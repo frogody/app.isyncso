@@ -113,3 +113,17 @@ export const generateCampaignOutreach = base44.functions.generateCampaignOutreac
 
 export const utils/events = base44.functions.utils/events;
 
+export const syncGetAllCandidates = base44.functions.syncGetAllCandidates;
+
+export const syncGetCandidateComplete = base44.functions.syncGetCandidateComplete;
+
+export const syncGetAllCampaigns = base44.functions.syncGetAllCampaigns;
+
+export const syncGetCampaignComplete = base44.functions.syncGetCampaignComplete;
+
+export const syncGetDashboardAnalytics = base44.functions.syncGetDashboardAnalytics;
+
+export const syncExportData = base44.functions.syncExportData;
+
+export const getOutreachTasks = base44.functions.getOutreachTasks;
+
