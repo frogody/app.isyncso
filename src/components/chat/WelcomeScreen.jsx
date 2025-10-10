@@ -1,542 +1,139 @@
-
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Plus,
-  Paperclip,
-  X,
-  Mic,
-  ArrowUp,
-  RefreshCw,
-  User as UserIcon,
-  Briefcase,
-  Zap
-} from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Sparkles, Users, TrendingUp, MessageSquare, Brain, Zap } from "lucide-react";
 import SyncAvatar from "../ui/SyncAvatar";
-import { useIsMobile } from "../utils/useIsMobile";
+import IconWrapper from "../ui/IconWrapper";
+import { motion } from "framer-motion";
 
-export default function WelcomeScreen({
-  onSendMessage,
-  inputMessage,
-  setInputMessage,
-  attachments,
-  setAttachments,
-  selectedCandidates,
-  setSelectedCandidates,
-  currentProject,
-  isLoading,
-  isUploadingDocs,
-  fileInputRef,
-  handleSelectFiles,
-  setShowCandidateModal,
-  setShowProjectModal,
-  setShowMCPModal,
-  showPlusMenu,
-  setShowPlusMenu,
-}) {
-  const [isListening, setIsListening] = React.useState(false);
-  const [recognition, setRecognition] = React.useState(null);
-  const isMobile = useIsMobile();
-
-  // Initialize speech recognition
-  React.useEffect(() => {
-    let recognitionInstance = null;
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      recognitionInstance = new SpeechRecognition();
-      
-      recognitionInstance.continuous = true;
-      recognitionInstance.interimResults = true;
-      recognitionInstance.lang = 'nl-NL';
-      
-      recognitionInstance.onstart = () => {
-        setIsListening(true);
-      };
-      
-      recognitionInstance.onresult = (event) => {
-        let finalTranscript = '';
-        
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscript += transcript + ' ';
-          }
-        }
-        
-        if (finalTranscript) {
-          setInputMessage(prev => prev + finalTranscript);
-        }
-      };
-      
-      recognitionInstance.onerror = (event) => {
-        console.error('Speech recognition error:', event.error);
-        setIsListening(false);
-      };
-      
-      recognitionInstance.onend = () => {
-        setIsListening(false);
-      };
-      
-      setRecognition(recognitionInstance);
+export default function WelcomeScreen({ onSelectPrompt, user }) {
+  const prompts = user?.language === 'nl' ? [
+    {
+      title: "Analyseer kandidaten",
+      description: "Wie zijn mijn hot leads met hoge intelligence scores?",
+      icon: Brain,
+      prompt: "Wie zijn mijn hot leads met hoge intelligence scores?"
+    },
+    {
+      title: "Schrijf outreach",
+      description: "Genereer een gepersonaliseerd outreach bericht",
+      icon: MessageSquare,
+      prompt: "Schrijf een outreach bericht voor mijn beste kandidaat"
+    },
+    {
+      title: "Campaign performance",
+      description: "Hoe presteren mijn actieve campaigns?",
+      icon: TrendingUp,
+      prompt: "Hoe presteren mijn actieve campaigns?"
+    },
+    {
+      title: "Taken overzicht",
+      description: "Wat moet ik deze week doen?",
+      icon: Zap,
+      prompt: "Wat zijn mijn prioriteiten deze week?"
     }
-
-    return () => {
-      if (recognitionInstance) {
-        recognitionInstance.stop();
-        recognitionInstance.onstart = null;
-        recognitionInstance.onresult = null;
-        recognitionInstance.onerror = null;
-        recognitionInstance.onend = null;
-      }
-    };
-  }, [setInputMessage]);
-
-  const toggleSpeechRecognition = () => {
-    if (!recognition) {
-      alert("Speech recognition is not supported in this browser. Please try Chrome, Edge, or Safari.");
-      return;
+  ] : [
+    {
+      title: "Analyze candidates",
+      description: "Who are my hot leads with high intelligence scores?",
+      icon: Brain,
+      prompt: "Who are my hot leads with high intelligence scores?"
+    },
+    {
+      title: "Write outreach",
+      description: "Generate a personalized outreach message",
+      icon: MessageSquare,
+      prompt: "Write an outreach message for my top candidate"
+    },
+    {
+      title: "Campaign performance",
+      description: "How are my active campaigns performing?",
+      icon: TrendingUp,
+      prompt: "How are my active campaigns performing?"
+    },
+    {
+      title: "Task overview",
+      description: "What should I focus on this week?",
+      icon: Zap,
+      prompt: "What are my priorities this week?"
     }
-    
-    if (isListening) {
-      recognition.stop();
-    } else {
-      setInputMessage(prev => prev + " ");
-      recognition.start();
-    }
-  };
+  ];
 
-  const removeAttachment = (url) => {
-    setAttachments(prev => prev.filter(a => a.url !== url));
-  };
-
-  const handleRemoveCandidate = (candidateId) => {
-    setSelectedCandidates(prev => prev.filter(c => c.id !== candidateId));
-  };
-
-  // Mobile version - optimized layout with better positioning
-  if (isMobile) {
-    return (
-      <div className="h-full flex flex-col">
-        <style jsx>{`
-          .input-container-mobile {
-            border-radius: 32px;
-          }
-          .mobile-welcome-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 1rem 1.5rem;
-            min-height: 0;
-            overflow: hidden;
-          }
-          .mobile-input-area {
-            flex-shrink: 0;
-            padding: 1rem 1rem;
-            background: linear-gradient(to top, var(--bg) 90%, transparent);
-            padding-bottom: max(1rem, calc(env(safe-area-inset-bottom) + 1rem));
-          }
-          /* The @supports block for .mobile-welcome-wrapper is removed as the class is no longer used */
-        `}</style>
-        
-        {/* Centered content area - responsive to keyboard */}
-        <div className="mobile-welcome-content">
-          <SyncAvatar size={80} />
-          <h2 className="text-base font-medium mt-4 text-center px-4" style={{color: 'var(--txt)'}}>
-            What's on your mind today?
-          </h2>
-        </div>
-        
-        {/* Fixed bottom input area - works with keyboard */}
-        <div className="mobile-input-area">
-          {/* Project/Attachments/Candidates display - above input */}
-          {(currentProject || attachments.length > 0 || selectedCandidates.length > 0) && (
-            <div className="mb-3 flex flex-wrap gap-2">
-              {currentProject && (
-                <div
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs"
-                  style={{ background: 'rgba(239,68,68,.12)', border: '1px solid rgba(239,68,68,.25)', color: 'var(--txt)' }}
-                >
-                  <Briefcase className="w-3.5 h-3.5" style={{ color: 'var(--accent)' }} />
-                  <span className="max-w-[180px] truncate">{currentProject.title}</span>
-                </div>
-              )}
-
-              {attachments.map(att => (
-                <div
-                  key={att.url}
-                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs"
-                  style={{ background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.12)', color: 'var(--txt)' }}
-                  title={att.name}
-                >
-                  <Paperclip className="w-3.5 h-3.5" style={{ color: 'var(--muted)' }} />
-                  <span className="max-w-[100px] truncate">{att.name}</span>
-                  <button
-                    type="button"
-                    onClick={() => removeAttachment(att.url)}
-                    className="hover:opacity-80"
-                    title="Remove"
-                  >
-                    <X className="w-3.5 h-3.5" style={{ color: 'var(--muted)' }} />
-                  </button>
-                </div>
-              ))}
-
-              {selectedCandidates.map(candidate => (
-                <div
-                  key={candidate.id}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs"
-                  style={{ background: 'rgba(128,128,128,.12)', border: '1px solid rgba(128,128,128,.25)', color: 'var(--txt)' }}
-                >
-                  <UserIcon className="w-3.5 h-3.5" style={{ color: 'var(--muted)' }} />
-                  <span className="max-w-[100px] truncate">{candidate.first_name} {candidate.last_name}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveCandidate(candidate.id)}
-                    className="hover:opacity-80 ml-0.5"
-                    title="Remove candidate"
-                  >
-                    <X className="w-3.5 h-3.5" style={{ color: 'var(--muted)' }} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <form onSubmit={onSendMessage} className="relative">
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept=".pdf,.doc,.docx,.txt,.md,.rtf,.png,.jpg,.jpeg"
-              className="hidden"
-              onChange={handleSelectFiles}
-            />
-            
-            <div 
-              className="input-container-mobile flex items-center gap-2.5 py-3 px-4 shadow-lg"
-              style={{ 
-                backgroundColor: 'rgba(26, 32, 38, 0.95)', 
-                borderColor: 'rgba(255,255,255,.12)',
-                border: '1px solid'
-              }}
-            >
-              <DropdownMenu open={showPlusMenu} onOpenChange={setShowPlusMenu}>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 flex-shrink-0 hover:bg-white/5 rounded-full"
-                  >
-                    <Plus className="w-5 h-5" style={{ color: 'var(--txt)' }} />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent 
-                  align="start" 
-                  className="glass-card border-white/10" 
-                  style={{ background: 'rgba(15,20,24,.98)', borderColor: 'rgba(255,255,255,.06)' }}
-                >
-                  <DropdownMenuItem 
-                    onClick={() => {
-                      fileInputRef.current?.click();
-                      setShowPlusMenu(false);
-                    }}
-                    disabled={isUploadingDocs}
-                    className="text-sm flex items-center gap-2 hover:bg-white/10"
-                    style={{ color: 'var(--txt)' }}
-                  >
-                    <Paperclip className="w-4 h-4 mr-2" />
-                    {isUploadingDocs ? 'Uploading...' : 'Attach files'}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    onClick={() => {
-                      setShowCandidateModal(true);
-                      setShowPlusMenu(false);
-                    }}
-                    className="text-sm flex items-center gap-2 hover:bg-white/10"
-                    style={{ color: 'var(--txt)' }}
-                  >
-                    <UserIcon className="w-4 h-4 mr-2" />
-                    Select candidate
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    onClick={() => {
-                      setShowProjectModal(true);
-                      setShowPlusMenu(false);
-                    }}
-                    className="text-sm flex items-center gap-2 hover:bg-white/10"
-                    style={{ color: 'var(--txt)' }}
-                  >
-                    <Briefcase className="w-4 h-4 mr-2" />
-                    Select project / role
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    onClick={() => {
-                      setShowMCPModal(true);
-                      setShowPlusMenu(false);
-                    }}
-                    className="text-sm flex items-center gap-2 hover:bg-white/10"
-                    style={{ color: 'var(--txt)' }}
-                  >
-                    <Zap className="w-4 h-4 mr-2" style={{ color: 'var(--accent)' }} />
-                    MCP Tools / Connections
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <Input
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                placeholder="Type your message..."
-                disabled={isLoading || isUploadingDocs}
-                className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 h-9 text-base"
-                style={{ color: 'var(--txt)' }}
-                autoComplete="off"
-              />
-
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className={`h-9 w-9 rounded-full transition-colors ${
-                    isListening 
-                      ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse' 
-                      : 'hover:bg-white/10 text-gray-300'
-                  }`}
-                  onClick={toggleSpeechRecognition}
-                  title={isListening ? 'Stop recording' : 'Start voice input'}
-                >
-                  <Mic className="w-5 h-5" />
-                </Button>
-
-                <Button
-                  type="submit"
-                  disabled={(!inputMessage.trim() && attachments.length === 0 && selectedCandidates.length === 0 && !currentProject) || isLoading || isUploadingDocs}
-                  size="icon"
-                  className="h-9 w-9 rounded-full btn-primary"
-                >
-                  {isLoading || isUploadingDocs ? (
-                    <div className="w-5 h-5">
-                      <SyncAvatar size={20} />
-                    </div>
-                  ) : (
-                    <ArrowUp className="w-5 h-5" />
-                  )}
-                </Button>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-    );
-  }
-
-  // Desktop version - keep existing layout
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-6">
-      <div className="text-center">
-        <div className="flex justify-center mb-2" style={{ transform: 'translateY(-80px)' }}>
-          <SyncAvatar size={180} />
-        </div>
+    <div className="flex flex-col items-center justify-center h-full max-w-4xl mx-auto">
+      <style jsx>{`
+        .welcome-card {
+          background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.015)), rgba(26,32,38,.35);
+          border: 1px solid rgba(255,255,255,.06);
+          box-shadow: 0 4px 12px rgba(0,0,0,.15), inset 0 1px 0 rgba(255,255,255,.04);
+          backdrop-filter: blur(8px);
+          border-radius: 16px;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
         
-        <h2 className="text-2xl font-medium mb-16" style={{color: 'var(--txt)', marginTop: '-80px'}}>
-          What's on your mind today?
-        </h2>
-      </div>
-      
-      <div className="w-full max-w-2xl lg:max-w-3xl">
-        <form onSubmit={onSendMessage} className="relative">
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            accept=".pdf,.doc,.docx,.txt,.md,.rtf,.png,.jpg,.jpeg"
-            className="hidden"
-            onChange={handleSelectFiles}
-          />
-          
-          <div 
-            className="flex items-center gap-3 bg-gray-800 border border-gray-600 rounded-3xl py-3 px-4 focus-within:border-gray-500 transition-colors"
-            style={{ backgroundColor: 'rgba(64, 64, 64, 0.6)', borderColor: 'rgba(122, 122, 122, 0.6)' }}
+        .welcome-card:hover {
+          background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)), rgba(26,32,38,.4);
+          border-color: rgba(239,68,68,.2);
+          transform: translateY(-2px);
+          box-shadow: 0 8px 24px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.06), 0 0 20px rgba(239,68,68,.1);
+        }
+      `}</style>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center mb-12"
+      >
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <SyncAvatar size={64} />
+        </div>
+        <h1 className="text-4xl font-bold mb-3" style={{ color: 'var(--txt)' }}>
+          {user?.language === 'nl' ? 'Welkom bij SYNC' : 'Welcome to SYNC'}
+        </h1>
+        <p className="text-lg" style={{ color: 'var(--muted)' }}>
+          {user?.language === 'nl' 
+            ? 'Je AI recruitment assistent. Wat kan ik vandaag voor je doen?'
+            : 'Your AI recruitment assistant. What can I help you with today?'}
+        </p>
+      </motion.div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+        {prompts.map((promptItem, index) => (
+          <motion.button
+            key={index}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+            onClick={() => onSelectPrompt(promptItem.prompt)}
+            className="welcome-card p-6 text-left"
           >
-            <DropdownMenu open={showPlusMenu} onOpenChange={setShowPlusMenu}>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0 hover:bg-gray-700 rounded-full"
-                >
-                  <Plus className="w-4 h-4 text-gray-300" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent 
-                align="start" 
-                side="top"
-                className="glass-card border-white/10 mb-2" 
-                style={{background: 'rgba(15,20,24,.95)', borderColor: 'rgba(255,255,255,.06)'}}
-              >
-                <DropdownMenuItem
-                  onClick={() => {
-                    setShowProjectModal(true);
-                    setShowPlusMenu(false);
-                  }}
-                  className="text-sm flex items-center gap-2 hover:bg-white/10"
-                  style={{color: 'var(--txt)'}}
-                >
-                  <Briefcase className="w-4 h-4" />
-                  Select project / role
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    setShowCandidateModal(true);
-                    setShowPlusMenu(false);
-                  }}
-                  className="text-sm flex items-center gap-2 hover:bg-white/10"
-                  style={{color: 'var(--txt)'}}
-                >
-                  <UserIcon className="w-4 h-4" />
-                  Select candidate
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    fileInputRef.current?.click();
-                    setShowPlusMenu(false);
-                  }}
-                  disabled={isUploadingDocs}
-                  className="text-sm flex items-center gap-2 hover:bg-white/10"
-                  style={{color: 'var(--txt)'}}
-                >
-                  <Paperclip className="w-4 h-4" />
-                  {isUploadingDocs ? 'Uploading...' : 'Attach files'}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    setShowMCPModal(true);
-                    setShowPlusMenu(false);
-                  }}
-                  className="text-sm flex items-center gap-2 hover:bg-white/10"
-                  style={{color: 'var(--txt)'}}
-                >
-                  <Zap className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-                  MCP Tools / Connections
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <Input
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              placeholder="Show me the best candidates in Amsterdam"
-              disabled={isLoading}
-              className="flex-1 bg-transparent border-none text-base py-0 px-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-              style={{color: 'var(--txt)'}}
-            />
-
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className={`h-6 w-6 p-0 rounded-full transition-colors ${
-                  isListening 
-                    ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse' 
-                    : 'hover:bg-gray-700 text-gray-300'
-                }`}
-                onClick={toggleSpeechRecognition}
-                title={isListening ? 'Stop recording' : 'Start voice input'}
-              >
-                <Mic className="w-4 h-4" />
-              </Button>
-              
-              <Button
-                type="submit"
-                disabled={(!inputMessage.trim() && attachments.length === 0 && selectedCandidates.length === 0 && !currentProject) || isLoading}
-                size="sm"
-                className="h-6 w-6 p-0 rounded-full bg-gray-300 hover:bg-white disabled:bg-gray-600"
-              >
-                {isLoading ? (
-                  <RefreshCw className="w-3 h-3 animate-spin text-black" />
-                ) : (
-                  <ArrowUp className="w-3 h-3 text-black" />
-                )}
-              </Button>
-            </div>
-          </div>
-
-          {/* Selected project display */}
-          {currentProject && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              <div
-                className="flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs"
-                style={{ background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.20)', color: 'var(--txt)' }}
-              >
-                <Briefcase className="w-3 h-3" style={{ color: 'var(--accent)' }} />
-                <span className="max-w-[200px] truncate">{currentProject.title}</span>
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <IconWrapper icon={promptItem.icon} size={24} variant="accent" glow={true} />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold mb-1" style={{ color: 'var(--txt)' }}>
+                  {promptItem.title}
+                </h3>
+                <p className="text-sm" style={{ color: 'var(--muted)' }}>
+                  {promptItem.description}
+                </p>
               </div>
             </div>
-          )}
-
-          {/* Attachments display */}
-          {attachments && attachments.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {attachments.map(att => (
-                <div
-                  key={att.url}
-                  className="flex items-center gap-2 px-2.5 py-1 rounded-lg text-xs"
-                  style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.10)', color: 'var(--txt)' }}
-                  title={att.name}
-                >
-                  <Paperclip className="w-3 h-3" style={{ color: 'var(--muted)' }} />
-                  <span className="max-w-[180px] truncate">{att.name}</span>
-                  <button
-                    type="button"
-                    onClick={() => removeAttachment(att.url)}
-                    className="hover:opacity-80"
-                    title="Remove"
-                  >
-                    <X className="w-3 h-3" style={{ color: 'var(--muted)' }} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Selected candidates display */}
-          {selectedCandidates.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {selectedCandidates.map(candidate => (
-                <div
-                  key={candidate.id}
-                  className="flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs"
-                  style={{ background: 'rgba(128,128,128,.08)', border: '1px solid rgba(128,128,128,.20)', color: 'var(--txt)' }}
-                >
-                  <UserIcon className="w-3 h-3" style={{ color: 'var(--muted)' }} />
-                  <span className="max-w-[150px] truncate">{candidate.first_name} {candidate.last_name}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveCandidate(candidate.id)}
-                    className="hover:opacity-80 ml-0.5"
-                    title="Remove candidate"
-                  >
-                    <X className="w-3 h-3" style={{ color: 'var(--muted)' }} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </form>
+          </motion.button>
+        ))}
       </div>
+
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}
+        className="mt-8 text-sm"
+        style={{ color: 'var(--muted)' }}
+      >
+        {user?.language === 'nl'
+          ? '💡 Tip: SYNC heeft toegang tot al je kandidaten, campaigns en projecten'
+          : '💡 Tip: SYNC has access to all your candidates, campaigns, and projects'}
+      </motion.p>
     </div>
   );
 }

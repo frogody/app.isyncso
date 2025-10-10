@@ -1,17 +1,79 @@
 
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { User } from "@/api/entities";
+import { base44 } from "@/api/base44Client";
 import { useTranslation } from "@/components/utils/translations";
-import { Users, User as UserIcon, LogOut, Sparkles, Building2, Brain, MessageSquare, CheckSquare, Briefcase, Activity, RefreshCw, Menu, X, ChevronRight, ChevronLeft, Megaphone } from "lucide-react";
+import { Users, User as UserIcon, LogOut, Sparkles, Building2, Brain, MessageSquare, CheckSquare, Briefcase, Activity, RefreshCw, Menu, X, ChevronRight, ChevronLeft, Megaphone, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SyncAvatar from "../components/ui/SyncAvatar";
 import IconWrapper from "../components/ui/IconWrapper";
 import { haptics } from "@/components/utils/haptics";
 import { useIsMobile } from "@/components/utils/useIsMobile";
 import { motion, AnimatePresence } from "framer-motion";
+
+// Navigation items
+const navigationItems = [
+  {
+    title: "SYNC",
+    icon: Sparkles,
+    url: createPageUrl("Chat"),
+    group: "discovery",
+    useSyncAvatar: true
+  },
+  {
+    title: "Kandidaten",
+    icon: Users,
+    url: createPageUrl("Candidates"),
+    group: "discovery"
+  },
+  {
+    title: "Campagnes",
+    icon: Megaphone,
+    url: createPageUrl("Campaigns"),
+    group: "pipeline"
+  },
+  {
+    title: "Projecten",
+    icon: Briefcase,
+    url: createPageUrl("Projects"),
+    group: "pipeline"
+  },
+  {
+    title: "Taken",
+    icon: CheckSquare,
+    url: createPageUrl("Tasks"),
+    group: "pipeline"
+  },
+  {
+    title: "Dashboard",
+    icon: Activity,
+    url: createPageUrl("Dashboard"),
+    group: "pipeline"
+  }
+];
+
+// Fallback logo component
+const FallbackLogo = ({ size = 40 }) => (
+  <div
+    style={{
+      width: size,
+      height: size,
+      borderRadius: '8px',
+      background: 'linear-gradient(135deg, #EF4444, #DC2626)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontWeight: 'bold',
+      fontSize: size * 0.4,
+      color: 'white',
+      boxShadow: '0 0 20px rgba(239,68,68,0.3)'
+    }}
+  >
+    T
+  </div>
+);
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -28,17 +90,16 @@ export default function Layout({ children, currentPageName }) {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const userData = await User.me();
+        const userData = await base44.auth.me();
         setUser(userData);
 
         if (!userData.organization_id && !hasCheckedOrganization) {
           setHasCheckedOrganization(true);
           try {
-            const { assignUserToOrganization } = await import("@/api/functions");
-            const response = await assignUserToOrganization();
+            const response = await base44.functions.invoke('assignUserToOrganization');
 
             if (response.data?.success && response.data?.organization_id) {
-              const updatedUserData = await User.me();
+              const updatedUserData = await base44.auth.me();
               setUser(updatedUserData);
             }
           } catch (error) {
@@ -56,58 +117,21 @@ export default function Layout({ children, currentPageName }) {
     loadUser();
   }, [hasCheckedOrganization]);
 
-  const FallbackLogo = ({ size = 40 }) => (
-    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="40" height="40" rx="8" fill="url(#gradient)" />
-      <text x="20" y="27" fontFamily="Arial, sans-serif" fontSize="18" fontWeight="bold" fill="white" textAnchor="middle">T</text>
-      <defs>
-        <linearGradient id="gradient" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#EF4444" />
-          <stop offset="1" stopColor="#DC2626" />
-        </linearGradient>
-      </defs>
-    </svg>
-  );
-
-  const navigationItems = [
-    {
-      title: t('nav_dashboard'),
-      url: createPageUrl("Dashboard"),
-      icon: Activity,
-      group: "discovery"
-    },
-    {
-      title: t('nav_candidates'),
-      url: createPageUrl("Candidates"),
-      icon: Users,
-      group: "discovery"
-    },
-    {
-      title: t('nav_sync'),
-      url: createPageUrl("Chat"),
-      icon: "SyncAvatar",
-      group: "discovery",
-      useSyncAvatar: true
-    },
-    {
-      title: t('nav_intelligence'),
-      url: createPageUrl("CandidateAnalytics"),
-      icon: Brain,
-      group: "discovery"
-    },
-    {
-      title: t('nav_projects'),
-      url: createPageUrl("Projects"),
-      icon: Briefcase,
-      group: "pipeline"
-    },
-    {
-      title: user?.language === 'nl' ? 'Campagnes' : 'Campaigns',
-      url: createPageUrl("Campaigns"),
-      icon: Megaphone,
-      group: "pipeline"
+  const handleChatClick = useCallback((e) => {
+    if (e && e.preventDefault) {
+      e.preventDefault();
     }
-  ];
+    if (e && e.stopPropagation) {
+      e.stopPropagation();
+    }
+
+    haptics.medium();
+
+    // Navigate to SYNC chat page
+    window.location.href = createPageUrl("Chat");
+
+    return false;
+  }, []);
 
   useEffect(() => {
     document.title = "TALENT";
@@ -121,7 +145,7 @@ export default function Layout({ children, currentPageName }) {
   const handleLogout = async () => {
     if (confirm(t('confirm_logout'))) {
       haptics.medium();
-      await User.logout();
+      await base44.auth.logout();
     }
   };
 
@@ -195,8 +219,8 @@ export default function Layout({ children, currentPageName }) {
           }
         `}</style>
 
-        <div className="fixed top-0 left-0 right-0 z-50 px-4 py-3 flex items-center justify-between" 
-             style={{ 
+        <div className="fixed top-0 left-0 right-0 z-50 px-4 py-3 flex items-center justify-between"
+             style={{
                background: 'linear-gradient(180deg, rgba(21,26,31,.98), rgba(21,26,31,.95))',
                borderBottom: '1px solid rgba(255,255,255,.06)',
                backdropFilter: 'blur(20px)'
@@ -239,7 +263,7 @@ export default function Layout({ children, currentPageName }) {
                 exit={{ opacity: 0 }}
                 onClick={toggleMobileMenu}
               />
-              
+
               <motion.div
                 className="menu-overlay"
                 initial={{ x: 280 }}
@@ -259,7 +283,7 @@ export default function Layout({ children, currentPageName }) {
                       <X className="w-5 h-5" style={{ color: 'var(--muted)' }} />
                     </Button>
                   </div>
-                  
+
                   {user && (
                     <Link
                       to={createPageUrl("Profile")}
@@ -290,6 +314,25 @@ export default function Layout({ children, currentPageName }) {
                 </div>
 
                 <div className="p-4 space-y-2">
+                  {/* Replaced WhatsApp button with SYNC Chat Link */}
+                  <Link
+                    to={createPageUrl("Chat")}
+                    onClick={(e) => {
+                      setShowMobileMenu(false); // Close mobile menu after clicking
+                      handleChatClick(e); // Use the new handler
+                    }}
+                    className="w-full flex items-center gap-3 p-4 rounded-lg transition-all"
+                    style={{
+                      background: 'rgba(239, 68, 68, .08)', // Accent red background
+                      border: '1px solid rgba(239, 68, 68, .25)' // Accent red border
+                    }}
+                  >
+                    <Sparkles className="w-5 h-5" style={{ color: 'var(--accent)' }} /> {/* SYNC icon */}
+                    <span className="font-medium" style={{ color: 'var(--accent)' }}>
+                      {t('SYNC')}
+                    </span>
+                  </Link>
+
                   <Link
                     to={createPageUrl("OrganizationSettings")}
                     onClick={() => {
@@ -307,6 +350,7 @@ export default function Layout({ children, currentPageName }) {
                   </Link>
 
                   <button
+                    type="button"
                     onClick={() => {
                       setShowMobileMenu(false);
                       handleLogout();
@@ -337,7 +381,7 @@ export default function Layout({ children, currentPageName }) {
             paddingBottom: 'env(safe-area-inset-bottom, 0px)'
           }}>
             <div className="flex items-center justify-around px-2 py-2">
-              {navigationItems.filter(item => item.group === "discovery").map((item) => { // Only show 'discovery' items in mobile bottom nav
+              {navigationItems.filter(item => item.group === "discovery").map((item) => {
                 const isActive = location.pathname === item.url;
                 return (
                   <Link
@@ -392,7 +436,7 @@ export default function Layout({ children, currentPageName }) {
         .sidebar-toggle {
           position: fixed;
           left: 0px;
-          top: 65%; /* Changed from 60% to 65% */
+          top: 65%;
           transform: translateY(-50%);
           z-index: 55;
           width: 12px;
@@ -671,40 +715,21 @@ export default function Layout({ children, currentPageName }) {
 
           <div className="flex-shrink-0">
             <div className="p-3">
-              {/* <Link
-                to={createPageUrl("Profile")}
-                onClick={() => haptics.light()}
-                className={`nav-item relative transition-all duration-200 rounded-lg mb-1 flex items-center h-12 group ${location.pathname === createPageUrl("Profile") ? 'active' : ''}`}
+              {/* Replaced WhatsApp button with SYNC Chat Link */}
+              <Link
+                to={createPageUrl("Chat")}
+                onClick={handleChatClick}
+                className="nav-item relative transition-all duration-200 rounded-lg mb-1 flex items-center h-12 group w-full"
                 style={{
-                  background: location.pathname === createPageUrl("Profile") ? "rgba(239, 68, 68, .08)" : "transparent",
-                  color: location.pathname === createPageUrl("Profile") ? "var(--accent)" : "var(--muted)"
+                  background: 'rgba(239, 68, 68, .08)',
+                  border: '1px solid rgba(239, 68, 68, .25)'
                 }}
-                title={t('nav_profile')}
+                title={t('SYNC')}
               >
-                <div className="w-full h-full flex-shrink-0 flex items-center justify-center">
-                  <IconWrapper
-                    icon={UserIcon}
-                    size={22}
-                    variant={location.pathname === createPageUrl("Profile") ? "accent" : "default"}
-                    glow={true}
-                  />
+                <div className="w-full flex-shrink-0 flex items-center justify-center">
+                  <Sparkles className="w-5 h-5" style={{ color: 'var(--accent)' }} />
                 </div>
-                {location.pathname === createPageUrl("Profile") && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      left: 0,
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      height: '60%',
-                      width: '3px',
-                      borderRadius: '3px',
-                      background: '#EF4444',
-                      boxShadow: '0 0 8px rgba(239,68,68,.3)'
-                    }}
-                  />
-                )}
-              </Link> */}
+              </Link>
 
               <Link
                 to={createPageUrl("OrganizationSettings")}
@@ -905,21 +930,25 @@ export default function Layout({ children, currentPageName }) {
 
               <div className="flex-shrink-0">
                 <div className="p-3">
-                  {/* The profile link was moved to the profile picture block to align with the request, if you need a separate text link uncomment this */}
-                  {/* <Link
-                    to={createPageUrl("Profile")}
-                    onClick={() => {
-                      haptics.light();
-                      setSidebarExpanded(false);
+                  {/* Replaced WhatsApp button with SYNC Chat Link */}
+                  <Link
+                    to={createPageUrl("Chat")}
+                    onClick={(e) => {
+                      setSidebarExpanded(false); // Close sidebar after clicking
+                      handleChatClick(e); // Use the new handler
                     }}
-                    className={`nav-item relative transition-all duration-200 rounded-lg mb-1 flex items-center h-12 group px-3 ${location.pathname === createPageUrl("Profile") ? 'active' : ''}`}
+                    className="nav-item relative transition-all duration-200 rounded-lg mb-1 flex items-center h-12 group px-3 gap-2 w-full"
                     style={{
-                      background: location.pathname === createPageUrl("Profile") ? "rgba(239, 68, 68, .08)" : "transparent",
-                      color: location.pathname === createPageUrl("Profile") ? "var(--accent)" : "var(--muted)"
+                      background: 'rgba(239, 68, 68, .08)',
+                      border: '1px solid rgba(239, 68, 68, .25)',
+                      color: 'var(--accent)'
                     }}
                   >
-                    <span className="font-semibold text-sm">{t('nav_profile')}</span>
-                  </Link> */}
+                    <Sparkles className="w-4 h-4 flex-shrink-0" /> {/* SYNC icon */}
+                    <span className="font-semibold text-sm">
+                      {t('SYNC')}
+                    </span>
+                  </Link>
 
                   <Link
                     to={createPageUrl("OrganizationSettings")}

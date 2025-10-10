@@ -38,6 +38,8 @@ import Campaigns from "./Campaigns";
 
 import OpenRoles from "./OpenRoles";
 
+import Agents from "./Agents";
+
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 
 const PAGES = {
@@ -79,6 +81,8 @@ const PAGES = {
     Campaigns: Campaigns,
     
     OpenRoles: OpenRoles,
+    
+    Agents: Agents,
     
 }
 
@@ -144,6 +148,8 @@ function PagesContent() {
                 <Route path="/Campaigns" element={<Campaigns />} />
                 
                 <Route path="/OpenRoles" element={<OpenRoles />} />
+                
+                <Route path="/Agents" element={<Agents />} />
                 
             </Routes>
         </Layout>

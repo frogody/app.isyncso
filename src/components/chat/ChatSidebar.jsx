@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import IconWrapper from "../ui/IconWrapper";
+import { base44 } from "@/api/base44Client"; // Added import for base44 client
 
 export default function ChatSidebar({
   conversations,
@@ -45,7 +46,9 @@ export default function ChatSidebar({
   const [editingId, setEditingId] = useState(null);
   const [editTitle, setEditTitle] = useState("");
 
+  // Filter conversations based on search query and the new metadata.archived flag
   const filteredConversations = conversations.filter(conv =>
+    !conv.metadata?.archived && // Exclude conversations that are soft-deleted (archived in metadata)
     conv.title?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -76,35 +79,45 @@ export default function ChatSidebar({
     if (onConversationUpdate) onConversationUpdate();
   };
 
+  // handleArchive now uses base44 and sets metadata.archived to true (soft delete/archive)
   const handleArchive = async (conv, e) => {
     e.stopPropagation();
-    if (confirm(`Archiveer "${conv.title}"?`)) {
-      await ChatConversation.update(conv.id, {
-        is_archived: true
-      });
+    try {
+      if (confirm(`Weet je zeker dat je het gesprek "${conv.title}" wilt archiveren? Het zal verdwijnen uit je lijst, maar kan later worden hersteld.`)) {
+        await base44.agents.updateConversation(conv.id, {
+          metadata: { ...(conv.metadata || {}), archived: true }
+        });
+        if (onConversationUpdate) onConversationUpdate();
+      }
+    } catch (error) {
+      console.error("Failed to archive conversation", error);
+      alert("Kon gesprek niet archiveren. Probeer het opnieuw.");
+    }
+  };
+
+  // handleHardDelete performs a permanent deletion using ChatConversation.delete
+  // This is distinct from archiving.
+  const handleHardDelete = async (conv, e) => {
+    e.stopPropagation();
+    if (confirm(`Weet je zeker dat je het gesprek "${conv.title}" PERMANENT wilt verwijderen? Dit kan NIET ongedaan worden gemaakt.`)) {
+      await ChatConversation.delete(conv.id);
       if (onConversationUpdate) onConversationUpdate();
     }
   };
 
-  const handleDelete = async (conv, e) => {
-    e.stopPropagation();
-    await ChatConversation.delete(conv.id);
-    if (onConversationUpdate) onConversationUpdate();
-  };
-
   const handleConversationClick = async (conv) => {
     await Promise.all(
-      conversations.map(c => 
-        c.is_active && c.id !== conv.id 
+      conversations.map(c =>
+        c.is_active && c.id !== conv.id
           ? ChatConversation.update(c.id, { is_active: false })
           : Promise.resolve()
       )
     );
-    
+
     if (!conv.is_active) {
       await ChatConversation.update(conv.id, { is_active: true });
     }
-    
+
     onConversationSelect(conv);
   };
 
@@ -321,8 +334,8 @@ export default function ChatSidebar({
                     onRenameSave={handleRenameSave}
                     onRenameCancel={handleRenameCancel}
                     onPin={handlePin}
-                    onArchive={handleArchive}
-                    onDelete={handleDelete}
+                    onArchive={handleArchive} // Pass the new handleArchive (soft delete)
+                    onDelete={handleHardDelete} // Pass the handleHardDelete (permanent delete)
                     formatDate={formatDate}
                     getMessageCount={getMessageCount}
                   />
@@ -351,8 +364,8 @@ export default function ChatSidebar({
                 onRenameSave={handleRenameSave}
                 onRenameCancel={handleRenameCancel}
                 onPin={handlePin}
-                onArchive={handleArchive}
-                onDelete={handleDelete}
+                onArchive={handleArchive} // Pass the new handleArchive (soft delete)
+                onDelete={handleHardDelete} // Pass the handleHardDelete (permanent delete)
                 formatDate={formatDate}
                 getMessageCount={getMessageCount}
               />
@@ -385,8 +398,8 @@ function ConversationItem({
   onRenameSave,
   onRenameCancel,
   onPin,
-  onArchive,
-  onDelete,
+  onArchive, // This prop now triggers the soft-delete/archive via base44
+  onDelete, // This prop now triggers the permanent delete via ChatConversation.delete
   formatDate,
   getMessageCount
 }) {
@@ -450,9 +463,9 @@ function ConversationItem({
               {conv.is_pinned && (
                 <IconWrapper icon={Pin} size={12} variant="accent" className="mt-0.5 flex-shrink-0" />
               )}
-              <p 
-                className="text-sm font-medium line-clamp-2" 
-                style={{ 
+              <p
+                className="text-sm font-medium line-clamp-2"
+                style={{
                   color: 'var(--txt)',
                   wordBreak: 'break-word',
                   lineHeight: '1.3',
@@ -503,7 +516,7 @@ function ConversationItem({
             </DropdownMenuItem>
             <DropdownMenuItem onClick={(e) => onDelete(conv, e)} className="text-xs py-2 text-red-400">
               <Trash2 className="w-3 h-3 mr-2" />
-              Verwijderen
+              Permanent verwijderen
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

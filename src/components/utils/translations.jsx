@@ -387,6 +387,9 @@ export const translations = {
     delete_selected: 'Verwijderen',
     confirm_delete_candidates: 'Weet je zeker dat je {count} kandidaten wilt verwijderen?',
     all_owners: 'Alle eigenaren',
+    
+    // WhatsApp
+    whatsapp_assistant: 'WhatsApp Assistent',
   },
   en: {
     // Navigation
@@ -774,6 +777,9 @@ export const translations = {
     delete_selected: 'Delete',
     confirm_delete_candidates: 'Are you sure you want to delete {count} candidates?',
     all_owners: 'All owners',
+
+    // WhatsApp
+    whatsapp_assistant: 'WhatsApp Assistant',
   }
 };
 
