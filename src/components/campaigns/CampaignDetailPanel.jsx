@@ -1,9 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import { Campaign } from "@/api/entities";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   MoreVertical,
   Play,
@@ -13,18 +14,18 @@ import {
   Edit,
   Users,
   MessageSquare,
-  TrendingUp, // This icon is replaced for follow_up stages in this update
-  Target, // This icon is replaced for follow_up stages in this update
   Sparkles,
-  Clock, // Added as new icon for follow-up stages
+  Clock,
   CheckCircle2,
-  Zap, // Added as new icon for no_reply stage
+  Zap,
   ExternalLink,
   Send,
-  X // Added X icon to imports (though not used in final implementation of this file as it's not a modal)
+  X,
+  Check,
+  Pencil
 } from "lucide-react";
 import IconWrapper from "../ui/IconWrapper";
-import CandidateCard from "../candidates/CandidateCard"; // This component will be replaced for active stage rendering
+import CandidateCard from "../candidates/CandidateCard";
 import CampaignOutreachStyleModal from "./CampaignOutreachStyleModal";
 import {
   DropdownMenu,
@@ -65,9 +66,14 @@ export default function CampaignDetailPanel({
   const [showStyleModal, setShowStyleModal] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
+  // State for message editing
+  const [editingMessageId, setEditingMessageId] = useState(null);
+  const [editedMessageText, setEditedMessageText] = useState('');
+  const [editingStage, setEditingStage] = useState(null);
+
   // New state variables for tracking sending status and already sent tasks
-  const [sendingToAgent, setSendingToAgent] = useState({}); // { candidate_id: boolean }
-  const [sentToAgent, setSentToAgent] = new useState(new Set()); // Set of candidate_ids
+  const [sendingToAgent, setSendingToAgent] = useState({});
+  const [sentToAgent, setSentToAgent] = new useState(new Set());
 
   useEffect(() => {
     setSelectedStage('first_message');
@@ -78,10 +84,9 @@ export default function CampaignDetailPanel({
     const loadSentTasks = async () => {
       if (!campaign?.id) return;
       try {
-        // Fetch existing outreach tasks that are 'approved_ready' (or similar status indicating sent/ready)
         const response = await base44.functions.invoke('getOutreachTasks', {
           campaign_id: campaign.id,
-          status: 'approved_ready' // This status might need adjustment based on backend
+          status: 'approved_ready'
         });
         const tasks = response?.data || [];
         const candidatesWithTasks = new Set(tasks.map((t) => t.candidate_id));
@@ -91,7 +96,7 @@ export default function CampaignDetailPanel({
       }
     };
     loadSentTasks();
-  }, [campaign?.id]); // Re-run when campaign ID changes
+  }, [campaign?.id]);
 
   if (!campaign) {
     return (
@@ -232,7 +237,7 @@ export default function CampaignDetailPanel({
 
   // New handler for sending tasks to agent
   const handleSendToAgent = async (candidate) => {
-    setSendingToAgent((prev) => ({ ...prev, [candidate.candidate_id]: true })); // Set sending state for this candidate
+    setSendingToAgent((prev) => ({ ...prev, [candidate.candidate_id]: true }));
 
     try {
       let taskType = '';
@@ -248,7 +253,6 @@ export default function CampaignDetailPanel({
         taskType = 'follow_up_2';
         messageContent = candidate.follow_up_message_2 || '';
       } else if (candidate.stage === 'no_reply') {
-        // Special case: create check_reply task
         taskType = 'check_reply';
         messageContent = user?.language === 'nl' ?
         'Controleer of deze kandidaat heeft gereageerd op LinkedIn. Type YES als er een reactie is, of NO als er geen reactie is.' :
@@ -281,9 +285,7 @@ export default function CampaignDetailPanel({
       });
 
       if (response?.data?.success) {
-        // Mark as sent to agent by adding to the set
         setSentToAgent((prev) => new Set(prev).add(candidate.candidate_id));
-        // Removed the alert popup for silent success
       } else {
         throw new Error(response?.data?.error || 'Failed to create task');
       }
@@ -293,8 +295,67 @@ export default function CampaignDetailPanel({
       '❌ Fout bij versturen naar agent' :
       '❌ Error sending to agent');
     } finally {
-      setSendingToAgent((prev) => ({ ...prev, [candidate.candidate_id]: false })); // Reset sending state
+      setSendingToAgent((prev) => ({ ...prev, [candidate.candidate_id]: false }));
     }
+  };
+
+  // Message editing handlers
+  const handleStartEditMessage = (candidate, stage) => {
+    setEditingMessageId(candidate.candidate_id);
+    setEditingStage(stage);
+
+    // Load current message based on stage
+    let currentMessage = '';
+    if (stage === 'first_message') {
+      currentMessage = candidate.outreach_message || '';
+    } else if (stage === 'follow_up_1') {
+      currentMessage = candidate.follow_up_message || '';
+    } else if (stage === 'follow_up_2') {
+      currentMessage = candidate.follow_up_message_2 || '';
+    }
+
+    setEditedMessageText(currentMessage);
+  };
+
+  const handleSaveEditedMessage = async (candidate) => {
+    if (!editedMessageText.trim()) {
+      alert(user?.language === 'nl' ?
+        'Bericht mag niet leeg zijn' :
+        'Message cannot be empty');
+      return;
+    }
+
+    try {
+      const updatedMatches = campaign.matched_candidates.map(m => {
+        if (m.candidate_id === candidate.candidate_id) {
+          const updates = { ...m };
+          if (editingStage === 'first_message') updates.outreach_message = editedMessageText;
+          if (editingStage === 'follow_up_1') updates.follow_up_message = editedMessageText;
+          if (editingStage === 'follow_up_2') updates.follow_up_message_2 = editedMessageText;
+          return updates;
+        }
+        return m;
+      });
+
+      await onCampaignUpdate(campaign.id, { matched_candidates: updatedMatches });
+
+      // Reset edit state
+      setEditingMessageId(null);
+      setEditedMessageText('');
+      setEditingStage(null);
+
+    } catch (error) {
+      console.error('Error saving edited message:', error);
+      alert(user?.language === 'nl' ?
+        'Fout bij opslaan bericht' :
+        'Error saving message');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingMessageId(null);
+    setEditedMessageText('');
+    setEditingStage(null);
   };
 
 
@@ -305,9 +366,9 @@ export default function CampaignDetailPanel({
   const getStageConfig = (stageKey) => {
     const configs = {
       first_message: { icon: MessageSquare, label: getStageLabel('first_message') },
-      follow_up_1: { icon: Clock, label: getStageLabel('follow_up_1') }, // Changed icon from TrendingUp to Clock
-      follow_up_2: { icon: Clock, label: getStageLabel('follow_up_2') }, // Changed icon from Target to Clock
-      no_reply: { icon: Zap, label: getStageLabel('no_reply') }, // Changed icon from Users to Zap
+      follow_up_1: { icon: Clock, label: getStageLabel('follow_up_1') },
+      follow_up_2: { icon: Clock, label: getStageLabel('follow_up_2') },
+      no_reply: { icon: Zap, label: getStageLabel('no_reply') },
       connected: { icon: CheckCircle2, label: getStageLabel('connected') }
     };
     return configs[stageKey];
@@ -335,8 +396,9 @@ export default function CampaignDetailPanel({
         </CardHeader>
         <CardContent className="space-y-2">
           {candidates.map((candidate) => {
-            const isSent = sentToAgent.has(candidate.candidate_id); // Check if task has been sent
-            const isSending = sendingToAgent[candidate.candidate_id]; // Check if task is currently sending
+            const isSent = sentToAgent.has(candidate.candidate_id);
+            const isSending = sendingToAgent[candidate.candidate_id];
+            const isEditing = editingMessageId === candidate.candidate_id;
 
             return (
               <div
@@ -344,7 +406,7 @@ export default function CampaignDetailPanel({
                 className="p-3 rounded-lg border transition-all hover:border-white/20"
                 style={{ background: 'rgba(255,255,255,.03)', borderColor: 'rgba(255,255,255,.08)' }}>
 
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-sm mb-1 truncate" style={{ color: 'var(--txt)' }}>
                       {candidate.candidate_name}
@@ -373,6 +435,24 @@ export default function CampaignDetailPanel({
                         color: '#FFFFFF'
                       }}>
                         <LinkedInIcon size={12} />
+                      </Button>
+                    }
+
+                    {/* Edit button - MIDDLE */}
+                    {(stage === 'first_message' || stage === 'follow_up_1' || stage === 'follow_up_2') &&
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleStartEditMessage(candidate, stage)}
+                      className="h-7 w-7 p-0"
+                      disabled={isEditing}
+                      style={{
+                        background: 'rgba(233,240,241,.08)',
+                        color: '#E9F0F1',
+                        border: '1px solid rgba(233,240,241,.2)',
+                        opacity: isEditing ? 0.5 : 1
+                      }}>
+                        <Pencil className="w-4 h-4" />
                       </Button>
                     }
 
@@ -415,6 +495,55 @@ export default function CampaignDetailPanel({
                     }
                   </div>
                 </div>
+
+                {/* Inline message editor */}
+                {isEditing && (
+                  <div className="mt-3 space-y-2">
+                    <Label className="text-xs" style={{ color: 'var(--muted)' }}>
+                      {user?.language === 'nl' ? 'Bericht bewerken:' : 'Edit message:'}
+                    </Label>
+                    <Textarea
+                      value={editedMessageText}
+                      onChange={(e) => setEditedMessageText(e.target.value)}
+                      rows={6}
+                      className="bg-transparent text-sm"
+                      style={{
+                        color: 'var(--txt)',
+                        borderColor: 'rgba(255,255,255,.12)'
+                      }}
+                      autoFocus
+                    />
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs" style={{ color: 'var(--muted)' }}>
+                        {editedMessageText.length} {user?.language === 'nl' ? 'tekens' : 'characters'}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={handleCancelEdit}
+                          className="h-8"
+                        >
+                          <X className="w-4 h-4 mr-1" style={{ color: '#EF4444' }} />
+                          {user?.language === 'nl' ? 'Annuleren' : 'Cancel'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handleSaveEditedMessage(candidate)}
+                          className="h-8"
+                          style={{
+                            background: 'rgba(34,197,94,.12)',
+                            color: '#86EFAC',
+                            border: '1px solid rgba(34,197,94,.3)'
+                          }}
+                        >
+                          <Check className="w-4 h-4 mr-1" />
+                          {user?.language === 'nl' ? 'Opslaan' : 'Save'}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>);
 
           })}

@@ -111,3 +111,5 @@ export const deepScrapeVacancies = base44.functions.deepScrapeVacancies;
 
 export const generateCampaignOutreach = base44.functions.generateCampaignOutreach;
 
+export const utils/events = base44.functions.utils/events;
+
