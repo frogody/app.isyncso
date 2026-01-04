@@ -1,129 +1,136 @@
+/**
+ * Cloud Functions Export
+ *
+ * This module provides a unified interface for all cloud functions.
+ * Uses feature flag to switch between Base44 and Supabase backends.
+ */
+
+// Feature flag from environment
+const USE_SUPABASE = import.meta.env.VITE_USE_SUPABASE === 'true';
+
+// Import both backends
 import { base44 } from './base44Client';
-
-
-export const googleSheetsAuth = base44.functions.googleSheetsAuth;
-
-export const syncGoogleSheet = base44.functions.syncGoogleSheet;
-
-export const googleSheetsCallback = base44.functions.googleSheetsCallback;
-
-export const exchangeGoogleCode = base44.functions.exchangeGoogleCode;
-
-export const generateApiKey = base44.functions.generateApiKey;
-
-export const zapierWebhook = base44.functions.zapierWebhook;
-
-export const chatWithCandidates = base44.functions.chatWithCandidates;
-
-export const assignCandidateRoundRobin = base44.functions.assignCandidateRoundRobin;
-
-export const inviteUser = base44.functions.inviteUser;
-
-export const acceptInvitation = base44.functions.acceptInvitation;
-
-export const assignUserToOrganization = base44.functions.assignUserToOrganization;
-
-export const syncDomainUsers = base44.functions.syncDomainUsers;
-
-export const migrateCandidatesToOrganization = base44.functions.migrateCandidatesToOrganization;
-
-export const testUserData = base44.functions.testUserData;
-
-export const debugUserEntity = base44.functions.debugUserEntity;
-
-export const assignOrganizationToCandidates = base44.functions.assignOrganizationToCandidates;
-
-export const getUsersByIds = base44.functions.getUsersByIds;
-
-export const assignOwnersEvenly = base44.functions.assignOwnersEvenly;
-
-export const generateCandidateIntelligence = base44.functions.generateCandidateIntelligence;
-
-export const generateOutreachMessage = base44.functions.generateOutreachMessage;
-
-export const createFollowUpTask = base44.functions.createFollowUpTask;
-
-export const handleFollowUpResponse = base44.functions.handleFollowUpResponse;
-
-export const generateFollowUpMessage = base44.functions.generateFollowUpMessage;
-
-export const createTaskAfterFollowUp = base44.functions.createTaskAfterFollowUp;
-
-export const clearOutreachAndTasks = base44.functions.clearOutreachAndTasks;
-
-export const bulkGenerateIntelligence = base44.functions.bulkGenerateIntelligence;
-
-export const claudeClient = base44.functions.claudeClient;
-
-export const generateFile = base44.functions.generateFile;
-
-export const mcpToolsConfig = base44.functions.mcpToolsConfig;
-
-export const googleOAuthUnified = base44.functions.googleOAuthUnified;
-
-export const googleOAuthCallback = base44.functions.googleOAuthCallback;
-
-export const mcpTools/googleDrive = base44.functions.mcpTools/googleDrive;
-
-export const mcpTools/googleMaps = base44.functions.mcpTools/googleMaps;
-
-export const mcpTools/braveSearch = base44.functions.mcpTools/braveSearch;
-
-export const mcpToolsHandler = base44.functions.mcpToolsHandler;
-
-export const fetchLinkedInProfilePicture = base44.functions.fetchLinkedInProfilePicture;
-
-export const updateCandidateProfilePictures = base44.functions.updateCandidateProfilePictures;
-
-export const autoFetchProfilePicture = base44.functions.autoFetchProfilePicture;
-
-export const extractLinkedInProfilePicture = base44.functions.extractLinkedInProfilePicture;
-
-export const bulkExtractProfilePictures = base44.functions.bulkExtractProfilePictures;
-
-export const brightDataLinkedIn = base44.functions.brightDataLinkedIn;
-
-export const autoLoadAllProfilePictures = base44.functions.autoLoadAllProfilePictures;
-
-export const testBrightDataConnection = base44.functions.testBrightDataConnection;
-
-export const mcpTools/gmail = base44.functions.mcpTools/gmail;
-
-export const mcpServer = base44.functions.mcpServer;
-
-export const generateMCPToken = base44.functions.generateMCPToken;
-
-export const testMcpServer = base44.functions.testMcpServer;
-
-export const regenerateAllIntelligence = base44.functions.regenerateAllIntelligence;
-
-export const createOutreachTask = base44.functions.createOutreachTask;
-
-export const parseLocationDescription = base44.functions.parseLocationDescription;
-
-export const analyzeCampaignProject = base44.functions.analyzeCampaignProject;
-
-export const dailyCampaignMatching = base44.functions.dailyCampaignMatching;
-
-export const scrapeWebsiteVacancies = base44.functions.scrapeWebsiteVacancies;
-
-export const deepScrapeVacancies = base44.functions.deepScrapeVacancies;
-
-export const generateCampaignOutreach = base44.functions.generateCampaignOutreach;
-
-export const utils/events = base44.functions.utils/events;
-
-export const syncGetAllCandidates = base44.functions.syncGetAllCandidates;
-
-export const syncGetCandidateComplete = base44.functions.syncGetCandidateComplete;
-
-export const syncGetAllCampaigns = base44.functions.syncGetAllCampaigns;
-
-export const syncGetCampaignComplete = base44.functions.syncGetCampaignComplete;
-
-export const syncGetDashboardAnalytics = base44.functions.syncGetDashboardAnalytics;
-
-export const syncExportData = base44.functions.syncExportData;
-
-export const getOutreachTasks = base44.functions.getOutreachTasks;
-
+import { functions as supabaseFunctions } from './supabaseClient';
+
+/**
+ * Create a function wrapper that calls either Base44 or Supabase Edge Function
+ */
+const createFunctionWrapper = (name) => {
+  return async (params = {}) => {
+    if (USE_SUPABASE) {
+      return supabaseFunctions.invoke(name, params);
+    } else {
+      return base44.functions[name](params);
+    }
+  };
+};
+
+// Google Sheets integrations
+export const googleSheetsAuth = createFunctionWrapper('googleSheetsAuth');
+export const syncGoogleSheet = createFunctionWrapper('syncGoogleSheet');
+export const googleSheetsCallback = createFunctionWrapper('googleSheetsCallback');
+export const exchangeGoogleCode = createFunctionWrapper('exchangeGoogleCode');
+
+// API Key management
+export const generateApiKey = createFunctionWrapper('generateApiKey');
+
+// Webhooks
+export const zapierWebhook = createFunctionWrapper('zapierWebhook');
+
+// Chat & AI
+export const chatWithCandidates = createFunctionWrapper('chatWithCandidates');
+export const claudeClient = createFunctionWrapper('claudeClient');
+
+// Candidate management
+export const assignCandidateRoundRobin = createFunctionWrapper('assignCandidateRoundRobin');
+export const generateCandidateIntelligence = createFunctionWrapper('generateCandidateIntelligence');
+export const bulkGenerateIntelligence = createFunctionWrapper('bulkGenerateIntelligence');
+export const regenerateAllIntelligence = createFunctionWrapper('regenerateAllIntelligence');
+
+// User & Organization management
+export const inviteUser = createFunctionWrapper('inviteUser');
+export const acceptInvitation = createFunctionWrapper('acceptInvitation');
+export const assignUserToOrganization = createFunctionWrapper('assignUserToOrganization');
+export const syncDomainUsers = createFunctionWrapper('syncDomainUsers');
+export const migrateCandidatesToOrganization = createFunctionWrapper('migrateCandidatesToOrganization');
+export const assignOrganizationToCandidates = createFunctionWrapper('assignOrganizationToCandidates');
+export const getUsersByIds = createFunctionWrapper('getUsersByIds');
+export const assignOwnersEvenly = createFunctionWrapper('assignOwnersEvenly');
+
+// Debug functions
+export const testUserData = createFunctionWrapper('testUserData');
+export const debugUserEntity = createFunctionWrapper('debugUserEntity');
+
+// Outreach
+export const generateOutreachMessage = createFunctionWrapper('generateOutreachMessage');
+export const createFollowUpTask = createFunctionWrapper('createFollowUpTask');
+export const handleFollowUpResponse = createFunctionWrapper('handleFollowUpResponse');
+export const generateFollowUpMessage = createFunctionWrapper('generateFollowUpMessage');
+export const createTaskAfterFollowUp = createFunctionWrapper('createTaskAfterFollowUp');
+export const clearOutreachAndTasks = createFunctionWrapper('clearOutreachAndTasks');
+export const createOutreachTask = createFunctionWrapper('createOutreachTask');
+export const getOutreachTasks = createFunctionWrapper('getOutreachTasks');
+
+// File generation
+export const generateFile = createFunctionWrapper('generateFile');
+
+// MCP Tools
+export const mcpToolsConfig = createFunctionWrapper('mcpToolsConfig');
+export const mcpToolsHandler = createFunctionWrapper('mcpToolsHandler');
+export const mcpServer = createFunctionWrapper('mcpServer');
+export const generateMCPToken = createFunctionWrapper('generateMCPToken');
+export const testMcpServer = createFunctionWrapper('testMcpServer');
+
+// Google OAuth
+export const googleOAuthUnified = createFunctionWrapper('googleOAuthUnified');
+export const googleOAuthCallback = createFunctionWrapper('googleOAuthCallback');
+
+// LinkedIn profile pictures
+export const fetchLinkedInProfilePicture = createFunctionWrapper('fetchLinkedInProfilePicture');
+export const updateCandidateProfilePictures = createFunctionWrapper('updateCandidateProfilePictures');
+export const autoFetchProfilePicture = createFunctionWrapper('autoFetchProfilePicture');
+export const extractLinkedInProfilePicture = createFunctionWrapper('extractLinkedInProfilePicture');
+export const bulkExtractProfilePictures = createFunctionWrapper('bulkExtractProfilePictures');
+export const brightDataLinkedIn = createFunctionWrapper('brightDataLinkedIn');
+export const autoLoadAllProfilePictures = createFunctionWrapper('autoLoadAllProfilePictures');
+export const testBrightDataConnection = createFunctionWrapper('testBrightDataConnection');
+
+// Campaign & Project
+export const analyzeCampaignProject = createFunctionWrapper('analyzeCampaignProject');
+export const dailyCampaignMatching = createFunctionWrapper('dailyCampaignMatching');
+export const scrapeWebsiteVacancies = createFunctionWrapper('scrapeWebsiteVacancies');
+export const deepScrapeVacancies = createFunctionWrapper('deepScrapeVacancies');
+export const generateCampaignOutreach = createFunctionWrapper('generateCampaignOutreach');
+
+// Location parsing
+export const parseLocationDescription = createFunctionWrapper('parseLocationDescription');
+
+// Sync APIs (for mobile/external integrations)
+export const syncGetAllCandidates = createFunctionWrapper('syncGetAllCandidates');
+export const syncGetCandidateComplete = createFunctionWrapper('syncGetCandidateComplete');
+export const syncGetAllCampaigns = createFunctionWrapper('syncGetAllCampaigns');
+export const syncGetCampaignComplete = createFunctionWrapper('syncGetCampaignComplete');
+export const syncGetDashboardAnalytics = createFunctionWrapper('syncGetDashboardAnalytics');
+export const syncExportData = createFunctionWrapper('syncExportData');
+
+// Note: Some Base44-specific functions with special characters in names
+// These are mapped to valid Edge Function names when using Supabase
+const specialFunctions = {
+  'mcpTools/googleDrive': 'mcpToolsGoogleDrive',
+  'mcpTools/googleMaps': 'mcpToolsGoogleMaps',
+  'mcpTools/braveSearch': 'mcpToolsBraveSearch',
+  'mcpTools/gmail': 'mcpToolsGmail',
+  'utils/events': 'utilsEvents'
+};
+
+// Export special functions with sanitized names
+export const mcpToolsGoogleDrive = createFunctionWrapper('mcpToolsGoogleDrive');
+export const mcpToolsGoogleMaps = createFunctionWrapper('mcpToolsGoogleMaps');
+export const mcpToolsBraveSearch = createFunctionWrapper('mcpToolsBraveSearch');
+export const mcpToolsGmail = createFunctionWrapper('mcpToolsGmail');
+export const utilsEvents = createFunctionWrapper('utilsEvents');
+
+// Log which backend is being used (for debugging)
+if (typeof window !== 'undefined') {
+  console.log(`[ISYNCSO Functions] Using ${USE_SUPABASE ? 'Supabase Edge Functions' : 'Base44 Cloud Functions'}`);
+}

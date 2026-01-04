@@ -1,0 +1,18 @@
+{
+  "tasks": [
+    {
+      "id": "setup-001",
+      "phase": "0-setup",
+      "description": "Initialize migration infrastructure",
+      "assignedTo": "orchestrator",
+      "startedAt": "2026-01-04T19:20:00Z"
+    },
+    {
+      "id": "setup-002",
+      "phase": "0-setup",
+      "description": "Collect credentials from user",
+      "assignedTo": "orchestrator",
+      "startedAt": "2026-01-04T19:20:00Z"
+    }
+  ]
+}
