@@ -16,6 +16,17 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
  * Convert snake_case table name to entity name
  */
 const tableNameMap = {
+  // === SkillSync Activity Tracking Tables ===
+  // These tables receive data from the SkillSync macOS app
+  'Activity': 'activities',                    // Core activity captures (every 5-6 seconds)
+  'DeepContent': 'deep_content',               // Rich content captures (emails, code, documents)
+  'MissingAction': 'missing_actions',          // AI-detected follow-up suggestions
+  'MicroLesson': 'micro_lessons',              // AI-generated lessons from activity analysis
+  'ActivitySummary': 'activity_summaries',     // Aggregated activity analytics
+  'UserProfile': 'user_profiles',              // User behavior profiles
+  'CompanyDataCache': 'company_data_cache',    // Company enrichment data
+
+  // === Learning Management Tables ===
   'Course': 'courses',
   'Module': 'modules',
   'Lesson': 'lessons',
@@ -23,19 +34,22 @@ const tableNameMap = {
   'Assessment': 'assessments',
   'UserResult': 'user_results',
   'CourseBuild': 'course_builds',
+  'ContentAsset': 'content_assets',
+  'CourseVersion': 'course_versions',
+  'CourseRating': 'course_ratings',
+  'LessonInteraction': 'lesson_interactions',
+
+  // === Organization Tables ===
   'Company': 'companies',
   'Department': 'departments',
   'Invitation': 'invitations',
   'Assignment': 'assignments',
-  'ContentAsset': 'content_assets',
-  'CourseVersion': 'course_versions',
+
+  // === Skills & Learning Paths ===
   'Skill': 'skills',
   'CourseSkill': 'course_skills',
   'LearningPath': 'learning_paths',
   'LearningPathStep': 'learning_path_steps',
-  'CourseRating': 'course_ratings',
-  'ComplianceRequirement': 'compliance_requirements',
-  'ActivitySession': 'activity_sessions',
   'SkillsMaster': 'skills_master',
   'SkillApplication': 'skill_applications',
   'LearningIndicator': 'learning_indicators',
@@ -43,36 +57,55 @@ const tableNameMap = {
   'SkillGap': 'skill_gaps',
   'CourseRecommendation': 'course_recommendations',
   'PracticeChallenge': 'practice_challenges',
-  'SupportTicket': 'support_tickets',
-  'FeatureRequest': 'feature_requests',
-  'HelpArticle': 'help_articles',
+  'UserSkill': 'user_skills',
+
+  // === Compliance & Sentinel ===
+  'ComplianceRequirement': 'compliance_requirements',
   'RegulatoryDocument': 'regulatory_documents',
   'AISystem': 'ai_systems',
   'Obligation': 'obligations',
+
+  // === Growth Engine Tables ===
   'Prospect': 'prospects',
   'ProspectList': 'prospect_lists',
   'ProspectListMembership': 'prospect_list_memberships',
   'ICPTemplate': 'icp_templates',
-  'UserGamification': 'user_gamification',
-  'Badge': 'badges',
-  'Certificate': 'certificates',
-  'UserSkill': 'user_skills',
-  'UserSettings': 'user_settings',
-  'CIDEDraft': 'cide_drafts',
-  'LessonInteraction': 'lesson_interactions',
   'GrowthMetric': 'growth_metrics',
   'GrowthCampaign': 'growth_campaigns',
   'GrowthOpportunity': 'growth_opportunities',
   'GrowthSignal': 'growth_signals',
+
+  // === Gamification & Achievements ===
+  'UserGamification': 'user_gamification',
+  'Badge': 'badges',
+  'Certificate': 'certificates',
+
+  // === User & Settings ===
+  'UserSettings': 'user_settings',
+  'UserAppConfig': 'user_app_configs',
+
+  // === Support ===
+  'SupportTicket': 'support_tickets',
+  'FeatureRequest': 'feature_requests',
+  'HelpArticle': 'help_articles',
+
+  // === Sync & Sessions ===
+  'ActivitySession': 'activity_sessions',
   'SyncSession': 'sync_sessions',
   'SyncEvent': 'sync_events',
   'SyncAction': 'sync_actions',
-  'MasterPromptTemplate': 'master_prompt_templates',
+
+  // === Communication ===
   'Channel': 'channels',
   'Message': 'messages',
+
+  // === Integrations & Actions ===
   'MergeIntegration': 'merge_integrations',
   'ActionLog': 'action_logs',
-  'UserAppConfig': 'user_app_configs',
+  'MasterPromptTemplate': 'master_prompt_templates',
+
+  // === CIDE (Content IDE) ===
+  'CIDEDraft': 'cide_drafts',
 };
 
 /**
@@ -232,6 +265,16 @@ function createEntityWrapper(entityName) {
  * Entity wrappers (matching Base44 entity names)
  */
 export const entities = {
+  // === SkillSync Activity Tracking (receives data from macOS app) ===
+  Activity: createEntityWrapper('Activity'),
+  DeepContent: createEntityWrapper('DeepContent'),
+  MissingAction: createEntityWrapper('MissingAction'),
+  MicroLesson: createEntityWrapper('MicroLesson'),
+  ActivitySummary: createEntityWrapper('ActivitySummary'),
+  UserProfile: createEntityWrapper('UserProfile'),
+  CompanyDataCache: createEntityWrapper('CompanyDataCache'),
+
+  // === Learning Management ===
   Course: createEntityWrapper('Course'),
   Module: createEntityWrapper('Module'),
   Lesson: createEntityWrapper('Lesson'),
@@ -239,19 +282,22 @@ export const entities = {
   Assessment: createEntityWrapper('Assessment'),
   UserResult: createEntityWrapper('UserResult'),
   CourseBuild: createEntityWrapper('CourseBuild'),
+  ContentAsset: createEntityWrapper('ContentAsset'),
+  CourseVersion: createEntityWrapper('CourseVersion'),
+  CourseRating: createEntityWrapper('CourseRating'),
+  LessonInteraction: createEntityWrapper('LessonInteraction'),
+
+  // === Organization ===
   Company: createEntityWrapper('Company'),
   Department: createEntityWrapper('Department'),
   Invitation: createEntityWrapper('Invitation'),
   Assignment: createEntityWrapper('Assignment'),
-  ContentAsset: createEntityWrapper('ContentAsset'),
-  CourseVersion: createEntityWrapper('CourseVersion'),
+
+  // === Skills & Learning Paths ===
   Skill: createEntityWrapper('Skill'),
   CourseSkill: createEntityWrapper('CourseSkill'),
   LearningPath: createEntityWrapper('LearningPath'),
   LearningPathStep: createEntityWrapper('LearningPathStep'),
-  CourseRating: createEntityWrapper('CourseRating'),
-  ComplianceRequirement: createEntityWrapper('ComplianceRequirement'),
-  ActivitySession: createEntityWrapper('ActivitySession'),
   SkillsMaster: createEntityWrapper('SkillsMaster'),
   SkillApplication: createEntityWrapper('SkillApplication'),
   LearningIndicator: createEntityWrapper('LearningIndicator'),
@@ -259,36 +305,55 @@ export const entities = {
   SkillGap: createEntityWrapper('SkillGap'),
   CourseRecommendation: createEntityWrapper('CourseRecommendation'),
   PracticeChallenge: createEntityWrapper('PracticeChallenge'),
-  SupportTicket: createEntityWrapper('SupportTicket'),
-  FeatureRequest: createEntityWrapper('FeatureRequest'),
-  HelpArticle: createEntityWrapper('HelpArticle'),
+  UserSkill: createEntityWrapper('UserSkill'),
+
+  // === Compliance & Sentinel ===
+  ComplianceRequirement: createEntityWrapper('ComplianceRequirement'),
   RegulatoryDocument: createEntityWrapper('RegulatoryDocument'),
   AISystem: createEntityWrapper('AISystem'),
   Obligation: createEntityWrapper('Obligation'),
+
+  // === Growth Engine ===
   Prospect: createEntityWrapper('Prospect'),
   ProspectList: createEntityWrapper('ProspectList'),
   ProspectListMembership: createEntityWrapper('ProspectListMembership'),
   ICPTemplate: createEntityWrapper('ICPTemplate'),
-  UserGamification: createEntityWrapper('UserGamification'),
-  Badge: createEntityWrapper('Badge'),
-  Certificate: createEntityWrapper('Certificate'),
-  UserSkill: createEntityWrapper('UserSkill'),
-  UserSettings: createEntityWrapper('UserSettings'),
-  CIDEDraft: createEntityWrapper('CIDEDraft'),
-  LessonInteraction: createEntityWrapper('LessonInteraction'),
   GrowthMetric: createEntityWrapper('GrowthMetric'),
   GrowthCampaign: createEntityWrapper('GrowthCampaign'),
   GrowthOpportunity: createEntityWrapper('GrowthOpportunity'),
   GrowthSignal: createEntityWrapper('GrowthSignal'),
+
+  // === Gamification & Achievements ===
+  UserGamification: createEntityWrapper('UserGamification'),
+  Badge: createEntityWrapper('Badge'),
+  Certificate: createEntityWrapper('Certificate'),
+
+  // === User & Settings ===
+  UserSettings: createEntityWrapper('UserSettings'),
+  UserAppConfig: createEntityWrapper('UserAppConfig'),
+
+  // === Support ===
+  SupportTicket: createEntityWrapper('SupportTicket'),
+  FeatureRequest: createEntityWrapper('FeatureRequest'),
+  HelpArticle: createEntityWrapper('HelpArticle'),
+
+  // === Sync & Sessions ===
+  ActivitySession: createEntityWrapper('ActivitySession'),
   SyncSession: createEntityWrapper('SyncSession'),
   SyncEvent: createEntityWrapper('SyncEvent'),
   SyncAction: createEntityWrapper('SyncAction'),
-  MasterPromptTemplate: createEntityWrapper('MasterPromptTemplate'),
+
+  // === Communication ===
   Channel: createEntityWrapper('Channel'),
   Message: createEntityWrapper('Message'),
+
+  // === Integrations & Actions ===
   MergeIntegration: createEntityWrapper('MergeIntegration'),
   ActionLog: createEntityWrapper('ActionLog'),
-  UserAppConfig: createEntityWrapper('UserAppConfig'),
+  MasterPromptTemplate: createEntityWrapper('MasterPromptTemplate'),
+
+  // === CIDE (Content IDE) ===
+  CIDEDraft: createEntityWrapper('CIDEDraft'),
 };
 
 /**
