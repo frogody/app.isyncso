@@ -10,7 +10,7 @@ export default function AcceptInvitePage() {
   const [status, setStatus] = useState('checking'); // checking, success, error, requires_login
   const [message, setMessage] = useState('');
   const [invitationEmail, setInvitationEmail] = useState('');
-  const [user, setUser] = useState(null);
+  const [_user, setUser] = useState(null);
 
   useEffect(() => {
     checkAuthAndAcceptInvite();
@@ -63,7 +63,7 @@ export default function AcceptInvitePage() {
           setMessage(error.response?.data?.error || error.message || 'Failed to accept invitation');
         }
       }
-    } catch (authError) {
+    } catch {
       // User is not logged in
       setStatus('requires_login');
       setMessage('Please log in to accept this invitation.');

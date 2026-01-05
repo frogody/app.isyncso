@@ -4,7 +4,7 @@ export function broadcastCampaignUpdated(campaignId) {
     window.dispatchEvent(new CustomEvent('campaignUpdated', { detail: { id: campaignId, at: Date.now() } }));
     // Notify other tabs
     localStorage.setItem(`campaignUpdated:${campaignId}`, String(Date.now()));
-  } catch {}
+  } catch { /* ignore localStorage errors */ }
 }
 
 export function subscribeCampaignUpdated(handler) {

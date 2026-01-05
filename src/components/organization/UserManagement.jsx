@@ -13,25 +13,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
-  Users, 
-  Mail, 
-  Shield, 
-  Clock, 
+import {
+  Users,
+  Mail,
+  Shield,
+  Clock,
   CheckCircle,
   XCircle,
   RefreshCw,
-  MoreHorizontal,
-  Trash2,
   UserPlus,
   Send
 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { inviteUser } from "@/api/functions";
 import { syncDomainUsers } from "@/api/functions";
 import { migrateCandidatesToOrganization } from "@/api/functions";

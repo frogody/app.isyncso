@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { User } from "@/api/entities";
-import { Organization } from "@/api/entities";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,7 +25,7 @@ export default function OrganizationAppSettings({ organization, onUpdate }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const { t } = useTranslation(user?.language || 'nl');
+  const { t: _t } = useTranslation(user?.language || 'nl');
   const webhookUrl = `${window.location.origin}/api/functions/zapierWebhook`;
 
   useEffect(() => {

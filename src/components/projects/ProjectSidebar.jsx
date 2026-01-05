@@ -20,7 +20,6 @@ import {
   X,
   Trash2,
   Building2,
-  User as UserIcon,
   Calendar,
   Target,
   DollarSign

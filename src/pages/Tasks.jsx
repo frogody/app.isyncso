@@ -34,12 +34,10 @@ import {
   AlertCircle,
   Briefcase,
   Calendar,
-  Check,
   CheckCircle2,
   CheckSquare,
   ChevronRight,
   Clock,
-  Edit,
   Eye,
   Filter,
   MessageSquare,
@@ -73,7 +71,7 @@ export default function TasksPage() {
   const [statusFilter, setStatusFilter] = useState("pending");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
-  const [sortBy, setSortBy] = useState("due_date");
+  const [sortBy, _setSortBy] = useState("due_date");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -205,9 +203,10 @@ export default function TasksPage() {
           if (!a.due_date) return 1;
           if (!b.due_date) return -1;
           return new Date(a.due_date) - new Date(b.due_date);
-        case "priority":
+        case "priority": {
           const priorityOrder = { urgent: 0, high: 1, medium: 2, low: 3 };
           return priorityOrder[a.priority] - priorityOrder[b.priority];
+        }
         case "created":
           return new Date(b.created_date) - new Date(a.created_date);
         default:
@@ -355,7 +354,7 @@ export default function TasksPage() {
     return date.toLocaleDateString(user?.language || 'nl', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
-  const format = (date, formatStr) => {
+  const _format = (date, formatStr) => {
     const months = [t('month_jan'), t('month_feb'), t('month_mar'), t('month_apr'), t('month_may'), t('month_jun'), t('month_jul'), t('month_aug'), t('month_sep'), t('month_oct'), t('month_nov'), t('month_dec')];
     if (formatStr === 'MMM d') {
       return `${months[date.getMonth()]} ${date.getDate()}`;

@@ -4,15 +4,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  ChevronDown,
   User,
   Send,
   RefreshCw,
   ExternalLink,
   Loader2,
   MoreVertical,
-  Trash2,
-  Clock // Added Clock icon
+  Trash2
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -32,8 +30,8 @@ export default function CandidateCard({
   candidate,
   matchData,
   stage,
-  isExpanded,
-  onToggleExpand,
+  _isExpanded,
+  _onToggleExpand,
   campaign,
   user,
   onDelete,
@@ -98,13 +96,12 @@ export default function CandidateCard({
       }
     })();
     // run once for the missing-follow-up case
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage, matchData?.follow_up_message, matchData?.follow_up_message_2, campaign?.id, candidate?.id]);
 
 
   // IMPORTANT: do not auto-generate follow-ups here; generation happens via AgentBacklog to prevent duplicates
   // This function is a no-op, provided as a placeholder if other code might call it.
-  const maybeGenerateFollowUpLocally = React.useCallback(() => {
+  const _maybeGenerateFollowUpLocally = React.useCallback(() => {
     // Intentionally disabled to avoid duplicates and race conditions.
     // The actual generation is expected to happen server-side via Agent Backlog processes.
     return;

@@ -1,29 +1,20 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Campaign } from "@/api/entities";
-import { OutreachMessage } from "@/api/entities";
 import { Project } from "@/api/entities";
 import { User } from "@/api/entities";
 import { useTranslation } from "@/components/utils/translations";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Megaphone,
   Plus,
-  Search,
   Filter,
-  Play,
-  Pause,
-  Archive,
   TrendingUp,
   Users,
   MessageSquare,
   Target,
-  Trash2,
-  MoreVertical,
   RefreshCw
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -39,13 +30,6 @@ import CampaignDetailModal from "../components/campaigns/CampaignDetailModal";
 import CampaignSidebar from "../components/campaigns/CampaignSidebar";
 import CampaignDetailPanel from "../components/campaigns/CampaignDetailPanel";
 import { motion } from "framer-motion";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { subscribeCampaignUpdated } from "@/components/utils/events";
 import logger from "@/components/utils/logger";
 
@@ -56,17 +40,17 @@ export default function CampaignsPage() {
   const [filteredCampaigns, setFilteredCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, _setStatusFilter] = useState("all");
   const [selectedStatsFilter, setSelectedStatsFilter] = useState("all");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState(null); // This is for the CampaignDetailModal
   const [user, setUser] = useState(null);
   const [projects, setProjects] = useState([]);
   const [selectedCampaignId, setSelectedCampaignId] = useState(null); // This is for the sidebar and detail panel
-  const [showAddToCampaignModal, setShowAddToCampaignModal] = useState(false);
+  const [_showAddToCampaignModal, _setShowAddToCampaignModal] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState(null);
 
-  const { t } = useTranslation(user?.language || 'nl');
+  const { t: _t } = useTranslation(user?.language || 'nl');
 
   // New useRef to prevent multiple simultaneous fetches
   const loadingRef = useRef(false);
@@ -302,7 +286,7 @@ export default function CampaignsPage() {
     logger.info(`New campaign created and opened: ${created.id}`);
   }, [openCampaign, storeCampaignId]);
 
-  const handleViewCampaign = (campaign) => {
+  const _handleViewCampaign = (campaign) => {
     setSelectedCampaignId(campaign.id); // Set the ID, the useEffect will handle `setSelectedCampaign`
     storeCampaignId(campaign.id); // Persist viewed campaign
     logger.info(`Viewing campaign: ${campaign.id}`);
@@ -371,7 +355,7 @@ export default function CampaignsPage() {
     }
   };
 
-  const handleAddCandidateToCampaign = async (campaignId, outreachMessage) => {
+  const _handleAddCandidateToCampaign = async (campaignId, _outreachMessage) => {
     try {
       const campaign = campaigns.find(c => c.id === campaignId);
       if (!campaign) {
@@ -407,7 +391,7 @@ export default function CampaignsPage() {
         candidate_job_title: selectedCandidate.job_title,
         candidate_company: selectedCandidate.company_name,
         matched_at: new Date().toISOString(),
-        outreach_message: outreachMessage,
+        outreach_message: _outreachMessage,
         stage: 'queue'
       };
 
@@ -419,7 +403,7 @@ export default function CampaignsPage() {
 
       // Reload data
       await fetchCampaignsAndRelatedData();
-      setShowAddToCampaignModal(false);
+      _setShowAddToCampaignModal(false);
       setSelectedCandidate(null);
       logger.info(`Candidate ${selectedCandidate.id} added to campaign ${campaignId}.`);
     } catch (error) {

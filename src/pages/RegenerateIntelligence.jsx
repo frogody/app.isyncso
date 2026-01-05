@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { RefreshCw, CheckCircle2, XCircle, AlertCircle, Trash2 } from "lucide-react";
+import { RefreshCw, CheckCircle2, XCircle, Trash2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import SyncAvatar from "../components/ui/SyncAvatar";
 import { RegenerationJob } from "@/api/entities";

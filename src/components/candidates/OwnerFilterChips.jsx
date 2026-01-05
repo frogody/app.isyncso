@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Users, ChevronRight, ChevronDown, MoreVertical, Pin, PinOff } from "lucide-react";
+import { Users, ChevronRight, ChevronDown, Pin, PinOff } from "lucide-react";
 import { User } from "@/api/entities";
 import { useTranslation } from "@/components/utils/translations";
 import {
@@ -24,7 +24,7 @@ export default function OwnerFilterChips({ users = [], selected = "all", onChang
   });
   const collapseTimerRef = useRef(null);
   
-  const { t } = useTranslation(currentUser?.language || 'nl');
+  const { t: _t } = useTranslation(currentUser?.language || 'nl');
 
   useEffect(() => {
     const loadUser = async () => {

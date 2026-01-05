@@ -12,10 +12,8 @@ import {
   Plus,
   Search,
   Globe,
-  Eye,
   Edit,
   Trash2,
-  ChevronDown,
   Loader2,
   CheckCircle2,
   XCircle,
@@ -40,7 +38,6 @@ import SyncAvatar from "../components/ui/SyncAvatar";
 import IconWrapper from "../components/ui/IconWrapper";
 import { useTranslation } from "@/components/utils/translations";
 import RoleModal from "../components/projects/RoleModal";
-import { scrapeWebsiteVacancies } from "@/api/functions"; // Keep for now, but deepScrapeVacancies is used
 import { deepScrapeVacancies } from "@/api/functions";
 import { Checkbox } from "@/components/ui/checkbox"; // Added for selecting scraped roles
 
@@ -219,7 +216,7 @@ export default function OpenRolesPage() {
         await Role.update(editingRole.id, roleData);
       } else {
         // Creating a new role (either from scratch or an individually edited scraped role)
-        const newRole = await Role.create({
+        const _newRole = await Role.create({
           ...roleData,
           organization_id: user.organization_id,
           created_by: user.id

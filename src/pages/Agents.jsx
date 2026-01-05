@@ -12,7 +12,6 @@ import {
   Mail,
   BarChart3,
   CheckSquare,
-  ExternalLink,
   Copy,
   Check
 } from "lucide-react";
@@ -133,7 +132,7 @@ export default function AgentsPage() {
   const [loading, setLoading] = useState(true);
   const [copiedAgent, setCopiedAgent] = useState(null);
 
-  const { t } = useTranslation(user?.language || 'nl');
+  const { t: _t } = useTranslation(user?.language || 'nl');
   const isNL = user?.language === 'nl';
 
   useEffect(() => {

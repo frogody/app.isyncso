@@ -1,5 +1,5 @@
 import React from "react";
-import { Sparkles, Users, TrendingUp, MessageSquare, Brain, Zap } from "lucide-react";
+import { TrendingUp, MessageSquare, Brain, Zap } from "lucide-react";
 import SyncAvatar from "../ui/SyncAvatar";
 import IconWrapper from "../ui/IconWrapper";
 import { motion } from "framer-motion";

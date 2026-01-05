@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { OutreachTask } from "@/api/entities";
 import { User } from "@/api/entities";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   MessageSquare,
@@ -25,7 +25,7 @@ import IconWrapper from "../components/ui/IconWrapper";
 export default function OutreachPage() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
+  const [_user, setUser] = useState(null);
   const [filter, setFilter] = useState("all");
 
   useEffect(() => {

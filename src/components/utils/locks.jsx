@@ -6,7 +6,7 @@ export function setLock(key, ttlMs = 10 * 60 * 1000) {
   try {
     const until = getNow() + ttlMs;
     localStorage.setItem(key, JSON.stringify({ until }));
-  } catch {}
+  } catch { /* ignore localStorage errors */ }
 }
 
 export function hasValidLock(key) {
@@ -28,5 +28,5 @@ export function hasValidLock(key) {
 export function clearLock(key) {
   try {
     localStorage.removeItem(key);
-  } catch {}
+  } catch { /* ignore localStorage errors */ }
 }

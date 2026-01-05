@@ -31,11 +31,10 @@ import {
   X,
   Edit3,
   Save,
-  Briefcase,
   Users,
   Phone,
   Mail,
-  MapPin, // MapPin is now used for location details
+  MapPin,
   DollarSign,
   Clock
 } from "lucide-react";

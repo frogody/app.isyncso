@@ -1,22 +1,16 @@
-
-import React, { useState, useEffect, useMemo } from "react";
-import { Candidate } from "@/api/entities";
-import { User } from "@/api/entities";
-import { Campaign } from "@/api/entities";
-import { Project } from "@/api/entities";
+import React, { useState, useEffect } from "react";
+import { Candidate, Campaign, User } from "@/api/entities";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import {
   MapPin,
   Briefcase,
   Calendar,
   DollarSign,
   TrendingUp,
-  ExternalLink,
   Trash2,
   UserCheck,
   Target,
@@ -26,31 +20,12 @@ import {
   Building2,
   UserPlus,
   RefreshCw,
-  Loader2,
-  ChevronDown,
-  ChevronUp,
-  Mail,
-  Phone,
-  Globe,
-  Star,
-  Users,
-  MessageSquare,
-  CheckCircle2,
-  XCircle,
-  Sparkles,
-  Circle,
-  Edit2,
-  Check,
-  X
+  Loader2
 } from "lucide-react";
 import { useTranslation } from "@/components/utils/translations";
 import LinkedInIcon from "../ui/LinkedInIcon";
 import SyncAvatar from "../ui/SyncAvatar";
 import { generateCandidateIntelligence } from "@/api/functions";
-import IntelligenceReport from "./IntelligenceReport";
-import { getUsersByIds } from "@/api/functions";
-import IconWrapper from "../ui/IconWrapper";
-import { haptics } from "@/components/utils/haptics";
 
 export default function CandidateDetails({ candidate, withCardWrapper = false, onUpdate }) {
   const [user, setUser] = useState(null);

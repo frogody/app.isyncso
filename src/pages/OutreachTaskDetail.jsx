@@ -10,11 +10,7 @@ import {
   ArrowLeft,
   Sparkles,
   CheckCircle2,
-  Send,
-  RefreshCw,
-  Clock,
-  Eye,
-  MessageSquare
+  RefreshCw
 } from "lucide-react";
 import SyncAvatar from "../components/ui/SyncAvatar";
 import IconWrapper from "../components/ui/IconWrapper";

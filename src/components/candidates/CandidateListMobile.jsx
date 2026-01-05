@@ -1,19 +1,17 @@
 
-import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import React, { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, ChevronDown, CheckCircle2, Circle, Briefcase, Building2, ChevronUp, User as UserIcon } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { MapPin, ChevronDown, CheckCircle2, Circle, Briefcase, Building2 } from "lucide-react";
 import CandidateDetails from "./CandidateDetails";
-import { User } from "@/api/entities";
-import { useTranslation } from "@/components/utils/translations"; // Changed useTranslation import path
+import { useTranslation } from "@/components/utils/translations";
 import LinkedInIcon from "../ui/LinkedInIcon";
 import IconWrapper from "../ui/IconWrapper";
 
 export default React.memo(function CandidateListMobile({ candidates }) {
-  const [expandedCard, setExpandedCard] = useState(null); // Renamed expandedId to expandedCard
-  const [user, setUser] = useState(null); // Added user state
+  const [expandedCard, setExpandedCard] = useState(null);
+  const [user] = useState(null);
 
   const { t } = useTranslation(user?.language || 'en'); // Added useTranslation hook
 

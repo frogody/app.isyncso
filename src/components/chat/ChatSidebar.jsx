@@ -26,7 +26,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
 import IconWrapper from "../ui/IconWrapper";
 import { base44 } from "@/api/base44Client"; // Added import for base44 client
 

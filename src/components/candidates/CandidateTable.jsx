@@ -7,9 +7,8 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ExternalLink, ChevronDown, CheckSquare, XSquare, User as UserIcon, Trash2, CheckCircle2, X, Circle } from "lucide-react";
+import { ChevronDown, CheckSquare, User as UserIcon, Trash2, CheckCircle2, X } from "lucide-react";
 import CandidateDetails from "./CandidateDetails";
 import CandidateListMobile from "./CandidateListMobile";
 import { getUsersByIds } from "@/api/functions";
@@ -34,7 +33,7 @@ export default React.memo(function CandidateTable({ candidates }) {
   const [users, setUsers] = useState({});
   const [selectedCandidates, setSelectedCandidates] = useState(new Set());
   const [localCandidates, setLocalCandidates] = useState([]);
-  const [user, setUser] = useState(null);
+  const [_user, setUser] = useState(null);
   // Introduce a state for the current language to ensure a stable value for useTranslation
   const [currentLanguage, setCurrentLanguage] = useState('en');
 

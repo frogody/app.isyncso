@@ -37,7 +37,7 @@ export default function DashboardPage() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const { t } = useTranslation(user?.language || 'nl');
+  const { t: _t } = useTranslation(user?.language || 'nl');
 
   // Load all data
   useEffect(() => {

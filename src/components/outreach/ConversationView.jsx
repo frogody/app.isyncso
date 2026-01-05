@@ -3,7 +3,6 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -19,7 +18,6 @@ import {
   User as UserIcon,
   Building2,
   Sparkles,
-  Send,
   Copy,
   RefreshCw
 } from "lucide-react";
@@ -461,7 +459,7 @@ export default function ConversationView({ messages, candidate, open, onClose, o
         {/* Messages Timeline */}
         <div className="flex-1 overflow-y-auto pr-2">
           <div className="space-y-4">
-            {sortedMessages.map((message, index) => (
+            {sortedMessages.map((message) => (
               <Card key={message.id} className="glass-card">
                 <CardContent className="p-4">
                   {/* Message Header */}

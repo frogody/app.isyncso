@@ -6,7 +6,7 @@ import { createPageUrl } from "@/utils";
 import { User } from "@/api/entities";
 import { assignUserToOrganization } from "@/api/functions";
 import { useTranslation } from "@/components/utils/translations";
-import { Users, User as UserIcon, LogOut, Sparkles, Building2, Brain, MessageSquare, CheckSquare, Briefcase, Activity, RefreshCw, Menu, X, ChevronRight, ChevronLeft, Megaphone, Bot } from "lucide-react";
+import { Users, User as UserIcon, LogOut, Sparkles, Building2, CheckSquare, Briefcase, Activity, Menu, X, ChevronRight, ChevronLeft, Megaphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SyncAvatar from "../components/ui/SyncAvatar";
 import IconWrapper from "../components/ui/IconWrapper";

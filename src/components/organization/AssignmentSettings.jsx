@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Settings, Users, Save, AlertCircle } from "lucide-react";
+import { Settings, Users, Save } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import IconWrapper from "../ui/IconWrapper";
 import { useTranslation } from "@/components/utils/translations";
@@ -34,7 +34,7 @@ export default function AssignmentSettings({ organization, onUpdate }) {
   const [isSaving, setSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const { t } = useTranslation(user?.language || 'nl');
+  const { t: _t } = useTranslation(user?.language || 'nl');
 
   const loadData = useCallback(async () => {
     setIsLoading(true);

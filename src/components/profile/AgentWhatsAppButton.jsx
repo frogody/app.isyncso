@@ -8,7 +8,7 @@ export default function AgentWhatsAppButton({ className = "" }) {
     try {
       const url = base44.agents.getWhatsAppConnectURL("recruitment_assistant");
       return typeof url === "string" && url.length > 0 ? url : null;
-    } catch (_) {
+    } catch {
       return null;
     }
   }, []);

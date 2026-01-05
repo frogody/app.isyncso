@@ -16,7 +16,6 @@ import {
   Users,
   ChevronLeft,
   ChevronRight,
-  Settings,
   Grid3x3,
   SlidersHorizontal,
 } from "lucide-react";
@@ -95,7 +94,7 @@ export default function CandidatesPage() {
     return project ? project.title : filter;
   };
 
-  const autoGenerateIntelligence = useCallback(async (candidateList) => {
+  const _autoGenerateIntelligence = useCallback(async (_candidateList) => {
     // DISABLED: Auto-generation hits rate limits too quickly
     // Users should use the "Generate All" button which has proper rate limiting
     console.log('Auto-generation disabled to prevent rate limits');

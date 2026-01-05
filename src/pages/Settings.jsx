@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { User } from "@/api/entities";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Trash2 } from "lucide-react";
 import { clearOutreachAndTasks } from "@/api/functions";
 
 export default function SettingsPage() {
-  const [user, setUser] = useState(null);
+  const [_user, setUser] = useState(null);
   const [isClearing, setIsClearing] = useState(false);
 
   useEffect(() => {

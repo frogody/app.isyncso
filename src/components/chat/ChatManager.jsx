@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import { Send, Users, Briefcase, Plus, Paperclip, X } from "lucide-react";
+import { AnimatePresence } from "framer-motion";
+import { Send, Users, Plus, Paperclip, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SyncAvatar from "../ui/SyncAvatar";
 import IconWrapper from "../ui/IconWrapper";
 import ChatMessage from "./ChatMessage";
 import WelcomeScreen from "./WelcomeScreen";
 import { useTranslation } from "@/components/utils/translations";
-import { motion, AnimatePresence } from "framer-motion";
 
 export default function ChatManager({
   messages,
@@ -24,17 +24,17 @@ export default function ChatManager({
   setAttachments,
   selectedCandidates,
   setSelectedCandidates,
-  currentProject,
-  setCurrentProject,
-  compareMode,
-  setCompareMode,
+  _currentProject,
+  _setCurrentProject,
+  _compareMode,
+  _setCompareMode,
   isRegenerating,
   user,
   messagesEndRef
 }) {
   const { t } = useTranslation(user?.language || 'nl');
-  const [showCandidateModal, setShowCandidateModal] = useState(false);
-  const [showProjectModal, setShowProjectModal] = useState(false);
+  const [_showCandidateModal, setShowCandidateModal] = useState(false);
+  const [_showProjectModal, _setShowProjectModal] = useState(false);
 
   const handleSend = () => {
     if (!inputMessage.trim() && attachments.length === 0 && selectedCandidates.length === 0) {

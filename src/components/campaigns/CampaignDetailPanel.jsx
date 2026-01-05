@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import { Campaign } from "@/api/entities";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,14 +17,12 @@ import {
   Clock,
   CheckCircle2,
   Zap,
-  ExternalLink,
   Send,
   X,
   Check,
   Pencil
 } from "lucide-react";
 import IconWrapper from "../ui/IconWrapper";
-import CandidateCard from "../candidates/CandidateCard";
 import CampaignOutreachStyleModal from "./CampaignOutreachStyleModal";
 import {
   DropdownMenu,
@@ -62,7 +59,7 @@ export default function CampaignDetailPanel({
   onCampaignDelete
 }) {
   const [selectedStage, setSelectedStage] = useState('first_message');
-  const [expandedCandidates, setExpandedCandidates] = useState({});
+  const [_expandedCandidates, setExpandedCandidates] = useState({});
   const [showStyleModal, setShowStyleModal] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
@@ -140,7 +137,7 @@ export default function CampaignDetailPanel({
     return labels[stage] || stage;
   };
 
-  const handleToggleExpand = (candidateId) => {
+  const _handleToggleExpand = (candidateId) => {
     setExpandedCandidates((prev) => ({
       ...prev,
       [candidateId]: !prev[candidateId]
@@ -219,7 +216,7 @@ export default function CampaignDetailPanel({
     }
   };
 
-  const handleDeleteCandidate = async (candidateId) => {
+  const _handleDeleteCandidate = async (candidateId) => {
     if (!window.confirm(user?.language === 'nl' ?
     'Weet je zeker dat je deze kandidaat uit de campaign wilt verwijderen?' :
     'Are you sure you want to remove this candidate from the campaign?')) {

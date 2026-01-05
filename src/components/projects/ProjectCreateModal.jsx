@@ -28,8 +28,7 @@ import { Calendar as CalendarIcon, Plus, X, Pencil, Check, Search, Building2 } f
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Client } from "@/api/entities";
 import { User } from "@/api/entities";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import LocationMap from "./LocationMap"; // New import
+import LocationMap from "./LocationMap";
 
 export default function ProjectCreateModal({ open, onClose, project, onSave }) {
   const [formData, setFormData] = useState({
@@ -56,7 +55,7 @@ export default function ProjectCreateModal({ open, onClose, project, onSave }) {
   const [showClientSearch, setShowClientSearch] = useState(false);
   const [showNewClientForm, setShowNewClientForm] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
-  const [user, setUser] = useState(null);
+  const [_user, setUser] = useState(null);
 
   useEffect(() => {
     if (open) {

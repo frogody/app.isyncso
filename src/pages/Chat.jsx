@@ -31,7 +31,7 @@ export default function ChatPage() {
 
   const isNl = (me?.language || 'nl') === 'nl';
   const heading = isNl ? "Waar kan ik je mee helpen?" : "How can I help you?";
-  const placeholder = isNl ? "Stel een vraag" : "Ask a question";
+  const _placeholder = isNl ? "Stel een vraag" : "Ask a question";
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg)' }}>

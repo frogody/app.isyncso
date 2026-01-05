@@ -1,6 +1,6 @@
 // ... keep existing code (imports and component start) ...
 
-  const getStatusColor = (status) => {
+  const _getStatusColor = (status) => {
     switch (status) {
       case 'discovery': return 'bg-gray-500/10 text-gray-400 border-gray-500/20';
       case 'active_search': return 'bg-red-500/10 text-red-400 border-red-500/20';
