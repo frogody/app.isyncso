@@ -5,7 +5,8 @@ import {
   Settings, X, Check,
   GraduationCap, Rocket, Shield, Sparkles, LayoutGrid, Eye, EyeOff,
   Users, Palette, TrendingUp, Clock, Lock, Zap, Target, BookOpen,
-  Brain, Trophy, BarChart3, LineChart, Mail, Search, FileText
+  Brain, Trophy, BarChart3, LineChart, Mail, Search, FileText,
+  DollarSign, Wallet, Receipt, CreditCard, PieChart
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -18,6 +19,8 @@ import { LEARN_WIDGETS } from '@/components/dashboard/widgets/LearnWidgets';
 import { GROWTH_WIDGETS } from '@/components/dashboard/widgets/GrowthWidgets';
 import { SENTINEL_WIDGETS } from '@/components/dashboard/widgets/SentinelWidgets';
 import { CORE_WIDGETS } from '@/components/dashboard/widgets/CoreWidgets';
+import { FINANCE_WIDGETS } from '@/components/dashboard/widgets/FinanceWidgets';
+import { RAISE_WIDGETS } from '@/components/dashboard/widgets/RaiseWidgets';
 
 // Merge core widgets into each app for visibility in previews
 const ALL_CORE_WIDGETS = CORE_WIDGETS;
@@ -74,6 +77,38 @@ const AVAILABLE_APPS = [
       { icon: Target, text: 'Task management for compliance activities' },
       { icon: Zap, text: 'Real-time compliance status monitoring' }
     ]
+  },
+  {
+    id: 'finance',
+    name: 'Finance',
+    description: 'Revenue, expenses, and financial tracking',
+    icon: DollarSign,
+    color: 'emerald',
+    defaultEnabled: false,
+    widgets: FINANCE_WIDGETS,
+    purpose: 'Track your business finances with invoices, expenses, and subscription management.',
+    capabilities: [
+      { icon: Receipt, text: 'Invoice creation and tracking' },
+      { icon: CreditCard, text: 'Expense management and categorization' },
+      { icon: PieChart, text: 'Financial reporting and analytics' },
+      { icon: TrendingUp, text: 'Revenue and subscription tracking' }
+    ]
+  },
+  {
+    id: 'raise',
+    name: 'Raise',
+    description: 'Fundraising toolkit & investor management',
+    icon: TrendingUp,
+    color: 'emerald',
+    defaultEnabled: false,
+    widgets: RAISE_WIDGETS,
+    purpose: 'Manage your fundraising campaigns with investor tracking and data room management.',
+    capabilities: [
+      { icon: Users, text: 'Investor pipeline and relationship management' },
+      { icon: FileText, text: 'Pitch deck and materials organization' },
+      { icon: Target, text: 'Campaign progress and milestone tracking' },
+      { icon: BarChart3, text: 'Data room for due diligence documents' }
+    ]
   }
 ];
 
@@ -92,13 +127,6 @@ const COMING_SOON_APPS = [
     description: 'Content generation with company context',
     icon: Palette,
     color: 'pink'
-  },
-  {
-    id: 'raise',
-    name: 'Raise',
-    description: 'Fundraising toolkit & stakeholder management',
-    icon: TrendingUp,
-    color: 'emerald'
   }
 ];
 

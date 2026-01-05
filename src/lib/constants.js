@@ -45,6 +45,20 @@ export const THEME_COLORS = {
     solid: 'border-purple-500',
     glow: 'shadow-purple-500/20'
   },
+  finance: {
+    text: 'text-emerald-500',
+    bg: 'bg-emerald-500/10',
+    border: 'border-emerald-500/20',
+    solid: 'border-emerald-500',
+    glow: 'shadow-emerald-500/20'
+  },
+  raise: {
+    text: 'text-teal-500',
+    bg: 'bg-teal-500/10',
+    border: 'border-teal-500/20',
+    solid: 'border-teal-500',
+    glow: 'shadow-teal-500/20'
+  },
   default: {
     text: 'text-amber-500',
     bg: 'bg-amber-500/10',
@@ -65,8 +79,9 @@ export const UI = {
 
 // Feature Flags
 export const FEATURES = {
-  DEFAULT_ENABLED_APPS: ['dashboard', 'crm', 'projects', 'tasks', 'inbox', 'actions', 'activity', 'ai-assistant'],
-  ALL_APPS: ['dashboard', 'crm', 'projects', 'tasks', 'inbox', 'actions', 'activity', 'ai-assistant', 'growth', 'learn', 'sentinel', 'sync'],
+  // Core navigation + default-enabled engine apps (learn, growth, sentinel are defaultEnabled in AppsManagerModal)
+  DEFAULT_ENABLED_APPS: ['dashboard', 'crm', 'projects', 'tasks', 'inbox', 'actions', 'activity', 'ai-assistant', 'learn', 'growth', 'sentinel'],
+  ALL_APPS: ['dashboard', 'crm', 'projects', 'tasks', 'inbox', 'actions', 'activity', 'ai-assistant', 'growth', 'learn', 'sentinel', 'sync', 'finance', 'raise'],
   BETA_FEATURES: ['vision', 'voice', 'mcp'],
   ENTERPRISE_ONLY: ['sso', 'audit-log', 'custom-branding']
 };

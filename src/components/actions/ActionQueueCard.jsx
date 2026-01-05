@@ -8,6 +8,7 @@ import {
   CheckCircle, XCircle, Clock, Loader2, Play, Pause, RotateCcw, Trash2,
   ChevronRight, Sparkles, Bot, Zap, ArrowRight
 } from 'lucide-react';
+import { formatTimeAgo, formatTimestamp } from '@/utils/dateUtils';
 
 const ACTION_ICONS = {
   send_email: Mail,
@@ -97,17 +98,7 @@ export default function ActionQueueCard({
   const StatusIcon = statusConfig.icon;
   const SourceIcon = sourceConfig.icon;
 
-  const formatTime = (dateStr) => {
-    if (!dateStr) return null;
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diff = now - date;
-    
-    if (diff < 60000) return 'Just now';
-    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-  };
+  // Using centralized formatTimeAgo from @/utils/dateUtils
 
   const canExecute = action.status === 'queued';
   const canRetry = action.status === 'failed';
@@ -131,7 +122,7 @@ export default function ActionQueueCard({
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-white truncate">{action.title}</p>
-          <p className="text-xs text-zinc-500">{action.platform} • {formatTime(action.created_date)}</p>
+          <p className="text-xs text-zinc-500">{action.platform} • {formatTimeAgo(action.created_date)}</p>
         </div>
         <StatusIcon className={cn('w-4 h-4', statusConfig.color, statusConfig.spin && 'animate-spin')} />
       </motion.div>
@@ -209,12 +200,12 @@ export default function ActionQueueCard({
           {action.scheduled_for && (
             <span className="flex items-center gap-1">
               <Calendar className="w-3 h-3" />
-              Scheduled: {formatTime(action.scheduled_for)}
+              Scheduled: {formatTimeAgo(action.scheduled_for)}
             </span>
           )}
           <span className="flex items-center gap-1">
             <Clock className="w-3 h-3" />
-            {formatTime(action.created_date)}
+            {formatTimeAgo(action.created_date)}
           </span>
         </div>
 

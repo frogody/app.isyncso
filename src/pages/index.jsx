@@ -146,6 +146,10 @@ import MCPIntegrations from "./MCPIntegrations";
 
 import OAuthCallback from "./OAuthCallback";
 
+import Finance from "./Finance";
+
+import Raise from "./Raise";
+
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 
 const PAGES = {
@@ -295,7 +299,11 @@ const PAGES = {
     MCPIntegrations: MCPIntegrations,
     
     OAuthCallback: OAuthCallback,
-    
+
+    Finance: Finance,
+
+    Raise: Raise,
+
 }
 
 function _getCurrentPage(url) {
@@ -468,7 +476,11 @@ function PagesContent() {
                 <Route path="/MCPIntegrations" element={<MCPIntegrations />} />
                 
                 <Route path="/OAuthCallback" element={<OAuthCallback />} />
-                
+
+                <Route path="/Finance" element={<Finance />} />
+
+                <Route path="/Raise" element={<Raise />} />
+
             </Routes>
         </Layout>
     );

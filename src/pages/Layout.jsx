@@ -48,7 +48,9 @@ import {
   FolderKanban,
   ListTodo,
   Contact,
-  Activity
+  Activity,
+  DollarSign,
+  TrendingUp
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -142,6 +144,18 @@ const ENGINE_ITEMS_CONFIG = {
     url: createPageUrl("SentinelDashboard"),
     icon: Shield,
     id: 'sentinel'
+  },
+  finance: {
+    title: "Finance",
+    url: createPageUrl("Finance"),
+    icon: DollarSign,
+    id: 'finance'
+  },
+  raise: {
+    title: "Raise",
+    url: createPageUrl("Raise"),
+    icon: TrendingUp,
+    id: 'raise'
   },
 };
 

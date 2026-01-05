@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import { formatMinutes } from '@/utils/dateUtils';
 import { base44 } from '@/api/base44Client';
 import { useUser } from '@/components/context/UserContext';
 import { 
@@ -171,11 +172,7 @@ export default function LearnDashboard() {
     }
   };
 
-  const formatTime = (minutes) => {
-    if (minutes < 60) return `${minutes}m`;
-    const hours = Math.floor(minutes / 60);
-    return `${hours}h ${minutes % 60}m`;
-  };
+  // Using centralized formatMinutes from @/utils/dateUtils
 
   // Memoized calculations
   const { continueLearning, recommended } = useMemo(() => {
@@ -350,7 +347,7 @@ export default function LearnDashboard() {
                   onClick={() => setShowTimeModal(true)}
                   className="cursor-pointer hover:bg-zinc-800/50 rounded-xl p-3 transition-colors border border-transparent hover:border-zinc-700"
                 >
-                  <div className="text-2xl font-bold text-white">{formatTime(analytics?.totalTimeMinutes || 0)}</div>
+                  <div className="text-2xl font-bold text-white">{formatMinutes(analytics?.totalTimeMinutes || 0)}</div>
                   <div className="text-xs text-zinc-400 flex items-center justify-center gap-1">
                     Time Invested <Info className="w-3 h-3" />
                   </div>
@@ -615,7 +612,7 @@ export default function LearnDashboard() {
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div className="text-center p-5 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 border border-cyan-500/30">
-              <div className="text-4xl font-bold text-cyan-400">{formatTime(analytics?.totalTimeMinutes || 0)}</div>
+              <div className="text-4xl font-bold text-cyan-400">{formatMinutes(analytics?.totalTimeMinutes || 0)}</div>
               <div className="text-sm text-zinc-400">Total Learning Time</div>
             </div>
 

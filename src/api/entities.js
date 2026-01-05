@@ -94,5 +94,16 @@ export const MasterPromptTemplate = base44.entities.MasterPromptTemplate;
 // === CIDE (Content IDE) ===
 export const CIDEDraft = base44.entities.CIDEDraft;
 
+// === Finance ===
+export const Expense = base44.entities.Expense;
+export const Invoice = base44.entities.Invoice;
+export const Subscription = base44.entities.Subscription;
+
+// === Raise (Fundraising) ===
+export const RaiseCampaign = base44.entities.RaiseCampaign;
+export const RaiseInvestor = base44.entities.RaiseInvestor;
+export const RaisePitchDeck = base44.entities.RaisePitchDeck;
+export const RaiseDataRoom = base44.entities.RaiseDataRoom;
+
 // === Auth SDK ===
 export const User = base44.auth;

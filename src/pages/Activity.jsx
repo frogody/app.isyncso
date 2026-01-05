@@ -19,6 +19,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   supabase, subscribeToEvents, fetchEvents, sendClaudePrompt, registerSession, checkSession
 } from "@/components/sync/supabaseSync";
+import { formatTimeAgo } from "@/utils/dateUtils";
 
 const CLAY_ICON_URL = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ebfb48566133bc1cface8c/d80dd1b25_ClayArchMarque.png";
 const LINKEDIN_ICON_URL = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ebfb48566133bc1cface8c/6c9d5c78c_linkedin.png";
@@ -244,14 +245,7 @@ export default function Activity() {
   const todayEvents = events.filter(e => new Date(e.created_at).toDateString() === new Date().toDateString());
   const weekEvents = events.filter(e => new Date(e.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
 
-  const formatTime = (timestamp) => {
-    const date = new Date(timestamp);
-    const diff = Date.now() - date;
-    if (diff < 60000) return 'Just now';
-    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-    return date.toLocaleDateString();
-  };
+  // Using centralized formatTimeAgo from @/utils/dateUtils
 
   if (loading) {
     return (
@@ -332,7 +326,7 @@ export default function Activity() {
                           {copied ? <Check className="w-3.5 h-3.5 text-cyan-400/80" /> : <Copy className="w-3.5 h-3.5" />}
                         </button>
                       </span>
-                      {lastSyncTime && <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Last activity: {formatTime(lastSyncTime)}</span>}
+                      {lastSyncTime && <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Last activity: {formatTimeAgo(lastSyncTime)}</span>}
                     </div>
                     {!isConnected && events.length > 0 && (
                       <p className="text-[10px] text-amber-400/60 mt-0.5">No activity in the last 5 minutes. Use your browser to generate events.</p>
@@ -477,7 +471,7 @@ export default function Activity() {
                           </div>
                           <div className="flex items-center gap-2 text-xs text-zinc-600">
                             <Clock className="w-3 h-3" />
-                            {formatTime(event.created_at)}
+                            {formatTimeAgo(event.created_at)}
                           </div>
                         </motion.div>
                       );
@@ -668,7 +662,7 @@ export default function Activity() {
                                   <Badge className="bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-xs">{event.platform}</Badge>
                                   <span className="text-sm font-medium text-zinc-200">{event.event_type.replace(':', ' → ').replace(/_/g, ' ')}</span>
                                 </div>
-                                <span className="text-xs text-zinc-600">{formatTime(event.created_at)}</span>
+                                <span className="text-xs text-zinc-600">{formatTimeAgo(event.created_at)}</span>
                               </div>
                             </motion.div>
                           );
@@ -724,7 +718,7 @@ export default function Activity() {
                     {syncErrors.map((err, i) => (
                       <div key={i} className="p-3 rounded-xl bg-red-950/30 border border-red-900/40">
                         <p className="text-red-400/80 text-sm">{err.message}</p>
-                        <p className="text-xs text-zinc-600 mt-1">{formatTime(err.time)}</p>
+                        <p className="text-xs text-zinc-600 mt-1">{formatTimeAgo(err.time)}</p>
                       </div>
                     ))}
                   </div>

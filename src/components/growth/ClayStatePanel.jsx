@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/components/sync/supabaseSync';
 import { toast } from 'sonner';
+import { formatTimeAgo } from '@/utils/dateUtils';
 
 const WORKFLOW_STAGES = {
   'not-in-table': { label: 'Not in Table', color: 'zinc', icon: Layers },
@@ -175,15 +176,7 @@ Please help me:
 What outreach approach do you recommend?`
 };
 
-function formatTimeAgo(date) {
-  if (!date) return 'never';
-  const seconds = Math.floor((new Date() - date) / 1000);
-  if (seconds < 10) return 'just now';
-  if (seconds < 60) return `${seconds}s ago`;
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-  return `${Math.floor(seconds / 86400)}d ago`;
-}
+// Using centralized formatTimeAgo from @/utils/dateUtils
 
 export default function ClayStatePanel({ sessionId: propSessionId, onSendPrompt }) {
   // Use prop, localStorage, or fallback for testing

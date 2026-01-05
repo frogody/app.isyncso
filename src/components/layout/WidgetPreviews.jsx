@@ -1,8 +1,9 @@
 import React from 'react';
-import { 
-  GraduationCap, BookOpen, Target, Rocket, Shield, Cpu, 
+import {
+  GraduationCap, BookOpen, Target, Rocket, Shield, Cpu,
   ListTodo, Zap, TrendingUp, CheckCircle, AlertTriangle,
-  Flame, Award, Bell, Send, DollarSign, Percent, Clock, FileText, Layers
+  Flame, Award, Bell, Send, DollarSign, Percent, Clock, FileText, Layers,
+  CreditCard, Receipt, CircleDollarSign, Users, Calendar, PieChart
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 
@@ -54,6 +55,31 @@ export function WidgetPreview({ widgetId, appId, size }) {
       return <ActionsRecentPreview />;
     case 'quick_actions':
       return <QuickActionsPreview />;
+
+    // Finance widgets
+    case 'finance_overview':
+      return <FinanceOverviewPreview />;
+    case 'finance_revenue':
+      return <FinanceRevenuePreview />;
+    case 'finance_expenses':
+      return <FinanceExpensesPreview />;
+    case 'finance_pending':
+      return <FinancePendingPreview />;
+    case 'finance_mrr':
+      return <FinanceMRRPreview />;
+
+    // Raise widgets
+    case 'raise_campaign':
+      return <RaiseCampaignPreview />;
+    case 'raise_target':
+      return <RaiseTargetPreview />;
+    case 'raise_committed':
+      return <RaiseCommittedPreview />;
+    case 'raise_investors':
+      return <RaiseInvestorsPreview />;
+    case 'raise_meetings':
+      return <RaiseMeetingsPreview />;
+
     default:
       return <DefaultPreview />;
   }
@@ -405,6 +431,189 @@ function DefaultPreview() {
       <div className="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center">
         <Zap className="w-5 h-5 text-zinc-600" />
       </div>
+    </div>
+  );
+}
+
+// FINANCE PREVIEWS
+function FinanceOverviewPreview() {
+  return (
+    <div className="space-y-2 transform scale-[0.85] origin-top-left">
+      <div className="flex items-center gap-2 mb-3">
+        <PieChart className="w-4 h-4 text-emerald-400" />
+        <span className="text-xs font-medium text-zinc-300">Overview</span>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <div className="p-1.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-center">
+          <div className="text-[10px] text-zinc-400">Revenue</div>
+          <div className="text-xs font-bold text-emerald-400">$45k</div>
+        </div>
+        <div className="p-1.5 rounded bg-red-500/10 border border-red-500/20 text-center">
+          <div className="text-[10px] text-zinc-400">Expenses</div>
+          <div className="text-xs font-bold text-red-400">$12k</div>
+        </div>
+        <div className="p-1.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-center">
+          <div className="text-[10px] text-zinc-400">Profit</div>
+          <div className="text-xs font-bold text-emerald-400">$33k</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FinanceRevenuePreview() {
+  return (
+    <div className="transform scale-[0.85] origin-top-left">
+      <div className="flex items-center justify-between mb-2">
+        <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
+          <DollarSign className="w-4 h-4 text-emerald-400" />
+        </div>
+        <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">+12%</span>
+      </div>
+      <div className="text-lg font-bold text-white">$45k</div>
+      <div className="text-[10px] text-zinc-500">Total Revenue</div>
+    </div>
+  );
+}
+
+function FinanceExpensesPreview() {
+  return (
+    <div className="transform scale-[0.85] origin-top-left">
+      <div className="flex items-center justify-between mb-2">
+        <div className="w-8 h-8 rounded-lg bg-red-500/20 border border-red-500/30 flex items-center justify-center">
+          <CreditCard className="w-4 h-4 text-red-400" />
+        </div>
+        <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">-3%</span>
+      </div>
+      <div className="text-lg font-bold text-red-400">$12k</div>
+      <div className="text-[10px] text-zinc-500">Total Expenses</div>
+    </div>
+  );
+}
+
+function FinancePendingPreview() {
+  return (
+    <div className="transform scale-[0.85] origin-top-left">
+      <div className="flex items-center justify-between mb-2">
+        <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
+          <Receipt className="w-4 h-4 text-amber-400" />
+        </div>
+        <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">4 pending</span>
+      </div>
+      <div className="text-lg font-bold text-amber-400">$8k</div>
+      <div className="text-[10px] text-zinc-500">Pending Invoices</div>
+    </div>
+  );
+}
+
+function FinanceMRRPreview() {
+  return (
+    <div className="transform scale-[0.85] origin-top-left">
+      <div className="flex items-center justify-between mb-2">
+        <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
+          <CircleDollarSign className="w-4 h-4 text-cyan-400" />
+        </div>
+        <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400">5 active</span>
+      </div>
+      <div className="text-lg font-bold text-cyan-400">$2.5k</div>
+      <div className="text-[10px] text-zinc-500">Monthly Recurring</div>
+    </div>
+  );
+}
+
+// RAISE PREVIEWS
+function RaiseCampaignPreview() {
+  return (
+    <div className="space-y-2 transform scale-[0.85] origin-top-left">
+      <div className="flex items-center gap-2 mb-3">
+        <TrendingUp className="w-4 h-4 text-emerald-400" />
+        <span className="text-xs font-medium text-zinc-300">Series A</span>
+      </div>
+      <div className="mb-2">
+        <div className="flex items-center justify-between text-[10px] mb-1">
+          <span className="text-zinc-400">Progress</span>
+          <span className="text-emerald-400">$2.1M / $3M</span>
+        </div>
+        <Progress value={70} className="h-1.5" />
+      </div>
+      <div className="grid grid-cols-4 gap-1">
+        <div className="text-center p-1 rounded bg-zinc-800/60">
+          <div className="text-[10px] font-bold text-blue-400">8</div>
+          <div className="text-[7px] text-zinc-500">Contact</div>
+        </div>
+        <div className="text-center p-1 rounded bg-zinc-800/60">
+          <div className="text-[10px] font-bold text-amber-400">5</div>
+          <div className="text-[7px] text-zinc-500">Meet</div>
+        </div>
+        <div className="text-center p-1 rounded bg-zinc-800/60">
+          <div className="text-[10px] font-bold text-purple-400">3</div>
+          <div className="text-[7px] text-zinc-500">DD</div>
+        </div>
+        <div className="text-center p-1 rounded bg-zinc-800/60">
+          <div className="text-[10px] font-bold text-emerald-400">2</div>
+          <div className="text-[7px] text-zinc-500">Commit</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RaiseTargetPreview() {
+  return (
+    <div className="transform scale-[0.85] origin-top-left">
+      <div className="flex items-center justify-between mb-2">
+        <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
+          <Target className="w-4 h-4 text-emerald-400" />
+        </div>
+        <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">Series A</span>
+      </div>
+      <div className="text-lg font-bold text-white">$3M</div>
+      <div className="text-[10px] text-zinc-500">Raise Target</div>
+    </div>
+  );
+}
+
+function RaiseCommittedPreview() {
+  return (
+    <div className="transform scale-[0.85] origin-top-left">
+      <div className="flex items-center justify-between mb-2">
+        <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
+          <DollarSign className="w-4 h-4 text-emerald-400" />
+        </div>
+        <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">70%</span>
+      </div>
+      <div className="text-lg font-bold text-emerald-400">$2.1M</div>
+      <div className="text-[10px] text-zinc-500">Committed</div>
+    </div>
+  );
+}
+
+function RaiseInvestorsPreview() {
+  return (
+    <div className="transform scale-[0.85] origin-top-left">
+      <div className="flex items-center justify-between mb-2">
+        <div className="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
+          <Users className="w-4 h-4 text-indigo-400" />
+        </div>
+        <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400">12 active</span>
+      </div>
+      <div className="text-lg font-bold text-white">18</div>
+      <div className="text-[10px] text-zinc-500">Total Investors</div>
+    </div>
+  );
+}
+
+function RaiseMeetingsPreview() {
+  return (
+    <div className="transform scale-[0.85] origin-top-left">
+      <div className="flex items-center justify-between mb-2">
+        <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
+          <Calendar className="w-4 h-4 text-amber-400" />
+        </div>
+        <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">3 upcoming</span>
+      </div>
+      <div className="text-lg font-bold text-white">8</div>
+      <div className="text-[10px] text-zinc-500">Meetings</div>
     </div>
   );
 }

@@ -2,46 +2,20 @@ import React from "react";
 import { AlertTriangle, RefreshCw, Home, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { getErrorCode, formatErrorMessage, logError, ERROR_CODES } from "@/components/utils/errorHandler";
 
-/**
- * Error codes and their user-friendly messages
- */
-const ERROR_MESSAGES = {
-  NETWORK_ERROR: "Unable to connect. Please check your internet connection.",
-  TIMEOUT: "The request took too long. Please try again.",
-  AUTH_ERROR: "Your session has expired. Please log in again.",
-  NOT_FOUND: "The requested resource was not found.",
-  SERVER_ERROR: "Something went wrong on our end. We're working on it.",
-  DEFAULT: "Something unexpected happened. Please try again.",
+// Map error codes to user-friendly types for display
+const getErrorType = (error) => {
+  const code = getErrorCode(error);
+  switch (code) {
+    case ERROR_CODES.NETWORK: return "NETWORK_ERROR";
+    case ERROR_CODES.TIMEOUT: return "TIMEOUT";
+    case ERROR_CODES.AUTH: return "AUTH_ERROR";
+    case ERROR_CODES.NOT_FOUND: return "NOT_FOUND";
+    case ERROR_CODES.SERVER: return "SERVER_ERROR";
+    default: return "DEFAULT";
+  }
 };
-
-/**
- * Determine error type from error object
- */
-function getErrorType(error) {
-  if (!error) return "DEFAULT";
-
-  const message = error.message?.toLowerCase() || "";
-  const status = error.status || error.statusCode;
-
-  if (message.includes("network") || message.includes("fetch")) {
-    return "NETWORK_ERROR";
-  }
-  if (message.includes("timeout") || status === 408) {
-    return "TIMEOUT";
-  }
-  if (status === 401 || status === 403) {
-    return "AUTH_ERROR";
-  }
-  if (status === 404) {
-    return "NOT_FOUND";
-  }
-  if (status >= 500) {
-    return "SERVER_ERROR";
-  }
-
-  return "DEFAULT";
-}
 
 /**
  * ErrorBoundary - Catches React render errors and provides recovery options
@@ -113,22 +87,16 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error("ErrorBoundary caught an error:", error, errorInfo);
+    // Use centralized error logging
+    logError("ErrorBoundary", error, {
+      componentStack: errorInfo?.componentStack,
+    });
+
     this.setState({
       error,
       errorInfo,
       errorType: getErrorType(error),
     });
-
-    // Report to error tracking service (if configured)
-    if (typeof window !== "undefined" && window.reportError) {
-      window.reportError({
-        error,
-        componentStack: errorInfo?.componentStack,
-        url: window.location.href,
-        timestamp: new Date().toISOString(),
-      });
-    }
   }
 
   handleReset = () => {
@@ -175,7 +143,7 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       const { errorType, error, errorInfo } = this.state;
-      const userMessage = ERROR_MESSAGES[errorType] || ERROR_MESSAGES.DEFAULT;
+      const userMessage = formatErrorMessage(error);
       const isDevMode = import.meta.env?.DEV || process.env.NODE_ENV === "development";
 
       // Use custom fallback if provided

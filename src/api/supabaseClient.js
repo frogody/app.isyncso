@@ -106,6 +106,17 @@ const tableNameMap = {
 
   // === CIDE (Content IDE) ===
   'CIDEDraft': 'cide_drafts',
+
+  // === Finance ===
+  'Expense': 'expenses',
+  'Invoice': 'invoices',
+  'Subscription': 'subscriptions',
+
+  // === Raise (Fundraising) ===
+  'RaiseCampaign': 'raise_campaigns',
+  'RaiseInvestor': 'raise_investors',
+  'RaisePitchDeck': 'raise_pitch_decks',
+  'RaiseDataRoom': 'raise_data_rooms',
 };
 
 /**
@@ -354,6 +365,17 @@ export const entities = {
 
   // === CIDE (Content IDE) ===
   CIDEDraft: createEntityWrapper('CIDEDraft'),
+
+  // === Finance ===
+  Expense: createEntityWrapper('Expense'),
+  Invoice: createEntityWrapper('Invoice'),
+  Subscription: createEntityWrapper('Subscription'),
+
+  // === Raise (Fundraising) ===
+  RaiseCampaign: createEntityWrapper('RaiseCampaign'),
+  RaiseInvestor: createEntityWrapper('RaiseInvestor'),
+  RaisePitchDeck: createEntityWrapper('RaisePitchDeck'),
+  RaiseDataRoom: createEntityWrapper('RaiseDataRoom'),
 };
 
 /**

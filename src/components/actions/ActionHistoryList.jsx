@@ -11,6 +11,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatTimeAgo } from '@/utils/dateUtils';
 
 const STATUS_CONFIG = {
   success: { 
@@ -39,14 +40,7 @@ const STATUS_CONFIG = {
 export default function ActionHistoryList({ actions, loading }) {
   const [expandedId, setExpandedId] = React.useState(null);
 
-  const formatTime = (dateStr) => {
-    const date = new Date(dateStr);
-    const diff = Date.now() - date;
-    if (diff < 60000) return 'Just now';
-    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-    return date.toLocaleDateString();
-  };
+  // Using centralized formatTimeAgo from @/utils/dateUtils
 
   if (loading) {
     return (
@@ -108,7 +102,7 @@ export default function ActionHistoryList({ actions, loading }) {
                     </div>
                     <div className="flex items-center gap-2 text-xs text-zinc-500">
                       <Clock className="w-3 h-3" />
-                      {formatTime(action.created_date)}
+                      {formatTimeAgo(action.created_date)}
                     </div>
                   </div>
                 </div>
