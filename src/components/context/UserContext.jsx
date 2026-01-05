@@ -70,9 +70,12 @@ export function UserProvider({ children }) {
             )
           : Promise.resolve(null),
 
-        // Load user settings
+        // Load user settings from database (not edge function)
         retryWithBackoff(
-          () => base44.functions.invoke('getUserSettings', { user_id: userData.id }),
+          async () => {
+            const configs = await base44.entities.UserAppConfig.filter({ user_id: userData.id });
+            return configs.length > 0 ? configs[0] : null;
+          },
           RETRY_OPTIONS
         ),
       ]);
@@ -86,7 +89,7 @@ export function UserProvider({ children }) {
 
       // Process settings result
       if (results[1].status === 'fulfilled') {
-        setSettings(results[1].value?.data || null);
+        setSettings(results[1].value || null);
       } else if (results[1].status === 'rejected') {
         logError('UserContext:settings', results[1].reason);
       }
@@ -153,14 +156,24 @@ export function UserProvider({ children }) {
     setSettings((prev) => ({ ...prev, ...updates }));
 
     try {
-      await base44.functions.invoke('updateUserSettings', { updates });
+      if (settings?.id) {
+        // Update existing settings
+        await base44.entities.UserAppConfig.update(settings.id, updates);
+      } else if (user?.id) {
+        // Create new settings record
+        const newSettings = await base44.entities.UserAppConfig.create({
+          user_id: user.id,
+          ...updates
+        });
+        setSettings(newSettings);
+      }
     } catch (err) {
       // Rollback on error
       setSettings(previousSettings);
       logError('UserContext:updateSettings', err);
       throw err;
     }
-  }, [settings]);
+  }, [settings, user]);
 
   // Memoize context value to prevent unnecessary re-renders
   const value = useMemo(

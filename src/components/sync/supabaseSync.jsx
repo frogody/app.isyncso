@@ -1,10 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
+// Use shared supabase client to avoid multiple GoTrueClient instances
+import { supabase } from '@/api/supabaseClient';
 
-// isyncso-sync Supabase project
-const supabaseUrl = 'https://sfxpmzicgpaxfntqleig.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmeHBtemljZ3BheGZudHFsZWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDY0NjIsImV4cCI6MjA4MjE4MjQ2Mn0.337ohi8A4zu_6Hl1LpcPaWP8UkI5E4Om7ZgeU9_A8t4';
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export { supabase };
 
 export function getSupabase() {
   return supabase;
