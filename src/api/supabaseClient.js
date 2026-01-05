@@ -3,409 +3,369 @@
  *
  * This module provides a Base44-compatible interface using Supabase as the backend.
  * It maintains API compatibility while migrating from Base44 to Supabase.
- *
- * Usage:
- *   import { supabase, entities, auth, functions } from '@/api/supabaseClient';
- *
- *   // Entity operations (same interface as Base44)
- *   const candidates = await entities.Candidate.list();
- *   const candidate = await entities.Candidate.create({ first_name: 'John' });
- *   await entities.Candidate.update(id, { contacted: true });
- *   await entities.Candidate.delete(id);
- *
- *   // Auth operations
- *   const user = await auth.me();
- *   await auth.signOut();
- *
- *   // Edge functions
- *   const result = await functions.invoke('generateIntelligence', { candidate_id: '...' });
  */
 
 import { createClient } from '@supabase/supabase-js';
 
-// Supabase configuration
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://hktkopulegnmdszxkwld.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhrdGtvcHVsZWdubWRzenhrd2xkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEwNzYyMTksImV4cCI6MjA3NjY1MjIxOX0.UWR9I3g2a7ZKQObpbYZezmPqR_dGrxFqVd6jr_Yp_W8';
 
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  console.warn('Supabase credentials not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
-}
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Create Supabase client
-export const supabase = createClient(SUPABASE_URL || '', SUPABASE_ANON_KEY || '', {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true
-  }
-});
+/**
+ * Convert snake_case table name to entity name
+ */
+const tableNameMap = {
+  'Course': 'courses',
+  'Module': 'modules',
+  'Lesson': 'lessons',
+  'UserProgress': 'user_progress',
+  'Assessment': 'assessments',
+  'UserResult': 'user_results',
+  'CourseBuild': 'course_builds',
+  'Company': 'companies',
+  'Department': 'departments',
+  'Invitation': 'invitations',
+  'Assignment': 'assignments',
+  'ContentAsset': 'content_assets',
+  'CourseVersion': 'course_versions',
+  'Skill': 'skills',
+  'CourseSkill': 'course_skills',
+  'LearningPath': 'learning_paths',
+  'LearningPathStep': 'learning_path_steps',
+  'CourseRating': 'course_ratings',
+  'ComplianceRequirement': 'compliance_requirements',
+  'ActivitySession': 'activity_sessions',
+  'SkillsMaster': 'skills_master',
+  'SkillApplication': 'skill_applications',
+  'LearningIndicator': 'learning_indicators',
+  'UserSkillProgress': 'user_skill_progress',
+  'SkillGap': 'skill_gaps',
+  'CourseRecommendation': 'course_recommendations',
+  'PracticeChallenge': 'practice_challenges',
+  'SupportTicket': 'support_tickets',
+  'FeatureRequest': 'feature_requests',
+  'HelpArticle': 'help_articles',
+  'RegulatoryDocument': 'regulatory_documents',
+  'AISystem': 'ai_systems',
+  'Obligation': 'obligations',
+  'Prospect': 'prospects',
+  'ProspectList': 'prospect_lists',
+  'ProspectListMembership': 'prospect_list_memberships',
+  'ICPTemplate': 'icp_templates',
+  'UserGamification': 'user_gamification',
+  'Badge': 'badges',
+  'Certificate': 'certificates',
+  'UserSkill': 'user_skills',
+  'UserSettings': 'user_settings',
+  'CIDEDraft': 'cide_drafts',
+  'LessonInteraction': 'lesson_interactions',
+  'GrowthMetric': 'growth_metrics',
+  'GrowthCampaign': 'growth_campaigns',
+  'GrowthOpportunity': 'growth_opportunities',
+  'GrowthSignal': 'growth_signals',
+  'SyncSession': 'sync_sessions',
+  'SyncEvent': 'sync_events',
+  'SyncAction': 'sync_actions',
+  'MasterPromptTemplate': 'master_prompt_templates',
+  'Channel': 'channels',
+  'Message': 'messages',
+  'MergeIntegration': 'merge_integrations',
+  'ActionLog': 'action_logs',
+  'UserAppConfig': 'user_app_configs',
+};
 
 /**
  * Create a Base44-compatible entity wrapper for a Supabase table
  */
-const createEntityWrapper = (tableName) => {
+function createEntityWrapper(entityName) {
+  const tableName = tableNameMap[entityName] || entityName.toLowerCase() + 's';
+
   return {
     /**
-     * List all records (with optional sorting and limit)
+     * List all records
      */
-    async list(orderBy = '-created_date', limit = 100) {
-      const ascending = !orderBy.startsWith('-');
-      const column = orderBy.replace(/^-/, '');
+    async list(options = {}) {
+      try {
+        let query = supabase.from(tableName).select('*');
 
-      let query = supabase
-        .from(tableName)
-        .select('*')
-        .order(column, { ascending })
-        .limit(limit);
+        if (options.order) {
+          query = query.order(options.order.column || 'created_at', {
+            ascending: options.order.ascending ?? false
+          });
+        } else {
+          query = query.order('created_at', { ascending: false });
+        }
 
-      const { data, error } = await query;
+        if (options.limit) {
+          query = query.limit(options.limit);
+        }
 
-      if (error) {
-        console.error(`Error listing ${tableName}:`, error);
-        throw error;
+        const { data, error } = await query;
+        if (error) throw error;
+        return data || [];
+      } catch (error) {
+        console.error(`[supabaseClient] ${entityName}.list error:`, error);
+        return [];
       }
-
-      return data || [];
     },
 
     /**
      * Filter records by criteria
      */
-    async filter(criteria, orderBy = '-created_date', limit = 100) {
-      const ascending = !orderBy.startsWith('-');
-      const column = orderBy.replace(/^-/, '');
+    async filter(filters = {}, options = {}) {
+      try {
+        let query = supabase.from(tableName).select('*');
 
-      let query = supabase
-        .from(tableName)
-        .select('*');
+        // Apply filters
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            if (Array.isArray(value)) {
+              query = query.in(key, value);
+            } else {
+              query = query.eq(key, value);
+            }
+          }
+        });
 
-      // Apply filters
-      Object.entries(criteria).forEach(([key, value]) => {
-        if (Array.isArray(value)) {
-          // Handle array values (IN clause)
-          query = query.in(key, value);
-        } else if (value === null) {
-          query = query.is(key, null);
+        // Apply ordering
+        if (options.order) {
+          query = query.order(options.order.column || 'created_at', {
+            ascending: options.order.ascending ?? false
+          });
         } else {
-          query = query.eq(key, value);
+          query = query.order('created_at', { ascending: false });
         }
-      });
 
-      query = query.order(column, { ascending }).limit(limit);
+        if (options.limit) {
+          query = query.limit(options.limit);
+        }
 
-      const { data, error } = await query;
-
-      if (error) {
-        console.error(`Error filtering ${tableName}:`, error);
-        throw error;
+        const { data, error } = await query;
+        if (error) throw error;
+        return data || [];
+      } catch (error) {
+        console.error(`[supabaseClient] ${entityName}.filter error:`, error);
+        return [];
       }
-
-      return data || [];
     },
 
     /**
      * Get a single record by ID
      */
     async get(id) {
-      const { data, error } = await supabase
-        .from(tableName)
-        .select('*')
-        .eq('id', id)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from(tableName)
+          .select('*')
+          .eq('id', id)
+          .single();
 
-      if (error) {
-        if (error.code === 'PGRST116') return null; // Not found
-        console.error(`Error getting ${tableName}:`, error);
-        throw error;
+        if (error) throw error;
+        return data;
+      } catch (error) {
+        console.error(`[supabaseClient] ${entityName}.get error:`, error);
+        return null;
       }
-
-      return data;
     },
 
     /**
      * Create a new record
      */
     async create(data) {
-      // Add timestamps if not present
-      const now = new Date().toISOString();
-      const record = {
-        ...data,
-        created_date: data.created_date || now,
-        updated_date: data.updated_date || now
-      };
+      try {
+        const { data: result, error } = await supabase
+          .from(tableName)
+          .insert(data)
+          .select()
+          .single();
 
-      const { data: created, error } = await supabase
-        .from(tableName)
-        .insert(record)
-        .select()
-        .single();
-
-      if (error) {
-        console.error(`Error creating ${tableName}:`, error);
+        if (error) throw error;
+        return result;
+      } catch (error) {
+        console.error(`[supabaseClient] ${entityName}.create error:`, error);
         throw error;
       }
-
-      return created;
     },
 
     /**
-     * Update an existing record
+     * Update a record by ID
      */
     async update(id, updates) {
-      const record = {
-        ...updates,
-        updated_date: new Date().toISOString()
-      };
+      try {
+        const { data, error } = await supabase
+          .from(tableName)
+          .update(updates)
+          .eq('id', id)
+          .select()
+          .single();
 
-      const { data, error } = await supabase
-        .from(tableName)
-        .update(record)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error(`Error updating ${tableName}:`, error);
+        if (error) throw error;
+        return data;
+      } catch (error) {
+        console.error(`[supabaseClient] ${entityName}.update error:`, error);
         throw error;
       }
-
-      return data;
     },
 
     /**
-     * Delete a record
+     * Delete a record by ID
      */
     async delete(id) {
-      const { error } = await supabase
-        .from(tableName)
-        .delete()
-        .eq('id', id);
+      try {
+        const { error } = await supabase
+          .from(tableName)
+          .delete()
+          .eq('id', id);
 
-      if (error) {
-        console.error(`Error deleting ${tableName}:`, error);
+        if (error) throw error;
+        return true;
+      } catch (error) {
+        console.error(`[supabaseClient] ${entityName}.delete error:`, error);
         throw error;
       }
-
-      return true;
-    },
-
-    /**
-     * Upsert (create or update)
-     */
-    async upsert(data, conflictColumns = ['id']) {
-      const record = {
-        ...data,
-        updated_date: new Date().toISOString()
-      };
-
-      if (!record.created_date) {
-        record.created_date = record.updated_date;
-      }
-
-      const { data: upserted, error } = await supabase
-        .from(tableName)
-        .upsert(record, { onConflict: conflictColumns.join(',') })
-        .select()
-        .single();
-
-      if (error) {
-        console.error(`Error upserting ${tableName}:`, error);
-        throw error;
-      }
-
-      return upserted;
-    },
-
-    /**
-     * Count records matching criteria
-     */
-    async count(criteria = {}) {
-      let query = supabase
-        .from(tableName)
-        .select('*', { count: 'exact', head: true });
-
-      Object.entries(criteria).forEach(([key, value]) => {
-        if (Array.isArray(value)) {
-          query = query.in(key, value);
-        } else if (value === null) {
-          query = query.is(key, null);
-        } else {
-          query = query.eq(key, value);
-        }
-      });
-
-      const { count, error } = await query;
-
-      if (error) {
-        console.error(`Error counting ${tableName}:`, error);
-        throw error;
-      }
-
-      return count || 0;
-    },
-
-    /**
-     * Subscribe to real-time changes
-     */
-    subscribe(callback, filter = '*') {
-      const channel = supabase
-        .channel(`${tableName}_changes`)
-        .on(
-          'postgres_changes',
-          { event: filter, schema: 'public', table: tableName },
-          (payload) => callback(payload)
-        )
-        .subscribe();
-
-      return () => supabase.removeChannel(channel);
     }
   };
-};
+}
 
-// Entity wrappers (matching Base44 entity names)
+/**
+ * Entity wrappers (matching Base44 entity names)
+ */
 export const entities = {
-  Candidate: createEntityWrapper('candidates'),
-  Campaign: createEntityWrapper('campaigns'),
-  Project: createEntityWrapper('projects'),
-  Role: createEntityWrapper('roles'),
-  Task: createEntityWrapper('tasks'),
-  Organization: createEntityWrapper('organizations'),
-  ChatConversation: createEntityWrapper('chat_conversations'),
-  OutreachMessage: createEntityWrapper('outreach_messages'),
-  UserInvitation: createEntityWrapper('user_invitations'),
-  RegenerationJob: createEntityWrapper('regeneration_jobs'),
-  Client: createEntityWrapper('clients'),
-  OutreachTask: createEntityWrapper('outreach_tasks'),
-  IntelligenceProgress: createEntityWrapper('intelligence_progress'),
-  ChatProgress: createEntityWrapper('chat_progress'),
-  Team: createEntityWrapper('teams'),
-  TeamMember: createEntityWrapper('team_members'),
-
-  // SkillSync entities (for shared backend)
-  User: createEntityWrapper('users'),
-  UserProfile: createEntityWrapper('user_profiles'),
-  Activity: createEntityWrapper('activities'),
-  MicroLesson: createEntityWrapper('micro_lessons'),
-  SkillCatalog: createEntityWrapper('skill_catalog'),
-  UserSkillProgress: createEntityWrapper('user_skill_progress'),
-  CourseCatalog: createEntityWrapper('course_catalog'),
-  CourseEnrollment: createEntityWrapper('course_enrollments'),
-  Achievement: createEntityWrapper('achievements')
+  Course: createEntityWrapper('Course'),
+  Module: createEntityWrapper('Module'),
+  Lesson: createEntityWrapper('Lesson'),
+  UserProgress: createEntityWrapper('UserProgress'),
+  Assessment: createEntityWrapper('Assessment'),
+  UserResult: createEntityWrapper('UserResult'),
+  CourseBuild: createEntityWrapper('CourseBuild'),
+  Company: createEntityWrapper('Company'),
+  Department: createEntityWrapper('Department'),
+  Invitation: createEntityWrapper('Invitation'),
+  Assignment: createEntityWrapper('Assignment'),
+  ContentAsset: createEntityWrapper('ContentAsset'),
+  CourseVersion: createEntityWrapper('CourseVersion'),
+  Skill: createEntityWrapper('Skill'),
+  CourseSkill: createEntityWrapper('CourseSkill'),
+  LearningPath: createEntityWrapper('LearningPath'),
+  LearningPathStep: createEntityWrapper('LearningPathStep'),
+  CourseRating: createEntityWrapper('CourseRating'),
+  ComplianceRequirement: createEntityWrapper('ComplianceRequirement'),
+  ActivitySession: createEntityWrapper('ActivitySession'),
+  SkillsMaster: createEntityWrapper('SkillsMaster'),
+  SkillApplication: createEntityWrapper('SkillApplication'),
+  LearningIndicator: createEntityWrapper('LearningIndicator'),
+  UserSkillProgress: createEntityWrapper('UserSkillProgress'),
+  SkillGap: createEntityWrapper('SkillGap'),
+  CourseRecommendation: createEntityWrapper('CourseRecommendation'),
+  PracticeChallenge: createEntityWrapper('PracticeChallenge'),
+  SupportTicket: createEntityWrapper('SupportTicket'),
+  FeatureRequest: createEntityWrapper('FeatureRequest'),
+  HelpArticle: createEntityWrapper('HelpArticle'),
+  RegulatoryDocument: createEntityWrapper('RegulatoryDocument'),
+  AISystem: createEntityWrapper('AISystem'),
+  Obligation: createEntityWrapper('Obligation'),
+  Prospect: createEntityWrapper('Prospect'),
+  ProspectList: createEntityWrapper('ProspectList'),
+  ProspectListMembership: createEntityWrapper('ProspectListMembership'),
+  ICPTemplate: createEntityWrapper('ICPTemplate'),
+  UserGamification: createEntityWrapper('UserGamification'),
+  Badge: createEntityWrapper('Badge'),
+  Certificate: createEntityWrapper('Certificate'),
+  UserSkill: createEntityWrapper('UserSkill'),
+  UserSettings: createEntityWrapper('UserSettings'),
+  CIDEDraft: createEntityWrapper('CIDEDraft'),
+  LessonInteraction: createEntityWrapper('LessonInteraction'),
+  GrowthMetric: createEntityWrapper('GrowthMetric'),
+  GrowthCampaign: createEntityWrapper('GrowthCampaign'),
+  GrowthOpportunity: createEntityWrapper('GrowthOpportunity'),
+  GrowthSignal: createEntityWrapper('GrowthSignal'),
+  SyncSession: createEntityWrapper('SyncSession'),
+  SyncEvent: createEntityWrapper('SyncEvent'),
+  SyncAction: createEntityWrapper('SyncAction'),
+  MasterPromptTemplate: createEntityWrapper('MasterPromptTemplate'),
+  Channel: createEntityWrapper('Channel'),
+  Message: createEntityWrapper('Message'),
+  MergeIntegration: createEntityWrapper('MergeIntegration'),
+  ActionLog: createEntityWrapper('ActionLog'),
+  UserAppConfig: createEntityWrapper('UserAppConfig'),
 };
 
-// Auth wrapper (Base44-compatible interface)
+/**
+ * Auth wrapper (Base44-compatible interface)
+ */
 export const auth = {
   /**
    * Get current user (Base44 me() equivalent)
    */
   async me() {
-    const { data: { user }, error } = await supabase.auth.getUser();
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error || !user) return null;
 
-    if (error || !user) {
+      // Get extended user profile from users table
+      const { data: profile } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      return {
+        id: user.id,
+        email: user.email,
+        full_name: profile?.full_name || user.user_metadata?.full_name || '',
+        avatar_url: profile?.avatar_url || user.user_metadata?.avatar_url || '',
+        role: profile?.role || 'user',
+        company_id: profile?.company_id,
+        department_id: profile?.department_id,
+        credits: profile?.credits || 0,
+        language: profile?.language || 'en',
+        ...profile
+      };
+    } catch (error) {
+      console.error('[supabaseClient] auth.me error:', error);
       return null;
     }
-
-    // Get extended user data from users table
-    const { data: userData } = await supabase
-      .from('users')
-      .select('*')
-      .eq('auth_id', user.id)
-      .single();
-
-    return {
-      id: userData?.id || user.id,
-      auth_id: user.id,
-      email: user.email,
-      full_name: userData?.full_name || user.user_metadata?.full_name,
-      avatar_url: userData?.avatar_url || user.user_metadata?.avatar_url,
-      organization_id: userData?.organization_id,
-      role: userData?.role || 'user',
-      language: userData?.language || 'en',
-      ...userData
-    };
   },
 
   /**
-   * Sign in with email/password
+   * Update current user profile
    */
-  async signIn(email, password) {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
+  async updateMe(updates) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
 
-    if (error) throw error;
-    return data;
-  },
+      const { data, error } = await supabase
+        .from('users')
+        .update(updates)
+        .eq('id', user.id)
+        .select()
+        .single();
 
-  /**
-   * Sign in with OAuth provider
-   */
-  async signInWithProvider(provider) {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`
-      }
-    });
-
-    if (error) throw error;
-    return data;
-  },
-
-  /**
-   * Sign up with email/password
-   */
-  async signUp(email, password, metadata = {}) {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: metadata
-      }
-    });
-
-    if (error) throw error;
-    return data;
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('[supabaseClient] auth.updateMe error:', error);
+      throw error;
+    }
   },
 
   /**
    * Sign out
    */
-  async signOut() {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-  },
-
-  /**
-   * Logout (Base44 alias for signOut)
-   */
   async logout() {
-    return this.signOut();
+    await supabase.auth.signOut();
+    window.location.href = '/';
   },
 
   /**
-   * Update user profile
+   * Redirect to login
    */
-  async updateProfile(updates) {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
-
-    // Update auth metadata
-    await supabase.auth.updateUser({
-      data: updates
-    });
-
-    // Update users table
-    const { data, error } = await supabase
-      .from('users')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('auth_id', user.id)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
+  redirectToLogin(returnUrl = window.location.href) {
+    // Store return URL for after login
+    localStorage.setItem('returnUrl', returnUrl);
+    window.location.href = '/login';
   },
 
   /**
@@ -413,219 +373,147 @@ export const auth = {
    */
   onAuthStateChange(callback) {
     return supabase.auth.onAuthStateChange(callback);
-  },
-
-  /**
-   * Get session
-   */
-  async getSession() {
-    const { data: { session }, error } = await supabase.auth.getSession();
-    if (error) throw error;
-    return session;
-  },
-
-  /**
-   * Login with redirect (Base44 compatibility)
-   * Redirects to Supabase Auth UI or OAuth flow
-   */
-  async loginWithRedirect(callbackUrl) {
-    // Store callback URL for after auth
-    if (callbackUrl) {
-      localStorage.setItem('auth_callback_url', callbackUrl);
-    }
-
-    // Redirect to Supabase Auth UI (configured in Supabase dashboard)
-    const redirectTo = `${window.location.origin}/auth/callback`;
-
-    // Use Google OAuth by default (can be customized)
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo }
-    });
-
-    if (error) throw error;
-    return data;
-  },
-
-  /**
-   * Handle auth callback (after OAuth redirect)
-   */
-  async handleAuthCallback() {
-    const { data, error } = await supabase.auth.getSession();
-
-    if (error) throw error;
-
-    // Check for stored callback URL
-    const callbackUrl = localStorage.getItem('auth_callback_url');
-    if (callbackUrl) {
-      localStorage.removeItem('auth_callback_url');
-      window.location.href = callbackUrl;
-      return data;
-    }
-
-    return data;
-  },
-
-  /**
-   * Reset password
-   */
-  async resetPassword(email) {
-    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`
-    });
-    if (error) throw error;
-    return data;
-  },
-
-  /**
-   * Update password
-   */
-  async updatePassword(newPassword) {
-    const { data, error } = await supabase.auth.updateUser({
-      password: newPassword
-    });
-    if (error) throw error;
-    return data;
   }
 };
 
-// Cloud functions wrapper (using Edge Functions or local implementations)
+/**
+ * Functions wrapper (for edge functions)
+ */
 export const functions = {
   /**
    * Invoke an edge function
    */
   async invoke(functionName, params = {}) {
-    const { data, error } = await supabase.functions.invoke(functionName, {
-      body: params
-    });
+    try {
+      const { data, error } = await supabase.functions.invoke(functionName, {
+        body: params
+      });
 
-    if (error) {
-      console.error(`Error invoking function ${functionName}:`, error);
-      throw error;
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error) {
+      console.error(`[supabaseClient] functions.invoke(${functionName}) error:`, error);
+      return { data: null, error };
     }
-
-    return { data, error: null };
   }
 };
 
-// Storage wrapper
+/**
+ * Storage wrapper
+ */
 export const storage = {
   /**
    * Upload a file
    */
-  async upload(bucket, path, file, options = {}) {
-    const { data, error } = await supabase.storage
-      .from(bucket)
-      .upload(path, file, options);
+  async upload(bucket, path, file) {
+    try {
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .upload(path, file, { upsert: true });
 
-    if (error) throw error;
-    return data;
-  },
+      if (error) throw error;
 
-  /**
-   * Get public URL
-   */
-  getPublicUrl(bucket, path) {
-    const { data } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(path);
+      const { data: { publicUrl } } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(path);
 
-    return data.publicUrl;
-  },
-
-  /**
-   * Download a file
-   */
-  async download(bucket, path) {
-    const { data, error } = await supabase.storage
-      .from(bucket)
-      .download(path);
-
-    if (error) throw error;
-    return data;
-  },
-
-  /**
-   * Delete a file
-   */
-  async delete(bucket, paths) {
-    const pathArray = Array.isArray(paths) ? paths : [paths];
-    const { error } = await supabase.storage
-      .from(bucket)
-      .remove(pathArray);
-
-    if (error) throw error;
-    return true;
-  },
-
-  /**
-   * List files in a bucket
-   */
-  async list(bucket, path = '', options = {}) {
-    const { data, error } = await supabase.storage
-      .from(bucket)
-      .list(path, options);
-
-    if (error) throw error;
-    return data;
-  }
-};
-
-// Real-time subscriptions
-export const realtime = {
-  /**
-   * Subscribe to a channel
-   */
-  channel(name) {
-    return supabase.channel(name);
-  },
-
-  /**
-   * Remove a channel
-   */
-  removeChannel(channel) {
-    return supabase.removeChannel(channel);
-  },
-
-  /**
-   * Subscribe to table changes
-   */
-  onTableChange(table, callback, event = '*') {
-    const channel = supabase
-      .channel(`${table}_realtime`)
-      .on(
-        'postgres_changes',
-        { event, schema: 'public', table },
-        callback
-      )
-      .subscribe();
-
-    return () => supabase.removeChannel(channel);
-  }
-};
-
-// Export a Base44-compatible interface
-export const isyncso = {
-  entities,
-  auth,
-  functions: {
-    invoke: functions.invoke,
-    // Add individual function exports for compatibility
-    async generateCandidateIntelligence(params) {
-      return functions.invoke('generateCandidateIntelligence', params);
-    },
-    async generateOutreachMessage(params) {
-      return functions.invoke('generateOutreachMessage', params);
-    },
-    async assignCandidateRoundRobin(params) {
-      return functions.invoke('assignCandidateRoundRobin', params);
-    },
-    async analyzeCampaignProject(params) {
-      return functions.invoke('analyzeCampaignProject', params);
+      return { path: data.path, url: publicUrl };
+    } catch (error) {
+      console.error('[supabaseClient] storage.upload error:', error);
+      throw error;
     }
   },
-  storage,
-  realtime
+
+  /**
+   * Get public URL for a file
+   */
+  getPublicUrl(bucket, path) {
+    const { data: { publicUrl } } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(path);
+    return publicUrl;
+  }
 };
 
-export default isyncso;
+/**
+ * Agents wrapper (placeholder for Base44 agents API)
+ * Note: This requires implementation of agent functionality in Supabase
+ */
+export const agents = {
+  async listConversations(agentName) {
+    console.warn('[supabaseClient] agents.listConversations not fully implemented');
+    return [];
+  },
+
+  async createConversation(agentName, params = {}) {
+    console.warn('[supabaseClient] agents.createConversation not fully implemented');
+    return { id: crypto.randomUUID(), messages: [] };
+  },
+
+  async addMessage(conversationId, message) {
+    console.warn('[supabaseClient] agents.addMessage not fully implemented');
+    return { id: crypto.randomUUID(), ...message };
+  },
+
+  async updateConversation(conversationId, updates) {
+    console.warn('[supabaseClient] agents.updateConversation not fully implemented');
+    return { id: conversationId, ...updates };
+  },
+
+  getWhatsAppConnectURL(agentId) {
+    // WhatsApp integration not available with Supabase backend
+    return null;
+  }
+};
+
+/**
+ * Integrations wrapper
+ */
+export const integrations = {
+  Core: {
+    async InvokeLLM(params) {
+      return functions.invoke('invokeLLM', params);
+    },
+
+    async SendEmail(params) {
+      return functions.invoke('sendEmail', params);
+    },
+
+    async UploadFile({ file, bucket = 'uploads' }) {
+      const path = `${Date.now()}_${file.name}`;
+      return storage.upload(bucket, path, file);
+    },
+
+    async GenerateImage(params) {
+      return functions.invoke('generateImage', params);
+    },
+
+    async ExtractDataFromUploadedFile(params) {
+      return functions.invoke('extractDataFromUploadedFile', params);
+    },
+
+    async CreateFileSignedUrl(params) {
+      return functions.invoke('createFileSignedUrl', params);
+    },
+
+    async UploadPrivateFile({ file, bucket = 'private' }) {
+      const path = `${Date.now()}_${file.name}`;
+      return storage.upload(bucket, path, file);
+    }
+  }
+};
+
+/**
+ * Base44-compatible client export
+ * This provides the same interface as the Base44 SDK
+ */
+export const base44 = {
+  entities,
+  auth,
+  functions,
+  storage,
+  agents,
+  integrations
+};
+
+export default base44;

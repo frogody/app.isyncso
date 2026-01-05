@@ -1,116 +1,176 @@
 /**
- * Cloud Functions Export
- *
- * This module provides a unified interface for all cloud functions using Supabase Edge Functions.
+ * Edge Functions Wrapper
+ * Provides exports for all Supabase Edge Functions
  */
+import { functions } from './supabaseClient';
 
-import { functions as supabaseFunctions } from './supabaseClient';
-
-/**
- * Create a function wrapper that calls Supabase Edge Function
- */
-const createFunctionWrapper = (name) => {
-  return async (params = {}) => {
-    return supabaseFunctions.invoke(name, params);
-  };
+// Helper to create a function wrapper
+const createFunction = (name) => async (params) => {
+  return functions.invoke(name, params);
 };
 
-// Google Sheets integrations
-export const googleSheetsAuth = createFunctionWrapper('googleSheetsAuth');
-export const syncGoogleSheet = createFunctionWrapper('syncGoogleSheet');
-export const googleSheetsCallback = createFunctionWrapper('googleSheetsCallback');
-export const exchangeGoogleCode = createFunctionWrapper('exchangeGoogleCode');
+// Activity functions
+export const activitySession = createFunction('activity/session');
+export const activitySkillApplication = createFunction('activity/skillApplication');
 
-// API Key management
-export const generateApiKey = createFunctionWrapper('generateApiKey');
+// Recommendations functions
+export const recommendationsNextCourse = createFunction('recommendations/nextCourse');
+export const recommendationsPracticeChallenge = createFunction('recommendations/practiceChallenge');
 
-// Webhooks
-export const zapierWebhook = createFunctionWrapper('zapierWebhook');
+// User functions
+export const userSkillGap = createFunction('user/skillGap');
+export const userDashboard = createFunction('user/dashboard');
 
-// Chat & AI
-export const chatWithCandidates = createFunctionWrapper('chatWithCandidates');
-export const claudeClient = createFunctionWrapper('claudeClient');
+// Auth functions
+export const authDevice = createFunction('auth/device');
 
-// Candidate management
-export const assignCandidateRoundRobin = createFunctionWrapper('assignCandidateRoundRobin');
-export const generateCandidateIntelligence = createFunctionWrapper('generateCandidateIntelligence');
-export const bulkGenerateIntelligence = createFunctionWrapper('bulkGenerateIntelligence');
-export const regenerateAllIntelligence = createFunctionWrapper('regenerateAllIntelligence');
+// Automation functions
+export const automationSkillDecay = createFunction('automation/skillDecay');
+export const automationProgressCelebration = createFunction('automation/progressCelebration');
+export const automationSkillGapPriority = createFunction('automation/skillGapPriority');
+export const automationWeeklyReport = createFunction('automation/weeklyReport');
 
-// User & Organization management
-export const inviteUser = createFunctionWrapper('inviteUser');
-export const acceptInvitation = createFunctionWrapper('acceptInvitation');
-export const assignUserToOrganization = createFunctionWrapper('assignUserToOrganization');
-export const syncDomainUsers = createFunctionWrapper('syncDomainUsers');
-export const migrateCandidatesToOrganization = createFunctionWrapper('migrateCandidatesToOrganization');
-export const assignOrganizationToCandidates = createFunctionWrapper('assignOrganizationToCandidates');
-export const getUsersByIds = createFunctionWrapper('getUsersByIds');
-export const assignOwnersEvenly = createFunctionWrapper('assignOwnersEvenly');
+// Course functions
+export const courseGenerateFromActivity = createFunction('course/generateFromActivity');
+export const parsePdfCourses = createFunction('parsePdfCourses');
+export const createCourseFromTemplate = createFunction('createCourseFromTemplate');
 
-// Debug functions
-export const testUserData = createFunctionWrapper('testUserData');
-export const debugUserEntity = createFunctionWrapper('debugUserEntity');
+// Explorium functions
+export const exploriumPeople = createFunction('exploriumPeople');
+export const exploriumFirmographics = createFunction('exploriumFirmographics');
+export const exploriumTechnographics = createFunction('exploriumTechnographics');
+export const exploriumFunding = createFunction('exploriumFunding');
+export const exploriumCompanies = createFunction('exploriumCompanies');
 
-// Outreach
-export const generateOutreachMessage = createFunctionWrapper('generateOutreachMessage');
-export const createFollowUpTask = createFunctionWrapper('createFollowUpTask');
-export const handleFollowUpResponse = createFunctionWrapper('handleFollowUpResponse');
-export const generateFollowUpMessage = createFunctionWrapper('generateFollowUpMessage');
-export const createTaskAfterFollowUp = createFunctionWrapper('createTaskAfterFollowUp');
-export const clearOutreachAndTasks = createFunctionWrapper('clearOutreachAndTasks');
-export const createOutreachTask = createFunctionWrapper('createOutreachTask');
-export const getOutreachTasks = createFunctionWrapper('getOutreachTasks');
+// Utils functions
+export const utilsValidation = createFunction('utils/validation');
 
-// File generation
-export const generateFile = createFunctionWrapper('generateFile');
+// Context functions
+export const getUserContext = createFunction('getUserContext');
+export const getCompanyContext = createFunction('getCompanyContext');
 
-// MCP Tools
-export const mcpToolsConfig = createFunctionWrapper('mcpToolsConfig');
-export const mcpToolsHandler = createFunctionWrapper('mcpToolsHandler');
-export const mcpServer = createFunctionWrapper('mcpServer');
-export const generateMCPToken = createFunctionWrapper('generateMCPToken');
-export const testMcpServer = createFunctionWrapper('testMcpServer');
+// Company functions
+export const researchCompany = createFunction('researchCompany');
+export const getCompanyUsers = createFunction('getCompanyUsers');
+export const refreshCompanyEnrichment = createFunction('refreshCompanyEnrichment');
+export const enrichCompanyFromExplorium = createFunction('enrichCompanyFromExplorium');
+export const enrichCompanyProfile = createFunction('enrichCompanyProfile');
 
-// Google OAuth
-export const googleOAuthUnified = createFunctionWrapper('googleOAuthUnified');
-export const googleOAuthCallback = createFunctionWrapper('googleOAuthCallback');
+// Credits functions
+export const initializeUserCredits = createFunction('initializeUserCredits');
+export const addCreditsToUsers = createFunction('addCreditsToUsers');
+export const grantOnboardingCredits = createFunction('grantOnboardingCredits');
+export const adminAddCredits = createFunction('adminAddCredits');
 
-// LinkedIn profile pictures
-export const fetchLinkedInProfilePicture = createFunctionWrapper('fetchLinkedInProfilePicture');
-export const updateCandidateProfilePictures = createFunctionWrapper('updateCandidateProfilePictures');
-export const autoFetchProfilePicture = createFunctionWrapper('autoFetchProfilePicture');
-export const extractLinkedInProfilePicture = createFunctionWrapper('extractLinkedInProfilePicture');
-export const bulkExtractProfilePictures = createFunctionWrapper('bulkExtractProfilePictures');
-export const brightDataLinkedIn = createFunctionWrapper('brightDataLinkedIn');
-export const autoLoadAllProfilePictures = createFunctionWrapper('autoLoadAllProfilePictures');
-export const testBrightDataConnection = createFunctionWrapper('testBrightDataConnection');
+// Template/Course generation functions
+export const generateTemplateCourseContent = createFunction('generateTemplateCourseContent');
+export const populateAllTemplateCourses = createFunction('populateAllTemplateCourses');
+export const personalizeCourse = createFunction('personalizeCourse');
+export const generateTemplateLibrary = createFunction('generateTemplateLibrary');
+export const importCourseTemplates = createFunction('importCourseTemplates');
+export const importTemplates = createFunction('importTemplates');
+export const verifyCourseLibrary = createFunction('verifyCourseLibrary');
+export const batchImportTemplates = createFunction('batchImportTemplates');
+export const replaceCourseLibrary = createFunction('replaceCourseLibrary');
 
-// Campaign & Project
-export const analyzeCampaignProject = createFunctionWrapper('analyzeCampaignProject');
-export const dailyCampaignMatching = createFunctionWrapper('dailyCampaignMatching');
-export const scrapeWebsiteVacancies = createFunctionWrapper('scrapeWebsiteVacancies');
-export const deepScrapeVacancies = createFunctionWrapper('deepScrapeVacancies');
-export const generateCampaignOutreach = createFunctionWrapper('generateCampaignOutreach');
+// Sentinel AI functions
+export const getCompanyAISystems = createFunction('getCompanyAISystems');
+export const getSystemObligations = createFunction('getSystemObligations');
+export const getComplianceOverview = createFunction('getComplianceOverview');
+export const analyzeAISystem = createFunction('analyzeAISystem');
+export const createComplianceTrainingRecommendation = createFunction('createComplianceTrainingRecommendation');
+export const getSentinelLearningRecommendations = createFunction('getSentinelLearningRecommendations');
 
-// Location parsing
-export const parseLocationDescription = createFunctionWrapper('parseLocationDescription');
+// Prospect functions
+export const saveProspectList = createFunction('saveProspectList');
+export const searchProspects = createFunction('searchProspects');
 
-// Sync APIs (for mobile/external integrations)
-export const syncGetAllCandidates = createFunctionWrapper('syncGetAllCandidates');
-export const syncGetCandidateComplete = createFunctionWrapper('syncGetCandidateComplete');
-export const syncGetAllCampaigns = createFunctionWrapper('syncGetAllCampaigns');
-export const syncGetCampaignComplete = createFunctionWrapper('syncGetCampaignComplete');
-export const syncGetDashboardAnalytics = createFunctionWrapper('syncGetDashboardAnalytics');
-export const syncExportData = createFunctionWrapper('syncExportData');
+// Email functions
+export const verifyEmail = createFunction('verifyEmail');
+export const verifyEmailsBulk = createFunction('verifyEmailsBulk');
 
-// Export special functions
-export const mcpToolsGoogleDrive = createFunctionWrapper('mcpToolsGoogleDrive');
-export const mcpToolsGoogleMaps = createFunctionWrapper('mcpToolsGoogleMaps');
-export const mcpToolsBraveSearch = createFunctionWrapper('mcpToolsBraveSearch');
-export const mcpToolsGmail = createFunctionWrapper('mcpToolsGmail');
-export const utilsEvents = createFunctionWrapper('utilsEvents');
+// ICP Template functions
+export const saveICPTemplate = createFunction('saveICPTemplate');
+export const getICPTemplates = createFunction('getICPTemplates');
+export const loadICPTemplate = createFunction('loadICPTemplate');
 
-// Log backend (for debugging)
-if (typeof window !== 'undefined') {
-  console.log('[ISYNCSO Functions] Using Supabase Edge Functions');
-}
+// Export functions
+export const exportForSalesforce = createFunction('exportForSalesforce');
+export const exportForHubSpot = createFunction('exportForHubSpot');
+
+// Gamification functions
+export const updateGamification = createFunction('updateGamification');
+export const getLeaderboard = createFunction('getLeaderboard');
+export const generateCertificate = createFunction('generateCertificate');
+
+// Skills functions
+export const updateUserSkills = createFunction('updateUserSkills');
+export const getUserSkillMap = createFunction('getUserSkillMap');
+
+// Migration functions
+export const migrateCompanyData = createFunction('migrateCompanyData');
+export const verifyMigration = createFunction('verifyMigration');
+
+// Settings functions
+export const getUserSettings = createFunction('getUserSettings');
+export const updateUserSettings = createFunction('updateUserSettings');
+export const calculateProfileCompleteness = createFunction('calculateProfileCompleteness');
+
+// Account functions
+export const deleteUserAccount = createFunction('deleteUserAccount');
+export const deleteUser = createFunction('deleteUser');
+
+// Audio/Voice functions
+export const generateLessonAudio = createFunction('generateLessonAudio');
+export const voiceChat = createFunction('voiceChat');
+export const generateVoice = createFunction('generateVoice');
+export const generateVoiceStream = createFunction('generateVoiceStream');
+export const voiceChatx = createFunction('voiceChatx');
+
+// Analytics functions
+export const getTeamAnalytics = createFunction('getTeamAnalytics');
+export const getTeamMembers = createFunction('getTeamMembers');
+
+// Content functions
+export const remixContent = createFunction('remixContent');
+
+// Vision functions
+export const analyzeScreenWithClaude = createFunction('analyzeScreenWithClaude');
+
+// Clay/Growth functions
+export const generateClaySuggestions = createFunction('generateClaySuggestions');
+
+// Merge Integration functions
+export const mergeCreateLinkToken = createFunction('mergeCreateLinkToken');
+export const mergeExchangeToken = createFunction('mergeExchangeToken');
+export const mergeExecuteAction = createFunction('mergeExecuteAction');
+export const mergeDisconnect = createFunction('mergeDisconnect');
+export const mergeCheckLinkedAccount = createFunction('mergeCheckLinkedAccount');
+
+// Assistant functions
+export const personalAssistant = createFunction('personalAssistant');
+
+// LinkedIn functions
+export const enrichLinkedInProfile = createFunction('enrichLinkedInProfile');
+
+// Lib functions
+export const libContextGatherer = createFunction('lib/contextGatherer');
+
+// Legacy function name mappings for backwards compatibility
+// (allows old code using base44.functions['activity/session'] to continue working)
+export const functionMap = {
+  'activity/session': activitySession,
+  'activity/skillApplication': activitySkillApplication,
+  'recommendations/nextCourse': recommendationsNextCourse,
+  'recommendations/practiceChallenge': recommendationsPracticeChallenge,
+  'user/skillGap': userSkillGap,
+  'user/dashboard': userDashboard,
+  'auth/device': authDevice,
+  'automation/skillDecay': automationSkillDecay,
+  'automation/progressCelebration': automationProgressCelebration,
+  'automation/skillGapPriority': automationSkillGapPriority,
+  'automation/weeklyReport': automationWeeklyReport,
+  'course/generateFromActivity': courseGenerateFromActivity,
+  'utils/validation': utilsValidation,
+  'lib/contextGatherer': libContextGatherer,
+};

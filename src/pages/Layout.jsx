@@ -1,1012 +1,906 @@
 
-
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { User } from "@/api/entities";
-import { assignUserToOrganization } from "@/api/functions";
-import { useTranslation } from "@/components/utils/translations";
-import { Users, User as UserIcon, LogOut, Sparkles, Building2, CheckSquare, Briefcase, Activity, Menu, X, ChevronRight, ChevronLeft, Megaphone } from "lucide-react";
+import { base44 } from "@/api/base44Client";
+import { SENTINEL, THEME_COLORS, UI, FEATURES } from "@/lib/constants";
+import { logError } from "@/components/utils/errorHandler";
+import {
+  BookOpen,
+  Home,
+  User as UserIcon,
+  Settings as SettingsIcon,
+  BarChart3,
+  PlusCircle,
+  Menu,
+  Brain,
+  Sparkles,
+  LogOut,
+  Shield,
+  Server,
+  LifeBuoy,
+  LogIn,
+  Zap,
+  List,
+  Calendar,
+  FileText,
+  MessageSquare,
+  Bookmark,
+  LayoutDashboard,
+  Award,
+  Target,
+  Trophy,
+  Cpu,
+  Map,
+  Copy,
+  Library,
+  Megaphone,
+  Inbox,
+  Users,
+  Clock,
+  UsersRound,
+  Search,
+  GraduationCap,
+  Rocket,
+  Kanban,
+  Radio,
+  Briefcase,
+  FolderKanban,
+  ListTodo,
+  Contact,
+  Activity
+  } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import SyncAvatar from "../components/ui/SyncAvatar";
-import IconWrapper from "../components/ui/IconWrapper";
-import { haptics } from "@/components/utils/haptics";
-import { useIsMobile } from "@/components/utils/useIsMobile";
-import { motion, AnimatePresence } from "framer-motion";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/toaster";
 
-// Navigation items
+// Import icons directly - no lazy loading for icons
+import SentinelOrbitIcon from "@/components/icons/SentinelOrbitIcon";
+import SyncOrbitIcon from "@/components/icons/SyncOrbitIcon";
+import CoursesOrbitIcon from "@/components/icons/CoursesOrbitIcon";
+
+import GrowthOrbitIcon from "@/components/icons/GrowthOrbitIcon";
+
+// Direct imports to avoid lazy loading issues
+import OnboardingGuard from "@/components/layout/OnboardingGuard";
+import ErrorBoundary from "@/components/error/ErrorBoundary";
+import FloatingAgentTrigger from "@/components/agents/FloatingAgentTrigger";
+import AppsManagerModal, { AVAILABLE_APPS } from "@/components/layout/AppsManagerModal";
+
+// Import providers
+import { AchievementProvider } from "@/components/learn/AchievementContext";
+import { UserProvider } from "@/components/context/UserContext";
+
 const navigationItems = [
   {
-    title: "SYNC",
-    icon: Sparkles,
-    url: createPageUrl("Chat"),
-    group: "discovery",
-    useSyncAvatar: true
-  },
-  {
-    title: "Kandidaten",
-    icon: Users,
-    url: createPageUrl("Candidates"),
-    group: "discovery"
-  },
-  {
-    title: "Campagnes",
-    icon: Megaphone,
-    url: createPageUrl("Campaigns"),
-    group: "pipeline"
-  },
-  {
-    title: "Projecten",
-    icon: Briefcase,
-    url: createPageUrl("Projects"),
-    group: "pipeline"
-  },
-  {
-    title: "Taken",
-    icon: CheckSquare,
-    url: createPageUrl("Tasks"),
-    group: "pipeline"
-  },
-  {
     title: "Dashboard",
-    icon: Activity,
     url: createPageUrl("Dashboard"),
-    group: "pipeline"
-  }
+    icon: LayoutDashboard,
+  },
+  {
+    title: "CRM",
+    url: createPageUrl("CRMContacts"),
+    icon: Contact,
+  },
+  {
+    title: "Projects",
+    url: createPageUrl("Projects"),
+    icon: FolderKanban,
+  },
+  {
+    title: "Tasks",
+    url: createPageUrl("Tasks"),
+    icon: ListTodo,
+  },
+  {
+    title: "Inbox",
+    url: createPageUrl("Inbox"),
+    icon: Inbox,
+  },
+  {
+    title: "Actions",
+    url: createPageUrl("Actions"),
+    icon: Zap,
+  },
+  {
+    title: "Activity",
+    url: createPageUrl("Activity"),
+    icon: Activity,
+  },
+  {
+    title: "AI Assistant",
+    url: createPageUrl("AIAssistant"),
+    icon: Brain,
+  },
 ];
 
-// Fallback logo component
-const FallbackLogo = ({ size = 40 }) => (
-  <div
-    style={{
-      width: size,
-      height: size,
-      borderRadius: '8px',
-      background: 'linear-gradient(135deg, #EF4444, #DC2626)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontWeight: 'bold',
-      fontSize: size * 0.4,
-      color: 'white',
-      boxShadow: '0 0 20px rgba(239,68,68,0.3)'
-    }}
-  >
-    T
-  </div>
-);
+const ENGINE_ITEMS_CONFIG = {
+  growth: {
+    title: "Growth",
+    url: createPageUrl("Growth"),
+    icon: Rocket,
+    id: 'growth'
+  },
+  learn: {
+    title: "Learn",
+    url: createPageUrl("LearnDashboard"),
+    icon: GraduationCap,
+    id: 'learn'
+  },
+  sentinel: {
+    title: "Sentinel",
+    url: createPageUrl("SentinelDashboard"),
+    icon: Shield,
+    id: 'sentinel'
+  },
+};
 
-export default function Layout({ children, currentPageName }) {
-  const location = useLocation();
-  const [user, setUser] = useState(null);
-  const [hasCheckedOrganization, setHasCheckedOrganization] = useState(false);
-  const [sidebarExpanded, setSidebarExpanded] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [logoError, setLogoError] = useState(false);
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const isMobile = useIsMobile();
 
-  const { t } = useTranslation(user?.language || 'nl');
 
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const userData = await User.me();
-        setUser(userData);
+const adminItems = [];
 
-        if (!userData.organization_id && !hasCheckedOrganization) {
-          setHasCheckedOrganization(true);
-          try {
-            const response = await assignUserToOrganization();
-
-            if (response.data?.success && response.data?.organization_id) {
-              const updatedUserData = await User.me();
-              setUser(updatedUserData);
-            }
-          } catch (error) {
-            console.error("Error assigning user to organization:", error);
-          }
-        }
-      } catch (error) {
-        console.error("Error loading user:", error);
-        setUser(null);
-      } finally {
-        setIsInitialized(true);
+// Get secondary nav config based on current route
+function getSecondaryNavConfig(pathname, stats = {}) {
+  // SENTINEL routes
+      if (pathname.includes('Sentinel') || pathname.includes('AISystem') || pathname.includes('Compliance') || pathname.includes('Document') || pathname.includes('RiskAssessment')) {
+        return {
+          title: 'SENTINEL',
+          color: 'sage',
+          agent: 'sentinel',
+          items: [
+            { label: 'AI Systems', path: createPageUrl('AISystemInventory'), icon: Cpu, badge: stats.systems },
+            { label: 'Roadmap', path: createPageUrl('ComplianceRoadmap'), icon: Map, badge: stats.tasks },
+            { label: 'Documents', path: createPageUrl('DocumentGenerator'), icon: FileText },
+          ]
+        };
       }
-    };
-
-    loadUser();
-  }, [hasCheckedOrganization]);
-
-  const handleChatClick = useCallback((e) => {
-    if (e && e.preventDefault) {
-      e.preventDefault();
-    }
-    if (e && e.stopPropagation) {
-      e.stopPropagation();
-    }
-
-    haptics.medium();
-
-    // Navigate to SYNC chat page
-    window.location.href = createPageUrl("Chat");
-
-    return false;
-  }, []);
-
-  useEffect(() => {
-    document.title = "iSyncSO";
-  }, []);
-
-  const toggleMobileMenu = () => {
-    haptics.light();
-    setShowMobileMenu(!showMobileMenu);
-  };
-
-  const handleLogout = async () => {
-    if (confirm(t('confirm_logout'))) {
-      haptics.medium();
-      await User.logout();
-    }
-  };
-
-  const groupedNavItems = {
-    discovery: navigationItems.filter(item => item.group === "discovery"),
-    pipeline: navigationItems.filter(item => item.group === "pipeline")
-  };
-
-  if (!isInitialized) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
-        <style jsx>{`
-          :root {
-            --bg: #151A1F;
-            --surface: #1A2026;
-            --txt: #E9F0F1;
-            --muted: #B5C0C4;
-            --accent: #EF4444;
-            --accent2: #DC2626;
+  
+  // GROWTH routes (merged with CIDE)
+          if (pathname.includes('Growth') || pathname.includes('Sequences') || pathname.includes('Deals') || pathname.includes('Leads') || pathname.includes('Insights') || pathname.includes('Prospect') || pathname.includes('Research') || pathname.includes('Pipeline')) {
+            return {
+              title: 'GROWTH',
+              color: 'indigo',
+              agent: 'growth',
+              items: [
+                { label: 'Pipeline', path: createPageUrl('GrowthPipeline'), icon: Kanban },
+                { label: 'Prospects', path: createPageUrl('GrowthProspects'), icon: Users },
+                { label: 'Campaigns', path: createPageUrl('GrowthCampaigns'), icon: Megaphone },
+                { label: 'Signals', path: createPageUrl('GrowthSignals'), icon: Radio },
+              ]
+            };
           }
-          body {
-            background: var(--bg) !important;
-            color: var(--txt) !important;
+
+      // SYNC routes - no secondary nav needed as it only has dashboard
+      if (pathname.includes('Sync')) {
+        return null;
+      }
+  
+  // LEARN routes
+                  if (pathname.includes('Learn') || pathname.includes('Course') || pathname.includes('Lesson') || pathname.includes('Certificate') || pathname.includes('Skill') || pathname.includes('Leaderboard')) {
+                    return {
+                      title: 'LEARN',
+                      color: 'cyan',
+                      agent: 'learn',
+                      items: [
+                        { label: 'My Courses', path: createPageUrl('Learn'), icon: BookOpen },
+                        { label: 'Skills', path: createPageUrl('SkillMap'), icon: Target, badge: stats.skills },
+                      ]
+                    };
+                  }
+
+          // LEARN Dashboard direct access
+          if (pathname.includes('LearnDashboard')) {
+            return {
+              title: 'LEARN',
+              color: 'cyan',
+              agent: 'learn',
+              items: [
+                { label: 'My Courses', path: createPageUrl('Learn'), icon: BookOpen },
+                { label: 'Skills', path: createPageUrl('SkillMap'), icon: Target, badge: stats.skills },
+              ]
+            };
           }
-        `}</style>
-        <div className="flex flex-col items-center gap-4">
-          <SyncAvatar size={48} />
-          <p className="text-lg font-medium" style={{ color: 'var(--txt)' }}>{t('loading_talent')}</p>
-        </div>
-      </div>
-    );
+  
+  return null;
+}
+
+// Color classes mapped from theme constants
+const COLOR_CLASSES = {
+  sage: {
+    text: THEME_COLORS.sentinel.text,
+    bg: THEME_COLORS.sentinel.bg,
+    border: THEME_COLORS.sentinel.border,
+    borderSolid: THEME_COLORS.sentinel.solid,
+    glow: THEME_COLORS.sentinel.glow
+  },
+  indigo: {
+    text: THEME_COLORS.growth.text,
+    bg: THEME_COLORS.growth.bg,
+    border: THEME_COLORS.growth.border,
+    borderSolid: THEME_COLORS.growth.solid,
+    glow: THEME_COLORS.growth.glow
+  },
+  cyan: {
+    text: THEME_COLORS.learn.text,
+    bg: THEME_COLORS.learn.bg,
+    border: THEME_COLORS.learn.border,
+    borderSolid: THEME_COLORS.learn.solid,
+    glow: THEME_COLORS.learn.glow
+  },
+  orange: {
+    text: 'text-orange-400',
+    bg: 'bg-orange-950/30',
+    border: 'border-orange-500/30',
+    borderSolid: 'bg-orange-500',
+    glow: 'shadow-[0_0_10px_rgba(249,115,22,0.5)]'
+  },
+  red: {
+    text: 'text-red-400',
+    bg: 'bg-red-950/30',
+    border: 'border-red-500/30',
+    borderSolid: 'bg-red-500',
+    glow: 'shadow-[0_0_10px_rgba(239,68,68,0.5)]'
   }
+};
 
-  if (isMobile) {
-    return (
-      <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
-        <style jsx>{`
-          :root {
-            --bg: #151A1F;
-            --surface: #1A2026;
-            --txt: #E9F0F1;
-            --muted: #B5C0C4;
-            --accent: #EF4444;
-            --accent2: #DC2626;
-          }
-          body {
-            background: var(--bg) !important;
-            color: var(--txt) !important;
-          }
-          .menu-overlay {
-            position: fixed;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            width: 280px;
-            background: linear-gradient(180deg, rgba(26,32,38,.98), rgba(21,26,31,.98));
-            backdrop-filter: blur(20px);
-            border-left: 1px solid rgba(255,255,255,.08);
-            box-shadow: -4px 0 24px rgba(0,0,0,.4);
-            z-index: 100;
-          }
-          .menu-backdrop {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,.6);
-            backdrop-filter: blur(4px);
-            z-index: 99;
-          }
-        `}</style>
+// Header offset constant for secondary sidebar alignment
+const SECONDARY_SIDEBAR_HEADER_OFFSET = 'pt-[56px]';
 
-        <div className="fixed top-0 left-0 right-0 z-50 px-4 py-3 flex items-center justify-between"
-             style={{
-               background: 'linear-gradient(180deg, rgba(21,26,31,.98), rgba(21,26,31,.95))',
-               borderBottom: '1px solid rgba(255,255,255,.06)',
-               backdropFilter: 'blur(20px)'
-             }}>
-          <div className="flex items-center gap-3">
-            {!logoError ? (
-              <img
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68d43cf2c324ccd03de6bce5/9821df82f_isyncsotalentredtransparantlogo.png"
-                alt="iSyncSO logo"
-                className="w-8 h-8 object-contain flex-shrink-0"
-                style={{ background: 'transparent' }}
-                onError={() => setLogoError(true)}
-              />
-            ) : (
-              <FallbackLogo size={32} />
-            )}
-            <h1 className="text-xl font-bold" style={{ color: 'var(--txt)' }}>iSyncSO</h1>
-          </div>
-          <Button
-            onClick={toggleMobileMenu}
-            size="icon"
-            variant="ghost"
-            className="h-10 w-10 rounded-lg"
-            style={{
-              background: 'rgba(255,255,255,.04)',
-              border: '1px solid rgba(255,255,255,.08)'
-            }}
-          >
-            <Menu className="w-5 h-5" style={{ color: 'var(--txt)' }} />
-          </Button>
-        </div>
+// Secondary Sidebar Component
+function SecondarySidebar({ config, location }) {
+  if (!config) return null;
 
-        <AnimatePresence>
-          {showMobileMenu && (
-            <>
-              <motion.div
-                className="menu-backdrop"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={toggleMobileMenu}
-              />
-
-              <motion.div
-                className="menu-overlay"
-                initial={{ x: 280 }}
-                animate={{ x: 0 }}
-                exit={{ x: 280 }}
-                transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              >
-                <div className="p-6 border-b" style={{ borderColor: 'rgba(255,255,255,.06)' }}>
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-bold" style={{ color: 'var(--txt)' }}>{t('settings')}</h2>
-                    <Button
-                      onClick={toggleMobileMenu}
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8"
-                    >
-                      <X className="w-5 h-5" style={{ color: 'var(--muted)' }} />
-                    </Button>
-                  </div>
-
-                  {user && (
-                    <Link
-                      to={createPageUrl("Profile")}
-                      onClick={() => {
-                        haptics.light();
-                        setShowMobileMenu(false);
-                      }}
-                      className="flex items-center gap-3 p-3 rounded-lg transition-all hover:bg-white/[0.02]"
-                      style={{ background: 'rgba(255,255,255,.04)' }}
-                    >
-                      <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-800 flex items-center justify-center flex-shrink-0">
-                        {user.profile_picture ? (
-                          <img src={user.profile_picture} alt="Profile" className="w-full h-full object-cover" />
-                        ) : (
-                          <UserIcon className="w-6 h-6" style={{ color: 'var(--muted)' }} />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold truncate" style={{ color: 'var(--txt)' }}>
-                          {user.full_name}
-                        </p>
-                        <p className="text-sm truncate" style={{ color: 'var(--muted)' }}>
-                          {user.job_title || t('default_job_title')}
-                        </p>
-                      </div>
-                    </Link>
-                  )}
-                </div>
-
-                <div className="p-4 space-y-2">
-                  {/* Replaced WhatsApp button with SYNC Chat Link */}
-                  <Link
-                    to={createPageUrl("Chat")}
-                    onClick={(e) => {
-                      setShowMobileMenu(false); // Close mobile menu after clicking
-                      handleChatClick(e); // Use the new handler
-                    }}
-                    className="w-full flex items-center gap-3 p-4 rounded-lg transition-all"
-                    style={{
-                      background: 'rgba(239, 68, 68, .08)', // Accent red background
-                      border: '1px solid rgba(239, 68, 68, .25)' // Accent red border
-                    }}
-                  >
-                    <Sparkles className="w-5 h-5" style={{ color: 'var(--accent)' }} /> {/* SYNC icon */}
-                    <span className="font-medium" style={{ color: 'var(--accent)' }}>
-                      {t('SYNC')}
-                    </span>
-                  </Link>
-
-                  <Link
-                    to={createPageUrl("OrganizationSettings")}
-                    onClick={() => {
-                      haptics.light();
-                      setShowMobileMenu(false);
-                    }}
-                    className="flex items-center gap-3 p-4 rounded-lg transition-all"
-                    style={{
-                      background: 'rgba(255,255,255,.04)',
-                      border: '1px solid rgba(255,255,255,.08)'
-                    }}
-                  >
-                    <IconWrapper icon={Building2} size={20} variant="default" glow={true} />
-                    <span className="font-medium" style={{ color: 'var(--txt)' }}>{t('nav_organization')}</span>
-                  </Link>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowMobileMenu(false);
-                      handleLogout();
-                    }}
-                    className="w-full flex items-center gap-3 p-4 rounded-lg transition-all"
-                    style={{
-                      background: 'rgba(239,68,68,.08)',
-                      border: '1px solid rgba(239,68,68,.25)'
-                    }}
-                  >
-                    <IconWrapper icon={LogOut} size={20} variant="accent" glow={true} />
-                    <span className="font-medium" style={{ color: '#FCA5A5' }}>{t('nav_logout')}</span>
-                  </button>
-                </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
-
-        <div style={{ paddingTop: '60px' }}>
-          {children}
-        </div>
-
-        {currentPageName !== 'Chat' && (
-          <div className="fixed bottom-0 left-0 right-0 z-50 safe-area-inset-bottom" style={{
-            background: 'var(--surface)',
-            borderTop: '1px solid rgba(255,255,255,.06)',
-            paddingBottom: 'env(safe-area-inset-bottom, 0px)'
-          }}>
-            <div className="flex items-center justify-around px-2 py-2">
-              {navigationItems.filter(item => item.group === "discovery").map((item) => {
-                const isActive = location.pathname === item.url;
-                return (
-                  <Link
-                    key={item.title}
-                    to={item.url}
-                    onClick={() => haptics.light()}
-                    className="flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-all"
-                    style={{
-                      background: isActive ? 'rgba(239, 68, 68, .08)' : 'transparent',
-                      color: isActive ? 'var(--accent)' : 'var(--muted)'
-                    }}
-                  >
-                    {item.useSyncAvatar ? (
-                      <SyncAvatar size={20} variant={isActive ? "default" : "grey"} />
-                    ) : (
-                      <IconWrapper
-                        icon={item.icon}
-                        size={20}
-                        variant={isActive ? "accent" : "default"}
-                        glow={false}
-                      />
-                    )}
-                    <span className="text-xs mt-1">{item.title}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // Desktop/Tablet layout with sidebar
+  const colors = COLOR_CLASSES[config.color] || COLOR_CLASSES.cyan;
+  
   return (
-    <div className="min-h-screen flex w-full" style={{ background: 'var(--bg)' }}>
-      <style jsx>{`
-        :root {
-          --bg: #151A1F;
-          --surface: #1A2026;
-          --txt: #E9F0F1;
-          --muted: #B5C0C4;
-          --accent: #EF4444;
-          --accent2: #DC2626;
-        }
-
-        body {
-          background: var(--bg) !important;
-          color: var(--txt) !important;
-        }
-
-        .sidebar-toggle {
-          position: fixed;
-          left: 0px;
-          top: 65%;
-          transform: translateY(-50%);
-          z-index: 55;
-          width: 12px;
-          height: 80px;
-          background: linear-gradient(135deg, rgba(239,68,68,.15), rgba(220,38,38,.12));
-          border: 1px solid rgba(239,68,68,.3);
-          border-left: none;
-          border-radius: 0 12px 12px 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all .2s ease;
-          box-shadow: 2px 0 12px rgba(239,68,68,.2);
-        }
-        .sidebar-toggle:hover {
-          width: 16px;
-          background: linear-gradient(135deg, rgba(239,68,68,.25), rgba(220,38,38,.2));
-          border-color: rgba(239,68,68,.4);
-          box-shadow: 3px 0 16px rgba(239,68,68,.3);
-        }
-        .sidebar-toggle-icon {
-          color: #EF4444;
-          filter: drop-shadow(0 0 4px rgba(239,68,68,.4));
-        }
-
-        .glass-card {
-          background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.015)), rgba(26,32,38,.35);
-          border: 1px solid rgba(255,255,255,.06);
-          box-shadow: 0 4px 12px rgba(0,0,0,.15), inset 0 1px 0 rgba(255,255,255,.04);
-          backdrop-filter: blur(8px);
-          border-radius: 16px;
-        }
-
-        .btn-primary {
-          background: rgba(239,68,68,.08) !important;
-          color: #FFCCCB !important;
-          border: 1px solid rgba(239,68,68,.25) !important;
-          border-radius: 12px !important;
-          transition: all .2s ease !important;
-        }
-
-        .btn-primary:hover {
-          background: rgba(239,68,68,.12) !important;
-          transform: translateY(-0.5px) !important;
-          border-color: rgba(239,68,68,.35) !important;
-          color: #E9F0F1 !important;
-          box-shadow: 0 2px 8px rgba(239,68,68,.15) !important;
-        }
-
-        .btn-outline {
-          background: transparent !important;
-          color: var(--muted) !important;
-          border: 1px solid rgba(255,255,255,.08) !important;
-          border-radius: 12px !important;
-        }
-        .btn-outline:hover {
-          background: rgba(255,255,255,.03) !important;
-          color: var(--txt) !important;
-        }
-
-        main input,
-        main textarea,
-        main select,
-        main [role="combobox"],
-        main .select-trigger,
-        .glass-card input,
-        .glass-card textarea,
-        .glass-card select {
-          background: transparent !important;
-          color: var(--txt) !important;
-          border-color: rgba(255,255,255,.08) !important;
-        }
-        main input::placeholder,
-        main textarea::placeholder {
-          color: var(--muted) !important;
-        }
-        main .hover\\:bg-gray-800\\/50:hover {
-          background: rgba(255,255,255,.03) !important;
-        }
-
-        .glass-card .popover,
-        .glass-card .dropdown-menu,
-        [role="menu"],
-        .radix-themes {
-          background: rgba(26,32,38,.9) !important;
-          border-color: rgba(255,255,255,.04) !important;
-          color: var(--txt) !important;
-        }
-
-        .glass-card table thead,
-        main table thead {
-          background: linear-gradient(180deg, rgba(239,68,68,0.08), rgba(239,68,68,0.04)) !important;
-          backdrop-filter: blur(4px);
-          border-bottom: 1px solid rgba(239,68,68,0.15) !important;
-          border-top-left-radius: 12px;
-          border-top-right-radius: 12px;
-          overflow: hidden;
-        }
-        .glass-card table thead th,
-        main table thead th {
-          color: var(--txt) !important;
-        }
-
-        main .shadow-sm,
-        main .rounded-lg.border {
-          background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.015)), rgba(26,32,38,.35) !important;
-          border: 1px solid rgba(255,255,255,.06) !important;
-          box-shadow: 0 4px 12px rgba(0,0,0,.15), inset 0 1px 0 rgba(255,255,255,.04) !important;
-          backdrop-filter: blur(8px) !important;
-          border-radius: 16px !important;
-        }
-
-        .badge,
-        .badge-variant-outline {
-          border-color: rgba(255,255,255,.08) !important;
-          background: rgba(255,255,255,.025) !important;
-          color: var(--txt) !important;
-        }
-
-        .glass-divider,
-        main .border-t,
-        main .border-b {
-          border-color: rgba(255,255,255,.04) !important;
-        }
-
-        .switch-accent span {
-          background-color: var(--accent) !important;
-        }
-        .switch-accent:disabled span {
-          opacity: 0.5;
-        }
-
-        html {
-          scrollbar-width: thin;
-          scrollbar-color: rgba(255,255,255,0.05) transparent;
-        }
-        *::-webkit-scrollbar {
-          width: 8px;
-          height: 8px;
-        }
-        *::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        *::-webkit-scrollbar-thumb {
-          background: rgba(255,255,255,0.04);
-          border-radius: 8px;
-          border: 1px solid transparent;
-          background-clip: padding-box;
-        }
-        *::-webkit-scrollbar-thumb:hover {
-          background: rgba(255,255,255,0.08);
-        }
-        *::-webkit-scrollbar-corner {
-          background: transparent;
-        }
-      `}</style>
-
-      {/* Fixed minimal sidebar */}
-      <div
-        className="fixed top-0 left-0 h-full z-50"
-        style={{
-          width: '80px',
-          background: 'var(--surface)',
-          borderRight: '1px solid rgba(255,255,255,.06)',
-        }}
-      >
-        <div className="flex flex-col h-full justify-between">
-          <div className="flex-shrink-0">
-            <div className="border-b p-4 h-20 flex items-center justify-center" style={{ borderColor: 'rgba(255,255,255,.06)' }}>
-              {!logoError ? (
-                <img
-                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68d43cf2c324ccd03de6bce5/9821df82f_isyncsotalentredtransparantlogo.png"
-                  alt="iSyncSO logo"
-                  className="w-10 h-10 object-contain"
-                  style={{ background: 'transparent' }}
-                  onError={() => setLogoError(true)}
-                />
-              ) : (
-                <FallbackLogo size={40} />
-              )}
-            </div>
-
-            <div className="p-3 mt-4">
-              <div className="h-5 mb-2" />
-              {groupedNavItems.discovery.map((item) => {
-                const isActive = location.pathname === item.url;
-                return (
-                  <Link
-                    key={item.title}
-                    to={item.url}
-                    onClick={() => haptics.light()}
-                    className={`nav-item relative transition-all duration-200 rounded-lg mb-1 flex items-center h-12 group ${isActive ? 'active' : ''}`}
-                    style={{
-                      background: isActive ? 'rgba(239, 68, 68, .08)' : 'transparent',
-                      color: isActive ? 'var(--accent)' : 'var(--muted)'
-                    }}
-                    title={item.title}
-                  >
-                    <div className="w-full flex-shrink-0 flex items-center justify-center">
-                      {item.useSyncAvatar ? (
-                        <SyncAvatar size={28} variant={isActive ? "default" : "grey"} />
-                      ) : (
-                        <IconWrapper
-                          icon={item.icon}
-                          size={22}
-                          variant={isActive ? "accent" : "default"}
-                          glow={true}
-                        />
-                      )}
-                    </div>
-                    {isActive && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          left: 0,
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          height: '60%',
-                          width: '3px',
-                          borderRadius: '3px',
-                          background: '#EF4444',
-                          boxShadow: '0 0 8px rgba(239,68,68,.3)'
-                        }}
-                      />
-                    )}
-                  </Link>
-                );
-              })}
-
-              <div className="my-4 border-t" style={{ borderColor: 'rgba(255,255,255,.04)' }} />
-
-              <div className="h-5 mb-2" />
-              {groupedNavItems.pipeline.map((item) => {
-                const isActive = location.pathname === item.url;
-                return (
-                  <Link
-                    key={item.title}
-                    to={item.url}
-                    onClick={() => haptics.light()}
-                    className={`nav-item relative transition-all duration-200 rounded-lg mb-1 flex items-center h-12 group ${isActive ? 'active' : ''}`}
-                    style={{
-                      background: isActive ? 'rgba(239, 68, 68, .08)' : 'transparent',
-                      color: isActive ? 'var(--accent)' : 'var(--muted)'
-                    }}
-                    title={item.title}
-                  >
-                    <div className="w-full flex-shrink-0 flex items-center justify-center">
-                      <IconWrapper
-                        icon={item.icon}
-                        size={22}
-                        variant={isActive ? "accent" : "default"}
-                        glow={true}
-                      />
-                    </div>
-                    {isActive && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          left: 0,
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          height: '60%',
-                          width: '3px',
-                          borderRadius: '3px',
-                          background: '#EF4444',
-                          boxShadow: '0 0 8px rgba(239,68,68,.3)'
-                        }}
-                      />
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="flex-shrink-0">
-            <div className="p-3">
-              {/* Replaced WhatsApp button with SYNC Chat Link */}
-              <Link
-                to={createPageUrl("Chat")}
-                onClick={handleChatClick}
-                className="nav-item relative transition-all duration-200 rounded-lg mb-1 flex items-center h-12 group w-full"
-                style={{
-                  background: 'rgba(239, 68, 68, .08)',
-                  border: '1px solid rgba(239, 68, 68, .25)'
-                }}
-                title={t('SYNC')}
-              >
-                <div className="w-full flex-shrink-0 flex items-center justify-center">
-                  <Sparkles className="w-5 h-5" style={{ color: 'var(--accent)' }} />
-                </div>
-              </Link>
-
-              <Link
-                to={createPageUrl("OrganizationSettings")}
-                onClick={() => haptics.light()}
-                className={`nav-item relative transition-all duration-200 rounded-lg mb-1 flex items-center h-12 group ${location.pathname === createPageUrl("OrganizationSettings") ? 'active' : ''}`}
-                style={{
-                  background: location.pathname === createPageUrl("OrganizationSettings") ? "rgba(239, 68, 68, .08)" : "transparent",
-                  color: location.pathname === createPageUrl("OrganizationSettings") ? "var(--accent)" : "var(--muted)"
-                }}
-                title={t('nav_organization')}
-              >
-                <div className="w-full h-full flex-shrink-0 flex items-center justify-center">
-                  <IconWrapper
-                    icon={Building2}
-                    size={22}
-                    variant={location.pathname === createPageUrl("OrganizationSettings") ? "accent" : "default"}
-                    glow={true}
-                  />
-                </div>
-                {location.pathname === createPageUrl("OrganizationSettings") && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      left: 0,
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      height: '60%',
-                      width: '3px',
-                      borderRadius: '3px',
-                      background: '#EF4444',
-                      boxShadow: '0 0 8px rgba(239,68,68,.3)'
-                    }}
-                  />
-                )}
-              </Link>
-            </div>
-
-            <div className="border-t p-3" style={{ borderColor: 'rgba(255,255,255,.06)' }}>
-              {user && (
-                <Link
-                  to={createPageUrl("Profile")}
-                  onClick={() => haptics.light()}
-                  className="flex justify-center p-2 h-14 items-center rounded-lg transition-all hover:bg-white/[0.02]"
-                  title={user.full_name}
-                >
-                  <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-800 flex items-center justify-center">
-                    {user.profile_picture ? (
-                      <img src={user.profile_picture} alt="Profile" className="w-full h-full object-cover" />
-                    ) : (
-                      <UserIcon className="w-4 h-4" style={{ color: 'var(--muted)' }} />
-                    )}
-                  </div>
-                </Link>
-              )}
-            </div>
-          </div>
-        </div>
+    <div className="hidden lg:flex flex-col w-[80px] bg-black border-r border-white/5 relative z-10 animate-in slide-in-from-left duration-300 overflow-hidden">
+      {/* Header */}
+      <div className={`px-4 py-4 flex items-center justify-center ${SECONDARY_SIDEBAR_HEADER_OFFSET} relative z-10`}>
+        <h3 className={`text-[10px] font-bold uppercase tracking-widest ${colors.text}`}>
+          {config.title}
+        </h3>
       </div>
-
-      {/* Toggle button for expanded sidebar */}
-      <AnimatePresence mode="wait">
-        {!sidebarExpanded && (
-          <motion.button
-            key="collapsed-toggle"
-            initial={{ x: -50, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -50, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            onClick={() => {
-              haptics.light();
-              setSidebarExpanded(true);
-            }}
-            className="sidebar-toggle"
-          >
-            <ChevronRight className="w-4 h-4 sidebar-toggle-icon" />
-          </motion.button>
-        )}
-      </AnimatePresence>
-
-      {/* Expanded sidebar overlay */}
-      <AnimatePresence>
-        {sidebarExpanded && (
-          <motion.div
-            initial={{ x: -256, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -256, opacity: 0 }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed top-0 left-20 h-full z-40"
-            style={{
-              width: '176px',
-              background: 'var(--surface)',
-              borderRight: '1px solid rgba(255,255,255,.06)',
-            }}
-          >
-            <div className="flex flex-col h-full justify-between">
-              <div className="flex-shrink-0">
-                <div className="border-b p-4 h-20 flex items-center justify-between" style={{ borderColor: 'rgba(255,255,255,.06)' }}>
-                  <h2 className="text-xl font-bold" style={{ color: 'var(--txt)' }}>iSyncSO</h2>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      haptics.light();
-                      setSidebarExpanded(false);
-                    }}
-                    className="h-8 w-8"
-                  >
-                    <ChevronLeft className="w-5 h-5" style={{ color: 'var(--muted)' }} />
-                  </Button>
-                </div>
-
-                <div className="p-3 mt-4">
-                  <div className="text-xs font-semibold uppercase tracking-wider mb-2 px-3 h-5" style={{ color: 'var(--muted)', opacity: 0.5 }}>
-                    {t('group_discovery')}
-                  </div>
-                  {groupedNavItems.discovery.map((item) => {
-                    const isActive = location.pathname === item.url;
-                    return (
-                      <Link
-                        key={item.title}
-                        to={item.url}
-                        onClick={() => {
-                          haptics.light();
-                          setSidebarExpanded(false);
-                        }}
-                        className={`nav-item relative transition-all duration-200 rounded-lg mb-1 flex items-center h-12 group px-3 ${isActive ? 'active' : ''}`}
-                        style={{
-                          background: isActive ? 'rgba(239, 68, 68, .08)' : 'transparent',
-                          color: isActive ? 'var(--accent)' : 'var(--muted)'
-                        }}
-                      >
-                        <span className="font-semibold text-sm">
-                          {item.title}
-                        </span>
-                        {isActive && (
-                          <div
-                            style={{
-                              position: 'absolute',
-                              left: 0,
-                              top: '50%',
-                              transform: 'translateY(-50%)',
-                              height: '60%',
-                              width: '3px',
-                              borderRadius: '3px',
-                              background: '#EF4444',
-                              boxShadow: '0 0 8px rgba(239,68,68,.3)'
-                            }}
-                          />
-                        )}
-                      </Link>
-                    );
-                  })}
-
-                  <div className="my-4 border-t" style={{ borderColor: 'rgba(255,255,255,.04)' }} />
-
-                  <div className="text-xs font-semibold uppercase tracking-wider mb-2 px-3 h-5" style={{ color: 'var(--muted)', opacity: 0.5 }}>
-                    {t('group_pipeline')}
-                  </div>
-                  {groupedNavItems.pipeline.map((item) => {
-                    const isActive = location.pathname === item.url;
-                    return (
-                      <Link
-                        key={item.title}
-                        to={item.url}
-                        onClick={() => {
-                          haptics.light();
-                          setSidebarExpanded(false);
-                        }}
-                        className={`nav-item relative transition-all duration-200 rounded-lg mb-1 flex items-center h-12 group px-3 ${isActive ? 'active' : ''}`}
-                        style={{
-                          background: isActive ? 'rgba(239, 68, 68, .08)' : 'transparent',
-                          color: isActive ? 'var(--accent)' : 'var(--muted)'
-                        }}
-                      >
-                        <span className="font-semibold text-sm">
-                          {item.title}
-                        </span>
-                        {isActive && (
-                          <div
-                            style={{
-                              position: 'absolute',
-                              left: 0,
-                              top: '50%',
-                              transform: 'translateY(-50%)',
-                              height: '60%',
-                              width: '3px',
-                              borderRadius: '3px',
-                              background: '#EF4444',
-                              boxShadow: '0 0 8px rgba(239,68,68,.3)'
-                            }}
-                          />
-                        )}
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="flex-shrink-0">
-                <div className="p-3">
-                  {/* Replaced WhatsApp button with SYNC Chat Link */}
+      
+      <TooltipProvider delayDuration={200}>
+        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-2 scrollbar-hide">
+          {config.items.map((item) => {
+            const isActive = location.pathname === item.path;
+            const Icon = item.icon;
+            
+            return (
+              <Tooltip key={item.label}>
+                <TooltipTrigger asChild>
                   <Link
-                    to={createPageUrl("Chat")}
-                    onClick={(e) => {
-                      setSidebarExpanded(false); // Close sidebar after clicking
-                      handleChatClick(e); // Use the new handler
-                    }}
-                    className="nav-item relative transition-all duration-200 rounded-lg mb-1 flex items-center h-12 group px-3 gap-2 w-full"
-                    style={{
-                      background: 'rgba(239, 68, 68, .08)',
-                      border: '1px solid rgba(239, 68, 68, .25)',
-                      color: 'var(--accent)'
-                    }}
+                    to={item.path}
+                    className={`
+                      relative flex items-center justify-center w-full h-12 rounded-xl transition-all duration-200 group
+                      ${isActive 
+                        ? `${colors.text} ${colors.bg}` 
+                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                      }
+                    `}
                   >
-                    <Sparkles className="w-4 h-4 flex-shrink-0" /> {/* SYNC icon */}
-                    <span className="font-semibold text-sm">
-                      {t('SYNC')}
-                    </span>
+                    <Icon className={`w-5 h-5 transition-colors ${isActive ? colors.text : 'group-hover:text-white'}`} />
+                    {item.badge > 0 && (
+                      <span className={`absolute top-1 right-1 text-[9px] px-1.5 py-0.5 rounded-full font-bold ${colors.bg} ${colors.text} border ${colors.border}`}>
+                        {item.badge}
+                      </span>
+                    )}
+                    {isActive && (
+                      <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 ${colors.borderSolid} rounded-r-full ${colors.glow}`} />
+                    )}
                   </Link>
-
-                  <Link
-                    to={createPageUrl("OrganizationSettings")}
-                    onClick={() => {
-                      haptics.light();
-                      setSidebarExpanded(false);
-                    }}
-                    className={`nav-item relative transition-all duration-200 rounded-lg mb-1 flex items-center h-12 group px-3 ${location.pathname === createPageUrl("OrganizationSettings") ? 'active' : ''}`}
-                    style={{
-                      background: location.pathname === createPageUrl("OrganizationSettings") ? "rgba(239, 68, 68, .08)" : "transparent",
-                      color: location.pathname === createPageUrl("OrganizationSettings") ? "var(--accent)" : "var(--muted)"
-                    }}
-                  >
-                    <span className="font-semibold text-sm">{t('nav_organization')}</span>
-                  </Link>
-                </div>
-
-                <div className="border-t p-3" style={{ borderColor: 'rgba(255,255,255,.06)' }}>
-                  {user && (
-                    <Link
-                      to={createPageUrl("Profile")}
-                      onClick={() => {
-                        haptics.light();
-                        setSidebarExpanded(false);
-                      }}
-                      className="flex items-center gap-3 p-2 rounded-lg h-14 transition-all hover:bg-white/[0.02]"
-                    >
-                      <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-800 flex items-center justify-center flex-shrink-0">
-                        {user.profile_picture ? (
-                          <img src={user.profile_picture} alt="Profile" className="w-full h-full object-cover" />
-                        ) : (
-                          <UserIcon className="w-4 h-4" style={{ color: 'var(--muted)' }} />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm truncate" style={{ color: 'var(--txt)' }}>
-                          {user.full_name}
-                        </p>
-                        <p className="text-xs truncate" style={{ color: 'var(--muted)' }}>
-                          {user.job_title || t('default_job_title')}
-                        </p>
-                      </div>
-                    </Link>
-                  )}
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <main className="flex-1 flex flex-col transition-all duration-300 ease-in-out" style={{ marginLeft: '80px' }}>
-        <div className="flex-1 overflow-auto" style={{ background: 'var(--bg)' }}>
-          {children}
-        </div>
-      </main>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="bg-gray-900 border-gray-700 text-white">
+                  <p>{item.label}</p>
+                </TooltipContent>
+              </Tooltip>
+            );
+          })}
+        </nav>
+      </TooltipProvider>
     </div>
   );
 }
 
+// Reusable Sidebar Content
+function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig, enabledApps, onOpenAppsManager }) {
+    const location = useLocation();
+  const [me, setMe] = React.useState(null);
+  const [isManager, setIsManager] = React.useState(false);
+
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const u = await base44.auth.me();
+        setMe(u);
+        
+        // Check if user is a department head
+        const departments = await base44.entities.Department.filter({
+          head_user_id: u.id
+        });
+        setIsManager(departments.length > 0);
+      } catch (e) {
+        console.error("Failed to fetch user data:", e);
+      }
+    })();
+  }, []);
+
+  // Filter engine items based on enabled apps
+  const engineItems = enabledApps
+    .map(appId => ENGINE_ITEMS_CONFIG[appId])
+    .filter(Boolean);
+
+  const handleLogin = async () => {
+    base44.auth.redirectToLogin(window.location.href);
+  };
+
+  return (
+    <div className="flex flex-col h-full relative">
+      {/* Apps Manager Button (Desktop only) */}
+      {!isMobile && (
+        <button
+          onClick={onOpenAppsManager}
+          className="absolute -right-3 top-16 bg-black border border-gray-700 text-gray-400 rounded-full p-1.5 hover:text-cyan-400 hover:border-cyan-500/50 transition-all z-50 shadow-lg"
+          title="Manage Apps"
+        >
+          <SettingsIcon size={12} />
+        </button>
+      )}
+
+      {/* Top Profile Section */}
+      <div className="flex flex-col items-center justify-center py-6 gap-4 transition-all duration-300 px-2">
+        
+        {/* Settings via Avatar */}
+        <Link to={createPageUrl("Settings")} className="relative group cursor-pointer flex flex-col items-center" aria-label="Go to Settings">
+          {me?.avatar_url ? (
+            <div className="rounded-full overflow-hidden border-2 border-white/10 w-10 h-10 transition-all duration-300 shadow-xl relative z-10">
+              <img 
+                src={me.avatar_url} 
+                alt="Profile" 
+                className="w-full h-full object-cover" 
+              />
+            </div>
+          ) : (
+            <div className="rounded-full overflow-hidden border-2 border-white/10 w-10 h-10 transition-all duration-300 shadow-xl relative z-10">
+              <img 
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ebfb48566133bc1cface8c/97c0a3206_GeneratedImageDecember082025-5_28PM.jpeg" 
+                alt="Profile" 
+                className="w-full h-full object-cover" 
+              />
+            </div>
+          )}
+          <div className="absolute inset-0 rounded-full bg-cyan-500/20 blur-md -z-0 transition-opacity duration-300 opacity-0 group-hover:opacity-100" />
+        </Link>
+
+        </div>
+
+      {/* Navigation - Mobile optimized with larger touch targets */}
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-3 space-y-1 scrollbar-hide scroll-smooth-ios">
+        {/* Core Navigation */}
+        <div className="space-y-1">
+          {navigationItems.map((item) => {
+                            const isActive = location.pathname === item.url;
+
+                            return (
+                              <Link
+                                key={item.title}
+                                to={item.url}
+                                className={`flex items-center ${isMobile ? 'justify-start gap-3 px-4' : 'justify-center'} min-h-[44px] py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative active:scale-[0.98]
+                                  ${isActive
+                                    ? 'text-cyan-400 bg-cyan-950/30'
+                                    : 'text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
+                                  }
+                                `}
+                                title={item.title}
+                              >
+                                <item.icon isActive={isActive} className={`w-5 h-5 flex-shrink-0 transition-colors ${isActive ? 'text-cyan-400' : 'group-hover:text-white'}`} />
+                                {isMobile && <span>{item.title}</span>}
+                                {isActive && (
+                                   <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-cyan-500 rounded-l-full shadow-[0_0_10px_rgba(6,182,212,0.5)]" />
+                                )}
+                              </Link>
+                            );
+                          })}
+        </div>
+
+        <div className="h-px bg-white/5 mx-2 my-2" />
+
+        {/* Engine Apps - Dynamic based on user config - Mobile optimized */}
+        <div className="space-y-1">
+          {engineItems.map((item) => {
+            const isActive = location.pathname === item.url;
+            const isLearn = item.id === "learn";
+            const isSentinel = item.id === "sentinel";
+            const isGrowth = item.id === "growth";
+
+            return (
+              <Link
+                key={item.title}
+                to={item.url}
+                className={`flex items-center ${isMobile ? 'justify-start gap-3 px-4' : 'justify-center'} min-h-[44px] py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative active:scale-[0.98]
+                  ${isActive
+                    ? isLearn
+                      ? 'text-cyan-400 bg-cyan-950/30'
+                      : isSentinel
+                      ? 'text-[#86EFAC] bg-[#86EFAC]/10'
+                      : isGrowth
+                      ? 'text-indigo-400 bg-indigo-950/30'
+                      : 'text-cyan-400 bg-cyan-950/30'
+                    : 'text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
+                  }
+                `}
+                title={item.title}
+              >
+                <item.icon isActive={isActive} className={`w-5 h-5 flex-shrink-0 transition-colors ${
+                  isActive
+                    ? isLearn
+                      ? 'text-cyan-400'
+                      : isSentinel
+                      ? 'text-[#86EFAC]'
+                      : isGrowth
+                      ? 'text-indigo-400'
+                      : 'text-cyan-400'
+                    : 'group-hover:text-white'
+                }`} />
+                {isMobile ? <span>{item.title}</span> : <span className="sr-only">{item.title}</span>}
+                {isActive && (
+                  <div className={`absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-l-full ${
+                    isLearn
+                      ? 'bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.5)]'
+                      : isSentinel
+                      ? 'bg-[#86EFAC] shadow-[0_0_10px_rgba(134,239,172,0.5)]'
+                      : isGrowth
+                      ? 'bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]'
+                      : 'bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.5)]'
+                  }`} />
+                )}
+              </Link>
+            );
+          })}
+          </div>
+
+        <div className="h-px bg-white/5 mx-2 my-2" />
+
+        {/* Manager Section - Mobile optimized */}
+        {isManager && (
+          <div className="space-y-1">
+            <Link
+              to={createPageUrl("ManagerDashboard")}
+              className={`flex items-center ${isMobile ? 'justify-start gap-3 px-4' : 'justify-center'} min-h-[44px] py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative active:scale-[0.98]
+                ${location.pathname === createPageUrl("ManagerDashboard")
+                  ? 'text-cyan-400 bg-cyan-950/30'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
+                }
+              `}
+              title="Team Dashboard"
+            >
+              <BarChart3 className={`w-5 h-5 flex-shrink-0 transition-colors ${location.pathname === createPageUrl("ManagerDashboard") ? 'text-cyan-400' : 'group-hover:text-white'}`} />
+              {isMobile ? <span>Team Dashboard</span> : <span className="sr-only">Team Dashboard</span>}
+            </Link>
+          </div>
+        )}
+
+        {me?.role === 'admin' && adminItems.length > 0 && (
+          <div className="space-y-1">
+            {adminItems.map((item) => {
+              const isActive = location.pathname === item.url;
+              return (
+                <Link
+                  key={item.title}
+                  to={item.url}
+                  className={`flex items-center ${isMobile ? 'justify-start gap-3 px-4' : 'justify-center'} min-h-[44px] py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative active:scale-[0.98]
+                    ${isActive
+                      ? 'text-purple-400 bg-purple-950/30'
+                      : 'text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
+                    }
+                  `}
+                  title={item.title}
+                >
+                  <item.icon className={`w-5 h-5 flex-shrink-0 transition-colors ${isActive ? 'text-purple-400' : 'group-hover:text-white'}`} />
+                  {isMobile ? <span>{item.title}</span> : <span className="sr-only">{item.title}</span>}
+                </Link>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Agent Trigger - show when on agent-enabled pages */}
+        {secondaryNavConfig?.agent && (
+          <div className="mt-4 flex justify-center">
+            <FloatingAgentTrigger agentType={secondaryNavConfig.agent} />
+          </div>
+        )}
+        </nav>
+
+      {/* Bottom Section */}
+      <div className="p-4 space-y-4 bg-gradient-to-t from-black via-black to-transparent">
+        {/* Credits / CTA */}
+        {me ? (
+        <div className="relative group flex justify-center" title="Top up coming soon">
+            <div className="w-10 h-10 rounded-full border-2 border-white/10 flex items-center justify-center relative transition-colors cursor-not-allowed opacity-70">
+               <span className="text-[9px] font-bold text-cyan-400">{me.credits || 0}</span>
+            </div>
+        </div>
+        ) : (
+          <Button 
+             onClick={handleLogin}
+             className="p-0 w-10 h-10 rounded-full flex items-center justify-center bg-cyan-600 hover:bg-cyan-500 text-white border-0 shadow-lg shadow-cyan-900/20"
+          >
+             <LogIn size={16} />
+          </Button>
+        )}
+        </div>
+    </div>
+  );
+}
+
+export default function Layout({ children, currentPageName }) {
+  const location = useLocation();
+  const [secondaryNavStats, setSecondaryNavStats] = useState({});
+  const [enabledApps, setEnabledApps] = useState(FEATURES.DEFAULT_ENABLED_APPS);
+  const [appsManagerOpen, setAppsManagerOpen] = useState(false);
+  
+
+  // Load user app config
+  const loadUserAppConfig = React.useCallback(async () => {
+    try {
+      const user = await base44.auth.me();
+      if (!user) return;
+
+      const configs = await base44.entities.UserAppConfig.filter({ user_id: user.id });
+      if (configs.length > 0) {
+        setEnabledApps(configs[0].enabled_apps || FEATURES.DEFAULT_ENABLED_APPS);
+      }
+    } catch (error) {
+      logError('Layout:loadUserAppConfig', error);
+    }
+  }, []);
+
+  // Load config on mount and listen for changes
+  useEffect(() => {
+    loadUserAppConfig();
+
+    // Listen for config updates from AppsManagerModal or Onboarding
+    const handleConfigUpdate = () => {
+      loadUserAppConfig();
+    };
+
+    window.addEventListener('dashboard-config-updated', handleConfigUpdate);
+    return () => {
+      window.removeEventListener('dashboard-config-updated', handleConfigUpdate);
+    };
+  }, [loadUserAppConfig]);
+
+  React.useEffect(() => {
+    window.dispatchEvent(new CustomEvent("isyncso:navigation", {
+      detail: { pathname: location.pathname, ts: new Date().toISOString() }
+    }));
+    
+    // Load stats for secondary nav badges
+    loadSecondaryNavStats();
+  }, [location.pathname]);
+  
+  const loadSecondaryNavStats = async () => {
+    try {
+      const { base44 } = await import("@/api/base44Client");
+      
+      // SENTINEL stats
+      if (location.pathname.includes('Sentinel') || location.pathname.includes('AISystem') || location.pathname.includes('Compliance')) {
+        const systems = await base44.entities.AISystem.list();
+        const highRiskCount = systems.filter(s => s.risk_classification === 'high-risk').length;
+        setSecondaryNavStats(prev => ({
+          ...prev,
+          systems: systems.length,
+          tasks: highRiskCount * SENTINEL.HIGH_RISK_TASK_MULTIPLIER
+        }));
+      }
+      
+      // CIDE stats
+      if (location.pathname.includes('CIDE')) {
+        const [lists, templatesResponse] = await Promise.all([
+          base44.entities.ProspectList.list(),
+          base44.functions.invoke('getICPTemplates')
+        ]);
+        setSecondaryNavStats(prev => ({
+          ...prev,
+          lists: lists.filter(l => l.status === 'active').length,
+          templates: templatesResponse.data?.templates?.length || 0
+        }));
+      }
+      
+      // LEARN stats
+      if (location.pathname.includes('Learn') || location.pathname.includes('Course') || location.pathname.includes('Certificate') || location.pathname.includes('Skill') || location.pathname.includes('Leaderboard') || location.pathname.includes('Activity') || location.pathname.includes('Team')) {
+        const currentUser = await base44.auth.me();
+        const [certificates, userSkills] = await Promise.all([
+          base44.entities.Certificate.filter({ user_id: currentUser.id }),
+          base44.entities.UserSkill.filter({ user_id: currentUser.id })
+        ]);
+        setSecondaryNavStats(prev => ({
+          ...prev,
+          certificates: certificates.length,
+          skills: userSkills.length
+        }));
+      }
+    } catch (error) {
+      logError('Layout:loadSecondaryNavStats', error);
+    }
+  };
+
+  // Callback for AppsManagerModal to update state immediately
+  const onAppsConfigChange = (newConfig) => {
+    setEnabledApps(newConfig.enabled_apps || FEATURES.DEFAULT_ENABLED_APPS);
+  };
+
+  // Memoize secondary nav config to prevent unnecessary recalculations
+  const secondaryNavConfig = useMemo(
+    () => getSecondaryNavConfig(location.pathname, secondaryNavStats),
+    [location.pathname, secondaryNavStats]
+  );
+  
+  return (
+    <ErrorBoundary>
+      <OnboardingGuard>
+          <UserProvider>
+            <AchievementProvider>
+              <Toaster />
+              {/* Skip to main content link for keyboard navigation */}
+              <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-cyan-600 focus:text-white focus:rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                Skip to main content
+              </a>
+              <div className="min-h-screen bg-black">
+        <style>{`
+          :root{
+            --bg: #050505;
+            --surface: #0E0E0E;
+            --surface-hover: #161616;
+            --txt: #FFFFFF;
+            --muted: #888888;
+            --accent: #06B6D4;
+            --accent-glow: rgba(6, 182, 212, 0.4);
+          }
+          body{background:var(--bg); color:var(--txt); font-family: 'Inter', sans-serif;}
+
+          /* Force dark backgrounds everywhere */
+          .bg-white,
+          .bg-white\\/95,.bg-white\\/90,.bg-white\\/80,.bg-white\\/70,
+          .bg-white\\/60,.bg-white\\/50,.bg-white\\/40,.bg-white\\/30,
+          .bg-white\\/20,.bg-white\\/10 { background: var(--surface) !important; border-color: rgba(255,255,255,0.08) !important; }
+
+          .text-black { color: var(--txt) !important; }
+          .border-white { border-color: rgba(255,255,255,.08) !important; }
+
+          /* Surfaces */
+          .glass-card {
+            background: #0A0A0A !important;
+            border: 1px solid rgba(255,255,255,0.08) !important;
+            border-radius: 12px;
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.4);
+          }
+
+          /* Scrollbar Hide */
+          .scrollbar-hide::-webkit-scrollbar {
+              display: none;
+          }
+          .scrollbar-hide {
+              -ms-overflow-style: none;
+              scrollbar-width: none;
+          }
+
+          /* Buttons */
+          .btn-primary {
+            background: linear-gradient(180deg, rgba(6,182,212,0.1), rgba(6,182,212,0.05));
+            color: #06B6D4;
+            border: 1px solid rgba(6,182,212,0.3);
+            box-shadow: 0 0 15px rgba(6,182,212,0.05);
+            border-radius: 8px;
+            transition: all 0.2s;
+          }
+          .btn-primary:hover {
+            background: linear-gradient(180deg, rgba(6,182,212,0.2), rgba(6,182,212,0.1));
+            border-color: rgba(6,182,212,0.6);
+            color: #fff;
+            box-shadow: 0 0 20px rgba(6,182,212,0.15);
+          }
+
+          .btn-outline {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #999;
+            border-radius: 8px;
+          }
+          .btn-outline:hover {
+            border-color: #fff;
+            color: #fff;
+            background: rgba(255,255,255,0.02);
+          }
+
+          /* Inputs */
+          input, textarea, select {
+            background: #080808 !important; 
+            color: #fff !important; 
+            border: 1px solid rgba(255,255,255,0.08) !important;
+            border-radius: 8px !important;
+          }
+          input:focus, textarea:focus, select:focus {
+            border-color: var(--accent) !important;
+            box-shadow: 0 0 0 1px var(--accent-glow);
+          }
+
+          /* Global Colors */
+          .bg-black { background: var(--bg) !important; }
+          .text-white { color: #fff !important; }
+          .text-gray-300, .text-gray-400 { color: #888 !important; }
+
+          /* Badges & Pills */
+          .badge, .pill {
+            background: rgba(6,182,212,0.1) !important;
+            color: #06B6D4 !important;
+            border: 1px solid rgba(6,182,212,0.2) !important;
+            border-radius: 6px !important;
+          }
+
+          /* Emerald Gradient replacements */
+          .emerald-gradient, .emerald-gradient-hover {
+             background: linear-gradient(180deg, rgba(6,182,212,0.1), rgba(6,182,212,0.05)) !important;
+             color: #06B6D4 !important;
+             border: 1px solid rgba(6,182,212,0.3) !important;
+          }
+          .emerald-gradient-hover:hover {
+             border-color: #06B6D4 !important;
+             color: #fff !important;
+             box-shadow: 0 0 20px rgba(6,182,212,0.2) !important;
+          }
+
+          /* Progress Bars */
+           div[role="progressbar"]{ background: rgba(255,255,255,.05) !important; height:6px !important; border-radius:999px !important; }
+           div[role="progressbar"] > div{ background: var(--accent) !important; box-shadow: 0 0 10px var(--accent-glow); }
+
+          /* Sheets/Dialogs */
+          .SheetContent, .DialogContent {
+             background: #0A0A0A !important;
+             border-color: rgba(255,255,255,0.1) !important;
+          }
+
+          /* Metallic gradient title */
+          .metallic-text{
+            background: linear-gradient(180deg, #FFFFFF, rgba(255,255,255,.65));
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+          }
+
+          @media (prefers-reduced-motion: reduce) {
+            .btn-primary, .emerald-gradient, .nav-item, a, button { transition: none !important; transform: none !important; }
+          }
+
+          /* Sidebar transitions */
+          .sidebar-shell {
+             transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+             background: #050505;
+             border-right: 1px solid rgba(255,255,255,0.08);
+          }
+
+          /* Flowing Animations */
+          @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0); opacity: 0.6; }
+            50% { transform: translateY(-15px) translateX(5px); opacity: 1; }
+          }
+          @keyframes drift {
+            0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.5; }
+            33% { transform: translate(8px, -8px) scale(1.1); opacity: 0.8; }
+            66% { transform: translate(-5px, 5px) scale(0.95); opacity: 0.7; }
+          }
+          @keyframes wave {
+            0%, 100% { transform: translateY(0) scale(1); opacity: 0.6; }
+            25% { transform: translateY(-10px) scale(1.05); opacity: 0.9; }
+            50% { transform: translateY(-5px) scale(1.1); opacity: 1; }
+            75% { transform: translateY(-12px) scale(1.05); opacity: 0.8; }
+          }
+          @keyframes cascade {
+            0% { transform: translateY(-20px); opacity: 0; }
+            50% { transform: translateY(10px); opacity: 1; }
+            100% { transform: translateY(0); opacity: 0.7; }
+          }
+          @keyframes orbit {
+            0% { transform: rotate(0deg) translateX(5px) rotate(0deg); }
+            100% { transform: rotate(360deg) translateX(5px) rotate(-360deg); }
+          }
+          @keyframes celebrate {
+            0%, 100% { transform: translateY(0) scale(1) rotate(0deg); opacity: 0.6; }
+            25% { transform: translateY(-12px) scale(1.15) rotate(5deg); opacity: 1; }
+            50% { transform: translateY(-8px) scale(1.1) rotate(-3deg); opacity: 0.9; }
+            75% { transform: translateY(-15px) scale(1.2) rotate(3deg); opacity: 0.95; }
+          }
+          @keyframes shootDown {
+            0% { height: 0; opacity: 0; }
+            100% { height: var(--target-height); opacity: 1; }
+          }
+          `}</style>
+
+        <div className="flex h-screen">
+          {/* Desktop Sidebar - Always collapsed */}
+          <div className="hidden lg:flex flex-col sidebar-shell w-[80px]">
+            <SidebarContent 
+              currentPageName={currentPageName} 
+              secondaryNavConfig={secondaryNavConfig} 
+              enabledApps={enabledApps}
+              onOpenAppsManager={() => setAppsManagerOpen(true)}
+            />
+          </div>
+
+          {/* Secondary Sidebar */}
+          <SecondarySidebar config={secondaryNavConfig} location={location} />
+
+          {/* Mobile Header - Optimized for iPhone/iPad with safe areas */}
+          <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-md border-b border-gray-800 pt-safe">
+            <div className="flex items-center justify-between px-4 h-14 sm:h-16">
+              <div className="flex items-center">
+                <img
+                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ebfb48566133bc1cface8c/3bee25c45_logoisyncso1.png"
+                  alt="ISYNCSO"
+                  className="h-7 sm:h-8 w-auto object-contain"
+                />
+              </div>
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-gray-300 touch-target flex items-center justify-center hover:bg-white/10 active:bg-white/20 transition-colors"
+                    aria-label="Open menu"
+                  >
+                    <Menu className="w-6 h-6" />
+                    <span className="sr-only">Open menu</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[300px] sm:w-[320px] p-0 border-gray-800 bg-black pt-safe pb-safe">
+                  <SidebarContent
+                    currentPageName={currentPageName}
+                    isMobile={true}
+                    secondaryNavConfig={secondaryNavConfig}
+                    enabledApps={enabledApps}
+                    onOpenAppsManager={() => setAppsManagerOpen(true)}
+                  />
+                </SheetContent>
+              </Sheet>
+            </div>
+          </div>
+
+          {/* Main Content - Mobile optimized with safe areas */}
+          <main
+            id="main-content"
+            className="flex-1 lg:pt-0 pt-14 sm:pt-16 overflow-auto transition-all duration-300 pb-safe scroll-smooth-ios"
+            role="main"
+          >
+            <div className="min-h-full">
+              {children}
+            </div>
+          </main>
+
+
+
+
+        </div>
+
+        {/* Apps Manager Modal */}
+        <AppsManagerModal
+          isOpen={appsManagerOpen}
+          onClose={() => setAppsManagerOpen(false)}
+          onConfigUpdate={onAppsConfigChange}
+        />
+        </div>
+          </AchievementProvider>
+        </UserProvider>
+        </OnboardingGuard>
+        </ErrorBoundary>
+        );
+        }

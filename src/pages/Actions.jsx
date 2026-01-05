@@ -1,0 +1,549 @@
+import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { base44 } from '@/api/base44Client';
+import { useUser } from '@/components/context/UserContext';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
+import { GlassCard, StatCard } from '@/components/ui/GlassCard';
+import { toast } from 'sonner';
+import {
+  Zap,
+  Plus,
+  Plug,
+  History,
+  RefreshCw,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Users,
+  Ticket,
+  Building2,
+  Briefcase,
+  Calculator,
+  FolderOpen,
+  ArrowRight,
+  Send,
+  Sparkles,
+  TrendingUp,
+  Activity,
+  ChevronRight,
+  Settings,
+  ExternalLink,
+  ListTodo,
+  Play,
+  Loader2,
+  CircleDot
+} from 'lucide-react';
+
+import IntegrationCard from '@/components/actions/IntegrationCard';
+import ConnectIntegrationModal from '@/components/actions/ConnectIntegrationModal';
+import ExecuteActionModal from '@/components/actions/ExecuteActionModal';
+import ActionHistoryList from '@/components/actions/ActionHistoryList';
+import ActionQueueCard from '@/components/actions/ActionQueueCard';
+import CreateActionModal from '@/components/actions/CreateActionModal';
+
+// Lazy load ride components
+const RideSelector = lazy(() => import('@/components/rides/RideSelector'));
+const ClayCampaignBuilder = lazy(() => import('@/components/growth/ClayCampaignBuilder'));
+const LinkedInOutreachRide = lazy(() => import('@/components/rides/LinkedInOutreachRide'));
+const SalesNavResearchRide = lazy(() => import('@/components/rides/SalesNavResearchRide'));
+const ColdEmailRide = lazy(() => import('@/components/rides/ColdEmailRide'));
+const CompetitiveIntelRide = lazy(() => import('@/components/rides/CompetitiveIntelRide'));
+const HubSpotWorkflowRide = lazy(() => import('@/components/rides/HubSpotWorkflowRide'));
+
+const CATEGORY_ICONS = {
+  crm: Users,
+  ticketing: Ticket,
+  hris: Building2,
+  ats: Briefcase,
+  accounting: Calculator,
+  filestorage: FolderOpen
+};
+
+const CATEGORY_GRADIENTS = {
+  crm: 'from-indigo-500 to-purple-500',
+  ticketing: 'from-orange-500 to-amber-500',
+  hris: 'from-green-500 to-emerald-500',
+  ats: 'from-purple-500 to-pink-500',
+  accounting: 'from-blue-500 to-cyan-500',
+  filestorage: 'from-cyan-500 to-teal-500'
+};
+
+export default function Actions() {
+  const { user, isLoading: userLoading } = useUser();
+  const [integrations, setIntegrations] = useState([]);
+  const [actionLogs, setActionLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [logsLoading, setLogsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('queue');
+  
+  const [connectModalOpen, setConnectModalOpen] = useState(false);
+  const [executeModalOpen, setExecuteModalOpen] = useState(false);
+  const [createActionModalOpen, setCreateActionModalOpen] = useState(false);
+  const [selectedIntegration, setSelectedIntegration] = useState(null);
+  const [disconnecting, setDisconnecting] = useState(null);
+  const [executingAction, setExecutingAction] = useState(null);
+  const [selectedRide, setSelectedRide] = useState(null);
+
+  const loadIntegrations = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      const data = await base44.entities.MergeIntegration.filter({
+        user_id: user.id
+      });
+      setIntegrations(data.filter(i => i.status === 'active'));
+    } catch (error) {
+      console.error('Error loading integrations:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  const loadActionLogs = useCallback(async () => {
+    if (!user) return;
+    
+    setLogsLoading(true);
+    try {
+      const data = await base44.entities.ActionLog.filter(
+        { user_id: user.id },
+        '-created_date',
+        50
+      );
+      setActionLogs(data);
+    } catch (error) {
+      console.error('Error loading action logs:', error);
+    } finally {
+      setLogsLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      loadIntegrations();
+      loadActionLogs();
+    }
+  }, [user, loadIntegrations, loadActionLogs]);
+
+  const handleDisconnect = async (integrationId) => {
+    setDisconnecting(integrationId);
+    try {
+      await base44.functions.invoke('mergeDisconnect', {
+        integration_id: integrationId
+      });
+      setIntegrations(prev => prev.filter(i => i.id !== integrationId));
+      toast.success('Integration disconnected');
+    } catch (error) {
+      toast.error('Failed to disconnect');
+    } finally {
+      setDisconnecting(null);
+    }
+  };
+
+  const handleUseAction = (integration) => {
+    setSelectedIntegration(integration);
+    setExecuteModalOpen(true);
+  };
+
+  const handleConnectionSuccess = () => {
+    loadIntegrations();
+  };
+
+  const handleActionComplete = () => {
+    loadActionLogs();
+  };
+
+  const handleExecuteAction = async (action) => {
+    setExecutingAction(action.id);
+    try {
+      await base44.entities.ActionLog.update(action.id, { 
+        status: 'in_progress',
+        executed_at: new Date().toISOString()
+      });
+      
+      // Simulate execution - in real app this would call the actual integration
+      setTimeout(async () => {
+        await base44.entities.ActionLog.update(action.id, { status: 'success' });
+        toast.success(`Action "${action.title}" completed!`);
+        loadActionLogs();
+        setExecutingAction(null);
+      }, 1500);
+    } catch (error) {
+      toast.error('Failed to execute action');
+      setExecutingAction(null);
+    }
+  };
+
+  const handleCancelAction = async (action) => {
+    try {
+      await base44.entities.ActionLog.update(action.id, { status: 'cancelled' });
+      toast.success('Action cancelled');
+      loadActionLogs();
+    } catch (error) {
+      toast.error('Failed to cancel action');
+    }
+  };
+
+  const handleRetryAction = async (action) => {
+    try {
+      await base44.entities.ActionLog.update(action.id, { 
+        status: 'queued',
+        retry_count: (action.retry_count || 0) + 1,
+        error_message: null
+      });
+      toast.success('Action requeued');
+      loadActionLogs();
+    } catch (error) {
+      toast.error('Failed to retry action');
+    }
+  };
+
+  const handleDeleteAction = async (action) => {
+    try {
+      await base44.entities.ActionLog.delete(action.id);
+      toast.success('Action deleted');
+      loadActionLogs();
+    } catch (error) {
+      toast.error('Failed to delete action');
+    }
+  };
+
+  const activeCount = integrations.length;
+  const queuedActions = actionLogs.filter(a => a.status === 'queued');
+  const inProgressActions = actionLogs.filter(a => a.status === 'in_progress');
+  const successfulActions = actionLogs.filter(a => a.status === 'success').length;
+  const failedActions = actionLogs.filter(a => a.status === 'failed').length;
+  const successRate = actionLogs.length > 0 ? Math.round((successfulActions / actionLogs.length) * 100) : 0;
+
+  if (userLoading || loading) {
+    return (
+      <div className="min-h-screen bg-black p-6">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <Skeleton className="h-32 w-full bg-zinc-800 rounded-2xl" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-28 bg-zinc-800 rounded-xl" />)}
+          </div>
+          <Skeleton className="h-96 w-full bg-zinc-800 rounded-2xl" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-black relative">
+      {/* Animated Background */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-20 left-1/4 w-96 h-96 bg-orange-900/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-amber-900/10 rounded-full blur-3xl" />
+      </div>
+
+      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+        {/* Premium Header */}
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden rounded-2xl bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/60 p-6">
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full blur-3xl opacity-10 bg-orange-600" />
+            <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full blur-2xl opacity-10 bg-amber-700" />
+          </div>
+
+          <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center">
+                <Zap className="w-7 h-7 text-orange-400/80" />
+              </div>
+              <div>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-2xl md:text-3xl font-bold text-zinc-100">Actions Hub</h1>
+                  <Badge className="bg-orange-950/40 text-orange-300/80 border-orange-800/30">
+                    {activeCount} Connected
+                  </Badge>
+                </div>
+                <p className="text-zinc-500 mt-1">Execute actions across your connected integrations</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Button onClick={() => setConnectModalOpen(true)} className="border border-zinc-700/60 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200">
+                <Plug className="w-4 h-4 mr-2" />
+                Connect App
+              </Button>
+              <Button onClick={() => setCreateActionModalOpen(true)} className="bg-orange-600/80 hover:bg-orange-600 text-white font-medium">
+                <Plus className="w-4 h-4 mr-2" />
+                New Action
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Stats Row */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
+            <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-11 h-11 rounded-xl bg-zinc-800/80 border border-zinc-700/40 flex items-center justify-center">
+                  <Clock className="w-5 h-5 text-orange-400/70" />
+                </div>
+                {queuedActions.length > 0 && <Badge className="bg-orange-950/40 text-orange-300/80 border-orange-800/30 text-xs">Pending</Badge>}
+              </div>
+              <div className="text-2xl font-bold text-zinc-100">{queuedActions.length}</div>
+              <div className="text-sm text-zinc-500">Queued Actions</div>
+            </div>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-11 h-11 rounded-xl bg-zinc-800/80 border border-zinc-700/40 flex items-center justify-center">
+                  <Loader2 className={`w-5 h-5 text-orange-300/70 ${inProgressActions.length > 0 ? 'animate-spin' : ''}`} />
+                </div>
+                {inProgressActions.length > 0 && <Badge className="bg-orange-950/40 text-orange-300/80 border-orange-800/30 text-xs">Running</Badge>}
+              </div>
+              <div className="text-2xl font-bold text-zinc-100">{inProgressActions.length}</div>
+              <div className="text-sm text-zinc-500">In Progress</div>
+            </div>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-11 h-11 rounded-xl bg-zinc-800/80 border border-zinc-700/40 flex items-center justify-center">
+                  <CheckCircle className="w-5 h-5 text-orange-400/70" />
+                </div>
+                <Badge className="bg-orange-950/40 text-orange-300/80 border-orange-800/30 text-xs">{successRate}%</Badge>
+              </div>
+              <div className="text-2xl font-bold text-zinc-100">{successfulActions}</div>
+              <div className="text-sm text-zinc-500">Completed</div>
+            </div>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+            <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-11 h-11 rounded-xl bg-zinc-800/80 border border-zinc-700/40 flex items-center justify-center">
+                  <XCircle className="w-5 h-5 text-orange-500/60" />
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-zinc-100">{failedActions}</div>
+              <div className="text-sm text-zinc-500">Failed</div>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Main Content Tabs */}
+        <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); if (v !== 'rides') setSelectedRide(null); }}>
+          <TabsList className="bg-zinc-900/60 border border-zinc-800/60 p-1.5 gap-1">
+            <TabsTrigger value="queue" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-orange-300/90 text-zinc-500 px-4">
+              <ListTodo className="w-4 h-4 mr-2" />Queue
+              {queuedActions.length > 0 && <Badge className="ml-2 bg-orange-950/40 text-orange-300/80 border-orange-800/30 text-[10px] px-1.5">{queuedActions.length}</Badge>}
+            </TabsTrigger>
+            <TabsTrigger value="rides" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-orange-300/90 text-zinc-500 px-4">
+              <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ebfb48566133bc1cface8c/1850cd012_claude-color.png" alt="Claude" className="w-4 h-4 mr-2" />Claude Rides
+              <Badge className="ml-2 bg-orange-950/40 text-orange-300/80 border-orange-800/30 text-[10px] px-1.5">New</Badge>
+            </TabsTrigger>
+            <TabsTrigger value="history" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-orange-300/90 text-zinc-500 px-4">
+              <History className="w-4 h-4 mr-2" />History
+            </TabsTrigger>
+            <TabsTrigger value="integrations" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-orange-300/90 text-zinc-500 px-4">
+              <Plug className="w-4 h-4 mr-2" />Integrations
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Rides Tab */}
+          <TabsContent value="rides" className="mt-6">
+            <Suspense fallback={<div className="space-y-4"><Skeleton className="h-20 bg-zinc-800 rounded-xl" /><div className="grid grid-cols-3 gap-4">{[1,2,3,4,5,6].map(i => <Skeleton key={i} className="h-48 bg-zinc-800 rounded-xl" />)}</div></div>}>
+              {!selectedRide ? (
+                <RideSelector onSelectRide={setSelectedRide} selectedRide={selectedRide} />
+              ) : (
+                <GlassCard hover={false} className="p-6">
+                  <div className="flex items-center gap-2 mb-6">
+                    <Button size="sm" variant="ghost" onClick={() => setSelectedRide(null)} className="text-zinc-400 hover:text-white">
+                      ← Back to Rides
+                    </Button>
+                  </div>
+                  {selectedRide === 'clay' && <ClayCampaignBuilder />}
+                  {selectedRide === 'linkedin' && <LinkedInOutreachRide />}
+                  {selectedRide === 'salesNav' && <SalesNavResearchRide />}
+                  {selectedRide === 'coldEmail' && <ColdEmailRide />}
+                  {selectedRide === 'competitive' && <CompetitiveIntelRide />}
+                  {selectedRide === 'hubspot' && <HubSpotWorkflowRide />}
+                </GlassCard>
+              )}
+            </Suspense>
+          </TabsContent>
+
+          {/* Queue Tab */}
+          <TabsContent value="queue" className="mt-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Queued & In Progress */}
+              <div className="lg:col-span-2 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-zinc-200 flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-orange-400/70" />
+                    Pending Actions
+                  </h3>
+                  <Button size="sm" onClick={loadActionLogs} className="border border-zinc-700 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-white">
+                    <RefreshCw className="w-4 h-4 mr-2" />Refresh
+                  </Button>
+                </div>
+                
+                {logsLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map(i => <Skeleton key={i} className="h-32 bg-zinc-800 rounded-xl" />)}
+                  </div>
+                ) : [...inProgressActions, ...queuedActions].length === 0 ? (
+                  <GlassCard hover={false} className="p-12">
+                    <div className="text-center">
+                      <div className="w-16 h-16 rounded-2xl bg-zinc-800/50 flex items-center justify-center mx-auto mb-4">
+                        <ListTodo className="w-8 h-8 text-zinc-600" />
+                      </div>
+                      <h4 className="text-lg font-semibold text-white mb-2">No Pending Actions</h4>
+                      <p className="text-zinc-500 text-sm mb-6">Create an action to get started</p>
+                      <Button onClick={() => setCreateActionModalOpen(true)} className="bg-orange-600/80 hover:bg-orange-600 text-white">
+                        <Plus className="w-4 h-4 mr-2" />Create Action
+                      </Button>
+                    </div>
+                  </GlassCard>
+                ) : (
+                  <div className="space-y-3">
+                    {[...inProgressActions, ...queuedActions].map((action, i) => (
+                      <ActionQueueCard
+                        key={action.id}
+                        action={action}
+                        index={i}
+                        onExecute={handleExecuteAction}
+                        onCancel={handleCancelAction}
+                        onRetry={handleRetryAction}
+                        onDelete={handleDeleteAction}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Recent Completed */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-zinc-200 flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-orange-400/70" />
+                  Recently Completed
+                </h3>
+                
+                <GlassCard hover={false} className="p-4 space-y-2">
+                  {actionLogs.filter(a => a.status === 'success' || a.status === 'failed').slice(0, 5).length === 0 ? (
+                    <p className="text-sm text-zinc-500 text-center py-4">No completed actions yet</p>
+                  ) : (
+                    actionLogs.filter(a => a.status === 'success' || a.status === 'failed').slice(0, 5).map((action, i) => (
+                      <ActionQueueCard key={action.id} action={action} index={i} compact />
+                    ))
+                  )}
+                </GlassCard>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Integrations Tab */}
+          <TabsContent value="integrations" className="mt-6">
+            {integrations.length === 0 ? (
+              <div className="p-12 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+                <div className="text-center max-w-lg mx-auto">
+                  <div className="w-20 h-20 rounded-2xl bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center mx-auto mb-6">
+                    <Plug className="w-10 h-10 text-orange-400/70" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-zinc-100 mb-3">Connect Your First Integration</h3>
+                  <p className="text-zinc-500 mb-8">
+                    Connect your favorite tools like HubSpot, Jira, Salesforce, and more to execute actions directly from ISYNCSO.
+                  </p>
+                  <Button onClick={() => setConnectModalOpen(true)} className="bg-orange-600/80 hover:bg-orange-600 text-white font-medium h-12 px-8">
+                    <Plus className="w-5 h-5 mr-2" />
+                    Connect Integration
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-zinc-200">Connected Integrations</h3>
+                  <Button size="sm" onClick={loadIntegrations} className="border border-zinc-700 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-white">
+                    <RefreshCw className="w-4 h-4 mr-2" />Refresh
+                  </Button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {integrations.map((integration, index) => (
+                    <IntegrationCard
+                      key={integration.id}
+                      integration={integration}
+                      onDisconnect={handleDisconnect}
+                      onUseAction={handleUseAction}
+                      isDisconnecting={disconnecting === integration.id}
+                      index={index}
+                    />
+                  ))}
+                  
+                  {/* Add More Card */}
+                  <motion.button
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: integrations.length * 0.1 }}
+                    onClick={() => setConnectModalOpen(true)}
+                    className="p-6 rounded-2xl border border-dashed border-zinc-700/60 hover:border-orange-800/40 bg-zinc-900/30 transition-all flex flex-col items-center justify-center min-h-[180px] group"
+                  >
+                    <div className="w-14 h-14 rounded-2xl bg-zinc-800/80 group-hover:bg-zinc-800 flex items-center justify-center mb-4 transition-colors">
+                      <Plus className="w-7 h-7 text-zinc-600 group-hover:text-orange-400/70 transition-colors" />
+                    </div>
+                    <span className="text-zinc-500 group-hover:text-zinc-300 font-medium transition-colors">Add Integration</span>
+                  </motion.button>
+                </div>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* History Tab */}
+          <TabsContent value="history" className="mt-6">
+            <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-zinc-800/80 border border-zinc-700/40 flex items-center justify-center">
+                    <History className="w-5 h-5 text-orange-400/70" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-zinc-200">Action History</h3>
+                    <p className="text-sm text-zinc-500">{actionLogs.length} actions executed</p>
+                  </div>
+                </div>
+                <Button size="sm" onClick={loadActionLogs} className="border border-zinc-700 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-white">
+                  <RefreshCw className="w-4 h-4 mr-2" />Refresh
+                </Button>
+              </div>
+              <ActionHistoryList actions={actionLogs} loading={logsLoading} />
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* Modals */}
+      <ConnectIntegrationModal
+        open={connectModalOpen}
+        onClose={() => setConnectModalOpen(false)}
+        onSuccess={handleConnectionSuccess}
+        existingIntegrations={integrations}
+      />
+
+      <ExecuteActionModal
+        open={executeModalOpen}
+        onClose={() => {
+          setExecuteModalOpen(false);
+          setSelectedIntegration(null);
+        }}
+        integration={selectedIntegration}
+        onActionComplete={handleActionComplete}
+      />
+
+      <CreateActionModal
+        open={createActionModalOpen}
+        onClose={() => setCreateActionModalOpen(false)}
+        onSuccess={() => loadActionLogs()}
+        userId={user?.id}
+      />
+    </div>
+  );
+}
