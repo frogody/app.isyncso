@@ -365,26 +365,38 @@ export const auth = {
    */
   async me() {
     try {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error || !user) return null;
+      // First try to get session from local storage (faster, no network call)
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return null;
 
-      // Get extended user profile from users table
-      const { data: profile } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+      const user = session.user;
+
+      // Try to get extended user profile from users table
+      let profile = null;
+      try {
+        const { data } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        profile = data;
+      } catch (profileError) {
+        // Profile fetch failed - continue with auth user data only
+        console.warn('[supabaseClient] Could not fetch user profile:', profileError);
+      }
 
       return {
         id: user.id,
         email: user.email,
-        full_name: profile?.full_name || user.user_metadata?.full_name || '',
-        avatar_url: profile?.avatar_url || user.user_metadata?.avatar_url || '',
+        full_name: profile?.full_name || user.user_metadata?.full_name || user.user_metadata?.name || '',
+        avatar_url: profile?.avatar_url || user.user_metadata?.avatar_url || user.user_metadata?.picture || '',
         role: profile?.role || 'user',
         company_id: profile?.company_id,
         department_id: profile?.department_id,
         credits: profile?.credits || 0,
         language: profile?.language || 'en',
+        job_title: profile?.job_title || '',
+        onboarding_completed: profile?.onboarding_completed || false,
         ...profile
       };
     } catch (error) {
@@ -487,13 +499,14 @@ export const auth = {
    */
   async updateMe(updates) {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      // Use getSession() instead of getUser() to avoid 401 errors
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) throw new Error('Not authenticated');
 
       const { data, error } = await supabase
         .from('users')
         .update(updates)
-        .eq('id', user.id)
+        .eq('id', session.user.id)
         .select()
         .single();
 
@@ -510,8 +523,11 @@ export const auth = {
    */
   async ensureUserProfile() {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
+      // Use getSession() instead of getUser() to avoid 401 errors
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return null;
+
+      const user = session.user;
 
       // Check if profile exists
       const { data: existingProfile } = await supabase
