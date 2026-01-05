@@ -174,7 +174,7 @@ export const translations = {
     all_companies: 'Alle Bedrijven',
     score: 'Score',
     tenure: 'Dienstverband',
-    company: 'Bedrijf',
+    // company already defined in profile section
     search_candidates: 'Zoek kandidaten...',
     score_high: 'Hoog (70+)',
     score_medium: 'Gemiddeld (50-70)',
@@ -220,7 +220,7 @@ export const translations = {
     projects_subtitle: 'Beheer je recruitment projecten en open vacatures',
     new_project: 'Nieuw Project',
     all_projects: 'Alle Projecten',
-    active: 'Actief',
+    // active already defined in account section
     on_hold: 'On Hold',
     closed: 'Gesloten',
     search_projects: 'Zoek projecten...',
@@ -322,16 +322,8 @@ export const translations = {
     // Task actions
     response_received: 'Reactie ontvangen',
     no_response: 'Geen reactie',
-    // NOTE: 'call_today' is already defined in Intelligence section, but contextually
-    // it appears again here in 'Task actions'. If it's a shared concept, it's fine.
-    // Otherwise, it might be better to prefix it, e.g., 'task_call_today'.
-    // For now, following the outline and keeping it as is.
-    call_today: 'Vandaag Bellen',
-    // NOTE: 'this_week' is already defined in Intelligence section, similar to 'call_today'.
-    this_week: 'Deze week',
-    // NOTE: 'this_month' is already defined in Intelligence section, similar to 'call_today'.
-    this_month: 'Deze maand',
-    
+    // NOTE: call_today, this_week, this_month are defined in Intelligence section
+
     // Task details
     due_date_status: 'Vervaldatum Status',
     assigned_to: 'Toegewezen aan',
@@ -564,7 +556,7 @@ export const translations = {
     all_companies: 'All Companies',
     score: 'Score',
     tenure: 'Tenure',
-    company: 'Company',
+    // company already defined in profile section
     search_candidates: 'Search candidates...',
     score_high: 'High (70+)',
     score_medium: 'Medium (50-70)',
@@ -610,7 +602,7 @@ export const translations = {
     projects_subtitle: 'Manage your recruitment projects and open roles',
     new_project: 'New Project',
     all_projects: 'All Projects',
-    active: 'Active',
+    // active already defined in account section
     on_hold: 'On Hold',
     closed: 'Closed',
     search_projects: 'Search projects...',
@@ -712,16 +704,8 @@ export const translations = {
     // Task actions
     response_received: 'Response received',
     no_response: 'No response',
-    // NOTE: 'call_today' is already defined in Intelligence section, but contextually
-    // it appears again here in 'Task actions'. If it's a shared concept, it's fine.
-    // Otherwise, it might be better to prefix it, e.g., 'task_call_today'.
-    // For now, following the outline and keeping it as is.
-    call_today: 'Call Today',
-    // NOTE: 'this_week' is already defined in Intelligence section, similar to 'call_today'.
-    this_week: 'This week',
-    // NOTE: 'this_month' is already defined in Intelligence section, similar to 'call_today'.
-    this_month: 'This month',
-    
+    // NOTE: call_today, this_week, this_month are defined in Intelligence section
+
     // Task details
     due_date_status: 'Due Date Status',
     assigned_to: 'Assigned to',

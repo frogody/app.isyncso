@@ -40,6 +40,8 @@ import OpenRoles from "./OpenRoles";
 
 import Agents from "./Agents";
 
+import AuthCallback from "./AuthCallback";
+
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 
 const PAGES = {
@@ -83,7 +85,9 @@ const PAGES = {
     OpenRoles: OpenRoles,
     
     Agents: Agents,
-    
+
+    AuthCallback: AuthCallback,
+
 }
 
 function _getCurrentPage(url) {
@@ -150,7 +154,9 @@ function PagesContent() {
                 <Route path="/OpenRoles" element={<OpenRoles />} />
                 
                 <Route path="/Agents" element={<Agents />} />
-                
+
+                <Route path="/auth/callback" element={<AuthCallback />} />
+
             </Routes>
         </Layout>
     );

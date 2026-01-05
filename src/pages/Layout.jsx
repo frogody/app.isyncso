@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { base44 } from "@/api/base44Client";
+import { User } from "@/api/entities";
+import { assignUserToOrganization } from "@/api/functions";
 import { useTranslation } from "@/components/utils/translations";
 import { Users, User as UserIcon, LogOut, Sparkles, Building2, Brain, MessageSquare, CheckSquare, Briefcase, Activity, RefreshCw, Menu, X, ChevronRight, ChevronLeft, Megaphone, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -90,16 +91,16 @@ export default function Layout({ children, currentPageName }) {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const userData = await base44.auth.me();
+        const userData = await User.me();
         setUser(userData);
 
         if (!userData.organization_id && !hasCheckedOrganization) {
           setHasCheckedOrganization(true);
           try {
-            const response = await base44.functions.invoke('assignUserToOrganization');
+            const response = await assignUserToOrganization();
 
             if (response.data?.success && response.data?.organization_id) {
-              const updatedUserData = await base44.auth.me();
+              const updatedUserData = await User.me();
               setUser(updatedUserData);
             }
           } catch (error) {
@@ -145,7 +146,7 @@ export default function Layout({ children, currentPageName }) {
   const handleLogout = async () => {
     if (confirm(t('confirm_logout'))) {
       haptics.medium();
-      await base44.auth.logout();
+      await User.logout();
     }
   };
 
