@@ -135,7 +135,7 @@ export default function Layout({ children, currentPageName }) {
   }, []);
 
   useEffect(() => {
-    document.title = "TALENT";
+    document.title = "iSyncSO";
   }, []);
 
   const toggleMobileMenu = () => {
@@ -230,7 +230,7 @@ export default function Layout({ children, currentPageName }) {
             {!logoError ? (
               <img
                 src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68d43cf2c324ccd03de6bce5/9821df82f_isyncsotalentredtransparantlogo.png"
-                alt="TALENT logo"
+                alt="iSyncSO logo"
                 className="w-8 h-8 object-contain flex-shrink-0"
                 style={{ background: 'transparent' }}
                 onError={() => setLogoError(true)}
@@ -238,7 +238,7 @@ export default function Layout({ children, currentPageName }) {
             ) : (
               <FallbackLogo size={32} />
             )}
-            <h1 className="text-xl font-bold" style={{ color: 'var(--txt)' }}>TALENT</h1>
+            <h1 className="text-xl font-bold" style={{ color: 'var(--txt)' }}>iSyncSO</h1>
           </div>
           <Button
             onClick={toggleMobileMenu}
@@ -611,7 +611,7 @@ export default function Layout({ children, currentPageName }) {
               {!logoError ? (
                 <img
                   src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68d43cf2c324ccd03de6bce5/9821df82f_isyncsotalentredtransparantlogo.png"
-                  alt="TALENT logo"
+                  alt="iSyncSO logo"
                   className="w-10 h-10 object-contain"
                   style={{ background: 'transparent' }}
                   onError={() => setLogoError(true)}
@@ -828,7 +828,7 @@ export default function Layout({ children, currentPageName }) {
             <div className="flex flex-col h-full justify-between">
               <div className="flex-shrink-0">
                 <div className="border-b p-4 h-20 flex items-center justify-between" style={{ borderColor: 'rgba(255,255,255,.06)' }}>
-                  <h2 className="text-xl font-bold" style={{ color: 'var(--txt)' }}>TALENT</h2>
+                  <h2 className="text-xl font-bold" style={{ color: 'var(--txt)' }}>iSyncSO</h2>
                   <Button
                     variant="ghost"
                     size="icon"
