@@ -205,7 +205,8 @@ export default function Onboarding() {
           job_title: formData.jobTitle,
           linkedin_url: formData.linkedinUrl || null,
           experience_level: formData.experienceLevel || 'intermediate',
-          industry: formData.industry || null
+          industry: formData.industry || null,
+          onboarding_completed: true
         });
       } catch (e) {
         console.warn('[Onboarding] Profile update warning:', e);
