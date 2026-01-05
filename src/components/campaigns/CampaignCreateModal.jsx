@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -30,15 +30,13 @@ export default function CampaignCreateModal({ open, onClose, onCreated, projects
     auto_match_enabled: false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedProject, setSelectedProject] = useState(null);
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState("");
 
   useEffect(() => {
     if (formData.project_id) {
       const project = projects.find(p => p.id === formData.project_id);
-      setSelectedProject(project);
-      
+
       if (project && !formData.name) {
         const defaultName = `${project.title} Campaign`;
         setFormData(prev => ({
@@ -47,8 +45,6 @@ export default function CampaignCreateModal({ open, onClose, onCreated, projects
           description: `Outreach campaign for ${project.title}`
         }));
       }
-    } else {
-      setSelectedProject(null);
     }
   }, [formData.project_id, projects, formData.name]);
 
@@ -125,7 +121,6 @@ export default function CampaignCreateModal({ open, onClose, onCreated, projects
       project_id: "",
       auto_match_enabled: false,
     });
-    setSelectedProject(null);
     setIsEditingName(false);
     setTempName("");
   };

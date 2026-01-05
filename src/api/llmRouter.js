@@ -339,7 +339,7 @@ const completeStream = async function* (prompt, options = {}) {
           if (content) {
             yield { content, done: false };
           }
-        } catch (e) {
+        } catch {
           // Ignore parse errors for incomplete chunks
         }
       }

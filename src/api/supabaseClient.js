@@ -27,9 +27,6 @@ import { createClient } from '@supabase/supabase-js';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Feature flag - toggle between Base44 and Supabase
-const USE_SUPABASE = import.meta.env.VITE_USE_SUPABASE === 'true';
-
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   console.warn('Supabase credentials not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
 }

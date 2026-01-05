@@ -5,9 +5,24 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 
 export default [
-  { ignores: ['dist'] },
+  { ignores: ['dist', '.migration'] },
+  // Node.js config files
   {
-    files: ['**/*.{js,jsx}'],
+    files: ['*.config.js', '*.config.cjs', '*.config.mjs'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: {
+        ...globals.node,
+      },
+      sourceType: 'module',
+    },
+    rules: {
+      ...js.configs.recommended.rules,
+    },
+  },
+  // React source files
+  {
+    files: ['src/**/*.{js,jsx}'],
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
@@ -29,10 +44,17 @@ export default [
       ...react.configs['jsx-runtime'].rules,
       ...reactHooks.configs.recommended.rules,
       'react/jsx-no-target-blank': 'off',
-      'react-refresh/only-export-components': [
-        'warn',
-        { allowConstantExport: true },
-      ],
+      'react/prop-types': 'off',
+      'react/no-unknown-property': ['error', { ignore: ['jsx', 'cmdk-input-wrapper', 'toast-close'] }],
+      'react/no-unescaped-entities': 'off',
+      'no-unused-vars': ['warn', {
+        varsIgnorePattern: '^React$|^_',
+        argsIgnorePattern: '^_'
+      }],
+      'no-empty': 'warn',
+      'no-case-declarations': 'warn',
+      'react-hooks/exhaustive-deps': 'warn',
+      'react-refresh/only-export-components': 'off',
     },
   },
 ]

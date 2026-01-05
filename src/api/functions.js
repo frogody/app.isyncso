@@ -113,17 +113,8 @@ export const syncGetCampaignComplete = createFunctionWrapper('syncGetCampaignCom
 export const syncGetDashboardAnalytics = createFunctionWrapper('syncGetDashboardAnalytics');
 export const syncExportData = createFunctionWrapper('syncExportData');
 
-// Note: Some Base44-specific functions with special characters in names
-// These are mapped to valid Edge Function names when using Supabase
-const specialFunctions = {
-  'mcpTools/googleDrive': 'mcpToolsGoogleDrive',
-  'mcpTools/googleMaps': 'mcpToolsGoogleMaps',
-  'mcpTools/braveSearch': 'mcpToolsBraveSearch',
-  'mcpTools/gmail': 'mcpToolsGmail',
-  'utils/events': 'utilsEvents'
-};
-
 // Export special functions with sanitized names
+// Note: These map Base44 special character names to valid Edge Function names
 export const mcpToolsGoogleDrive = createFunctionWrapper('mcpToolsGoogleDrive');
 export const mcpToolsGoogleMaps = createFunctionWrapper('mcpToolsGoogleMaps');
 export const mcpToolsBraveSearch = createFunctionWrapper('mcpToolsBraveSearch');

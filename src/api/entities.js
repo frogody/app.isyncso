@@ -12,10 +12,6 @@ const USE_SUPABASE = import.meta.env.VITE_USE_SUPABASE === 'true';
 import { base44 } from './base44Client';
 import { entities as supabaseEntities, auth as supabaseAuth } from './supabaseClient';
 
-// Select backend based on feature flag
-const backend = USE_SUPABASE ? supabaseEntities : base44.entities;
-const authBackend = USE_SUPABASE ? supabaseAuth : base44.auth;
-
 // Entity exports - use Supabase or Base44 based on flag
 export const Candidate = USE_SUPABASE ? supabaseEntities.Candidate : base44.entities.Candidate;
 export const ChatConversation = USE_SUPABASE ? supabaseEntities.ChatConversation : base44.entities.ChatConversation;
