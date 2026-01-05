@@ -394,6 +394,95 @@ export const auth = {
   },
 
   /**
+   * Check if user is authenticated (quick check without profile fetch)
+   */
+  async isAuthenticated() {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      return !!session;
+    } catch {
+      return false;
+    }
+  },
+
+  /**
+   * Sign in with email and password
+   */
+  async signInWithEmail(email, password) {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      if (error) throw error;
+      return { user: data.user, session: data.session, error: null };
+    } catch (error) {
+      console.error('[supabaseClient] signInWithEmail error:', error);
+      return { user: null, session: null, error };
+    }
+  },
+
+  /**
+   * Sign up with email and password
+   */
+  async signUpWithEmail(email, password, metadata = {}) {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: metadata,
+          emailRedirectTo: `${window.location.origin}/AuthCallback`
+        }
+      });
+      if (error) throw error;
+      return { user: data.user, session: data.session, error: null };
+    } catch (error) {
+      console.error('[supabaseClient] signUpWithEmail error:', error);
+      return { user: null, session: null, error };
+    }
+  },
+
+  /**
+   * Sign in with Google OAuth
+   */
+  async signInWithGoogle() {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/AuthCallback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent'
+          }
+        }
+      });
+      if (error) throw error;
+      return { url: data.url, error: null };
+    } catch (error) {
+      console.error('[supabaseClient] signInWithGoogle error:', error);
+      return { url: null, error };
+    }
+  },
+
+  /**
+   * Send password reset email
+   */
+  async resetPassword(email) {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/AuthCallback?type=recovery`
+      });
+      if (error) throw error;
+      return { error: null };
+    } catch (error) {
+      console.error('[supabaseClient] resetPassword error:', error);
+      return { error };
+    }
+  },
+
+  /**
    * Update current user profile
    */
   async updateMe(updates) {
@@ -417,11 +506,64 @@ export const auth = {
   },
 
   /**
+   * Create or update user profile after auth
+   */
+  async ensureUserProfile() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      // Check if profile exists
+      const { data: existingProfile } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (existingProfile) return existingProfile;
+
+      // Create new profile
+      const { data: newProfile, error } = await supabase
+        .from('users')
+        .insert({
+          id: user.id,
+          email: user.email,
+          full_name: user.user_metadata?.full_name || user.user_metadata?.name || '',
+          avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || '',
+          role: 'user',
+          credits: 100, // Starting credits
+          language: 'en',
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) {
+        // Profile might already exist due to race condition
+        if (error.code === '23505') {
+          const { data: profile } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+          return profile;
+        }
+        throw error;
+      }
+
+      return newProfile;
+    } catch (error) {
+      console.error('[supabaseClient] ensureUserProfile error:', error);
+      return null;
+    }
+  },
+
+  /**
    * Sign out
    */
   async logout() {
     await supabase.auth.signOut();
-    window.location.href = '/';
+    window.location.href = '/Login';
   },
 
   /**
@@ -430,7 +572,7 @@ export const auth = {
   redirectToLogin(returnUrl = window.location.href) {
     // Store return URL for after login
     localStorage.setItem('returnUrl', returnUrl);
-    window.location.href = '/login';
+    window.location.href = '/Login';
   },
 
   /**

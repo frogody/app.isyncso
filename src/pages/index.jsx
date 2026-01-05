@@ -4,6 +4,10 @@ import AIAssistant from "./AIAssistant";
 
 import AISystemInventory from "./AISystemInventory";
 
+import AuthCallback from "./AuthCallback";
+
+import Login from "./Login";
+
 import Actions from "./Actions";
 
 import Activity from "./Activity";
@@ -145,10 +149,14 @@ import OAuthCallback from "./OAuthCallback";
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 
 const PAGES = {
-    
+
     AIAssistant: AIAssistant,
-    
+
     AISystemInventory: AISystemInventory,
+
+    AuthCallback: AuthCallback,
+
+    Login: Login,
     
     Actions: Actions,
     
@@ -318,7 +326,11 @@ function PagesContent() {
                 <Route path="/AIAssistant" element={<AIAssistant />} />
                 
                 <Route path="/AISystemInventory" element={<AISystemInventory />} />
-                
+
+                <Route path="/AuthCallback" element={<AuthCallback />} />
+
+                <Route path="/Login" element={<Login />} />
+
                 <Route path="/Actions" element={<Actions />} />
                 
                 <Route path="/Activity" element={<Activity />} />
