@@ -472,7 +472,8 @@ export const agents = {
 export const integrations = {
   Core: {
     async InvokeLLM(params) {
-      return functions.invoke('invokeLLM', params);
+      // Use Grok (xAI) as the LLM provider
+      return functions.invoke('invokeGrok', params);
     },
 
     async SendEmail(params) {
