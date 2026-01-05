@@ -143,7 +143,7 @@ export default function InboxPage() {
       setUnreadCounts(counts);
 
       // Create default channels if none exist
-      if (publicChannels.length === 0) {
+      if (publicChannels.length === 0 && user) {
         const defaultChannels = [
           { name: 'general', description: 'General discussions', type: 'public' },
           { name: 'random', description: 'Random stuff', type: 'public' },
@@ -151,7 +151,11 @@ export default function InboxPage() {
         ];
 
         for (const ch of defaultChannels) {
-          await base44.entities.Channel.create(ch);
+          await base44.entities.Channel.create({
+            ...ch,
+            user_id: user.id,  // Set creator
+            members: []
+          });
         }
 
         const newChannels = await base44.entities.Channel.list('-created_date');
@@ -580,10 +584,15 @@ export default function InboxPage() {
     try {
       console.log('[Inbox] Creating channel:', channelData);
 
+      // Include creator in members for private channels
+      const members = channelData.type === 'private'
+        ? [...new Set([user.id, ...(channelData.members || [])])]
+        : [];
+
       const newChannel = await base44.entities.Channel.create({
         ...channelData,
-        members: channelData.members || [],
-        created_by: user?.email,
+        user_id: user.id,  // Set creator
+        members: members,  // Include creator in members
         last_message_at: new Date().toISOString()
       });
 
@@ -634,7 +643,8 @@ export default function InboxPage() {
       const newDM = await base44.entities.Channel.create({
         name: targetUser.full_name || targetUser.email,
         type: 'dm',
-        members: [user.id, targetUser.id]
+        user_id: user.id,  // Creator
+        members: [user.id, targetUser.id]  // Both users as members
       });
 
       setDirectMessages(prev => [...prev, newDM]);
