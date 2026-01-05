@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Candidate, Campaign, User } from "@/api/entities";
-import { base44 } from "@/api/base44Client";
+import { functions } from "@/api/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -208,7 +208,7 @@ export default function CandidateDetails({ candidate, withCardWrapper = false, o
 
       console.log('🤖 STEP 3: Invoking outreach generation...');
       
-      const outreachResponse = await base44.functions.invoke('generateCampaignOutreach', {
+      const outreachResponse = await functions.invoke('generateCampaignOutreach', {
         campaign_id: campaignId,
         candidate_ids: [candidate.id]
       });

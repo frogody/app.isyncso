@@ -31,7 +31,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger } from
 "@/components/ui/dropdown-menu";
-import { base44 } from "@/api/base44Client";
+import { functions } from "@/api/supabaseClient";
 
 // Define LinkedInIcon component
 const LinkedInIcon = ({ size = 24, className = '', ...props }) =>
@@ -81,7 +81,7 @@ export default function CampaignDetailPanel({
     const loadSentTasks = async () => {
       if (!campaign?.id) return;
       try {
-        const response = await base44.functions.invoke('getOutreachTasks', {
+        const response = await functions.invoke('getOutreachTasks', {
           campaign_id: campaign.id,
           status: 'approved_ready'
         });
@@ -93,6 +93,7 @@ export default function CampaignDetailPanel({
       }
     };
     loadSentTasks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [campaign?.id]);
 
   if (!campaign) {
@@ -175,7 +176,7 @@ export default function CampaignDetailPanel({
     try {
       await onCampaignUpdate(campaign.id, { status: 'analyzing' });
 
-      const response = await base44.functions.invoke('analyzeCampaignProject', {
+      const response = await functions.invoke('analyzeCampaignProject', {
         project_id: campaign.project_id,
         campaign_id: campaign.id
       });
@@ -268,7 +269,7 @@ export default function CampaignDetailPanel({
         return;
       }
 
-      const response = await base44.functions.invoke('createOutreachTask', {
+      const response = await functions.invoke('createOutreachTask', {
         candidate_id: candidate.candidate_id,
         campaign_id: campaign.id,
         task_type: taskType,

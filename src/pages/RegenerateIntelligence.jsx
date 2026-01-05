@@ -53,6 +53,7 @@ export default function RegenerateIntelligence() {
     };
 
     init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const clearExistingJobs = async () => {

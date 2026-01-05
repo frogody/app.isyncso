@@ -1,20 +1,22 @@
-import React, { useMemo } from "react";
-import { base44 } from "@/api/base44Client";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { MessageSquare } from "lucide-react";
 
+/**
+ * WhatsApp Agent Connect Button
+ *
+ * Note: WhatsApp integration requires a backend service.
+ * This button is currently disabled pending Supabase Edge Function implementation.
+ */
 export default function AgentWhatsAppButton({ className = "" }) {
-  const whatsappUrl = useMemo(() => {
-    try {
-      const url = base44.agents.getWhatsAppConnectURL("recruitment_assistant");
-      return typeof url === "string" && url.length > 0 ? url : null;
-    } catch {
-      return null;
-    }
-  }, []);
+  // WhatsApp integration not yet available with Supabase backend
+  const whatsappUrl = null;
 
   const handleClick = () => {
-    if (!whatsappUrl) return;
+    if (!whatsappUrl) {
+      alert("WhatsApp integratie is momenteel niet beschikbaar.");
+      return;
+    }
     window.open(whatsappUrl, "_blank", "noopener,noreferrer");
   };
 
@@ -23,13 +25,13 @@ export default function AgentWhatsAppButton({ className = "" }) {
       type="button"
       onClick={handleClick}
       disabled={!whatsappUrl}
-      className={`flex items-center gap-2 rounded-lg border px-4 py-2 ${className}`}
+      className={`flex items-center gap-2 rounded-lg border px-4 py-2 opacity-50 ${className}`}
       style={{
         background: "rgba(37,211,102,.12)",
         color: "#4ADE80",
         borderColor: "rgba(37,211,102,.3)"
       }}
-      title={whatsappUrl ? "Verbind WhatsApp met de recruitment assistent" : "WhatsApp niet beschikbaar"}
+      title="WhatsApp integratie komt binnenkort"
     >
       <MessageSquare className="w-4 h-4" />
       WhatsApp koppelen

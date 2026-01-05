@@ -20,7 +20,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Campaign } from "@/api/entities";
 import { Sparkles, Info, Pencil, Check, X } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { base44 } from "@/api/base44Client";
+import { functions } from "@/api/supabaseClient";
 
 export default function CampaignCreateModal({ open, onClose, onCreated, projects, user }) {
   const [formData, setFormData] = useState({
@@ -93,12 +93,12 @@ export default function CampaignCreateModal({ open, onClose, onCreated, projects
 
       try {
         if (newCampaign?.id && payload.auto_match_enabled) {
-          console.log('[components/campaigns/CampaignCreateModal.js] Starting auto-match analysis via base44.functions.invoke...');
-          await base44.functions.invoke('analyzeCampaignProject', {
+          console.log('[CampaignCreateModal] Starting auto-match analysis via Supabase...');
+          await functions.invoke('analyzeCampaignProject', {
             project_id: payload.project_id,
             campaign_id: newCampaign.id
           });
-          console.log('[components/campaigns/CampaignCreateModal.js] Auto-match analysis started');
+          console.log('[CampaignCreateModal] Auto-match analysis started');
         }
       } catch (e) {
         console.warn('[CampaignCreateModal] analyze failed:', e?.message);

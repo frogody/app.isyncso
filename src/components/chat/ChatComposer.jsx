@@ -1,6 +1,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { User, ChatConversation } from "@/api/entities";
+import { UploadFile } from "@/api/integrations";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,20 +41,22 @@ export default function ChatComposer({ conversation: conversationProp = null, ag
     const ensureConversation = async () => {
       if (conversationProp) return; // Parent manages it
       try {
-        const me = await base44.auth.me();
+        const me = await User.me();
         if (!me) return;
         // Try to get the most recent non-archived conversation for this agent
-        const list = await base44.agents.listConversations({ agent_name: agentName });
+        const list = await ChatConversation.filter({ agent_name: agentName });
         const active = (list || []).find(c => !c.metadata?.archived) || null;
         if (active) {
           setConversation(active);
         } else {
-          const created = await base44.agents.createConversation({
+          const created = await ChatConversation.create({
             agent_name: agentName,
+            title: "Nieuw gesprek",
             metadata: {
               name: "Nieuw gesprek",
               language: me.language || "nl"
-            }
+            },
+            messages: []
           });
           setConversation(created);
         }
@@ -75,7 +78,7 @@ export default function ChatComposer({ conversation: conversationProp = null, ag
     const uploaded = [];
     for (const file of files) {
       try {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        const { file_url } = await UploadFile({ file });
         uploaded.push({ url: file_url, name: file.name, size: file.size });
       } catch (err) {
         console.error("Upload failed", err);
@@ -123,11 +126,19 @@ export default function ChatComposer({ conversation: conversationProp = null, ag
     if (!conversation || !canSend || sending) return;
     setSending(true);
     try {
-      await base44.agents.addMessage(conversation, {
+      // Add message to conversation messages array
+      const newMessage = {
         role: "user",
         content: text || "",
-        file_urls: attachments.map(a => a.url)
+        file_urls: attachments.map(a => a.url),
+        timestamp: new Date().toISOString()
+      };
+      const updatedMessages = [...(conversation.messages || []), newMessage];
+      await ChatConversation.update(conversation.id, {
+        messages: updatedMessages
       });
+      // Update local state
+      setConversation({ ...conversation, messages: updatedMessages });
       // Clear local composer
       setText("");
       setAttachments([]);

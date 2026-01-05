@@ -27,7 +27,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import IconWrapper from "../ui/IconWrapper";
-import { base44 } from "@/api/base44Client"; // Added import for base44 client
 
 export default function ChatSidebar({
   conversations,
@@ -78,12 +77,12 @@ export default function ChatSidebar({
     if (onConversationUpdate) onConversationUpdate();
   };
 
-  // handleArchive now uses base44 and sets metadata.archived to true (soft delete/archive)
+  // handleArchive sets metadata.archived to true (soft delete/archive)
   const handleArchive = async (conv, e) => {
     e.stopPropagation();
     try {
       if (confirm(`Weet je zeker dat je het gesprek "${conv.title}" wilt archiveren? Het zal verdwijnen uit je lijst, maar kan later worden hersteld.`)) {
-        await base44.agents.updateConversation(conv.id, {
+        await ChatConversation.update(conv.id, {
           metadata: { ...(conv.metadata || {}), archived: true }
         });
         if (onConversationUpdate) onConversationUpdate();
@@ -397,7 +396,7 @@ function ConversationItem({
   onRenameSave,
   onRenameCancel,
   onPin,
-  onArchive, // This prop now triggers the soft-delete/archive via base44
+  onArchive, // This prop triggers the soft-delete/archive via Supabase
   onDelete, // This prop now triggers the permanent delete via ChatConversation.delete
   formatDate,
   getMessageCount

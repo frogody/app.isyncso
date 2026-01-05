@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { User } from "@/api/entities";
-import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -150,8 +149,10 @@ export default function AgentsPage() {
     setLoading(false);
   };
 
-  const getWhatsAppURL = (agentId) => {
-    return base44.agents.getWhatsAppConnectURL(agentId);
+  const getWhatsAppURL = (_agentId) => {
+    // WhatsApp agent URLs not available with Supabase backend
+    // This was a Base44-specific feature
+    return null;
   };
 
   const handleCopyURL = async (agentId) => {

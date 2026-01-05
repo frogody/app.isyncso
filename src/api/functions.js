@@ -1,27 +1,17 @@
 /**
  * Cloud Functions Export
  *
- * This module provides a unified interface for all cloud functions.
- * Uses feature flag to switch between Base44 and Supabase backends.
+ * This module provides a unified interface for all cloud functions using Supabase Edge Functions.
  */
 
-// Feature flag from environment
-const USE_SUPABASE = import.meta.env.VITE_USE_SUPABASE === 'true';
-
-// Import both backends
-import { base44 } from './base44Client';
 import { functions as supabaseFunctions } from './supabaseClient';
 
 /**
- * Create a function wrapper that calls either Base44 or Supabase Edge Function
+ * Create a function wrapper that calls Supabase Edge Function
  */
 const createFunctionWrapper = (name) => {
   return async (params = {}) => {
-    if (USE_SUPABASE) {
-      return supabaseFunctions.invoke(name, params);
-    } else {
-      return base44.functions[name](params);
-    }
+    return supabaseFunctions.invoke(name, params);
   };
 };
 
@@ -113,15 +103,14 @@ export const syncGetCampaignComplete = createFunctionWrapper('syncGetCampaignCom
 export const syncGetDashboardAnalytics = createFunctionWrapper('syncGetDashboardAnalytics');
 export const syncExportData = createFunctionWrapper('syncExportData');
 
-// Export special functions with sanitized names
-// Note: These map Base44 special character names to valid Edge Function names
+// Export special functions
 export const mcpToolsGoogleDrive = createFunctionWrapper('mcpToolsGoogleDrive');
 export const mcpToolsGoogleMaps = createFunctionWrapper('mcpToolsGoogleMaps');
 export const mcpToolsBraveSearch = createFunctionWrapper('mcpToolsBraveSearch');
 export const mcpToolsGmail = createFunctionWrapper('mcpToolsGmail');
 export const utilsEvents = createFunctionWrapper('utilsEvents');
 
-// Log which backend is being used (for debugging)
+// Log backend (for debugging)
 if (typeof window !== 'undefined') {
-  console.log(`[ISYNCSO Functions] Using ${USE_SUPABASE ? 'Supabase Edge Functions' : 'Base44 Cloud Functions'}`);
+  console.log('[ISYNCSO Functions] Using Supabase Edge Functions');
 }

@@ -71,6 +71,7 @@ export default function ProjectDetailsModal({ open, project, onClose, onUpdate }
       });
       loadRoles();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project]);
 
   const loadRoles = async () => {

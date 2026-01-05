@@ -24,6 +24,7 @@ export default function CampaignOutreachModal({ open, onClose, matchData, campai
     if (open && !matchData.outreach_message) {
       handleGenerate();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const handleGenerate = async () => {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { User } from "@/api/entities";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,7 +28,7 @@ export default function Profile() {
     let mounted = true;
     const load = async () => {
       try {
-        const user = await base44.auth.me();
+        const user = await User.me();
         if (!mounted) return;
         setMe(user || null);
         setForm({
@@ -54,8 +54,8 @@ export default function Profile() {
   const onSave = async () => {
     setSaving(true);
     try {
-      await base44.auth.updateMe(form);
-      const updated = await base44.auth.me();
+      await User.updateProfile(form);
+      const updated = await User.me();
       setMe(updated);
       alert("Profiel succesvol bijgewerkt!");
     } catch (e) {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { User } from "@/api/entities";
 import SyncAvatar from "../components/ui/SyncAvatar";
 import ChatComposer from "@/components/chat/ChatComposer";
 
@@ -11,7 +11,7 @@ export default function ChatPage() {
     let mounted = true;
     const load = async () => {
       try {
-        const user = await base44.auth.me();
+        const user = await User.me();
         if (mounted) setMe(user || null);
       } finally {
         if (mounted) setLoading(false);

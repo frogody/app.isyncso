@@ -31,6 +31,7 @@ const EntityPickerModal = ({
       setSelected([]);
       setSearch("");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, entityName]);
 
   const loadItems = async () => {
