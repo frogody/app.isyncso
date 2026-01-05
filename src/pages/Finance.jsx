@@ -5,12 +5,35 @@ import {
   DollarSign, TrendingUp, TrendingDown, CreditCard, Receipt,
   PieChart, BarChart3, ArrowUpRight, ArrowDownRight, Plus,
   Filter, Download, Calendar, Building2, Users, FileText,
-  Wallet, BanknoteIcon, CircleDollarSign, Percent
+  Wallet, BanknoteIcon, CircleDollarSign, Percent, X
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+// Modal Component
+function Modal({ isOpen, onClose, title, children }) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-zinc-900 border border-zinc-700 rounded-xl p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-white">{title}</h2>
+          <button onClick={onClose} className="text-zinc-400 hover:text-white">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export default function Finance() {
   const [loading, setLoading] = useState(true);
@@ -18,6 +41,12 @@ export default function Finance() {
   const [expenses, setExpenses] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
+
+  // Modal states
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [showExpenseModal, setShowExpenseModal] = useState(false);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     loadFinanceData();
@@ -40,6 +69,87 @@ export default function Finance() {
       console.error('Error loading finance data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Create Invoice
+  const handleCreateInvoice = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const formData = new FormData(e.target);
+      const user = await base44.auth.me();
+      const invoice = await base44.entities.Invoice.create({
+        user_id: user?.id,
+        invoice_number: `INV-${Date.now().toString().slice(-6)}`,
+        client_name: formData.get('client_name'),
+        client_email: formData.get('client_email'),
+        total: parseFloat(formData.get('amount')) || 0,
+        status: 'pending',
+        due_date: formData.get('due_date'),
+        description: formData.get('description')
+      });
+      setInvoices(prev => [invoice, ...prev]);
+      setShowInvoiceModal(false);
+      e.target.reset();
+    } catch (error) {
+      console.error('Error creating invoice:', error);
+      alert('Failed to create invoice. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Create Expense
+  const handleCreateExpense = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const formData = new FormData(e.target);
+      const user = await base44.auth.me();
+      const expense = await base44.entities.Expense.create({
+        user_id: user?.id,
+        description: formData.get('description'),
+        amount: parseFloat(formData.get('amount')) || 0,
+        category: formData.get('category'),
+        date: formData.get('date') || new Date().toISOString().split('T')[0],
+        vendor: formData.get('vendor')
+      });
+      setExpenses(prev => [expense, ...prev]);
+      setShowExpenseModal(false);
+      e.target.reset();
+    } catch (error) {
+      console.error('Error creating expense:', error);
+      alert('Failed to create expense. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Create Subscription
+  const handleCreateSubscription = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const formData = new FormData(e.target);
+      const user = await base44.auth.me();
+      const subscription = await base44.entities.Subscription.create({
+        user_id: user?.id,
+        name: formData.get('name'),
+        amount: parseFloat(formData.get('amount')) || 0,
+        billing_cycle: formData.get('billing_cycle') || 'monthly',
+        status: 'active',
+        next_billing_date: formData.get('next_billing_date'),
+        description: formData.get('description')
+      });
+      setSubscriptions(prev => [subscription, ...prev]);
+      setShowSubscriptionModal(false);
+      e.target.reset();
+    } catch (error) {
+      console.error('Error creating subscription:', error);
+      alert('Failed to create subscription. Please try again.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -125,11 +235,11 @@ export default function Finance() {
           </p>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" className="border-zinc-700 text-zinc-300">
+          <Button variant="outline" className="border-zinc-700 text-zinc-300" onClick={() => alert('Export coming soon!')}>
             <Download className="w-4 h-4 mr-2" />
             Export
           </Button>
-          <Button className="bg-gradient-to-r from-emerald-500 to-cyan-500">
+          <Button className="bg-gradient-to-r from-emerald-500 to-cyan-500" onClick={() => setShowInvoiceModal(true)}>
             <Plus className="w-4 h-4 mr-2" />
             New Transaction
           </Button>
@@ -244,7 +354,7 @@ export default function Finance() {
                   <CardTitle className="text-white">Invoices</CardTitle>
                   <CardDescription>{invoices.length} total invoices</CardDescription>
                 </div>
-                <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600">
+                <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600" onClick={() => setShowInvoiceModal(true)}>
                   <Plus className="w-4 h-4 mr-2" />
                   New Invoice
                 </Button>
@@ -256,7 +366,7 @@ export default function Finance() {
                   <Receipt className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-white mb-2">No invoices yet</h3>
                   <p className="text-zinc-500 mb-4">Create your first invoice to start tracking revenue</p>
-                  <Button className="bg-emerald-500 hover:bg-emerald-600">
+                  <Button className="bg-emerald-500 hover:bg-emerald-600" onClick={() => setShowInvoiceModal(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Create Invoice
                   </Button>
@@ -300,7 +410,7 @@ export default function Finance() {
                   <CardTitle className="text-white">Expenses</CardTitle>
                   <CardDescription>{expenses.length} total expenses</CardDescription>
                 </div>
-                <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600">
+                <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600" onClick={() => setShowExpenseModal(true)}>
                   <Plus className="w-4 h-4 mr-2" />
                   Add Expense
                 </Button>
@@ -312,7 +422,7 @@ export default function Finance() {
                   <CreditCard className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-white mb-2">No expenses recorded</h3>
                   <p className="text-zinc-500 mb-4">Track your business expenses here</p>
-                  <Button className="bg-emerald-500 hover:bg-emerald-600">
+                  <Button className="bg-emerald-500 hover:bg-emerald-600" onClick={() => setShowExpenseModal(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Add Expense
                   </Button>
@@ -350,7 +460,7 @@ export default function Finance() {
                   <CardTitle className="text-white">Subscriptions</CardTitle>
                   <CardDescription>{subscriptions.length} active subscriptions</CardDescription>
                 </div>
-                <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600">
+                <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600" onClick={() => setShowSubscriptionModal(true)}>
                   <Plus className="w-4 h-4 mr-2" />
                   Add Subscription
                 </Button>
@@ -362,7 +472,7 @@ export default function Finance() {
                   <CircleDollarSign className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-white mb-2">No subscriptions</h3>
                   <p className="text-zinc-500 mb-4">Track recurring revenue from subscriptions</p>
-                  <Button className="bg-emerald-500 hover:bg-emerald-600">
+                  <Button className="bg-emerald-500 hover:bg-emerald-600" onClick={() => setShowSubscriptionModal(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Add Subscription
                   </Button>
@@ -397,6 +507,209 @@ export default function Finance() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Invoice Modal */}
+      <Modal isOpen={showInvoiceModal} onClose={() => setShowInvoiceModal(false)} title="Create Invoice">
+        <form onSubmit={handleCreateInvoice} className="space-y-4">
+          <div>
+            <Label htmlFor="client_name" className="text-zinc-300">Client Name *</Label>
+            <Input
+              id="client_name"
+              name="client_name"
+              required
+              className="bg-zinc-800 border-zinc-700 text-white mt-1"
+              placeholder="Enter client name"
+            />
+          </div>
+          <div>
+            <Label htmlFor="client_email" className="text-zinc-300">Client Email</Label>
+            <Input
+              id="client_email"
+              name="client_email"
+              type="email"
+              className="bg-zinc-800 border-zinc-700 text-white mt-1"
+              placeholder="client@example.com"
+            />
+          </div>
+          <div>
+            <Label htmlFor="amount" className="text-zinc-300">Amount *</Label>
+            <Input
+              id="amount"
+              name="amount"
+              type="number"
+              step="0.01"
+              required
+              className="bg-zinc-800 border-zinc-700 text-white mt-1"
+              placeholder="0.00"
+            />
+          </div>
+          <div>
+            <Label htmlFor="due_date" className="text-zinc-300">Due Date</Label>
+            <Input
+              id="due_date"
+              name="due_date"
+              type="date"
+              className="bg-zinc-800 border-zinc-700 text-white mt-1"
+            />
+          </div>
+          <div>
+            <Label htmlFor="description" className="text-zinc-300">Description</Label>
+            <Input
+              id="description"
+              name="description"
+              className="bg-zinc-800 border-zinc-700 text-white mt-1"
+              placeholder="Invoice description"
+            />
+          </div>
+          <div className="flex gap-3 pt-4">
+            <Button type="button" variant="outline" onClick={() => setShowInvoiceModal(false)} className="flex-1 border-zinc-700">
+              Cancel
+            </Button>
+            <Button type="submit" disabled={saving} className="flex-1 bg-emerald-500 hover:bg-emerald-600">
+              {saving ? 'Creating...' : 'Create Invoice'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Expense Modal */}
+      <Modal isOpen={showExpenseModal} onClose={() => setShowExpenseModal(false)} title="Add Expense">
+        <form onSubmit={handleCreateExpense} className="space-y-4">
+          <div>
+            <Label htmlFor="exp_description" className="text-zinc-300">Description *</Label>
+            <Input
+              id="exp_description"
+              name="description"
+              required
+              className="bg-zinc-800 border-zinc-700 text-white mt-1"
+              placeholder="What was this expense for?"
+            />
+          </div>
+          <div>
+            <Label htmlFor="exp_amount" className="text-zinc-300">Amount *</Label>
+            <Input
+              id="exp_amount"
+              name="amount"
+              type="number"
+              step="0.01"
+              required
+              className="bg-zinc-800 border-zinc-700 text-white mt-1"
+              placeholder="0.00"
+            />
+          </div>
+          <div>
+            <Label htmlFor="category" className="text-zinc-300">Category</Label>
+            <select
+              id="category"
+              name="category"
+              className="w-full mt-1 bg-zinc-800 border border-zinc-700 text-white rounded-md px-3 py-2"
+            >
+              <option value="software">Software & Tools</option>
+              <option value="marketing">Marketing</option>
+              <option value="office">Office & Equipment</option>
+              <option value="travel">Travel</option>
+              <option value="salary">Salaries</option>
+              <option value="contractors">Contractors</option>
+              <option value="utilities">Utilities</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div>
+            <Label htmlFor="vendor" className="text-zinc-300">Vendor</Label>
+            <Input
+              id="vendor"
+              name="vendor"
+              className="bg-zinc-800 border-zinc-700 text-white mt-1"
+              placeholder="Vendor name"
+            />
+          </div>
+          <div>
+            <Label htmlFor="exp_date" className="text-zinc-300">Date</Label>
+            <Input
+              id="exp_date"
+              name="date"
+              type="date"
+              className="bg-zinc-800 border-zinc-700 text-white mt-1"
+              defaultValue={new Date().toISOString().split('T')[0]}
+            />
+          </div>
+          <div className="flex gap-3 pt-4">
+            <Button type="button" variant="outline" onClick={() => setShowExpenseModal(false)} className="flex-1 border-zinc-700">
+              Cancel
+            </Button>
+            <Button type="submit" disabled={saving} className="flex-1 bg-emerald-500 hover:bg-emerald-600">
+              {saving ? 'Adding...' : 'Add Expense'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Subscription Modal */}
+      <Modal isOpen={showSubscriptionModal} onClose={() => setShowSubscriptionModal(false)} title="Add Subscription">
+        <form onSubmit={handleCreateSubscription} className="space-y-4">
+          <div>
+            <Label htmlFor="sub_name" className="text-zinc-300">Subscription Name *</Label>
+            <Input
+              id="sub_name"
+              name="name"
+              required
+              className="bg-zinc-800 border-zinc-700 text-white mt-1"
+              placeholder="e.g., Slack, AWS, Figma"
+            />
+          </div>
+          <div>
+            <Label htmlFor="sub_amount" className="text-zinc-300">Amount *</Label>
+            <Input
+              id="sub_amount"
+              name="amount"
+              type="number"
+              step="0.01"
+              required
+              className="bg-zinc-800 border-zinc-700 text-white mt-1"
+              placeholder="0.00"
+            />
+          </div>
+          <div>
+            <Label htmlFor="billing_cycle" className="text-zinc-300">Billing Cycle</Label>
+            <select
+              id="billing_cycle"
+              name="billing_cycle"
+              className="w-full mt-1 bg-zinc-800 border border-zinc-700 text-white rounded-md px-3 py-2"
+            >
+              <option value="monthly">Monthly</option>
+              <option value="yearly">Yearly</option>
+              <option value="quarterly">Quarterly</option>
+              <option value="weekly">Weekly</option>
+            </select>
+          </div>
+          <div>
+            <Label htmlFor="next_billing_date" className="text-zinc-300">Next Billing Date</Label>
+            <Input
+              id="next_billing_date"
+              name="next_billing_date"
+              type="date"
+              className="bg-zinc-800 border-zinc-700 text-white mt-1"
+            />
+          </div>
+          <div>
+            <Label htmlFor="sub_description" className="text-zinc-300">Description</Label>
+            <Input
+              id="sub_description"
+              name="description"
+              className="bg-zinc-800 border-zinc-700 text-white mt-1"
+              placeholder="What's this subscription for?"
+            />
+          </div>
+          <div className="flex gap-3 pt-4">
+            <Button type="button" variant="outline" onClick={() => setShowSubscriptionModal(false)} className="flex-1 border-zinc-700">
+              Cancel
+            </Button>
+            <Button type="submit" disabled={saving} className="flex-1 bg-emerald-500 hover:bg-emerald-600">
+              {saving ? 'Adding...' : 'Add Subscription'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
