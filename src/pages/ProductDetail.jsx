@@ -210,35 +210,31 @@ function PhysicalProductDetail({
           </GlassCard>
 
           {/* SKU & Barcode */}
-          <GlassCard className="p-4">
-            <div className="flex flex-wrap items-start gap-6">
-              <div className="flex-1 min-w-[200px]">
-                <div className="grid grid-cols-2 gap-4">
-                  <InlineEditText
-                    value={details?.sku}
-                    onSave={(val) => onDetailsUpdate({ sku: val })}
-                    label="SKU"
-                    placeholder="Enter SKU..."
-                    textClassName="font-mono text-sm"
-                  />
-                  <InlineEditText
-                    value={details?.barcode}
-                    onSave={(val) => onDetailsUpdate({ barcode: val })}
-                    label="EAN / Barcode"
-                    placeholder="Enter barcode..."
-                    textClassName="font-mono text-sm"
-                  />
-                </div>
+          <GlassCard className="p-3">
+            <div className="flex items-center gap-4">
+              <div className="grid grid-cols-2 gap-3 flex-1">
+                <InlineEditText
+                  value={details?.sku}
+                  onSave={(val) => onDetailsUpdate({ sku: val })}
+                  label="SKU"
+                  placeholder="Enter SKU..."
+                  textClassName="font-mono text-sm"
+                />
+                <InlineEditText
+                  value={details?.barcode}
+                  onSave={(val) => onDetailsUpdate({ barcode: val })}
+                  label="EAN / Barcode"
+                  placeholder="Enter barcode..."
+                  textClassName="font-mono text-sm"
+                />
               </div>
               {(details?.barcode || details?.sku) && (
-                <div className="flex-shrink-0">
-                  <BarcodeDisplay
-                    code={details.barcode || details.sku}
-                    displayMode="inline"
-                    height={50}
-                    showControls={true}
-                  />
-                </div>
+                <BarcodeDisplay
+                  code={details.barcode || details.sku}
+                  displayMode="inline"
+                  height={40}
+                  showControls={false}
+                />
               )}
             </div>
           </GlassCard>
