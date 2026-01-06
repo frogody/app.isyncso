@@ -19,7 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
 import { useUser } from "@/components/context/UserContext";
-import { Product, DigitalProduct, PhysicalProduct, Supplier } from "@/api/entities";
+import { Product, DigitalProduct, PhysicalProduct, Supplier, ProductBundle } from "@/api/entities";
 import {
   MediaGallery,
   SpecificationsTable,
@@ -35,7 +35,10 @@ import {
   QuickActions,
   DocumentsSection,
   PricingTiers,
-  VariantsManager
+  VariantsManager,
+  DigitalPricingManager,
+  BundleManager,
+  BundleEditor
 } from "@/components/products";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -63,8 +66,9 @@ const STATUS_COLORS = {
 const NAV_ITEMS = [
   { id: 'overview', label: 'Overview', icon: LayoutGrid },
   { id: 'pricing', label: 'Pricing', icon: DollarSign },
-  { id: 'inventory', label: 'Inventory', icon: Package },
-  { id: 'specs', label: 'Specifications', icon: Settings },
+  { id: 'inventory', label: 'Inventory', icon: Package, physicalOnly: true },
+  { id: 'specs', label: 'Specifications', icon: Settings, physicalOnly: true },
+  { id: 'bundles', label: 'Bundles', icon: Layers, digitalOnly: true },
   { id: 'documents', label: 'Documents', icon: FolderOpen },
   { id: 'activity', label: 'Activity', icon: History },
 ];
@@ -110,9 +114,9 @@ function StatusBadge({ status }) {
   );
 }
 
-function StatCard({ icon: Icon, label, value, subtext, trend, color = "orange" }) {
+function StatCard({ icon: Icon, label, value, subtext, trend, color = "cyan" }) {
   const colors = {
-    orange: "bg-orange-500/10 border-orange-500/20 text-orange-400",
+    cyan: "bg-cyan-500/10 border-cyan-500/20 text-cyan-400",
     green: "bg-green-500/10 border-green-500/20 text-green-400",
     blue: "bg-blue-500/10 border-blue-500/20 text-blue-400",
     purple: "bg-purple-500/10 border-purple-500/20 text-purple-400",
@@ -143,7 +147,11 @@ function StatCard({ icon: Icon, label, value, subtext, trend, color = "orange" }
 }
 
 function SectionNav({ activeSection, onSectionChange, isPhysical }) {
-  const items = isPhysical ? NAV_ITEMS : NAV_ITEMS.filter(item => !['inventory', 'specs'].includes(item.id));
+  const items = NAV_ITEMS.filter(item => {
+    if (item.physicalOnly && !isPhysical) return false;
+    if (item.digitalOnly && isPhysical) return false;
+    return true;
+  });
 
   return (
     <div className="flex items-center gap-1 p-1 bg-zinc-900/50 rounded-lg border border-white/5 overflow-x-auto">
@@ -157,7 +165,7 @@ function SectionNav({ activeSection, onSectionChange, isPhysical }) {
             className={cn(
               "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap",
               isActive
-                ? "bg-orange-500/20 text-orange-400 border border-orange-500/30"
+                ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
                 : "text-zinc-400 hover:text-white hover:bg-white/5"
             )}
           >
@@ -255,8 +263,8 @@ function OverviewSection({
               <div className="flex items-center gap-3">
                 <StatusBadge status={product.status} />
                 {saving && (
-                  <div className="flex items-center gap-2 text-orange-400">
-                    <div className="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+                  <div className="flex items-center gap-2 text-cyan-400">
+                    <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
                     <span className="text-sm">Saving...</span>
                   </div>
                 )}
@@ -344,7 +352,7 @@ function OverviewSection({
         {/* Description */}
         <GlassCard className="p-6">
           <div className="flex items-center gap-2 mb-4">
-            <FileText className="w-5 h-5 text-orange-400" />
+            <FileText className="w-5 h-5 text-cyan-400" />
             <span className="font-medium text-white">Description</span>
           </div>
           <InlineEditText
@@ -433,7 +441,7 @@ function PricingSection({ details, onDetailsUpdate, currency }) {
         {/* Pricing Details */}
         <GlassCard className="p-6">
           <div className="flex items-center gap-2 mb-6">
-            <DollarSign className="w-5 h-5 text-orange-400" />
+            <DollarSign className="w-5 h-5 text-cyan-400" />
             <span className="font-medium text-white">Pricing Details</span>
           </div>
 
@@ -542,6 +550,197 @@ function PricingSection({ details, onDetailsUpdate, currency }) {
   );
 }
 
+// ============= DIGITAL PRICING SECTION =============
+
+function DigitalPricingSection({ details, onDetailsUpdate, currency }) {
+  const pricingConfig = details?.pricing_config || {};
+
+  const handlePricingConfigChange = (newConfig) => {
+    onDetailsUpdate({ pricing_config: newConfig });
+  };
+
+  return (
+    <div className="space-y-6">
+      <GlassCard className="p-6">
+        <DigitalPricingManager
+          pricingConfig={pricingConfig}
+          currency={currency}
+          onConfigChange={handlePricingConfigChange}
+        />
+      </GlassCard>
+    </div>
+  );
+}
+
+// ============= BUNDLES SECTION =============
+
+function BundlesSection({ product, details, currency }) {
+  const [bundles, setBundles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showEditor, setShowEditor] = useState(false);
+  const [editingBundle, setEditingBundle] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const { user } = useUser();
+
+  const loadBundles = async () => {
+    if (!user?.company_id) return;
+
+    try {
+      setLoading(true);
+      // Load bundles that include this product
+      const allBundles = await ProductBundle.filter({
+        company_id: user.company_id
+      });
+
+      // Filter to bundles containing this product
+      const productBundles = allBundles.filter(bundle =>
+        bundle.items?.some(item => item.product_id === product?.id)
+      );
+
+      setBundles(productBundles);
+    } catch (err) {
+      console.error('Failed to load bundles:', err);
+      toast.error('Failed to load bundles');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadBundles();
+  }, [product?.id, user?.company_id]);
+
+  const handleCreateBundle = () => {
+    // Pre-populate with current product
+    const newBundle = {
+      name: '',
+      description: '',
+      bundle_type: 'fixed',
+      pricing_strategy: 'discount',
+      discount_percent: 10,
+      items: product ? [{
+        id: `item_${Date.now().toString(36)}`,
+        product_id: product.id,
+        product_type: 'digital',
+        name: product.name,
+        price: details?.pricing?.base_price || 0,
+        quantity: 1
+      }] : [],
+      status: 'draft'
+    };
+    setEditingBundle(newBundle);
+    setShowEditor(true);
+  };
+
+  const handleEditBundle = (bundle) => {
+    setEditingBundle(bundle);
+    setShowEditor(true);
+  };
+
+  const handleDuplicateBundle = async (bundle) => {
+    try {
+      const duplicated = {
+        ...bundle,
+        id: undefined,
+        name: `${bundle.name} (Copy)`,
+        status: 'draft',
+        created_at: undefined,
+        updated_at: undefined
+      };
+      await ProductBundle.create({
+        ...duplicated,
+        company_id: user?.company_id
+      });
+      toast.success('Bundle duplicated');
+      loadBundles();
+    } catch (err) {
+      console.error('Failed to duplicate bundle:', err);
+      toast.error('Failed to duplicate bundle');
+    }
+  };
+
+  const handleArchiveBundle = async (bundle) => {
+    try {
+      const newStatus = bundle.status === 'archived' ? 'draft' : 'archived';
+      await ProductBundle.update(bundle.id, { status: newStatus });
+      toast.success(newStatus === 'archived' ? 'Bundle archived' : 'Bundle unarchived');
+      loadBundles();
+    } catch (err) {
+      console.error('Failed to archive bundle:', err);
+      toast.error('Failed to update bundle');
+    }
+  };
+
+  const handleDeleteBundle = async (bundle) => {
+    if (!confirm('Are you sure you want to delete this bundle?')) return;
+
+    try {
+      await ProductBundle.delete(bundle.id);
+      toast.success('Bundle deleted');
+      loadBundles();
+    } catch (err) {
+      console.error('Failed to delete bundle:', err);
+      toast.error('Failed to delete bundle');
+    }
+  };
+
+  const handleSaveBundle = async (bundleData) => {
+    setSaving(true);
+    try {
+      if (bundleData.id) {
+        await ProductBundle.update(bundleData.id, bundleData);
+        toast.success('Bundle updated');
+      } else {
+        await ProductBundle.create({
+          ...bundleData,
+          company_id: user?.company_id
+        });
+        toast.success('Bundle created');
+      }
+      setShowEditor(false);
+      setEditingBundle(null);
+      loadBundles();
+    } catch (err) {
+      console.error('Failed to save bundle:', err);
+      toast.error('Failed to save bundle');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (showEditor) {
+    return (
+      <GlassCard className="p-6">
+        <BundleEditor
+          bundle={editingBundle}
+          currency={currency}
+          onSave={handleSaveBundle}
+          onCancel={() => {
+            setShowEditor(false);
+            setEditingBundle(null);
+          }}
+          saving={saving}
+        />
+      </GlassCard>
+    );
+  }
+
+  return (
+    <GlassCard className="p-6">
+      <BundleManager
+        bundles={bundles}
+        currency={currency}
+        loading={loading}
+        onCreateBundle={handleCreateBundle}
+        onEditBundle={handleEditBundle}
+        onDuplicateBundle={handleDuplicateBundle}
+        onArchiveBundle={handleArchiveBundle}
+        onDeleteBundle={handleDeleteBundle}
+      />
+    </GlassCard>
+  );
+}
+
 // ============= INVENTORY SECTION =============
 
 function InventorySection({ details, onDetailsUpdate, currency }) {
@@ -597,7 +796,7 @@ function InventorySection({ details, onDetailsUpdate, currency }) {
         {/* Stock Management */}
         <GlassCard className="p-6">
           <div className="flex items-center gap-2 mb-6">
-            <Package className="w-5 h-5 text-orange-400" />
+            <Package className="w-5 h-5 text-cyan-400" />
             <span className="font-medium text-white">Stock Management</span>
           </div>
 
@@ -722,7 +921,7 @@ function SpecificationsSection({ details, onDetailsUpdate }) {
     <div className="space-y-6">
       <GlassCard className="p-6">
         <div className="flex items-center gap-2 mb-6">
-          <Settings className="w-5 h-5 text-orange-400" />
+          <Settings className="w-5 h-5 text-cyan-400" />
           <span className="font-medium text-white">Technical Specifications</span>
         </div>
 
@@ -828,7 +1027,7 @@ function ActivitySectionWrapper({ product, details }) {
   return (
     <GlassCard className="p-6">
       <div className="flex items-center gap-2 mb-6">
-        <History className="w-5 h-5 text-orange-400" />
+        <History className="w-5 h-5 text-cyan-400" />
         <span className="font-medium text-white">Activity History</span>
       </div>
 
@@ -1037,11 +1236,11 @@ export default function ProductDetail() {
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className={cn(
           "absolute top-20 right-1/4 w-96 h-96 rounded-full blur-3xl",
-          isPhysical ? 'bg-orange-900/10' : 'bg-cyan-900/10'
+          'bg-cyan-900/10'
         )} />
         <div className={cn(
           "absolute bottom-20 left-1/4 w-80 h-80 rounded-full blur-3xl",
-          isPhysical ? 'bg-orange-950/10' : 'bg-cyan-950/10'
+          'bg-cyan-950/10'
         )} />
       </div>
 
@@ -1101,11 +1300,19 @@ export default function ProductDetail() {
             )}
 
             {activeSection === 'pricing' && (
-              <PricingSection
-                details={details}
-                onDetailsUpdate={handleDetailsUpdate}
-                currency={currency}
-              />
+              isPhysical ? (
+                <PricingSection
+                  details={details}
+                  onDetailsUpdate={handleDetailsUpdate}
+                  currency={currency}
+                />
+              ) : (
+                <DigitalPricingSection
+                  details={details}
+                  onDetailsUpdate={handleDetailsUpdate}
+                  currency={currency}
+                />
+              )
             )}
 
             {activeSection === 'inventory' && isPhysical && (
@@ -1120,6 +1327,14 @@ export default function ProductDetail() {
               <SpecificationsSection
                 details={details}
                 onDetailsUpdate={handleDetailsUpdate}
+              />
+            )}
+
+            {activeSection === 'bundles' && !isPhysical && (
+              <BundlesSection
+                product={product}
+                details={details}
+                currency={currency}
               />
             )}
 
@@ -1143,7 +1358,7 @@ export default function ProductDetail() {
         {activeSection === 'overview' && relatedProducts.length > 0 && (
           <div className="mt-8">
             <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-              <Layers className="w-5 h-5 text-orange-400" />
+              <Layers className="w-5 h-5 text-cyan-400" />
               Related Products
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

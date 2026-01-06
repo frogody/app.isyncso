@@ -4,8 +4,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Receipt, Plus, Search, Filter, Download, Send, Check, Clock, AlertCircle,
   FileText, MoreVertical, Eye, Edit2, Trash2, Mail, X, ChevronDown,
-  ArrowUpDown, Calendar, DollarSign, Building2, User
+  ArrowUpDown, Calendar, DollarSign, Building2, User, Package, RefreshCw, Zap
 } from 'lucide-react';
+import { ProductSelector } from '@/components/finance';
+import { Subscription } from '@/api/entities';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +36,7 @@ export default function FinanceInvoices() {
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showProductSelector, setShowProductSelector] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [saving, setSaving] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -135,31 +138,94 @@ export default function FinanceInvoices() {
     setEditMode(false);
   };
 
+  // Calculate total from line items
+  const calculateTotal = () => {
+    return formData.items.reduce((sum, item) => {
+      const quantity = item.quantity || 1;
+      const price = parseFloat(item.unit_price) || 0;
+      return sum + (quantity * price);
+    }, 0);
+  };
+
+  // Add product from selector
+  const handleAddProduct = (lineItem) => {
+    setFormData(prev => ({
+      ...prev,
+      items: [...prev.items.filter(i => i.description || i.product_id), lineItem],
+      total: '' // Will be recalculated
+    }));
+    setShowProductSelector(false);
+  };
+
+  // Remove line item
+  const handleRemoveItem = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      items: prev.items.filter((_, i) => i !== index)
+    }));
+  };
+
   const handleCreateInvoice = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
       const user = await base44.auth.me();
+      const validItems = formData.items.filter(item => (item.description || item.name) && item.unit_price);
+      const calculatedTotal = validItems.reduce((sum, item) => {
+        const quantity = item.quantity || 1;
+        const price = parseFloat(item.unit_price) || 0;
+        return sum + (quantity * price);
+      }, 0);
+
       const invoiceData = {
         user_id: user?.id,
+        company_id: user?.company_id,
         invoice_number: `INV-${Date.now().toString().slice(-6)}`,
         client_name: formData.client_name,
         client_email: formData.client_email,
         client_address: formData.client_address,
-        total: parseFloat(formData.total) || 0,
+        total: calculatedTotal || parseFloat(formData.total) || 0,
         status: 'draft',
         due_date: formData.due_date,
         description: formData.description,
-        items: formData.items.filter(item => item.description && item.unit_price)
+        items: validItems
       };
 
+      let newInvoice;
       if (editMode && selectedInvoice) {
         await base44.entities.Invoice.update(selectedInvoice.id, invoiceData);
         toast.success('Invoice updated successfully');
       } else {
-        const newInvoice = await base44.entities.Invoice.create(invoiceData);
+        newInvoice = await base44.entities.Invoice.create(invoiceData);
         setInvoices(prev => [newInvoice, ...prev]);
-        toast.success('Invoice created successfully');
+
+        // Auto-create subscriptions for subscription line items
+        const subscriptionItems = validItems.filter(item => item.is_subscription);
+        for (const item of subscriptionItems) {
+          try {
+            await Subscription.create({
+              company_id: user?.company_id,
+              product_id: item.product_id,
+              plan_id: item.plan_id,
+              plan_name: item.plan_name,
+              billing_cycle: item.billing_cycle || 'monthly',
+              amount: item.unit_price,
+              status: 'active',
+              invoice_id: newInvoice?.id,
+              client_name: formData.client_name,
+              client_email: formData.client_email,
+              start_date: new Date().toISOString()
+            });
+          } catch (subErr) {
+            console.warn('Could not create subscription:', subErr);
+          }
+        }
+
+        if (subscriptionItems.length > 0) {
+          toast.success(`Invoice created with ${subscriptionItems.length} subscription(s) activated`);
+        } else {
+          toast.success('Invoice created successfully');
+        }
       }
 
       setShowCreateModal(false);
@@ -554,27 +620,116 @@ export default function FinanceInvoices() {
                 />
               </div>
 
-              <div>
-                <Label className="text-zinc-300">Amount *</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={formData.total}
-                  onChange={(e) => setFormData(prev => ({ ...prev, total: e.target.value }))}
-                  required
-                  className="bg-zinc-800 border-zinc-700 text-white mt-1"
-                  placeholder="0.00"
-                />
+              {/* Line Items Section */}
+              <div className="col-span-2 pt-4 border-t border-zinc-700">
+                <div className="flex items-center justify-between mb-3">
+                  <Label className="text-zinc-300 flex items-center gap-2">
+                    <Package className="w-4 h-4" />
+                    Line Items
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowProductSelector(true)}
+                    className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add Product
+                  </Button>
+                </div>
+
+                {/* Line Items List */}
+                {formData.items.filter(i => i.description || i.name || i.product_id).length > 0 ? (
+                  <div className="space-y-2 mb-4">
+                    {formData.items.map((item, idx) => (
+                      (item.description || item.name || item.product_id) && (
+                        <div
+                          key={idx}
+                          className="flex items-center gap-3 p-3 rounded-lg bg-zinc-800/50 border border-white/5"
+                        >
+                          <div className="w-8 h-8 rounded flex items-center justify-center bg-zinc-700/50">
+                            {item.is_subscription ? (
+                              <RefreshCw className="w-4 h-4 text-cyan-400" />
+                            ) : item.product_id ? (
+                              <Zap className="w-4 h-4 text-amber-400" />
+                            ) : (
+                              <Package className="w-4 h-4 text-zinc-400" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-white text-sm truncate">
+                              {item.name || item.description}
+                            </p>
+                            {item.is_subscription && (
+                              <p className="text-xs text-cyan-400">
+                                {item.plan_name} ({item.billing_cycle})
+                              </p>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-medium text-white">
+                              ${((item.quantity || 1) * (parseFloat(item.unit_price) || 0)).toFixed(2)}
+                            </p>
+                            {item.quantity > 1 && (
+                              <p className="text-xs text-zinc-500">
+                                {item.quantity} x ${parseFloat(item.unit_price || 0).toFixed(2)}
+                              </p>
+                            )}
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveItem(idx)}
+                            className="text-zinc-400 hover:text-red-400 h-8 w-8 p-0"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )
+                    ))}
+
+                    {/* Total from items */}
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                      <span className="text-sm text-amber-400">Calculated Total</span>
+                      <span className="text-lg font-bold text-amber-400">
+                        ${calculateTotal().toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-6 rounded-lg border border-dashed border-zinc-700 mb-4">
+                    <Package className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
+                    <p className="text-sm text-zinc-500">No products added</p>
+                    <p className="text-xs text-zinc-600 mt-1">
+                      Click "Add Product" to select from your catalog
+                    </p>
+                  </div>
+                )}
+
+                {/* Manual amount override */}
+                <div>
+                  <Label className="text-zinc-500 text-xs">Manual Amount Override</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={formData.total}
+                    onChange={(e) => setFormData(prev => ({ ...prev, total: e.target.value }))}
+                    className="bg-zinc-800 border-zinc-700 text-white mt-1"
+                    placeholder="Leave empty to use calculated total"
+                  />
+                </div>
               </div>
 
               <div className="col-span-2">
-                <Label className="text-zinc-300">Description</Label>
+                <Label className="text-zinc-300">Notes</Label>
                 <Textarea
                   value={formData.description}
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   className="bg-zinc-800 border-zinc-700 text-white mt-1"
-                  placeholder="Invoice description or notes"
-                  rows={3}
+                  placeholder="Invoice notes or additional information"
+                  rows={2}
                 />
               </div>
             </div>
@@ -675,6 +830,14 @@ export default function FinanceInvoices() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Product Selector Modal */}
+      <ProductSelector
+        open={showProductSelector}
+        onClose={() => setShowProductSelector(false)}
+        onSelect={handleAddProduct}
+        currency="EUR"
+      />
     </div>
   );
 }

@@ -397,6 +397,10 @@ export const entities = {
   PhysicalProduct: createEntityWrapper('PhysicalProduct'),
   Supplier: createEntityWrapper('Supplier'),
   ProductCategory: createEntityWrapper('ProductCategory'),
+  ProductBundle: createEntityWrapper('ProductBundle'),
+
+  // === Proposals ===
+  Proposal: createEntityWrapper('Proposal'),
 };
 
 /**

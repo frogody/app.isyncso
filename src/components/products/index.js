@@ -35,3 +35,21 @@ export { default as QuickActions } from './QuickActions';
 export { default as DocumentsSection } from './DocumentsSection';
 export { default as PricingTiers } from './PricingTiers';
 export { default as VariantsManager } from './VariantsManager';
+
+// Digital Product Pricing
+export {
+  DigitalPricingManager,
+  SubscriptionPlanEditor,
+  OneTimePricingEditor,
+  AddOnEditor
+} from './digital';
+
+// Product Bundles
+export {
+  BundleManager,
+  BundleEditor,
+  BundlePricingCalculator,
+  BundlePriceTag,
+  InlineBundlePrice,
+  calculateBundlePrice
+} from './bundles';

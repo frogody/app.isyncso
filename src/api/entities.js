@@ -111,6 +111,10 @@ export const DigitalProduct = base44.entities.DigitalProduct;
 export const PhysicalProduct = base44.entities.PhysicalProduct;
 export const Supplier = base44.entities.Supplier;
 export const ProductCategory = base44.entities.ProductCategory;
+export const ProductBundle = base44.entities.ProductBundle;
+
+// === Proposals ===
+export const Proposal = base44.entities.Proposal;
 
 // === Auth SDK ===
 export const User = base44.auth;

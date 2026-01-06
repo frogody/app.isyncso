@@ -119,6 +119,12 @@ const navigationItems = [
     permission: "projects.view", // Tasks are part of projects
   },
   {
+    title: "Products",
+    url: createPageUrl("Products"),
+    icon: Package,
+    permission: null, // Always visible - core feature
+  },
+  {
     title: "Inbox",
     url: createPageUrl("Inbox"),
     icon: Inbox,
@@ -169,13 +175,6 @@ const ENGINE_ITEMS_CONFIG = {
     id: 'raise',
     permission: "finance.view", // Fundraising is finance-related
   },
-  products: {
-    title: "Products",
-    url: createPageUrl("Products"),
-    icon: Package,
-    id: 'products',
-    permission: null, // Always visible
-  },
 };
 
 
@@ -205,7 +204,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       }
   
   // GROWTH routes (merged with CIDE)
-          if (path.includes('growth') || path.includes('sequences') || path.includes('deals') || path.includes('leads') || path.includes('insights') || path.includes('prospect') || path.includes('research') || path.includes('pipeline')) {
+          if (path.includes('growth') || path.includes('sequences') || path.includes('deals') || path.includes('leads') || path.includes('insights') || path.includes('prospect') || path.includes('research') || path.includes('pipeline') || path.includes('proposal')) {
             return {
               title: 'GROWTH',
               color: 'indigo',
@@ -214,6 +213,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
                 { label: 'Pipeline', path: createPageUrl('GrowthPipeline'), icon: Kanban },
                 { label: 'Prospects', path: createPageUrl('GrowthProspects'), icon: Users },
                 { label: 'Campaigns', path: createPageUrl('GrowthCampaigns'), icon: Megaphone },
+                { label: 'Proposals', path: createPageUrl('GrowthProposals'), icon: FileText },
                 { label: 'Signals', path: createPageUrl('GrowthSignals'), icon: Radio },
               ]
             };
@@ -252,7 +252,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
 
     return {
       title: 'PRODUCTS',
-      color: 'purple',
+      color: 'cyan',
       items
     };
   }

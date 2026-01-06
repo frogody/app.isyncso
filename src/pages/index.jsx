@@ -72,6 +72,10 @@ import GrowthPipeline from "./GrowthPipeline";
 
 import GrowthProspects from "./GrowthProspects";
 
+import GrowthProposals from "./GrowthProposals";
+
+import GrowthProposalBuilder from "./GrowthProposalBuilder";
+
 import GrowthResearch from "./GrowthResearch";
 
 import GrowthSignals from "./GrowthSignals";
@@ -251,7 +255,11 @@ const PAGES = {
     GrowthPipeline: GrowthPipeline,
     
     GrowthProspects: GrowthProspects,
-    
+
+    GrowthProposals: GrowthProposals,
+
+    GrowthProposalBuilder: GrowthProposalBuilder,
+
     GrowthResearch: GrowthResearch,
     
     GrowthSignals: GrowthSignals,
@@ -454,7 +462,11 @@ function PagesContent() {
                 <Route path="/GrowthPipeline" element={<GrowthPipeline />} />
                 
                 <Route path="/GrowthProspects" element={<GrowthProspects />} />
-                
+
+                <Route path="/GrowthProposals" element={<GrowthProposals />} />
+
+                <Route path="/GrowthProposalBuilder" element={<GrowthProposalBuilder />} />
+
                 <Route path="/GrowthResearch" element={<GrowthResearch />} />
                 
                 <Route path="/GrowthSignals" element={<GrowthSignals />} />

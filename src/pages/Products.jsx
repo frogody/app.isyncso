@@ -45,11 +45,11 @@ function ProductCard({ product }) {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="group p-4 rounded-xl bg-zinc-900/50 border border-white/5 hover:border-purple-500/30 transition-all cursor-pointer"
+        className="group p-4 rounded-xl bg-zinc-900/50 border border-white/5 hover:border-cyan-500/30 transition-all cursor-pointer"
       >
         <div className="flex items-start gap-4">
           {/* Product Image or Icon */}
-          <div className="w-16 h-16 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center flex-shrink-0 overflow-hidden">
+          <div className="w-16 h-16 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center flex-shrink-0 overflow-hidden">
             {product.featured_image?.url ? (
               <img
                 src={product.featured_image.url}
@@ -57,14 +57,14 @@ function ProductCard({ product }) {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <Icon className="w-7 h-7 text-purple-400" />
+              <Icon className="w-7 h-7 text-cyan-400" />
             )}
           </div>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div>
-                <h3 className="font-medium text-white truncate group-hover:text-purple-400 transition-colors">
+                <h3 className="font-medium text-white truncate group-hover:text-cyan-400 transition-colors">
                   {product.name}
                 </h3>
                 <p className="text-sm text-zinc-500 mt-0.5 line-clamp-1">
@@ -308,8 +308,8 @@ export default function Products() {
     <div className="min-h-screen bg-black relative">
       {/* Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 right-1/4 w-96 h-96 bg-purple-900/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-purple-950/10 rounded-full blur-3xl" />
+        <div className="absolute top-20 right-1/4 w-96 h-96 bg-cyan-900/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-cyan-950/10 rounded-full blur-3xl" />
       </div>
 
       <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
@@ -318,7 +318,7 @@ export default function Products() {
           title="Products"
           subtitle="Manage your digital and physical product catalog"
           icon={Package}
-          color="purple"
+          color="cyan"
           actions={
             <div className="flex items-center gap-3">
               {/* Settings Popover */}
@@ -326,7 +326,7 @@ export default function Products() {
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className="border-white/10 bg-zinc-900/60 text-zinc-300 hover:text-white hover:border-purple-500/50 hover:bg-purple-500/10"
+                    className="border-white/10 bg-zinc-900/60 text-zinc-300 hover:text-white hover:border-cyan-500/50 hover:bg-cyan-500/10"
                   >
                     <Settings className="w-4 h-4 mr-2" /> Settings
                   </Button>
@@ -383,7 +383,7 @@ export default function Products() {
 
               <Button
                 variant="outline"
-                className="border-white/10 bg-zinc-900/60 text-zinc-300 hover:text-white hover:border-purple-500/50 hover:bg-purple-500/10"
+                className="border-white/10 bg-zinc-900/60 text-zinc-300 hover:text-white hover:border-cyan-500/50 hover:bg-cyan-500/10"
               >
                 <Plus className="w-4 h-4 mr-2" /> Add Product
               </Button>
@@ -397,7 +397,7 @@ export default function Products() {
             icon={Package}
             label="Total Products"
             value={loading ? '-' : stats.total}
-            color="purple"
+            color="cyan"
           />
           {digitalEnabled && (
             <QuickStatCard
@@ -425,13 +425,13 @@ export default function Products() {
             icon={Edit2}
             label="Drafts"
             value={loading ? '-' : stats.draft}
-            color="purple"
+            color="cyan"
           />
           <QuickStatCard
             icon={Tag}
             label="Categories"
             value={loading ? '-' : stats.categories}
-            color="purple"
+            color="cyan"
           />
         </div>
 
@@ -494,8 +494,8 @@ export default function Products() {
         <GlassCard className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center">
-                <Layers className="w-5 h-5 text-purple-400" />
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
+                <Layers className="w-5 h-5 text-cyan-400" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-white">Recent Products</h3>
@@ -537,15 +537,15 @@ export default function Products() {
             </div>
           ) : (
             <div className="text-center py-12">
-              <div className="w-16 h-16 rounded-full bg-purple-500/10 border border-purple-500/30 flex items-center justify-center mx-auto mb-4">
-                <Package className="w-8 h-8 text-purple-400" />
+              <div className="w-16 h-16 rounded-full bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mx-auto mb-4">
+                <Package className="w-8 h-8 text-cyan-400" />
               </div>
               <h4 className="text-lg font-medium text-white mb-2">No products yet</h4>
               <p className="text-sm text-zinc-500 mb-4">
                 {searchQuery ? 'No products match your search' : 'Get started by adding your first product'}
               </p>
               {!searchQuery && (
-                <Button className="bg-purple-500 hover:bg-purple-600 text-white">
+                <Button className="bg-cyan-500 hover:bg-cyan-600 text-white">
                   <Plus className="w-4 h-4 mr-2" /> Add Your First Product
                 </Button>
               )}
@@ -567,8 +567,8 @@ export default function Products() {
         {categories.length > 0 && (
           <GlassCard className="p-6">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center">
-                <Tag className="w-5 h-5 text-purple-400" />
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
+                <Tag className="w-5 h-5 text-cyan-400" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-white">Categories</h3>
@@ -580,7 +580,7 @@ export default function Products() {
               {categories.map((category) => (
                 <Badge
                   key={category.id}
-                  className="bg-zinc-800/50 border border-white/10 text-zinc-300 hover:border-purple-500/30 hover:text-purple-400 cursor-pointer transition-colors"
+                  className="bg-zinc-800/50 border border-white/10 text-zinc-300 hover:border-cyan-500/30 hover:text-cyan-400 cursor-pointer transition-colors"
                 >
                   {category.name}
                   <span className="ml-2 text-xs text-zinc-500">
