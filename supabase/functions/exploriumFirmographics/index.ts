@@ -13,7 +13,24 @@ serve(async (req) => {
   }
 
   try {
-    const { companyName, domain } = await req.json()
+    const body = await req.json()
+
+    // Support both formats: { businesses: [...] } and { companyName, domain }
+    let businessesToMatch: { name?: string | null; domain?: string | null }[] = []
+
+    if (body.businesses && Array.isArray(body.businesses)) {
+      // Frontend sends { businesses: [{ name, domain }] }
+      businessesToMatch = body.businesses.map((b: any) => ({
+        name: b.name || null,
+        domain: b.domain || null
+      }))
+    } else if (body.companyName || body.domain) {
+      // Direct format { companyName, domain }
+      businessesToMatch = [{
+        name: body.companyName || null,
+        domain: body.domain || null
+      }]
+    }
 
     // Get Explorium API key from environment
     const exploriumApiKey = Deno.env.get('EXPLORIUM_API_KEY')
@@ -25,28 +42,54 @@ serve(async (req) => {
       )
     }
 
-    // Build search query
-    const searchParams: Record<string, string> = {}
-    if (domain) searchParams.domain = domain
-    if (companyName) searchParams.company_name = companyName
-
-    if (Object.keys(searchParams).length === 0) {
+    if (businessesToMatch.length === 0 || (!businessesToMatch[0].name && !businessesToMatch[0].domain)) {
       return new Response(
-        JSON.stringify({ error: 'Either companyName or domain is required', data: null }),
+        JSON.stringify({ error: 'Either companyName/name or domain is required', data: null }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       )
     }
 
-    // Call Explorium Firmographics API
-    const response = await fetch('https://api.explorium.ai/v1/businesses/match', {
+    // Call Explorium Firmographics API - first match the business
+    const matchResponse = await fetch('https://api.explorium.ai/v1/businesses/match', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${exploriumApiKey}`,
+        'API_KEY': exploriumApiKey,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        ...searchParams,
-        enrich: true,
+        businesses_to_match: businessesToMatch
+      }),
+    })
+
+    if (!matchResponse.ok) {
+      const errorText = await matchResponse.text()
+      console.error('Explorium match error:', matchResponse.status, errorText)
+      return new Response(
+        JSON.stringify({ error: `Explorium match error: ${matchResponse.status}`, data: null }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      )
+    }
+
+    const matchData = await matchResponse.json()
+    const businessIds = matchData.matched_businesses?.map((b: any) => b.business_id) || []
+
+    if (businessIds.length === 0) {
+      return new Response(
+        JSON.stringify({ error: null, data: [], message: 'No matching businesses found' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      )
+    }
+
+    // Now enrich the matched businesses
+    const response = await fetch('https://api.explorium.ai/v1/businesses/firmographics/bulk_enrich', {
+      method: 'POST',
+      headers: {
+        'api_key': exploriumApiKey,
+        'accept': 'application/json',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        business_ids: businessIds
       }),
     })
 

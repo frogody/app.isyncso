@@ -157,16 +157,47 @@ export default function FinanceProposalBuilder() {
     setSaving(true);
     try {
       const me = await base44.auth.me();
+
+      // Verify user is authenticated and has a company
+      if (!me) {
+        toast.error('Please log in to save proposals');
+        return;
+      }
+
+      if (!me.company_id) {
+        toast.error('Your account is not associated with a company. Please contact support.');
+        return;
+      }
+
+      // Only include valid database columns to avoid errors
       const proposalData = {
-        ...proposal,
-        company_id: me?.company_id,
+        company_id: me.company_id,
+        prospect_id: proposal.prospect_id || null,
+        title: proposal.title,
+        status: sendAfterSave ? 'sent' : (proposal.status || 'draft'),
+        client_name: proposal.client_name || null,
+        client_email: proposal.client_email || null,
+        client_company: proposal.client_company || null,
+        client_address: proposal.client_address || {},
+        introduction: proposal.introduction || null,
+        sections: proposal.sections || [],
+        line_items: proposal.line_items || [],
+        terms_and_conditions: proposal.terms_and_conditions || null,
         subtotal: pricing.subtotal,
+        discount_type: proposal.discount_type || null,
+        discount_value: proposal.discount_value || 0,
         discount_amount: pricing.discountAmount,
+        tax_percent: proposal.tax_percent || 0,
         tax_amount: pricing.taxAmount,
         total: pricing.total,
-        status: sendAfterSave ? 'sent' : proposal.status,
-        sent_at: sendAfterSave ? new Date().toISOString() : proposal.sent_at
+        currency: proposal.currency || 'EUR',
+        valid_until: proposal.valid_until || null,
+        branding: proposal.branding || {},
+        signature_required: proposal.signature_required || false,
+        sent_at: sendAfterSave ? new Date().toISOString() : (proposal.sent_at || null)
       };
+
+      console.log('[Proposal Save] Attempting to save:', { proposalId, hasCompanyId: !!me.company_id });
 
       if (proposalId) {
         await Proposal.update(proposalId, proposalData);
@@ -182,8 +213,24 @@ export default function FinanceProposalBuilder() {
         navigate(createPageUrl('FinanceProposals'));
       }
     } catch (error) {
-      console.error('Error saving proposal:', error);
-      toast.error('Failed to save proposal');
+      console.error('[Proposal Save] Error:', error);
+
+      // Extract detailed error message
+      let errorMessage = 'Failed to save proposal';
+      if (error?.message) {
+        errorMessage = error.message;
+      }
+      if (error?.details) {
+        errorMessage = error.details;
+      }
+      if (error?.code === 'PGRST301' || error?.message?.includes('RLS')) {
+        errorMessage = 'Permission denied. Please check your account settings.';
+      }
+      if (error?.code === '42501') {
+        errorMessage = 'You do not have permission to save proposals.';
+      }
+
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }

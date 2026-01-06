@@ -13,7 +13,38 @@ serve(async (req) => {
   }
 
   try {
-    const { email, linkedinUrl, fullName, companyName, domain } = await req.json()
+    const body = await req.json()
+
+    // Support both formats: { contacts: [...] } and { email, linkedinUrl, ... }
+    interface ContactToMatch {
+      email?: string | null
+      linkedin_url?: string | null
+      full_name?: string | null
+      company_name?: string | null
+      company_domain?: string | null
+    }
+
+    let contactsToMatch: ContactToMatch[] = []
+
+    if (body.contacts && Array.isArray(body.contacts)) {
+      // Frontend sends { contacts: [{ email, linkedin_url, full_name, company_name }] }
+      contactsToMatch = body.contacts.map((c: any) => ({
+        email: c.email || null,
+        linkedin_url: c.linkedin_url || null,
+        full_name: c.full_name || null,
+        company_name: c.company_name || null,
+        company_domain: c.company_domain || c.domain || null
+      }))
+    } else if (body.email || body.linkedinUrl || body.fullName || body.companyName) {
+      // Direct format { email, linkedinUrl, fullName, companyName, domain }
+      contactsToMatch = [{
+        email: body.email || null,
+        linkedin_url: body.linkedinUrl || null,
+        full_name: body.fullName || null,
+        company_name: body.companyName || null,
+        company_domain: body.domain || null
+      }]
+    }
 
     // Get Explorium API key from environment
     const exploriumApiKey = Deno.env.get('EXPLORIUM_API_KEY')
@@ -25,31 +56,54 @@ serve(async (req) => {
       )
     }
 
-    // Build search query
-    const searchParams: Record<string, string> = {}
-    if (email) searchParams.email = email
-    if (linkedinUrl) searchParams.linkedin_url = linkedinUrl
-    if (fullName) searchParams.full_name = fullName
-    if (companyName) searchParams.company_name = companyName
-    if (domain) searchParams.company_domain = domain
-
-    if (Object.keys(searchParams).length === 0) {
+    if (contactsToMatch.length === 0) {
       return new Response(
-        JSON.stringify({ error: 'At least one search parameter is required', data: null }),
+        JSON.stringify({ error: 'At least one contact with search parameters is required', data: null }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       )
     }
 
-    // Call Explorium People API
-    const response = await fetch('https://api.explorium.ai/v1/people/match', {
+    // Call Explorium People API - first match the contact
+    const matchResponse = await fetch('https://api.explorium.ai/v1/contacts/match', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${exploriumApiKey}`,
+        'API_KEY': exploriumApiKey,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        ...searchParams,
-        enrich: true,
+        contacts_to_match: contactsToMatch
+      }),
+    })
+
+    if (!matchResponse.ok) {
+      const errorText = await matchResponse.text()
+      console.error('Explorium contact match error:', matchResponse.status, errorText)
+      return new Response(
+        JSON.stringify({ error: `Explorium match error: ${matchResponse.status}`, data: null }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      )
+    }
+
+    const matchData = await matchResponse.json()
+    const contactIds = matchData.matched_contacts?.map((c: any) => c.contact_id) || []
+
+    if (contactIds.length === 0) {
+      return new Response(
+        JSON.stringify({ error: null, data: [], message: 'No matching contacts found' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      )
+    }
+
+    // Now enrich the matched contacts
+    const response = await fetch('https://api.explorium.ai/v1/contacts/enrich', {
+      method: 'POST',
+      headers: {
+        'api_key': exploriumApiKey,
+        'accept': 'application/json',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        contact_ids: contactIds
       }),
     })
 

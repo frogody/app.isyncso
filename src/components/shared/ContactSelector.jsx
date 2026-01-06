@@ -43,12 +43,20 @@ export default function ContactSelector({
   const [loading, setLoading] = useState(false);
   const [selectedContact, setSelectedContact] = useState(null);
 
-  // Load contacts when component mounts or opens
+  // Load contacts on mount if user is available and value is set
+  // This ensures we can display the selected contact even before popover opens
   useEffect(() => {
-    if (open && user?.id) {
+    if (user?.id && (value || open)) {
       loadContacts();
     }
-  }, [open, user?.id]);
+  }, [user?.id, open]);
+
+  // Also load when value changes and we have a user but no contacts yet
+  useEffect(() => {
+    if (value && user?.id && contacts.length === 0 && !loading) {
+      loadContacts();
+    }
+  }, [value, user?.id]);
 
   // Set initial selected contact from value prop
   useEffect(() => {
@@ -57,6 +65,9 @@ export default function ContactSelector({
       if (contact) {
         setSelectedContact(contact);
       }
+    } else if (!value) {
+      // Clear selection when value is cleared externally
+      setSelectedContact(null);
     }
   }, [value, contacts]);
 

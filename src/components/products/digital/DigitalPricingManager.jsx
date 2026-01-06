@@ -156,9 +156,10 @@ export default function DigitalPricingManager({
     }
   }, [pricingConfig]);
 
-  const updateConfig = (path, value) => {
+  const updateConfig = (path, value, autoSave = false) => {
+    let newConfig;
     setConfig(prev => {
-      const newConfig = { ...prev };
+      newConfig = { ...prev };
       const keys = path.split('.');
       let current = newConfig;
 
@@ -171,6 +172,13 @@ export default function DigitalPricingManager({
       return newConfig;
     });
     setHasChanges(true);
+
+    // Auto-save for certain updates
+    if (autoSave && newConfig) {
+      onConfigChange?.(newConfig).catch(err => {
+        console.error('Auto-save failed:', err);
+      });
+    }
   };
 
   const handleSave = async () => {
@@ -184,8 +192,25 @@ export default function DigitalPricingManager({
     }
   };
 
-  const toggleSection = (section) => {
-    updateConfig(`${section}.enabled`, !config[section]?.enabled);
+  const toggleSection = async (section) => {
+    const newEnabled = !config[section]?.enabled;
+    const newConfig = {
+      ...config,
+      [section]: {
+        ...config[section],
+        enabled: newEnabled
+      }
+    };
+    setConfig(newConfig);
+
+    // Auto-save section toggles immediately
+    try {
+      await onConfigChange?.(newConfig);
+      toast.success(`${section === 'subscriptions' ? 'Subscriptions' : section === 'one_time' ? 'One-time services' : 'Add-ons'} ${newEnabled ? 'enabled' : 'disabled'}`);
+    } catch (error) {
+      console.error('Failed to save:', error);
+      toast.error('Failed to save changes');
+    }
   };
 
   return (

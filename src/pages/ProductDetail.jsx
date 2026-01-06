@@ -1144,10 +1144,13 @@ export default function ProductDetail() {
 
     setSaving(true);
     try {
+      // digital_products and physical_products use product_id as primary key, not id
+      const detailsId = details.product_id || details.id;
+
       if (type === 'digital') {
-        await DigitalProduct.update(details.id, updates);
+        await DigitalProduct.update(detailsId, updates);
       } else {
-        await PhysicalProduct.update(details.id, updates);
+        await PhysicalProduct.update(detailsId, updates);
       }
       setDetails(prev => ({ ...prev, ...updates }));
       toast.success('Saved');
