@@ -166,16 +166,16 @@ export function FinanceMRRWidget({ mrr = 0, activeCount = 0 }) {
   return (
     <GlassCard className="p-5">
       <div className="flex items-start justify-between mb-3">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-cyan-500/20 border-cyan-500/30 border">
-          <CircleDollarSign className="w-5 h-5 text-cyan-400" />
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-emerald-500/20 border-emerald-500/30 border">
+          <CircleDollarSign className="w-5 h-5 text-emerald-400" />
         </div>
         {activeCount > 0 && (
-          <span className="text-xs px-2 py-1 rounded-lg bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+          <span className="text-xs px-2 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
             {activeCount} active
           </span>
         )}
       </div>
-      <div className="text-2xl font-bold text-cyan-400">${mrr.toLocaleString()}</div>
+      <div className="text-2xl font-bold text-emerald-400">${mrr.toLocaleString()}</div>
       <div className="text-sm text-zinc-400">Monthly Recurring</div>
     </GlassCard>
   );

@@ -19,10 +19,18 @@ import {
   GrowthPipelineWidget, GrowthValueWidget, GrowthDealsWidget,
   GrowthWinRateWidget, GrowthSignalsWidget, GrowthCampaignsWidget 
 } from "@/components/dashboard/widgets/GrowthWidgets";
-import { 
+import {
   SentinelComplianceWidget, SentinelSystemsWidget, SentinelRiskWidget,
-  SentinelTasksWidget, SentinelDocsWidget 
+  SentinelTasksWidget, SentinelDocsWidget
 } from "@/components/dashboard/widgets/SentinelWidgets";
+import {
+  FinanceOverviewWidget, FinanceRevenueWidget, FinanceExpensesWidget,
+  FinancePendingWidget, FinanceMRRWidget
+} from "@/components/dashboard/widgets/FinanceWidgets";
+import {
+  RaiseCampaignWidget, RaiseTargetWidget, RaiseCommittedWidget,
+  RaiseInvestorsWidget, RaiseMeetingsWidget
+} from "@/components/dashboard/widgets/RaiseWidgets";
 import { RecentActionsWidget, QuickActionsWidget } from "@/components/dashboard/widgets/CoreWidgets";
 
 // Widget size configuration
@@ -47,6 +55,18 @@ const WIDGET_CONFIG = {
   sentinel_risk: { size: 'medium', app: 'sentinel' },
   sentinel_tasks: { size: 'small', app: 'sentinel' },
   sentinel_docs: { size: 'small', app: 'sentinel' },
+  // Finance widgets
+  finance_overview: { size: 'large', app: 'finance' },
+  finance_revenue: { size: 'small', app: 'finance' },
+  finance_expenses: { size: 'small', app: 'finance' },
+  finance_pending: { size: 'small', app: 'finance' },
+  finance_mrr: { size: 'small', app: 'finance' },
+  // Raise widgets
+  raise_campaign: { size: 'large', app: 'raise' },
+  raise_target: { size: 'small', app: 'raise' },
+  raise_committed: { size: 'small', app: 'raise' },
+  raise_investors: { size: 'small', app: 'raise' },
+  raise_meetings: { size: 'small', app: 'raise' },
   // Core widgets (no app requirement)
   actions_recent: { size: 'medium', app: null },
   quick_actions: { size: 'medium', app: null },
@@ -89,6 +109,20 @@ export default function Dashboard() {
     pendingTasks: 0,
     urgentTasks: 0,
     docCount: 0,
+    // Finance
+    invoices: [],
+    financeRevenue: 0,
+    financeExpenses: 0,
+    pendingInvoiceAmount: 0,
+    pendingInvoiceCount: 0,
+    mrr: 0,
+    activeSubscriptions: 0,
+    // Raise
+    raiseCampaign: null,
+    investors: [],
+    committedAmount: 0,
+    investorMeetings: 0,
+    upcomingMeetings: 0,
     // Core
     recentActions: [],
   });
@@ -117,7 +151,9 @@ export default function Dashboard() {
       const [
         coursesData, progressData, actionsData, opportunitiesData, systemsData,
         activitiesResult, gamificationResult, userSkillsResult,
-        signalsResult, campaignsResult, certificatesResult
+        signalsResult, campaignsResult, certificatesResult,
+        invoicesResult, expensesResult, subscriptionsResult,
+        raiseCampaignsResult, investorsResult
       ] = await Promise.allSettled([
         base44.entities.Course.list({ limit: 50 }).catch(() => []),
         base44.entities.UserProgress.list({ limit: 100 }).catch(() => []),
@@ -130,7 +166,14 @@ export default function Dashboard() {
         base44.entities.UserSkill.list({ limit: 5 }).catch(() => []),
         base44.entities.GrowthSignal.list({ limit: 5 }).catch(() => []),
         base44.entities.GrowthCampaign.list({ limit: 10 }).catch(() => []),
-        base44.entities.Certificate.list({ limit: 50 }).catch(() => [])
+        base44.entities.Certificate.list({ limit: 50 }).catch(() => []),
+        // Finance data
+        base44.entities.Invoice?.list?.({ limit: 20 }).catch(() => []) || Promise.resolve([]),
+        base44.entities.Expense?.list?.({ limit: 50 }).catch(() => []) || Promise.resolve([]),
+        base44.entities.Subscription?.list?.({ limit: 20 }).catch(() => []) || Promise.resolve([]),
+        // Raise data
+        base44.entities.RaiseCampaign?.list?.({ limit: 1 }).catch(() => []) || Promise.resolve([]),
+        base44.entities.Investor?.list?.({ limit: 50 }).catch(() => []) || Promise.resolve([])
       ]);
 
       // Process Learn data
@@ -172,6 +215,30 @@ export default function Dashboard() {
       const pendingTasks = highRiskCount * 22;
       const urgentTasks = Math.floor(pendingTasks * 0.2);
 
+      // Process Finance data
+      const invoices = invoicesResult.status === 'fulfilled' ? invoicesResult.value : [];
+      const expenses = expensesResult.status === 'fulfilled' ? expensesResult.value : [];
+      const subscriptions = subscriptionsResult.status === 'fulfilled' ? subscriptionsResult.value : [];
+
+      const financeRevenue = invoices
+        .filter(i => i.status === 'paid')
+        .reduce((sum, i) => sum + (i.total || i.amount || 0), 0);
+      const financeExpenses = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+      const pendingInvoices = invoices.filter(i => i.status === 'pending' || i.status === 'sent');
+      const pendingInvoiceAmount = pendingInvoices.reduce((sum, i) => sum + (i.total || i.amount || 0), 0);
+      const pendingInvoiceCount = pendingInvoices.length;
+      const activeSubscriptions = subscriptions.filter(s => s.status === 'active');
+      const mrr = activeSubscriptions.reduce((sum, s) => sum + (s.amount || 0), 0);
+
+      // Process Raise data
+      const raiseCampaigns = raiseCampaignsResult.status === 'fulfilled' ? raiseCampaignsResult.value : [];
+      const investors = investorsResult.status === 'fulfilled' ? investorsResult.value : [];
+      const activeCampaign = raiseCampaigns.find(c => c.status === 'active') || raiseCampaigns[0] || null;
+      const committedInvestors = investors.filter(i => i.status === 'committed');
+      const committedAmount = committedInvestors.reduce((sum, i) => sum + (i.committed_amount || 0), 0);
+      const investorMeetings = investors.filter(i => i.status === 'meeting_scheduled').length;
+      const upcomingMeetings = investorMeetings; // Simplified
+
       // Core data
       const recentActions = actionsData.status === 'fulfilled' ? actionsData.value : [];
 
@@ -203,7 +270,22 @@ export default function Dashboard() {
         riskBreakdown,
         pendingTasks,
         urgentTasks,
-        docCount: systems.length * 3, // Estimate docs per system
+        docCount: systems.length * 3,
+        // Finance
+        invoices,
+        financeRevenue,
+        financeExpenses,
+        pendingInvoiceAmount,
+        pendingInvoiceCount,
+        mrr,
+        activeSubscriptions: activeSubscriptions.length,
+        // Raise
+        raiseCampaign: activeCampaign,
+        investors,
+        committedAmount,
+        investorMeetings,
+        upcomingMeetings,
+        // Core
         recentActions,
       });
 
@@ -431,6 +513,18 @@ export default function Dashboard() {
       case 'sentinel_risk': return <SentinelRiskWidget riskBreakdown={d.riskBreakdown} />;
       case 'sentinel_tasks': return <SentinelTasksWidget pendingTasks={d.pendingTasks} urgentTasks={d.urgentTasks} />;
       case 'sentinel_docs': return <SentinelDocsWidget docCount={d.docCount} />;
+      // Finance
+      case 'finance_overview': return <FinanceOverviewWidget revenue={d.financeRevenue} expenses={d.financeExpenses} invoices={d.invoices} />;
+      case 'finance_revenue': return <FinanceRevenueWidget totalRevenue={d.financeRevenue} />;
+      case 'finance_expenses': return <FinanceExpensesWidget totalExpenses={d.financeExpenses} />;
+      case 'finance_pending': return <FinancePendingWidget pendingAmount={d.pendingInvoiceAmount} invoiceCount={d.pendingInvoiceCount} />;
+      case 'finance_mrr': return <FinanceMRRWidget mrr={d.mrr} activeCount={d.activeSubscriptions} />;
+      // Raise
+      case 'raise_campaign': return <RaiseCampaignWidget campaign={d.raiseCampaign} investors={d.investors} />;
+      case 'raise_target': return <RaiseTargetWidget targetAmount={d.raiseCampaign?.target_amount || 0} roundType={d.raiseCampaign?.round_type || ''} />;
+      case 'raise_committed': return <RaiseCommittedWidget committedAmount={d.committedAmount} targetAmount={d.raiseCampaign?.target_amount || 0} />;
+      case 'raise_investors': return <RaiseInvestorsWidget investorCount={d.investors?.length || 0} interestedCount={d.investors?.filter(i => ['interested', 'meeting_scheduled', 'in_dd'].includes(i.status)).length || 0} />;
+      case 'raise_meetings': return <RaiseMeetingsWidget meetingCount={d.investorMeetings} upcomingCount={d.upcomingMeetings} />;
       // Core
       case 'actions_recent': return <RecentActionsWidget actions={d.recentActions} />;
       case 'quick_actions': return <QuickActionsWidget enabledApps={enabledApps} />;

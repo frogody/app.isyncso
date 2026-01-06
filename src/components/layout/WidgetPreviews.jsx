@@ -510,12 +510,12 @@ function FinanceMRRPreview() {
   return (
     <div className="transform scale-[0.85] origin-top-left">
       <div className="flex items-center justify-between mb-2">
-        <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
-          <CircleDollarSign className="w-4 h-4 text-cyan-400" />
+        <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
+          <CircleDollarSign className="w-4 h-4 text-emerald-400" />
         </div>
-        <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400">5 active</span>
+        <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">5 active</span>
       </div>
-      <div className="text-lg font-bold text-cyan-400">$2.5k</div>
+      <div className="text-lg font-bold text-emerald-400">$2.5k</div>
       <div className="text-[10px] text-zinc-500">Monthly Recurring</div>
     </div>
   );
@@ -592,10 +592,10 @@ function RaiseInvestorsPreview() {
   return (
     <div className="transform scale-[0.85] origin-top-left">
       <div className="flex items-center justify-between mb-2">
-        <div className="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
-          <Users className="w-4 h-4 text-indigo-400" />
+        <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
+          <Users className="w-4 h-4 text-emerald-400" />
         </div>
-        <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400">12 active</span>
+        <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">12 active</span>
       </div>
       <div className="text-lg font-bold text-white">18</div>
       <div className="text-[10px] text-zinc-500">Total Investors</div>
