@@ -184,6 +184,11 @@ export default function CreateImages() {
 
       if (error) throw error;
 
+      // Check if data contains an error response
+      if (data?.error) {
+        throw new Error(data.details || data.error);
+      }
+
       if (data?.url) {
         // Save to generated_content
         const savedContent = await GeneratedContent.create({
