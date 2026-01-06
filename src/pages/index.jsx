@@ -168,6 +168,8 @@ const PAGES = {
 
     AIAssistant: AIAssistant,
 
+    Sync: AIAssistant,
+
     AISystemInventory: AISystemInventory,
 
     AuthCallback: AuthCallback,
@@ -356,6 +358,8 @@ function PagesContent() {
                 
                 
                 <Route path="/AIAssistant" element={<AIAssistant />} />
+
+                <Route path="/Sync" element={<AIAssistant />} />
                 
                 <Route path="/AISystemInventory" element={<AISystemInventory />} />
 

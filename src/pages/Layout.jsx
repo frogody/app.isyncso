@@ -159,7 +159,7 @@ const ENGINE_ITEMS_CONFIG = {
   },
   sync: {
     title: "Sync",
-    url: createPageUrl("AIAssistant"),
+    url: createPageUrl("Sync"),
     icon: Brain,
     id: 'sync',
     permission: null, // Always available
@@ -266,13 +266,13 @@ function getSecondaryNavConfig(pathname, stats = {}) {
   }
 
   // SYNC routes
-  if (path.includes('sync') || path.includes('aiassistant')) {
+  if (path.includes('sync') || path.includes('aiassistant') || path.includes('mcpintegrations')) {
     return {
       title: 'SYNC',
       color: 'purple',
       agent: 'sync',
       items: [
-        { label: 'Assistant', path: createPageUrl('AIAssistant'), icon: Brain },
+        { label: 'Sync', path: createPageUrl('Sync'), icon: Brain },
         { label: 'Integrations', path: createPageUrl('MCPIntegrations'), icon: Cpu },
       ]
     };
