@@ -206,11 +206,6 @@ function getSecondaryNavConfig(pathname, stats = {}) {
             };
           }
 
-      // SYNC routes - no secondary nav needed as it only has dashboard
-      if (path.includes('sync')) {
-        return null;
-      }
-
   // FINANCE routes
   if (path.includes('finance')) {
     return {
