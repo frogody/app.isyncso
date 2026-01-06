@@ -711,24 +711,25 @@ export default function CRMContacts() {
   const loadContacts = async () => {
     if (!user?.id) return;
     try {
-      const prospects = await base44.entities.Prospect.filter({ user_id: user.id });
+      // Use owner_id which is the actual column name in the prospects table
+      const prospects = await base44.entities.Prospect.filter({ owner_id: user.id });
       const contactList = prospects.map(p => ({
         id: p.id,
-        name: p.contact_name || p.company_name || "Unknown",
-        email: p.contact_email || p.email,
-        phone: p.contact_phone || p.phone,
-        company_name: p.company_name,
-        job_title: p.contact_title || p.job_title,
-        location: p.location || p.hq_city,
-        stage: p.stage || p.status || "new",
+        name: [p.first_name, p.last_name].filter(Boolean).join(' ') || p.company || "Unknown",
+        email: p.email,
+        phone: p.phone,
+        company_name: p.company,
+        job_title: p.job_title,
+        location: p.location,
+        stage: p.stage || "new",
         source: p.source || "website",
         industry: p.industry,
         company_size: p.company_size,
-        website: p.website || p.domain,
+        website: p.website,
         linkedin_url: p.linkedin_url,
         twitter_url: p.twitter_url,
-        deal_value: p.deal_value || p.estimated_value || 0,
-        score: p.score || 50,
+        deal_value: p.deal_value || 0,
+        score: p.probability || 50,
         tags: p.tags || [],
         notes: p.notes,
         is_starred: p.is_starred || false,
@@ -809,27 +810,28 @@ export default function CRMContacts() {
     }
 
     try {
+      // Parse name into first_name and last_name
+      const nameParts = (formData.name || '').trim().split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+
+      // Use correct column names for the prospects table
       const prospectData = {
-        user_id: user.id,
-        contact_name: formData.name,
-        contact_email: formData.email,
-        contact_phone: formData.phone,
-        contact_title: formData.job_title,
-        company_name: formData.company_name,
-        location: formData.location,
+        owner_id: user.id,
+        first_name: firstName,
+        last_name: lastName,
+        email: formData.email,
+        phone: formData.phone,
+        job_title: formData.job_title,
+        company: formData.company_name,
         stage: formData.stage,
         source: formData.source,
-        industry: formData.industry,
-        company_size: formData.company_size,
-        website: formData.website,
         linkedin_url: formData.linkedin_url,
-        twitter_url: formData.twitter_url,
         deal_value: formData.deal_value ? parseFloat(formData.deal_value) : null,
-        score: formData.score,
+        probability: formData.score,
         tags: formData.tags,
         notes: formData.notes,
         is_starred: formData.is_starred || false,
-        last_contacted: formData.last_contacted,
         next_follow_up: formData.next_follow_up,
       };
 

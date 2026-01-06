@@ -64,21 +64,22 @@ export default function ContactSelector({
     if (!user?.id) return;
     setLoading(true);
     try {
-      const prospects = await base44.entities.Prospect.filter({ user_id: user.id });
+      // Use owner_id which is the actual column name in the prospects table
+      const prospects = await base44.entities.Prospect.filter({ owner_id: user.id });
       const contactList = prospects.map(p => ({
         id: p.id,
-        name: p.contact_name || p.company_name || "Unknown",
-        email: p.contact_email || p.email,
-        phone: p.contact_phone || p.phone,
-        company_name: p.company_name,
-        job_title: p.contact_title || p.job_title,
-        location: p.location || p.hq_city,
+        name: [p.first_name, p.last_name].filter(Boolean).join(' ') || p.company || "Unknown",
+        email: p.email,
+        phone: p.phone,
+        company_name: p.company,
+        job_title: p.job_title,
+        location: p.location,
         industry: p.industry,
-        website: p.website || p.domain,
+        website: p.website,
         linkedin_url: p.linkedin_url,
-        stage: p.stage || p.status || "new",
-        deal_value: p.deal_value || p.estimated_value || 0,
-        score: p.score || 50,
+        stage: p.stage || "new",
+        deal_value: p.deal_value || 0,
+        score: p.probability || 50,
       }));
       setContacts(contactList);
     } catch (error) {
@@ -290,21 +291,22 @@ export function ContactSelectorModal({
     if (!user?.id) return;
     setLoading(true);
     try {
-      const prospects = await base44.entities.Prospect.filter({ user_id: user.id });
+      // Use owner_id which is the actual column name in the prospects table
+      const prospects = await base44.entities.Prospect.filter({ owner_id: user.id });
       const contactList = prospects.map(p => ({
         id: p.id,
-        name: p.contact_name || p.company_name || "Unknown",
-        email: p.contact_email || p.email,
-        phone: p.contact_phone || p.phone,
-        company_name: p.company_name,
-        job_title: p.contact_title || p.job_title,
-        location: p.location || p.hq_city,
+        name: [p.first_name, p.last_name].filter(Boolean).join(' ') || p.company || "Unknown",
+        email: p.email,
+        phone: p.phone,
+        company_name: p.company,
+        job_title: p.job_title,
+        location: p.location,
         industry: p.industry,
-        website: p.website || p.domain,
+        website: p.website,
         linkedin_url: p.linkedin_url,
-        stage: p.stage || p.status || "new",
-        deal_value: p.deal_value || p.estimated_value || 0,
-        score: p.score || 50,
+        stage: p.stage || "new",
+        deal_value: p.deal_value || 0,
+        score: p.probability || 50,
       }));
       setContacts(contactList);
     } catch (error) {
