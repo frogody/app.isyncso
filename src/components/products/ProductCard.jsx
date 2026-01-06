@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import {
-  Cloud, Package, MoreHorizontal, Eye, Edit2, Copy, Archive,
+  Cloud, Package, MoreHorizontal, Eye, Edit2, Copy, Archive, Trash2,
   Play, Tag, Clock, Check, Truck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -37,6 +37,7 @@ export function ProductGridCard({
   onEdit,
   onDuplicate,
   onArchive,
+  onDelete,
   index = 0,
 }) {
   const status = STATUS_COLORS[product.status] || STATUS_COLORS.draft;
@@ -180,10 +181,16 @@ export function ProductGridCard({
                     <Copy className="w-4 h-4 mr-2" /> Duplicate
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    className="text-red-400 hover:text-red-300"
+                    className="text-amber-400 hover:text-amber-300"
                     onClick={(e) => { e.preventDefault(); onArchive?.(product); }}
                   >
                     <Archive className="w-4 h-4 mr-2" /> Archive
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-red-400 hover:text-red-300"
+                    onClick={(e) => { e.preventDefault(); onDelete?.(product); }}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" /> Delete
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -202,6 +209,7 @@ export function ProductListRow({
   onEdit,
   onDuplicate,
   onArchive,
+  onDelete,
   index = 0,
 }) {
   const status = STATUS_COLORS[product.status] || STATUS_COLORS.draft;
@@ -334,10 +342,16 @@ export function ProductListRow({
                   <Copy className="w-4 h-4 mr-2" /> Duplicate
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  className="text-red-400 hover:text-red-300"
+                  className="text-amber-400 hover:text-amber-300"
                   onClick={(e) => { e.preventDefault(); onArchive?.(product); }}
                 >
                   <Archive className="w-4 h-4 mr-2" /> Archive
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-red-400 hover:text-red-300"
+                  onClick={(e) => { e.preventDefault(); onDelete?.(product); }}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" /> Delete
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

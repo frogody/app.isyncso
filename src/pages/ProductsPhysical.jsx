@@ -115,6 +115,25 @@ export default function ProductsPhysical() {
     }
   };
 
+  const handleDeleteProduct = async (product) => {
+    if (!confirm(`Are you sure you want to delete "${product.name}"? This action cannot be undone.`)) {
+      return;
+    }
+    try {
+      // Delete physical product details first if they exist
+      if (physicalProducts[product.id]) {
+        await PhysicalProduct.delete(physicalProducts[product.id].id);
+      }
+      // Delete the main product
+      await Product.delete(product.id);
+      toast.success('Product deleted');
+      setProducts(prev => prev.filter(p => p.id !== product.id));
+    } catch (e) {
+      console.error('Failed to delete product:', e);
+      toast.error('Failed to delete product');
+    }
+  };
+
   // SEO: Set page title
   useEffect(() => {
     document.title = 'Physical Products | iSyncSO';
@@ -387,6 +406,7 @@ export default function ProductsPhysical() {
                   index={index}
                   onEdit={handleEditProduct}
                   onArchive={handleArchiveProduct}
+                  onDelete={handleDeleteProduct}
                 />
               ))}
             </div>
@@ -401,6 +421,7 @@ export default function ProductsPhysical() {
                   index={index}
                   onEdit={handleEditProduct}
                   onArchive={handleArchiveProduct}
+                  onDelete={handleDeleteProduct}
                 />
               ))}
             </div>
