@@ -459,6 +459,95 @@ export async function getPeopleData({ contacts }) {
   }
 }
 
+/**
+ * Enrich a CRM contact with company and person data
+ * This is a high-level function that combines firmographic and people data
+ */
+export async function enrichContact({ companyName, domain, email, linkedinUrl, fullName }) {
+  const results = {
+    company: null,
+    person: null,
+    enriched: false,
+    error: null
+  };
+
+  try {
+    // Enrich company data if we have company name or domain
+    if (companyName || domain) {
+      const businesses = [{
+        name: companyName || null,
+        domain: domain || null
+      }];
+
+      const firmographicData = await getFirmographicData({ businesses });
+      if (firmographicData?.data?.length > 0) {
+        results.company = firmographicData.data[0];
+        results.enriched = true;
+      }
+    }
+
+    // Enrich person data if we have email or LinkedIn
+    if (email || linkedinUrl || fullName) {
+      const contacts = [{
+        email: email || null,
+        linkedin_url: linkedinUrl || null,
+        full_name: fullName || null,
+        company_name: companyName || null
+      }];
+
+      const peopleData = await getPeopleData({ contacts });
+      if (peopleData?.data?.length > 0) {
+        results.person = peopleData.data[0];
+        results.enriched = true;
+      }
+    }
+
+    return results;
+  } catch (error) {
+    console.error('Contact enrichment failed:', error);
+    return {
+      ...results,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Convert enriched data to CRM contact format
+ * Maps Explorium data fields to your Prospect/Contact entity fields
+ */
+export function mapEnrichedDataToContact(enrichedData) {
+  const { company, person } = enrichedData;
+
+  const mapped = {};
+
+  // Map company data
+  if (company) {
+    mapped.company_name = company.company_name || company.name;
+    mapped.industry = company.industry;
+    mapped.company_size = company.employee_count_range || company.employees?.toString();
+    mapped.website = company.website || company.domain;
+    mapped.location = [company.city, company.state, company.country].filter(Boolean).join(', ');
+    mapped.linkedin_url = company.linkedin_url;
+    mapped.revenue = company.estimated_revenue;
+    mapped.founded_year = company.founded_year;
+    mapped.description = company.description;
+    mapped.hq_city = company.city;
+    mapped.hq_country = company.country;
+  }
+
+  // Map person data
+  if (person) {
+    mapped.contact_name = person.full_name || mapped.contact_name;
+    mapped.contact_title = person.title || person.job_title;
+    mapped.contact_email = person.email || mapped.contact_email;
+    mapped.contact_phone = person.phone;
+    mapped.linkedin_url = person.linkedin_url || mapped.linkedin_url;
+  }
+
+  return mapped;
+}
+
 export default function ExploriumAPI() {
   return null;
 }

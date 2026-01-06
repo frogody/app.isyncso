@@ -11,8 +11,9 @@ import {
   ArrowDownRight, Minus, PieChart, LineChart, Send, PhoneCall, Video,
   UserPlus, Settings2, Zap, Sparkles, Award, AlertCircle, ArrowRight,
   Table2, RefreshCw, Copy, Link2, Linkedin, Twitter, SlidersHorizontal,
-  ChevronLeft, Home, Layers, GripVertical, Hash
+  ChevronLeft, Home, Layers, GripVertical, Hash, Loader2
 } from "lucide-react";
+import { enrichContact, mapEnrichedDataToContact } from "@/components/integrations/ExploriumAPI";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -701,6 +702,7 @@ export default function CRMContacts() {
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [activities, setActivities] = useState([]);
   const [deals, setDeals] = useState([]);
+  const [enriching, setEnriching] = useState(false);
 
   useEffect(() => {
     if (user?.id) loadContacts();
@@ -801,8 +803,14 @@ export default function CRMContacts() {
       return;
     }
 
+    if (!user?.id) {
+      toast.error("You must be logged in to create contacts");
+      return;
+    }
+
     try {
       const prospectData = {
+        user_id: user.id,
         contact_name: formData.name,
         contact_email: formData.email,
         contact_phone: formData.phone,
@@ -872,6 +880,70 @@ export default function CRMContacts() {
       loadContacts();
     } catch (error) {
       console.error("Failed to update:", error);
+    }
+  };
+
+  // Explorium enrichment for contacts
+  const handleEnrichContact = async () => {
+    if (!formData.company_name && !formData.email && !formData.website) {
+      toast.error("Enter a company name, email, or website to enrich");
+      return;
+    }
+
+    setEnriching(true);
+    try {
+      // Extract domain from email or website
+      let domain = null;
+      if (formData.website) {
+        try {
+          domain = new URL(formData.website.startsWith('http') ? formData.website : `https://${formData.website}`).hostname;
+        } catch { }
+      } else if (formData.email) {
+        domain = formData.email.split('@')[1];
+      }
+
+      const enrichedData = await enrichContact({
+        companyName: formData.company_name,
+        domain: domain,
+        email: formData.email,
+        linkedinUrl: formData.linkedin_url,
+        fullName: formData.name
+      });
+
+      if (enrichedData.error) {
+        toast.error("Enrichment service unavailable. Set up Explorium API in Settings.");
+        return;
+      }
+
+      if (!enrichedData.enriched) {
+        toast.info("No additional data found for this contact");
+        return;
+      }
+
+      // Map and merge enriched data
+      const mappedData = mapEnrichedDataToContact(enrichedData);
+
+      setFormData(prev => ({
+        ...prev,
+        // Only fill in empty fields, don't overwrite existing data
+        company_name: prev.company_name || mappedData.company_name || prev.company_name,
+        industry: prev.industry || mappedData.industry || prev.industry,
+        company_size: prev.company_size || mappedData.company_size || prev.company_size,
+        website: prev.website || mappedData.website || prev.website,
+        location: prev.location || mappedData.location || prev.location,
+        linkedin_url: prev.linkedin_url || mappedData.linkedin_url || prev.linkedin_url,
+        name: prev.name || mappedData.contact_name || prev.name,
+        job_title: prev.job_title || mappedData.contact_title || prev.job_title,
+        email: prev.email || mappedData.contact_email || prev.email,
+        phone: prev.phone || mappedData.contact_phone || prev.phone,
+      }));
+
+      toast.success("Contact enriched with company data!");
+    } catch (error) {
+      console.error("Enrichment failed:", error);
+      toast.error("Failed to enrich contact. Check your Explorium API setup.");
+    } finally {
+      setEnriching(false);
     }
   };
 
@@ -1347,6 +1419,29 @@ export default function CRMContacts() {
                 />
               </div>
             </div>
+
+            {/* Enrich with AI Button */}
+            <Button
+              type="button"
+              onClick={handleEnrichContact}
+              disabled={enriching || (!formData.company_name && !formData.email && !formData.website)}
+              className="w-full bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white border-0 disabled:opacity-50"
+            >
+              {enriching ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Enriching...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Enrich with AI
+                </>
+              )}
+            </Button>
+            <p className="text-xs text-zinc-500 text-center -mt-2">
+              Auto-fill company data using Explorium API
+            </p>
 
             <div>
               <label className="text-xs text-zinc-500 mb-1 block">Notes</label>

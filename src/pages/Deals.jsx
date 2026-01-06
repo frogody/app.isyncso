@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, DollarSign, Calendar, User, X, Building, MoreVertical } from 'lucide-react';
+import { Plus, DollarSign, Calendar, User, X, Building, MoreVertical, Users } from 'lucide-react';
 import { toast } from 'sonner';
+import ContactSelector from '@/components/shared/ContactSelector';
+import { Label } from '@/components/ui/label';
 
 const STAGES = [
   { id: 'qualification', label: 'Qualification', color: 'blue' },
@@ -32,7 +34,26 @@ export default function Deals() {
   const [draggedDeal, setDraggedDeal] = useState(null);
   const [dragOverStage, setDragOverStage] = useState(null);
   const [showAddDeal, setShowAddDeal] = useState(false);
-  const [newDeal, setNewDeal] = useState({ title: '', value: '', company: '', contact: '', closeDate: '' });
+  const [newDeal, setNewDeal] = useState({ title: '', value: '', company: '', contact: '', closeDate: '', prospect_id: null });
+  const [selectedContact, setSelectedContact] = useState(null);
+
+  // Handle contact selection from ContactSelector
+  const handleContactSelect = (contact) => {
+    setSelectedContact(contact);
+    if (contact) {
+      setNewDeal(prev => ({
+        ...prev,
+        company: contact.company_name || prev.company,
+        contact: contact.name || prev.contact,
+        prospect_id: contact.id
+      }));
+    } else {
+      setNewDeal(prev => ({
+        ...prev,
+        prospect_id: null
+      }));
+    }
+  };
 
   const handleDragStart = (deal, stage) => {
     setDraggedDeal({ deal, stage });
@@ -78,10 +99,12 @@ export default function Deals() {
       company: newDeal.company,
       contact: newDeal.contact,
       probability: 30,
-      closeDate: newDeal.closeDate || new Date().toISOString().split('T')[0]
+      closeDate: newDeal.closeDate || new Date().toISOString().split('T')[0],
+      prospect_id: newDeal.prospect_id
     };
     setDeals(prev => ({ ...prev, qualification: [...prev.qualification, deal] }));
-    setNewDeal({ title: '', value: '', company: '', contact: '', closeDate: '' });
+    setNewDeal({ title: '', value: '', company: '', contact: '', closeDate: '', prospect_id: null });
+    setSelectedContact(null);
     setShowAddDeal(false);
     toast.success('Deal created successfully');
   };
@@ -242,49 +265,72 @@ export default function Deals() {
               </button>
             </div>
             <div className="space-y-4">
-              <input 
-                type="text" 
-                placeholder="Deal Title *" 
+              <input
+                type="text"
+                placeholder="Deal Title *"
                 value={newDeal.title}
                 onChange={(e) => setNewDeal(prev => ({ ...prev, title: e.target.value }))}
-                className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:border-cyan-500 focus:outline-none" 
+                className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:border-cyan-500 focus:outline-none"
               />
-              <input 
-                type="number" 
-                placeholder="Deal Value *" 
+              <input
+                type="number"
+                placeholder="Deal Value *"
                 value={newDeal.value}
                 onChange={(e) => setNewDeal(prev => ({ ...prev, value: e.target.value }))}
-                className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:border-cyan-500 focus:outline-none" 
+                className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:border-cyan-500 focus:outline-none"
               />
-              <input 
-                type="text" 
-                placeholder="Company" 
-                value={newDeal.company}
-                onChange={(e) => setNewDeal(prev => ({ ...prev, company: e.target.value }))}
-                className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:border-cyan-500 focus:outline-none" 
-              />
-              <input 
-                type="text" 
-                placeholder="Contact Name" 
-                value={newDeal.contact}
-                onChange={(e) => setNewDeal(prev => ({ ...prev, contact: e.target.value }))}
-                className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:border-cyan-500 focus:outline-none" 
-              />
-              <input 
-                type="date" 
-                placeholder="Expected Close Date" 
+
+              {/* Contact Selector */}
+              <div className="space-y-2">
+                <Label className="text-zinc-300 flex items-center gap-2 text-sm">
+                  <Users className="w-4 h-4 text-cyan-400" />
+                  Select from CRM Contacts
+                </Label>
+                <p className="text-xs text-zinc-500">
+                  Select a contact to auto-fill company and contact info
+                </p>
+                <ContactSelector
+                  value={newDeal.prospect_id}
+                  onSelect={handleContactSelect}
+                  placeholder="Search CRM contacts..."
+                />
+              </div>
+
+              <div className="pt-2 border-t border-zinc-800">
+                <p className="text-xs text-zinc-500 mb-3">Or enter manually:</p>
+                <div className="space-y-3">
+                  <input
+                    type="text"
+                    placeholder="Company"
+                    value={newDeal.company}
+                    onChange={(e) => setNewDeal(prev => ({ ...prev, company: e.target.value }))}
+                    className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:border-cyan-500 focus:outline-none"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Contact Name"
+                    value={newDeal.contact}
+                    onChange={(e) => setNewDeal(prev => ({ ...prev, contact: e.target.value }))}
+                    className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:border-cyan-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <input
+                type="date"
+                placeholder="Expected Close Date"
                 value={newDeal.closeDate}
                 onChange={(e) => setNewDeal(prev => ({ ...prev, closeDate: e.target.value }))}
-                className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:border-cyan-500 focus:outline-none" 
+                className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:border-cyan-500 focus:outline-none"
               />
               <div className="flex gap-2">
-                <button 
-                  onClick={() => setShowAddDeal(false)}
+                <button
+                  onClick={() => { setShowAddDeal(false); setSelectedContact(null); }}
                   className="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 rounded-lg font-medium transition-colors"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   onClick={handleAddDeal}
                   className="flex-1 py-3 bg-cyan-500 hover:bg-cyan-600 rounded-lg font-medium transition-colors"
                 >

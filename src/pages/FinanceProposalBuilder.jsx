@@ -37,6 +37,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { useUser } from '@/components/context/UserContext';
+import ContactSelector from '@/components/shared/ContactSelector';
 
 const SECTION_TYPES = [
   { id: 'text', label: 'Text Block', icon: Type, description: 'Rich text content' },
@@ -199,6 +200,27 @@ export default function FinanceProposalBuilder() {
     }));
   };
 
+  // Handle contact selection from ContactSelector
+  const handleContactSelect = (contact) => {
+    if (!contact) {
+      setProposal(prev => ({
+        ...prev,
+        prospect_id: null,
+        client_name: '',
+        client_email: '',
+        client_company: ''
+      }));
+      return;
+    }
+    setProposal(prev => ({
+      ...prev,
+      prospect_id: contact.id,
+      client_name: contact.name || '',
+      client_email: contact.email || '',
+      client_company: contact.company_name || ''
+    }));
+  };
+
   const handleAddProduct = (lineItem) => {
     setProposal(prev => ({
       ...prev,
@@ -344,25 +366,21 @@ export default function FinanceProposalBuilder() {
                     />
                   </div>
 
-                  {/* Link to Prospect */}
+                  {/* Link to CRM Contact */}
                   <div>
-                    <Label className="text-zinc-300">Link to Prospect</Label>
-                    <Select
-                      value={proposal.prospect_id || 'none'}
-                      onValueChange={(v) => handleProspectChange(v === 'none' ? null : v)}
-                    >
-                      <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white mt-1">
-                        <SelectValue placeholder="Select prospect (optional)" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-zinc-900 border-zinc-700">
-                        <SelectItem value="none">No linked prospect</SelectItem>
-                        {prospects.map(p => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.company_name || p.contact_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label className="text-zinc-300 flex items-center gap-2">
+                      <User className="w-4 h-4 text-cyan-400" />
+                      Select from CRM Contacts
+                    </Label>
+                    <p className="text-xs text-zinc-500 mb-2 mt-1">
+                      Select an existing contact to auto-fill information
+                    </p>
+                    <ContactSelector
+                      value={proposal.prospect_id}
+                      onSelect={handleContactSelect}
+                      placeholder="Search CRM contacts..."
+                      className="mt-1"
+                    />
                   </div>
 
                   {/* Client Info */}
