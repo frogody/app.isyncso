@@ -15,6 +15,7 @@ export function GlassCard({
     sage: 'hover:shadow-[0_0_30px_rgba(134,239,172,0.15)] hover:border-[#86EFAC]/30',
     indigo: 'hover:shadow-[0_0_30px_rgba(99,102,241,0.15)] hover:border-indigo-500/30',
     orange: 'hover:shadow-[0_0_30px_rgba(249,115,22,0.15)] hover:border-orange-500/30',
+    amber: 'hover:shadow-[0_0_30px_rgba(245,158,11,0.15)] hover:border-amber-500/30',
     red: 'hover:shadow-[0_0_30px_rgba(239,68,68,0.15)] hover:border-red-500/30',
   };
 
@@ -52,6 +53,7 @@ export function StatCard({
     sage: { icon: 'text-[#86EFAC]', bg: 'bg-[#86EFAC]/20', border: 'border-[#86EFAC]/30' },
     indigo: { icon: 'text-indigo-400', bg: 'bg-indigo-500/20', border: 'border-indigo-500/30' },
     orange: { icon: 'text-orange-400', bg: 'bg-orange-500/20', border: 'border-orange-500/30' },
+    amber: { icon: 'text-amber-400', bg: 'bg-amber-500/20', border: 'border-amber-500/30' },
     red: { icon: 'text-red-400', bg: 'bg-red-500/20', border: 'border-red-500/30' },
   };
 

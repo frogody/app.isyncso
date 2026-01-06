@@ -307,7 +307,7 @@ export default function FinanceProposals() {
           label="Total Proposals"
           value={stats.total}
           icon={FileText}
-          color="amber"
+          color="cyan"
         />
         <StatCard
           label="Total Value"
