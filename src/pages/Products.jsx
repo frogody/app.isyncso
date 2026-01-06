@@ -27,7 +27,7 @@ import { toast } from "sonner";
 
 const STATUS_COLORS = {
   published: { bg: 'bg-green-500/10', text: 'text-green-400', border: 'border-green-500/30' },
-  draft: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/30' },
+  draft: { bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/30' },
   archived: { bg: 'bg-zinc-500/10', text: 'text-zinc-400', border: 'border-zinc-500/30' },
 };
 
@@ -77,7 +77,7 @@ function ProductCard({ product }) {
             </div>
 
             <div className="flex items-center gap-3 mt-3">
-              <span className={`inline-flex items-center gap-1 text-xs ${product.type === 'digital' ? 'text-cyan-400' : 'text-orange-400'}`}>
+              <span className={`inline-flex items-center gap-1 text-xs ${product.type === 'digital' ? 'text-cyan-400' : 'text-cyan-400'}`}>
                 <Icon className="w-3 h-3" />
                 {product.type}
               </span>
@@ -98,7 +98,6 @@ function QuickStatCard({ icon: Icon, label, value, sublabel, color = 'purple' })
   const colorClasses = {
     purple: 'bg-purple-500/10 border-purple-500/30 text-purple-400',
     cyan: 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400',
-    orange: 'bg-orange-500/10 border-orange-500/30 text-orange-400',
     green: 'bg-green-500/10 border-green-500/30 text-green-400',
   };
 
@@ -359,8 +358,8 @@ export default function Products() {
                     {/* Physical Toggle */}
                     <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/50 border border-white/5">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-orange-500/20 border border-orange-500/30 flex items-center justify-center">
-                          <Box className="w-4 h-4 text-orange-400" />
+                        <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
+                          <Box className="w-4 h-4 text-cyan-400" />
                         </div>
                         <div>
                           <div className="text-sm font-medium text-white">Physical Products</div>
@@ -412,7 +411,7 @@ export default function Products() {
               icon={Box}
               label="Physical"
               value={loading ? '-' : stats.physical}
-              color="orange"
+              color="cyan"
             />
           )}
           <QuickStatCard
@@ -466,22 +465,22 @@ export default function Products() {
           {/* Physical Products Card */}
           {physicalEnabled && (
             <Link to={createPageUrl('ProductsPhysical')}>
-              <GlassCard className="p-6 group hover:border-orange-500/30 transition-all cursor-pointer">
+              <GlassCard className="p-6 group hover:border-cyan-500/30 transition-all cursor-pointer">
                 <div className="flex items-start gap-4">
-                  <div className="w-14 h-14 rounded-xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center">
-                    <Box className="w-7 h-7 text-orange-400" />
+                  <div className="w-14 h-14 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
+                    <Box className="w-7 h-7 text-cyan-400" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-white group-hover:text-orange-400 transition-colors">
+                    <h3 className="text-lg font-semibold text-white group-hover:text-cyan-400 transition-colors">
                       Physical Products
                     </h3>
                     <p className="text-sm text-zinc-400 mt-1">
                       Hardware, merchandise, equipment, and tangible goods
                     </p>
                     <div className="flex items-center gap-4 mt-4">
-                      <span className="text-2xl font-bold text-orange-400">{stats.physical}</span>
+                      <span className="text-2xl font-bold text-cyan-400">{stats.physical}</span>
                       <span className="text-sm text-zinc-500">products</span>
-                      <ArrowRight className="w-4 h-4 text-zinc-500 ml-auto group-hover:text-orange-400 transition-colors" />
+                      <ArrowRight className="w-4 h-4 text-zinc-500 ml-auto group-hover:text-cyan-400 transition-colors" />
                     </div>
                   </div>
                 </div>

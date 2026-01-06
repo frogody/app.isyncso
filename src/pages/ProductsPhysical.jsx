@@ -33,13 +33,13 @@ import {
 
 const STATUS_COLORS = {
   published: { bg: 'bg-green-500/10', text: 'text-green-400', border: 'border-green-500/30', label: 'Published' },
-  draft: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/30', label: 'Draft' },
+  draft: { bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/30', label: 'Draft' },
   archived: { bg: 'bg-zinc-500/10', text: 'text-zinc-400', border: 'border-zinc-500/30', label: 'Archived' },
 };
 
 const STOCK_STATUS = {
   in_stock: { label: 'In Stock', color: 'text-green-400', icon: CheckCircle },
-  low_stock: { label: 'Low Stock', color: 'text-amber-400', icon: AlertTriangle },
+  low_stock: { label: 'Low Stock', color: 'text-cyan-400', icon: AlertTriangle },
   out_of_stock: { label: 'Out of Stock', color: 'text-red-400', icon: XCircle },
 };
 
@@ -265,8 +265,8 @@ export default function ProductsPhysical() {
     <div className="min-h-screen bg-black relative">
       {/* Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 right-1/4 w-96 h-96 bg-orange-900/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-orange-950/10 rounded-full blur-3xl" />
+        <div className="absolute top-20 right-1/4 w-96 h-96 bg-cyan-900/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-cyan-950/10 rounded-full blur-3xl" />
       </div>
 
       <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
@@ -275,9 +275,9 @@ export default function ProductsPhysical() {
           title="Physical Products"
           subtitle="Hardware, merchandise, equipment, and tangible goods"
           icon={Box}
-          color="orange"
+          color="cyan"
           actions={
-            <Button onClick={handleAddProduct} className="bg-orange-500 hover:bg-orange-600 text-white">
+            <Button onClick={handleAddProduct} className="bg-cyan-500 hover:bg-cyan-600 text-white">
               <Plus className="w-4 h-4 mr-2" /> New Physical Product
             </Button>
           }
@@ -296,7 +296,7 @@ export default function ProductsPhysical() {
           </div>
           <div className="w-px h-8 bg-white/10" />
           <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-amber-400">{stats.low_stock}</span>
+            <span className="text-2xl font-bold text-cyan-400">{stats.low_stock}</span>
             <span className="text-sm text-zinc-500">low stock</span>
           </div>
           <div className="w-px h-8 bg-white/10" />
@@ -364,7 +364,7 @@ export default function ProductsPhysical() {
               <Button
                 variant="ghost"
                 size="sm"
-                className={`h-8 px-3 ${viewMode === 'grid' ? 'bg-orange-500/20 text-orange-400' : 'text-zinc-400 hover:text-white'}`}
+                className={`h-8 px-3 ${viewMode === 'grid' ? 'bg-cyan-500/20 text-cyan-400' : 'text-zinc-400 hover:text-white'}`}
                 onClick={() => setViewMode('grid')}
               >
                 <Grid3X3 className="w-4 h-4" />
@@ -372,7 +372,7 @@ export default function ProductsPhysical() {
               <Button
                 variant="ghost"
                 size="sm"
-                className={`h-8 px-3 ${viewMode === 'list' ? 'bg-orange-500/20 text-orange-400' : 'text-zinc-400 hover:text-white'}`}
+                className={`h-8 px-3 ${viewMode === 'list' ? 'bg-cyan-500/20 text-cyan-400' : 'text-zinc-400 hover:text-white'}`}
                 onClick={() => setViewMode('list')}
               >
                 <List className="w-4 h-4" />
@@ -428,8 +428,8 @@ export default function ProductsPhysical() {
           )
         ) : (
           <GlassCard className="p-12 text-center">
-            <div className="w-16 h-16 rounded-full bg-orange-500/10 border border-orange-500/30 flex items-center justify-center mx-auto mb-4">
-              <Box className="w-8 h-8 text-orange-400" />
+            <div className="w-16 h-16 rounded-full bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mx-auto mb-4">
+              <Box className="w-8 h-8 text-cyan-400" />
             </div>
             <h4 className="text-lg font-medium text-white mb-2">No physical products found</h4>
             <p className="text-sm text-zinc-500 mb-4">
@@ -437,7 +437,7 @@ export default function ProductsPhysical() {
                 ? 'Try adjusting your filters'
                 : 'Get started by adding your first physical product'}
             </p>
-            <Button onClick={handleAddProduct} className="bg-orange-500 hover:bg-orange-600 text-white">
+            <Button onClick={handleAddProduct} className="bg-cyan-500 hover:bg-cyan-600 text-white">
               <Plus className="w-4 h-4 mr-2" /> Add Physical Product
             </Button>
           </GlassCard>
