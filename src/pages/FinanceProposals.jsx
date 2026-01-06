@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { base44 } from '@/api/base44Client';
+import { base44, auth } from '@/api/base44Client';
 import { Proposal, Prospect, Invoice, Subscription } from '@/api/entities';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
@@ -173,18 +173,59 @@ export default function FinanceProposals() {
   };
 
   const handleSendProposal = async (proposal) => {
+    if (!proposal.client_email) {
+      toast.error('Client email is required to send the proposal');
+      return;
+    }
+
     try {
+      // Get current user info for sender details
+      const me = await base44.auth.me();
+
+      // Send the email via edge function
+      const emailResponse = await fetch(
+        `https://sfxpmzicgpaxfntqleig.supabase.co/functions/v1/send-proposal-email`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${(await base44.auth.getSession())?.access_token || ''}`
+          },
+          body: JSON.stringify({
+            to: proposal.client_email,
+            clientName: proposal.client_name,
+            proposalTitle: proposal.title,
+            proposalId: proposal.id,
+            senderName: me?.full_name,
+            senderCompany: me?.company_name || 'iSyncSO',
+            total: proposal.total,
+            currency: proposal.currency || 'EUR',
+            validUntil: proposal.valid_until,
+            introduction: proposal.introduction
+          })
+        }
+      );
+
+      const emailResult = await emailResponse.json();
+
+      if (!emailResponse.ok) {
+        throw new Error(emailResult.error || 'Failed to send email');
+      }
+
+      // Update proposal status
       await Proposal.update(proposal.id, {
         status: 'sent',
         sent_at: new Date().toISOString()
       });
+
       setProposals(prev => prev.map(p =>
         p.id === proposal.id ? { ...p, status: 'sent', sent_at: new Date().toISOString() } : p
       ));
-      toast.success('Proposal marked as sent');
+
+      toast.success('Proposal sent successfully');
     } catch (error) {
       console.error('Error sending proposal:', error);
-      toast.error('Failed to update proposal');
+      toast.error(error.message || 'Failed to send proposal');
     }
   };
 
@@ -200,12 +241,13 @@ export default function FinanceProposals() {
         invoice_number: `INV-${Date.now().toString().slice(-6)}`,
         client_name: proposal.client_name,
         client_email: proposal.client_email,
-        client_address: JSON.stringify(proposal.client_address || {}),
+        client_address: proposal.client_address || {},
         total: proposal.total || 0,
         status: 'draft',
         description: proposal.title,
         items: proposal.line_items || [],
-        proposal_id: proposal.id
+        proposal_id: proposal.id,
+        due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 30 days from now
       };
 
       const newInvoice = await Invoice.create(invoiceData);
@@ -503,13 +545,13 @@ export default function FinanceProposals() {
                             <Copy className="w-4 h-4 mr-2" />
                             Duplicate
                           </DropdownMenuItem>
-                          {proposal.status === 'draft' && (
+                          {proposal.status === 'draft' && proposal.client_email && (
                             <DropdownMenuItem
                               onClick={() => handleSendProposal(proposal)}
                               className="text-blue-400 hover:bg-zinc-800"
                             >
                               <Send className="w-4 h-4 mr-2" />
-                              Mark as Sent
+                              Send Proposal
                             </DropdownMenuItem>
                           )}
                           {!proposal.converted_to_invoice_id && ['accepted', 'viewed', 'sent'].includes(proposal.status) && (

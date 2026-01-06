@@ -477,6 +477,18 @@ export const auth = {
   },
 
   /**
+   * Get current session with access token (for API calls)
+   */
+  async getSession() {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      return session;
+    } catch {
+      return null;
+    }
+  },
+
+  /**
    * Sign in with email and password
    */
   async signInWithEmail(email, password) {
