@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { PageHeader } from '@/components/ui/PageHeader';
 import {
   Card,
   CardContent,
@@ -298,27 +299,23 @@ export default function CreateBranding() {
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <Palette className="w-7 h-7 text-rose-400" />
-            Brand Assets
-          </h1>
-          <p className="text-zinc-400 mt-1">
-            Configure your brand identity for AI-generated content
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {hasChanges && (
+      <PageHeader
+        title="Brand Assets"
+        subtitle="Configure your brand identity for AI-generated content"
+        icon={Palette}
+        color="rose"
+        badge={
+          hasChanges ? (
             <Badge variant="outline" className="border-amber-500/50 text-amber-400">
               Unsaved changes
             </Badge>
-          )}
-          {saving && (
+          ) : saving ? (
             <Badge variant="outline" className="border-rose-500/50 text-rose-400">
               Saving...
             </Badge>
-          )}
+          ) : null
+        }
+        actions={
           <Button
             onClick={saveBrandAssets}
             disabled={saving || !hasChanges}
@@ -327,8 +324,8 @@ export default function CreateBranding() {
             <Save className="w-4 h-4 mr-2" />
             Save Changes
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       <Tabs defaultValue="logos" className="space-y-6">
         <TabsList className="bg-zinc-900 border border-zinc-800">

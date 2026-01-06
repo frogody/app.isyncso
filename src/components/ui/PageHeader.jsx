@@ -19,6 +19,7 @@ export function PageHeader({
     red: { icon: 'text-red-400', iconBg: 'bg-red-500/20', gradient: 'from-red-500/10 to-transparent' },
     emerald: { icon: 'text-emerald-400', iconBg: 'bg-emerald-500/20', gradient: 'from-emerald-500/10 to-transparent' },
     amber: { icon: 'text-amber-400', iconBg: 'bg-amber-500/20', gradient: 'from-amber-500/10 to-transparent' },
+    rose: { icon: 'text-rose-400', iconBg: 'bg-rose-500/20', gradient: 'from-rose-500/10 to-transparent' },
   };
 
   const colors = colorClasses[color];

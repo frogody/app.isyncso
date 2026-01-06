@@ -27,6 +27,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { toast } from 'sonner';
 import {
   Select,
@@ -186,28 +187,22 @@ export default function CreateLibrary() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-rose-500/10 rounded-lg">
-                <FolderOpen className="w-6 h-6 text-rose-400" />
-              </div>
-              <h1 className="text-2xl font-bold text-white">Content Library</h1>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="border-slate-600 text-slate-300">
-                {filteredContent.length} items
-              </Badge>
-            </div>
-          </div>
-          <p className="text-slate-400">Manage all your AI-generated images and videos</p>
-        </div>
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      {/* Header */}
+      <PageHeader
+        title="Content Library"
+        subtitle="Manage all your AI-generated images and videos"
+        icon={FolderOpen}
+        color="rose"
+        badge={
+          <Badge variant="outline" className="border-slate-600 text-slate-300">
+            {filteredContent.length} items
+          </Badge>
+        }
+      />
 
-        {/* Toolbar */}
-        <Card className="bg-slate-800/50 border-slate-700 mb-6">
+      {/* Toolbar */}
+      <Card className="bg-zinc-900/60 border-white/10">
           <CardContent className="p-4">
             <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
               {/* Search */}
@@ -581,7 +576,6 @@ export default function CreateLibrary() {
             ))}
           </div>
         )}
-      </div>
 
       {/* Preview Dialog */}
       <Dialog open={!!previewItem} onOpenChange={() => setPreviewItem(null)}>

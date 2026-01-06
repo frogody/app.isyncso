@@ -25,6 +25,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { toast } from 'sonner';
 import {
   Select,
@@ -294,20 +295,16 @@ export default function CreateVideos() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-rose-500/10 rounded-lg">
-              <Video className="w-6 h-6 text-rose-400" />
-            </div>
-            <h1 className="text-2xl font-bold text-white">AI Video Generation</h1>
-          </div>
-          <p className="text-slate-400">Generate videos with AI, enhanced with your brand and product context</p>
-        </div>
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      {/* Header */}
+      <PageHeader
+        title="AI Video Generation"
+        subtitle="Generate videos with AI, enhanced with your brand and product context"
+        icon={Video}
+        color="rose"
+      />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Panel - Controls */}
           <div className="space-y-6">
             {/* Prompt Input */}
@@ -689,7 +686,6 @@ export default function CreateVideos() {
             )}
           </div>
         </div>
-      </div>
 
       {/* Video Preview Dialog */}
       <Dialog open={!!previewVideo} onOpenChange={() => setPreviewVideo(null)}>
