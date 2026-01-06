@@ -106,96 +106,28 @@ const COLOR_MAP = {
     glow: 'shadow-[0_0_20px_rgba(245,158,11,0.3)]',
     solid: 'bg-amber-500',
   },
-  purple: {
-    bg: 'bg-purple-500/10',
-    border: 'border-purple-500/30',
-    text: 'text-purple-400',
-    glow: 'shadow-[0_0_30px_rgba(168,85,247,0.4)]',
-    solid: 'bg-purple-500',
-  },
 };
-
-function AgentCard({ agent, index }) {
-  const colors = COLOR_MAP[agent.color];
-  const [isHovered, setIsHovered] = useState(false);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1 }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <Link to={agent.link}>
-        <div className={`relative p-5 rounded-2xl ${colors.bg} border ${colors.border} hover:${colors.glow} transition-all duration-300 cursor-pointer group`}>
-          {/* Status indicator */}
-          <div className="absolute top-4 right-4">
-            {agent.status === 'active' ? (
-              <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-xs text-green-400">Active</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-zinc-500" />
-                <span className="text-xs text-zinc-500">Coming Soon</span>
-              </div>
-            )}
-          </div>
-
-          {/* Icon */}
-          <div className={`w-12 h-12 rounded-xl ${colors.bg} border ${colors.border} flex items-center justify-center mb-4`}>
-            <agent.icon className={`w-6 h-6 ${colors.text}`} />
-          </div>
-
-          {/* Content */}
-          <h3 className="text-lg font-semibold text-white mb-1">{agent.name} Agent</h3>
-          <p className="text-sm text-zinc-400 mb-4">{agent.description}</p>
-
-          {/* Capabilities */}
-          <div className="space-y-1.5">
-            {agent.capabilities.slice(0, 3).map((cap, i) => (
-              <div key={i} className="flex items-center gap-2 text-xs text-zinc-500">
-                <div className={`w-1 h-1 rounded-full ${colors.solid}`} />
-                {cap}
-              </div>
-            ))}
-          </div>
-
-          {/* Hover arrow */}
-          <motion.div
-            className="absolute bottom-4 right-4"
-            animate={{ x: isHovered ? 0 : -4, opacity: isHovered ? 1 : 0 }}
-          >
-            <ChevronRight className={`w-5 h-5 ${colors.text}`} />
-          </motion.div>
-        </div>
-      </Link>
-    </motion.div>
-  );
-}
 
 function OrbitVisualization() {
   return (
     <div className="relative w-full h-[400px] flex items-center justify-center">
       {/* Outer orbit ring */}
       <motion.div
-        className="absolute w-[350px] h-[350px] rounded-full border border-purple-500/20"
+        className="absolute w-[350px] h-[350px] rounded-full border border-cyan-500/20"
         animate={{ rotate: 360 }}
         transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
       />
 
       {/* Middle orbit ring */}
       <motion.div
-        className="absolute w-[250px] h-[250px] rounded-full border border-purple-500/30"
+        className="absolute w-[250px] h-[250px] rounded-full border border-cyan-500/30"
         animate={{ rotate: -360 }}
         transition={{ duration: 45, repeat: Infinity, ease: "linear" }}
       />
 
       {/* Inner orbit ring */}
       <motion.div
-        className="absolute w-[150px] h-[150px] rounded-full border border-purple-500/40"
+        className="absolute w-[150px] h-[150px] rounded-full border border-cyan-500/40"
         animate={{ rotate: 360 }}
         transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
       />
@@ -239,11 +171,11 @@ function OrbitVisualization() {
         animate={{ scale: [1, 1.05, 1] }}
         transition={{ duration: 3, repeat: Infinity }}
       >
-        <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-purple-500/30 to-indigo-500/30 border border-purple-500/50 flex items-center justify-center shadow-[0_0_40px_rgba(168,85,247,0.4)]">
-          <Brain className="w-12 h-12 text-purple-400" />
+        <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-cyan-500/30 to-cyan-600/30 border border-cyan-500/50 flex items-center justify-center shadow-[0_0_40px_rgba(6,182,212,0.4)]">
+          <Brain className="w-12 h-12 text-cyan-400" />
         </div>
         <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap">
-          <span className="text-sm font-medium text-purple-400">Sync</span>
+          <span className="text-sm font-medium text-cyan-400">Sync</span>
         </div>
       </motion.div>
 
@@ -251,8 +183,8 @@ function OrbitVisualization() {
       <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ transform: 'translate(0, 0)' }}>
         <defs>
           <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="rgba(168, 85, 247, 0.5)" />
-            <stop offset="100%" stopColor="rgba(168, 85, 247, 0.1)" />
+            <stop offset="0%" stopColor="rgba(6, 182, 212, 0.5)" />
+            <stop offset="100%" stopColor="rgba(6, 182, 212, 0.1)" />
           </linearGradient>
         </defs>
       </svg>
@@ -280,8 +212,8 @@ export default function AIAssistant() {
     <div className="min-h-screen bg-black relative">
       {/* Animated Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 right-1/4 w-96 h-96 bg-purple-900/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-purple-950/10 rounded-full blur-3xl" />
+        <div className="absolute top-20 right-1/4 w-96 h-96 bg-cyan-900/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-cyan-950/10 rounded-full blur-3xl" />
       </div>
 
       <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-8">
@@ -290,13 +222,13 @@ export default function AIAssistant() {
           title="Sync"
           subtitle="Central AI orchestrator for your entire workspace"
           icon={Brain}
-          color="purple"
+          color="cyan"
           actions={
             <div className="flex items-center gap-3">
               <Link to={createPageUrl("MCPIntegrations")}>
                 <Button
                   variant="outline"
-                  className="border-white/10 bg-zinc-900/60 text-zinc-300 hover:text-white hover:border-purple-500/50 hover:bg-purple-500/10"
+                  className="border-white/10 bg-zinc-900/60 text-zinc-300 hover:text-white hover:border-cyan-500/50 hover:bg-cyan-500/10"
                 >
                   <Cpu className="w-4 h-4 mr-2" /> Integrations
                 </Button>
@@ -311,9 +243,9 @@ export default function AIAssistant() {
             {/* Left: Text content */}
             <div className="space-y-6">
               <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/30 mb-4">
-                  <Network className="w-4 h-4 text-purple-400" />
-                  <span className="text-sm text-purple-400">AI Orchestration</span>
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 mb-4">
+                  <Network className="w-4 h-4 text-cyan-400" />
+                  <span className="text-sm text-cyan-400">AI Orchestration</span>
                 </div>
                 <h2 className="text-3xl font-bold text-white mb-3">
                   One Brain. Many Agents.
@@ -355,7 +287,7 @@ export default function AIAssistant() {
                 </a>
                 <Button
                   variant="outline"
-                  className="border-purple-500/30 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20"
+                  className="border-cyan-500/30 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20"
                 >
                   <Sparkles className="w-4 h-4 mr-2" /> Try Sync in Inbox
                 </Button>
@@ -369,27 +301,11 @@ export default function AIAssistant() {
           </div>
         </GlassCard>
 
-        {/* Specialized Agents Section */}
-        <div>
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-xl font-semibold text-white">Specialized Agents</h3>
-              <p className="text-sm text-zinc-500">Sync orchestrates these domain-specific agents</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {SPECIALIZED_AGENTS.map((agent, index) => (
-              <AgentCard key={agent.id} agent={agent} index={index} />
-            ))}
-          </div>
-        </div>
-
         {/* How it works */}
         <GlassCard className="p-6">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center">
-              <Workflow className="w-5 h-5 text-purple-400" />
+            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
+              <Workflow className="w-5 h-5 text-cyan-400" />
             </div>
             <div>
               <h3 className="text-lg font-semibold text-white">How Sync Works</h3>
@@ -400,7 +316,7 @@ export default function AIAssistant() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="relative">
               <div className="flex items-center gap-4 mb-3">
-                <div className="w-8 h-8 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-sm font-medium text-purple-400">
+                <div className="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-sm font-medium text-cyan-400">
                   1
                 </div>
                 <h4 className="font-medium text-white">You Ask</h4>
@@ -415,7 +331,7 @@ export default function AIAssistant() {
 
             <div className="relative">
               <div className="flex items-center gap-4 mb-3">
-                <div className="w-8 h-8 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-sm font-medium text-purple-400">
+                <div className="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-sm font-medium text-cyan-400">
                   2
                 </div>
                 <h4 className="font-medium text-white">Sync Routes</h4>
@@ -430,7 +346,7 @@ export default function AIAssistant() {
 
             <div>
               <div className="flex items-center gap-4 mb-3">
-                <div className="w-8 h-8 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-sm font-medium text-purple-400">
+                <div className="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-sm font-medium text-cyan-400">
                   3
                 </div>
                 <h4 className="font-medium text-white">Agent Executes</h4>
@@ -455,7 +371,7 @@ export default function AIAssistant() {
               ].map((example, i) => (
                 <div
                   key={i}
-                  className="px-3 py-1.5 rounded-lg bg-zinc-800/50 border border-white/5 text-sm text-zinc-400 hover:text-white hover:border-purple-500/30 cursor-pointer transition-colors"
+                  className="px-3 py-1.5 rounded-lg bg-zinc-800/50 border border-white/5 text-sm text-zinc-400 hover:text-white hover:border-cyan-500/30 cursor-pointer transition-colors"
                 >
                   "{example}"
                 </div>

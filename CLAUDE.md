@@ -2,6 +2,36 @@
 
 This file contains critical development rules and patterns that must be followed when building features for the iSyncSO application.
 
+## Supabase MCP - ALWAYS USE FOR DATABASE OPERATIONS
+
+**CRITICAL: Always use the Supabase MCP for all database operations.** The MCP is configured and provides direct SQL execution capabilities.
+
+### Available MCP Tools
+- `mcp__supabase__execute_sql` - Run any SQL query directly
+- `mcp__supabase__list_tables` - List all database tables
+- `mcp__supabase__get_table_schema` - Get table structure
+- `mcp__supabase__apply_migration` - Apply SQL migrations
+- Storage tools for bucket/file operations
+
+### When to Use Supabase MCP
+- Running database migrations
+- Creating/altering tables
+- Setting up RLS policies
+- Managing storage buckets and policies
+- Any direct SQL execution needed
+- Checking database schema/structure
+
+### Example Usage
+```
+// Run a migration
+mcp__supabase__execute_sql("CREATE TABLE foo (id UUID PRIMARY KEY)")
+
+// Apply RLS policy
+mcp__supabase__execute_sql("CREATE POLICY \"Users can view own data\" ON foo FOR SELECT USING (user_id = auth.uid())")
+```
+
+**DO NOT** ask the user to run SQL manually in the Supabase Dashboard - use the MCP instead.
+
 ## RBAC (Role-Based Access Control) - MANDATORY
 
 Every feature in iSyncSO must implement proper permission checks. The RBAC system is the foundation of security and access control.
@@ -157,3 +187,88 @@ const isAtLeastManager = hierarchyLevel >= 60;
 ---
 
 **Remember**: Every feature interaction should answer: "Does this user have permission to do this?"
+
+## Supabase Configuration
+
+**Project: isyncso-sync**
+
+| Key | Value |
+|-----|-------|
+| Project ID | `sfxpmzicgpaxfntqleig` |
+| API URL | `https://sfxpmzicgpaxfntqleig.supabase.co` |
+| Anon Public Key | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmeHBtemljZ3BheGZudHFsZWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDY0NjIsImV4cCI6MjA4MjE4MjQ2Mn0.337ohi8A4zu_6Hl1LpcPaWP8UkI5E4Om7ZgeU9_A8t4` |
+| Service Role Key | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmeHBtemljZ3BheGZudHFsZWlnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NjYwNjQ2MiwiZXhwIjoyMDgyMTgyNDYyfQ.8SeBs34zEK3WVAgGVHmS9h9PStGCJAjPqiynMzx1xsU` |
+| Publishable Key | `sb_publishable_CFe3Zkw-Fji8LNc3aR2EFQ_El0Xwq8k` |
+| Secret Key | `sb_secret_Ove4Djf-0eV9L7gnVDgizQ_fiXjMO4I` |
+| Personal Access Token (PAT) | `sbp_b998952de7493074e84b50702e83f1db14be1479` |
+
+### Database Connection
+
+```
+Host: aws-0-us-west-1.pooler.supabase.com
+Port: 6543
+Database: postgres
+User: postgres.sfxpmzicgpaxfntqleig
+```
+
+### Running Migrations
+
+**PRIMARY METHOD - Use MCP (see top of this file):**
+```
+mcp__supabase__execute_sql("<SQL here>")
+```
+
+**Fallback - Supabase CLI:**
+```bash
+SUPABASE_ACCESS_TOKEN="sbp_b998952de7493074e84b50702e83f1db14be1479" npx supabase db push
+```
+
+### MCP Configuration
+
+The Supabase MCP is configured in `.claude.json`:
+```json
+{
+  "mcpServers": {
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=sfxpmzicgpaxfntqleig&features=database,storage",
+      "headers": {
+        "Authorization": "Bearer sbp_b998952de7493074e84b50702e83f1db14be1479"
+      }
+    }
+  }
+}
+```
+
+**Features enabled:** `database`, `storage`
+
+This allows Claude to:
+- Execute SQL directly
+- Manage database schema
+- Handle storage buckets and policies
+- Run migrations without user intervention
+
+### GitHub Integration
+
+Supabase is connected to GitHub for automatic database migrations.
+
+| Setting | Value |
+|---------|-------|
+| GitHub Repository | `frogody/app.isyncso` |
+| Supabase directory | `.` (root) |
+| Production branch | `main` |
+| Deploy to production | Enabled |
+| Automatic branching | Enabled |
+| Branch limit | 50 |
+| Supabase changes only | Enabled |
+
+**How it works:**
+- Pushing to `main` branch automatically deploys migrations to production
+- Pull requests automatically create preview branches for testing
+- Only changes to Supabase files trigger preview branches
+
+**Migration workflow:**
+1. Create migration file in `supabase/migrations/` with timestamp prefix (e.g., `20260106123000_my_migration.sql`)
+2. Commit and push to a feature branch
+3. Create PR - Supabase creates a preview branch for testing
+4. Merge PR to `main` - migration automatically applies to production

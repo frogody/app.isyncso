@@ -117,6 +117,13 @@ const tableNameMap = {
   'RaiseInvestor': 'raise_investors',
   'RaisePitchDeck': 'raise_pitch_decks',
   'RaiseDataRoom': 'raise_data_rooms',
+
+  // === Products ===
+  'Product': 'products',
+  'DigitalProduct': 'digital_products',
+  'PhysicalProduct': 'physical_products',
+  'Supplier': 'suppliers',
+  'ProductCategory': 'product_categories',
 };
 
 /**
@@ -193,13 +200,18 @@ function createEntityWrapper(entityName) {
 
     /**
      * Get a single record by ID
+     * Note: Some tables use product_id as primary key (digital_products, physical_products)
      */
     async get(id) {
       try {
+        // Tables that use product_id instead of id as primary key
+        const productIdTables = ['digital_products', 'physical_products'];
+        const idColumn = productIdTables.includes(tableName) ? 'product_id' : 'id';
+
         const { data, error } = await supabase
           .from(tableName)
           .select('*')
-          .eq('id', id)
+          .eq(idColumn, id)
           .single();
 
         if (error) throw error;
@@ -231,13 +243,18 @@ function createEntityWrapper(entityName) {
 
     /**
      * Update a record by ID
+     * Note: Some tables use product_id as primary key (digital_products, physical_products)
      */
     async update(id, updates) {
       try {
+        // Tables that use product_id instead of id as primary key
+        const productIdTables = ['digital_products', 'physical_products'];
+        const idColumn = productIdTables.includes(tableName) ? 'product_id' : 'id';
+
         const { data, error } = await supabase
           .from(tableName)
           .update(updates)
-          .eq('id', id)
+          .eq(idColumn, id)
           .select()
           .single();
 
@@ -373,6 +390,13 @@ export const entities = {
   RaiseInvestor: createEntityWrapper('RaiseInvestor'),
   RaisePitchDeck: createEntityWrapper('RaisePitchDeck'),
   RaiseDataRoom: createEntityWrapper('RaiseDataRoom'),
+
+  // === Products ===
+  Product: createEntityWrapper('Product'),
+  DigitalProduct: createEntityWrapper('DigitalProduct'),
+  PhysicalProduct: createEntityWrapper('PhysicalProduct'),
+  Supplier: createEntityWrapper('Supplier'),
+  ProductCategory: createEntityWrapper('ProductCategory'),
 };
 
 /**

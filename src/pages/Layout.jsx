@@ -53,7 +53,11 @@ import {
   TrendingUp,
   Receipt,
   CreditCard,
-  PieChart
+  PieChart,
+  Bot,
+  Package,
+  Cloud,
+  Box
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -120,6 +124,12 @@ const navigationItems = [
     icon: Inbox,
     permission: "inbox.view",
   },
+  {
+    title: "Sync",
+    url: createPageUrl("Sync"),
+    icon: Brain,
+    permission: null, // Always visible - core feature
+  },
 ];
 
 // Engine apps with permission requirements
@@ -145,13 +155,6 @@ const ENGINE_ITEMS_CONFIG = {
     id: 'sentinel',
     permission: "admin.access", // Admin/compliance feature
   },
-  sync: {
-    title: "Sync",
-    url: createPageUrl("Sync"),
-    icon: Brain,
-    id: 'sync',
-    permission: null, // Always available
-  },
   finance: {
     title: "Finance",
     url: createPageUrl("FinanceOverview"),
@@ -166,14 +169,24 @@ const ENGINE_ITEMS_CONFIG = {
     id: 'raise',
     permission: "finance.view", // Fundraising is finance-related
   },
+  products: {
+    title: "Products",
+    url: createPageUrl("Products"),
+    icon: Package,
+    id: 'products',
+    permission: null, // Always visible
+  },
 };
 
 
 
 const adminItems = [];
 
+// Products settings key for localStorage
+const PRODUCTS_SETTINGS_KEY = 'isyncso_products_settings';
+
 // Get secondary nav config based on current route
-function getSecondaryNavConfig(pathname, stats = {}) {
+function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
   // Convert to lowercase for case-insensitive matching
   const path = pathname.toLowerCase();
 
@@ -221,6 +234,29 @@ function getSecondaryNavConfig(pathname, stats = {}) {
     };
   }
 
+  // PRODUCTS routes
+  if (path.includes('products') || path.includes('productdetail')) {
+    const { digitalEnabled = true, physicalEnabled = true } = productsSettings;
+
+    // Build items list based on settings
+    const items = [
+      { label: 'Overview', path: createPageUrl('Products'), icon: Package },
+    ];
+
+    if (digitalEnabled) {
+      items.push({ label: 'Digital', path: createPageUrl('ProductsDigital'), icon: Cloud });
+    }
+    if (physicalEnabled) {
+      items.push({ label: 'Physical', path: createPageUrl('ProductsPhysical'), icon: Box });
+    }
+
+    return {
+      title: 'PRODUCTS',
+      color: 'purple',
+      items
+    };
+  }
+
   // RAISE routes
   if (path.includes('raise')) {
     return {
@@ -248,17 +284,16 @@ function getSecondaryNavConfig(pathname, stats = {}) {
     };
   }
 
-  // SYNC routes
-  if (path.includes('sync') || path.includes('aiassistant') || path.includes('mcpintegrations') || path.includes('actions') || path.includes('activity')) {
+  // SYNC routes - core feature, uses cyan like other main features
+  if (path.includes('sync') || path.includes('aiassistant') || path.includes('actions') || path.includes('activity') || path.includes('agents') || path.includes('agentdetail')) {
     return {
       title: 'SYNC',
-      color: 'purple',
-      agent: 'sync',
+      color: 'cyan',
       items: [
         { label: 'Sync', path: createPageUrl('Sync'), icon: Brain },
+        { label: 'Agents', path: createPageUrl('Agents'), icon: Bot },
         { label: 'Actions', path: createPageUrl('Actions'), icon: Zap },
         { label: 'Activity', path: createPageUrl('Activity'), icon: Activity },
-        { label: 'Integrations', path: createPageUrl('MCPIntegrations'), icon: Cpu },
       ]
     };
   }
@@ -633,6 +668,7 @@ export default function Layout({ children, currentPageName }) {
   const [secondaryNavStats, setSecondaryNavStats] = useState({});
   const [enabledApps, setEnabledApps] = useState(FEATURES.DEFAULT_ENABLED_APPS);
   const [appsManagerOpen, setAppsManagerOpen] = useState(false);
+  const [productsSettings, setProductsSettings] = useState({ digitalEnabled: true, physicalEnabled: true });
   
 
   // Load user app config
@@ -665,6 +701,31 @@ export default function Layout({ children, currentPageName }) {
       window.removeEventListener('dashboard-config-updated', handleConfigUpdate);
     };
   }, [loadUserAppConfig]);
+
+  // Load products settings from localStorage and listen for changes
+  useEffect(() => {
+    // Load initial settings
+    try {
+      const saved = localStorage.getItem(PRODUCTS_SETTINGS_KEY);
+      if (saved) {
+        setProductsSettings(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.warn('Failed to load products settings:', e);
+    }
+
+    // Listen for settings changes from Products page
+    const handleProductsSettingsChange = (event) => {
+      if (event.detail) {
+        setProductsSettings(event.detail);
+      }
+    };
+
+    window.addEventListener('products-settings-changed', handleProductsSettingsChange);
+    return () => {
+      window.removeEventListener('products-settings-changed', handleProductsSettingsChange);
+    };
+  }, []);
 
   React.useEffect(() => {
     let isMounted = true;
@@ -751,8 +812,8 @@ export default function Layout({ children, currentPageName }) {
 
   // Memoize secondary nav config to prevent unnecessary recalculations
   const secondaryNavConfig = useMemo(
-    () => getSecondaryNavConfig(location.pathname, secondaryNavStats),
-    [location.pathname, secondaryNavStats]
+    () => getSecondaryNavConfig(location.pathname, secondaryNavStats, productsSettings),
+    [location.pathname, secondaryNavStats, productsSettings]
   );
   
   return (

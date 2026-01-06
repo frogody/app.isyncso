@@ -105,5 +105,12 @@ export const RaiseInvestor = base44.entities.RaiseInvestor;
 export const RaisePitchDeck = base44.entities.RaisePitchDeck;
 export const RaiseDataRoom = base44.entities.RaiseDataRoom;
 
+// === Products ===
+export const Product = base44.entities.Product;
+export const DigitalProduct = base44.entities.DigitalProduct;
+export const PhysicalProduct = base44.entities.PhysicalProduct;
+export const Supplier = base44.entities.Supplier;
+export const ProductCategory = base44.entities.ProductCategory;
+
 // === Auth SDK ===
 export const User = base44.auth;

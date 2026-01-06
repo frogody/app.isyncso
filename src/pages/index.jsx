@@ -162,6 +162,18 @@ import Raise from "./Raise";
 
 import TeamManagement from "./TeamManagement";
 
+import Agents from "./Agents";
+
+import AgentDetail from "./AgentDetail";
+
+import Products from "./Products";
+
+import ProductsDigital from "./ProductsDigital";
+
+import ProductsPhysical from "./ProductsPhysical";
+
+import ProductDetail from "./ProductDetail";
+
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 
 const PAGES = {
@@ -329,6 +341,18 @@ const PAGES = {
     Raise: Raise,
 
     TeamManagement: TeamManagement,
+
+    Agents: Agents,
+
+    AgentDetail: AgentDetail,
+
+    Products: Products,
+
+    ProductsDigital: ProductsDigital,
+
+    ProductsPhysical: ProductsPhysical,
+
+    ProductDetail: ProductDetail,
 
 }
 
@@ -520,6 +544,18 @@ function PagesContent() {
                 <Route path="/Raise" element={<Raise />} />
 
                 <Route path="/TeamManagement" element={<TeamManagement />} />
+
+                <Route path="/Agents" element={<Agents />} />
+
+                <Route path="/AgentDetail" element={<AgentDetail />} />
+
+                <Route path="/Products" element={<Products />} />
+
+                <Route path="/ProductsDigital" element={<ProductsDigital />} />
+
+                <Route path="/ProductsPhysical" element={<ProductsPhysical />} />
+
+                <Route path="/ProductDetail" element={<ProductDetail />} />
 
             </Routes>
         </Layout>
