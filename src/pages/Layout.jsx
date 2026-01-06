@@ -57,7 +57,11 @@ import {
   Bot,
   Package,
   Cloud,
-  Box
+  Box,
+  Palette,
+  Image,
+  Video,
+  FolderOpen
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -174,6 +178,13 @@ const ENGINE_ITEMS_CONFIG = {
     icon: TrendingUp,
     id: 'raise',
     permission: "finance.view", // Fundraising is finance-related
+  },
+  create: {
+    title: "Create",
+    url: createPageUrl("CreateBranding"),
+    icon: Palette,
+    id: 'create',
+    permission: null, // Always visible - content creation feature
   },
 };
 
@@ -297,7 +308,22 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       ]
     };
   }
-  
+
+  // CREATE routes - content creation hub
+  if (path.includes('create')) {
+    return {
+      title: 'CREATE',
+      color: 'rose',
+      agent: 'create',
+      items: [
+        { label: 'Branding', path: createPageUrl('CreateBranding'), icon: Palette },
+        { label: 'Images', path: createPageUrl('CreateImages'), icon: Image },
+        { label: 'Videos', path: createPageUrl('CreateVideos'), icon: Video },
+        { label: 'Library', path: createPageUrl('CreateLibrary'), icon: FolderOpen },
+      ]
+    };
+  }
+
   return null;
 }
 
@@ -344,6 +370,13 @@ const COLOR_CLASSES = {
     border: THEME_COLORS.sync.border,
     borderSolid: THEME_COLORS.sync.solid,
     glow: THEME_COLORS.sync.glow
+  },
+  rose: {
+    text: THEME_COLORS.create.text,
+    bg: THEME_COLORS.create.bg,
+    border: THEME_COLORS.create.border,
+    borderSolid: THEME_COLORS.create.solid,
+    glow: THEME_COLORS.create.glow
   }
 };
 

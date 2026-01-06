@@ -136,6 +136,10 @@ const tableNameMap = {
   'RaiseCampaign': 'raise_campaigns',
   'RaiseInvestor': 'raise_investors',
   'Investor': 'raise_investors',
+
+  // === CREATE (Content Creation) ===
+  'BrandAssets': 'brand_assets',
+  'GeneratedContent': 'generated_content',
 };
 
 /**
@@ -413,6 +417,10 @@ export const entities = {
 
   // === Proposals ===
   Proposal: createEntityWrapper('Proposal'),
+
+  // === CREATE (Content Creation) ===
+  BrandAssets: createEntityWrapper('BrandAssets'),
+  GeneratedContent: createEntityWrapper('GeneratedContent'),
 };
 
 /**

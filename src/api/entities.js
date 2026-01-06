@@ -116,5 +116,9 @@ export const ProductBundle = base44.entities.ProductBundle;
 // === Proposals ===
 export const Proposal = base44.entities.Proposal;
 
+// === CREATE (Content Creation) ===
+export const BrandAssets = base44.entities.BrandAssets;
+export const GeneratedContent = base44.entities.GeneratedContent;
+
 // === Auth SDK ===
 export const User = base44.auth;

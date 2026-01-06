@@ -178,6 +178,14 @@ import ProductsPhysical from "./ProductsPhysical";
 
 import ProductDetail from "./ProductDetail";
 
+import CreateBranding from "./CreateBranding";
+
+import CreateImages from "./CreateImages";
+
+import CreateVideos from "./CreateVideos";
+
+import CreateLibrary from "./CreateLibrary";
+
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 
 const PAGES = {
@@ -361,6 +369,14 @@ const PAGES = {
     ProductsPhysical: ProductsPhysical,
 
     ProductDetail: ProductDetail,
+
+    CreateBranding: CreateBranding,
+
+    CreateImages: CreateImages,
+
+    CreateVideos: CreateVideos,
+
+    CreateLibrary: CreateLibrary,
 
 }
 
@@ -568,6 +584,14 @@ function PagesContent() {
                 <Route path="/ProductsPhysical" element={<ProductsPhysical />} />
 
                 <Route path="/ProductDetail" element={<ProductDetail />} />
+
+                <Route path="/CreateBranding" element={<CreateBranding />} />
+
+                <Route path="/CreateImages" element={<CreateImages />} />
+
+                <Route path="/CreateVideos" element={<CreateVideos />} />
+
+                <Route path="/CreateLibrary" element={<CreateLibrary />} />
 
             </Routes>
         </Layout>
