@@ -304,28 +304,28 @@ export default function GrowthProposals() {
       {/* Stats Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Total Proposals"
+          label="Total Proposals"
           value={stats.total}
-          icon={<FileText className="w-5 h-5 text-orange-400" />}
-          className="bg-zinc-900/50 border-zinc-800"
+          icon={FileText}
+          color="orange"
         />
         <StatCard
-          title="Total Value"
+          label="Total Value"
           value={`€${stats.totalValue.toLocaleString()}`}
-          icon={<DollarSign className="w-5 h-5 text-emerald-400" />}
-          className="bg-zinc-900/50 border-zinc-800"
+          icon={DollarSign}
+          color="sage"
         />
         <StatCard
-          title="Accepted"
+          label="Accepted"
           value={`${stats.accepted} (€${stats.acceptedValue.toLocaleString()})`}
-          icon={<CheckCircle2 className="w-5 h-5 text-emerald-400" />}
-          className="bg-zinc-900/50 border-zinc-800"
+          icon={CheckCircle2}
+          color="sage"
         />
         <StatCard
-          title="Conversion Rate"
+          label="Conversion Rate"
           value={`${stats.conversionRate}%`}
-          icon={<ArrowRight className="w-5 h-5 text-blue-400" />}
-          className="bg-zinc-900/50 border-zinc-800"
+          icon={ArrowRight}
+          color="indigo"
         />
       </div>
 
