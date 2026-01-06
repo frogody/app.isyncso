@@ -104,6 +104,7 @@ function ProductCard({ product, details, currency, onSelect, isSelected }) {
   const hasSubscription = details?.pricing_config?.subscriptions?.enabled;
   const hasOneTime = details?.pricing_config?.one_time?.enabled;
   const hasAddOns = details?.pricing_config?.add_ons?.enabled;
+  const isDraft = product.status === 'draft';
 
   return (
     <div
@@ -134,6 +135,11 @@ function ProductCard({ product, details, currency, onSelect, isSelected }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h4 className="font-medium text-white truncate">{product.name}</h4>
+            {isDraft && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-zinc-800 text-zinc-400 border-zinc-700">
+                Draft
+              </Badge>
+            )}
             {isSelected && <Check className="w-4 h-4 text-cyan-400" />}
           </div>
           {product.sku && (
@@ -505,14 +511,15 @@ export default function ProductSelector({
 
     setLoading(true);
     try {
-      // Load all products
+      // Load all products (draft, published, or active - all usable in proposals)
       const allProducts = await Product.filter({
-        company_id: user.company_id,
-        status: 'published'
+        company_id: user.company_id
       });
 
-      // Filter out excluded products
-      const filtered = allProducts.filter(p => !excludeIds.includes(p.id));
+      // Filter out excluded products and archived ones
+      const filtered = allProducts.filter(p =>
+        !excludeIds.includes(p.id) && p.status !== 'archived'
+      );
       setProducts(filtered);
 
       // Load details for digital products
