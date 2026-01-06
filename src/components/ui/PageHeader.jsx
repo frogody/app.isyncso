@@ -14,6 +14,7 @@ export function PageHeader({
     cyan: { icon: 'text-cyan-400', iconBg: 'bg-cyan-500/20', gradient: 'from-cyan-500/10 to-transparent' },
     sage: { icon: 'text-[#86EFAC]', iconBg: 'bg-[#86EFAC]/20', gradient: 'from-[#86EFAC]/10 to-transparent' },
     indigo: { icon: 'text-indigo-400', iconBg: 'bg-indigo-500/20', gradient: 'from-indigo-500/10 to-transparent' },
+    purple: { icon: 'text-purple-400', iconBg: 'bg-purple-500/20', gradient: 'from-purple-500/10 to-transparent' },
     orange: { icon: 'text-orange-400', iconBg: 'bg-orange-500/20', gradient: 'from-orange-500/10 to-transparent' },
     red: { icon: 'text-red-400', iconBg: 'bg-red-500/20', gradient: 'from-red-500/10 to-transparent' },
     emerald: { icon: 'text-emerald-400', iconBg: 'bg-emerald-500/20', gradient: 'from-emerald-500/10 to-transparent' },
