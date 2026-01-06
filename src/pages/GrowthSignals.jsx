@@ -260,19 +260,22 @@ export default function GrowthSignals() {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    loadSignals();
-  }, []);
+    let isMounted = true;
 
-  const loadSignals = async () => {
-    try {
-      const sigs = await base44.entities.GrowthSignal.list('-created_date');
-      setSignals(sigs);
-    } catch (error) {
-      console.error('Failed to load:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const loadSignals = async () => {
+      try {
+        const sigs = await base44.entities.GrowthSignal.list({ limit: 100 }).catch(() => []);
+        if (isMounted) setSignals(sigs || []);
+      } catch (error) {
+        console.error('Failed to load:', error);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    loadSignals();
+    return () => { isMounted = false; };
+  }, []);
 
   const handleCreateOpportunity = async (signal) => {
     try {

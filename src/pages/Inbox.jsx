@@ -113,13 +113,17 @@ export default function InboxPage() {
 
     setLoading(true);
     try {
-      // Use service role function to get users (regular users can't list all users)
-      const [channelsData, usersResponse] = await Promise.all([
-        base44.entities.Channel.list('-last_message_at'),
-        base44.functions.invoke('getTeamMembers')
-      ]);
+      // Load channels - RLS handles access
+      const channelsData = await base44.entities.Channel.list({ limit: 100 }).catch(() => []);
 
-      const usersData = usersResponse?.data?.users || [];
+      // Try to get team members - this edge function may not be available
+      let usersData = [];
+      try {
+        const usersResponse = await base44.functions.invoke('getTeamMembers');
+        usersData = usersResponse?.data?.users || [];
+      } catch (e) {
+        console.warn('getTeamMembers not available, using empty list:', e.message);
+      }
 
       const publicChannels = (channelsData || []).filter(c => c.type !== 'dm' && !c.is_archived);
       const dms = (channelsData || []).filter(c => c.type === 'dm' && !c.is_archived);
@@ -158,7 +162,7 @@ export default function InboxPage() {
           });
         }
 
-        const newChannels = await base44.entities.Channel.list('-created_date');
+        const newChannels = await base44.entities.Channel.list({ limit: 100 }).catch(() => []);
         setChannels(newChannels.filter(c => c.type !== 'dm'));
 
         if (newChannels.length > 0) {
@@ -176,7 +180,13 @@ export default function InboxPage() {
   }, [user]);
 
   useEffect(() => {
-    if (user) loadData();
+    let isMounted = true;
+    if (user) {
+      loadData().then(() => {
+        if (!isMounted) return; // Component unmounted during load
+      });
+    }
+    return () => { isMounted = false; };
   }, [user, loadData]);
 
   // Load messages when channel changes

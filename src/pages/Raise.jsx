@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 export default function Raise() {
   const [loading, setLoading] = useState(true);
@@ -64,14 +65,14 @@ export default function Raise() {
       value: `$${(targetAmount / 1000000).toFixed(1)}M`,
       subtitle: activeCampaign?.name || 'No active campaign',
       icon: Target,
-      color: 'emerald'
+      color: 'amber'
     },
     {
       title: 'Amount Raised',
       value: `$${(raisedAmount / 1000000).toFixed(1)}M`,
       subtitle: `${progressPercent}% of target`,
       icon: DollarSign,
-      color: 'cyan'
+      color: 'amber'
     },
     {
       title: 'Investor Pipeline',
@@ -91,20 +92,18 @@ export default function Raise() {
 
   const getColorClasses = (color) => {
     const colors = {
-      emerald: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-      cyan: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
-      indigo: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
-      amber: 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+      amber: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+      indigo: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
     };
-    return colors[color] || colors.emerald;
+    return colors[color] || colors.amber;
   };
 
   const getStatusColor = (status) => {
     const statusColors = {
-      'interested': 'text-cyan-400 border-cyan-500/30 bg-cyan-500/10',
+      'interested': 'text-amber-400 border-amber-500/30 bg-amber-500/10',
       'in_discussions': 'text-amber-400 border-amber-500/30 bg-amber-500/10',
       'due_diligence': 'text-indigo-400 border-indigo-500/30 bg-indigo-500/10',
-      'committed': 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10',
+      'committed': 'text-amber-400 border-amber-500/30 bg-amber-500/10',
       'passed': 'text-zinc-400 border-zinc-500/30 bg-zinc-500/10'
     };
     return statusColors[status] || statusColors.interested;
@@ -113,45 +112,50 @@ export default function Raise() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black text-white p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-            Raise
-          </h1>
-          <p className="text-zinc-400 mt-1">
-            Fundraising toolkit & investor management
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Button variant="outline" className="border-zinc-700 text-zinc-300">
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
-          <Button className="bg-gradient-to-r from-emerald-500 to-cyan-500">
-            <Plus className="w-4 h-4 mr-2" />
-            New Campaign
-          </Button>
-        </div>
+    <div className="min-h-screen bg-black relative">
+      {/* Animated Background */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-20 left-1/4 w-96 h-96 bg-amber-900/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-amber-950/10 rounded-full blur-3xl" />
       </div>
+
+      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+        {/* Header */}
+        <PageHeader
+          icon={Rocket}
+          title="Raise"
+          subtitle="Fundraising toolkit & investor management"
+          color="amber"
+          actions={
+            <div className="flex gap-3">
+              <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
+                <Download className="w-4 h-4 mr-2" />
+                Export
+              </Button>
+              <Button className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                <Plus className="w-4 h-4 mr-2" />
+                New Campaign
+              </Button>
+            </div>
+          }
+        />
 
       {/* Progress Bar for Active Campaign */}
       {activeCampaign && (
-        <Card className="bg-gradient-to-r from-emerald-950/50 to-cyan-950/50 border-emerald-500/20 mb-8">
+        <Card className="bg-gradient-to-r from-amber-950/50 to-amber-950/50 border-amber-500/20 mb-8">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-semibold text-white">{activeCampaign.name}</h3>
                 <p className="text-sm text-zinc-400">{activeCampaign.round_type || 'Funding Round'}</p>
               </div>
-              <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+              <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">
                 Active
               </Badge>
             </div>
@@ -229,10 +233,10 @@ export default function Raise() {
                 <div className="space-y-4">
                   {[
                     { stage: 'Contacted', count: investors.filter(i => i.status === 'contacted').length, color: 'zinc' },
-                    { stage: 'Interested', count: investors.filter(i => i.status === 'interested').length, color: 'cyan' },
+                    { stage: 'Interested', count: investors.filter(i => i.status === 'interested').length, color: 'amber' },
                     { stage: 'In Discussions', count: investors.filter(i => i.status === 'in_discussions').length, color: 'amber' },
                     { stage: 'Due Diligence', count: investors.filter(i => i.status === 'due_diligence').length, color: 'indigo' },
-                    { stage: 'Committed', count: investors.filter(i => i.status === 'committed').length, color: 'emerald' }
+                    { stage: 'Committed', count: investors.filter(i => i.status === 'committed').length, color: 'amber' }
                   ].map((stage) => (
                     <div key={stage.stage} className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -289,7 +293,7 @@ export default function Raise() {
                   <CardTitle className="text-white">Investor CRM</CardTitle>
                   <CardDescription>{investors.length} investors in pipeline</CardDescription>
                 </div>
-                <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600">
+                <Button size="sm" className="bg-amber-500 hover:bg-amber-600">
                   <Plus className="w-4 h-4 mr-2" />
                   Add Investor
                 </Button>
@@ -301,7 +305,7 @@ export default function Raise() {
                   <Users className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-white mb-2">No investors yet</h3>
                   <p className="text-zinc-500 mb-4">Start building your investor pipeline</p>
-                  <Button className="bg-emerald-500 hover:bg-emerald-600">
+                  <Button className="bg-amber-500 hover:bg-amber-600">
                     <Plus className="w-4 h-4 mr-2" />
                     Add First Investor
                   </Button>
@@ -357,7 +361,7 @@ export default function Raise() {
                   <CardTitle className="text-white">Pitch Materials</CardTitle>
                   <CardDescription>Decks, one-pagers, and presentations</CardDescription>
                 </div>
-                <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600">
+                <Button size="sm" className="bg-amber-500 hover:bg-amber-600">
                   <Plus className="w-4 h-4 mr-2" />
                   Upload Material
                 </Button>
@@ -369,7 +373,7 @@ export default function Raise() {
                   <FileText className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-white mb-2">No pitch materials</h3>
                   <p className="text-zinc-500 mb-4">Upload your pitch deck and other materials</p>
-                  <Button className="bg-emerald-500 hover:bg-emerald-600">
+                  <Button className="bg-amber-500 hover:bg-amber-600">
                     <Plus className="w-4 h-4 mr-2" />
                     Upload Pitch Deck
                   </Button>
@@ -377,7 +381,7 @@ export default function Raise() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {pitchDecks.map((deck) => (
-                    <div key={deck.id} className="p-4 bg-zinc-800/50 rounded-lg border border-zinc-700 hover:border-emerald-500/50 transition-colors cursor-pointer">
+                    <div key={deck.id} className="p-4 bg-zinc-800/50 rounded-lg border border-zinc-700 hover:border-amber-500/50 transition-colors cursor-pointer">
                       <div className="flex items-start justify-between mb-3">
                         <div className="p-2 bg-amber-500/10 rounded-lg">
                           <FileText className="w-5 h-5 text-amber-400" />
@@ -404,7 +408,7 @@ export default function Raise() {
                   <CardTitle className="text-white">Data Rooms</CardTitle>
                   <CardDescription>Secure document sharing with investors</CardDescription>
                 </div>
-                <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600">
+                <Button size="sm" className="bg-amber-500 hover:bg-amber-600">
                   <Plus className="w-4 h-4 mr-2" />
                   Create Data Room
                 </Button>
@@ -416,7 +420,7 @@ export default function Raise() {
                   <Briefcase className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-white mb-2">No data rooms</h3>
                   <p className="text-zinc-500 mb-4">Create a secure data room for due diligence</p>
-                  <Button className="bg-emerald-500 hover:bg-emerald-600">
+                  <Button className="bg-amber-500 hover:bg-amber-600">
                     <Plus className="w-4 h-4 mr-2" />
                     Create Data Room
                   </Button>
@@ -426,8 +430,8 @@ export default function Raise() {
                   {dataRooms.map((room) => (
                     <div key={room.id} className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg">
                       <div className="flex items-center gap-4">
-                        <div className="p-2 bg-cyan-500/10 rounded-lg">
-                          <Briefcase className="w-5 h-5 text-cyan-400" />
+                        <div className="p-2 bg-amber-500/10 rounded-lg">
+                          <Briefcase className="w-5 h-5 text-amber-400" />
                         </div>
                         <div>
                           <p className="font-medium text-white">{room.name || 'Data Room'}</p>
@@ -449,6 +453,7 @@ export default function Raise() {
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 }

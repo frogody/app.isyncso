@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
 import {
@@ -14,6 +14,9 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PermissionGuard } from '@/components/guards';
+import { usePermissions } from '@/components/context/PermissionContext';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 // Modal Component
 function Modal({ isOpen, onClose, title, children }) {
@@ -42,6 +45,9 @@ export default function Finance() {
   const [invoices, setInvoices] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
 
+  // Get permissions for conditional rendering
+  const { hasPermission, isLoading: permLoading } = usePermissions();
+
   // Modal states
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [showExpenseModal, setShowExpenseModal] = useState(false);
@@ -49,28 +55,38 @@ export default function Finance() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+
+    const loadFinanceData = async () => {
+      try {
+        if (!isMounted) return;
+        setLoading(true);
+
+        const [expensesData, invoicesData, subscriptionsData] = await Promise.all([
+          base44.entities.Expense?.list?.({ limit: 100 }).catch(() => []) || Promise.resolve([]),
+          base44.entities.Invoice?.list?.({ limit: 100 }).catch(() => []) || Promise.resolve([]),
+          base44.entities.Subscription?.list?.({ limit: 100 }).catch(() => []) || Promise.resolve([])
+        ]);
+
+        if (!isMounted) return;
+        setExpenses(expensesData || []);
+        setInvoices(invoicesData || []);
+        setSubscriptions(subscriptionsData || []);
+      } catch (error) {
+        console.error('Error loading finance data:', error);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
     loadFinanceData();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
-
-  const loadFinanceData = async () => {
-    try {
-      setLoading(true);
-
-      const [expensesData, invoicesData, subscriptionsData] = await Promise.all([
-        base44.entities.Expense?.filter({}) || [],
-        base44.entities.Invoice?.filter({}) || [],
-        base44.entities.Subscription?.filter({}) || []
-      ]);
-
-      setExpenses(expensesData || []);
-      setInvoices(invoicesData || []);
-      setSubscriptions(subscriptionsData || []);
-    } catch (error) {
-      console.error('Error loading finance data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Create Invoice
   const handleCreateInvoice = async (e) => {
@@ -153,98 +169,137 @@ export default function Finance() {
     }
   };
 
-  // Calculate summary metrics
-  const totalRevenue = invoices
-    .filter(i => i.status === 'paid')
-    .reduce((sum, i) => sum + (i.total || 0), 0);
+  // Memoize all calculations to prevent unnecessary recalculations
+  const { totalRevenue, totalExpenses, pendingInvoices, monthlyRecurring, metrics } = useMemo(() => {
+    const totalRevenue = invoices
+      .filter(i => i.status === 'paid')
+      .reduce((sum, i) => sum + (i.total || 0), 0);
 
-  const totalExpenses = expenses
-    .reduce((sum, e) => sum + (e.amount || 0), 0);
+    const totalExpenses = expenses
+      .reduce((sum, e) => sum + (e.amount || 0), 0);
 
-  const pendingInvoices = invoices
-    .filter(i => i.status === 'pending' || i.status === 'sent')
-    .reduce((sum, i) => sum + (i.total || 0), 0);
+    const pendingInvoices = invoices
+      .filter(i => i.status === 'pending' || i.status === 'sent')
+      .reduce((sum, i) => sum + (i.total || 0), 0);
 
-  const monthlyRecurring = subscriptions
-    .filter(s => s.status === 'active')
-    .reduce((sum, s) => sum + (s.amount || 0), 0);
+    const monthlyRecurring = subscriptions
+      .filter(s => s.status === 'active')
+      .reduce((sum, s) => sum + (s.amount || 0), 0);
 
-  const metrics = [
-    {
-      title: 'Total Revenue',
-      value: `$${totalRevenue.toLocaleString()}`,
-      change: '+12.5%',
-      trend: 'up',
-      icon: DollarSign,
-      color: 'emerald'
-    },
-    {
-      title: 'Total Expenses',
-      value: `$${totalExpenses.toLocaleString()}`,
-      change: '-3.2%',
-      trend: 'down',
-      icon: CreditCard,
-      color: 'red'
-    },
-    {
-      title: 'Pending Invoices',
-      value: `$${pendingInvoices.toLocaleString()}`,
-      change: `${invoices.filter(i => i.status === 'pending').length} invoices`,
-      trend: 'neutral',
-      icon: Receipt,
-      color: 'amber'
-    },
-    {
-      title: 'Monthly Recurring',
-      value: `$${monthlyRecurring.toLocaleString()}`,
-      change: `${subscriptions.filter(s => s.status === 'active').length} active`,
-      trend: 'up',
-      icon: TrendingUp,
-      color: 'cyan'
-    }
-  ];
+    const metrics = [
+      {
+        title: 'Total Revenue',
+        value: `$${totalRevenue.toLocaleString()}`,
+        change: '+12.5%',
+        trend: 'up',
+        icon: DollarSign,
+        color: 'amber'
+      },
+      {
+        title: 'Total Expenses',
+        value: `$${totalExpenses.toLocaleString()}`,
+        change: '-3.2%',
+        trend: 'down',
+        icon: CreditCard,
+        color: 'red'
+      },
+      {
+        title: 'Pending Invoices',
+        value: `$${pendingInvoices.toLocaleString()}`,
+        change: `${invoices.filter(i => i.status === 'pending').length} invoices`,
+        trend: 'neutral',
+        icon: Receipt,
+        color: 'amber'
+      },
+      {
+        title: 'Monthly Recurring',
+        value: `$${monthlyRecurring.toLocaleString()}`,
+        change: `${subscriptions.filter(s => s.status === 'active').length} active`,
+        trend: 'up',
+        icon: TrendingUp,
+        color: 'cyan'
+      }
+    ];
+
+    return { totalRevenue, totalExpenses, pendingInvoices, monthlyRecurring, metrics };
+  }, [invoices, expenses, subscriptions]);
 
   const getColorClasses = (color) => {
     const colors = {
-      emerald: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-      red: 'bg-red-500/10 text-red-400 border-red-500/20',
       amber: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+      red: 'bg-red-500/10 text-red-400 border-red-500/20',
       cyan: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
     };
-    return colors[color] || colors.emerald;
+    return colors[color] || colors.amber;
   };
 
-  if (loading) {
+  // Memoize permission checks - only compute when permissions are loaded
+  const { canView, canCreate, canExport } = useMemo(() => {
+    // Return false for all permissions while loading to avoid unnecessary re-computations
+    if (permLoading) {
+      return { canView: false, canCreate: false, canExport: false };
+    }
+    return {
+      canView: hasPermission('finance.view'),
+      canCreate: hasPermission('finance.create'),
+      canExport: hasPermission('finance.export')
+    };
+  }, [hasPermission, permLoading]);
+
+  if (loading || permLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500" />
+      </div>
+    );
+  }
+
+  if (!canView) {
+    return (
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center text-center p-6">
+        <div className="text-red-400 mb-4">
+          <svg className="w-16 h-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <h2 className="text-2xl font-bold text-white mb-2">Access Denied</h2>
+        <p className="text-zinc-400">You don't have permission to view finance data.</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black text-white p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-            Finance
-          </h1>
-          <p className="text-zinc-400 mt-1">
-            Track revenue, expenses, and financial metrics
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Button variant="outline" className="border-zinc-700 text-zinc-300" onClick={() => alert('Export coming soon!')}>
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
-          <Button className="bg-gradient-to-r from-emerald-500 to-cyan-500" onClick={() => setShowInvoiceModal(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            New Transaction
-          </Button>
-        </div>
+    <div className="min-h-screen bg-black relative">
+      {/* Animated Background */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-20 left-1/4 w-96 h-96 bg-amber-900/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-amber-950/10 rounded-full blur-3xl" />
       </div>
+
+      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+        {/* Header */}
+        <PageHeader
+          icon={DollarSign}
+          title="Finance"
+          subtitle="Track revenue, expenses, and financial metrics"
+          color="amber"
+          actions={
+            <div className="flex gap-3">
+              {canExport && (
+                <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800" onClick={() => alert('Export coming soon!')}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Export
+                </Button>
+              )}
+              {canCreate && (
+                <Button className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30" onClick={() => setShowInvoiceModal(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Transaction
+                </Button>
+              )}
+            </div>
+          }
+        />
 
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -262,7 +317,7 @@ export default function Finance() {
                     <metric.icon className="w-5 h-5" />
                   </div>
                   {metric.trend === 'up' && (
-                    <Badge variant="outline" className="text-emerald-400 border-emerald-500/30 bg-emerald-500/10">
+                    <Badge variant="outline" className="text-amber-400 border-amber-500/30 bg-amber-500/10">
                       <ArrowUpRight className="w-3 h-3 mr-1" />
                       {metric.change}
                     </Badge>
@@ -354,7 +409,7 @@ export default function Finance() {
                   <CardTitle className="text-white">Invoices</CardTitle>
                   <CardDescription>{invoices.length} total invoices</CardDescription>
                 </div>
-                <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600" onClick={() => setShowInvoiceModal(true)}>
+                <Button size="sm" className="bg-amber-500 hover:bg-amber-600" onClick={() => setShowInvoiceModal(true)}>
                   <Plus className="w-4 h-4 mr-2" />
                   New Invoice
                 </Button>
@@ -366,7 +421,7 @@ export default function Finance() {
                   <Receipt className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-white mb-2">No invoices yet</h3>
                   <p className="text-zinc-500 mb-4">Create your first invoice to start tracking revenue</p>
-                  <Button className="bg-emerald-500 hover:bg-emerald-600" onClick={() => setShowInvoiceModal(true)}>
+                  <Button className="bg-amber-500 hover:bg-amber-600" onClick={() => setShowInvoiceModal(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Create Invoice
                   </Button>
@@ -376,8 +431,8 @@ export default function Finance() {
                   {invoices.map((invoice) => (
                     <div key={invoice.id} className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg">
                       <div className="flex items-center gap-4">
-                        <div className="p-2 bg-emerald-500/10 rounded-lg">
-                          <FileText className="w-5 h-5 text-emerald-400" />
+                        <div className="p-2 bg-amber-500/10 rounded-lg">
+                          <FileText className="w-5 h-5 text-amber-400" />
                         </div>
                         <div>
                           <p className="font-medium text-white">{invoice.invoice_number || `INV-${invoice.id?.slice(0, 8)}`}</p>
@@ -387,7 +442,7 @@ export default function Finance() {
                       <div className="text-right">
                         <p className="font-medium text-white">${(invoice.total || 0).toLocaleString()}</p>
                         <Badge variant="outline" className={
-                          invoice.status === 'paid' ? 'text-emerald-400 border-emerald-500/30' :
+                          invoice.status === 'paid' ? 'text-amber-400 border-amber-500/30' :
                           invoice.status === 'overdue' ? 'text-red-400 border-red-500/30' :
                           'text-amber-400 border-amber-500/30'
                         }>
@@ -410,7 +465,7 @@ export default function Finance() {
                   <CardTitle className="text-white">Expenses</CardTitle>
                   <CardDescription>{expenses.length} total expenses</CardDescription>
                 </div>
-                <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600" onClick={() => setShowExpenseModal(true)}>
+                <Button size="sm" className="bg-amber-500 hover:bg-amber-600" onClick={() => setShowExpenseModal(true)}>
                   <Plus className="w-4 h-4 mr-2" />
                   Add Expense
                 </Button>
@@ -422,7 +477,7 @@ export default function Finance() {
                   <CreditCard className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-white mb-2">No expenses recorded</h3>
                   <p className="text-zinc-500 mb-4">Track your business expenses here</p>
-                  <Button className="bg-emerald-500 hover:bg-emerald-600" onClick={() => setShowExpenseModal(true)}>
+                  <Button className="bg-amber-500 hover:bg-amber-600" onClick={() => setShowExpenseModal(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Add Expense
                   </Button>
@@ -460,7 +515,7 @@ export default function Finance() {
                   <CardTitle className="text-white">Subscriptions</CardTitle>
                   <CardDescription>{subscriptions.length} active subscriptions</CardDescription>
                 </div>
-                <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600" onClick={() => setShowSubscriptionModal(true)}>
+                <Button size="sm" className="bg-amber-500 hover:bg-amber-600" onClick={() => setShowSubscriptionModal(true)}>
                   <Plus className="w-4 h-4 mr-2" />
                   Add Subscription
                 </Button>
@@ -472,7 +527,7 @@ export default function Finance() {
                   <CircleDollarSign className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-white mb-2">No subscriptions</h3>
                   <p className="text-zinc-500 mb-4">Track recurring revenue from subscriptions</p>
-                  <Button className="bg-emerald-500 hover:bg-emerald-600" onClick={() => setShowSubscriptionModal(true)}>
+                  <Button className="bg-amber-500 hover:bg-amber-600" onClick={() => setShowSubscriptionModal(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Add Subscription
                   </Button>
@@ -493,7 +548,7 @@ export default function Finance() {
                       <div className="text-right">
                         <p className="font-medium text-cyan-400">${(sub.amount || 0).toLocaleString()}/mo</p>
                         <Badge variant="outline" className={
-                          sub.status === 'active' ? 'text-emerald-400 border-emerald-500/30' :
+                          sub.status === 'active' ? 'text-amber-400 border-amber-500/30' :
                           'text-zinc-400 border-zinc-500/30'
                         }>
                           {sub.status || 'active'}
@@ -507,6 +562,7 @@ export default function Finance() {
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
 
       {/* Invoice Modal */}
       <Modal isOpen={showInvoiceModal} onClose={() => setShowInvoiceModal(false)} title="Create Invoice">
@@ -565,7 +621,7 @@ export default function Finance() {
             <Button type="button" variant="outline" onClick={() => setShowInvoiceModal(false)} className="flex-1 border-zinc-700">
               Cancel
             </Button>
-            <Button type="submit" disabled={saving} className="flex-1 bg-emerald-500 hover:bg-emerald-600">
+            <Button type="submit" disabled={saving} className="flex-1 bg-amber-500 hover:bg-amber-600">
               {saving ? 'Creating...' : 'Create Invoice'}
             </Button>
           </div>
@@ -637,7 +693,7 @@ export default function Finance() {
             <Button type="button" variant="outline" onClick={() => setShowExpenseModal(false)} className="flex-1 border-zinc-700">
               Cancel
             </Button>
-            <Button type="submit" disabled={saving} className="flex-1 bg-emerald-500 hover:bg-emerald-600">
+            <Button type="submit" disabled={saving} className="flex-1 bg-amber-500 hover:bg-amber-600">
               {saving ? 'Adding...' : 'Add Expense'}
             </Button>
           </div>
@@ -704,7 +760,7 @@ export default function Finance() {
             <Button type="button" variant="outline" onClick={() => setShowSubscriptionModal(false)} className="flex-1 border-zinc-700">
               Cancel
             </Button>
-            <Button type="submit" disabled={saving} className="flex-1 bg-emerald-500 hover:bg-emerald-600">
+            <Button type="submit" disabled={saving} className="flex-1 bg-amber-500 hover:bg-amber-600">
               {saving ? 'Adding...' : 'Add Subscription'}
             </Button>
           </div>

@@ -29,18 +29,23 @@ export default function Certificates() {
   const loadCertificates = React.useCallback(async () => {
     if (!user) return;
     try {
-      const certs = await base44.entities.Certificate.filter({ user_id: user.id });
+      // RLS handles filtering - list all accessible certificates
+      const certs = await base44.entities.Certificate?.list?.({ limit: 200 }).catch(() => []) || [];
       certs.sort((a, b) => new Date(b.issued_at) - new Date(a.issued_at));
       setCertificates(certs);
     } catch (error) {
-      console.error("Failed to load certificates:", error);
+      console.warn("Failed to load certificates:", error.message);
     } finally {
       setDataLoading(false);
     }
   }, [user]);
 
   useEffect(() => {
-    if (user) loadCertificates();
+    let isMounted = true;
+    if (user) {
+      loadCertificates().then(() => { if (!isMounted) return; });
+    }
+    return () => { isMounted = false; };
   }, [loadCertificates, user]);
 
   const filteredCerts = filterYear === "all" 

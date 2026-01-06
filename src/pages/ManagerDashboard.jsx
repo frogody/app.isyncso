@@ -120,7 +120,7 @@ export default function ManagerDashboard() {
     );
   }
 
-  if (error === 'general') {
+  if (error === 'general' || !analytics) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center p-6">
         <Card className="glass-card border-0 max-w-md">
@@ -130,9 +130,9 @@ export default function ManagerDashboard() {
             </div>
             <h2 className="text-2xl font-bold text-white">Error Loading Data</h2>
             <p className="text-gray-400">
-              Failed to load team analytics. Please try again.
+              Failed to load team analytics. The analytics service may not be configured yet.
             </p>
-            <Button 
+            <Button
               onClick={loadAnalytics}
               className="bg-cyan-600 hover:bg-cyan-500"
             >
@@ -144,7 +144,7 @@ export default function ManagerDashboard() {
     );
   }
 
-  const { team_overview, skill_heatmap, activity_trend, top_performers, engagement_breakdown } = analytics;
+  const { team_overview, skill_heatmap, activity_trend, top_performers, engagement_breakdown } = analytics || {};
 
   return (
     <div className="min-h-screen bg-black p-4 sm:p-8 animate-in fade-in duration-500">

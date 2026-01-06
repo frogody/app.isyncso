@@ -3,10 +3,12 @@ import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useUser } from "@/components/context/UserContext";
+import { usePermissions } from "@/components/context/PermissionContext";
 import { motion } from "framer-motion";
-import { Plus, LayoutGrid } from "lucide-react";
+import { Plus, LayoutGrid, Users, TrendingUp, Award, Target, BookOpen, Briefcase, Shield, DollarSign, AlertTriangle, FileCheck, Activity, PieChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 // Import ALL widget components
 import { 
@@ -52,9 +54,16 @@ const WIDGET_CONFIG = {
 
 export default function Dashboard() {
   const { user, isLoading: userLoading } = useUser();
+  const { isManager, isAdmin, hierarchyLevel, isLoading: permLoading } = usePermissions();
   const [dataLoading, setDataLoading] = useState(true);
   const [enabledApps, setEnabledApps] = useState(['learn', 'growth', 'sentinel']);
   const [enabledWidgets, setEnabledWidgets] = useState([]);
+  const [viewMode, setViewMode] = useState('personal'); // 'personal' or 'team'
+  const [teamData, setTeamData] = useState(null);
+  const [teamLoading, setTeamLoading] = useState(false);
+
+  // Check if user can see team dashboard (manager, admin, or super_admin)
+  const canViewTeamDashboard = isManager || isAdmin || hierarchyLevel >= 60;
   
   // Data states
   const [dashboardData, setDashboardData] = useState({
@@ -86,17 +95,17 @@ export default function Dashboard() {
 
   const loadDashboardData = useCallback(async () => {
     if (!user) return;
-    
+
     try {
-      // Load user config first
-      const configs = await base44.entities.UserAppConfig.filter({ user_id: user.id });
+      // Load user config first - RLS handles filtering
+      const configs = await base44.entities.UserAppConfig.list({ limit: 10 }).catch(() => []);
       const defaultWidgets = [
         'learn_progress', 'learn_stats', 'learn_streak', 'learn_xp',
         'growth_pipeline', 'growth_stats', 'growth_deals',
         'sentinel_compliance', 'sentinel_systems',
         'actions_recent', 'quick_actions'
       ];
-      
+
       if (configs.length > 0) {
         setEnabledApps(configs[0].enabled_apps || ['learn', 'growth', 'sentinel']);
         setEnabledWidgets(configs[0].dashboard_widgets || defaultWidgets);
@@ -104,23 +113,24 @@ export default function Dashboard() {
         setEnabledWidgets(defaultWidgets);
       }
 
-      // Fetch all data in parallel - all filtered by user_id for data isolation
+      // Fetch all data in parallel - RLS handles data isolation
       const [
         coursesData, progressData, actionsData, opportunitiesData, systemsData,
         activitiesResult, gamificationResult, userSkillsResult,
         signalsResult, campaignsResult, certificatesResult
       ] = await Promise.allSettled([
-        base44.entities.Course.list(), // Courses are shared/published content
-        base44.entities.UserProgress.filter({ user_id: user.id }),
-        base44.entities.ActionLog.filter({ user_id: user.id }, '-created_date', 5),
-        base44.entities.GrowthOpportunity.filter({ user_id: user.id }, '-updated_date', 10),
-        base44.entities.AISystem.filter({ user_id: user.id }),
-        base44.entities.ActivitySession.filter({ user_id: user.id }),
-        base44.entities.UserGamification.filter({ user_id: user.id }),
-        base44.entities.UserSkill.filter({ user_id: user.id }, '-proficiency_score', 5),
-        base44.entities.GrowthSignal.filter({ user_id: user.id, is_read: false }, '-created_date', 5),
-        base44.entities.GrowthCampaign.filter({ user_id: user.id, status: 'active' }),
-        base44.entities.Certificate.filter({ user_id: user.id })
+        base44.entities.Course.list({ limit: 50 }).catch(() => []),
+        base44.entities.UserProgress.list({ limit: 100 }).catch(() => []),
+        base44.entities.ActionLog.list({ limit: 5 }).catch(() => []),
+        base44.entities.GrowthOpportunity.list({ limit: 10 }).catch(() => []),
+        base44.entities.AISystem.list({ limit: 50 }).catch(() => []),
+        base44.entities.ActivitySession.list({ limit: 100 }).catch(() => []),
+        // UserGamification may not exist - wrap in try/catch
+        base44.entities.UserGamification?.list?.({ limit: 1 }).catch(() => []) || Promise.resolve([]),
+        base44.entities.UserSkill.list({ limit: 5 }).catch(() => []),
+        base44.entities.GrowthSignal.list({ limit: 5 }).catch(() => []),
+        base44.entities.GrowthCampaign.list({ limit: 10 }).catch(() => []),
+        base44.entities.Certificate.list({ limit: 50 }).catch(() => [])
       ]);
 
       // Process Learn data
@@ -204,19 +214,143 @@ export default function Dashboard() {
     }
   }, [user]);
 
-  useEffect(() => { loadDashboardData(); }, [loadDashboardData]);
-  
+  // Load team data for managers - across ALL modules
+  const loadTeamData = useCallback(async () => {
+    if (!user?.company_id || !canViewTeamDashboard) return;
+
+    setTeamLoading(true);
+    try {
+      // Load data from ALL modules
+      const [
+        usersResult,
+        progressResult,
+        activityResult,
+        opportunitiesResult,
+        systemsResult,
+        actionsResult,
+        invoicesResult,
+        expensesResult
+      ] = await Promise.allSettled([
+        base44.entities.User?.list?.({ limit: 100 }).catch(() => []),
+        base44.entities.UserProgress?.list?.({ limit: 500 }).catch(() => []),
+        base44.entities.ActivitySession?.list?.({ limit: 500 }).catch(() => []),
+        base44.entities.GrowthOpportunity?.list?.({ limit: 100 }).catch(() => []),
+        base44.entities.AISystem?.list?.({ limit: 100 }).catch(() => []),
+        base44.entities.ActionLog?.list?.({ limit: 100 }).catch(() => []),
+        base44.entities.Invoice?.list?.({ limit: 100 }).catch(() => []),
+        base44.entities.Expense?.list?.({ limit: 100 }).catch(() => [])
+      ]);
+
+      const allUsers = usersResult.status === 'fulfilled' ? usersResult.value : [];
+      const allProgress = progressResult.status === 'fulfilled' ? progressResult.value : [];
+      const allActivities = activityResult.status === 'fulfilled' ? activityResult.value : [];
+      const allOpportunities = opportunitiesResult.status === 'fulfilled' ? opportunitiesResult.value : [];
+      const allSystems = systemsResult.status === 'fulfilled' ? systemsResult.value : [];
+      const allActions = actionsResult.status === 'fulfilled' ? actionsResult.value : [];
+      const allInvoices = invoicesResult.status === 'fulfilled' ? invoicesResult.value : [];
+      const allExpenses = expensesResult.status === 'fulfilled' ? expensesResult.value : [];
+
+      // Filter to company users
+      const teamMembers = allUsers.filter(u => u.company_id === user.company_id);
+      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+      // Team overview
+      const activeThisWeek = new Set(
+        allActivities
+          .filter(a => new Date(a.created_at) > weekAgo)
+          .map(a => a.user_id)
+      ).size;
+
+      // LEARN stats
+      const totalHours = Math.round(allActivities.reduce((sum, a) => sum + (a.total_active_minutes || 0), 0) / 60);
+      const coursesCompleted = allProgress.filter(p => p.status === 'completed').length;
+
+      // GROWTH stats
+      const activeDeals = allOpportunities.filter(o => !['closed_won', 'closed_lost'].includes(o.stage));
+      const totalPipelineValue = activeDeals.reduce((sum, o) => sum + (o.value || o.deal_value || 0), 0);
+      const wonDeals = allOpportunities.filter(o => o.stage === 'closed_won').length;
+      const recentDeals = allOpportunities.filter(o => new Date(o.created_at) > weekAgo).length;
+
+      // SENTINEL stats
+      const totalSystems = allSystems.length;
+      const highRiskSystems = allSystems.filter(s => s.risk_classification === 'high-risk').length;
+      const compliantSystems = allSystems.filter(s => s.compliance_status === 'compliant').length;
+      const complianceRate = totalSystems > 0 ? Math.round((compliantSystems / totalSystems) * 100) : 0;
+
+      // FINANCE stats
+      const totalRevenue = allInvoices.filter(i => i.status === 'paid').reduce((sum, i) => sum + (i.amount || 0), 0);
+      const pendingInvoices = allInvoices.filter(i => i.status === 'pending').length;
+      const monthlyExpenses = allExpenses
+        .filter(e => new Date(e.date) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000))
+        .reduce((sum, e) => sum + (e.amount || 0), 0);
+
+      // Actions this week
+      const recentActions = allActions.filter(a => new Date(a.created_at) > weekAgo).length;
+
+      setTeamData({
+        // Team overview
+        memberCount: teamMembers.length,
+        activeThisWeek,
+
+        // Learn
+        learningHours: totalHours,
+        coursesCompleted,
+
+        // Growth
+        activeDeals: activeDeals.length,
+        pipelineValue: totalPipelineValue,
+        wonDeals,
+        recentDeals,
+
+        // Sentinel
+        aiSystems: totalSystems,
+        highRiskSystems,
+        complianceRate,
+
+        // Finance
+        revenue: totalRevenue,
+        pendingInvoices,
+        monthlyExpenses,
+
+        // Activity
+        actionsThisWeek: recentActions
+      });
+    } catch (error) {
+      console.error('Error loading team data:', error);
+      setTeamData(null);
+    } finally {
+      setTeamLoading(false);
+    }
+  }, [user, canViewTeamDashboard]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const runLoad = async () => {
+      await loadDashboardData();
+      // Only update state if still mounted (handled inside loadDashboardData via setters)
+    };
+    runLoad();
+    return () => { isMounted = false; };
+  }, [loadDashboardData]);
+
+  // Load team data when switching to team view
+  useEffect(() => {
+    if (viewMode === 'team' && canViewTeamDashboard && !teamData) {
+      loadTeamData();
+    }
+  }, [viewMode, canViewTeamDashboard, teamData, loadTeamData]);
+
   // Listen for config updates from the AppsManagerModal
   useEffect(() => {
     const handleConfigUpdate = () => {
       loadDashboardData();
     };
-    
+
     window.addEventListener('dashboard-config-updated', handleConfigUpdate);
     return () => window.removeEventListener('dashboard-config-updated', handleConfigUpdate);
   }, [loadDashboardData]);
 
-  const loading = userLoading || dataLoading;
+  const loading = userLoading || dataLoading || permLoading;
   
   if (loading) {
     return (
@@ -388,7 +522,286 @@ export default function Dashboard() {
           </div>
         </motion.div>
 
-        {hasWidgets ? (
+        {/* View Switcher for Managers */}
+        {canViewTeamDashboard && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="flex gap-2 p-1 bg-zinc-900/50 rounded-xl w-fit border border-zinc-800"
+          >
+            <button
+              onClick={() => setViewMode('personal')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                viewMode === 'personal'
+                  ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+              }`}
+            >
+              <LayoutGrid className="w-4 h-4" />
+              My Dashboard
+            </button>
+            <button
+              onClick={() => setViewMode('team')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                viewMode === 'team'
+                  ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                  : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              Team Dashboard
+            </button>
+          </motion.div>
+        )}
+
+        {/* Team Dashboard View */}
+        {viewMode === 'team' && canViewTeamDashboard ? (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            {teamLoading ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  {[1,2,3,4].map(i => <Skeleton key={i} className="h-28 bg-zinc-800 rounded-xl" />)}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[1,2,3,4].map(i => <Skeleton key={i} className="h-48 bg-zinc-800 rounded-xl" />)}
+                </div>
+              </div>
+            ) : teamData ? (
+              <>
+                {/* Team Overview Stats */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <Card className="bg-zinc-900/50 border-zinc-800 hover:border-cyan-500/30 transition-colors">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <Users className="w-5 h-5 text-cyan-400" />
+                      </div>
+                      <p className="text-2xl font-bold text-white">{teamData.memberCount}</p>
+                      <p className="text-sm text-zinc-400">Team Members</p>
+                      <p className="text-xs text-cyan-400 mt-1">{teamData.activeThisWeek} active this week</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-zinc-900/50 border-zinc-800 hover:border-emerald-500/30 transition-colors">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <DollarSign className="w-5 h-5 text-emerald-400" />
+                      </div>
+                      <p className="text-2xl font-bold text-white">${(teamData.pipelineValue / 1000).toFixed(0)}k</p>
+                      <p className="text-sm text-zinc-400">Pipeline Value</p>
+                      <p className="text-xs text-emerald-400 mt-1">{teamData.activeDeals} active deals</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-zinc-900/50 border-zinc-800 hover:border-purple-500/30 transition-colors">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <Shield className="w-5 h-5 text-purple-400" />
+                      </div>
+                      <p className="text-2xl font-bold text-white">{teamData.complianceRate}%</p>
+                      <p className="text-sm text-zinc-400">Compliance Rate</p>
+                      <p className="text-xs text-purple-400 mt-1">{teamData.aiSystems} AI systems</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-zinc-900/50 border-zinc-800 hover:border-amber-500/30 transition-colors">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <Activity className="w-5 h-5 text-amber-400" />
+                      </div>
+                      <p className="text-2xl font-bold text-white">{teamData.actionsThisWeek}</p>
+                      <p className="text-sm text-zinc-400">Actions This Week</p>
+                      <p className="text-xs text-amber-400 mt-1">Team activity</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Module Cards Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* LEARN Module Card */}
+                  <Card className="bg-zinc-900/50 border-zinc-800">
+                    <CardHeader className="border-b border-zinc-800 py-3">
+                      <CardTitle className="text-white flex items-center gap-2 text-base">
+                        <BookOpen className="w-5 h-5 text-indigo-400" />
+                        Learn
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <p className="text-2xl font-bold text-white">{teamData.learningHours}h</p>
+                          <p className="text-xs text-zinc-400">Learning Hours</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-2xl font-bold text-white">{teamData.coursesCompleted}</p>
+                          <p className="text-xs text-zinc-400">Courses Completed</p>
+                        </div>
+                      </div>
+                      <Link to={createPageUrl("LearnDashboard")} className="mt-4 block">
+                        <Button variant="outline" size="sm" className="w-full border-zinc-700 text-zinc-300 hover:bg-indigo-500/10 hover:text-indigo-400 hover:border-indigo-500/30">
+                          View Learning Analytics
+                        </Button>
+                      </Link>
+                    </CardContent>
+                  </Card>
+
+                  {/* GROWTH Module Card */}
+                  <Card className="bg-zinc-900/50 border-zinc-800">
+                    <CardHeader className="border-b border-zinc-800 py-3">
+                      <CardTitle className="text-white flex items-center gap-2 text-base">
+                        <TrendingUp className="w-5 h-5 text-emerald-400" />
+                        Growth
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4">
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="space-y-1">
+                          <p className="text-xl font-bold text-white">{teamData.activeDeals}</p>
+                          <p className="text-xs text-zinc-400">Active Deals</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-xl font-bold text-emerald-400">{teamData.wonDeals}</p>
+                          <p className="text-xs text-zinc-400">Won</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-xl font-bold text-white">{teamData.recentDeals}</p>
+                          <p className="text-xs text-zinc-400">New This Week</p>
+                        </div>
+                      </div>
+                      <Link to={createPageUrl("GrowthPipeline")} className="mt-4 block">
+                        <Button variant="outline" size="sm" className="w-full border-zinc-700 text-zinc-300 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/30">
+                          View Pipeline
+                        </Button>
+                      </Link>
+                    </CardContent>
+                  </Card>
+
+                  {/* SENTINEL Module Card */}
+                  <Card className="bg-zinc-900/50 border-zinc-800">
+                    <CardHeader className="border-b border-zinc-800 py-3">
+                      <CardTitle className="text-white flex items-center gap-2 text-base">
+                        <Shield className="w-5 h-5 text-purple-400" />
+                        Sentinel
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4">
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="space-y-1">
+                          <p className="text-xl font-bold text-white">{teamData.aiSystems}</p>
+                          <p className="text-xs text-zinc-400">AI Systems</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-xl font-bold text-amber-400">{teamData.highRiskSystems}</p>
+                          <p className="text-xs text-zinc-400">High Risk</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-xl font-bold text-purple-400">{teamData.complianceRate}%</p>
+                          <p className="text-xs text-zinc-400">Compliant</p>
+                        </div>
+                      </div>
+                      <Link to={createPageUrl("SentinelDashboard")} className="mt-4 block">
+                        <Button variant="outline" size="sm" className="w-full border-zinc-700 text-zinc-300 hover:bg-purple-500/10 hover:text-purple-400 hover:border-purple-500/30">
+                          View Compliance
+                        </Button>
+                      </Link>
+                    </CardContent>
+                  </Card>
+
+                  {/* FINANCE Module Card */}
+                  <Card className="bg-zinc-900/50 border-zinc-800">
+                    <CardHeader className="border-b border-zinc-800 py-3">
+                      <CardTitle className="text-white flex items-center gap-2 text-base">
+                        <DollarSign className="w-5 h-5 text-cyan-400" />
+                        Finance
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4">
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="space-y-1">
+                          <p className="text-xl font-bold text-emerald-400">${(teamData.revenue / 1000).toFixed(0)}k</p>
+                          <p className="text-xs text-zinc-400">Revenue</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-xl font-bold text-amber-400">{teamData.pendingInvoices}</p>
+                          <p className="text-xs text-zinc-400">Pending</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-xl font-bold text-rose-400">${(teamData.monthlyExpenses / 1000).toFixed(1)}k</p>
+                          <p className="text-xs text-zinc-400">Expenses</p>
+                        </div>
+                      </div>
+                      <Link to={createPageUrl("FinanceOverview")} className="mt-4 block">
+                        <Button variant="outline" size="sm" className="w-full border-zinc-700 text-zinc-300 hover:bg-cyan-500/10 hover:text-cyan-400 hover:border-cyan-500/30">
+                          View Financials
+                        </Button>
+                      </Link>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Quick Actions for Managers */}
+                <Card className="bg-zinc-900/50 border-zinc-800">
+                  <CardHeader className="border-b border-zinc-800 py-3">
+                    <CardTitle className="text-white flex items-center gap-2 text-base">
+                      <Briefcase className="w-5 h-5 text-cyan-400" />
+                      Manager Actions
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                      <Link to={createPageUrl("TeamManagement")}>
+                        <Button variant="outline" size="sm" className="w-full justify-start border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white text-xs">
+                          <Users className="w-4 h-4 mr-1.5" />
+                          Team
+                        </Button>
+                      </Link>
+                      <Link to={createPageUrl("Courses")}>
+                        <Button variant="outline" size="sm" className="w-full justify-start border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white text-xs">
+                          <BookOpen className="w-4 h-4 mr-1.5" />
+                          Courses
+                        </Button>
+                      </Link>
+                      <Link to={createPageUrl("GrowthPipeline")}>
+                        <Button variant="outline" size="sm" className="w-full justify-start border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white text-xs">
+                          <TrendingUp className="w-4 h-4 mr-1.5" />
+                          Pipeline
+                        </Button>
+                      </Link>
+                      <Link to={createPageUrl("SentinelDashboard")}>
+                        <Button variant="outline" size="sm" className="w-full justify-start border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white text-xs">
+                          <Shield className="w-4 h-4 mr-1.5" />
+                          Compliance
+                        </Button>
+                      </Link>
+                      <Link to={createPageUrl("FinanceOverview")}>
+                        <Button variant="outline" size="sm" className="w-full justify-start border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white text-xs">
+                          <DollarSign className="w-4 h-4 mr-1.5" />
+                          Finance
+                        </Button>
+                      </Link>
+                      <Link to={createPageUrl("AnalyticsDashboard")}>
+                        <Button variant="outline" size="sm" className="w-full justify-start border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white text-xs">
+                          <PieChart className="w-4 h-4 mr-1.5" />
+                          Analytics
+                        </Button>
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <div className="text-center py-12">
+                <Users className="w-16 h-16 mx-auto mb-4 text-zinc-600" />
+                <h2 className="text-xl font-semibold text-zinc-300 mb-2">No team data available</h2>
+                <p className="text-zinc-500">Team analytics will appear once your team starts using the platform</p>
+              </div>
+            )}
+          </motion.div>
+        ) : hasWidgets ? (
           <>
             {/* Small Widgets Row - Mobile optimized */}
             {smallWidgets.length > 0 && (

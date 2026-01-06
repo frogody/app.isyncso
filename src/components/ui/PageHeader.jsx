@@ -16,6 +16,8 @@ export function PageHeader({
     indigo: { icon: 'text-indigo-400', iconBg: 'bg-indigo-500/20', gradient: 'from-indigo-500/10 to-transparent' },
     orange: { icon: 'text-orange-400', iconBg: 'bg-orange-500/20', gradient: 'from-orange-500/10 to-transparent' },
     red: { icon: 'text-red-400', iconBg: 'bg-red-500/20', gradient: 'from-red-500/10 to-transparent' },
+    emerald: { icon: 'text-emerald-400', iconBg: 'bg-emerald-500/20', gradient: 'from-emerald-500/10 to-transparent' },
+    amber: { icon: 'text-amber-400', iconBg: 'bg-amber-500/20', gradient: 'from-amber-500/10 to-transparent' },
   };
 
   const colors = colorClasses[color];

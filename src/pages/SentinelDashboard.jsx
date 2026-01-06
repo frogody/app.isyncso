@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense } from "react";
+import React, { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
@@ -24,51 +24,56 @@ export default function SentinelDashboard() {
   const [loading, setLoading] = useState(true);
   const [showWelcome, setShowWelcome] = useState(false);
 
-  const loadData = React.useCallback(async () => {
-    try {
-      const userData = await base44.auth.me();
-      setUser(userData);
+  useEffect(() => {
+    let isMounted = true;
 
-      const hasVisited = localStorage.getItem('sentinel_visited');
-      if (!hasVisited) {
-        setShowWelcome(true);
-        localStorage.setItem('sentinel_visited', 'true');
+    const loadData = async () => {
+      try {
+        const userData = await base44.auth.me();
+        if (!isMounted) return;
+        setUser(userData);
+
+        const hasVisited = localStorage.getItem('sentinel_visited');
+        if (!hasVisited) {
+          setShowWelcome(true);
+          localStorage.setItem('sentinel_visited', 'true');
+        }
+
+        // RLS handles data access - just list all systems
+        const systems = await base44.entities.AISystem.list({ limit: 100 }).catch(() => []);
+        if (!isMounted) return;
+        setAISystems(systems || []);
+      } catch (error) {
+        console.error("Failed to load dashboard data:", error);
+      } finally {
+        if (isMounted) setLoading(false);
       }
+    };
 
-      // Filter by user_id for data isolation
-      const systems = await base44.entities.AISystem.filter({ user_id: userData.id });
-      setAISystems(systems);
-    } catch (error) {
-      console.error("Failed to load dashboard data:", error);
-    } finally {
-      setLoading(false);
-    }
+    loadData();
+    return () => { isMounted = false; };
   }, []);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  const totalSystems = aiSystems.length;
-  const byClassification = {
-    prohibited: aiSystems.filter(s => s.risk_classification === 'prohibited').length,
-    'high-risk': aiSystems.filter(s => s.risk_classification === 'high-risk').length,
-    gpai: aiSystems.filter(s => s.risk_classification === 'gpai').length,
-    'limited-risk': aiSystems.filter(s => s.risk_classification === 'limited-risk').length,
-    'minimal-risk': aiSystems.filter(s => s.risk_classification === 'minimal-risk').length,
-    unclassified: aiSystems.filter(s => s.risk_classification === 'unclassified').length,
-  };
-
-  const byStatus = {
-    'not-started': aiSystems.filter(s => s.compliance_status === 'not-started').length,
-    'in-progress': aiSystems.filter(s => s.compliance_status === 'in-progress').length,
-    compliant: aiSystems.filter(s => s.compliance_status === 'compliant').length,
-    'non-compliant': aiSystems.filter(s => s.compliance_status === 'non-compliant').length,
-  };
-
-  const complianceScore = totalSystems > 0 
-    ? Math.round((byStatus.compliant / totalSystems) * 100) 
-    : 0;
+  // Memoize calculations to prevent unnecessary recalculations
+  const { totalSystems, byClassification, byStatus, complianceScore } = useMemo(() => {
+    const total = aiSystems.length;
+    const classification = {
+      prohibited: aiSystems.filter(s => s.risk_classification === 'prohibited').length,
+      'high-risk': aiSystems.filter(s => s.risk_classification === 'high-risk').length,
+      gpai: aiSystems.filter(s => s.risk_classification === 'gpai').length,
+      'limited-risk': aiSystems.filter(s => s.risk_classification === 'limited-risk').length,
+      'minimal-risk': aiSystems.filter(s => s.risk_classification === 'minimal-risk').length,
+      unclassified: aiSystems.filter(s => s.risk_classification === 'unclassified').length,
+    };
+    const status = {
+      'not-started': aiSystems.filter(s => s.compliance_status === 'not-started').length,
+      'in-progress': aiSystems.filter(s => s.compliance_status === 'in-progress').length,
+      compliant: aiSystems.filter(s => s.compliance_status === 'compliant').length,
+      'non-compliant': aiSystems.filter(s => s.compliance_status === 'non-compliant').length,
+    };
+    const score = total > 0 ? Math.round((status.compliant / total) * 100) : 0;
+    return { totalSystems: total, byClassification: classification, byStatus: status, complianceScore: score };
+  }, [aiSystems]);
 
   const classificationColors = {
     prohibited: 'bg-zinc-700/50 text-zinc-400 border-zinc-600/40',

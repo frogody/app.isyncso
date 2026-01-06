@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
@@ -29,40 +29,49 @@ export default function Growth() {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    loadData();
-  }, [user]);
+    let isMounted = true;
 
-  const loadData = async () => {
-    if (!user?.id) return;
-    try {
-      const [prospects, camps, allCamps, sigs, lists] = await Promise.all([
-        // Use Prospect entity (synced with CRM and GrowthPipeline)
-        base44.entities.Prospect.filter({ user_id: user.id }, '-created_date'),
-        base44.entities.GrowthCampaign.filter({ user_id: user.id, status: 'active' }),
-        base44.entities.GrowthCampaign.filter({ user_id: user.id }),
-        base44.entities.GrowthSignal.filter({ user_id: user.id, is_read: false }, '-created_date', 5),
-        base44.entities.ProspectList.filter({ user_id: user.id }, '-created_date', 5)
-      ]);
-      // Map Prospect to opportunity format for display
-      const opps = prospects.map(p => ({
-        id: p.id,
-        company_name: p.company_name,
-        contact_name: p.contact_name,
-        stage: p.stage || 'new',
-        deal_value: p.deal_value || p.estimated_value || 0,
-        source: p.source,
-        created_date: p.created_date,
-      }));
-      setOpportunities(opps);
-      setCampaigns(allCamps);
-      setSignals(sigs);
-      setProspectLists(lists);
-    } catch (error) {
-      console.error('Failed to load growth data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const loadData = async () => {
+      if (!user?.id) {
+        if (isMounted) setLoading(false);
+        return;
+      }
+      try {
+        // Fetch all data without user_id filter (RLS handles access control)
+        const [prospects, allCamps, sigs, lists] = await Promise.all([
+          base44.entities.Prospect.list({ limit: 50 }).catch(() => []),
+          base44.entities.GrowthCampaign.list({ limit: 50 }).catch(() => []),
+          base44.entities.GrowthSignal.list({ limit: 10 }).catch(() => []),
+          base44.entities.ProspectList.list({ limit: 10 }).catch(() => [])
+        ]);
+
+        if (!isMounted) return;
+
+        // Map Prospect to opportunity format for display
+        const opps = (prospects || []).map(p => ({
+          id: p.id,
+          company_name: p.company_name,
+          contact_name: p.contact_name,
+          stage: p.stage || 'new',
+          deal_value: p.deal_value || p.estimated_value || 0,
+          source: p.source,
+          created_date: p.created_date,
+        }));
+        setOpportunities(opps);
+        setCampaigns(allCamps || []);
+        setSignals((sigs || []).filter(s => !s.is_read));
+        setProspectLists(lists || []);
+      } catch (error) {
+        console.error('Failed to load growth data:', error);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    loadData();
+
+    return () => { isMounted = false; };
+  }, [user]);
 
   const handleQuickSearch = (e) => {
     e.preventDefault();
@@ -71,41 +80,55 @@ export default function Growth() {
     }
   };
 
-  const totalProspects = prospectLists.reduce((sum, l) => sum + (l.prospect_count || 0), 0);
+  // Memoize all calculations to prevent unnecessary recalculations
+  const {
+    totalProspects,
+    totalPipeline,
+    wonDeals,
+    lostDeals,
+    wonValue,
+    meetingsThisMonth,
+    winRate,
+    activeDeals,
+    stageData,
+    pieData,
+    revenueData
+  } = useMemo(() => {
+    const totalProspects = prospectLists.reduce((sum, l) => sum + (l.prospect_count || 0), 0);
+    const totalPipeline = opportunities.reduce((sum, o) => sum + (o.deal_value || 0), 0);
+    const wonDeals = opportunities.filter(o => o.stage === 'won');
+    const lostDeals = opportunities.filter(o => o.stage === 'lost');
+    const wonValue = wonDeals.reduce((sum, o) => sum + (o.deal_value || 0), 0);
+    const meetingsThisMonth = campaigns.reduce((sum, c) => sum + (c.meetings_booked || 0), 0);
+    const winRate = (wonDeals.length + lostDeals.length) > 0
+      ? Math.round((wonDeals.length / (wonDeals.length + lostDeals.length)) * 100)
+      : 0;
+    const activeDeals = opportunities.filter(o => !['won', 'lost'].includes(o.stage)).length;
 
-  const totalPipeline = opportunities.reduce((sum, o) => sum + (o.deal_value || 0), 0);
-  const wonDeals = opportunities.filter(o => o.stage === 'won');
-  const lostDeals = opportunities.filter(o => o.stage === 'lost');
-  const wonValue = wonDeals.reduce((sum, o) => sum + (o.deal_value || 0), 0);
-  const meetingsThisMonth = campaigns.reduce((sum, c) => sum + (c.meetings_booked || 0), 0);
-  const winRate = (wonDeals.length + lostDeals.length) > 0 ? Math.round((wonDeals.length / (wonDeals.length + lostDeals.length)) * 100) : 0;
-  const activeDeals = opportunities.filter(o => !['won', 'lost'].includes(o.stage)).length;
+    // Analytics data - stages synced with CRM
+    const stageData = [
+      { name: 'New', value: opportunities.filter(o => o.stage === 'new').length, fill: '#3b82f6' },
+      { name: 'Contacted', value: opportunities.filter(o => o.stage === 'contacted').length, fill: '#06b6d4' },
+      { name: 'Qualified', value: opportunities.filter(o => o.stage === 'qualified').length, fill: '#6366f1' },
+      { name: 'Proposal', value: opportunities.filter(o => o.stage === 'proposal').length, fill: '#a855f7' },
+      { name: 'Negotiation', value: opportunities.filter(o => o.stage === 'negotiation').length, fill: '#eab308' },
+      { name: 'Won', value: wonDeals.length, fill: '#22c55e' }
+    ];
 
-  // Analytics data - stages synced with CRM
-  const stageData = [
-    { name: 'New', value: opportunities.filter(o => o.stage === 'new').length, fill: '#3b82f6' },
-    { name: 'Contacted', value: opportunities.filter(o => o.stage === 'contacted').length, fill: '#06b6d4' },
-    { name: 'Qualified', value: opportunities.filter(o => o.stage === 'qualified').length, fill: '#6366f1' },
-    { name: 'Proposal', value: opportunities.filter(o => o.stage === 'proposal').length, fill: '#a855f7' },
-    { name: 'Negotiation', value: opportunities.filter(o => o.stage === 'negotiation').length, fill: '#eab308' },
-    { name: 'Won', value: wonDeals.length, fill: '#22c55e' }
-  ];
+    const sourceData = opportunities.reduce((acc, o) => {
+      const source = o.source || 'Other';
+      acc[source] = (acc[source] || 0) + 1;
+      return acc;
+    }, {});
 
-  const sourceData = opportunities.reduce((acc, o) => {
-    const source = o.source || 'Other';
-    acc[source] = (acc[source] || 0) + 1;
-    return acc;
-  }, {});
+    const pieData = Object.entries(sourceData).map(([name, value], i) => ({
+      name, value, fill: ['#6366f1', '#818cf8', '#a5b4fc', '#6366f1', '#52525b'][i % 5]
+    }));
 
-  const pieData = Object.entries(sourceData).map(([name, value], i) => ({
-    name, value, fill: ['#6366f1', '#818cf8', '#a5b4fc', '#6366f1', '#52525b'][i % 5]
-  }));
-
-  // Group opportunities by month for pipeline chart
-  const revenueData = (() => {
+    // Group opportunities by month for pipeline chart
     const monthlyData = {};
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
+
     // Initialize last 6 months with 0
     const now = new Date();
     for (let i = 5; i >= 0; i--) {
@@ -113,7 +136,7 @@ export default function Growth() {
       const key = `${date.getFullYear()}-${date.getMonth()}`;
       monthlyData[key] = { month: months[date.getMonth()], value: 0 };
     }
-    
+
     // Aggregate deal values by month
     opportunities.forEach(opp => {
       if (opp.created_date) {
@@ -124,9 +147,23 @@ export default function Growth() {
         }
       }
     });
-    
-    return Object.values(monthlyData);
-  })();
+
+    const revenueData = Object.values(monthlyData);
+
+    return {
+      totalProspects,
+      totalPipeline,
+      wonDeals,
+      lostDeals,
+      wonValue,
+      meetingsThisMonth,
+      winRate,
+      activeDeals,
+      stageData,
+      pieData,
+      revenueData
+    };
+  }, [opportunities, prospectLists, campaigns]);
 
   // Stage badges synced with CRM
   const stageBadges = {

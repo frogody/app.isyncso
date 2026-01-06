@@ -261,37 +261,44 @@ export default function GrowthPipeline() {
   const [formData, setFormData] = useState(emptyForm);
 
   useEffect(() => {
-    if (user?.id) loadOpportunities();
-  }, [user]);
+    let isMounted = true;
 
-  const loadOpportunities = async () => {
-    if (!user?.id) return;
-    try {
-      // Use Prospect entity (synced with CRM)
-      const prospects = await base44.entities.Prospect.filter({ user_id: user.id });
-      // Map Prospect fields to opportunity format for display
-      const opps = prospects.map(p => ({
-        id: p.id,
-        company_name: p.company_name,
-        contact_name: p.contact_name,
-        contact_email: p.contact_email,
-        stage: p.stage || 'new',
-        deal_value: p.deal_value || p.estimated_value || 0,
-        probability: p.score || 50,
-        expected_close_date: p.next_follow_up,
-        source: p.source,
-        notes: p.notes,
-        next_action: null,
-        created_date: p.created_date,
-        updated_date: p.updated_date,
-      }));
-      setOpportunities(opps);
-    } catch (error) {
-      console.error('Failed to load opportunities:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const loadOpportunities = async () => {
+      if (!user?.id) {
+        if (isMounted) setLoading(false);
+        return;
+      }
+      try {
+        // Use Prospect entity - RLS handles access control
+        const prospects = await base44.entities.Prospect.list({ limit: 100 }).catch(() => []);
+        if (!isMounted) return;
+        // Map Prospect fields to opportunity format for display
+        const opps = (prospects || []).map(p => ({
+          id: p.id,
+          company_name: p.company_name,
+          contact_name: p.contact_name,
+          contact_email: p.contact_email,
+          stage: p.stage || 'new',
+          deal_value: p.deal_value || p.estimated_value || 0,
+          probability: p.score || 50,
+          expected_close_date: p.next_follow_up,
+          source: p.source,
+          notes: p.notes,
+          next_action: null,
+          created_date: p.created_date,
+          updated_date: p.updated_date,
+        }));
+        setOpportunities(opps);
+      } catch (error) {
+        console.error('Failed to load opportunities:', error);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    loadOpportunities();
+    return () => { isMounted = false; };
+  }, [user]);
 
   const handleDragEnd = async (result) => {
     if (!result.destination) return;

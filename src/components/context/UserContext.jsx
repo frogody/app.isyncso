@@ -1,26 +1,34 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
+import { supabase } from '@/api/supabaseClient';
 import { logError, isRecoverableError, retryWithBackoff } from '@/components/utils/errorHandler';
 
+// All available apps in the system
+const ALL_APPS = ['learn', 'growth', 'sentinel', 'finance', 'inbox', 'projects', 'analytics'];
+
 /**
- * UserContext - Centralized user, company, and settings management
+ * UserContext - Centralized user, company, team, and settings management
  *
  * Provides:
  * - user: Current authenticated user data
  * - company: User's company entity (linked via company_id)
  * - settings: User preferences from UserSettings entity
+ * - userTeams: Array of teams the user belongs to (with app access info)
+ * - effectiveApps: Array of app names the user can access based on teams
  * - isLoading: Combined loading state
  * - error: Any fetch errors
  * - refreshUser: Manually refetch all user data
  * - updateUser: Update user profile
  * - updateCompany: Update company data
  * - updateSettings: Update user settings
+ * - hasAppAccess(appName): Check if user has access to specific app
  *
  * Features:
  * - Auto-loads on mount with retry logic
  * - Memoized context value to prevent unnecessary re-renders
  * - Handles missing company_id gracefully
  * - Provides optimistic updates for better UX
+ * - Team-based app access control (admins get all apps, others get team apps)
  */
 
 const UserContext = createContext(null);
@@ -36,6 +44,8 @@ export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
   const [company, setCompany] = useState(null);
   const [settings, setSettings] = useState(null);
+  const [userTeams, setUserTeams] = useState([]);
+  const [effectiveApps, setEffectiveApps] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastRefresh, setLastRefresh] = useState(null);
@@ -57,7 +67,7 @@ export function UserProvider({ children }) {
         return;
       }
 
-      // Load company and settings in parallel with individual error handling
+      // Load company, settings, and team data in parallel with individual error handling
       const results = await Promise.allSettled([
         // Load company if user has company_id - use filter to avoid 404 errors
         userData.company_id
@@ -78,6 +88,45 @@ export function UserProvider({ children }) {
           },
           RETRY_OPTIONS
         ),
+
+        // Load user's team memberships with team and app access data
+        retryWithBackoff(
+          async () => {
+            const { data: teamMemberships, error: teamError } = await supabase
+              .from('team_members')
+              .select(`
+                team_id,
+                role,
+                teams:team_id (
+                  id,
+                  name,
+                  description,
+                  company_id,
+                  team_app_access (
+                    app_name,
+                    is_enabled
+                  )
+                )
+              `)
+              .eq('user_id', userData.id);
+
+            if (teamError) throw teamError;
+            return teamMemberships || [];
+          },
+          RETRY_OPTIONS
+        ),
+
+        // Get user's effective apps via database function
+        retryWithBackoff(
+          async () => {
+            const { data, error: funcError } = await supabase
+              .rpc('get_user_effective_apps', { p_user_id: userData.id });
+
+            if (funcError) throw funcError;
+            return data || [];
+          },
+          RETRY_OPTIONS
+        ),
       ]);
 
       // Process company result
@@ -92,6 +141,29 @@ export function UserProvider({ children }) {
         setSettings(results[1].value || null);
       } else if (results[1].status === 'rejected') {
         logError('UserContext:settings', results[1].reason);
+      }
+
+      // Process team memberships result
+      if (results[2].status === 'fulfilled') {
+        const memberships = results[2].value;
+        // Transform to array of team objects with membership role
+        const teams = memberships.map(m => ({
+          ...m.teams,
+          memberRole: m.role,
+        })).filter(t => t.id); // Filter out any null teams
+        setUserTeams(teams);
+      } else if (results[2].status === 'rejected') {
+        logError('UserContext:teams', results[2].reason);
+        setUserTeams([]);
+      }
+
+      // Process effective apps result
+      if (results[3].status === 'fulfilled') {
+        setEffectiveApps(results[3].value || []);
+      } else if (results[3].status === 'rejected') {
+        logError('UserContext:effectiveApps', results[3].reason);
+        // Fallback: if function fails, give empty apps (minimal access)
+        setEffectiveApps([]);
       }
 
       setLastRefresh(new Date().toISOString());
@@ -175,12 +247,19 @@ export function UserProvider({ children }) {
     }
   }, [settings, user]);
 
+  // Helper function to check if user has access to specific app
+  const hasAppAccess = useCallback((appName) => {
+    return effectiveApps.includes(appName);
+  }, [effectiveApps]);
+
   // Memoize context value to prevent unnecessary re-renders
   const value = useMemo(
     () => ({
       user,
       company,
       settings,
+      userTeams,
+      effectiveApps,
       isLoading,
       error,
       lastRefresh,
@@ -188,16 +267,22 @@ export function UserProvider({ children }) {
       updateUser,
       updateCompany,
       updateSettings,
+      hasAppAccess,
       // Computed properties
       isAuthenticated: !!user,
       hasCompany: !!company,
+      hasTeams: userTeams.length > 0,
       userId: user?.id,
       companyId: company?.id,
+      // All available apps constant
+      allApps: ALL_APPS,
     }),
     [
       user,
       company,
       settings,
+      userTeams,
+      effectiveApps,
       isLoading,
       error,
       lastRefresh,
@@ -205,6 +290,7 @@ export function UserProvider({ children }) {
       updateUser,
       updateCompany,
       updateSettings,
+      hasAppAccess,
     ]
   );
 
@@ -249,6 +335,17 @@ export function useSettingsData() {
   return useMemo(
     () => ({ settings, isLoading, error, updateSettings }),
     [settings, isLoading, error, updateSettings]
+  );
+}
+
+/**
+ * Hook to get team membership and app access data
+ */
+export function useTeamAccess() {
+  const { userTeams, effectiveApps, hasAppAccess, hasTeams, allApps, isLoading } = useUser();
+  return useMemo(
+    () => ({ userTeams, effectiveApps, hasAppAccess, hasTeams, allApps, isLoading }),
+    [userTeams, effectiveApps, hasAppAccess, hasTeams, allApps, isLoading]
   );
 }
 

@@ -76,7 +76,7 @@ const tableNameMap = {
   'GrowthSignal': 'growth_signals',
 
   // === Gamification & Achievements ===
-  'UserGamification': 'user_gamification',
+  'UserGamification': 'user_gamifications',
   'Badge': 'badges',
   'Certificate': 'certificates',
 
@@ -133,12 +133,11 @@ function createEntityWrapper(entityName) {
       try {
         let query = supabase.from(tableName).select('*');
 
+        // Only apply ordering if explicitly requested (not all tables have created_at)
         if (options.order) {
-          query = query.order(options.order.column || 'created_at', {
+          query = query.order(options.order.column || 'id', {
             ascending: options.order.ascending ?? false
           });
-        } else {
-          query = query.order('created_at', { ascending: false });
         }
 
         if (options.limit) {
@@ -172,13 +171,11 @@ function createEntityWrapper(entityName) {
           }
         });
 
-        // Apply ordering
+        // Only apply ordering if explicitly requested (not all tables have created_at)
         if (options.order) {
-          query = query.order(options.order.column || 'created_at', {
+          query = query.order(options.order.column || 'id', {
             ascending: options.order.ascending ?? false
           });
-        } else {
-          query = query.order('created_at', { ascending: false });
         }
 
         if (options.limit) {

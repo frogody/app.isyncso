@@ -50,7 +50,10 @@ import {
   Contact,
   Activity,
   DollarSign,
-  TrendingUp
+  TrendingUp,
+  Receipt,
+  CreditCard,
+  PieChart
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -81,81 +84,99 @@ import AppsManagerModal, { AVAILABLE_APPS } from "@/components/layout/AppsManage
 
 // Import providers
 import { AchievementProvider } from "@/components/learn/AchievementContext";
-import { UserProvider } from "@/components/context/UserContext";
+import { UserProvider, useTeamAccess } from "@/components/context/UserContext";
+import { PermissionProvider, usePermissions } from "@/components/context/PermissionContext";
 
+// Navigation items with permission requirements
+// permission: null = always visible, string = requires that permission
 const navigationItems = [
   {
     title: "Dashboard",
     url: createPageUrl("Dashboard"),
     icon: LayoutDashboard,
+    permission: null, // Always visible
   },
   {
     title: "CRM",
     url: createPageUrl("CRMContacts"),
     icon: Contact,
+    permission: "users.view", // Basic permission
   },
   {
     title: "Projects",
     url: createPageUrl("Projects"),
     icon: FolderKanban,
+    permission: "projects.view",
   },
   {
     title: "Tasks",
     url: createPageUrl("Tasks"),
     icon: ListTodo,
+    permission: "projects.view", // Tasks are part of projects
   },
   {
     title: "Inbox",
     url: createPageUrl("Inbox"),
     icon: Inbox,
+    permission: "inbox.view",
   },
   {
     title: "Actions",
     url: createPageUrl("Actions"),
     icon: Zap,
+    permission: "workflows.view",
   },
   {
     title: "Activity",
     url: createPageUrl("Activity"),
     icon: Activity,
-  },
-  {
-    title: "AI Assistant",
-    url: createPageUrl("AIAssistant"),
-    icon: Brain,
+    permission: null, // Always visible
   },
 ];
 
+// Engine apps with permission requirements
 const ENGINE_ITEMS_CONFIG = {
   growth: {
     title: "Growth",
     url: createPageUrl("Growth"),
     icon: Rocket,
-    id: 'growth'
+    id: 'growth',
+    permission: "analytics.view", // Growth analytics
   },
   learn: {
     title: "Learn",
     url: createPageUrl("LearnDashboard"),
     icon: GraduationCap,
-    id: 'learn'
+    id: 'learn',
+    permission: "courses.view", // Learning features
   },
   sentinel: {
     title: "Sentinel",
     url: createPageUrl("SentinelDashboard"),
     icon: Shield,
-    id: 'sentinel'
+    id: 'sentinel',
+    permission: "admin.access", // Admin/compliance feature
+  },
+  sync: {
+    title: "Sync",
+    url: createPageUrl("AIAssistant"),
+    icon: Brain,
+    id: 'sync',
+    permission: null, // Always available
   },
   finance: {
     title: "Finance",
-    url: createPageUrl("Finance"),
+    url: createPageUrl("FinanceOverview"),
     icon: DollarSign,
-    id: 'finance'
+    id: 'finance',
+    permission: "finance.view",
   },
   raise: {
     title: "Raise",
     url: createPageUrl("Raise"),
     icon: TrendingUp,
-    id: 'raise'
+    id: 'raise',
+    permission: "finance.view", // Fundraising is finance-related
   },
 };
 
@@ -165,8 +186,11 @@ const adminItems = [];
 
 // Get secondary nav config based on current route
 function getSecondaryNavConfig(pathname, stats = {}) {
+  // Convert to lowercase for case-insensitive matching
+  const path = pathname.toLowerCase();
+
   // SENTINEL routes
-      if (pathname.includes('Sentinel') || pathname.includes('AISystem') || pathname.includes('Compliance') || pathname.includes('Document') || pathname.includes('RiskAssessment')) {
+      if (path.includes('sentinel') || path.includes('aisystem') || path.includes('compliance') || path.includes('document') || path.includes('riskassessment')) {
         return {
           title: 'SENTINEL',
           color: 'sage',
@@ -180,7 +204,7 @@ function getSecondaryNavConfig(pathname, stats = {}) {
       }
   
   // GROWTH routes (merged with CIDE)
-          if (pathname.includes('Growth') || pathname.includes('Sequences') || pathname.includes('Deals') || pathname.includes('Leads') || pathname.includes('Insights') || pathname.includes('Prospect') || pathname.includes('Research') || pathname.includes('Pipeline')) {
+          if (path.includes('growth') || path.includes('sequences') || path.includes('deals') || path.includes('leads') || path.includes('insights') || path.includes('prospect') || path.includes('research') || path.includes('pipeline')) {
             return {
               title: 'GROWTH',
               color: 'indigo',
@@ -195,35 +219,64 @@ function getSecondaryNavConfig(pathname, stats = {}) {
           }
 
       // SYNC routes - no secondary nav needed as it only has dashboard
-      if (pathname.includes('Sync')) {
+      if (path.includes('sync')) {
         return null;
       }
-  
-  // LEARN routes
-                  if (pathname.includes('Learn') || pathname.includes('Course') || pathname.includes('Lesson') || pathname.includes('Certificate') || pathname.includes('Skill') || pathname.includes('Leaderboard')) {
-                    return {
-                      title: 'LEARN',
-                      color: 'cyan',
-                      agent: 'learn',
-                      items: [
-                        { label: 'My Courses', path: createPageUrl('Learn'), icon: BookOpen },
-                        { label: 'Skills', path: createPageUrl('SkillMap'), icon: Target, badge: stats.skills },
-                      ]
-                    };
-                  }
 
-          // LEARN Dashboard direct access
-          if (pathname.includes('LearnDashboard')) {
-            return {
-              title: 'LEARN',
-              color: 'cyan',
-              agent: 'learn',
-              items: [
-                { label: 'My Courses', path: createPageUrl('Learn'), icon: BookOpen },
-                { label: 'Skills', path: createPageUrl('SkillMap'), icon: Target, badge: stats.skills },
-              ]
-            };
-          }
+  // FINANCE routes
+  if (path.includes('finance')) {
+    return {
+      title: 'FINANCE',
+      color: 'amber',
+      agent: 'finance',
+      items: [
+        { label: 'Overview', path: createPageUrl('FinanceOverview'), icon: PieChart },
+        { label: 'Invoices', path: createPageUrl('FinanceInvoices'), icon: Receipt },
+        { label: 'Expenses', path: createPageUrl('FinanceExpenses'), icon: DollarSign },
+        { label: 'Subscriptions', path: createPageUrl('FinanceSubscriptions'), icon: CreditCard },
+      ]
+    };
+  }
+
+  // RAISE routes
+  if (path.includes('raise')) {
+    return {
+      title: 'RAISE',
+      color: 'orange',
+      agent: 'raise',
+      items: [
+        { label: 'Dashboard', path: createPageUrl('Raise'), icon: TrendingUp },
+      ]
+    };
+  }
+
+  // LEARN routes (includes course building tools)
+  if (path.includes('learn') || path.includes('course') || path.includes('lesson') || path.includes('certificate') || path.includes('skill') || path.includes('leaderboard') || path.includes('learndashboard')) {
+    return {
+      title: 'LEARN',
+      color: 'cyan',
+      agent: 'learn',
+      items: [
+        { label: 'My Courses', path: createPageUrl('Learn'), icon: BookOpen },
+        { label: 'Skills', path: createPageUrl('SkillMap'), icon: Target, badge: stats.skills },
+        { label: 'Course Builder', path: createPageUrl('ManageCourses'), icon: Library },
+        { label: 'AI Tools', path: createPageUrl('LearnAITools'), icon: Sparkles },
+      ]
+    };
+  }
+
+  // SYNC routes
+  if (path.includes('sync') || path.includes('aiassistant')) {
+    return {
+      title: 'SYNC',
+      color: 'purple',
+      agent: 'sync',
+      items: [
+        { label: 'Assistant', path: createPageUrl('AIAssistant'), icon: Brain },
+        { label: 'Integrations', path: createPageUrl('MCPIntegrations'), icon: Cpu },
+      ]
+    };
+  }
   
   return null;
 }
@@ -251,19 +304,26 @@ const COLOR_CLASSES = {
     borderSolid: THEME_COLORS.learn.solid,
     glow: THEME_COLORS.learn.glow
   },
-  orange: {
-    text: 'text-orange-400',
-    bg: 'bg-orange-950/30',
-    border: 'border-orange-500/30',
-    borderSolid: 'bg-orange-500',
-    glow: 'shadow-[0_0_10px_rgba(249,115,22,0.5)]'
+  amber: {
+    text: THEME_COLORS.finance.text,
+    bg: THEME_COLORS.finance.bg,
+    border: THEME_COLORS.finance.border,
+    borderSolid: THEME_COLORS.finance.solid,
+    glow: THEME_COLORS.finance.glow
   },
-  red: {
-    text: 'text-red-400',
-    bg: 'bg-red-950/30',
-    border: 'border-red-500/30',
-    borderSolid: 'bg-red-500',
-    glow: 'shadow-[0_0_10px_rgba(239,68,68,0.5)]'
+  orange: {
+    text: THEME_COLORS.raise.text,
+    bg: THEME_COLORS.raise.bg,
+    border: THEME_COLORS.raise.border,
+    borderSolid: THEME_COLORS.raise.solid,
+    glow: THEME_COLORS.raise.glow
+  },
+  purple: {
+    text: THEME_COLORS.sync.text,
+    bg: THEME_COLORS.sync.bg,
+    border: THEME_COLORS.sync.border,
+    borderSolid: THEME_COLORS.sync.solid,
+    glow: THEME_COLORS.sync.glow
   }
 };
 
@@ -277,7 +337,7 @@ function SecondarySidebar({ config, location }) {
   const colors = COLOR_CLASSES[config.color] || COLOR_CLASSES.cyan;
   
   return (
-    <div className="hidden lg:flex flex-col w-[80px] bg-black border-r border-white/5 relative z-10 animate-in slide-in-from-left duration-300 overflow-hidden">
+    <div className="hidden md:flex flex-col w-[80px] bg-black border-r border-white/5 relative z-10 animate-in slide-in-from-left duration-300 overflow-hidden">
       {/* Header */}
       <div className={`px-4 py-4 flex items-center justify-center ${SECONDARY_SIDEBAR_HEADER_OFFSET} relative z-10`}>
         <h3 className={`text-[10px] font-bold uppercase tracking-widest ${colors.text}`}>
@@ -327,33 +387,83 @@ function SecondarySidebar({ config, location }) {
   );
 }
 
-// Reusable Sidebar Content
+// Reusable Sidebar Content - must be rendered inside PermissionProvider
 function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig, enabledApps, onOpenAppsManager }) {
     const location = useLocation();
   const [me, setMe] = React.useState(null);
-  const [isManager, setIsManager] = React.useState(false);
+
+  // Get permission context - use the hook directly
+  const { hasPermission, isAdmin, isManager, isLoading: permLoading } = usePermissions();
+
+  // Get team-based app access
+  const { effectiveApps, hasTeams, isLoading: teamLoading } = useTeamAccess();
 
   React.useEffect(() => {
+    let isMounted = true;
     (async () => {
       try {
         const u = await base44.auth.me();
-        setMe(u);
-        
-        // Check if user is a department head
-        const departments = await base44.entities.Department.filter({
-          head_user_id: u.id
-        });
-        setIsManager(departments.length > 0);
+        if (isMounted) {
+          setMe(u);
+        }
+        // Manager status is now determined by RBAC system via PermissionContext
       } catch (e) {
         console.error("Failed to fetch user data:", e);
       }
     })();
+    return () => { isMounted = false; };
   }, []);
 
-  // Filter engine items based on enabled apps
-  const engineItems = enabledApps
-    .map(appId => ENGINE_ITEMS_CONFIG[appId])
-    .filter(Boolean);
+  // Memoize filtered navigation items - show all items while loading
+  const filteredNavItems = useMemo(() => {
+    // While permissions are loading, show items without permission requirements
+    if (permLoading) {
+      return navigationItems.filter(item => !item.permission);
+    }
+    return navigationItems.filter(item => {
+      // No permission required - always show
+      if (!item.permission) return true;
+      // Check permission
+      return hasPermission(item.permission);
+    });
+  }, [hasPermission, permLoading]);
+
+  // Memoize engine items based on team app access AND permissions
+  // Priority: Admin gets all apps, otherwise use team-based effectiveApps, fallback to enabledApps
+  const engineItems = useMemo(() => {
+    // Determine which apps to show based on team membership and admin status
+    let appsToShow;
+
+    if (isAdmin) {
+      // Admins get all apps regardless of team membership
+      appsToShow = Object.keys(ENGINE_ITEMS_CONFIG);
+    } else if (hasTeams && effectiveApps.length > 0) {
+      // Users with teams get apps based on team_app_access
+      appsToShow = effectiveApps;
+    } else if (!hasTeams && !teamLoading) {
+      // Users without team assignments get no engine apps (minimal access)
+      // This encourages admins to assign users to teams
+      appsToShow = [];
+    } else {
+      // Fallback to user's personal config while loading or if no teams
+      appsToShow = enabledApps;
+    }
+
+    const items = appsToShow
+      .map(appId => ENGINE_ITEMS_CONFIG[appId])
+      .filter(Boolean);
+
+    // While permissions are loading, show items without permission requirements
+    if (permLoading) {
+      return items.filter(item => !item.permission);
+    }
+    return items.filter(item => {
+      // No permission required - always show
+      if (!item.permission) return true;
+      // Check permission
+      return hasPermission(item.permission);
+    });
+  }, [enabledApps, effectiveApps, hasTeams, isAdmin, teamLoading, hasPermission, permLoading]);
 
   const handleLogin = async () => {
     base44.auth.redirectToLogin(window.location.href);
@@ -401,9 +511,9 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
 
       {/* Navigation - Mobile optimized with larger touch targets */}
       <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-3 space-y-1 scrollbar-hide scroll-smooth-ios">
-        {/* Core Navigation */}
+        {/* Core Navigation - filtered by permissions */}
         <div className="space-y-1">
-          {navigationItems.map((item) => {
+          {filteredNavItems.map((item) => {
                             const isActive = location.pathname === item.url;
 
                             return (
@@ -437,6 +547,21 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
             const isLearn = item.id === "learn";
             const isSentinel = item.id === "sentinel";
             const isGrowth = item.id === "growth";
+            const isSync = item.id === "sync";
+            const isFinance = item.id === "finance";
+            const isRaise = item.id === "raise";
+
+            // Get the appropriate color classes for this engine
+            const getEngineColors = () => {
+              if (isLearn) return { text: 'text-cyan-400', bg: 'bg-cyan-950/30', solid: 'bg-cyan-500', glow: 'shadow-[0_0_10px_rgba(6,182,212,0.5)]' };
+              if (isSentinel) return { text: 'text-[#86EFAC]', bg: 'bg-[#86EFAC]/10', solid: 'bg-[#86EFAC]', glow: 'shadow-[0_0_10px_rgba(134,239,172,0.5)]' };
+              if (isGrowth) return { text: 'text-indigo-400', bg: 'bg-indigo-950/30', solid: 'bg-indigo-500', glow: 'shadow-[0_0_10px_rgba(99,102,241,0.5)]' };
+              if (isSync) return { text: 'text-purple-400', bg: 'bg-purple-950/30', solid: 'bg-purple-500', glow: 'shadow-[0_0_10px_rgba(168,85,247,0.5)]' };
+              if (isFinance) return { text: 'text-amber-400', bg: 'bg-amber-950/30', solid: 'bg-amber-500', glow: 'shadow-[0_0_10px_rgba(245,158,11,0.5)]' };
+              if (isRaise) return { text: 'text-orange-400', bg: 'bg-orange-950/30', solid: 'bg-orange-500', glow: 'shadow-[0_0_10px_rgba(249,115,22,0.5)]' };
+              return { text: 'text-cyan-400', bg: 'bg-cyan-950/30', solid: 'bg-cyan-500', glow: 'shadow-[0_0_10px_rgba(6,182,212,0.5)]' };
+            };
+            const colors = getEngineColors();
 
             return (
               <Link
@@ -444,40 +569,18 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
                 to={item.url}
                 className={`flex items-center ${isMobile ? 'justify-start gap-3 px-4' : 'justify-center'} min-h-[44px] py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative active:scale-[0.98]
                   ${isActive
-                    ? isLearn
-                      ? 'text-cyan-400 bg-cyan-950/30'
-                      : isSentinel
-                      ? 'text-[#86EFAC] bg-[#86EFAC]/10'
-                      : isGrowth
-                      ? 'text-indigo-400 bg-indigo-950/30'
-                      : 'text-cyan-400 bg-cyan-950/30'
+                    ? `${colors.text} ${colors.bg}`
                     : 'text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
                   }
                 `}
                 title={item.title}
               >
                 <item.icon isActive={isActive} className={`w-5 h-5 flex-shrink-0 transition-colors ${
-                  isActive
-                    ? isLearn
-                      ? 'text-cyan-400'
-                      : isSentinel
-                      ? 'text-[#86EFAC]'
-                      : isGrowth
-                      ? 'text-indigo-400'
-                      : 'text-cyan-400'
-                    : 'group-hover:text-white'
+                  isActive ? colors.text : 'group-hover:text-white'
                 }`} />
                 {isMobile ? <span>{item.title}</span> : <span className="sr-only">{item.title}</span>}
                 {isActive && (
-                  <div className={`absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-l-full ${
-                    isLearn
-                      ? 'bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.5)]'
-                      : isSentinel
-                      ? 'bg-[#86EFAC] shadow-[0_0_10px_rgba(134,239,172,0.5)]'
-                      : isGrowth
-                      ? 'bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]'
-                      : 'bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.5)]'
-                  }`} />
+                  <div className={`absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-l-full ${colors.solid} ${colors.glow}`} />
                 )}
               </Link>
             );
@@ -485,25 +588,6 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
           </div>
 
         <div className="h-px bg-white/5 mx-2 my-2" />
-
-        {/* Manager Section - Mobile optimized */}
-        {isManager && (
-          <div className="space-y-1">
-            <Link
-              to={createPageUrl("ManagerDashboard")}
-              className={`flex items-center ${isMobile ? 'justify-start gap-3 px-4' : 'justify-center'} min-h-[44px] py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative active:scale-[0.98]
-                ${location.pathname === createPageUrl("ManagerDashboard")
-                  ? 'text-cyan-400 bg-cyan-950/30'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
-                }
-              `}
-              title="Team Dashboard"
-            >
-              <BarChart3 className={`w-5 h-5 flex-shrink-0 transition-colors ${location.pathname === createPageUrl("ManagerDashboard") ? 'text-cyan-400' : 'group-hover:text-white'}`} />
-              {isMobile ? <span>Team Dashboard</span> : <span className="sr-only">Team Dashboard</span>}
-            </Link>
-          </div>
-        )}
 
         {me?.role === 'admin' && adminItems.length > 0 && (
           <div className="space-y-1">
@@ -572,7 +656,8 @@ export default function Layout({ children, currentPageName }) {
       const user = await base44.auth.me();
       if (!user) return;
 
-      const configs = await base44.entities.UserAppConfig.filter({ user_id: user.id });
+      // RLS handles filtering - list all accessible configs
+      const configs = await base44.entities.UserAppConfig?.list?.({ limit: 10 }).catch(() => []) || [];
       if (configs.length > 0) {
         setEnabledApps(configs[0].enabled_apps || FEATURES.DEFAULT_ENABLED_APPS);
       }
@@ -597,59 +682,82 @@ export default function Layout({ children, currentPageName }) {
   }, [loadUserAppConfig]);
 
   React.useEffect(() => {
+    let isMounted = true;
+
     window.dispatchEvent(new CustomEvent("isyncso:navigation", {
       detail: { pathname: location.pathname, ts: new Date().toISOString() }
     }));
-    
+
     // Load stats for secondary nav badges
-    loadSecondaryNavStats();
+    const loadStats = async () => {
+      try {
+        const { base44 } = await import("@/api/base44Client");
+        // Convert pathname to lowercase for case-insensitive matching
+        const path = location.pathname.toLowerCase();
+
+        // SENTINEL stats
+        if (path.includes('sentinel') || path.includes('aisystem') || path.includes('compliance')) {
+          try {
+            const systems = await base44.entities.AISystem.list();
+            if (!isMounted) return;
+            const highRiskCount = (systems || []).filter(s => s.risk_classification === 'high-risk').length;
+            setSecondaryNavStats(prev => ({
+              ...prev,
+              systems: (systems || []).length,
+              tasks: highRiskCount * SENTINEL.HIGH_RISK_TASK_MULTIPLIER
+            }));
+          } catch (e) {
+            console.warn('Failed to load SENTINEL stats:', e.message);
+          }
+        }
+
+        // GROWTH/CIDE stats
+        if (path.includes('growth') || path.includes('cide')) {
+          try {
+            // Only load ProspectList - getICPTemplates edge function has CORS issues
+            const lists = await base44.entities.ProspectList.list().catch(() => []);
+            if (!isMounted) return;
+            setSecondaryNavStats(prev => ({
+              ...prev,
+              lists: (lists || []).filter(l => l.status === 'active').length,
+              templates: 0
+            }));
+          } catch (e) {
+            console.warn('Failed to load GROWTH stats:', e.message);
+          }
+        }
+
+        // LEARN stats
+        if (path.includes('learn') || path.includes('course') || path.includes('certificate') || path.includes('skill') || path.includes('leaderboard')) {
+          try {
+            const currentUser = await base44.auth.me();
+            if (!isMounted) return;
+            if (currentUser?.id) {
+              // RLS handles filtering - list all accessible items
+              const [certificates, userSkills] = await Promise.all([
+                base44.entities.Certificate?.list?.({ limit: 100 }).catch(() => []) || Promise.resolve([]),
+                base44.entities.UserSkill?.list?.({ limit: 100 }).catch(() => []) || Promise.resolve([])
+              ]);
+              if (!isMounted) return;
+              setSecondaryNavStats(prev => ({
+                ...prev,
+                certificates: (certificates || []).length,
+                skills: (userSkills || []).length
+              }));
+            }
+          } catch (e) {
+            console.warn('Failed to load LEARN stats:', e.message);
+          }
+        }
+      } catch (error) {
+        logError('Layout:loadSecondaryNavStats', error);
+      }
+    };
+
+    loadStats();
+
+    return () => { isMounted = false; };
   }, [location.pathname]);
-  
-  const loadSecondaryNavStats = async () => {
-    try {
-      const { base44 } = await import("@/api/base44Client");
-      
-      // SENTINEL stats
-      if (location.pathname.includes('Sentinel') || location.pathname.includes('AISystem') || location.pathname.includes('Compliance')) {
-        const systems = await base44.entities.AISystem.list();
-        const highRiskCount = systems.filter(s => s.risk_classification === 'high-risk').length;
-        setSecondaryNavStats(prev => ({
-          ...prev,
-          systems: systems.length,
-          tasks: highRiskCount * SENTINEL.HIGH_RISK_TASK_MULTIPLIER
-        }));
-      }
-      
-      // CIDE stats
-      if (location.pathname.includes('CIDE')) {
-        const [lists, templatesResponse] = await Promise.all([
-          base44.entities.ProspectList.list(),
-          base44.functions.invoke('getICPTemplates')
-        ]);
-        setSecondaryNavStats(prev => ({
-          ...prev,
-          lists: lists.filter(l => l.status === 'active').length,
-          templates: templatesResponse.data?.templates?.length || 0
-        }));
-      }
-      
-      // LEARN stats
-      if (location.pathname.includes('Learn') || location.pathname.includes('Course') || location.pathname.includes('Certificate') || location.pathname.includes('Skill') || location.pathname.includes('Leaderboard') || location.pathname.includes('Activity') || location.pathname.includes('Team')) {
-        const currentUser = await base44.auth.me();
-        const [certificates, userSkills] = await Promise.all([
-          base44.entities.Certificate.filter({ user_id: currentUser.id }),
-          base44.entities.UserSkill.filter({ user_id: currentUser.id })
-        ]);
-        setSecondaryNavStats(prev => ({
-          ...prev,
-          certificates: certificates.length,
-          skills: userSkills.length
-        }));
-      }
-    } catch (error) {
-      logError('Layout:loadSecondaryNavStats', error);
-    }
-  };
 
   // Callback for AppsManagerModal to update state immediately
   const onAppsConfigChange = (newConfig) => {
@@ -666,6 +774,7 @@ export default function Layout({ children, currentPageName }) {
     <ErrorBoundary>
       <OnboardingGuard>
           <UserProvider>
+          <PermissionProvider>
             <AchievementProvider>
               <Toaster />
               {/* Skip to main content link for keyboard navigation */}
@@ -841,8 +950,8 @@ export default function Layout({ children, currentPageName }) {
           `}</style>
 
         <div className="flex h-screen">
-          {/* Desktop Sidebar - Always collapsed */}
-          <div className="hidden lg:flex flex-col sidebar-shell w-[80px]">
+          {/* Desktop/Tablet Sidebar - Always collapsed */}
+          <div className="hidden md:flex flex-col sidebar-shell w-[80px]">
             <SidebarContent 
               currentPageName={currentPageName} 
               secondaryNavConfig={secondaryNavConfig} 
@@ -854,8 +963,8 @@ export default function Layout({ children, currentPageName }) {
           {/* Secondary Sidebar */}
           <SecondarySidebar config={secondaryNavConfig} location={location} />
 
-          {/* Mobile Header - Optimized for iPhone/iPad with safe areas */}
-          <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-md border-b border-gray-800 pt-safe">
+          {/* Mobile Header - Only on phones (below 768px) */}
+          <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-md border-b border-gray-800 pt-safe">
             <div className="flex items-center justify-between px-4 h-14 sm:h-16">
               <div className="flex items-center">
                 <img
@@ -892,7 +1001,7 @@ export default function Layout({ children, currentPageName }) {
           {/* Main Content - Mobile optimized with safe areas */}
           <main
             id="main-content"
-            className="flex-1 lg:pt-0 pt-14 sm:pt-16 overflow-auto transition-all duration-300 pb-safe scroll-smooth-ios"
+            className="flex-1 md:pt-0 pt-14 sm:pt-16 overflow-auto transition-all duration-300 pb-safe scroll-smooth-ios"
             role="main"
           >
             <div className="min-h-full">
@@ -913,6 +1022,7 @@ export default function Layout({ children, currentPageName }) {
         />
         </div>
           </AchievementProvider>
+          </PermissionProvider>
         </UserProvider>
         </OnboardingGuard>
         </ErrorBoundary>

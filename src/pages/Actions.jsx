@@ -89,14 +89,13 @@ export default function Actions() {
 
   const loadIntegrations = useCallback(async () => {
     if (!user) return;
-    
+
     try {
-      const data = await base44.entities.MergeIntegration.filter({
-        user_id: user.id
-      });
-      setIntegrations(data.filter(i => i.status === 'active'));
+      // RLS handles filtering - list all accessible integrations
+      const data = await base44.entities.MergeIntegration?.list?.({ limit: 50 }).catch(() => []) || [];
+      setIntegrations((data || []).filter(i => i.status === 'active'));
     } catch (error) {
-      console.error('Error loading integrations:', error);
+      console.warn('Error loading integrations:', error.message);
     } finally {
       setLoading(false);
     }
@@ -104,27 +103,26 @@ export default function Actions() {
 
   const loadActionLogs = useCallback(async () => {
     if (!user) return;
-    
+
     setLogsLoading(true);
     try {
-      const data = await base44.entities.ActionLog.filter(
-        { user_id: user.id },
-        '-created_date',
-        50
-      );
-      setActionLogs(data);
+      // RLS handles filtering - list all accessible logs
+      const data = await base44.entities.ActionLog?.list?.({ limit: 50 }).catch(() => []) || [];
+      setActionLogs(data || []);
     } catch (error) {
-      console.error('Error loading action logs:', error);
+      console.warn('Error loading action logs:', error.message);
     } finally {
       setLogsLoading(false);
     }
   }, [user]);
 
   useEffect(() => {
+    let isMounted = true;
     if (user) {
-      loadIntegrations();
-      loadActionLogs();
+      loadIntegrations().then(() => { if (!isMounted) return; });
+      loadActionLogs().then(() => { if (!isMounted) return; });
     }
+    return () => { isMounted = false; };
   }, [user, loadIntegrations, loadActionLogs]);
 
   const handleDisconnect = async (integrationId) => {

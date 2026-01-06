@@ -15,24 +15,40 @@ export function ProgressWidget({ userId, compact = false }) {
 
   const loadGamification = React.useCallback(async () => {
     try {
-      const data = await base44.entities.UserGamification.filter({ user_id: userId });
+      // UserGamification table may not exist - handle gracefully
+      if (!base44.entities.UserGamification?.list) {
+        setLoading(false);
+        return;
+      }
+      const data = await base44.entities.UserGamification.list({ limit: 1 }).catch(() => []);
       if (data.length > 0) {
         setGamification(data[0]);
       }
     } catch (error) {
-      console.error('[ProgressWidget] Load failed:', error);
+      console.warn('[ProgressWidget] Load failed:', error.message);
     } finally {
       setLoading(false);
     }
   }, [userId]);
 
   useEffect(() => {
+    let isMounted = true;
     if (!userId) return;
-    loadGamification();
+
+    const doLoad = async () => {
+      await loadGamification();
+    };
+    doLoad();
 
     // Refresh every 30s to catch updates
-    const interval = setInterval(loadGamification, 30000);
-    return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      if (isMounted) loadGamification();
+    }, 30000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, [userId, loadGamification]);
 
   if (loading || !gamification) return null;

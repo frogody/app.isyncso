@@ -90,6 +90,8 @@ import Leads from "./Leads";
 
 import Learn from "./Learn";
 
+import LearnAITools from "./LearnAITools";
+
 import LearnAssistant from "./LearnAssistant";
 
 import LearnDashboard from "./LearnDashboard";
@@ -148,7 +150,17 @@ import OAuthCallback from "./OAuthCallback";
 
 import Finance from "./Finance";
 
+import FinanceOverview from "./FinanceOverview";
+
+import FinanceInvoices from "./FinanceInvoices";
+
+import FinanceExpenses from "./FinanceExpenses";
+
+import FinanceSubscriptions from "./FinanceSubscriptions";
+
 import Raise from "./Raise";
+
+import TeamManagement from "./TeamManagement";
 
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 
@@ -244,8 +256,10 @@ const PAGES = {
     
     Learn: Learn,
     
+    LearnAITools: LearnAITools,
+
     LearnAssistant: LearnAssistant,
-    
+
     LearnDashboard: LearnDashboard,
     
     LessonViewer: LessonViewer,
@@ -302,7 +316,17 @@ const PAGES = {
 
     Finance: Finance,
 
+    FinanceOverview: FinanceOverview,
+
+    FinanceInvoices: FinanceInvoices,
+
+    FinanceExpenses: FinanceExpenses,
+
+    FinanceSubscriptions: FinanceSubscriptions,
+
     Raise: Raise,
+
+    TeamManagement: TeamManagement,
 
 }
 
@@ -328,7 +352,7 @@ function PagesContent() {
         <Layout currentPageName={currentPage}>
             <Routes>            
                 
-                    <Route path="/" element={<AIAssistant />} />
+                    <Route path="/" element={<Dashboard />} />
                 
                 
                 <Route path="/AIAssistant" element={<AIAssistant />} />
@@ -421,8 +445,10 @@ function PagesContent() {
                 
                 <Route path="/Learn" element={<Learn />} />
                 
+                <Route path="/LearnAITools" element={<LearnAITools />} />
+
                 <Route path="/LearnAssistant" element={<LearnAssistant />} />
-                
+
                 <Route path="/LearnDashboard" element={<LearnDashboard />} />
                 
                 <Route path="/LessonViewer" element={<LessonViewer />} />
@@ -479,7 +505,17 @@ function PagesContent() {
 
                 <Route path="/Finance" element={<Finance />} />
 
+                <Route path="/FinanceOverview" element={<FinanceOverview />} />
+
+                <Route path="/FinanceInvoices" element={<FinanceInvoices />} />
+
+                <Route path="/FinanceExpenses" element={<FinanceExpenses />} />
+
+                <Route path="/FinanceSubscriptions" element={<FinanceSubscriptions />} />
+
                 <Route path="/Raise" element={<Raise />} />
+
+                <Route path="/TeamManagement" element={<TeamManagement />} />
 
             </Routes>
         </Layout>

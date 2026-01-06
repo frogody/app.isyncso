@@ -126,18 +126,27 @@ export default function LearnDashboard() {
   const [showTimeModal, setShowTimeModal] = useState(false);
 
   useEffect(() => {
-    if (user?.id) loadDashboardData();
+    let isMounted = true;
+    if (user?.id) {
+      loadDashboardData().then(() => {
+        if (!isMounted) return;
+      });
+    }
+    return () => { isMounted = false; };
   }, [user]);
 
   const loadDashboardData = async () => {
     try {
+      // RLS handles data isolation - no need for user_id filters
       const [progressData, gamificationData, allCourses, sessionsData, certsData, skillsData] = await Promise.all([
-        base44.entities.UserProgress.filter({ user_id: user.id }),
-        base44.entities.UserGamification.filter({ user_id: user.id }),
-        base44.entities.Course.filter({ is_template: true, is_published: true }),
-        base44.entities.ActivitySession.filter({ user_id: user.id }),
-        base44.entities.Certificate.filter({ user_id: user.id }),
-        base44.entities.UserSkill.filter({ user_id: user.id })
+        base44.entities.UserProgress.list({ limit: 100 }).catch(() => []),
+        // UserGamification may not exist
+        base44.entities.UserGamification?.list?.({ limit: 1 }).catch(() => []) || Promise.resolve([]),
+        // List all courses - is_template/is_published columns may not exist
+        base44.entities.Course.list({ limit: 100 }).catch(() => []),
+        base44.entities.ActivitySession.list({ limit: 200 }).catch(() => []),
+        base44.entities.Certificate.list({ limit: 50 }).catch(() => []),
+        base44.entities.UserSkill.list({ limit: 20 }).catch(() => [])
       ]);
 
       const totalTimeMinutes = sessionsData.reduce((sum, s) => sum + (s.total_active_minutes || 0), 0);

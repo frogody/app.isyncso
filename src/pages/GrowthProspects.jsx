@@ -92,14 +92,42 @@ export default function GrowthProspects() {
   });
 
   useEffect(() => {
+    let isMounted = true;
+
+    const loadLists = async () => {
+      try {
+        const data = await base44.entities.ProspectList.list({ limit: 100 }).catch(() => []);
+        if (isMounted) setLists(data || []);
+      } catch (error) {
+        console.error("Failed to load lists:", error);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
     loadLists();
+    return () => { isMounted = false; };
   }, []);
 
   useEffect(() => {
-    if (activeTab === 'templates' && templates.length === 0) {
-      loadTemplates();
-    }
-  }, [activeTab]);
+    let isMounted = true;
+
+    const loadTemplates = async () => {
+      if (activeTab !== 'templates' || templates.length > 0) return;
+      setTemplatesLoading(true);
+      try {
+        const response = await base44.functions.invoke('getICPTemplates').catch(() => ({ data: null }));
+        if (isMounted) setTemplates(response?.data?.templates || []);
+      } catch (error) {
+        console.error("Failed to load templates:", error);
+      } finally {
+        if (isMounted) setTemplatesLoading(false);
+      }
+    };
+
+    loadTemplates();
+    return () => { isMounted = false; };
+  }, [activeTab, templates.length]);
 
   useEffect(() => {
     const listId = searchParams.get('list');
@@ -112,22 +140,11 @@ export default function GrowthProspects() {
     }
   }, [searchParams, lists]);
 
-  const loadLists = async () => {
-    try {
-      const data = await base44.entities.ProspectList.list('-created_date');
-      setLists(data);
-    } catch (error) {
-      console.error("Failed to load lists:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadTemplates = async () => {
+  const loadTemplatesManual = async () => {
     setTemplatesLoading(true);
     try {
-      const response = await base44.functions.invoke('getICPTemplates');
-      setTemplates(response.data?.templates || []);
+      const response = await base44.functions.invoke('getICPTemplates').catch(() => ({ data: null }));
+      setTemplates(response?.data?.templates || []);
     } catch (error) {
       console.error("Failed to load templates:", error);
     } finally {

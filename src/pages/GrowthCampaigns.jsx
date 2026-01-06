@@ -159,18 +159,23 @@ export default function GrowthCampaigns() {
   const [modalTab, setModalTab] = useState('details');
   const [detailCampaign, setDetailCampaign] = useState(null);
 
-  useEffect(() => { loadCampaigns(); }, []);
+  useEffect(() => {
+    let isMounted = true;
 
-  const loadCampaigns = async () => {
-    try {
-      const camps = await base44.entities.GrowthCampaign.list('-created_date');
-      setCampaigns(camps);
-    } catch (error) {
-      console.error('Failed to load:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const loadCampaigns = async () => {
+      try {
+        const camps = await base44.entities.GrowthCampaign.list({ limit: 100 }).catch(() => []);
+        if (isMounted) setCampaigns(camps || []);
+      } catch (error) {
+        console.error('Failed to load:', error);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    loadCampaigns();
+    return () => { isMounted = false; };
+  }, []);
 
   const handleSave = async () => {
     if (!formData.name) {

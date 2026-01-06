@@ -42,6 +42,9 @@ export default function Onboarding() {
   const [profileData, setProfileData] = useState(null);
   const [companyEnrichment, setCompanyEnrichment] = useState(null); // Explorium data
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isInvitedUser, setIsInvitedUser] = useState(false);
+  const [existingCompany, setExistingCompany] = useState(null);
+  const [initialCheckDone, setInitialCheckDone] = useState(false);
 
   // Form data
   const [formData, setFormData] = useState({
@@ -57,26 +60,138 @@ export default function Onboarding() {
     selectedApps: null, // Will be auto-populated based on goals
   });
 
+  // Check if user was invited (already has company_id)
+  React.useEffect(() => {
+    const checkInvitedUser = async () => {
+      try {
+        const user = await base44.auth.me();
+        if (user?.company_id) {
+          // User has a company_id - they were invited!
+          // Mark as invited FIRST, even if company load fails
+          setIsInvitedUser(true);
+          console.log('[Onboarding] User has company_id, marking as invited user:', user.company_id);
+
+          // Try to load company data for pre-filling form
+          try {
+            const company = await base44.entities.Company.get(user.company_id);
+            if (company) {
+              setExistingCompany(company);
+              // Pre-fill form with company data
+              setFormData(prev => ({
+                ...prev,
+                fullName: user.full_name || '',
+                companyName: company.name || '',
+                companyWebsite: company.domain || company.website || '',
+                companySize: company.size_range || '',
+                industry: company.industry || '',
+              }));
+              console.log('[Onboarding] Company loaded successfully:', company.name);
+            } else {
+              // Company couldn't be loaded but user IS invited
+              // Just pre-fill what we can from user data
+              setFormData(prev => ({
+                ...prev,
+                fullName: user.full_name || '',
+              }));
+              console.warn('[Onboarding] Company not found but user has company_id - still treating as invited');
+            }
+          } catch (companyError) {
+            // Company load failed (possibly RLS) but user IS still invited
+            console.warn('[Onboarding] Failed to load company (RLS?), but user has company_id:', companyError);
+            setFormData(prev => ({
+              ...prev,
+              fullName: user.full_name || '',
+            }));
+          }
+        }
+      } catch (error) {
+        console.error('[Onboarding] Error checking invited user:', error);
+      } finally {
+        setInitialCheckDone(true);
+      }
+    };
+    checkInvitedUser();
+  }, []);
+
   // Update form data
   const updateFormData = useCallback((updates) => {
     setFormData(prev => ({ ...prev, ...updates }));
   }, []);
+
+  // Simplified analysis messages for invited users
+  const INVITED_USER_MESSAGES = [
+    "Setting up your profile...",
+    "Configuring your workspace...",
+    "Personalizing your experience...",
+    "Almost ready..."
+  ];
 
   // Run company and profile analysis
   const runAnalysis = async () => {
     setStep(6); // Analysis step (now step 6 with LinkedIn)
     setIsAnalyzing(true);
 
+    // Use different messages for invited users
+    const messages = isInvitedUser ? INVITED_USER_MESSAGES : ANALYSIS_MESSAGES;
+
     // Cycle through messages
     let messageIndex = 0;
     const messageInterval = setInterval(() => {
-      messageIndex = (messageIndex + 1) % ANALYSIS_MESSAGES.length;
-      setCurrentAnalysisMessage(ANALYSIS_MESSAGES[messageIndex]);
+      messageIndex = (messageIndex + 1) % messages.length;
+      setCurrentAnalysisMessage(messages[messageIndex]);
     }, 1500);
 
     // Local variables to store results before setting state
     let finalProfileData = null;
     let finalDossier = null;
+
+    // For invited users, use existing company data and skip research
+    if (isInvitedUser) {
+      try {
+        clearInterval(messageInterval);
+
+        // Build dossier from existing company (if available) or minimal data
+        finalDossier = {
+          company_name: existingCompany?.name || formData.companyName || 'Your Company',
+          business_summary: existingCompany?.description || "Technology company delivering innovative solutions.",
+          key_products: ["Platform Services", "Enterprise Solutions"],
+          target_audience: "Business professionals and enterprise customers",
+          industry_challenges: ["Digital transformation", "Scalability"],
+          industry: existingCompany?.industry || formData.industry || 'Technology',
+          employee_count: existingCompany?.employee_count || null,
+          size_range: existingCompany?.size_range || formData.companySize,
+          founded_year: existingCompany?.founded_year || null,
+          headquarters: existingCompany?.headquarters || null,
+          revenue_range: existingCompany?.revenue_range || null,
+          linkedin_url: existingCompany?.linkedin_url || null,
+          logo_url: existingCompany?.logo_url || null,
+          tech_stack: existingCompany?.tech_stack || [],
+          tech_categories: existingCompany?.tech_categories || [],
+          funding_data: existingCompany?.funding_data || null,
+          total_funding: existingCompany?.total_funding || null,
+          funding_stage: existingCompany?.funding_stage || null,
+          data_completeness: existingCompany?.data_completeness || 50
+        };
+
+        setDossier(finalDossier);
+        if (existingCompany) {
+          setCompanyEnrichment(existingCompany);
+        }
+
+        // Small delay for UX
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        setStep(7); // Review step
+        setIsAnalyzing(false);
+        return;
+      } catch (error) {
+        console.error('[Onboarding] Invited user analysis error:', error);
+        clearInterval(messageInterval);
+        setIsAnalyzing(false);
+        setStep(7);
+        return;
+      }
+    }
 
     try {
       // Clean URL first
@@ -212,70 +327,88 @@ export default function Onboarding() {
         console.warn('[Onboarding] Profile update warning:', e);
       }
 
-      // Parse domain from company website
-      let companyDomain = '';
-      try {
-        const cleanUrl = formData.companyWebsite.trim();
-        const urlString = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
-        companyDomain = new URL(urlString).hostname;
-      } catch (e) {
-        companyDomain = formData.companyWebsite.replace(/^https?:\/\//, '').split('/')[0];
-      }
-
-      // Note: enrichCompanyProfile is called AFTER Explorium enrichment below
-      // This ensures we have the actual tech stack data for personalization
-
-      // Create or link Company entity - THIS IS CRITICAL for Settings page
+      // For invited users, company already exists - skip company creation
       let companyId = null;
-      try {
-        // Check if company with this domain already exists
-        const existingCompanies = await base44.entities.Company.filter({ domain: companyDomain });
+      let companyDomain = '';
 
-        if (existingCompanies.length > 0) {
-          // Use existing company
-          companyId = existingCompanies[0].id;
-          console.log('[Onboarding] Found existing company:', companyId);
+      if (isInvitedUser) {
+        // Invited user - NEVER create a new company, use their existing company_id
+        const currentUser = await base44.auth.me();
+        companyId = existingCompany?.id || currentUser?.company_id;
 
-          // Update company with latest research data
-          await base44.entities.Company.update(companyId, {
-            name: dossier?.company_name || formData.companyName,
-            description: dossier?.business_summary || '',
-            industry: formData.industry || 'Technology',
-            size_range: formData.companySize || '',
-            website_url: formData.companyWebsite,
-            enriched_at: new Date().toISOString(),
-            enrichment_source: 'onboarding_research'
-          });
-        } else {
-          // Create new company entity with all research data
-          const newCompany = await base44.entities.Company.create({
-            domain: companyDomain,
-            name: dossier?.company_name || formData.companyName,
-            description: dossier?.business_summary || '',
-            industry: formData.industry || 'Technology',
-            size_range: formData.companySize || '',
-            website_url: formData.companyWebsite,
-            tech_stack: [],
-            knowledge_files: [],
-            enriched_at: new Date().toISOString(),
-            enrichment_source: 'onboarding_research',
-            settings: {}
-          });
-          companyId = newCompany.id;
-          console.log('[Onboarding] Created new company:', companyId);
-        }
-
-        // Link user to company - this makes Settings work!
         if (companyId) {
-          await base44.auth.updateMe({ company_id: companyId });
+          companyDomain = existingCompany?.domain || '';
+          console.log('[Onboarding] Invited user - using existing company:', companyId);
+        } else {
+          console.error('[Onboarding] Invited user has no company_id! This should not happen.');
         }
-      } catch (companyError) {
-        console.error('[Onboarding] Company creation/linking error:', companyError);
-        // Non-critical - continue without company linkage
+      } else {
+        // Parse domain from company website
+        try {
+          const cleanUrl = formData.companyWebsite.trim();
+          const urlString = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
+          companyDomain = new URL(urlString).hostname;
+        } catch (e) {
+          companyDomain = formData.companyWebsite.replace(/^https?:\/\//, '').split('/')[0];
+        }
+
+        // Note: enrichCompanyProfile is called AFTER Explorium enrichment below
+        // This ensures we have the actual tech stack data for personalization
+
+        // Create or link Company entity - THIS IS CRITICAL for Settings page
+        try {
+          // Check if company with this domain already exists
+          const existingCompanies = await base44.entities.Company.filter({ domain: companyDomain });
+
+          if (existingCompanies.length > 0) {
+            // Use existing company
+            companyId = existingCompanies[0].id;
+            console.log('[Onboarding] Found existing company:', companyId);
+
+            // Update company with latest research data
+            await base44.entities.Company.update(companyId, {
+              name: dossier?.company_name || formData.companyName,
+              description: dossier?.business_summary || '',
+              industry: formData.industry || 'Technology',
+              size_range: formData.companySize || '',
+              website_url: formData.companyWebsite,
+              enriched_at: new Date().toISOString(),
+              enrichment_source: 'onboarding_research'
+            });
+          } else {
+            // Create new company entity with all research data
+            const newCompany = await base44.entities.Company.create({
+              domain: companyDomain,
+              name: dossier?.company_name || formData.companyName,
+              description: dossier?.business_summary || '',
+              industry: formData.industry || 'Technology',
+              size_range: formData.companySize || '',
+              website_url: formData.companyWebsite,
+              tech_stack: [],
+              knowledge_files: [],
+              enriched_at: new Date().toISOString(),
+              enrichment_source: 'onboarding_research',
+              settings: {}
+            });
+            companyId = newCompany.id;
+            console.log('[Onboarding] Created new company:', companyId);
+          }
+
+          // Link user to company - this makes Settings work!
+          if (companyId) {
+            await base44.auth.updateMe({ company_id: companyId });
+          }
+        } catch (companyError) {
+          console.error('[Onboarding] Company creation/linking error:', companyError);
+          // Non-critical - continue without company linkage
+        }
       }
 
-      // Try Explorium enrichment for additional company data (tech stack, firmographics)
-      if (companyId && companyDomain) {
+      // Skip Explorium enrichment for invited users - company data already exists
+      if (isInvitedUser && existingCompany) {
+        console.log('[Onboarding] Invited user - skipping Explorium enrichment');
+      } else if (companyId && companyDomain) {
+        // Try Explorium enrichment for additional company data (tech stack, firmographics)
         try {
           const exploriumResult = await base44.functions.invoke('enrichCompanyFromExplorium', {
             domain: companyDomain
@@ -476,10 +609,13 @@ export default function Onboarding() {
     }
   };
 
-  // Handle step navigation
+  // Handle step navigation - for invited users, skip LinkedIn (2) and Company (3) steps
   const handleNext = () => {
     if (step === 5) {
       runAnalysis(); // Apps step (5) triggers analysis
+    } else if (isInvitedUser && step === 1) {
+      // Invited users skip LinkedIn and Company steps, go directly to Goals
+      setStep(4);
     } else {
       setStep(s => s + 1);
     }
@@ -488,6 +624,9 @@ export default function Onboarding() {
   const handleBack = () => {
     if (step === 7) {
       setStep(5); // Skip analysis step when going back from review
+    } else if (isInvitedUser && step === 4) {
+      // Invited users go back from Goals directly to Welcome
+      setStep(1);
     } else {
       setStep(s => s - 1);
     }
@@ -497,6 +636,37 @@ export default function Onboarding() {
   const handleSkipLinkedIn = () => {
     setStep(3); // Skip to company step
   };
+
+  // Calculate total steps for progress indicator
+  const totalSteps = isInvitedUser ? 5 : 7; // Invited users skip LinkedIn and Company
+
+  // Map current step to progress step for invited users
+  const getProgressStep = () => {
+    if (!isInvitedUser) return step;
+    // For invited users: 1->1, 4->2, 5->3, 6->4, 7->5
+    if (step === 1) return 1;
+    if (step === 4) return 2;
+    if (step === 5) return 3;
+    if (step === 6) return 4;
+    if (step === 7) return 5;
+    return step;
+  };
+
+  // Show loading while checking if user is invited
+  if (!initialCheckDone) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 pointer-events-none">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
+        </div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+          <p className="text-zinc-400 text-sm">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-4 sm:p-6">
@@ -508,19 +678,21 @@ export default function Onboarding() {
 
       <div className="relative w-full max-w-2xl">
         {/* Header */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-8"
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-900/50 border border-zinc-800 mb-6">
             <Sparkles className="w-4 h-4 text-cyan-400" />
-            <span className="text-sm text-zinc-400">Personalized Workspace Setup</span>
+            <span className="text-sm text-zinc-400">
+              {isInvitedUser ? 'Complete Your Profile' : 'Personalized Workspace Setup'}
+            </span>
           </div>
         </motion.div>
 
         {/* Progress - hide during analysis step */}
-        {step !== 6 && <ProgressIndicator currentStep={step} totalSteps={7} />}
+        {step !== 6 && <ProgressIndicator currentStep={getProgressStep()} totalSteps={totalSteps} />}
 
         {/* Card */}
         <motion.div

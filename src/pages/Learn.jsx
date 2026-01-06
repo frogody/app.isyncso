@@ -118,13 +118,14 @@ export default function Learn() {
       setDataLoading(false);
       return;
     }
-    
+
     try {
+      // RLS handles filtering - list all accessible items
       const [coursesData, progressData] = await Promise.allSettled([
-        base44.entities.Course.list('-created_date', 100),
-        base44.entities.UserProgress.filter({ user_id: user.id })
+        base44.entities.Course.list({ limit: 100 }).catch(() => []),
+        base44.entities.UserProgress.list({ limit: 100 }).catch(() => [])
       ]);
-      
+
       setCourses(coursesData.status === 'fulfilled' ? coursesData.value || [] : []);
       setUserProgress(progressData.status === 'fulfilled' ? progressData.value || [] : []);
     } catch (error) {
@@ -135,7 +136,9 @@ export default function Learn() {
   }, [user]);
 
   useEffect(() => {
-    loadData();
+    let isMounted = true;
+    loadData().then(() => { if (!isMounted) return; });
+    return () => { isMounted = false; };
   }, [loadData]);
 
   // Stats calculation

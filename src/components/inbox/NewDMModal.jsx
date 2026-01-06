@@ -48,12 +48,20 @@ export default function NewDMModal({
   const loadUsers = async () => {
     setLoading(true);
     try {
-      const [usersResponse, me] = await Promise.all([
-        base44.functions.invoke('getTeamMembers'),
-        base44.auth.me()
-      ]);
-      const allUsers = usersResponse?.data?.users || [];
+      // Get current user first
+      const me = await base44.auth.me().catch(() => null);
       setCurrentUser(me);
+
+      // Try to get team members - edge function may not be available
+      let allUsers = [];
+      try {
+        const usersResponse = await base44.functions.invoke('getTeamMembers');
+        allUsers = usersResponse?.data?.users || [];
+      } catch (e) {
+        console.warn('getTeamMembers not available:', e.message);
+        // Fallback: empty list - user will see "No team members yet"
+      }
+
       setUsers(allUsers.filter(u => u.id !== currentUserId));
     } catch (error) {
       console.error('Failed to load users:', error);
