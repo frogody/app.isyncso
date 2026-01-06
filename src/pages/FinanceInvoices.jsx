@@ -4,8 +4,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Receipt, Plus, Search, Filter, Download, Send, Check, Clock, AlertCircle,
   FileText, MoreVertical, Eye, Edit2, Trash2, Mail, X, ChevronDown,
-  ArrowUpDown, Calendar, DollarSign, Building2, User, Package, RefreshCw, Zap
+  ArrowUpDown, Calendar, DollarSign, Building2, User, Package, RefreshCw, Zap,
+  FileDown, Printer
 } from 'lucide-react';
+import { downloadInvoicePDF, previewInvoicePDF } from '@/utils/generateInvoicePDF';
 import { ProductSelector } from '@/components/finance';
 import { Subscription } from '@/api/entities';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -520,6 +522,20 @@ export default function FinanceInvoices() {
                               View Details
                             </DropdownMenuItem>
                             <DropdownMenuItem
+                              onClick={() => previewInvoicePDF(invoice)}
+                              className="text-zinc-300 hover:bg-zinc-800"
+                            >
+                              <Printer className="w-4 h-4 mr-2" />
+                              View PDF
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => downloadInvoicePDF(invoice)}
+                              className="text-zinc-300 hover:bg-zinc-800"
+                            >
+                              <FileDown className="w-4 h-4 mr-2" />
+                              Download PDF
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
                               onClick={() => openEditModal(invoice)}
                               className="text-zinc-300 hover:bg-zinc-800"
                             >
@@ -799,14 +815,69 @@ export default function FinanceInvoices() {
                 </div>
               </div>
 
+              {/* Line Items */}
+              {selectedInvoice.items?.length > 0 && (
+                <div className="bg-zinc-800/50 rounded-lg p-4">
+                  <p className="text-zinc-400 text-sm mb-3">Line Items</p>
+                  <div className="space-y-2">
+                    {selectedInvoice.items.map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between py-2 border-b border-zinc-700/50 last:border-0">
+                        <div className="flex items-center gap-2">
+                          {item.is_subscription ? (
+                            <RefreshCw className="w-4 h-4 text-cyan-400" />
+                          ) : (
+                            <Package className="w-4 h-4 text-zinc-400" />
+                          )}
+                          <div>
+                            <p className="text-white text-sm">{item.name || item.description}</p>
+                            {item.is_subscription && (
+                              <p className="text-xs text-cyan-400">{item.plan_name} ({item.billing_cycle})</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-white font-medium">
+                            €{((item.quantity || 1) * (parseFloat(item.unit_price) || 0)).toFixed(2)}
+                          </p>
+                          {item.quantity > 1 && (
+                            <p className="text-xs text-zinc-500">{item.quantity} × €{parseFloat(item.unit_price || 0).toFixed(2)}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {selectedInvoice.description && (
                 <div className="bg-zinc-800/50 rounded-lg p-4">
-                  <p className="text-zinc-400 text-sm mb-1">Description</p>
+                  <p className="text-zinc-400 text-sm mb-1">Notes</p>
                   <p className="text-white">{selectedInvoice.description}</p>
                 </div>
               )}
 
-              <div className="flex gap-3 pt-4">
+              {/* PDF Actions */}
+              <div className="flex gap-3 pt-4 border-t border-zinc-700">
+                <Button
+                  variant="outline"
+                  className="flex-1 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                  onClick={() => previewInvoicePDF(selectedInvoice)}
+                >
+                  <Printer className="w-4 h-4 mr-2" />
+                  View PDF
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                  onClick={() => downloadInvoicePDF(selectedInvoice)}
+                >
+                  <FileDown className="w-4 h-4 mr-2" />
+                  Download PDF
+                </Button>
+              </div>
+
+              {/* Status Actions */}
+              <div className="flex gap-3">
                 {selectedInvoice.status === 'draft' && (
                   <Button
                     className="flex-1 bg-amber-500 hover:bg-amber-600"
@@ -818,7 +889,7 @@ export default function FinanceInvoices() {
                 )}
                 {selectedInvoice.status !== 'paid' && (
                   <Button
-                    className="flex-1 bg-amber-500 hover:bg-amber-600"
+                    className="flex-1 bg-emerald-500 hover:bg-emerald-600"
                     onClick={() => { handleUpdateStatus(selectedInvoice, 'paid'); setShowDetailModal(false); }}
                   >
                     <Check className="w-4 h-4 mr-2" />
