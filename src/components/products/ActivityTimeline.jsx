@@ -1,0 +1,180 @@
+import React from 'react';
+import { format, formatDistanceToNow } from 'date-fns';
+import {
+  Package, Edit, DollarSign, Truck, Upload, Archive,
+  CheckCircle, AlertTriangle, Plus, Minus, FileText, User
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+const ACTIVITY_ICONS = {
+  created: Plus,
+  updated: Edit,
+  stock_adjusted: Package,
+  price_changed: DollarSign,
+  shipped: Truck,
+  image_added: Upload,
+  archived: Archive,
+  published: CheckCircle,
+  low_stock: AlertTriangle,
+  document_added: FileText,
+  default: Edit
+};
+
+const ACTIVITY_COLORS = {
+  created: 'bg-green-500/20 text-green-400 border-green-500/30',
+  updated: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  stock_adjusted: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+  price_changed: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+  shipped: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+  image_added: 'bg-pink-500/20 text-pink-400 border-pink-500/30',
+  archived: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
+  published: 'bg-green-500/20 text-green-400 border-green-500/30',
+  low_stock: 'bg-red-500/20 text-red-400 border-red-500/30',
+  document_added: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
+  default: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'
+};
+
+function ActivityItem({ activity }) {
+  const Icon = ACTIVITY_ICONS[activity.type] || ACTIVITY_ICONS.default;
+  const colorClass = ACTIVITY_COLORS[activity.type] || ACTIVITY_COLORS.default;
+
+  return (
+    <div className="flex gap-3 group">
+      {/* Icon */}
+      <div className={cn(
+        "flex-shrink-0 w-8 h-8 rounded-full border flex items-center justify-center",
+        colorClass
+      )}>
+        <Icon className="w-4 h-4" />
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 min-w-0 pb-4">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <p className="text-sm text-white font-medium">{activity.title}</p>
+            {activity.description && (
+              <p className="text-xs text-zinc-500 mt-0.5">{activity.description}</p>
+            )}
+          </div>
+          <span className="text-xs text-zinc-600 whitespace-nowrap">
+            {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
+          </span>
+        </div>
+
+        {/* User info */}
+        {activity.user && (
+          <div className="flex items-center gap-1.5 mt-1.5">
+            <User className="w-3 h-3 text-zinc-600" />
+            <span className="text-xs text-zinc-600">{activity.user}</span>
+          </div>
+        )}
+
+        {/* Change details */}
+        {activity.changes && (
+          <div className="mt-2 p-2 rounded-lg bg-zinc-900/50 border border-white/5">
+            {Object.entries(activity.changes).map(([field, change]) => (
+              <div key={field} className="flex items-center gap-2 text-xs">
+                <span className="text-zinc-500">{field}:</span>
+                <span className="text-zinc-600 line-through">{change.old}</span>
+                <span className="text-zinc-400">→</span>
+                <span className="text-white">{change.new}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function ActivityTimeline({
+  activities = [],
+  maxItems = 10,
+  showEmpty = true,
+  className
+}) {
+  const displayActivities = activities.slice(0, maxItems);
+
+  if (displayActivities.length === 0 && showEmpty) {
+    return (
+      <div className={cn("text-center py-8", className)}>
+        <div className="w-12 h-12 rounded-full bg-zinc-800 border border-white/5 flex items-center justify-center mx-auto mb-3">
+          <FileText className="w-6 h-6 text-zinc-600" />
+        </div>
+        <p className="text-sm text-zinc-500">No activity yet</p>
+        <p className="text-xs text-zinc-600 mt-1">Changes to this product will appear here</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn("relative", className)}>
+      {/* Timeline line */}
+      <div className="absolute left-4 top-8 bottom-0 w-px bg-gradient-to-b from-white/10 to-transparent" />
+
+      {/* Activities */}
+      <div className="space-y-0">
+        {displayActivities.map((activity, index) => (
+          <ActivityItem key={activity.id || index} activity={activity} />
+        ))}
+      </div>
+
+      {activities.length > maxItems && (
+        <div className="pl-11 text-xs text-zinc-500">
+          +{activities.length - maxItems} more activities
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Helper to generate mock activities for demo
+export function generateMockActivities(product, details) {
+  const activities = [];
+  const now = new Date();
+
+  // Product created
+  if (product?.created_at) {
+    activities.push({
+      id: 'created',
+      type: 'created',
+      title: 'Product created',
+      timestamp: product.created_at,
+    });
+  }
+
+  // Last updated
+  if (product?.updated_at && product.updated_at !== product.created_at) {
+    activities.push({
+      id: 'updated',
+      type: 'updated',
+      title: 'Product updated',
+      timestamp: product.updated_at,
+    });
+  }
+
+  // Published
+  if (product?.published_at) {
+    activities.push({
+      id: 'published',
+      type: 'published',
+      title: 'Product published',
+      timestamp: product.published_at,
+    });
+  }
+
+  // Low stock warning
+  if (details?.inventory?.quantity <= (details?.inventory?.low_stock_threshold || 10)) {
+    activities.push({
+      id: 'low_stock',
+      type: 'low_stock',
+      title: 'Low stock warning',
+      description: `Only ${details.inventory.quantity} units remaining`,
+      timestamp: new Date(now - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
+    });
+  }
+
+  // Sort by timestamp descending
+  return activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+}
