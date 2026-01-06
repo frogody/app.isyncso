@@ -38,7 +38,7 @@ const STATUS_CONFIG = {
   expired: { label: 'Expired', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30', icon: Clock }
 };
 
-export default function GrowthProposals() {
+export default function FinanceProposals() {
   const navigate = useNavigate();
   const { user } = useUser();
   const { hasPermission, isLoading: permLoading } = usePermissions();
@@ -136,11 +136,11 @@ export default function GrowthProposals() {
   }, [proposals]);
 
   const handleCreateProposal = () => {
-    navigate(createPageUrl('GrowthProposalBuilder'));
+    navigate(createPageUrl('FinanceProposalBuilder'));
   };
 
   const handleEditProposal = (proposal) => {
-    navigate(createPageUrl(`GrowthProposalBuilder?id=${proposal.id}`));
+    navigate(createPageUrl(`FinanceProposalBuilder?id=${proposal.id}`));
   };
 
   const handleDuplicateProposal = async (proposal) => {
@@ -289,11 +289,11 @@ export default function GrowthProposals() {
         title="Proposals"
         subtitle="Create and manage sales proposals"
         icon={FileText}
-        color="orange"
+        color="amber"
         actions={
           <Button
             onClick={handleCreateProposal}
-            className="bg-orange-500 hover:bg-orange-600"
+            className="bg-amber-500 hover:bg-amber-600"
           >
             <Plus className="w-4 h-4 mr-2" />
             New Proposal
@@ -307,7 +307,7 @@ export default function GrowthProposals() {
           label="Total Proposals"
           value={stats.total}
           icon={FileText}
-          color="orange"
+          color="amber"
         />
         <StatCard
           label="Total Value"
@@ -349,7 +349,7 @@ export default function GrowthProposals() {
               {/* Status Filter Tabs */}
               <Tabs value={statusFilter} onValueChange={setStatusFilter}>
                 <TabsList className="bg-zinc-800">
-                  <TabsTrigger value="all" className="data-[state=active]:bg-orange-500">All</TabsTrigger>
+                  <TabsTrigger value="all" className="data-[state=active]:bg-amber-500">All</TabsTrigger>
                   <TabsTrigger value="draft" className="data-[state=active]:bg-zinc-600">Draft</TabsTrigger>
                   <TabsTrigger value="sent" className="data-[state=active]:bg-blue-500">Sent</TabsTrigger>
                   <TabsTrigger value="accepted" className="data-[state=active]:bg-emerald-500">Accepted</TabsTrigger>
@@ -403,7 +403,7 @@ export default function GrowthProposals() {
                   : 'Create your first proposal to get started'}
               </p>
               {!searchQuery && statusFilter === 'all' && (
-                <Button onClick={handleCreateProposal} className="bg-orange-500 hover:bg-orange-600">
+                <Button onClick={handleCreateProposal} className="bg-amber-500 hover:bg-amber-600">
                   <Plus className="w-4 h-4 mr-2" />
                   Create Proposal
                 </Button>
@@ -421,12 +421,12 @@ export default function GrowthProposals() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.03 }}
-                    className="group flex items-center gap-4 p-4 rounded-lg bg-zinc-800/50 border border-zinc-700/50 hover:border-orange-500/30 transition-all cursor-pointer"
+                    className="group flex items-center gap-4 p-4 rounded-lg bg-zinc-800/50 border border-zinc-700/50 hover:border-amber-500/30 transition-all cursor-pointer"
                     onClick={() => { setSelectedProposal(proposal); setShowDetailModal(true); }}
                   >
                     {/* Icon */}
-                    <div className="w-10 h-10 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center flex-shrink-0">
-                      <FileText className="w-5 h-5 text-orange-400" />
+                    <div className="w-10 h-10 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
+                      <FileText className="w-5 h-5 text-amber-400" />
                     </div>
 
                     {/* Main Content */}
@@ -545,7 +545,7 @@ export default function GrowthProposals() {
         <DialogContent className="bg-zinc-900 border-zinc-700 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-orange-400" />
+              <FileText className="w-5 h-5 text-amber-400" />
               {selectedProposal?.proposal_number || 'Proposal Details'}
             </DialogTitle>
           </DialogHeader>
@@ -651,7 +651,7 @@ export default function GrowthProposals() {
                     )}
                     <div className="flex justify-between text-lg font-bold pt-2 border-t border-zinc-600">
                       <span className="text-white">Total</span>
-                      <span className="text-orange-400">€{(selectedProposal.total || 0).toLocaleString()}</span>
+                      <span className="text-amber-400">€{(selectedProposal.total || 0).toLocaleString()}</span>
                     </div>
                   </div>
                 </div>

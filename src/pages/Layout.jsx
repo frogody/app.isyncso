@@ -204,7 +204,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       }
   
   // GROWTH routes (merged with CIDE)
-          if (path.includes('growth') || path.includes('sequences') || path.includes('deals') || path.includes('leads') || path.includes('insights') || path.includes('prospect') || path.includes('research') || path.includes('pipeline') || path.includes('proposal')) {
+          if (path.includes('growth') || path.includes('sequences') || path.includes('deals') || path.includes('leads') || path.includes('insights') || path.includes('prospect') || path.includes('research') || path.includes('pipeline')) {
             return {
               title: 'GROWTH',
               color: 'indigo',
@@ -213,14 +213,13 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
                 { label: 'Pipeline', path: createPageUrl('GrowthPipeline'), icon: Kanban },
                 { label: 'Prospects', path: createPageUrl('GrowthProspects'), icon: Users },
                 { label: 'Campaigns', path: createPageUrl('GrowthCampaigns'), icon: Megaphone },
-                { label: 'Proposals', path: createPageUrl('GrowthProposals'), icon: FileText },
                 { label: 'Signals', path: createPageUrl('GrowthSignals'), icon: Radio },
               ]
             };
           }
 
   // FINANCE routes
-  if (path.includes('finance')) {
+  if (path.includes('finance') || path.includes('proposal')) {
     return {
       title: 'FINANCE',
       color: 'amber',
@@ -228,6 +227,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       items: [
         { label: 'Overview', path: createPageUrl('FinanceOverview'), icon: PieChart },
         { label: 'Invoices', path: createPageUrl('FinanceInvoices'), icon: Receipt },
+        { label: 'Proposals', path: createPageUrl('FinanceProposals'), icon: FileText },
         { label: 'Expenses', path: createPageUrl('FinanceExpenses'), icon: DollarSign },
         { label: 'Subscriptions', path: createPageUrl('FinanceSubscriptions'), icon: CreditCard },
       ]

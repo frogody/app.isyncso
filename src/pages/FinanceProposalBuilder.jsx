@@ -44,7 +44,7 @@ const SECTION_TYPES = [
   { id: 'timeline', label: 'Timeline', icon: Calendar, description: 'Project milestones' },
 ];
 
-export default function GrowthProposalBuilder() {
+export default function FinanceProposalBuilder() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useUser();
@@ -173,12 +173,12 @@ export default function GrowthProposalBuilder() {
       } else {
         const newProposal = await Proposal.create(proposalData);
         toast.success('Proposal created');
-        navigate(createPageUrl(`GrowthProposalBuilder?id=${newProposal.id}`), { replace: true });
+        navigate(createPageUrl(`FinanceProposalBuilder?id=${newProposal.id}`), { replace: true });
       }
 
       if (sendAfterSave) {
         toast.success('Proposal sent');
-        navigate(createPageUrl('GrowthProposals'));
+        navigate(createPageUrl('FinanceProposals'));
       }
     } catch (error) {
       console.error('Error saving proposal:', error);
@@ -264,7 +264,7 @@ export default function GrowthProposalBuilder() {
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
-            onClick={() => navigate(createPageUrl('GrowthProposals'))}
+            onClick={() => navigate(createPageUrl('FinanceProposals'))}
             className="text-zinc-400"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -272,7 +272,7 @@ export default function GrowthProposalBuilder() {
           </Button>
           <div>
             <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-              <FileText className="w-6 h-6 text-orange-400" />
+              <FileText className="w-6 h-6 text-amber-400" />
               {proposalId ? 'Edit Proposal' : 'New Proposal'}
             </h1>
             {proposal.proposal_number && (
@@ -302,7 +302,7 @@ export default function GrowthProposalBuilder() {
           <Button
             onClick={() => handleSave(true)}
             disabled={saving}
-            className="bg-orange-500 hover:bg-orange-600"
+            className="bg-amber-500 hover:bg-amber-600"
           >
             <Send className="w-4 h-4 mr-2" />
             Save & Send
@@ -317,16 +317,16 @@ export default function GrowthProposalBuilder() {
             <CardContent className="p-6">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="bg-zinc-800 mb-6">
-                  <TabsTrigger value="details" className="data-[state=active]:bg-orange-500">
+                  <TabsTrigger value="details" className="data-[state=active]:bg-amber-500">
                     Details
                   </TabsTrigger>
-                  <TabsTrigger value="content" className="data-[state=active]:bg-orange-500">
+                  <TabsTrigger value="content" className="data-[state=active]:bg-amber-500">
                     Content
                   </TabsTrigger>
-                  <TabsTrigger value="pricing" className="data-[state=active]:bg-orange-500">
+                  <TabsTrigger value="pricing" className="data-[state=active]:bg-amber-500">
                     Products & Pricing
                   </TabsTrigger>
-                  <TabsTrigger value="settings" className="data-[state=active]:bg-orange-500">
+                  <TabsTrigger value="settings" className="data-[state=active]:bg-amber-500">
                     Settings
                   </TabsTrigger>
                 </TabsList>
@@ -675,7 +675,7 @@ export default function GrowthProposalBuilder() {
           <Card className="bg-zinc-900/50 border-zinc-800 sticky top-6">
             <CardHeader className="pb-3">
               <CardTitle className="text-white flex items-center gap-2 text-lg">
-                <DollarSign className="w-5 h-5 text-orange-400" />
+                <DollarSign className="w-5 h-5 text-amber-400" />
                 Pricing Summary
               </CardTitle>
             </CardHeader>
@@ -713,7 +713,7 @@ export default function GrowthProposalBuilder() {
               <div className="border-t border-zinc-700 pt-4">
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-medium text-white">Total</span>
-                  <span className="text-2xl font-bold text-orange-400">
+                  <span className="text-2xl font-bold text-amber-400">
                     €{pricing.total.toLocaleString()}
                   </span>
                 </div>
@@ -774,7 +774,7 @@ export default function GrowthProposalBuilder() {
         <DialogContent className="bg-zinc-900 border-zinc-700 text-white max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Eye className="w-5 h-5 text-orange-400" />
+              <Eye className="w-5 h-5 text-amber-400" />
               Proposal Preview
             </DialogTitle>
           </DialogHeader>
@@ -861,7 +861,7 @@ export default function GrowthProposalBuilder() {
                   )}
                   <div className="flex justify-end gap-4 text-lg font-bold border-t border-zinc-200 pt-2">
                     <span>Total:</span>
-                    <span className="w-24 text-orange-600">€{pricing.total.toLocaleString()}</span>
+                    <span className="w-24 text-amber-600">€{pricing.total.toLocaleString()}</span>
                   </div>
                 </div>
               </div>
