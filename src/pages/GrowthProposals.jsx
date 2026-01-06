@@ -287,8 +287,9 @@ export default function GrowthProposals() {
     <div className="p-6 space-y-6">
       <PageHeader
         title="Proposals"
-        description="Create and manage sales proposals"
-        icon={<FileText className="w-6 h-6 text-orange-400" />}
+        subtitle="Create and manage sales proposals"
+        icon={FileText}
+        color="orange"
         actions={
           <Button
             onClick={handleCreateProposal}
