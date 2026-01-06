@@ -266,13 +266,61 @@ export default function FinanceInvoices() {
   };
 
   const handleSendInvoice = async (invoice) => {
+    if (!invoice.client_email) {
+      toast.error('Client email is required to send the invoice');
+      return;
+    }
+
     try {
-      await base44.entities.Invoice.update(invoice.id, { status: 'sent', sent_at: new Date().toISOString() });
-      setInvoices(prev => prev.map(i => i.id === invoice.id ? { ...i, status: 'sent' } : i));
+      // Get current user info for sender details
+      const me = await base44.auth.me();
+      const session = await base44.auth.getSession();
+
+      // Send the email via edge function
+      const emailResponse = await fetch(
+        `https://sfxpmzicgpaxfntqleig.supabase.co/functions/v1/send-invoice-email`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token || ''}`
+          },
+          body: JSON.stringify({
+            to: invoice.client_email,
+            clientName: invoice.client_name,
+            invoiceNumber: invoice.invoice_number || `INV-${invoice.id?.slice(0, 8)}`,
+            invoiceId: invoice.id,
+            senderName: me?.full_name,
+            senderCompany: me?.company_name || 'iSyncSO',
+            total: invoice.total || 0,
+            currency: 'EUR',
+            dueDate: invoice.due_date,
+            description: invoice.description,
+            items: invoice.items || []
+          })
+        }
+      );
+
+      const emailResult = await emailResponse.json();
+
+      if (!emailResponse.ok) {
+        throw new Error(emailResult.error || 'Failed to send email');
+      }
+
+      // Update invoice status
+      await base44.entities.Invoice.update(invoice.id, {
+        status: 'sent',
+        sent_at: new Date().toISOString()
+      });
+
+      setInvoices(prev => prev.map(i =>
+        i.id === invoice.id ? { ...i, status: 'sent', sent_at: new Date().toISOString() } : i
+      ));
+
       toast.success('Invoice sent successfully');
     } catch (error) {
       console.error('Error sending invoice:', error);
-      toast.error('Failed to send invoice');
+      toast.error(error.message || 'Failed to send invoice');
     }
   };
 
@@ -543,7 +591,7 @@ export default function FinanceInvoices() {
                               Edit
                             </DropdownMenuItem>
                             <DropdownMenuSeparator className="bg-zinc-700" />
-                            {invoice.status === 'draft' && (
+                            {invoice.status === 'draft' && invoice.client_email && (
                               <DropdownMenuItem
                                 onClick={() => handleSendInvoice(invoice)}
                                 className="text-amber-400 hover:bg-zinc-800"
@@ -878,7 +926,7 @@ export default function FinanceInvoices() {
 
               {/* Status Actions */}
               <div className="flex gap-3">
-                {selectedInvoice.status === 'draft' && (
+                {selectedInvoice.status === 'draft' && selectedInvoice.client_email && (
                   <Button
                     className="flex-1 bg-amber-500 hover:bg-amber-600"
                     onClick={() => { handleSendInvoice(selectedInvoice); setShowDetailModal(false); }}
