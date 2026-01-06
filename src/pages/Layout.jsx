@@ -120,18 +120,6 @@ const navigationItems = [
     icon: Inbox,
     permission: "inbox.view",
   },
-  {
-    title: "Actions",
-    url: createPageUrl("Actions"),
-    icon: Zap,
-    permission: "workflows.view",
-  },
-  {
-    title: "Activity",
-    url: createPageUrl("Activity"),
-    icon: Activity,
-    permission: null, // Always visible
-  },
 ];
 
 // Engine apps with permission requirements
@@ -266,13 +254,15 @@ function getSecondaryNavConfig(pathname, stats = {}) {
   }
 
   // SYNC routes
-  if (path.includes('sync') || path.includes('aiassistant') || path.includes('mcpintegrations')) {
+  if (path.includes('sync') || path.includes('aiassistant') || path.includes('mcpintegrations') || path.includes('actions') || path.includes('activity')) {
     return {
       title: 'SYNC',
       color: 'purple',
       agent: 'sync',
       items: [
         { label: 'Sync', path: createPageUrl('Sync'), icon: Brain },
+        { label: 'Actions', path: createPageUrl('Actions'), icon: Zap },
+        { label: 'Activity', path: createPageUrl('Activity'), icon: Activity },
         { label: 'Integrations', path: createPageUrl('MCPIntegrations'), icon: Cpu },
       ]
     };

@@ -277,8 +277,14 @@ export default function AIAssistant() {
   }, [loadUserData]);
 
   return (
-    <div className="min-h-screen bg-black">
-      <div className="p-6 lg:p-8 space-y-8 max-w-7xl mx-auto">
+    <div className="min-h-screen bg-black relative">
+      {/* Animated Background */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-20 right-1/4 w-96 h-96 bg-purple-900/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-purple-950/10 rounded-full blur-3xl" />
+      </div>
+
+      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-8">
         {/* Page Header */}
         <PageHeader
           title="Sync"
