@@ -8,24 +8,40 @@ import {
   Clock, Shield, Award, ChevronRight, Package, Truck, Building2,
   Barcode, Globe, Tag, CheckCircle, XCircle, AlertTriangle,
   Image as ImageIcon, Video, HelpCircle, Share2, Copy, Heart,
-  ShoppingCart, Info, Layers, Ruler, Weight, MapPin
+  ShoppingCart, Info, Layers, Ruler, Weight, MapPin, Save
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import { useUser } from "@/components/context/UserContext";
 import { Product, DigitalProduct, PhysicalProduct, Supplier } from "@/api/entities";
 import {
-  ProductModal,
   MediaGallery,
   SpecificationsTable,
   ProductInquiryModal,
   ProductGridCard,
-  BarcodeDisplay
+  BarcodeDisplay,
+  ProductImageUploader,
+  InlineEditText,
+  InlineEditNumber,
+  InlineEditSelect
 } from "@/components/products";
 import { toast } from "sonner";
+
+const STATUS_OPTIONS = [
+  { value: 'draft', label: 'Draft' },
+  { value: 'published', label: 'Published' },
+  { value: 'archived', label: 'Archived' },
+];
+
+const CURRENCY_OPTIONS = [
+  { value: 'EUR', label: 'EUR' },
+  { value: 'USD', label: 'USD' },
+  { value: 'GBP', label: 'GBP' },
+];
 
 const STATUS_COLORS = {
   published: { bg: 'bg-green-500/10', text: 'text-green-400', border: 'border-green-500/30', label: 'Published' },
@@ -52,9 +68,18 @@ function formatPrice(price, currency = 'USD') {
   }).format(num);
 }
 
-// ============= PHYSICAL PRODUCT DETAIL =============
+// ============= PHYSICAL PRODUCT DETAIL (INLINE EDIT) =============
 
-function PhysicalProductDetail({ product, details, supplier, onEdit, onRequestQuote, relatedProducts }) {
+function PhysicalProductDetail({
+  product,
+  details,
+  supplier,
+  onUpdate,
+  onDetailsUpdate,
+  onRequestQuote,
+  relatedProducts,
+  saving
+}) {
   const pricing = details?.pricing || {};
   const inventory = details?.inventory || {};
   const shipping = details?.shipping || {};
@@ -62,74 +87,118 @@ function PhysicalProductDetail({ product, details, supplier, onEdit, onRequestQu
   const StockIcon = stock.icon;
 
   const hasPrice = pricing.base_price && parseFloat(pricing.base_price) > 0;
-  const hasComparePrice = pricing.compare_at_price && parseFloat(pricing.compare_at_price) > parseFloat(pricing.base_price || 0);
 
-  // Prepare gallery for MediaGallery component
-  const galleryImages = Array.isArray(product.gallery) ? product.gallery : [];
+  // Local state for gallery/featured (for immediate UI update)
+  const [localImages, setLocalImages] = useState(product.gallery || []);
+  const [localFeatured, setLocalFeatured] = useState(product.featured_image);
+
+  useEffect(() => {
+    setLocalImages(product.gallery || []);
+    setLocalFeatured(product.featured_image);
+  }, [product.gallery, product.featured_image]);
+
+  const handleImagesChange = async (newImages) => {
+    setLocalImages(newImages);
+    await onUpdate({ gallery: newImages });
+  };
+
+  const handleFeaturedChange = async (newFeatured) => {
+    setLocalFeatured(newFeatured);
+    await onUpdate({ featured_image: newFeatured });
+  };
+
+  const handlePricingUpdate = async (field, value) => {
+    const newPricing = { ...pricing, [field]: value };
+    await onDetailsUpdate({ pricing: newPricing });
+  };
+
+  const handleInventoryUpdate = async (field, value) => {
+    const newInventory = { ...inventory, [field]: value };
+    await onDetailsUpdate({ inventory: newInventory });
+  };
+
+  const handleShippingUpdate = async (field, value) => {
+    const newShipping = { ...shipping, [field]: value };
+    await onDetailsUpdate({ shipping: newShipping });
+  };
 
   return (
     <div className="space-y-6">
       {/* Main Product Section */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {/* Left: Image Gallery */}
+        {/* Left: Image Gallery with Upload */}
         <div className="lg:col-span-2">
           <GlassCard className="p-4">
-            <MediaGallery
-              featuredImage={product.featured_image}
-              images={galleryImages}
-              videos={[]}
+            <ProductImageUploader
+              images={localImages}
+              featuredImage={localFeatured}
+              onImagesChange={handleImagesChange}
+              onFeaturedChange={handleFeaturedChange}
+              maxImages={10}
             />
           </GlassCard>
         </div>
 
-        {/* Right: Product Info */}
+        {/* Right: Product Info - All Inline Editable */}
         <div className="lg:col-span-3 space-y-4">
-          {/* Title & Status */}
+          {/* Status & Title */}
           <GlassCard className="p-6">
             <div className="flex items-start justify-between gap-4 mb-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge className={`${STATUS_COLORS[product.status]?.bg} ${STATUS_COLORS[product.status]?.text} ${STATUS_COLORS[product.status]?.border}`}>
-                    {STATUS_COLORS[product.status]?.label || product.status}
-                  </Badge>
-                  {product.category && (
-                    <Badge variant="outline" className="border-white/10 text-zinc-400">
-                      {product.category}
-                    </Badge>
-                  )}
+              <div className="flex-1 space-y-3">
+                {/* Status Selector */}
+                <div className="flex items-center gap-3">
+                  <InlineEditSelect
+                    value={product.status}
+                    options={STATUS_OPTIONS}
+                    onSave={(val) => onUpdate({ status: val })}
+                    label="Status"
+                  />
                 </div>
-                <h1 className="text-2xl font-bold text-white mb-2">{product.name}</h1>
-                {product.tagline && (
-                  <p className="text-zinc-400">{product.tagline}</p>
-                )}
+
+                {/* Product Name */}
+                <InlineEditText
+                  value={product.name}
+                  onSave={(val) => onUpdate({ name: val })}
+                  placeholder="Product name"
+                  textClassName="text-2xl font-bold"
+                />
+
+                {/* Tagline */}
+                <InlineEditText
+                  value={product.tagline}
+                  onSave={(val) => onUpdate({ tagline: val })}
+                  placeholder="Add a tagline..."
+                  textClassName="text-zinc-400"
+                />
               </div>
-              <Button variant="outline" size="sm" onClick={onEdit} className="border-white/10 text-zinc-300 hover:text-white">
-                <Edit2 className="w-4 h-4 mr-2" /> Edit
-              </Button>
+
+              {saving && (
+                <div className="flex items-center gap-2 text-orange-400">
+                  <div className="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-sm">Saving...</span>
+                </div>
+              )}
             </div>
 
             {/* Price & Stock */}
             <div className="flex flex-wrap items-end gap-6 pt-4 border-t border-white/5">
-              {hasPrice ? (
-                <div>
-                  <div className="text-xs text-zinc-500 mb-1">Price</div>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-bold text-white">
-                      {formatPrice(pricing.base_price, pricing.currency)}
-                    </span>
-                    {hasComparePrice && (
-                      <span className="text-lg text-zinc-500 line-through">
-                        {formatPrice(pricing.compare_at_price, pricing.currency)}
-                      </span>
-                    )}
-                  </div>
+              <div className="space-y-1">
+                <div className="text-xs text-zinc-500">Price</div>
+                <div className="flex items-baseline gap-2">
+                  <InlineEditNumber
+                    value={pricing.base_price}
+                    onSave={(val) => handlePricingUpdate('base_price', val)}
+                    placeholder="0.00"
+                    prefix={pricing.currency === 'EUR' ? '' : '$'}
+                    textClassName="text-3xl font-bold"
+                  />
+                  <InlineEditSelect
+                    value={pricing.currency || 'EUR'}
+                    options={CURRENCY_OPTIONS}
+                    onSave={(val) => handlePricingUpdate('currency', val)}
+                  />
                 </div>
-              ) : (
-                <div>
-                  <div className="text-xs text-zinc-500 mb-1">Price</div>
-                  <span className="text-lg text-zinc-400">Contact for pricing</span>
-                </div>
-              )}
+              </div>
 
               <div className="flex-1" />
 
@@ -140,34 +209,28 @@ function PhysicalProductDetail({ product, details, supplier, onEdit, onRequestQu
             </div>
           </GlassCard>
 
-          {/* SKU with Barcode Display */}
-          {(details?.sku || details?.barcode) && (
-            <GlassCard className="p-4">
-              <div className="flex flex-wrap items-start gap-6">
-                {/* Code Info */}
-                <div className="flex-1 min-w-[200px]">
-                  <div className="grid grid-cols-2 gap-4">
-                    {details?.sku && (
-                      <div>
-                        <div className="flex items-center gap-2 text-zinc-500 mb-1">
-                          <Barcode className="w-4 h-4" />
-                          <span className="text-xs">SKU</span>
-                        </div>
-                        <p className="text-white font-mono text-sm">{details.sku}</p>
-                      </div>
-                    )}
-                    {details?.barcode && (
-                      <div>
-                        <div className="flex items-center gap-2 text-zinc-500 mb-1">
-                          <Tag className="w-4 h-4" />
-                          <span className="text-xs">EAN / Barcode</span>
-                        </div>
-                        <p className="text-white font-mono text-sm">{details.barcode}</p>
-                      </div>
-                    )}
-                  </div>
+          {/* SKU & Barcode */}
+          <GlassCard className="p-4">
+            <div className="flex flex-wrap items-start gap-6">
+              <div className="flex-1 min-w-[200px]">
+                <div className="grid grid-cols-2 gap-4">
+                  <InlineEditText
+                    value={details?.sku}
+                    onSave={(val) => onDetailsUpdate({ sku: val })}
+                    label="SKU"
+                    placeholder="Enter SKU..."
+                    textClassName="font-mono text-sm"
+                  />
+                  <InlineEditText
+                    value={details?.barcode}
+                    onSave={(val) => onDetailsUpdate({ barcode: val })}
+                    label="EAN / Barcode"
+                    placeholder="Enter barcode..."
+                    textClassName="font-mono text-sm"
+                  />
                 </div>
-                {/* Barcode Visual */}
+              </div>
+              {(details?.barcode || details?.sku) && (
                 <div className="flex-shrink-0">
                   <BarcodeDisplay
                     code={details.barcode || details.sku}
@@ -176,21 +239,21 @@ function PhysicalProductDetail({ product, details, supplier, onEdit, onRequestQu
                     showControls={true}
                   />
                 </div>
-              </div>
-            </GlassCard>
-          )}
+              )}
+            </div>
+          </GlassCard>
 
-          {/* Quick Info Cards */}
+          {/* Origin & Country */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {details?.country_of_origin && (
-              <div className="p-4 rounded-xl bg-zinc-900/50 border border-white/5">
-                <div className="flex items-center gap-2 text-zinc-500 mb-1">
-                  <Globe className="w-4 h-4" />
-                  <span className="text-xs">Origin</span>
-                </div>
-                <p className="text-white text-sm">{details.country_of_origin}</p>
-              </div>
-            )}
+            <div className="p-4 rounded-xl bg-zinc-900/50 border border-white/5">
+              <InlineEditText
+                value={details?.country_of_origin}
+                onSave={(val) => onDetailsUpdate({ country_of_origin: val })}
+                label="Country of Origin"
+                placeholder="e.g. NL"
+                textClassName="text-sm"
+              />
+            </div>
             {supplier && (
               <div className="p-4 rounded-xl bg-zinc-900/50 border border-white/5">
                 <div className="flex items-center gap-2 text-zinc-500 mb-1">
@@ -200,48 +263,54 @@ function PhysicalProductDetail({ product, details, supplier, onEdit, onRequestQu
                 <p className="text-white text-sm">{supplier.name}</p>
               </div>
             )}
-            {details?.mpn && (
-              <div className="p-4 rounded-xl bg-zinc-900/50 border border-white/5">
-                <div className="flex items-center gap-2 text-zinc-500 mb-1">
-                  <Tag className="w-4 h-4" />
-                  <span className="text-xs">MPN</span>
-                </div>
-                <p className="text-white font-mono text-sm">{details.mpn}</p>
-              </div>
-            )}
+            <div className="p-4 rounded-xl bg-zinc-900/50 border border-white/5">
+              <InlineEditText
+                value={details?.mpn}
+                onSave={(val) => onDetailsUpdate({ mpn: val })}
+                label="MPN"
+                placeholder="Manufacturer Part Number"
+                textClassName="font-mono text-sm"
+              />
+            </div>
           </div>
 
-          {/* Shipping Info */}
-          {(shipping.weight || (shipping.dimensions && (shipping.dimensions.length || shipping.dimensions.width || shipping.dimensions.height))) && (
-            <GlassCard className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Truck className="w-5 h-5 text-orange-400" />
-                <span className="font-medium text-white">Shipping Information</span>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                {shipping.weight && (
-                  <div className="flex items-center gap-3">
-                    <Weight className="w-4 h-4 text-zinc-500" />
-                    <div>
-                      <div className="text-xs text-zinc-500">Weight</div>
-                      <div className="text-white">{shipping.weight} {shipping.weight_unit || 'kg'}</div>
-                    </div>
-                  </div>
-                )}
-                {shipping.dimensions && (shipping.dimensions.length || shipping.dimensions.width || shipping.dimensions.height) && (
-                  <div className="flex items-center gap-3">
-                    <Ruler className="w-4 h-4 text-zinc-500" />
-                    <div>
-                      <div className="text-xs text-zinc-500">Dimensions (L × W × H)</div>
-                      <div className="text-white">
-                        {shipping.dimensions.length || '–'} × {shipping.dimensions.width || '–'} × {shipping.dimensions.height || '–'} cm
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </GlassCard>
-          )}
+          {/* Inventory & Shipping */}
+          <GlassCard className="p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Package className="w-5 h-5 text-orange-400" />
+              <span className="font-medium text-white">Inventory & Shipping</span>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <InlineEditNumber
+                value={inventory.quantity}
+                onSave={(val) => handleInventoryUpdate('quantity', val)}
+                label="Quantity in Stock"
+                placeholder="0"
+                min={0}
+              />
+              <InlineEditNumber
+                value={inventory.low_stock_threshold}
+                onSave={(val) => handleInventoryUpdate('low_stock_threshold', val)}
+                label="Low Stock Threshold"
+                placeholder="5"
+                min={0}
+              />
+              <InlineEditNumber
+                value={shipping.weight}
+                onSave={(val) => handleShippingUpdate('weight', val)}
+                label="Weight (kg)"
+                placeholder="0"
+                step={0.1}
+              />
+              <InlineEditNumber
+                value={pricing.cost_price}
+                onSave={(val) => handlePricingUpdate('cost_price', val)}
+                label="Cost Price"
+                placeholder="0.00"
+                prefix={pricing.currency === 'EUR' ? '' : '$'}
+              />
+            </div>
+          </GlassCard>
 
           {/* Actions */}
           <div className="flex flex-wrap gap-3">
@@ -261,47 +330,20 @@ function PhysicalProductDetail({ product, details, supplier, onEdit, onRequestQu
         </div>
       </div>
 
-      {/* Description & Specifications Tabs */}
+      {/* Description - Inline Editable */}
       <GlassCard className="p-6">
-        <Tabs defaultValue="description" className="w-full">
-          <TabsList className="bg-zinc-800/50 border border-white/5 p-1 mb-6">
-            <TabsTrigger value="description" className="data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-400">
-              Description
-            </TabsTrigger>
-            {details?.specifications && details.specifications.length > 0 && (
-              <TabsTrigger value="specifications" className="data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-400">
-                Specifications
-              </TabsTrigger>
-            )}
-          </TabsList>
-
-          <TabsContent value="description">
-            {product.description ? (
-              <div className="prose prose-invert prose-sm max-w-none">
-                <div className="text-zinc-300 whitespace-pre-wrap leading-relaxed">
-                  {product.description}
-                </div>
-              </div>
-            ) : (
-              <p className="text-zinc-500 italic">No description available.</p>
-            )}
-          </TabsContent>
-
-          {details?.specifications && details.specifications.length > 0 && (
-            <TabsContent value="specifications">
-              <SpecificationsTable
-                specifications={details.specifications}
-                attributes={details.attributes || []}
-                productInfo={{
-                  sku: details.sku,
-                  barcode: details.barcode,
-                  mpn: details.mpn,
-                  country_of_origin: details.country_of_origin
-                }}
-              />
-            </TabsContent>
-          )}
-        </Tabs>
+        <div className="flex items-center gap-2 mb-4">
+          <FileText className="w-5 h-5 text-orange-400" />
+          <span className="font-medium text-white">Description</span>
+        </div>
+        <InlineEditText
+          value={product.description}
+          onSave={(val) => onUpdate({ description: val })}
+          placeholder="Add a product description..."
+          multiline
+          rows={6}
+          textClassName="text-zinc-300 whitespace-pre-wrap leading-relaxed"
+        />
       </GlassCard>
 
       {/* Tags */}
@@ -340,34 +382,72 @@ function PhysicalProductDetail({ product, details, supplier, onEdit, onRequestQu
   );
 }
 
-// ============= DIGITAL PRODUCT DETAIL =============
+// ============= DIGITAL PRODUCT DETAIL (INLINE EDIT) =============
 
-function DigitalProductDetail({ product, details, onEdit, onRequestQuote, relatedProducts }) {
-  const galleryImages = Array.isArray(product.gallery) ? product.gallery : [];
+function DigitalProductDetail({
+  product,
+  details,
+  onUpdate,
+  onDetailsUpdate,
+  onRequestQuote,
+  relatedProducts,
+  saving
+}) {
+  const [localImages, setLocalImages] = useState(product.gallery || []);
+  const [localFeatured, setLocalFeatured] = useState(product.featured_image);
+
+  useEffect(() => {
+    setLocalImages(product.gallery || []);
+    setLocalFeatured(product.featured_image);
+  }, [product.gallery, product.featured_image]);
+
+  const handleImagesChange = async (newImages) => {
+    setLocalImages(newImages);
+    await onUpdate({ gallery: newImages });
+  };
+
+  const handleFeaturedChange = async (newFeatured) => {
+    setLocalFeatured(newFeatured);
+    await onUpdate({ featured_image: newFeatured });
+  };
 
   return (
     <div className="space-y-6">
       {/* Hero Section */}
       <GlassCard className="p-8 overflow-hidden">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
           <div className="space-y-6">
-            <div className="flex items-center gap-2 mb-2">
-              <Badge className={`${STATUS_COLORS[product.status]?.bg} ${STATUS_COLORS[product.status]?.text} ${STATUS_COLORS[product.status]?.border}`}>
-                {STATUS_COLORS[product.status]?.label || product.status}
-              </Badge>
-              {details?.pricing_model && (
-                <Badge variant="outline" className="border-cyan-500/30 text-cyan-400">
-                  {details.pricing_model.replace('_', ' ')}
-                </Badge>
+            {/* Status */}
+            <div className="flex items-center gap-3">
+              <InlineEditSelect
+                value={product.status}
+                options={STATUS_OPTIONS}
+                onSave={(val) => onUpdate({ status: val })}
+                label="Status"
+              />
+              {saving && (
+                <div className="flex items-center gap-2 text-cyan-400">
+                  <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-sm">Saving...</span>
+                </div>
               )}
             </div>
 
-            <div>
-              <h1 className="text-3xl font-bold text-white mb-3">{product.name}</h1>
-              <p className="text-lg text-zinc-400">
-                {product.tagline || product.short_description || product.description?.slice(0, 150)}
-              </p>
-            </div>
+            {/* Name */}
+            <InlineEditText
+              value={product.name}
+              onSave={(val) => onUpdate({ name: val })}
+              placeholder="Product name"
+              textClassName="text-3xl font-bold"
+            />
+
+            {/* Tagline */}
+            <InlineEditText
+              value={product.tagline || product.short_description}
+              onSave={(val) => onUpdate({ tagline: val })}
+              placeholder="Add a tagline..."
+              textClassName="text-lg text-zinc-400"
+            />
 
             {details?.trial_available && (
               <div className="flex items-center gap-2 text-green-400">
@@ -390,33 +470,36 @@ function DigitalProductDetail({ product, details, onEdit, onRequestQuote, relate
               >
                 <MessageCircle className="w-4 h-4 mr-2" /> Request Demo
               </Button>
-              {details?.documentation_url && (
-                <a href={details.documentation_url} target="_blank" rel="noopener noreferrer">
-                  <Button variant="outline" className="border-white/10 text-zinc-300 hover:text-white">
-                    <FileText className="w-4 h-4 mr-2" /> Documentation
-                  </Button>
-                </a>
-              )}
-              <Button variant="outline" size="icon" onClick={onEdit} className="border-white/10 text-zinc-300 hover:text-white">
-                <Edit2 className="w-4 h-4" />
-              </Button>
             </div>
           </div>
 
-          <div className="aspect-video rounded-xl bg-gradient-to-br from-cyan-900/20 to-cyan-950/20 overflow-hidden border border-cyan-500/20">
-            {product.featured_image?.url || galleryImages.length > 0 ? (
-              <MediaGallery
-                featuredImage={product.featured_image}
-                images={galleryImages}
-                videos={details?.demo_videos || details?.promo_videos || []}
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <Cloud className="w-16 h-16 text-cyan-500/30" />
-              </div>
-            )}
+          {/* Image Upload Area */}
+          <div className="aspect-video rounded-xl bg-gradient-to-br from-cyan-900/20 to-cyan-950/20 overflow-hidden border border-cyan-500/20 p-4">
+            <ProductImageUploader
+              images={localImages}
+              featuredImage={localFeatured}
+              onImagesChange={handleImagesChange}
+              onFeaturedChange={handleFeaturedChange}
+              maxImages={10}
+            />
           </div>
         </div>
+      </GlassCard>
+
+      {/* Description */}
+      <GlassCard className="p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <FileText className="w-5 h-5 text-cyan-400" />
+          <span className="font-medium text-white">About</span>
+        </div>
+        <InlineEditText
+          value={product.description}
+          onSave={(val) => onUpdate({ description: val })}
+          placeholder="Add a product description..."
+          multiline
+          rows={6}
+          textClassName="text-zinc-300 whitespace-pre-wrap leading-relaxed"
+        />
       </GlassCard>
 
       {/* Features */}
@@ -433,34 +516,6 @@ function DigitalProductDetail({ product, details, onEdit, onRequestQuote, relate
                 {feature.description && (
                   <p className="text-sm text-zinc-500">{feature.description}</p>
                 )}
-              </div>
-            ))}
-          </div>
-        </GlassCard>
-      )}
-
-      {/* Description */}
-      {product.description && (
-        <GlassCard className="p-6">
-          <h3 className="text-xl font-semibold text-white mb-4">About</h3>
-          <div className="text-zinc-300 whitespace-pre-wrap leading-relaxed">
-            {product.description}
-          </div>
-        </GlassCard>
-      )}
-
-      {/* FAQs */}
-      {details?.faqs && details.faqs.length > 0 && (
-        <GlassCard className="p-6">
-          <h3 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
-            <HelpCircle className="w-5 h-5 text-cyan-400" />
-            Frequently Asked Questions
-          </h3>
-          <div className="space-y-4">
-            {details.faqs.map((faq, i) => (
-              <div key={i} className="p-4 rounded-xl bg-zinc-900/50 border border-white/5">
-                <h4 className="font-medium text-white mb-2">{faq.question}</h4>
-                <p className="text-sm text-zinc-400">{faq.answer}</p>
               </div>
             ))}
           </div>
@@ -516,10 +571,10 @@ export default function ProductDetail() {
   const [supplier, setSupplier] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
   // Modal states
-  const [editModalOpen, setEditModalOpen] = useState(false);
   const [inquiryModalOpen, setInquiryModalOpen] = useState(false);
 
   const loadProduct = async () => {
@@ -558,7 +613,7 @@ export default function ProductDetail() {
         }
       }
 
-      // Load related products (same type, same category, excluding current)
+      // Load related products
       try {
         const related = await Product.filter(
           { type, category: productData.category, status: 'published' },
@@ -580,86 +635,49 @@ export default function ProductDetail() {
     loadProduct();
   }, [slug, type]);
 
-  // SEO: Update document title and meta tags when product loads
-  useEffect(() => {
+  // Handle product update (inline save)
+  const handleProductUpdate = async (updates) => {
     if (!product) return;
 
-    // Set document title
-    const title = product.seo_meta_title || `${product.name} | iSyncSO Products`;
-    document.title = title;
+    setSaving(true);
+    try {
+      await Product.update(product.id, updates);
+      setProduct(prev => ({ ...prev, ...updates }));
+      toast.success('Saved');
+    } catch (err) {
+      console.error('Failed to update product:', err);
+      toast.error('Failed to save changes');
+    } finally {
+      setSaving(false);
+    }
+  };
 
-    // Helper to update or create meta tag
-    const setMetaTag = (name, content, property = false) => {
-      if (!content) return;
-      const attr = property ? 'property' : 'name';
-      let meta = document.querySelector(`meta[${attr}="${name}"]`);
-      if (!meta) {
-        meta = document.createElement('meta');
-        meta.setAttribute(attr, name);
-        document.head.appendChild(meta);
+  // Handle details update (inline save)
+  const handleDetailsUpdate = async (updates) => {
+    if (!details) return;
+
+    setSaving(true);
+    try {
+      if (type === 'digital') {
+        await DigitalProduct.update(details.id, updates);
+      } else {
+        await PhysicalProduct.update(details.id, updates);
       }
-      meta.setAttribute('content', content);
-    };
-
-    // Set meta description
-    const description = product.seo_meta_description ||
-      product.short_description ||
-      product.tagline ||
-      (product.description ? product.description.slice(0, 160) : '');
-    setMetaTag('description', description);
-
-    // Set Open Graph tags
-    setMetaTag('og:title', title, true);
-    setMetaTag('og:description', description, true);
-    setMetaTag('og:type', 'product', true);
-    setMetaTag('og:url', window.location.href, true);
-
-    // Set OG image
-    const ogImage = product.seo_og_image ||
-      product.featured_image?.url ||
-      '';
-    if (ogImage) {
-      setMetaTag('og:image', ogImage, true);
+      setDetails(prev => ({ ...prev, ...updates }));
+      toast.success('Saved');
+    } catch (err) {
+      console.error('Failed to update details:', err);
+      toast.error('Failed to save changes');
+    } finally {
+      setSaving(false);
     }
-
-    // Set Twitter Card tags
-    setMetaTag('twitter:card', 'summary_large_image');
-    setMetaTag('twitter:title', title);
-    setMetaTag('twitter:description', description);
-    if (ogImage) {
-      setMetaTag('twitter:image', ogImage);
-    }
-
-    // Set keywords if available
-    if (product.seo_keywords && product.seo_keywords.length > 0) {
-      setMetaTag('keywords', product.seo_keywords.join(', '));
-    } else if (product.tags && product.tags.length > 0) {
-      setMetaTag('keywords', product.tags.join(', '));
-    }
-
-    // Cleanup on unmount
-    return () => {
-      document.title = 'iSyncSO';
-    };
-  }, [product]);
-
-  const handleEdit = () => {
-    setEditModalOpen(true);
   };
 
   const handleRequestQuote = () => {
     setInquiryModalOpen(true);
   };
 
-  const handleProductSaved = async () => {
-    toast.success('Product updated!');
-    setEditModalOpen(false);
-    await loadProduct();
-  };
-
   const isDigital = type === 'digital';
-  const Icon = isDigital ? Cloud : Box;
-  const color = isDigital ? 'cyan' : 'orange';
   const backUrl = isDigital ? 'ProductsDigital' : 'ProductsPhysical';
 
   if (loading) {
@@ -724,33 +742,25 @@ export default function ProductDetail() {
           <DigitalProductDetail
             product={product}
             details={details}
-            onEdit={handleEdit}
+            onUpdate={handleProductUpdate}
+            onDetailsUpdate={handleDetailsUpdate}
             onRequestQuote={handleRequestQuote}
             relatedProducts={relatedProducts}
+            saving={saving}
           />
         ) : (
           <PhysicalProductDetail
             product={product}
             details={details}
             supplier={supplier}
-            onEdit={handleEdit}
+            onUpdate={handleProductUpdate}
+            onDetailsUpdate={handleDetailsUpdate}
             onRequestQuote={handleRequestQuote}
             relatedProducts={relatedProducts}
+            saving={saving}
           />
         )}
       </div>
-
-      {/* Edit Modal */}
-      <ProductModal
-        open={editModalOpen}
-        onClose={() => setEditModalOpen(false)}
-        productType={type}
-        product={{
-          ...product,
-          ...(isDigital ? { digitalDetails: details } : { physicalDetails: details })
-        }}
-        onSave={handleProductSaved}
-      />
 
       {/* Inquiry Modal */}
       <ProductInquiryModal

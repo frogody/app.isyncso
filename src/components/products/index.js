@@ -20,3 +20,11 @@ export {
   default as BarcodeDisplay,
   InlineBarcode
 } from './BarcodeDisplay';
+
+// Inline Editing
+export {
+  InlineEditText,
+  InlineEditNumber,
+  InlineEditSelect,
+  EditableSection
+} from './InlineEdit';
