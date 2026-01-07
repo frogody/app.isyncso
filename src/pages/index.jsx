@@ -186,6 +186,12 @@ import CreateVideos from "./CreateVideos";
 
 import CreateLibrary from "./CreateLibrary";
 
+import InventoryReceiving from "./InventoryReceiving";
+
+import InventoryShipping from "./InventoryShipping";
+
+import InventoryExpenses from "./InventoryExpenses";
+
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 
 const PAGES = {
@@ -377,6 +383,12 @@ const PAGES = {
     CreateVideos: CreateVideos,
 
     CreateLibrary: CreateLibrary,
+
+    InventoryReceiving: InventoryReceiving,
+
+    InventoryShipping: InventoryShipping,
+
+    InventoryExpenses: InventoryExpenses,
 
 }
 
@@ -592,6 +604,12 @@ function PagesContent() {
                 <Route path="/CreateVideos" element={<CreateVideos />} />
 
                 <Route path="/CreateLibrary" element={<CreateLibrary />} />
+
+                <Route path="/InventoryReceiving" element={<InventoryReceiving />} />
+
+                <Route path="/InventoryShipping" element={<InventoryShipping />} />
+
+                <Route path="/InventoryExpenses" element={<InventoryExpenses />} />
 
             </Routes>
         </Layout>
