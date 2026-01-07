@@ -1,6 +1,7 @@
 /**
  * SYNC API Endpoint
  * Main orchestrator endpoint for processing user messages
+ * Supports both standard and streaming responses
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -15,106 +16,186 @@ const TOGETHER_API_KEY = Deno.env.get("TOGETHER_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-// Agent definitions for routing
-const AGENTS = {
-  learn: {
-    id: 'learn',
-    name: 'Learn Agent',
-    description: 'Learning & development, courses, skill tracking',
-    keywords: ['learn', 'course', 'training', 'skill', 'education', 'lesson', 'certificate'],
+// ============================================================================
+// Agent Routing Configuration
+// ============================================================================
+
+interface AgentRouting {
+  id: string;
+  name: string;
+  description: string;
+  keywords: string[];
+  priority: number; // Higher priority = checked first
+  patterns: RegExp[]; // Regex patterns for more precise matching
+}
+
+const AGENTS: Record<string, AgentRouting> = {
+  finance: {
+    id: 'finance',
+    name: 'Finance Agent',
+    description: 'Invoices, expenses, budgets, payments, BTW/VAT',
+    keywords: ['invoice', 'invoices', 'invoicing', 'payment', 'payments', 'expense', 'expenses', 'budget', 'btw', 'vat', 'financial', 'billing', 'bill', 'receipt', 'euro', 'eur', '€', 'price', 'cost', 'fee', 'charge'],
+    priority: 100, // Highest priority for finance
+    patterns: [
+      /send\s+(an?\s+)?invoice/i,
+      /create\s+(an?\s+)?invoice/i,
+      /invoice\s+for\s+/i,
+      /\d+\s*(euro|eur|€)/i,
+      /€\s*\d+/i,
+      /btw|vat/i,
+      /payment\s+(of|for)/i,
+      /billing/i,
+    ],
   },
   growth: {
     id: 'growth',
     name: 'Growth Agent',
-    description: 'Sales pipeline, prospects, leads, campaigns',
-    keywords: ['prospect', 'lead', 'sales', 'campaign', 'outreach', 'pipeline', 'crm'],
+    description: 'Sales pipeline, prospects, leads, campaigns, outreach',
+    keywords: ['prospect', 'prospects', 'lead', 'leads', 'sales', 'campaign', 'campaigns', 'outreach', 'pipeline', 'crm', 'contact', 'contacts', 'cold email', 'sequence', 'follow up', 'followup'],
+    priority: 80,
+    patterns: [
+      /find\s+(prospects?|leads?|contacts?)/i,
+      /research\s+(company|companies|prospect)/i,
+      /sales\s+pipeline/i,
+      /lead\s+scor/i,
+      /email\s+(sequence|campaign|outreach)/i,
+    ],
   },
   sentinel: {
     id: 'sentinel',
     name: 'Sentinel Agent',
     description: 'Compliance, EU AI Act, risk assessment, governance',
-    keywords: ['compliance', 'risk', 'ai act', 'regulation', 'audit', 'governance', 'policy'],
+    keywords: ['compliance', 'compliant', 'risk', 'risks', 'ai act', 'regulation', 'regulations', 'audit', 'governance', 'policy', 'policies', 'gdpr', 'legal', 'regulatory'],
+    priority: 90,
+    patterns: [
+      /eu\s+ai\s+act/i,
+      /risk\s+(assessment|level|classification)/i,
+      /compliance\s+(check|status|report)/i,
+      /ai\s+system\s+(risk|classification)/i,
+      /gdpr/i,
+    ],
   },
-  finance: {
-    id: 'finance',
-    name: 'Finance Agent',
-    description: 'Invoices, expenses, budgets, payments',
-    keywords: ['invoice', 'payment', 'expense', 'budget', 'btw', 'vat', 'financial', 'billing'],
+  learn: {
+    id: 'learn',
+    name: 'Learn Agent',
+    description: 'Learning & development, courses, skill tracking',
+    keywords: ['learn', 'learning', 'course', 'courses', 'training', 'skill', 'skills', 'education', 'lesson', 'lessons', 'certificate', 'certificates', 'tutorial', 'study'],
+    priority: 70,
+    patterns: [
+      /take\s+(a\s+)?course/i,
+      /learn\s+(about|how)/i,
+      /training\s+(program|course)/i,
+      /skill\s+(gap|assessment)/i,
+    ],
   },
   raise: {
     id: 'raise',
     name: 'Raise Agent',
     description: 'Fundraising, investors, pitch, valuation',
-    keywords: ['investor', 'funding', 'pitch', 'valuation', 'raise', 'venture', 'capital'],
+    keywords: ['investor', 'investors', 'funding', 'fundraising', 'pitch', 'valuation', 'raise', 'raising', 'venture', 'capital', 'vc', 'seed', 'series'],
+    priority: 75,
+    patterns: [
+      /raise\s+(funding|capital|money)/i,
+      /find\s+investors?/i,
+      /pitch\s+(deck|preparation)/i,
+      /series\s+[a-z]/i,
+      /seed\s+(round|funding)/i,
+    ],
   },
   create: {
     id: 'create',
     name: 'Create Agent',
     description: 'Image generation, marketing creatives, visuals',
-    keywords: ['image', 'create', 'generate', 'visual', 'design', 'creative', 'photo'],
+    keywords: ['image', 'images', 'create', 'generate', 'visual', 'visuals', 'design', 'creative', 'creatives', 'photo', 'photos', 'graphic', 'graphics', 'banner', 'logo'],
+    priority: 60,
+    patterns: [
+      /generate\s+(an?\s+)?image/i,
+      /create\s+(an?\s+)?(image|visual|graphic)/i,
+      /marketing\s+(creative|visual|image)/i,
+      /product\s+(photo|image)/i,
+    ],
   },
 };
 
-// Session store (in production, use Redis or database)
-const sessions: Map<string, { messages: Array<{ role: string; content: string }>; context: object }> = new Map();
+// ============================================================================
+// Routing Logic
+// ============================================================================
 
-const SYNC_SYSTEM_PROMPT = `You are SYNC, the central AI orchestrator for iSyncSO - an intelligent business platform.
-
-Your role is to:
-1. Understand user requests and provide helpful responses
-2. Route specialized tasks to the appropriate agent when needed
-3. Maintain context across the conversation
-4. Synthesize information from multiple sources
-
-Available specialized agents:
-- learn: Learning & development, course recommendations, skill tracking
-- growth: Sales pipeline, prospect research, lead scoring
-- sentinel: EU AI Act compliance, risk assessment, governance
-- finance: Invoice processing, expense tracking, budget forecasting
-- raise: Fundraising, investor research, pitch preparation
-- create: AI image generation, marketing creatives
-
-When you determine a task should be delegated, respond with a JSON block:
-{"delegate": {"agent": "agent_id", "task": "specific task description"}}
-
-For direct responses, just reply naturally.
-
-Be concise, professional, and helpful. Use Dutch business context when relevant (BTW for VAT, etc.).`;
-
-interface SyncRequest {
-  message: string;
-  sessionId?: string;
-  context?: {
-    userId?: string;
-    companyId?: string;
-    metadata?: Record<string, unknown>;
-  };
+interface RoutingResult {
+  agentId: string | null;
+  confidence: number;
+  matchedKeywords: string[];
+  matchedPatterns: string[];
 }
 
-interface SyncResponse {
-  response: string;
-  sessionId: string;
-  delegatedTo?: string;
-  usage?: {
-    promptTokens: number;
-    completionTokens: number;
-    totalTokens: number;
-  };
-}
-
-function detectAgentFromMessage(message: string): string | null {
+function detectAgentFromMessage(message: string): RoutingResult {
   const lowerMessage = message.toLowerCase();
+  const scores: Map<string, { score: number; keywords: string[]; patterns: string[] }> = new Map();
 
-  for (const [agentId, agent] of Object.entries(AGENTS)) {
+  // Sort agents by priority (highest first)
+  const sortedAgents = Object.entries(AGENTS).sort((a, b) => b[1].priority - a[1].priority);
+
+  for (const [agentId, agent] of sortedAgents) {
+    let score = 0;
+    const matchedKeywords: string[] = [];
+    const matchedPatterns: string[] = [];
+
+    // Check patterns first (more precise, higher score)
+    for (const pattern of agent.patterns) {
+      if (pattern.test(message)) {
+        score += 30; // High score for pattern match
+        matchedPatterns.push(pattern.source);
+      }
+    }
+
+    // Check keywords
     for (const keyword of agent.keywords) {
       if (lowerMessage.includes(keyword)) {
-        return agentId;
+        // Longer keywords are more specific, give them higher score
+        score += 10 + keyword.length;
+        matchedKeywords.push(keyword);
       }
+    }
+
+    // Apply priority multiplier
+    score = score * (agent.priority / 100);
+
+    if (score > 0) {
+      scores.set(agentId, { score, keywords: matchedKeywords, patterns: matchedPatterns });
     }
   }
 
-  return null;
+  // Find the agent with highest score
+  let bestAgent: string | null = null;
+  let bestScore = 0;
+  let bestKeywords: string[] = [];
+  let bestPatterns: string[] = [];
+
+  for (const [agentId, data] of scores) {
+    if (data.score > bestScore) {
+      bestScore = data.score;
+      bestAgent = agentId;
+      bestKeywords = data.keywords;
+      bestPatterns = data.patterns;
+    }
+  }
+
+  // Confidence is normalized score (0-1)
+  const confidence = Math.min(bestScore / 100, 1);
+
+  return {
+    agentId: bestAgent,
+    confidence,
+    matchedKeywords: bestKeywords,
+    matchedPatterns: bestPatterns,
+  };
 }
+
+// ============================================================================
+// Session Management
+// ============================================================================
+
+const sessions: Map<string, { messages: Array<{ role: string; content: string }>; context: object }> = new Map();
 
 function generateSessionId(): string {
   return `sync_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
@@ -131,6 +212,179 @@ function getOrCreateSession(sessionId?: string): { id: string; messages: Array<{
   return { id, ...session };
 }
 
+// ============================================================================
+// System Prompt
+// ============================================================================
+
+const SYNC_SYSTEM_PROMPT = `You are SYNC, the central AI orchestrator for iSyncSO - an intelligent business platform.
+
+Your role is to:
+1. Understand user requests and provide helpful responses
+2. Route specialized tasks to the appropriate agent when needed
+3. Maintain context across the conversation
+4. Synthesize information from multiple sources
+
+Available specialized agents:
+- finance: Invoice processing (with Dutch BTW 21%), expense tracking, budget forecasting, payments
+- growth: Sales pipeline, prospect research, lead scoring, email campaigns
+- sentinel: EU AI Act compliance, risk assessment, AI governance documentation
+- learn: Learning & development, course recommendations, skill tracking
+- raise: Fundraising, investor research, pitch preparation
+- create: AI image generation, marketing creatives
+
+Routing guidelines:
+- Invoice, payment, expense, BTW/VAT requests → finance
+- Prospect research, sales, CRM, email outreach → growth
+- Compliance, risk, EU AI Act, regulation → sentinel
+- Learning, courses, training, skills → learn
+- Investors, funding, pitch decks → raise
+- Image generation, visuals, creatives → create
+
+When you determine a task should be delegated, respond with a JSON block:
+{"delegate": {"agent": "agent_id", "task": "specific task description"}}
+
+For direct responses, just reply naturally.
+
+Be concise, professional, and helpful. Use Dutch business context when relevant (BTW for VAT, etc.).`;
+
+// ============================================================================
+// Request/Response Types
+// ============================================================================
+
+interface SyncRequest {
+  message: string;
+  sessionId?: string;
+  stream?: boolean;
+  context?: {
+    userId?: string;
+    companyId?: string;
+    metadata?: Record<string, unknown>;
+  };
+}
+
+interface SyncResponse {
+  response: string;
+  sessionId: string;
+  delegatedTo?: string;
+  routing?: {
+    confidence: number;
+    matchedKeywords: string[];
+    matchedPatterns: string[];
+  };
+  usage?: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
+}
+
+// ============================================================================
+// Streaming Support
+// ============================================================================
+
+async function handleStreamingRequest(
+  apiMessages: Array<{ role: string; content: string }>,
+  session: { id: string; messages: Array<{ role: string; content: string }>; context: object },
+  routingResult: RoutingResult,
+): Promise<Response> {
+  const encoder = new TextEncoder();
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      try {
+        const response = await fetch('https://api.together.xyz/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${TOGETHER_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8',
+            messages: apiMessages,
+            temperature: 0.7,
+            max_tokens: 2048,
+            stream: true,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+
+        const reader = response.body?.getReader();
+        if (!reader) {
+          throw new Error('No response body');
+        }
+
+        let fullContent = '';
+        const decoder = new TextDecoder();
+
+        // Send initial metadata
+        const metadata = {
+          event: 'start',
+          sessionId: session.id,
+          delegatedTo: routingResult.agentId,
+          routing: {
+            confidence: routingResult.confidence,
+            matchedKeywords: routingResult.matchedKeywords,
+          },
+        };
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(metadata)}\n\n`));
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n').filter(line => line.trim().startsWith('data:'));
+
+          for (const line of lines) {
+            const data = line.replace('data: ', '').trim();
+            if (data === '[DONE]') continue;
+
+            try {
+              const parsed = JSON.parse(data);
+              const content = parsed.choices?.[0]?.delta?.content;
+              if (content) {
+                fullContent += content;
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ event: 'chunk', content })}\n\n`));
+              }
+            } catch {
+              // Skip unparseable chunks
+            }
+          }
+        }
+
+        // Store the complete response
+        session.messages.push({ role: 'assistant', content: fullContent });
+        sessions.set(session.id, { messages: session.messages, context: session.context });
+
+        // Send completion event
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ event: 'end', content: fullContent })}\n\n`));
+        controller.close();
+
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ event: 'error', error: errorMessage })}\n\n`));
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      ...corsHeaders,
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+    },
+  });
+}
+
+// ============================================================================
+// Main Handler
+// ============================================================================
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -139,7 +393,7 @@ serve(async (req) => {
 
   try {
     const body: SyncRequest = await req.json();
-    const { message, sessionId, context } = body;
+    const { message, sessionId, stream = false, context } = body;
 
     // Validate input
     if (!message?.trim()) {
@@ -164,6 +418,9 @@ serve(async (req) => {
       session.context = { ...session.context, ...context };
     }
 
+    // Detect agent routing BEFORE adding to messages
+    const routingResult = detectAgentFromMessage(message);
+
     // Add user message to history
     session.messages.push({ role: 'user', content: message });
 
@@ -173,7 +430,12 @@ serve(async (req) => {
       ...session.messages.slice(-10), // Keep last 10 messages for context
     ];
 
-    // Call Together AI
+    // Handle streaming request
+    if (stream) {
+      return handleStreamingRequest(apiMessages, session, routingResult);
+    }
+
+    // Non-streaming request
     const response = await fetch('https://api.together.xyz/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -221,6 +483,12 @@ serve(async (req) => {
         JSON.stringify({
           response: assistantMessage,
           sessionId: session.id,
+          delegatedTo: routingResult.agentId || undefined,
+          routing: {
+            confidence: routingResult.confidence,
+            matchedKeywords: routingResult.matchedKeywords,
+            matchedPatterns: routingResult.matchedPatterns,
+          },
           usage: fallbackData.usage ? {
             promptTokens: fallbackData.usage.prompt_tokens,
             completionTokens: fallbackData.usage.completion_tokens,
@@ -233,35 +501,32 @@ serve(async (req) => {
 
     const data = await response.json();
     let assistantMessage = data.choices?.[0]?.message?.content || '';
-    let delegatedTo: string | undefined;
+    let delegatedTo: string | undefined = routingResult.agentId || undefined;
 
-    // Check for delegation in response
+    // Check for explicit delegation in response
     const delegateMatch = assistantMessage.match(/\{"delegate":\s*\{[^}]+\}\}/);
     if (delegateMatch) {
       try {
         const delegateInfo = JSON.parse(delegateMatch[0]);
-        delegatedTo = delegateInfo.delegate?.agent;
+        if (delegateInfo.delegate?.agent) {
+          delegatedTo = delegateInfo.delegate.agent;
+        }
 
         // Remove the JSON from the response and add delegation info
         assistantMessage = assistantMessage.replace(delegateMatch[0], '').trim();
         if (!assistantMessage) {
           assistantMessage = `I'm routing your request to the ${AGENTS[delegatedTo as keyof typeof AGENTS]?.name || delegatedTo} for specialized handling.`;
         }
-      } catch (e) {
+      } catch {
         // Ignore parse errors
       }
-    }
-
-    // Also check for keyword-based routing if no explicit delegation
-    if (!delegatedTo) {
-      delegatedTo = detectAgentFromMessage(message) || undefined;
     }
 
     // Store assistant response
     session.messages.push({ role: 'assistant', content: assistantMessage });
     sessions.set(session.id, { messages: session.messages, context: session.context });
 
-    // Log usage for tracking (optional - can be stored in Supabase)
+    // Log usage for tracking
     if (context?.companyId) {
       try {
         const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -274,12 +539,15 @@ serve(async (req) => {
           metadata: {
             sessionId: session.id,
             delegatedTo,
+            routing: {
+              confidence: routingResult.confidence,
+              matchedKeywords: routingResult.matchedKeywords,
+            },
             messageLength: message.length,
           },
         });
       } catch (logError) {
         console.error('Failed to log usage:', logError);
-        // Don't fail the request if logging fails
       }
     }
 
@@ -287,6 +555,11 @@ serve(async (req) => {
       response: assistantMessage,
       sessionId: session.id,
       delegatedTo,
+      routing: {
+        confidence: routingResult.confidence,
+        matchedKeywords: routingResult.matchedKeywords,
+        matchedPatterns: routingResult.matchedPatterns,
+      },
       usage: data.usage ? {
         promptTokens: data.usage.prompt_tokens,
         completionTokens: data.usage.completion_tokens,

@@ -662,15 +662,17 @@ export class SyncOrchestrator {
 
   private buildApiMessages(
     memory: ConversationMemory
-  ): Together.Chat.Completions.CompletionCreateParams.Message[] {
-    const messages: Together.Chat.Completions.CompletionCreateParams.Message[] =
+  ): Array<{ role: 'system' | 'user' | 'assistant'; content: string }> {
+    const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> =
       [{ role: 'system', content: this.buildSystemPrompt(memory.context) }];
 
     for (const msg of memory.messages) {
-      messages.push({
-        role: msg.role as 'user' | 'assistant',
-        content: msg.content,
-      });
+      if (msg.role === 'user' || msg.role === 'assistant') {
+        messages.push({
+          role: msg.role,
+          content: msg.content,
+        });
+      }
     }
 
     return messages;
