@@ -100,13 +100,18 @@ function BarcodeScanner({ onScan, isActive }) {
 
 // Product card after scan
 function ScannedProductCard({ scanResult, onReceive, onCancel }) {
-  const [quantity, setQuantity] = useState(
-    scanResult.expectedDelivery?.quantity_expected -
-      scanResult.expectedDelivery?.quantity_received || 1
-  );
+  // Calculate initial values safely
+  const initialQuantity = scanResult?.expectedDelivery
+    ? (scanResult.expectedDelivery.quantity_expected - scanResult.expectedDelivery.quantity_received) || 1
+    : 1;
+
+  const [quantity, setQuantity] = useState(initialQuantity);
   const [condition, setCondition] = useState("good");
   const [location, setLocation] = useState("");
   const [notes, setNotes] = useState("");
+
+  // Defensive: ensure scanResult and product exist (after hooks)
+  if (!scanResult || !scanResult.product) return null;
 
   const expectedQty = scanResult.expectedDelivery?.quantity_expected || 0;
   const receivedQty = scanResult.expectedDelivery?.quantity_received || 0;
