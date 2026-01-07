@@ -17,6 +17,10 @@ export function GlassCard({
     orange: 'hover:shadow-[0_0_30px_rgba(249,115,22,0.15)] hover:border-orange-500/30',
     amber: 'hover:shadow-[0_0_30px_rgba(245,158,11,0.15)] hover:border-amber-500/30',
     red: 'hover:shadow-[0_0_30px_rgba(239,68,68,0.15)] hover:border-red-500/30',
+    yellow: 'hover:shadow-[0_0_30px_rgba(234,179,8,0.15)] hover:border-yellow-500/30',
+    blue: 'hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] hover:border-blue-500/30',
+    green: 'hover:shadow-[0_0_30px_rgba(34,197,94,0.15)] hover:border-green-500/30',
+    purple: 'hover:shadow-[0_0_30px_rgba(168,85,247,0.15)] hover:border-purple-500/30',
   };
 
   return (
@@ -55,9 +59,14 @@ export function StatCard({
     orange: { icon: 'text-orange-400', bg: 'bg-orange-500/20', border: 'border-orange-500/30' },
     amber: { icon: 'text-amber-400', bg: 'bg-amber-500/20', border: 'border-amber-500/30' },
     red: { icon: 'text-red-400', bg: 'bg-red-500/20', border: 'border-red-500/30' },
+    yellow: { icon: 'text-yellow-400', bg: 'bg-yellow-500/20', border: 'border-yellow-500/30' },
+    blue: { icon: 'text-blue-400', bg: 'bg-blue-500/20', border: 'border-blue-500/30' },
+    green: { icon: 'text-green-400', bg: 'bg-green-500/20', border: 'border-green-500/30' },
+    purple: { icon: 'text-purple-400', bg: 'bg-purple-500/20', border: 'border-purple-500/30' },
   };
 
-  const colors = colorClasses[color];
+  // Safe fallback to cyan if color not found
+  const colors = colorClasses[color] || colorClasses.cyan;
 
   return (
     <GlassCard glow={color} delay={delay} className="p-6">
@@ -91,6 +100,11 @@ export function ProgressRing({ value, size = 120, strokeWidth = 8, color = 'cyan
     indigo: 'stroke-indigo-500',
     orange: 'stroke-orange-500',
     red: 'stroke-red-500',
+    yellow: 'stroke-yellow-500',
+    blue: 'stroke-blue-500',
+    green: 'stroke-green-500',
+    amber: 'stroke-amber-500',
+    purple: 'stroke-purple-500',
   };
 
   return (
@@ -105,7 +119,7 @@ export function ProgressRing({ value, size = 120, strokeWidth = 8, color = 'cyan
           cy={size / 2}
         />
         <motion.circle
-          className={colorClasses[color]}
+          className={colorClasses[color] || colorClasses.cyan}
           strokeWidth={strokeWidth}
           strokeLinecap="round"
           fill="none"
