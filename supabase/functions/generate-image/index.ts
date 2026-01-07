@@ -6,13 +6,140 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// API Keys from secrets
 const GOOGLE_API_KEY = Deno.env.get("GOOGLE_API_KEY");
+const TOGETHER_API_KEY = Deno.env.get("TOGETHER_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+function buildProductPreservationPrompt(
+  userPrompt: string,
+  productContext: any,
+  hasReferenceImages: boolean
+): string {
+  if (!productContext) return userPrompt;
+
+  const productName = productContext.name || productContext.product_name || 'the product';
+  const productDescription = productContext.description || '';
+  const productType = productContext.type;
+
+  if (productType === 'physical' || hasReferenceImages) {
+    return `Professional product photography of "${productName}".
+
+CRITICAL REQUIREMENTS:
+- Product must be the EXACT "${productName}" with precise design accuracy
+- Maintain exact shape, colors, materials, textures, and visual characteristics
+- For jewelry: preserve chain style, pendant shape, clasp design, metal finish exactly
+- For clothing: preserve cut, fabric texture, patterns, stitching precisely
+- Product should look like a real photograph of the actual product
+
+PRODUCT: ${productName}
+${productDescription ? `DESCRIPTION: ${productDescription}` : ''}
+
+SCENE: ${userPrompt}
+
+Create photorealistic product photograph with the product clearly visible and in focus.`;
+  }
+
+  return `${userPrompt}. Product: ${productName}. ${productDescription}`;
+}
+
+// Try Gemini image generation
+async function tryGemini(prompt: string): Promise<{ success: boolean; data?: string; mimeType?: string; error?: string }> {
+  if (!GOOGLE_API_KEY) return { success: false, error: 'No Google API key' };
+
+  const models = ['gemini-2.0-flash-exp', 'gemini-1.5-flash'];
+
+  for (const model of models) {
+    try {
+      console.log(`Trying Gemini ${model}...`);
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GOOGLE_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { responseModalities: ["image", "text"] }
+          })
+        }
+      );
+
+      if (!response.ok) {
+        const errText = await response.text();
+        if (errText.includes('not available in your country')) {
+          console.log('Gemini geo-restricted');
+          return { success: false, error: 'geo-restricted' };
+        }
+        continue;
+      }
+
+      const data = await response.json();
+      const candidate = data.candidates?.[0];
+      if (candidate?.content?.parts) {
+        for (const part of candidate.content.parts) {
+          if (part.inlineData?.mimeType?.startsWith('image/')) {
+            return {
+              success: true,
+              data: part.inlineData.data,
+              mimeType: part.inlineData.mimeType
+            };
+          }
+        }
+      }
+    } catch (e: any) {
+      console.error(`Gemini ${model} error:`, e.message);
+    }
+  }
+
+  return { success: false, error: 'Gemini failed' };
+}
+
+// Try Together.ai Flux model
+async function tryTogether(prompt: string): Promise<{ success: boolean; data?: string; mimeType?: string; error?: string }> {
+  if (!TOGETHER_API_KEY) return { success: false, error: 'No Together API key' };
+
+  try {
+    console.log('Trying Together.ai Flux...');
+    const response = await fetch('https://api.together.xyz/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${TOGETHER_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'black-forest-labs/FLUX.1-schnell',
+        prompt: prompt,
+        width: 1024,
+        height: 1024,
+        steps: 4,
+        n: 1,
+        response_format: 'b64_json'
+      })
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error('Together error:', errText);
+      return { success: false, error: errText };
+    }
+
+    const data = await response.json();
+    if (data.data?.[0]?.b64_json) {
+      return {
+        success: true,
+        data: data.data[0].b64_json,
+        mimeType: 'image/png'
+      };
+    }
+
+    return { success: false, error: 'No image in response' };
+  } catch (e: any) {
+    console.error('Together error:', e.message);
+    return { success: false, error: e.message };
+  }
+}
+
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -23,10 +150,12 @@ serve(async (req) => {
       original_prompt,
       style,
       aspect_ratio,
-      width,
-      height,
       brand_context,
       product_context,
+      product_images,
+      is_physical_product,
+      width = 1024,
+      height = 1024,
     } = await req.json();
 
     if (!prompt) {
@@ -36,150 +165,85 @@ serve(async (req) => {
       );
     }
 
-    if (!GOOGLE_API_KEY) {
-      console.error('GOOGLE_API_KEY is not set');
-      return new Response(
-        JSON.stringify({
-          error: 'API key not configured',
-          message: 'GOOGLE_API_KEY environment variable is not set'
-        }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    const hasProductImages = product_images?.length > 0;
+    const isPhysicalProductRequest = is_physical_product || product_context?.type === 'physical' || hasProductImages;
+
+    let enhancedPrompt = prompt;
+    if (isPhysicalProductRequest && product_context) {
+      enhancedPrompt = buildProductPreservationPrompt(prompt, product_context, hasProductImages);
+      console.log('Product preservation for:', product_context.name);
     }
 
-    let imageUrl: string | null = null;
-    let model = 'unknown';
-    let errorDetails: string | null = null;
+    if (style && style !== 'photorealistic') {
+      enhancedPrompt += ` Style: ${style}.`;
+    }
 
-    // Try Nano Banana Pro (gemini-3-pro-image-preview) first for best quality
-    const modelsToTry = [
-      'gemini-3-pro-image-preview',  // Nano Banana Pro - best quality
-      'gemini-2.5-flash-image',      // Nano Banana - faster
-      'gemini-2.0-flash-exp',        // Fallback
-    ];
+    if (brand_context?.colors?.primary) {
+      enhancedPrompt += ` Brand colors: ${brand_context.colors.primary}${brand_context.colors.secondary ? `, ${brand_context.colors.secondary}` : ''}.`;
+    }
 
-    for (const modelName of modelsToTry) {
-      if (imageUrl) break;
+    let imageResult: { success: boolean; data?: string; mimeType?: string; error?: string };
+    let usedModel = 'unknown';
 
-      try {
-        console.log(`Attempting image generation with ${modelName}...`);
+    // Try Gemini first
+    imageResult = await tryGemini(enhancedPrompt);
+    if (imageResult.success) {
+      usedModel = 'gemini';
+    }
 
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GOOGLE_API_KEY}`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-goog-api-key': GOOGLE_API_KEY
-            },
-            body: JSON.stringify({
-              contents: [{
-                parts: [{
-                  text: prompt
-                }]
-              }],
-              generationConfig: {
-                responseModalities: ["image", "text"],
-              }
-            })
-          }
-        );
-
-        const responseText = await response.text();
-        console.log(`${modelName} response status:`, response.status);
-
-        if (response.ok) {
-          const data = JSON.parse(responseText);
-          console.log(`${modelName} response structure:`, JSON.stringify(data).substring(0, 300));
-
-          // Look for image data in the response
-          const candidate = data.candidates?.[0];
-          if (candidate?.content?.parts) {
-            for (const part of candidate.content.parts) {
-              if (part.inlineData?.mimeType?.startsWith('image/')) {
-                const base64Image = part.inlineData.data;
-                const mimeType = part.inlineData.mimeType;
-
-                // Determine file extension
-                let extension = 'png';
-                if (mimeType.includes('jpeg') || mimeType.includes('jpg')) extension = 'jpg';
-                else if (mimeType.includes('webp')) extension = 'webp';
-
-                // Upload to Supabase Storage
-                const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-                const fileName = `generated-${Date.now()}-${Math.random().toString(36).substring(7)}.${extension}`;
-                const imageData = Uint8Array.from(atob(base64Image), c => c.charCodeAt(0));
-
-                const { data: uploadData, error: uploadError } = await supabase.storage
-                  .from('generated-content')
-                  .upload(fileName, imageData, {
-                    contentType: mimeType,
-                    upsert: false
-                  });
-
-                if (uploadError) {
-                  console.error('Storage upload error:', uploadError);
-                  errorDetails = `Storage error: ${uploadError.message}`;
-                  continue;
-                }
-
-                const { data: urlData } = supabase.storage
-                  .from('generated-content')
-                  .getPublicUrl(fileName);
-
-                imageUrl = urlData.publicUrl;
-                model = modelName;
-                console.log(`Successfully generated image with ${modelName}`);
-                break;
-              }
-            }
-          }
-
-          if (!imageUrl && candidate) {
-            // Check if there's text response but no image
-            const textPart = candidate.content?.parts?.find((p: any) => p.text);
-            if (textPart) {
-              console.log(`${modelName} returned text instead of image:`, textPart.text?.substring(0, 200));
-            }
-          }
-        } else {
-          const errorInfo = `${modelName} API error (${response.status}): ${responseText.substring(0, 300)}`;
-          console.error(errorInfo);
-          if (!errorDetails) errorDetails = errorInfo;
-        }
-      } catch (modelError: any) {
-        const errorInfo = `${modelName} error: ${modelError.message}`;
-        console.error(errorInfo);
-        if (!errorDetails) errorDetails = errorInfo;
+    // Fallback to Together.ai
+    if (!imageResult.success) {
+      console.log('Gemini failed, trying Together.ai...');
+      imageResult = await tryTogether(enhancedPrompt);
+      if (imageResult.success) {
+        usedModel = 'flux-schnell';
       }
     }
 
-    // If no image was generated, return error with details
-    if (!imageUrl) {
+    if (!imageResult.success) {
       return new Response(
         JSON.stringify({
-          error: 'Failed to generate image',
-          details: errorDetails || 'No image models returned valid image data. The API may not support image generation with your current API key.',
-          apiKeyPresent: true,
-          modelsAttempted: modelsToTry
+          error: 'Image generation failed',
+          details: imageResult.error || 'All providers failed',
+          suggestion: 'Configure TOGETHER_API_KEY for fallback image generation',
         }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Upload to Supabase Storage
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const ext = imageResult.mimeType?.includes('jpeg') ? 'jpg' : 'png';
+    const fileName = `generated-${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
+    const imageData = Uint8Array.from(atob(imageResult.data!), c => c.charCodeAt(0));
+
+    const { error: uploadError } = await supabase.storage
+      .from('generated-content')
+      .upload(fileName, imageData, { contentType: imageResult.mimeType || 'image/png', upsert: false });
+
+    if (uploadError) {
+      return new Response(
+        JSON.stringify({ error: 'Storage upload failed', details: uploadError.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    const { data: urlData } = supabase.storage.from('generated-content').getPublicUrl(fileName);
+
     return new Response(
       JSON.stringify({
-        url: imageUrl,
-        model: model,
-        prompt: prompt,
-        original_prompt: original_prompt,
-        dimensions: { width, height }
+        url: urlData.publicUrl,
+        model: usedModel,
+        prompt: enhancedPrompt,
+        original_prompt: original_prompt || prompt,
+        dimensions: { width, height },
+        product_preserved: isPhysicalProductRequest,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error: any) {
-    console.error('Error in generate-image:', error);
+    console.error('Error:', error);
     return new Response(
       JSON.stringify({ error: error.message || 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
