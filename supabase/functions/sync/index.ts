@@ -392,6 +392,19 @@ serve(async (req) => {
   }
 
   try {
+    // Check for authorization header (accepts anon key or user JWT)
+    // We don't strictly verify the JWT - Supabase handles that at the gateway level
+    const authHeader = req.headers.get('Authorization');
+    const apiKey = req.headers.get('apikey');
+
+    // Allow requests with either Authorization header or apikey header
+    if (!authHeader && !apiKey) {
+      return new Response(
+        JSON.stringify({ error: 'Missing authorization' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const body: SyncRequest = await req.json();
     const { message, sessionId, stream = false, context } = body;
 
