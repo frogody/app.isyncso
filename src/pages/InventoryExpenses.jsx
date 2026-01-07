@@ -556,7 +556,7 @@ export default function InventoryExpenses() {
         <PageHeader
           title="Uitgaven"
           subtitle="Beheer facturen en AI-extractie reviews"
-          icon={<Receipt className="w-6 h-6 text-cyan-400" />}
+          icon={Receipt}
           actions={
             <Button className="bg-cyan-600 hover:bg-cyan-700">
               <Upload className="w-4 h-4 mr-2" />

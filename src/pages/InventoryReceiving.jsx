@@ -514,7 +514,7 @@ export default function InventoryReceiving() {
         <PageHeader
           title="Ontvangst"
           subtitle="Scan producten om voorraad te ontvangen"
-          icon={<Package className="w-6 h-6 text-cyan-400" />}
+          icon={Package}
         />
 
         <div className="container mx-auto px-4 py-6">

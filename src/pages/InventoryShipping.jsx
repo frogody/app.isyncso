@@ -489,7 +489,7 @@ export default function InventoryShipping() {
         <PageHeader
           title="Verzendingen"
           subtitle="Beheer verzendtaken en track & trace"
-          icon={<Truck className="w-6 h-6 text-cyan-400" />}
+          icon={Truck}
         />
 
         <div className="container mx-auto px-4 py-6">
