@@ -21,4 +21,10 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      // Externalize Node.js-only dependencies that together-ai optionally uses
+      external: ['parquetjs'],
+    },
+  },
 }) 
