@@ -1,19 +1,43 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// API Keys from secrets
 const GOOGLE_API_KEY = Deno.env.get("GOOGLE_API_KEY");
 const GOOGLE_VEO_API_KEY = Deno.env.get("GOOGLE_VEO_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+// Helper: Upload to Supabase Storage
+async function uploadToStorage(
+  bucket: string,
+  fileName: string,
+  data: Uint8Array,
+  contentType: string
+): Promise<{ publicUrl: string }> {
+  const uploadUrl = `${SUPABASE_URL}/storage/v1/object/${bucket}/${fileName}`;
+  const response = await fetch(uploadUrl, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_SERVICE_ROLE_KEY,
+      'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      'Content-Type': contentType,
+    },
+    body: data,
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Storage upload error: ${err}`);
+  }
+
+  const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${fileName}`;
+  return { publicUrl };
+}
+
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -46,8 +70,6 @@ serve(async (req) => {
     const veoApiKey = GOOGLE_VEO_API_KEY || GOOGLE_API_KEY;
     if (veoApiKey) {
       try {
-        // Note: Google Veo API is still in preview/limited access
-        // This is the expected API structure based on Google's documentation
         const veoResponse = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/veo:generateVideo?key=${veoApiKey}`,
           {
@@ -65,11 +87,9 @@ serve(async (req) => {
         if (veoResponse.ok) {
           const veoData = await veoResponse.json();
 
-          // Handle async video generation - Veo typically returns an operation ID
           if (veoData.operationId) {
-            // Poll for completion (simplified - in production, use webhooks)
             let attempts = 0;
-            const maxAttempts = 60; // 5 minutes with 5 second intervals
+            const maxAttempts = 60;
 
             while (attempts < maxAttempts) {
               await new Promise(resolve => setTimeout(resolve, 5000));
@@ -93,7 +113,6 @@ serve(async (req) => {
               attempts++;
             }
           } else if (veoData.videoUrl) {
-            // Direct response (if API supports it)
             videoUrl = veoData.videoUrl;
             thumbnailUrl = veoData.thumbnailUrl;
             model = 'google-veo';
@@ -104,10 +123,9 @@ serve(async (req) => {
       }
     }
 
-    // Alternative: Try Imagen Video or other available Google video models
+    // Alternative: Try Gemini with video generation
     if (!videoUrl && GOOGLE_API_KEY) {
       try {
-        // Gemini with video generation capabilities (when available)
         const geminiResponse = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GOOGLE_API_KEY}`,
           {
@@ -133,34 +151,22 @@ serve(async (req) => {
         if (geminiResponse.ok) {
           const geminiData = await geminiResponse.json();
 
-          // Check for video content
           const videoPart = geminiData.candidates?.[0]?.content?.parts?.find(
             (part: any) => part.inlineData?.mimeType?.startsWith('video/')
           );
 
           if (videoPart?.inlineData?.data) {
-            // Upload to Supabase Storage
-            const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
             const fileName = `generated-video-${Date.now()}-${Math.random().toString(36).substring(7)}.mp4`;
             const videoData = Uint8Array.from(atob(videoPart.inlineData.data), c => c.charCodeAt(0));
 
-            const { data: uploadData, error: uploadError } = await supabase.storage
-              .from('generated-content')
-              .upload(fileName, videoData, {
-                contentType: 'video/mp4',
-                upsert: false
-              });
+            const { publicUrl } = await uploadToStorage(
+              'generated-content',
+              fileName,
+              videoData,
+              'video/mp4'
+            );
 
-            if (uploadError) {
-              console.error('Storage upload error:', uploadError);
-              throw new Error('Failed to upload generated video');
-            }
-
-            const { data: urlData } = supabase.storage
-              .from('generated-content')
-              .getPublicUrl(fileName);
-
-            videoUrl = urlData.publicUrl;
+            videoUrl = publicUrl;
             model = 'gemini-video';
           }
         }
@@ -196,7 +202,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in generate-video:', error);
     return new Response(
       JSON.stringify({ error: error.message || 'Internal server error' }),
