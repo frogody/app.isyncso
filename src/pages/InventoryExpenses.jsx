@@ -310,9 +310,20 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject }) {
   );
 }
 
+// Default style fallback for expenses
+const DEFAULT_EXPENSE_STYLE = {
+  bg: "bg-zinc-500/10",
+  text: "text-zinc-400",
+  border: "border-zinc-500/30",
+};
+
 // Expense card
 function ExpenseCard({ expense, onReview }) {
-  const status = STATUS_STYLES[expense.status] || STATUS_STYLES.draft;
+  // Defensive: ensure expense exists
+  if (!expense) return null;
+
+  // Always ensure we have a valid style object
+  const status = (expense.status && STATUS_STYLES[expense.status]) || STATUS_STYLES.draft || DEFAULT_EXPENSE_STYLE;
   const needsReview = expense.needs_review && expense.review_status === "pending";
 
   return (

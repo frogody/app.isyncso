@@ -226,14 +226,23 @@ function ShipModal({ task, isOpen, onClose, onShip }) {
   );
 }
 
+// Default style fallback
+const DEFAULT_STYLE = {
+  bg: "bg-zinc-500/10",
+  text: "text-zinc-400",
+  border: "border-zinc-500/30",
+  icon: Clock,
+};
+
 // Shipping task card
 function ShippingTaskCard({ task, onShip }) {
   // Defensive: ensure task exists
   if (!task) return null;
 
-  const status = STATUS_STYLES[task.status] || STATUS_STYLES.pending;
-  const priority = PRIORITY_STYLES[task.priority] || PRIORITY_STYLES.normal;
-  const StatusIcon = status?.icon || Clock;
+  // Always ensure we have a valid style object
+  const status = (task.status && STATUS_STYLES[task.status]) || STATUS_STYLES.pending || DEFAULT_STYLE;
+  const priority = (task.priority && PRIORITY_STYLES[task.priority]) || PRIORITY_STYLES.normal || DEFAULT_STYLE;
+  const StatusIcon = (status && status.icon) || Clock;
 
   const isShippable = ["pending", "ready_to_ship"].includes(task.status);
 
@@ -245,19 +254,19 @@ function ShippingTaskCard({ task, onShip }) {
     >
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-3">
-          <div className={`p-2 rounded-lg ${status?.bg || 'bg-zinc-500/10'} ${status?.border || 'border-zinc-500/30'}`}>
-            <StatusIcon className={`w-5 h-5 ${status?.text || 'text-zinc-400'}`} />
+          <div className={`p-2 rounded-lg ${status.bg} ${status.border}`}>
+            <StatusIcon className={`w-5 h-5 ${status.text}`} />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-medium text-white">
                 {task.sales_orders?.order_number || task.task_number}
               </h3>
-              <Badge className={`${status?.bg || 'bg-zinc-500/10'} ${status?.text || 'text-zinc-400'} ${status?.border || 'border-zinc-500/30'}`}>
+              <Badge className={`${status.bg} ${status.text} ${status.border}`}>
                 {task.status || 'unknown'}
               </Badge>
               {task.priority !== "normal" && (
-                <Badge className={`${priority?.bg || 'bg-zinc-500/10'} ${priority?.text || 'text-zinc-400'}`}>
+                <Badge className={`${priority.bg} ${priority.text}`}>
                   {task.priority}
                 </Badge>
               )}
