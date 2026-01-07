@@ -423,6 +423,10 @@ export default function CreateImages() {
     return parts.filter(p => p).join(', ');
   };
 
+  // State for AI-enhanced prompt
+  const [aiEnhancedPrompt, setAiEnhancedPrompt] = useState(null);
+  const [isEnhancing, setIsEnhancing] = useState(false);
+
   const handleGenerate = async () => {
     const useCase = USE_CASES[selectedUseCase];
 
@@ -439,23 +443,61 @@ export default function CreateImages() {
     }
 
     setIsGenerating(true);
+    setIsEnhancing(true);
     setGeneratedImage(null);
+    setAiEnhancedPrompt(null);
 
     try {
-      const enhancedPrompt = buildEnhancedPrompt();
+      // Step 1: AI-enhance the prompt
+      let finalPrompt = prompt;
+      let enhancementData = null;
+
+      try {
+        toast.info('🪄 AI is enhancing your prompt...', { duration: 2000 });
+
+        const { data: enhanceData, error: enhanceError } = await supabase.functions.invoke('enhance-prompt', {
+          body: {
+            prompt: prompt,
+            use_case: selectedUseCase,
+            style: selectedStyle,
+            product_name: selectedProduct?.name,
+            product_type: selectedProduct?.type,
+            brand_mood: brandAssets?.visual_style?.mood,
+            has_reference_image: !!selectedReferenceImage
+          }
+        });
+
+        if (!enhanceError && enhanceData?.enhanced_prompt) {
+          finalPrompt = enhanceData.enhanced_prompt;
+          enhancementData = enhanceData;
+          setAiEnhancedPrompt(enhanceData);
+          console.log('AI Enhanced Prompt:', enhanceData);
+        } else {
+          // Fallback to rule-based enhancement
+          finalPrompt = buildEnhancedPrompt();
+          console.log('Using fallback enhancement');
+        }
+      } catch (enhanceErr) {
+        console.warn('AI enhancement failed, using fallback:', enhanceErr);
+        finalPrompt = buildEnhancedPrompt();
+      }
+
+      setIsEnhancing(false);
+
       const aspectConfig = ASPECT_RATIOS.find(a => a.id === aspectRatio);
 
       // Determine if this is a physical product with reference images
       const isPhysicalProduct = selectedProduct?.type === 'physical';
 
+      // Step 2: Generate the image with enhanced prompt
       const { data, error } = await supabase.functions.invoke('generate-image', {
         body: {
           // New multi-model params
           use_case: selectedUseCase,
           reference_image_url: selectedReferenceImage,
 
-          // Existing params
-          prompt: enhancedPrompt,
+          // Use AI-enhanced prompt
+          prompt: finalPrompt,
           original_prompt: prompt,
           style: selectedStyle,
           aspect_ratio: aspectRatio,
@@ -512,7 +554,8 @@ export default function CreateImages() {
           url: data.url,
           id: savedContent.id,
           prompt: prompt,
-          enhanced_prompt: enhancedPrompt,
+          enhanced_prompt: finalPrompt,
+          ai_enhancement: enhancementData,
         });
         loadGenerationHistory();
         toast.success('Image generated successfully!');
@@ -522,6 +565,7 @@ export default function CreateImages() {
       toast.error(error.message || 'Failed to generate image');
     } finally {
       setIsGenerating(false);
+      setIsEnhancing(false);
     }
   };
 
@@ -916,12 +960,12 @@ export default function CreateImages() {
                     {isGenerating ? (
                       <>
                         <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                        Generating...
+                        {isEnhancing ? 'Enhancing prompt...' : 'Generating image...'}
                       </>
                     ) : (
                       <>
-                        <Sparkles className="w-5 h-5 mr-2" />
-                        Generate Image
+                        <Wand2 className="w-5 h-5 mr-2" />
+                        Generate with AI
                       </>
                     )}
                   </Button>
@@ -988,9 +1032,18 @@ export default function CreateImages() {
               >
                 {isGenerating ? (
                   <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-800/30">
-                    <Loader2 className="w-12 h-12 text-rose-400 animate-spin mb-4" />
-                    <p className="text-zinc-400">Creating your image...</p>
-                    <p className="text-zinc-500 text-sm mt-2">This may take a moment</p>
+                    <div className="relative">
+                      <Loader2 className="w-12 h-12 text-rose-400 animate-spin" />
+                      {isEnhancing && (
+                        <Wand2 className="w-5 h-5 text-rose-300 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                      )}
+                    </div>
+                    <p className="text-zinc-300 mt-4 font-medium">
+                      {isEnhancing ? '🪄 AI is optimizing your prompt...' : '🎨 Generating your image...'}
+                    </p>
+                    <p className="text-zinc-500 text-sm mt-2">
+                      {isEnhancing ? 'Transforming your idea into the perfect prompt' : 'This may take a moment'}
+                    </p>
                   </div>
                 ) : generatedImage ? (
                   <img
@@ -1008,11 +1061,39 @@ export default function CreateImages() {
                 )}
               </div>
 
-              {/* Enhanced Prompt Display */}
+              {/* AI Enhanced Prompt Display */}
               {generatedImage?.enhanced_prompt && (
-                <div className="mt-4 p-3 bg-zinc-800/30 rounded-lg border border-zinc-700/30">
-                  <Label className="text-zinc-500 text-xs mb-1 block">Enhanced Prompt Used:</Label>
-                  <p className="text-zinc-300 text-sm">{generatedImage.enhanced_prompt}</p>
+                <div className="mt-4 p-4 bg-gradient-to-br from-zinc-800/50 to-zinc-900/50 rounded-xl border border-zinc-700/30">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Wand2 className="w-4 h-4 text-rose-400" />
+                    <Label className="text-rose-400 text-xs font-medium">AI-Enhanced Prompt</Label>
+                    {generatedImage.ai_enhancement && !generatedImage.ai_enhancement.fallback && (
+                      <Badge variant="outline" className="text-xs bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
+                        AI Optimized
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-zinc-200 text-sm leading-relaxed">{generatedImage.enhanced_prompt}</p>
+
+                  {/* Style Tags */}
+                  {generatedImage.ai_enhancement?.style_tags?.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {generatedImage.ai_enhancement.style_tags.map((tag, i) => (
+                        <span key={i} className="px-2 py-0.5 text-xs rounded-full bg-zinc-700/50 text-zinc-400">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Composition Notes */}
+                  {generatedImage.ai_enhancement?.composition_notes && (
+                    <div className="mt-3 pt-3 border-t border-zinc-700/30">
+                      <p className="text-zinc-500 text-xs">
+                        <span className="text-zinc-400">Composition:</span> {generatedImage.ai_enhancement.composition_notes}
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </motion.div>
