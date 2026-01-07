@@ -11,116 +11,141 @@ const TOGETHER_API_KEY = Deno.env.get("TOGETHER_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-function buildProductPreservationPrompt(
+// Model configurations with pricing (per megapixel)
+// Note: FLUX Redux/Canny/Depth require dedicated endpoints, not serverless
+// FLUX Kontext is the serverless alternative for in-context image editing
+const MODELS: Record<string, { id: string; requiresImage: boolean; costPerMp: number; steps: number }> = {
+  // Serverless image-to-image (in-context editing)
+  'flux-kontext': {
+    id: 'black-forest-labs/FLUX.1-Kontext-dev',
+    requiresImage: true,
+    costPerMp: 0.025,
+    steps: 28
+  },
+  'flux-kontext-pro': {
+    id: 'black-forest-labs/FLUX.1-Kontext-pro',
+    requiresImage: true,
+    costPerMp: 0.04,
+    steps: 28
+  },
+  // Serverless text-to-image
+  'flux-dev': {
+    id: 'black-forest-labs/FLUX.1-dev',
+    requiresImage: false,
+    costPerMp: 0.025,
+    steps: 28
+  },
+  'flux-schnell': {
+    id: 'black-forest-labs/FLUX.1-schnell',
+    requiresImage: false,
+    costPerMp: 0.0027,
+    steps: 4
+  },
+  'flux-pro': {
+    id: 'black-forest-labs/FLUX.1.1-pro',
+    requiresImage: false,
+    costPerMp: 0.04,
+    steps: 28
+  }
+};
+
+// Use case to model mapping
+const USE_CASE_MODELS: Record<string, string> = {
+  'product_variation': 'flux-kontext',      // In-context editing preserves product
+  'product_scene': 'flux-kontext-pro',      // Premium in-context editing
+  'marketing_creative': 'flux-dev',         // Standard text-to-image
+  'quick_draft': 'flux-schnell',            // Fast & cheap iterations
+  'premium_quality': 'flux-pro'             // Highest quality text-to-image
+};
+
+function buildEnhancedPrompt(
   userPrompt: string,
-  productContext: any,
-  hasReferenceImages: boolean
+  brandContext: any,
+  productContext: any
 ): string {
-  if (!productContext) return userPrompt;
+  let enhanced = userPrompt || '';
 
-  const productName = productContext.name || productContext.product_name || 'the product';
-  const productDescription = productContext.description || '';
-  const productType = productContext.type;
-
-  if (productType === 'physical' || hasReferenceImages) {
-    return `Professional product photography of "${productName}".
-
-CRITICAL REQUIREMENTS:
-- Product must be the EXACT "${productName}" with precise design accuracy
-- Maintain exact shape, colors, materials, textures, and visual characteristics
-- For jewelry: preserve chain style, pendant shape, clasp design, metal finish exactly
-- For clothing: preserve cut, fabric texture, patterns, stitching precisely
-- Product should look like a real photograph of the actual product
-
-PRODUCT: ${productName}
-${productDescription ? `DESCRIPTION: ${productDescription}` : ''}
-
-SCENE: ${userPrompt}
-
-Create photorealistic product photograph with the product clearly visible and in focus.`;
+  // Add brand context
+  if (brandContext?.colors?.primary) {
+    enhanced += ` Brand colors: ${brandContext.colors.primary}`;
+    if (brandContext.colors.secondary) {
+      enhanced += `, ${brandContext.colors.secondary}`;
+    }
+    enhanced += '.';
   }
 
-  return `${userPrompt}. Product: ${productName}. ${productDescription}`;
-}
+  if (brandContext?.visual_style?.mood) {
+    enhanced += ` Style: ${brandContext.visual_style.mood}.`;
+  }
 
-// Try Gemini image generation
-async function tryGemini(prompt: string): Promise<{ success: boolean; data?: string; mimeType?: string; error?: string }> {
-  if (!GOOGLE_API_KEY) return { success: false, error: 'No Google API key' };
-
-  const models = ['gemini-2.0-flash-exp', 'gemini-1.5-flash'];
-
-  for (const model of models) {
-    try {
-      console.log(`Trying Gemini ${model}...`);
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GOOGLE_API_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { responseModalities: ["image", "text"] }
-          })
-        }
-      );
-
-      if (!response.ok) {
-        const errText = await response.text();
-        if (errText.includes('not available in your country')) {
-          console.log('Gemini geo-restricted');
-          return { success: false, error: 'geo-restricted' };
-        }
-        continue;
-      }
-
-      const data = await response.json();
-      const candidate = data.candidates?.[0];
-      if (candidate?.content?.parts) {
-        for (const part of candidate.content.parts) {
-          if (part.inlineData?.mimeType?.startsWith('image/')) {
-            return {
-              success: true,
-              data: part.inlineData.data,
-              mimeType: part.inlineData.mimeType
-            };
-          }
-        }
-      }
-    } catch (e: any) {
-      console.error(`Gemini ${model} error:`, e.message);
+  // Add product context for text-to-image models
+  if (productContext) {
+    const productName = productContext.name || productContext.product_name || 'the product';
+    enhanced += ` Product: ${productName}.`;
+    if (productContext.description) {
+      enhanced += ` ${productContext.description}`;
     }
   }
 
-  return { success: false, error: 'Gemini failed' };
+  return enhanced;
 }
 
-// Try Together.ai Flux model
-async function tryTogether(prompt: string): Promise<{ success: boolean; data?: string; mimeType?: string; error?: string }> {
-  if (!TOGETHER_API_KEY) return { success: false, error: 'No Together API key' };
+// Generate image using Together.ai
+async function generateWithTogether(
+  modelConfig: { id: string; requiresImage: boolean; costPerMp: number; steps: number },
+  prompt: string | null,
+  referenceImageUrl: string | null,
+  width: number,
+  height: number
+): Promise<{ success: boolean; data?: string; mimeType?: string; error?: string }> {
+  if (!TOGETHER_API_KEY) {
+    return { success: false, error: 'No Together API key configured' };
+  }
 
   try {
-    console.log('Trying Together.ai Flux...');
+    const requestBody: any = {
+      model: modelConfig.id,
+      width,
+      height,
+      steps: modelConfig.steps,
+      n: 1,
+      response_format: 'b64_json'
+    };
+
+    // For image-to-image models (Kontext)
+    if (modelConfig.requiresImage) {
+      if (!referenceImageUrl) {
+        return { success: false, error: `Model ${modelConfig.id} requires a reference image` };
+      }
+      requestBody.image_url = referenceImageUrl;
+      // Prompt is required for Kontext to describe the transformation
+      if (prompt) {
+        requestBody.prompt = prompt;
+      }
+    } else {
+      // Text-to-image models require a prompt
+      if (!prompt) {
+        return { success: false, error: 'Prompt is required for text-to-image generation' };
+      }
+      requestBody.prompt = prompt;
+    }
+
+    console.log(`Generating with ${modelConfig.id}...`);
+    console.log('Request:', JSON.stringify({ ...requestBody, image_url: requestBody.image_url ? '[URL provided]' : undefined }));
+
     const response = await fetch('https://api.together.xyz/v1/images/generations', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${TOGETHER_API_KEY}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        model: 'black-forest-labs/FLUX.1-schnell',
-        prompt: prompt,
-        width: 1024,
-        height: 1024,
-        steps: 4,
-        n: 1,
-        response_format: 'b64_json'
-      })
+      body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error('Together error:', errText);
-      return { success: false, error: errText };
+      console.error('Together.ai error:', errText);
+      return { success: false, error: `Together.ai API error: ${errText}` };
     }
 
     const data = await response.json();
@@ -132,9 +157,54 @@ async function tryTogether(prompt: string): Promise<{ success: boolean; data?: s
       };
     }
 
-    return { success: false, error: 'No image in response' };
+    return { success: false, error: 'No image data in response' };
   } catch (e: any) {
-    console.error('Together error:', e.message);
+    console.error('Together.ai exception:', e.message);
+    return { success: false, error: e.message };
+  }
+}
+
+// Fallback to Gemini for text-to-image
+async function tryGemini(prompt: string): Promise<{ success: boolean; data?: string; mimeType?: string; error?: string }> {
+  if (!GOOGLE_API_KEY) return { success: false, error: 'No Google API key' };
+
+  try {
+    console.log('Trying Gemini fallback...');
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GOOGLE_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseModalities: ["image", "text"] }
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const errText = await response.text();
+      if (errText.includes('not available in your country')) {
+        return { success: false, error: 'Gemini geo-restricted' };
+      }
+      return { success: false, error: `Gemini error: ${errText}` };
+    }
+
+    const data = await response.json();
+    const candidate = data.candidates?.[0];
+    if (candidate?.content?.parts) {
+      for (const part of candidate.content.parts) {
+        if (part.inlineData?.mimeType?.startsWith('image/')) {
+          return {
+            success: true,
+            data: part.inlineData.data,
+            mimeType: part.inlineData.mimeType
+          };
+        }
+      }
+    }
+    return { success: false, error: 'No image in Gemini response' };
+  } catch (e: any) {
     return { success: false, error: e.message };
   }
 }
@@ -146,58 +216,89 @@ serve(async (req) => {
 
   try {
     const {
+      // New multi-model params
+      model_key,              // e.g., 'flux-redux', 'flux-dev', 'flux-schnell'
+      use_case,               // e.g., 'product_variation', 'marketing_creative'
+      reference_image_url,    // For image-to-image models (Redux, Canny, Depth)
+
+      // Existing params
       prompt,
       original_prompt,
       style,
       aspect_ratio,
       brand_context,
       product_context,
-      product_images,
+      product_images,         // Array of product image URLs (legacy)
       is_physical_product,
       width = 1024,
       height = 1024,
+
+      // Cost tracking params
+      company_id,
+      user_id,
     } = await req.json();
 
-    if (!prompt) {
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Determine which model to use
+    let selectedModelKey = model_key;
+
+    // If use_case is provided, map to model
+    if (use_case && USE_CASE_MODELS[use_case]) {
+      selectedModelKey = USE_CASE_MODELS[use_case];
+    }
+
+    // Legacy support: if physical product with images, use Kontext for in-context editing
+    const hasProductImages = product_images?.length > 0 || reference_image_url;
+    if (!selectedModelKey && (is_physical_product || product_context?.type === 'physical') && hasProductImages) {
+      selectedModelKey = 'flux-kontext';
+    }
+
+    // Default to flux-dev for text-to-image
+    if (!selectedModelKey) {
+      selectedModelKey = 'flux-dev';
+    }
+
+    const modelConfig = MODELS[selectedModelKey];
+    if (!modelConfig) {
       return new Response(
-        JSON.stringify({ error: 'Prompt is required' }),
+        JSON.stringify({ error: `Unknown model: ${selectedModelKey}` }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const hasProductImages = product_images?.length > 0;
-    const isPhysicalProductRequest = is_physical_product || product_context?.type === 'physical' || hasProductImages;
+    // Get reference image URL (support both new and legacy params)
+    const refImageUrl = reference_image_url || (product_images?.length > 0 ? product_images[0] : null);
 
+    // Validate image-to-image models have reference
+    if (modelConfig.requiresImage && !refImageUrl) {
+      return new Response(
+        JSON.stringify({
+          error: 'Reference image required',
+          details: `Model ${selectedModelKey} requires a reference image for product preservation`,
+          suggestion: 'Select a product with images or upload a reference image'
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Build prompt for text-to-image models
     let enhancedPrompt = prompt;
-    if (isPhysicalProductRequest && product_context) {
-      enhancedPrompt = buildProductPreservationPrompt(prompt, product_context, hasProductImages);
-      console.log('Product preservation for:', product_context.name);
-    }
+    if (!modelConfig.requiresImage) {
+      enhancedPrompt = buildEnhancedPrompt(prompt, brand_context, product_context);
 
-    if (style && style !== 'photorealistic') {
-      enhancedPrompt += ` Style: ${style}.`;
-    }
-
-    if (brand_context?.colors?.primary) {
-      enhancedPrompt += ` Brand colors: ${brand_context.colors.primary}${brand_context.colors.secondary ? `, ${brand_context.colors.secondary}` : ''}.`;
-    }
-
-    let imageResult: { success: boolean; data?: string; mimeType?: string; error?: string };
-    let usedModel = 'unknown';
-
-    // Try Gemini first
-    imageResult = await tryGemini(enhancedPrompt);
-    if (imageResult.success) {
-      usedModel = 'gemini';
-    }
-
-    // Fallback to Together.ai
-    if (!imageResult.success) {
-      console.log('Gemini failed, trying Together.ai...');
-      imageResult = await tryTogether(enhancedPrompt);
-      if (imageResult.success) {
-        usedModel = 'flux-schnell';
+      if (style && style !== 'photorealistic') {
+        enhancedPrompt += ` Style: ${style}.`;
       }
+    }
+
+    // Generate image
+    let imageResult = await generateWithTogether(modelConfig, enhancedPrompt, refImageUrl, width, height);
+
+    // Fallback to Gemini for text-to-image failures
+    if (!imageResult.success && !modelConfig.requiresImage && GOOGLE_API_KEY) {
+      console.log('Together.ai failed, trying Gemini fallback...');
+      imageResult = await tryGemini(enhancedPrompt);
     }
 
     if (!imageResult.success) {
@@ -205,14 +306,13 @@ serve(async (req) => {
         JSON.stringify({
           error: 'Image generation failed',
           details: imageResult.error || 'All providers failed',
-          suggestion: 'Configure TOGETHER_API_KEY for fallback image generation',
+          model_attempted: selectedModelKey
         }),
         { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     // Upload to Supabase Storage
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const ext = imageResult.mimeType?.includes('jpeg') ? 'jpg' : 'png';
     const fileName = `generated-${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
     const imageData = Uint8Array.from(atob(imageResult.data!), c => c.charCodeAt(0));
@@ -230,14 +330,43 @@ serve(async (req) => {
 
     const { data: urlData } = supabase.storage.from('generated-content').getPublicUrl(fileName);
 
+    // Calculate cost
+    const megapixels = (width * height) / 1000000;
+    const costUsd = megapixels * modelConfig.costPerMp;
+
+    // Track usage if company_id provided
+    if (company_id) {
+      try {
+        await supabase.from('ai_usage_log').insert({
+          company_id,
+          user_id: user_id || null,
+          model: modelConfig.id,
+          cost_usd: costUsd,
+          content_type: 'image',
+          metadata: {
+            model_key: selectedModelKey,
+            use_case: use_case || null,
+            dimensions: { width, height },
+            has_reference_image: !!refImageUrl
+          }
+        });
+      } catch (logError) {
+        console.error('Failed to log usage:', logError);
+        // Don't fail the request if logging fails
+      }
+    }
+
     return new Response(
       JSON.stringify({
         url: urlData.publicUrl,
-        model: usedModel,
+        model: selectedModelKey,
+        model_id: modelConfig.id,
+        cost_usd: costUsd,
         prompt: enhancedPrompt,
         original_prompt: original_prompt || prompt,
         dimensions: { width, height },
-        product_preserved: isPhysicalProductRequest,
+        product_preserved: modelConfig.requiresImage,
+        use_case: use_case || null
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

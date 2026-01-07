@@ -55,6 +55,60 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from '@/api/supabaseClient';
 
+// Use case definitions with model selection
+const USE_CASES = {
+  product_variation: {
+    id: 'product_variation',
+    name: 'Product Variations',
+    description: 'In-context editing: keep product, change background/environment',
+    icon: Package,
+    requiresReferenceImage: true,
+    costTier: 'standard',
+    estimatedCost: 0.025,
+    color: 'emerald'
+  },
+  product_scene: {
+    id: 'product_scene',
+    name: 'Product in Scene',
+    description: 'Premium in-context editing for lifestyle settings',
+    icon: Camera,
+    requiresReferenceImage: true,
+    costTier: 'premium',
+    estimatedCost: 0.04,
+    color: 'blue'
+  },
+  marketing_creative: {
+    id: 'marketing_creative',
+    name: 'Marketing Creative',
+    description: 'Create promotional images, ads, social media content',
+    icon: Sparkles,
+    requiresReferenceImage: false,
+    costTier: 'standard',
+    estimatedCost: 0.025,
+    color: 'purple'
+  },
+  quick_draft: {
+    id: 'quick_draft',
+    name: 'Quick Draft',
+    description: 'Fast brainstorming and concept exploration',
+    icon: Clock,
+    requiresReferenceImage: false,
+    costTier: 'economy',
+    estimatedCost: 0.003,
+    color: 'amber'
+  },
+  premium_quality: {
+    id: 'premium_quality',
+    name: 'Premium Quality',
+    description: 'Highest quality for final assets',
+    icon: Film,
+    requiresReferenceImage: false,
+    costTier: 'premium',
+    estimatedCost: 0.04,
+    color: 'rose'
+  }
+};
+
 const STYLE_PRESETS = [
   { id: 'photorealistic', label: 'Photorealistic', icon: Camera },
   { id: 'illustration', label: 'Illustration', icon: Paintbrush },
@@ -91,6 +145,8 @@ export default function CreateImages() {
   const [previewImage, setPreviewImage] = useState(null);
   const [productImages, setProductImages] = useState([]);
   const [loadingProductImages, setLoadingProductImages] = useState(false);
+  const [selectedUseCase, setSelectedUseCase] = useState('marketing_creative');
+  const [selectedReferenceImage, setSelectedReferenceImage] = useState(null);
 
   useEffect(() => {
     if (user?.company_id) {
@@ -172,10 +228,15 @@ export default function CreateImages() {
       }
 
       setProductImages(images);
+      // Auto-select the first image as reference
+      if (images.length > 0) {
+        setSelectedReferenceImage(images[0]);
+      }
       console.log(`Loaded ${images.length} reference images for product:`, product.name);
     } catch (error) {
       console.error('Error loading product images:', error);
       setProductImages([]);
+      setSelectedReferenceImage(null);
     } finally {
       setLoadingProductImages(false);
     }
@@ -187,8 +248,13 @@ export default function CreateImages() {
     setProductSearch('');
     if (product) {
       await loadProductImages(product);
+      // Auto-switch to product variation use case for physical products
+      if (product.type === 'physical') {
+        setSelectedUseCase('product_variation');
+      }
     } else {
       setProductImages([]);
+      setSelectedReferenceImage(null);
     }
   };
 
@@ -220,10 +286,20 @@ export default function CreateImages() {
   };
 
   const handleGenerate = async () => {
-    if (!prompt.trim()) {
+    const useCase = USE_CASES[selectedUseCase];
+
+    // Validate prompt for non-image-to-image use cases
+    if (!useCase.requiresReferenceImage && !prompt.trim()) {
       toast.error('Please enter a prompt');
       return;
     }
+
+    // Validate reference image for image-to-image use cases
+    if (useCase.requiresReferenceImage && !selectedReferenceImage) {
+      toast.error('Please select a reference image for this use case');
+      return;
+    }
+
     setIsGenerating(true);
     setGeneratedImage(null);
 
@@ -233,10 +309,14 @@ export default function CreateImages() {
 
       // Determine if this is a physical product with reference images
       const isPhysicalProduct = selectedProduct?.type === 'physical';
-      const hasReferenceImages = productImages.length > 0;
 
       const { data, error } = await supabase.functions.invoke('generate-image', {
         body: {
+          // New multi-model params
+          use_case: selectedUseCase,
+          reference_image_url: selectedReferenceImage,
+
+          // Existing params
           prompt: enhancedPrompt,
           original_prompt: prompt,
           style: selectedStyle,
@@ -248,9 +328,13 @@ export default function CreateImages() {
             ...selectedProduct,
             type: selectedProduct.type,
           } : null,
-          // Pass product reference images for physical products
+          // Legacy params (for backward compatibility)
           product_images: isPhysicalProduct ? productImages : [],
           is_physical_product: isPhysicalProduct,
+
+          // Cost tracking
+          company_id: user.company_id,
+          user_id: user.id,
         }
       });
 
@@ -363,15 +447,73 @@ export default function CreateImages() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Panel - Controls */}
           <div className="space-y-6">
-            {/* Prompt Input */}
+            {/* Use Case Selector */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60"
             >
               <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
+                <Sparkles className="w-5 h-5 text-rose-400/70" />
+                What do you want to create?
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {Object.values(USE_CASES).map(useCase => {
+                  const IconComponent = useCase.icon;
+                  const isSelected = selectedUseCase === useCase.id;
+                  const colorClasses = {
+                    emerald: isSelected ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' : 'hover:border-emerald-500/30',
+                    blue: isSelected ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'hover:border-blue-500/30',
+                    purple: isSelected ? 'bg-purple-500/20 border-purple-500/50 text-purple-400' : 'hover:border-purple-500/30',
+                    amber: isSelected ? 'bg-amber-500/20 border-amber-500/50 text-amber-400' : 'hover:border-amber-500/30',
+                    rose: isSelected ? 'bg-rose-500/20 border-rose-500/50 text-rose-400' : 'hover:border-rose-500/30',
+                  };
+                  return (
+                    <button
+                      key={useCase.id}
+                      onClick={() => setSelectedUseCase(useCase.id)}
+                      className={`p-4 rounded-xl border text-left transition-all ${
+                        isSelected
+                          ? colorClasses[useCase.color]
+                          : `bg-zinc-800/30 border-zinc-700/30 text-zinc-400 ${colorClasses[useCase.color]}`
+                      }`}
+                    >
+                      <IconComponent className="w-5 h-5 mb-2" />
+                      <div className="text-sm font-medium">{useCase.name}</div>
+                      <div className="text-xs opacity-60 mt-1">{useCase.description}</div>
+                      <div className="mt-2 flex items-center gap-2">
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] px-1.5 py-0 ${
+                            useCase.costTier === 'economy' ? 'border-amber-500/30 text-amber-400' :
+                            useCase.costTier === 'premium' ? 'border-rose-500/30 text-rose-400' :
+                            'border-zinc-500/30 text-zinc-400'
+                          }`}
+                        >
+                          ${useCase.estimatedCost.toFixed(3)}
+                        </Badge>
+                        {useCase.requiresReferenceImage && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-cyan-500/30 text-cyan-400">
+                            Needs Image
+                          </Badge>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </motion.div>
+
+            {/* Prompt Input */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 }}
+              className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60"
+            >
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
                 <Wand2 className="w-5 h-5 text-rose-400/70" />
-                Prompt
+                {USE_CASES[selectedUseCase]?.requiresReferenceImage ? 'Describe the Scene (Optional)' : 'Prompt'}
               </h3>
               <div className="space-y-4">
                 <div>
@@ -497,24 +639,34 @@ export default function CreateImages() {
                         <div>
                           <Label className="text-zinc-400 mb-2 block text-sm flex items-center gap-2">
                             <ImageIcon className="w-4 h-4" />
-                            Reference Images ({productImages.length})
+                            Select Reference Image ({productImages.length} available)
                           </Label>
                           <div className="grid grid-cols-4 gap-2">
-                            {productImages.slice(0, 4).map((imageUrl, index) => (
-                              <div
+                            {productImages.slice(0, 8).map((imageUrl, index) => (
+                              <button
                                 key={index}
-                                className="aspect-square rounded-lg overflow-hidden border border-zinc-700/50 bg-zinc-800/50"
+                                onClick={() => setSelectedReferenceImage(imageUrl)}
+                                className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                                  selectedReferenceImage === imageUrl
+                                    ? 'border-emerald-500 ring-2 ring-emerald-500/30'
+                                    : 'border-zinc-700/50 hover:border-zinc-500'
+                                }`}
                               >
                                 <img
                                   src={imageUrl}
                                   alt={`Product reference ${index + 1}`}
                                   className="w-full h-full object-cover"
                                 />
-                              </div>
+                                {selectedReferenceImage === imageUrl && (
+                                  <div className="absolute inset-0 bg-emerald-500/20 flex items-center justify-center">
+                                    <Check className="w-6 h-6 text-emerald-400" />
+                                  </div>
+                                )}
+                              </button>
                             ))}
                           </div>
                           <p className="text-xs text-zinc-500 mt-2">
-                            These images will be used as reference to ensure your product appears exactly the same in the generated image.
+                            Click to select the image that best represents your product. This will be preserved exactly in the generated image.
                           </p>
                         </div>
                       ) : (
@@ -593,25 +745,49 @@ export default function CreateImages() {
                   </Select>
                 </div>
 
-                {/* Generate Button */}
-                <Button
-                  onClick={handleGenerate}
-                  disabled={isGenerating || !prompt.trim()}
-                  className="w-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 hover:border-rose-500/50 transition-all"
-                  size="lg"
-                >
-                  {isGenerating ? (
-                    <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-5 h-5 mr-2" />
-                      Generate Image
-                    </>
-                  )}
-                </Button>
+                {/* Cost Estimate & Generate Button */}
+                <div className="space-y-3">
+                  {/* Cost Estimate */}
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/30 border border-zinc-700/30">
+                    <div className="flex items-center gap-2">
+                      <span className="text-zinc-400 text-sm">Estimated cost:</span>
+                      <Badge
+                        variant="outline"
+                        className={`${
+                          USE_CASES[selectedUseCase]?.costTier === 'economy' ? 'border-amber-500/30 text-amber-400' :
+                          USE_CASES[selectedUseCase]?.costTier === 'premium' ? 'border-rose-500/30 text-rose-400' :
+                          'border-zinc-500/30 text-zinc-400'
+                        }`}
+                      >
+                        ${USE_CASES[selectedUseCase]?.estimatedCost?.toFixed(3) || '0.025'}
+                      </Badge>
+                    </div>
+                    <span className="text-zinc-500 text-xs">
+                      {USE_CASES[selectedUseCase]?.costTier === 'economy' ? '⚡ Fast & cheap' :
+                       USE_CASES[selectedUseCase]?.costTier === 'premium' ? '✨ Highest quality' :
+                       '🎯 Balanced'}
+                    </span>
+                  </div>
+
+                  <Button
+                    onClick={handleGenerate}
+                    disabled={isGenerating || (!USE_CASES[selectedUseCase]?.requiresReferenceImage && !prompt.trim()) || (USE_CASES[selectedUseCase]?.requiresReferenceImage && !selectedReferenceImage)}
+                    className="w-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 hover:border-rose-500/50 transition-all"
+                    size="lg"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-5 h-5 mr-2" />
+                        Generate Image
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             </motion.div>
 
