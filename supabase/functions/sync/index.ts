@@ -2,10 +2,17 @@
  * SYNC API Endpoint
  * Main orchestrator endpoint for processing user messages
  * Supports both standard and streaming responses
+ *
+ * Phase 1: 14 Actions (Finance + Products)
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+// Import modular action executors
+import { executeFinanceAction } from './tools/finance.ts';
+import { executeProductsAction } from './tools/products.ts';
+import { ActionContext, ActionResult } from './tools/types.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,6 +23,81 @@ const TOGETHER_API_KEY = Deno.env.get("TOGETHER_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+// Initialize Supabase client for database operations
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+// Default company ID (fallback)
+const DEFAULT_COMPANY_ID = '6a07896c-28e5-4f54-836e-ec0bde91c2c2';
+
+// ============================================================================
+// Action Categories
+// ============================================================================
+
+const FINANCE_ACTIONS = [
+  'create_proposal',
+  'create_invoice',
+  'list_invoices',
+  'update_invoice',
+  'create_expense',
+  'list_expenses',
+  'get_financial_summary',
+  'convert_proposal_to_invoice',
+];
+
+const PRODUCT_ACTIONS = [
+  'search_products',
+  'create_product',
+  'update_product',
+  'update_inventory',
+  'list_products',
+  'get_low_stock',
+];
+
+// ============================================================================
+// Action Parsing and Execution
+// ============================================================================
+
+function parseActionFromResponse(response: string): { action: string; data: any } | null {
+  const actionMatch = response.match(/\[ACTION\]([\s\S]*?)\[\/ACTION\]/);
+  if (actionMatch) {
+    try {
+      return JSON.parse(actionMatch[1].trim());
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+async function executeAction(
+  action: { action: string; data: any },
+  companyId: string,
+  userId?: string
+): Promise<ActionResult> {
+  // Create action context
+  const ctx: ActionContext = {
+    supabase,
+    companyId,
+    userId,
+  };
+
+  // Route to appropriate module
+  if (FINANCE_ACTIONS.includes(action.action)) {
+    return executeFinanceAction(ctx, action.action, action.data);
+  }
+
+  if (PRODUCT_ACTIONS.includes(action.action)) {
+    return executeProductsAction(ctx, action.action, action.data);
+  }
+
+  // Unknown action
+  return {
+    success: false,
+    message: `Unknown action: ${action.action}`,
+    error: 'Action not found',
+  };
+}
+
 // ============================================================================
 // Agent Routing Configuration
 // ============================================================================
@@ -25,8 +107,8 @@ interface AgentRouting {
   name: string;
   description: string;
   keywords: string[];
-  priority: number; // Higher priority = checked first
-  patterns: RegExp[]; // Regex patterns for more precise matching
+  priority: number;
+  patterns: RegExp[];
 }
 
 const AGENTS: Record<string, AgentRouting> = {
@@ -34,8 +116,8 @@ const AGENTS: Record<string, AgentRouting> = {
     id: 'finance',
     name: 'Finance Agent',
     description: 'Invoices, expenses, budgets, payments, BTW/VAT',
-    keywords: ['invoice', 'invoices', 'invoicing', 'payment', 'payments', 'expense', 'expenses', 'budget', 'btw', 'vat', 'financial', 'billing', 'bill', 'receipt', 'euro', 'eur', '€', 'price', 'cost', 'fee', 'charge'],
-    priority: 100, // Highest priority for finance
+    keywords: ['invoice', 'invoices', 'invoicing', 'payment', 'payments', 'expense', 'expenses', 'budget', 'btw', 'vat', 'financial', 'billing', 'bill', 'receipt', 'euro', 'eur', '€', 'price', 'cost', 'fee', 'charge', 'proposal', 'proposals', 'quote', 'quotes'],
+    priority: 100,
     patterns: [
       /send\s+(an?\s+)?invoice/i,
       /create\s+(an?\s+)?invoice/i,
@@ -45,6 +127,34 @@ const AGENTS: Record<string, AgentRouting> = {
       /btw|vat/i,
       /payment\s+(of|for)/i,
       /billing/i,
+      /create\s+(an?\s+)?proposal/i,
+      /send\s+(an?\s+)?proposal/i,
+      /show\s+(my\s+)?invoices/i,
+      /list\s+(all\s+)?invoices/i,
+      /unpaid\s+invoices/i,
+      /overdue\s+invoices/i,
+      /log\s+(an?\s+)?expense/i,
+      /financial\s+summary/i,
+      /revenue|income|cash\s*flow/i,
+    ],
+  },
+  products: {
+    id: 'products',
+    name: 'Products Agent',
+    description: 'Product catalog, inventory, stock management',
+    keywords: ['product', 'products', 'inventory', 'stock', 'sku', 'catalog', 'item', 'items', 'warehouse'],
+    priority: 95,
+    patterns: [
+      /search\s+(for\s+)?products?/i,
+      /find\s+products?/i,
+      /add\s+(a\s+)?product/i,
+      /create\s+(a\s+)?product/i,
+      /update\s+(the\s+)?stock/i,
+      /update\s+inventory/i,
+      /low\s+stock/i,
+      /out\s+of\s+stock/i,
+      /list\s+(all\s+)?products/i,
+      /show\s+(my\s+)?products/i,
     ],
   },
   growth: {
@@ -132,7 +242,6 @@ function detectAgentFromMessage(message: string): RoutingResult {
   const lowerMessage = message.toLowerCase();
   const scores: Map<string, { score: number; keywords: string[]; patterns: string[] }> = new Map();
 
-  // Sort agents by priority (highest first)
   const sortedAgents = Object.entries(AGENTS).sort((a, b) => b[1].priority - a[1].priority);
 
   for (const [agentId, agent] of sortedAgents) {
@@ -140,24 +249,20 @@ function detectAgentFromMessage(message: string): RoutingResult {
     const matchedKeywords: string[] = [];
     const matchedPatterns: string[] = [];
 
-    // Check patterns first (more precise, higher score)
     for (const pattern of agent.patterns) {
       if (pattern.test(message)) {
-        score += 30; // High score for pattern match
+        score += 30;
         matchedPatterns.push(pattern.source);
       }
     }
 
-    // Check keywords
     for (const keyword of agent.keywords) {
       if (lowerMessage.includes(keyword)) {
-        // Longer keywords are more specific, give them higher score
         score += 10 + keyword.length;
         matchedKeywords.push(keyword);
       }
     }
 
-    // Apply priority multiplier
     score = score * (agent.priority / 100);
 
     if (score > 0) {
@@ -165,7 +270,6 @@ function detectAgentFromMessage(message: string): RoutingResult {
     }
   }
 
-  // Find the agent with highest score
   let bestAgent: string | null = null;
   let bestScore = 0;
   let bestKeywords: string[] = [];
@@ -180,7 +284,6 @@ function detectAgentFromMessage(message: string): RoutingResult {
     }
   }
 
-  // Confidence is normalized score (0-1)
   const confidence = Math.min(bestScore / 100, 1);
 
   return {
@@ -213,51 +316,205 @@ function getOrCreateSession(sessionId?: string): { id: string; messages: Array<{
 }
 
 // ============================================================================
-// System Prompt
+// System Prompt - Phase 1 (14 Actions)
 // ============================================================================
 
 const SYNC_SYSTEM_PROMPT = `You are SYNC, the central AI orchestrator for iSyncSO - an intelligent business platform.
 
-CRITICAL RULES:
-1. DO NOT explain what you would do or describe delegation - ACTUALLY DO THE TASK
-2. Complete user requests directly with real, actionable output
-3. Never say "I'll delegate this to..." - just provide the result
-4. Be concise and action-oriented
+You can EXECUTE REAL ACTIONS by including an [ACTION] block in your response.
 
-Your capabilities:
-- Create professional proposals and invoices (use Dutch BTW 21% for EU)
-- Draft emails and outreach messages
-- Provide compliance guidance (EU AI Act, GDPR)
-- Research and analyze business information
-- Create learning recommendations
+## IMPORTANT: Automatic Product Price Lookup
+When creating proposals or invoices, you can OMIT the unit_price field. The system will automatically look up prices from the product inventory. Just use the product name as it appears in the catalog.
 
-When creating proposals or invoices:
-- Include client name, items, quantities, unit prices
-- Calculate subtotal, BTW (21%), and total
-- Use professional formatting with clear sections
-- Include payment terms (default: 30 days)
+## Available Actions
 
-When creating emails:
-- Write complete, ready-to-send emails
-- Include subject line, greeting, body, closing
-- Match the tone to the context (formal for business, friendly for follow-ups)
+### FINANCE (8 actions)
 
-Example format for a proposal:
----
-PROPOSAL FOR [Client Name]
+#### Search Products (for price lookup)
+[ACTION]
+{"action": "search_products", "data": {"query": "product name"}}
+[/ACTION]
 
-Items:
-- [Product/Service] x [Qty] @ €[Price] = €[Total]
+#### Create Proposal
+[ACTION]
+{"action": "create_proposal", "data": {
+  "client_name": "Client Name",
+  "client_company": "Company Name (optional)",
+  "client_email": "email@example.com (optional)",
+  "title": "Proposal: Product/Service for Client",
+  "items": [{"name": "Product Name", "quantity": 10}],
+  "tax_percent": 21,
+  "notes": "Additional notes (optional)"
+}}
+[/ACTION]
 
-Subtotal: €[Amount]
-BTW (21%): €[Amount]
-TOTAL: €[Amount]
+#### Create Invoice
+[ACTION]
+{"action": "create_invoice", "data": {
+  "client_name": "Client Name",
+  "client_email": "email@example.com (optional)",
+  "items": [{"name": "Product Name", "quantity": 1}],
+  "tax_percent": 21,
+  "due_days": 30
+}}
+[/ACTION]
 
-Payment Terms: 30 days
-Valid Until: [Date]
----
+#### List Invoices
+[ACTION]
+{"action": "list_invoices", "data": {
+  "status": "draft|sent|paid|overdue|cancelled (optional)",
+  "client": "client name filter (optional)",
+  "limit": 20
+}}
+[/ACTION]
 
-Be professional, direct, and always complete the task fully.`;
+#### Update Invoice Status
+[ACTION]
+{"action": "update_invoice", "data": {
+  "invoice_number": "INV-2025-123456",
+  "status": "draft|sent|paid|overdue|cancelled"
+}}
+[/ACTION]
+
+#### Create Expense
+[ACTION]
+{"action": "create_expense", "data": {
+  "description": "Expense description",
+  "amount": 100.00,
+  "category": "office|travel|software|marketing|other",
+  "vendor": "Vendor Name (optional)",
+  "date": "2025-01-07 (optional, defaults to today)",
+  "notes": "Additional notes (optional)"
+}}
+[/ACTION]
+
+#### List Expenses
+[ACTION]
+{"action": "list_expenses", "data": {
+  "category": "filter by category (optional)",
+  "vendor": "filter by vendor (optional)",
+  "limit": 20
+}}
+[/ACTION]
+
+#### Get Financial Summary
+[ACTION]
+{"action": "get_financial_summary", "data": {
+  "period": "month|quarter|year"
+}}
+[/ACTION]
+
+#### Convert Proposal to Invoice
+[ACTION]
+{"action": "convert_proposal_to_invoice", "data": {
+  "proposal_number": "PROP-2025-123456"
+}}
+[/ACTION]
+
+### PRODUCTS (6 actions)
+
+#### Search Products
+[ACTION]
+{"action": "search_products", "data": {"query": "product name"}}
+[/ACTION]
+
+#### Create Product
+[ACTION]
+{"action": "create_product", "data": {
+  "name": "Product Name",
+  "type": "physical|digital",
+  "price": 29.99,
+  "sku": "SKU-123 (optional)",
+  "quantity": 100,
+  "description": "Product description (optional)",
+  "status": "draft|published"
+}}
+[/ACTION]
+
+#### Update Product
+[ACTION]
+{"action": "update_product", "data": {
+  "name": "Product Name (for lookup)",
+  "updates": {
+    "price": 34.99,
+    "status": "published",
+    "description": "Updated description"
+  }
+}}
+[/ACTION]
+
+#### Update Inventory
+[ACTION]
+{"action": "update_inventory", "data": {
+  "name": "Product Name",
+  "quantity": 50,
+  "adjustment_type": "set|add|subtract"
+}}
+[/ACTION]
+
+#### List Products
+[ACTION]
+{"action": "list_products", "data": {
+  "type": "physical|digital (optional)",
+  "status": "draft|published|archived (optional)",
+  "search": "name filter (optional)",
+  "limit": 20
+}}
+[/ACTION]
+
+#### Get Low Stock Alerts
+[ACTION]
+{"action": "get_low_stock", "data": {
+  "threshold": 10
+}}
+[/ACTION]
+
+## Rules:
+1. When asked to CREATE/MAKE a proposal or invoice, ALWAYS include the [ACTION] block
+2. Extract client name, product names, and quantities from the user's message
+3. DO NOT include unit_price unless the user specifically provides a custom price
+4. Use Dutch BTW rate of 21% by default
+5. Use the exact or similar product name as in the catalog (e.g., "Philips OneBlade", "OneBlade")
+6. Provide a brief confirmation message along with the action block
+7. For list/search queries, filter appropriately based on user request
+8. Always confirm what action you're taking before the [ACTION] block
+
+## Example Conversations:
+
+### Invoice Creation
+User: "make an invoice for mink krijnen for 88 philips one blades"
+Response: Creating an invoice for Mink Krijnen with 88 Philips OneBlade units. The price will be looked up from your product inventory.
+[ACTION]
+{"action": "create_invoice", "data": {"client_name": "Mink Krijnen", "items": [{"name": "Philips OneBlade", "quantity": 88}], "tax_percent": 21}}
+[/ACTION]
+
+### List Unpaid Invoices
+User: "show me all unpaid invoices"
+Response: Here are your unpaid invoices:
+[ACTION]
+{"action": "list_invoices", "data": {"status": "sent"}}
+[/ACTION]
+
+### Log Expense
+User: "log an expense of 250 euros for office supplies from staples"
+Response: Logging an expense of €250 for office supplies from Staples.
+[ACTION]
+{"action": "create_expense", "data": {"description": "Office supplies", "amount": 250, "category": "office", "vendor": "Staples"}}
+[/ACTION]
+
+### Check Low Stock
+User: "what products are running low on stock?"
+Response: Checking for products with low inventory:
+[ACTION]
+{"action": "get_low_stock", "data": {"threshold": 10}}
+[/ACTION]
+
+### Update Stock
+User: "set the oneblade stock to 200 units"
+Response: Updating Philips OneBlade stock to 200 units.
+[ACTION]
+{"action": "update_inventory", "data": {"name": "OneBlade", "quantity": 200, "adjustment_type": "set"}}
+[/ACTION]`;
 
 // ============================================================================
 // Request/Response Types
@@ -288,6 +545,12 @@ interface SyncResponse {
     completionTokens: number;
     totalTokens: number;
   };
+  actionExecuted?: {
+    success: boolean;
+    type?: string;
+    result?: any;
+    link?: string;
+  };
 }
 
 // ============================================================================
@@ -298,6 +561,8 @@ async function handleStreamingRequest(
   apiMessages: Array<{ role: string; content: string }>,
   session: { id: string; messages: Array<{ role: string; content: string }>; context: object },
   routingResult: RoutingResult,
+  companyId: string,
+  userId?: string,
 ): Promise<Response> {
   const encoder = new TextEncoder();
 
@@ -331,7 +596,6 @@ async function handleStreamingRequest(
         let fullContent = '';
         const decoder = new TextDecoder();
 
-        // Send initial metadata
         const metadata = {
           event: 'start',
           sessionId: session.id,
@@ -367,12 +631,27 @@ async function handleStreamingRequest(
           }
         }
 
-        // Store the complete response
+        // Check for and execute action blocks after streaming
+        const actionData = parseActionFromResponse(fullContent);
+        let actionResult: ActionResult | null = null;
+        if (actionData) {
+          actionResult = await executeAction(actionData, companyId, userId);
+          const cleanedContent = fullContent.replace(/\[ACTION\][\s\S]*?\[\/ACTION\]/g, '').trim();
+          fullContent = cleanedContent + '\n\n' + actionResult.message;
+        }
+
         session.messages.push({ role: 'assistant', content: fullContent });
         sessions.set(session.id, { messages: session.messages, context: session.context });
 
-        // Send completion event
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ event: 'end', content: fullContent })}\n\n`));
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+          event: 'end',
+          content: fullContent,
+          actionExecuted: actionResult ? {
+            success: actionResult.success,
+            type: actionData?.action,
+            link: actionResult.link,
+          } : undefined,
+        })}\n\n`));
         controller.close();
 
       } catch (error) {
@@ -398,18 +677,14 @@ async function handleStreamingRequest(
 // ============================================================================
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    // Check for authorization header (accepts anon key or user JWT)
-    // We don't strictly verify the JWT - Supabase handles that at the gateway level
     const authHeader = req.headers.get('Authorization');
     const apiKey = req.headers.get('apikey');
 
-    // Allow requests with either Authorization header or apikey header
     if (!authHeader && !apiKey) {
       return new Response(
         JSON.stringify({ error: 'Missing authorization' }),
@@ -420,7 +695,6 @@ serve(async (req) => {
     const body: SyncRequest = await req.json();
     const { message, sessionId, stream = false, context } = body;
 
-    // Validate input
     if (!message?.trim()) {
       return new Response(
         JSON.stringify({ error: 'Message is required' }),
@@ -435,29 +709,24 @@ serve(async (req) => {
       );
     }
 
-    // Get or create session
     const session = getOrCreateSession(sessionId);
+    const companyId = context?.companyId || DEFAULT_COMPANY_ID;
+    const userId = context?.userId;
 
-    // Update context if provided
     if (context) {
       session.context = { ...session.context, ...context };
     }
 
-    // Detect agent routing BEFORE adding to messages
     const routingResult = detectAgentFromMessage(message);
-
-    // Add user message to history
     session.messages.push({ role: 'user', content: message });
 
-    // Build messages for API
     const apiMessages = [
       { role: 'system', content: SYNC_SYSTEM_PROMPT },
-      ...session.messages.slice(-10), // Keep last 10 messages for context
+      ...session.messages.slice(-10),
     ];
 
-    // Handle streaming request
     if (stream) {
-      return handleStreamingRequest(apiMessages, session, routingResult);
+      return handleStreamingRequest(apiMessages, session, routingResult, companyId, userId);
     }
 
     // Non-streaming request
@@ -536,8 +805,6 @@ serve(async (req) => {
         if (delegateInfo.delegate?.agent) {
           delegatedTo = delegateInfo.delegate.agent;
         }
-
-        // Remove the JSON from the response and add delegation info
         assistantMessage = assistantMessage.replace(delegateMatch[0], '').trim();
         if (!assistantMessage) {
           assistantMessage = `I'm routing your request to the ${AGENTS[delegatedTo as keyof typeof AGENTS]?.name || delegatedTo} for specialized handling.`;
@@ -547,19 +814,28 @@ serve(async (req) => {
       }
     }
 
-    // Store assistant response
+    // Check for and execute action blocks
+    let actionExecuted: ActionResult | null = null;
+    const actionData = parseActionFromResponse(assistantMessage);
+    if (actionData) {
+      actionExecuted = await executeAction(actionData, companyId, userId);
+      assistantMessage = assistantMessage.replace(/\[ACTION\][\s\S]*?\[\/ACTION\]/g, '').trim();
+      if (actionExecuted) {
+        assistantMessage = assistantMessage + '\n\n' + actionExecuted.message;
+      }
+    }
+
     session.messages.push({ role: 'assistant', content: assistantMessage });
     sessions.set(session.id, { messages: session.messages, context: session.context });
 
     // Log usage for tracking
     if (context?.companyId) {
       try {
-        const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
         await supabase.from('ai_usage_log').insert({
           company_id: context.companyId,
           user_id: context.userId || null,
           model: 'meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8',
-          cost_usd: 0, // Free model
+          cost_usd: 0,
           content_type: 'chat',
           metadata: {
             sessionId: session.id,
@@ -569,6 +845,7 @@ serve(async (req) => {
               matchedKeywords: routingResult.matchedKeywords,
             },
             messageLength: message.length,
+            actionExecuted: actionExecuted ? actionData?.action : null,
           },
         });
       } catch (logError) {
@@ -589,6 +866,12 @@ serve(async (req) => {
         promptTokens: data.usage.prompt_tokens,
         completionTokens: data.usage.completion_tokens,
         totalTokens: data.usage.total_tokens,
+      } : undefined,
+      actionExecuted: actionExecuted ? {
+        success: actionExecuted.success,
+        type: actionData?.action,
+        result: actionExecuted.result,
+        link: actionExecuted.link,
       } : undefined,
     };
 
