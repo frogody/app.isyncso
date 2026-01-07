@@ -3,7 +3,7 @@
  * Main orchestrator endpoint for processing user messages
  * Supports both standard and streaming responses
  *
- * Phase 2: 31 Actions (Finance + Products + Growth + Tasks)
+ * Phase 3 & 4: 51 Actions (All Modules)
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -14,6 +14,11 @@ import { executeFinanceAction } from './tools/finance.ts';
 import { executeProductsAction } from './tools/products.ts';
 import { executeGrowthAction } from './tools/growth.ts';
 import { executeTasksAction } from './tools/tasks.ts';
+import { executeInboxAction } from './tools/inbox.ts';
+import { executeTeamAction } from './tools/team.ts';
+import { executeLearnAction } from './tools/learn.ts';
+import { executeSentinelAction } from './tools/sentinel.ts';
+import { executeCreateAction } from './tools/create.ts';
 import { ActionContext, ActionResult } from './tools/types.ts';
 
 const corsHeaders = {
@@ -78,6 +83,41 @@ const TASK_ACTIONS = [
   'get_overdue_tasks',
 ];
 
+const INBOX_ACTIONS = [
+  'list_conversations',
+  'create_conversation',
+  'send_message',
+  'search_messages',
+  'get_unread_count',
+];
+
+const TEAM_ACTIONS = [
+  'create_team',
+  'list_teams',
+  'add_team_member',
+  'remove_team_member',
+  'list_team_members',
+  'invite_user',
+];
+
+const LEARN_ACTIONS = [
+  'list_courses',
+  'get_learning_progress',
+  'enroll_course',
+  'recommend_courses',
+];
+
+const SENTINEL_ACTIONS = [
+  'register_ai_system',
+  'list_ai_systems',
+  'get_compliance_status',
+];
+
+const CREATE_ACTIONS = [
+  'generate_image',
+  'list_generated_content',
+];
+
 // ============================================================================
 // Action Parsing and Execution
 // ============================================================================
@@ -121,6 +161,26 @@ async function executeAction(
 
   if (TASK_ACTIONS.includes(action.action)) {
     return executeTasksAction(ctx, action.action, action.data);
+  }
+
+  if (INBOX_ACTIONS.includes(action.action)) {
+    return executeInboxAction(ctx, action.action, action.data);
+  }
+
+  if (TEAM_ACTIONS.includes(action.action)) {
+    return executeTeamAction(ctx, action.action, action.data);
+  }
+
+  if (LEARN_ACTIONS.includes(action.action)) {
+    return executeLearnAction(ctx, action.action, action.data);
+  }
+
+  if (SENTINEL_ACTIONS.includes(action.action)) {
+    return executeSentinelAction(ctx, action.action, action.data);
+  }
+
+  if (CREATE_ACTIONS.includes(action.action)) {
+    return executeCreateAction(ctx, action.action, action.data);
   }
 
   // Unknown action
@@ -349,12 +409,12 @@ function getOrCreateSession(sessionId?: string): { id: string; messages: Array<{
 }
 
 // ============================================================================
-// System Prompt - Phase 2 (31 Actions)
+// System Prompt - Phase 3 & 4 (51 Actions)
 // ============================================================================
 
 const SYNC_SYSTEM_PROMPT = `You are SYNC, the central AI orchestrator for iSyncSO - an intelligent business platform.
 
-You can EXECUTE REAL ACTIONS by including an [ACTION] block in your response. You have 31 actions across 4 categories.
+You can EXECUTE REAL ACTIONS by including an [ACTION] block in your response. You have 51 actions across 9 categories.
 
 ## IMPORTANT: Automatic Product Price Lookup
 When creating proposals or invoices, you can OMIT the unit_price field. The system will automatically look up prices from the product inventory.
@@ -400,6 +460,36 @@ When creating proposals or invoices, you can OMIT the unit_price field. The syst
 - **get_my_tasks**: Get tasks assigned to current user
 - **get_overdue_tasks**: Get all overdue tasks
 
+### INBOX/MESSAGING (5 actions)
+- **list_conversations**: List chat conversations
+- **create_conversation**: Start a new conversation
+- **send_message**: Send a message in a conversation
+- **search_messages**: Search message history
+- **get_unread_count**: Get unread message count
+
+### TEAM MANAGEMENT (6 actions)
+- **create_team**: Create a new team
+- **list_teams**: List all teams
+- **add_team_member**: Add a user to a team
+- **remove_team_member**: Remove a user from a team
+- **list_team_members**: List members of a team
+- **invite_user**: Send an invitation to join
+
+### LEARN (4 actions)
+- **list_courses**: List available courses
+- **get_learning_progress**: Get user's learning progress
+- **enroll_course**: Enroll in a course
+- **recommend_courses**: Get AI course recommendations
+
+### SENTINEL/COMPLIANCE (3 actions)
+- **register_ai_system**: Register an AI system for compliance
+- **list_ai_systems**: List registered AI systems
+- **get_compliance_status**: Get EU AI Act compliance overview
+
+### CREATE/AI GENERATION (2 actions)
+- **generate_image**: Generate an AI image (product, marketing, creative)
+- **list_generated_content**: List generated AI content
+
 ## Action Examples
 
 ### Finance
@@ -425,6 +515,29 @@ When creating proposals or invoices, you can OMIT the unit_price field. The syst
 [ACTION]{"action": "complete_task", "data": {"title": "Review proposal"}}[/ACTION]
 [ACTION]{"action": "get_overdue_tasks", "data": {}}[/ACTION]
 
+### Inbox/Messaging
+[ACTION]{"action": "list_conversations", "data": {"limit": 10}}[/ACTION]
+[ACTION]{"action": "create_conversation", "data": {"title": "Project Discussion", "participant_ids": ["user-id-1"]}}[/ACTION]
+[ACTION]{"action": "send_message", "data": {"conversation_id": "conv-id", "content": "Hello team!"}}[/ACTION]
+
+### Team Management
+[ACTION]{"action": "create_team", "data": {"name": "Sales Team", "description": "Outbound sales"}}[/ACTION]
+[ACTION]{"action": "list_team_members", "data": {"team_name": "Sales Team"}}[/ACTION]
+[ACTION]{"action": "invite_user", "data": {"email": "newuser@company.com", "role": "member"}}[/ACTION]
+
+### Learn
+[ACTION]{"action": "list_courses", "data": {"category": "sales", "limit": 5}}[/ACTION]
+[ACTION]{"action": "get_learning_progress", "data": {}}[/ACTION]
+[ACTION]{"action": "recommend_courses", "data": {"interests": ["ai", "marketing"]}}[/ACTION]
+
+### Sentinel/Compliance
+[ACTION]{"action": "register_ai_system", "data": {"name": "Customer Chatbot", "type": "chatbot", "risk_level": "low"}}[/ACTION]
+[ACTION]{"action": "get_compliance_status", "data": {}}[/ACTION]
+
+### Create/AI Generation
+[ACTION]{"action": "generate_image", "data": {"prompt": "Professional product photo of smartphone on white background", "style": "photorealistic"}}[/ACTION]
+[ACTION]{"action": "list_generated_content", "data": {"content_type": "image", "limit": 10}}[/ACTION]
+
 ## Rules
 1. ALWAYS include [ACTION] block when user requests an action
 2. Extract names, quantities, and details from user's natural language
@@ -432,7 +545,9 @@ When creating proposals or invoices, you can OMIT the unit_price field. The syst
 4. Confirm what action you're taking before the [ACTION] block
 5. For pipeline stages use: new, contacted, qualified, proposal, negotiation, won, lost
 6. For task priorities use: low, medium, high, urgent
-7. For task statuses use: pending, in_progress, completed, cancelled`;
+7. For task statuses use: pending, in_progress, completed, cancelled
+8. For AI risk levels use: low, medium, high, critical
+9. For image styles use: photorealistic, artistic, minimalist, vibrant`;
 
 // ============================================================================
 // Request/Response Types
