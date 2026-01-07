@@ -62,6 +62,9 @@ import {
   Image,
   Video,
   FolderOpen,
+  Truck,
+  PackageCheck,
+  Wallet,
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -246,7 +249,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
   }
 
   // PRODUCTS routes
-  if (path.includes('products') || path.includes('productdetail')) {
+  if (path.includes('products') || path.includes('productdetail') || path.includes('inventory')) {
     const { digitalEnabled = true, physicalEnabled = true } = productsSettings;
 
     // Build items list based on settings
@@ -259,6 +262,13 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
     }
     if (physicalEnabled) {
       items.push({ label: 'Physical', path: createPageUrl('ProductsPhysical'), icon: Box });
+    }
+
+    // Inventory management items (only for physical products)
+    if (physicalEnabled) {
+      items.push({ label: 'Receiving', path: createPageUrl('InventoryReceiving'), icon: PackageCheck });
+      items.push({ label: 'Shipping', path: createPageUrl('InventoryShipping'), icon: Truck });
+      items.push({ label: 'Expenses', path: createPageUrl('InventoryExpenses'), icon: Wallet });
     }
 
     return {
