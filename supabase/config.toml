@@ -3,3 +3,6 @@ verify_jwt = false
 
 [functions.generate-video]
 verify_jwt = false
+
+[functions.enhance-prompt]
+verify_jwt = false

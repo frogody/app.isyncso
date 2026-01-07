@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
+const TOGETHER_API_KEY = Deno.env.get("TOGETHER_API_KEY");
 
 const SYSTEM_PROMPT = `You are an expert AI image prompt engineer. Your job is to transform user prompts into highly optimized, detailed prompts that produce stunning images.
 
@@ -94,15 +94,15 @@ serve(async (req) => {
       userMessage += `\n\nContext:\n${context.map(c => `- ${c}`).join('\n')}`;
     }
 
-    // Call Groq for fast inference
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    // Call Together.ai for fast inference (using Meta Llama)
+    const response = await fetch('https://api.together.xyz/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${GROQ_API_KEY}`,
+        'Authorization': `Bearer ${TOGETHER_API_KEY}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
+        model: 'meta-llama/Llama-3.3-70B-Instruct-Turbo',
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: userMessage }
@@ -115,16 +115,17 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error('Groq API error:', errText);
+      console.error('Together.ai API error:', errText);
 
-      // Fallback: return a basic enhancement
+      // Fallback: return a basic enhancement with error info for debugging
       return new Response(
         JSON.stringify({
           enhanced_prompt: prompt,
           style_tags: [style || 'photorealistic'],
           negative_prompt: 'blurry, low quality, distorted',
           composition_notes: 'Standard composition',
-          fallback: true
+          fallback: true,
+          debug_error: errText.slice(0, 200)
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
