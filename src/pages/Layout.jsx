@@ -63,8 +63,7 @@ import {
   Video,
   FolderOpen,
   Truck,
-  PackageCheck,
-  Wallet
+  PackageCheck
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -264,10 +263,9 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       items.push({ label: 'Physical', path: createPageUrl('ProductsPhysical'), icon: Box });
     }
 
-    // Inventory management items
+    // Inventory management items (Receiving and Shipping only - Expenses is in Finance)
     items.push({ label: 'Receiving', path: createPageUrl('InventoryReceiving'), icon: PackageCheck });
     items.push({ label: 'Shipping', path: createPageUrl('InventoryShipping'), icon: Truck });
-    items.push({ label: 'Expenses', path: createPageUrl('InventoryExpenses'), icon: Wallet });
 
     return {
       title: 'PRODUCTS',
