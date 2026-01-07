@@ -11,18 +11,22 @@ export function PageHeader({
   color = 'cyan' 
 }) {
   const colorClasses = {
-    cyan: { icon: 'text-cyan-400', iconBg: 'bg-cyan-500/20', gradient: 'from-cyan-500/10 to-transparent' },
-    sage: { icon: 'text-[#86EFAC]', iconBg: 'bg-[#86EFAC]/20', gradient: 'from-[#86EFAC]/10 to-transparent' },
-    indigo: { icon: 'text-indigo-400', iconBg: 'bg-indigo-500/20', gradient: 'from-indigo-500/10 to-transparent' },
-    purple: { icon: 'text-purple-400', iconBg: 'bg-purple-500/20', gradient: 'from-purple-500/10 to-transparent' },
-    orange: { icon: 'text-orange-400', iconBg: 'bg-orange-500/20', gradient: 'from-orange-500/10 to-transparent' },
-    red: { icon: 'text-red-400', iconBg: 'bg-red-500/20', gradient: 'from-red-500/10 to-transparent' },
-    emerald: { icon: 'text-emerald-400', iconBg: 'bg-emerald-500/20', gradient: 'from-emerald-500/10 to-transparent' },
-    amber: { icon: 'text-amber-400', iconBg: 'bg-amber-500/20', gradient: 'from-amber-500/10 to-transparent' },
-    rose: { icon: 'text-rose-400', iconBg: 'bg-rose-500/20', gradient: 'from-rose-500/10 to-transparent' },
+    cyan: { icon: 'text-cyan-400', iconBg: 'bg-cyan-500/20', border: 'border-cyan-500/30', gradient: 'from-cyan-500/10 to-transparent' },
+    sage: { icon: 'text-[#86EFAC]', iconBg: 'bg-[#86EFAC]/20', border: 'border-[#86EFAC]/30', gradient: 'from-[#86EFAC]/10 to-transparent' },
+    indigo: { icon: 'text-indigo-400', iconBg: 'bg-indigo-500/20', border: 'border-indigo-500/30', gradient: 'from-indigo-500/10 to-transparent' },
+    purple: { icon: 'text-purple-400', iconBg: 'bg-purple-500/20', border: 'border-purple-500/30', gradient: 'from-purple-500/10 to-transparent' },
+    orange: { icon: 'text-orange-400', iconBg: 'bg-orange-500/20', border: 'border-orange-500/30', gradient: 'from-orange-500/10 to-transparent' },
+    red: { icon: 'text-red-400', iconBg: 'bg-red-500/20', border: 'border-red-500/30', gradient: 'from-red-500/10 to-transparent' },
+    emerald: { icon: 'text-emerald-400', iconBg: 'bg-emerald-500/20', border: 'border-emerald-500/30', gradient: 'from-emerald-500/10 to-transparent' },
+    amber: { icon: 'text-amber-400', iconBg: 'bg-amber-500/20', border: 'border-amber-500/30', gradient: 'from-amber-500/10 to-transparent' },
+    rose: { icon: 'text-rose-400', iconBg: 'bg-rose-500/20', border: 'border-rose-500/30', gradient: 'from-rose-500/10 to-transparent' },
+    yellow: { icon: 'text-yellow-400', iconBg: 'bg-yellow-500/20', border: 'border-yellow-500/30', gradient: 'from-yellow-500/10 to-transparent' },
+    blue: { icon: 'text-blue-400', iconBg: 'bg-blue-500/20', border: 'border-blue-500/30', gradient: 'from-blue-500/10 to-transparent' },
+    green: { icon: 'text-green-400', iconBg: 'bg-green-500/20', border: 'border-green-500/30', gradient: 'from-green-500/10 to-transparent' },
   };
 
-  const colors = colorClasses[color];
+  // Safe fallback to cyan if color not found
+  const colors = colorClasses[color] || colorClasses.cyan;
 
   return (
     <motion.div
@@ -42,7 +46,7 @@ export function PageHeader({
       <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           {Icon && (
-            <div className={cn('w-14 h-14 rounded-2xl flex items-center justify-center border', colors.iconBg, `border-${color}-500/30`)}>
+            <div className={cn('w-14 h-14 rounded-2xl flex items-center justify-center border', colors.iconBg, colors.border)}>
               <Icon className={cn('w-7 h-7', colors.icon)} />
             </div>
           )}
