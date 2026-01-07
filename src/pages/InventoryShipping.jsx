@@ -226,23 +226,41 @@ function ShipModal({ task, isOpen, onClose, onShip }) {
   );
 }
 
-// Default style fallback
-const DEFAULT_STYLE = {
-  bg: "bg-zinc-500/10",
-  text: "text-zinc-400",
-  border: "border-zinc-500/30",
-  icon: Clock,
-};
+// Helper to safely get status style
+function getStatusStyle(statusKey) {
+  const style = STATUS_STYLES[statusKey];
+  if (style && style.bg && style.text && style.border) {
+    return style;
+  }
+  // Return safe fallback
+  return {
+    bg: "bg-zinc-500/10",
+    text: "text-zinc-400",
+    border: "border-zinc-500/30",
+    icon: Clock,
+  };
+}
+
+// Helper to safely get priority style
+function getPriorityStyle(priorityKey) {
+  const style = PRIORITY_STYLES[priorityKey];
+  if (style && style.bg && style.text) {
+    return style;
+  }
+  return { bg: "bg-zinc-500/10", text: "text-zinc-400" };
+}
 
 // Shipping task card
 function ShippingTaskCard({ task, onShip }) {
   // Defensive: ensure task exists
   if (!task) return null;
 
-  // Always ensure we have a valid style object
-  const status = (task.status && STATUS_STYLES[task.status]) || STATUS_STYLES.pending || DEFAULT_STYLE;
-  const priority = (task.priority && PRIORITY_STYLES[task.priority]) || PRIORITY_STYLES.normal || DEFAULT_STYLE;
-  const StatusIcon = (status && status.icon) || Clock;
+  // Get safe style objects
+  const status = getStatusStyle(task.status);
+  const priority = getPriorityStyle(task.priority);
+
+  // Safely get icon - use Clock as ultimate fallback
+  const StatusIcon = (status.icon && typeof status.icon === 'function') ? status.icon : Clock;
 
   const isShippable = ["pending", "ready_to_ship"].includes(task.status);
 
