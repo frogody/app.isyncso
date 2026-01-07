@@ -258,31 +258,169 @@ export default function CreateImages() {
     }
   };
 
+  // Helper: Convert hex color to natural description
+  const hexToColorDescription = (hex) => {
+    if (!hex) return null;
+    const colorMap = {
+      // Common color patterns
+      '#000': 'black', '#fff': 'white', '#f00': 'red', '#0f0': 'green', '#00f': 'blue',
+      '#ff0': 'yellow', '#0ff': 'cyan', '#f0f': 'magenta',
+    };
+
+    // Check exact matches first
+    const normalized = hex.toLowerCase().replace('#', '');
+    for (const [key, value] of Object.entries(colorMap)) {
+      if (key.replace('#', '') === normalized) return value;
+    }
+
+    // Parse RGB and describe
+    let r, g, b;
+    if (normalized.length === 3) {
+      r = parseInt(normalized[0] + normalized[0], 16);
+      g = parseInt(normalized[1] + normalized[1], 16);
+      b = parseInt(normalized[2] + normalized[2], 16);
+    } else if (normalized.length === 6) {
+      r = parseInt(normalized.slice(0, 2), 16);
+      g = parseInt(normalized.slice(2, 4), 16);
+      b = parseInt(normalized.slice(4, 6), 16);
+    } else {
+      return null;
+    }
+
+    // Determine color family and intensity
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const lightness = (max + min) / 2 / 255;
+
+    let intensity = '';
+    if (lightness < 0.2) intensity = 'dark ';
+    else if (lightness < 0.4) intensity = 'deep ';
+    else if (lightness > 0.8) intensity = 'light ';
+    else if (lightness > 0.6) intensity = 'soft ';
+
+    // Determine hue
+    if (max - min < 30) {
+      if (lightness < 0.3) return 'charcoal';
+      if (lightness > 0.7) return 'off-white';
+      return 'gray';
+    }
+
+    if (r >= g && r >= b) {
+      if (g > b * 1.5) return intensity + 'orange';
+      if (b > 100 && r > 200) return intensity + 'pink';
+      return intensity + 'red';
+    }
+    if (g >= r && g >= b) {
+      if (b > r) return intensity + 'teal';
+      if (r > 150) return intensity + 'lime';
+      return intensity + 'green';
+    }
+    if (b >= r && b >= g) {
+      if (r > g * 1.3) return intensity + 'purple';
+      if (g > 150) return intensity + 'cyan';
+      return intensity + 'blue';
+    }
+    return null;
+  };
+
+  // Style-specific enhancements
+  const getStyleEnhancements = (styleId) => {
+    const styleEnhancements = {
+      photorealistic: 'ultra-realistic photograph, professional photography, sharp focus, high resolution, natural textures',
+      illustration: 'detailed illustration, artistic rendering, clean lines, vibrant artwork',
+      '3d_render': '3D rendered, octane render, ray tracing, volumetric lighting, smooth surfaces',
+      digital_art: 'digital artwork, highly detailed, artstation quality, concept art style',
+      watercolor: 'watercolor painting style, soft edges, color bleeding, artistic brushstrokes, paper texture',
+      minimalist: 'minimalist composition, clean background, simple elegant design, negative space',
+      vintage: 'vintage aesthetic, retro color grading, film grain, nostalgic atmosphere',
+      cinematic: 'cinematic composition, dramatic lighting, movie still quality, anamorphic lens, depth of field',
+    };
+    return styleEnhancements[styleId] || '';
+  };
+
+  // Use case specific prompt templates
+  const getUseCaseEnhancements = (useCaseId, hasReferenceImage) => {
+    if (hasReferenceImage) {
+      // For in-context editing, keep the prompt focused on the scene/environment
+      const enhancements = {
+        product_variation: 'maintaining exact product appearance, only changing the background and environment',
+        product_scene: 'preserving product details while placing in lifestyle context',
+      };
+      return enhancements[useCaseId] || '';
+    }
+
+    const enhancements = {
+      marketing_creative: 'professional marketing imagery, commercial quality, brand-aligned aesthetic',
+      quick_draft: 'concept visualization',
+      premium_quality: 'ultra high quality, professional commercial photography, perfect composition, studio lighting',
+    };
+    return enhancements[useCaseId] || '';
+  };
+
   const buildEnhancedPrompt = () => {
-    let enhanced = prompt;
-    const style = STYLE_PRESETS.find(s => s.id === selectedStyle);
-    if (style) {
-      enhanced += ` Style: ${style.label}.`;
+    const useCase = USE_CASES[selectedUseCase];
+    const hasReferenceImage = useCase?.requiresReferenceImage && selectedReferenceImage;
+
+    // Start with base prompt
+    let parts = [];
+
+    // For reference image modes, the prompt describes the desired scene/background
+    if (hasReferenceImage) {
+      if (prompt.trim()) {
+        parts.push(prompt.trim());
+      }
+      parts.push(getUseCaseEnhancements(selectedUseCase, true));
+    } else {
+      // For text-to-image, build a comprehensive prompt
+      if (prompt.trim()) {
+        parts.push(prompt.trim());
+      }
+
+      // Add product context naturally
+      if (selectedProduct) {
+        const productType = selectedProduct.type === 'physical' ? 'product' : 'software interface';
+        parts.push(`featuring ${selectedProduct.name}`);
+      }
     }
+
+    // Add style enhancements
+    const styleEnhancement = getStyleEnhancements(selectedStyle);
+    if (styleEnhancement) {
+      parts.push(styleEnhancement);
+    }
+
+    // Add brand context naturally (not raw hex codes)
     if (useBrandContext && brandAssets) {
+      const colorDescriptions = [];
       if (brandAssets.colors?.primary) {
-        enhanced += ` Use brand colors: ${brandAssets.colors.primary}`;
-        if (brandAssets.colors?.secondary) {
-          enhanced += `, ${brandAssets.colors.secondary}`;
+        const primaryColor = hexToColorDescription(brandAssets.colors.primary);
+        if (primaryColor) colorDescriptions.push(primaryColor);
+      }
+      if (brandAssets.colors?.secondary) {
+        const secondaryColor = hexToColorDescription(brandAssets.colors.secondary);
+        if (secondaryColor && secondaryColor !== colorDescriptions[0]) {
+          colorDescriptions.push(secondaryColor);
         }
-        enhanced += '.';
       }
+      if (colorDescriptions.length > 0) {
+        parts.push(`color palette featuring ${colorDescriptions.join(' and ')}`);
+      }
+
       if (brandAssets.visual_style?.mood) {
-        enhanced += ` Mood: ${brandAssets.visual_style.mood}.`;
+        parts.push(`${brandAssets.visual_style.mood} atmosphere`);
       }
     }
-    if (selectedProduct) {
-      enhanced += ` Product: ${selectedProduct.name}.`;
-      if (selectedProduct.description) {
-        enhanced += ` ${selectedProduct.description.slice(0, 100)}.`;
+
+    // Add use case quality enhancements
+    if (!hasReferenceImage) {
+      const useCaseEnhancement = getUseCaseEnhancements(selectedUseCase, false);
+      if (useCaseEnhancement) {
+        parts.push(useCaseEnhancement);
       }
     }
-    return enhanced;
+
+    // Combine all parts naturally
+    return parts.filter(p => p).join(', ');
   };
 
   const handleGenerate = async () => {
