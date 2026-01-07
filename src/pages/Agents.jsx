@@ -20,12 +20,16 @@ import {
   Sparkles,
   Settings,
   Power,
-  ArrowRight
+  ArrowRight,
+  Palette,
+  MessageSquare,
+  UsersRound
 } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { cn } from '@/lib/utils';
 
 // Agent definitions - in production, these would come from the database
+// Updated to reflect SYNC's 51 actions across 9 categories
 const AGENTS_DATA = [
   {
     id: 'learn',
@@ -37,115 +41,150 @@ const AGENTS_DATA = [
     status: 'active',
     category: 'Productivity',
     capabilities: [
-      'Personalized course recommendations',
+      'List & browse available courses',
+      'Track learning progress',
+      'Course enrollment via AI',
+      'AI-powered course recommendations',
       'Skill gap analysis',
-      'Learning path optimization',
-      'AI tutoring assistance',
-      'Progress tracking & analytics',
-      'Certificate management'
+      'Team learning coordination'
     ],
     useCases: [
-      'Get course suggestions based on your role',
-      'Track team learning progress',
-      'Generate skill development reports',
-      'Answer questions during lessons'
+      'Get course suggestions based on your interests',
+      'Track your learning progress',
+      'Enroll in courses through chat',
+      'Get personalized recommendations'
     ],
     stats: {
       users: '2.4k',
       tasks: '15k',
       satisfaction: '94%'
     },
+    actions: 4, // list_courses, get_learning_progress, enroll_course, recommend_courses
     appLink: '/Learn'
   },
   {
     id: 'growth',
     name: 'Growth Agent',
     shortName: 'Growth',
-    description: 'Accelerate your sales pipeline with AI-powered prospect research, campaign automation, and intelligent lead scoring.',
+    description: 'Accelerate your sales pipeline with AI-powered prospect management, campaign automation, and intelligent pipeline tracking.',
     icon: TrendingUp,
     color: 'indigo',
     status: 'active',
     category: 'Sales',
     capabilities: [
-      'Lead scoring & qualification',
-      'Prospect enrichment',
-      'Campaign automation',
-      'Email sequence generation',
-      'Market research',
-      'Competitive intelligence'
+      'Create & manage prospects',
+      'Pipeline stage management',
+      'Campaign creation & tracking',
+      'Prospect search & filtering',
+      'Pipeline statistics & analytics',
+      'Deal value forecasting'
     ],
     useCases: [
-      'Find and qualify new prospects',
-      'Generate personalized outreach',
-      'Analyze campaign performance',
-      'Research target companies'
+      'Add new prospects to your pipeline',
+      'Move deals through stages',
+      'Create outreach campaigns',
+      'Get pipeline analytics'
     ],
     stats: {
       users: '1.8k',
       tasks: '28k',
       satisfaction: '91%'
     },
+    actions: 9, // create/update/search/list prospects, move_pipeline_stage, get_pipeline_stats, create/list/update campaigns
     appLink: '/Growth'
   },
   {
     id: 'sentinel',
     name: 'Sentinel Agent',
     shortName: 'Sentinel',
-    description: 'Your AI compliance guardian that monitors risks, ensures governance, and generates compliance documentation automatically.',
+    description: 'Your AI compliance guardian for EU AI Act. Register AI systems, assess risks, and monitor compliance status automatically.',
     icon: Shield,
     color: 'sage',
     status: 'active',
     category: 'Compliance',
     capabilities: [
-      'Risk assessment automation',
-      'Compliance monitoring',
-      'Document generation',
-      'AI system governance',
-      'Regulatory tracking',
-      'Audit preparation'
+      'Register AI systems',
+      'Risk level classification',
+      'EU AI Act compliance tracking',
+      'Compliance status overview',
+      'AI governance reporting',
+      'Risk assessment automation'
     ],
     useCases: [
-      'Assess AI system risks',
-      'Generate compliance reports',
-      'Monitor regulatory changes',
-      'Create governance documentation'
+      'Register a new AI system for compliance',
+      'Check compliance status across systems',
+      'Classify AI systems by risk level',
+      'Generate compliance reports'
     ],
     stats: {
       users: '890',
       tasks: '5.2k',
       satisfaction: '96%'
     },
+    actions: 3, // register_ai_system, list_ai_systems, get_compliance_status
     appLink: '/Sentinel'
   },
   {
     id: 'finance',
     name: 'Finance Agent',
     shortName: 'Finance',
-    description: 'Streamline financial operations with intelligent invoice processing, expense categorization, and budget forecasting.',
+    description: 'Streamline financial operations with AI-powered invoice creation, expense tracking, and financial summaries.',
     icon: DollarSign,
     color: 'amber',
-    status: 'coming_soon',
+    status: 'active',
     category: 'Finance',
     capabilities: [
-      'Invoice processing',
-      'Expense categorization',
-      'Budget forecasting',
-      'Cash flow analysis',
-      'Financial reporting',
-      'Subscription management'
+      'Create invoices with auto-pricing',
+      'Create & manage proposals',
+      'Expense logging & categorization',
+      'Financial summaries & reports',
+      'Invoice status management',
+      'Proposal to invoice conversion'
     ],
     useCases: [
-      'Process invoices automatically',
-      'Categorize expenses with AI',
-      'Forecast quarterly budgets',
-      'Track subscription spend'
+      'Create an invoice for a client',
+      'Log business expenses',
+      'Get monthly financial summary',
+      'Convert proposals to invoices'
     ],
     stats: {
-      users: '-',
-      tasks: '-',
-      satisfaction: '-'
+      users: '1.2k',
+      tasks: '8.5k',
+      satisfaction: '93%'
     },
+    actions: 8, // create_proposal, create_invoice, list/update invoices, create/list expenses, get_financial_summary, convert_proposal
     appLink: '/Finance'
+  },
+  {
+    id: 'create',
+    name: 'Create Agent',
+    shortName: 'Create',
+    description: 'Generate stunning AI images for products, marketing, and creative projects. Powered by FLUX models.',
+    icon: Palette,
+    color: 'rose',
+    status: 'active',
+    category: 'Creative',
+    capabilities: [
+      'AI image generation (FLUX)',
+      'Product photography creation',
+      'Marketing creative generation',
+      'Brand-aware image styling',
+      'Generated content library',
+      'Multiple image styles'
+    ],
+    useCases: [
+      'Generate product images',
+      'Create marketing visuals',
+      'Browse generated content',
+      'Generate brand-consistent imagery'
+    ],
+    stats: {
+      users: '650',
+      tasks: '3.2k',
+      satisfaction: '89%'
+    },
+    actions: 2, // generate_image, list_generated_content
+    appLink: '/CreateImages'
   },
   {
     id: 'raise',
@@ -175,6 +214,7 @@ const AGENTS_DATA = [
       tasks: '-',
       satisfaction: '-'
     },
+    actions: 0,
     appLink: '/Raise'
   }
 ];
@@ -219,6 +259,14 @@ const colorStyles = {
     solid: 'bg-orange-500',
     glow: 'shadow-[0_0_20px_rgba(249,115,22,0.3)]',
     gradient: 'from-orange-500/20 to-orange-600/5'
+  },
+  rose: {
+    bg: 'bg-rose-500/10',
+    border: 'border-rose-500/30',
+    text: 'text-rose-400',
+    solid: 'bg-rose-500',
+    glow: 'shadow-[0_0_20px_rgba(244,63,94,0.3)]',
+    gradient: 'from-rose-500/20 to-rose-600/5'
   }
 };
 

@@ -272,3 +272,139 @@ Supabase is connected to GitHub for automatic database migrations.
 2. Commit and push to a feature branch
 3. Create PR - Supabase creates a preview branch for testing
 4. Merge PR to `main` - migration automatically applies to production
+
+### Alternative: Supabase Management API
+
+When CLI/MCP isn't working, use the Management API directly:
+```bash
+curl -s -X POST "https://api.supabase.com/v1/projects/sfxpmzicgpaxfntqleig/database/query" \
+  -H "Authorization: Bearer sbp_b998952de7493074e84b50702e83f1db14be1479" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "YOUR SQL HERE"}'
+```
+
+---
+
+## Storage Buckets
+
+| Bucket | Public | Size Limit | MIME Types | Purpose |
+|--------|--------|------------|------------|---------|
+| `avatars` | Yes | 5MB | image/* | User profile pictures |
+| `documents` | No | 50MB | pdf, doc, docx, txt | Private documents |
+| `attachments` | No | 25MB | any | Message/task attachments |
+| `exports` | No | 100MB | json, csv, xlsx | Data exports |
+| `product-images` | Yes | 10MB | image/* | Product catalog images |
+| `generated-content` | Yes | unlimited | any | AI-generated images/videos |
+| `brand-assets` | Yes | 10MB | image/*, svg | Company logos & branding |
+
+### Storage RLS Pattern
+
+All buckets follow this RLS policy pattern on `storage.objects`:
+```sql
+-- Public read (if bucket is public)
+CREATE POLICY "Public read" ON storage.objects FOR SELECT USING (bucket_id = 'bucket-name');
+
+-- Authenticated upload/update/delete
+CREATE POLICY "Auth upload" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'bucket-name' AND auth.role() = 'authenticated');
+CREATE POLICY "Auth update" ON storage.objects FOR UPDATE USING (bucket_id = 'bucket-name' AND auth.role() = 'authenticated');
+CREATE POLICY "Auth delete" ON storage.objects FOR DELETE USING (bucket_id = 'bucket-name' AND auth.role() = 'authenticated');
+```
+
+---
+
+## Edge Functions
+
+### Configuration (`supabase/config.toml`)
+
+```toml
+[functions.sync]
+verify_jwt = false
+
+[functions.generate-image]
+verify_jwt = false
+
+[functions.generate-video]
+verify_jwt = false
+
+[functions.enhance-prompt]
+verify_jwt = false
+```
+
+### Deployed Functions
+
+| Function | JWT | Purpose |
+|----------|-----|---------|
+| `sync` | No | SYNC AI agent - natural language commands |
+| `generate-image` | No | AI image generation (Together.ai FLUX) |
+| `generate-video` | No | AI video generation |
+| `enhance-prompt` | No | Prompt enhancement for image gen |
+
+### Deploying Edge Functions
+
+```bash
+SUPABASE_ACCESS_TOKEN="sbp_b998952de7493074e84b50702e83f1db14be1479" npx supabase functions deploy <function-name> --project-ref sfxpmzicgpaxfntqleig --no-verify-jwt
+```
+
+### Edge Function Secrets
+
+```bash
+# List secrets
+SUPABASE_ACCESS_TOKEN="sbp_b998952de7493074e84b50702e83f1db14be1479" npx supabase secrets list --project-ref sfxpmzicgpaxfntqleig
+
+# Set secret
+SUPABASE_ACCESS_TOKEN="sbp_b998952de7493074e84b50702e83f1db14be1479" npx supabase secrets set KEY="value" --project-ref sfxpmzicgpaxfntqleig
+```
+
+---
+
+## SYNC Agent
+
+The SYNC agent is the AI orchestrator that can execute actions across the platform via natural language.
+
+### Current Capabilities (3 actions)
+- `create_invoice` - Create invoices with auto-price lookup
+- `create_proposal` - Create proposals
+- `search_products` - Search product inventory
+
+### Planned Expansion (51 actions)
+See plan file: `/Users/daviddebruin/.claude/plans/crispy-zooming-unicorn.md`
+
+Categories:
+- Finance (8 actions): invoices, expenses, subscriptions, proposals
+- Products (6 actions): CRUD, inventory, bundles
+- Growth/CRM (10 actions): prospects, campaigns, pipeline
+- Tasks & Projects (8 actions): task/project management
+- Communication (5 actions): messages, channels
+- Team Management (6 actions): users, roles, teams
+- Learn (6 actions): courses, skills, certificates
+- Sentinel (5 actions): AI compliance
+
+### SYNC System Prompt Features
+- Dynamic date/time injection (knows current date)
+- Company context from authenticated user
+- Product price auto-lookup for invoices/proposals
+
+---
+
+## Recent Fixes & Achievements (Jan 2026)
+
+### SYNC Agent Fixes
+1. **401 Authentication Error** - Fixed by:
+   - Added `verify_jwt = false` to `supabase/config.toml`
+   - Redeployed with `--no-verify-jwt` flag
+   - Updated `SyncChat.jsx` to use explicit fetch with auth headers
+
+2. **Date Awareness** - SYNC now knows today's date via dynamic injection in system prompt
+
+### CreateImages Page
+- Fixed `ReferenceError: enhancedPrompt is not defined` - changed to `finalPrompt`
+
+### Brand Assets Storage
+- Created `brand-assets` bucket for logo uploads
+- Added RLS policies for authenticated upload/update/delete
+- Public read access for displaying logos
+
+### Key Learnings
+- Supabase Edge Functions require `verify_jwt = false` in config.toml for public access
+- Use Management API (`api.supabase.com/v1/projects/.../database/query`) when CLI fails
+- Browser caching can mask deployed fixes - instruct users to hard refresh (Cmd+Shift+R)

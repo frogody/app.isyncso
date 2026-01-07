@@ -753,8 +753,12 @@ serve(async (req) => {
     const routingResult = detectAgentFromMessage(message);
     session.messages.push({ role: 'user', content: message });
 
+    // Add current date context to the system prompt
+    const now = new Date();
+    const dateContext = `\n\n## Current Date & Time\nToday is ${now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}. Current time: ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}.`;
+
     const apiMessages = [
-      { role: 'system', content: SYNC_SYSTEM_PROMPT },
+      { role: 'system', content: SYNC_SYSTEM_PROMPT + dateContext },
       ...session.messages.slice(-10),
     ];
 

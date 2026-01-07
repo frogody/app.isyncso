@@ -1,0 +1,653 @@
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Receipt, Search, Filter, Clock, Check, X, AlertTriangle,
+  Eye, FileText, Upload, Sparkles, ChevronRight, Edit2,
+  CheckCircle2, XCircle, RefreshCw, DollarSign, Calendar,
+  Building, Percent, ExternalLink
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { GlassCard, StatCard } from "@/components/ui/GlassCard";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import { useUser } from "@/components/context/UserContext";
+import { PermissionGuard } from "@/components/guards";
+import { toast } from "sonner";
+import {
+  listExpenses,
+  getExpense,
+  getReviewQueue,
+  approveExpense,
+  rejectExpense,
+} from "@/lib/db/queries";
+import { processInvoiceImage } from "@/lib/services/inventory-service";
+import { MIN_CONFIDENCE } from "@/lib/db/schema";
+
+const STATUS_STYLES = {
+  draft: {
+    bg: "bg-zinc-500/10",
+    text: "text-zinc-400",
+    border: "border-zinc-500/30",
+  },
+  pending_review: {
+    bg: "bg-yellow-500/10",
+    text: "text-yellow-400",
+    border: "border-yellow-500/30",
+  },
+  approved: {
+    bg: "bg-green-500/10",
+    text: "text-green-400",
+    border: "border-green-500/30",
+  },
+  processed: {
+    bg: "bg-blue-500/10",
+    text: "text-blue-400",
+    border: "border-blue-500/30",
+  },
+  archived: {
+    bg: "bg-zinc-500/10",
+    text: "text-zinc-400",
+    border: "border-zinc-500/30",
+  },
+};
+
+// Confidence indicator
+function ConfidenceIndicator({ confidence }) {
+  const percent = Math.round(confidence * 100);
+  let color = "bg-red-500";
+  let textColor = "text-red-400";
+
+  if (confidence >= MIN_CONFIDENCE) {
+    color = "bg-green-500";
+    textColor = "text-green-400";
+  } else if (confidence >= 0.7) {
+    color = "bg-yellow-500";
+    textColor = "text-yellow-400";
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <Progress value={percent} className={`w-24 h-2 ${color}`} />
+      <span className={`text-sm font-medium ${textColor}`}>{percent}%</span>
+    </div>
+  );
+}
+
+// Review modal
+function ReviewModal({ expense, isOpen, onClose, onApprove, onReject }) {
+  const [notes, setNotes] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleApprove = async () => {
+    setIsSubmitting(true);
+    try {
+      await onApprove(expense.id, notes);
+      onClose();
+      toast.success("Factuur goedgekeurd");
+    } catch (error) {
+      toast.error("Fout bij goedkeuren: " + error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!notes.trim()) {
+      toast.error("Geef een reden op voor afwijzing");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await onReject(expense.id, notes);
+      onClose();
+      toast.success("Factuur afgewezen");
+    } catch (error) {
+      toast.error("Fout bij afwijzen: " + error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!expense) return null;
+
+  const extractedData = expense.ai_extracted_data || {};
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FileText className="w-5 h-5 text-cyan-400" />
+            Factuur beoordelen
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-6 py-4">
+          {/* Confidence score */}
+          <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-900/50 border border-white/10">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-cyan-400" />
+              <span className="text-sm text-zinc-400">AI Betrouwbaarheid</span>
+            </div>
+            <ConfidenceIndicator confidence={expense.ai_confidence || 0} />
+          </div>
+
+          {/* Original document */}
+          {expense.original_file_url && (
+            <div>
+              <Label className="text-zinc-400">Origineel document</Label>
+              <div className="mt-2 rounded-lg border border-white/10 overflow-hidden">
+                <img
+                  src={expense.original_file_url}
+                  alt="Invoice"
+                  className="w-full max-h-64 object-contain bg-zinc-950"
+                />
+              </div>
+              <Button
+                variant="link"
+                size="sm"
+                className="mt-1 text-cyan-400"
+                onClick={() => window.open(expense.original_file_url, "_blank")}
+              >
+                <ExternalLink className="w-3 h-3 mr-1" />
+                Open in nieuw tabblad
+              </Button>
+            </div>
+          )}
+
+          {/* Extracted data */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-zinc-400">Leverancier</Label>
+              <p className="text-white font-medium">
+                {extractedData.supplier_name || expense.suppliers?.name || "-"}
+              </p>
+            </div>
+            <div>
+              <Label className="text-zinc-400">Factuurnummer</Label>
+              <p className="text-white font-medium">
+                {expense.external_reference || "-"}
+              </p>
+            </div>
+            <div>
+              <Label className="text-zinc-400">Factuurdatum</Label>
+              <p className="text-white font-medium">
+                {expense.invoice_date
+                  ? new Date(expense.invoice_date).toLocaleDateString("nl-NL")
+                  : "-"}
+              </p>
+            </div>
+            <div>
+              <Label className="text-zinc-400">Totaal</Label>
+              <p className="text-white font-medium text-lg">
+                € {expense.total?.toFixed(2) || "0.00"}
+              </p>
+            </div>
+          </div>
+
+          {/* Line items */}
+          {expense.expense_line_items && expense.expense_line_items.length > 0 && (
+            <div>
+              <Label className="text-zinc-400 mb-2 block">Regelitems</Label>
+              <div className="rounded-lg border border-white/10 overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-zinc-900/50">
+                    <tr className="text-left text-zinc-500">
+                      <th className="px-3 py-2">Omschrijving</th>
+                      <th className="px-3 py-2 text-right">Aantal</th>
+                      <th className="px-3 py-2 text-right">Prijs</th>
+                      <th className="px-3 py-2 text-right">Totaal</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {expense.expense_line_items.map((item) => (
+                      <tr key={item.id}>
+                        <td className="px-3 py-2 text-white">
+                          {item.description}
+                          {item.ean && (
+                            <span className="ml-2 text-xs text-zinc-500">
+                              EAN: {item.ean}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2 text-right text-zinc-400">
+                          {item.quantity}
+                        </td>
+                        <td className="px-3 py-2 text-right text-zinc-400">
+                          € {item.unit_price?.toFixed(2)}
+                        </td>
+                        <td className="px-3 py-2 text-right text-white">
+                          € {item.line_total?.toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-zinc-900/30">
+                    <tr>
+                      <td colSpan={3} className="px-3 py-2 text-right text-zinc-400">
+                        Subtotaal
+                      </td>
+                      <td className="px-3 py-2 text-right text-white">
+                        € {expense.subtotal?.toFixed(2)}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td colSpan={3} className="px-3 py-2 text-right text-zinc-400">
+                        BTW ({expense.tax_percent || 21}%)
+                      </td>
+                      <td className="px-3 py-2 text-right text-white">
+                        € {expense.tax_amount?.toFixed(2)}
+                      </td>
+                    </tr>
+                    <tr className="font-medium">
+                      <td colSpan={3} className="px-3 py-2 text-right text-white">
+                        Totaal
+                      </td>
+                      <td className="px-3 py-2 text-right text-cyan-400">
+                        € {expense.total?.toFixed(2)}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Review notes */}
+          <div>
+            <Label>Opmerkingen</Label>
+            <Textarea
+              placeholder="Eventuele opmerkingen bij de beoordeling..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="mt-1 bg-zinc-900/50 border-white/10"
+            />
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button
+            variant="destructive"
+            onClick={handleReject}
+            disabled={isSubmitting}
+          >
+            <XCircle className="w-4 h-4 mr-2" />
+            Afwijzen
+          </Button>
+          <Button
+            onClick={handleApprove}
+            disabled={isSubmitting}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            {isSubmitting ? (
+              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <CheckCircle2 className="w-4 h-4 mr-2" />
+            )}
+            Goedkeuren
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Expense card
+function ExpenseCard({ expense, onReview }) {
+  const status = STATUS_STYLES[expense.status] || STATUS_STYLES.draft;
+  const needsReview = expense.needs_review && expense.review_status === "pending";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`p-4 rounded-xl bg-zinc-900/50 border transition-all ${
+        needsReview
+          ? "border-yellow-500/30 hover:border-yellow-500/50"
+          : "border-white/5 hover:border-cyan-500/30"
+      }`}
+    >
+      <div className="flex items-start justify-between">
+        <div className="flex items-start gap-3">
+          <div className={`p-2 rounded-lg ${status.bg} ${status.border}`}>
+            <Receipt className={`w-5 h-5 ${status.text}`} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-medium text-white">
+                {expense.expense_number || expense.external_reference || "Factuur"}
+              </h3>
+              <Badge className={`${status.bg} ${status.text} ${status.border}`}>
+                {expense.status.replace("_", " ")}
+              </Badge>
+              {needsReview && (
+                <Badge className="bg-yellow-500/10 text-yellow-400 border-yellow-500/30">
+                  <AlertTriangle className="w-3 h-3 mr-1" />
+                  Review vereist
+                </Badge>
+              )}
+            </div>
+            <p className="text-sm text-zinc-400 mt-1">
+              {expense.suppliers?.name || "Onbekende leverancier"}
+            </p>
+          </div>
+        </div>
+
+        <div className="text-right">
+          <p className="text-lg font-semibold text-white">
+            € {expense.total?.toFixed(2) || "0.00"}
+          </p>
+          {expense.ai_confidence !== undefined && (
+            <ConfidenceIndicator confidence={expense.ai_confidence} />
+          )}
+        </div>
+      </div>
+
+      {/* Details row */}
+      <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between">
+        <div className="flex items-center gap-4 text-sm text-zinc-500">
+          {expense.invoice_date && (
+            <span className="flex items-center gap-1">
+              <Calendar className="w-4 h-4" />
+              {new Date(expense.invoice_date).toLocaleDateString("nl-NL")}
+            </span>
+          )}
+          {expense.expense_line_items && (
+            <span>{expense.expense_line_items.length} items</span>
+          )}
+          {expense.source_type === "email" && (
+            <Badge variant="outline" className="text-xs">
+              Via e-mail
+            </Badge>
+          )}
+        </div>
+
+        {needsReview ? (
+          <Button
+            size="sm"
+            onClick={() => onReview(expense)}
+            className="bg-yellow-600 hover:bg-yellow-700"
+          >
+            <Eye className="w-4 h-4 mr-2" />
+            Beoordelen
+          </Button>
+        ) : (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => onReview(expense)}
+          >
+            <Eye className="w-4 h-4 mr-2" />
+            Bekijken
+          </Button>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+// Review queue banner
+function ReviewQueueBanner({ count, onClick }) {
+  if (count === 0) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mb-6 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/30 cursor-pointer hover:bg-yellow-500/20 transition-colors"
+      onClick={onClick}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <AlertTriangle className="w-6 h-6 text-yellow-400" />
+          <div>
+            <h3 className="font-medium text-yellow-400">
+              {count} factuur{count > 1 ? "en" : ""} wachten op beoordeling
+            </h3>
+            <p className="text-sm text-yellow-400/70">
+              AI-extractie had &lt;{Math.round(MIN_CONFIDENCE * 100)}% betrouwbaarheid
+            </p>
+          </div>
+        </div>
+        <ChevronRight className="w-5 h-5 text-yellow-400" />
+      </div>
+    </motion.div>
+  );
+}
+
+export default function InventoryExpenses() {
+  const { user } = useUser();
+  const [expenses, setExpenses] = useState([]);
+  const [reviewQueue, setReviewQueue] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [filter, setFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const [selectedExpense, setSelectedExpense] = useState(null);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+
+  const companyId = user?.company_id;
+
+  // Load expenses
+  useEffect(() => {
+    if (!companyId) return;
+
+    const loadExpenses = async () => {
+      setIsLoading(true);
+      try {
+        const [expenseData, queueData] = await Promise.all([
+          listExpenses(companyId),
+          getReviewQueue(companyId),
+        ]);
+        setExpenses(expenseData);
+        setReviewQueue(queueData);
+      } catch (error) {
+        console.error("Failed to load expenses:", error);
+        toast.error("Kon uitgaven niet laden");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadExpenses();
+  }, [companyId]);
+
+  // Filter expenses
+  const filteredExpenses = expenses.filter((expense) => {
+    // Status filter
+    if (filter === "review" && !expense.needs_review) return false;
+    if (filter === "approved" && expense.status !== "approved") return false;
+    if (filter === "pending" && expense.status !== "pending_review") return false;
+
+    // Search filter
+    if (search) {
+      const searchLower = search.toLowerCase();
+      return (
+        expense.expense_number?.toLowerCase().includes(searchLower) ||
+        expense.external_reference?.toLowerCase().includes(searchLower) ||
+        expense.suppliers?.name?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    return true;
+  });
+
+  // Calculate stats
+  const totalAmount = expenses.reduce((sum, e) => sum + (e.total || 0), 0);
+  const stats = {
+    total: expenses.length,
+    pendingReview: reviewQueue.length,
+    approved: expenses.filter((e) => e.status === "approved").length,
+    totalAmount,
+  };
+
+  // Handlers
+  const handleReview = async (expense) => {
+    // Load full expense details
+    try {
+      const fullExpense = await getExpense(expense.id);
+      setSelectedExpense(fullExpense);
+      setShowReviewModal(true);
+    } catch (error) {
+      toast.error("Kon factuur niet laden");
+    }
+  };
+
+  const handleApprove = async (expenseId, notes) => {
+    await approveExpense(expenseId, user?.id, notes);
+    // Refresh
+    const [expenseData, queueData] = await Promise.all([
+      listExpenses(companyId),
+      getReviewQueue(companyId),
+    ]);
+    setExpenses(expenseData);
+    setReviewQueue(queueData);
+  };
+
+  const handleReject = async (expenseId, notes) => {
+    await rejectExpense(expenseId, user?.id, notes);
+    // Refresh
+    const [expenseData, queueData] = await Promise.all([
+      listExpenses(companyId),
+      getReviewQueue(companyId),
+    ]);
+    setExpenses(expenseData);
+    setReviewQueue(queueData);
+  };
+
+  return (
+    <PermissionGuard permission="finance.view" showMessage>
+      <div className="min-h-screen bg-background">
+        <PageHeader
+          title="Uitgaven"
+          subtitle="Beheer facturen en AI-extractie reviews"
+          icon={<Receipt className="w-6 h-6 text-cyan-400" />}
+          actions={
+            <Button className="bg-cyan-600 hover:bg-cyan-700">
+              <Upload className="w-4 h-4 mr-2" />
+              Factuur uploaden
+            </Button>
+          }
+        />
+
+        <div className="container mx-auto px-4 py-6">
+          {/* Review queue banner */}
+          <ReviewQueueBanner
+            count={stats.pendingReview}
+            onClick={() => setFilter("review")}
+          />
+
+          {/* Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <StatCard
+              icon={Receipt}
+              label="Totaal facturen"
+              value={stats.total}
+              color="cyan"
+            />
+            <StatCard
+              icon={AlertTriangle}
+              label="Te beoordelen"
+              value={stats.pendingReview}
+              color="yellow"
+            />
+            <StatCard
+              icon={Check}
+              label="Goedgekeurd"
+              value={stats.approved}
+              color="green"
+            />
+            <StatCard
+              icon={DollarSign}
+              label="Totaal bedrag"
+              value={`€ ${stats.totalAmount.toFixed(0)}`}
+              color="purple"
+            />
+          </div>
+
+          {/* Filters */}
+          <GlassCard className="p-4 mb-6">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                <Input
+                  placeholder="Zoek op factuurnummer of leverancier..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-9 bg-zinc-900/50 border-white/10"
+                />
+              </div>
+              <Tabs value={filter} onValueChange={setFilter}>
+                <TabsList className="bg-zinc-900/50">
+                  <TabsTrigger value="all">Alles</TabsTrigger>
+                  <TabsTrigger value="review">Te beoordelen</TabsTrigger>
+                  <TabsTrigger value="approved">Goedgekeurd</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+          </GlassCard>
+
+          {/* Expense list */}
+          {isLoading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-32 rounded-xl" />
+              ))}
+            </div>
+          ) : filteredExpenses.length === 0 ? (
+            <GlassCard className="p-12 text-center">
+              <Receipt className="w-16 h-16 mx-auto text-zinc-600 mb-4" />
+              <h3 className="text-lg font-medium text-white mb-2">
+                Geen facturen gevonden
+              </h3>
+              <p className="text-zinc-500">
+                {search
+                  ? "Probeer een andere zoekopdracht"
+                  : "Upload een factuur om te beginnen"}
+              </p>
+            </GlassCard>
+          ) : (
+            <div className="space-y-4">
+              {filteredExpenses.map((expense) => (
+                <ExpenseCard
+                  key={expense.id}
+                  expense={expense}
+                  onReview={handleReview}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Review modal */}
+        <ReviewModal
+          expense={selectedExpense}
+          isOpen={showReviewModal}
+          onClose={() => {
+            setShowReviewModal(false);
+            setSelectedExpense(null);
+          }}
+          onApprove={handleApprove}
+          onReject={handleReject}
+        />
+      </div>
+    </PermissionGuard>
+  );
+}

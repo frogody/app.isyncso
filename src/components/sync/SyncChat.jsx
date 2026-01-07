@@ -259,16 +259,40 @@ export default function SyncChat({
     setIsLoading(true);
 
     try {
-      // Call SYNC edge function
-      const { data, error: apiError } = await supabase.functions.invoke('sync', {
-        body: {
+      // Get current session for auth context
+      const { data: { session } } = await supabase.auth.getSession();
+
+      // Get the Supabase URL and anon key from the client
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://sfxpmzicgpaxfntqleig.supabase.co';
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmeHBtemljZ3BheGZudHFsZWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDY0NjIsImV4cCI6MjA4MjE4MjQ2Mn0.337ohi8A4zu_6Hl1LpcPaWP8UkI5E4Om7ZgeU9_A8t4';
+
+      // Use session token if available, otherwise use anon key
+      const authToken = session?.access_token || supabaseAnonKey;
+
+      // Call SYNC edge function with explicit auth headers
+      const response = await fetch(`${supabaseUrl}/functions/v1/sync`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+          'apikey': supabaseAnonKey,
+        },
+        body: JSON.stringify({
           message: trimmedMessage,
           sessionId,
-          context: context || {},
-        },
+          context: {
+            ...context,
+            userId: session?.user?.id,
+          },
+        }),
       });
 
-      if (apiError) throw apiError;
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Request failed' }));
+        throw new Error(errorData.error || `Request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
 
       // Update session ID
       if (data.sessionId) {

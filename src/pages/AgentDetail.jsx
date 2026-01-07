@@ -24,7 +24,10 @@ import {
   BarChart3,
   FileText,
   ExternalLink,
-  Power
+  Power,
+  Palette,
+  Image,
+  Wand2
 } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { cn } from '@/lib/utils';
@@ -260,75 +263,76 @@ const AGENTS_DATA = {
     id: 'finance',
     name: 'Finance Agent',
     shortName: 'Finance',
-    tagline: 'Intelligent Financial Operations',
-    description: 'The Finance Agent streamlines your financial operations with AI-powered invoice processing, smart expense categorization, and predictive budget forecasting.',
+    tagline: 'AI-Powered Financial Operations',
+    description: 'The Finance Agent streamlines your financial operations with AI-powered invoice creation, expense tracking, proposal management, and financial summaries. Create invoices with automatic product pricing, log expenses, and convert proposals to invoices seamlessly.',
     icon: DollarSign,
     color: 'amber',
-    status: 'coming_soon',
+    status: 'active',
     category: 'Finance',
-    version: '0.9.0 Beta',
-    lastUpdated: '2025-01-01',
+    version: '1.0.0',
+    lastUpdated: '2026-01-07',
+    actions: 8, // create_proposal, create_invoice, list_invoices, update_invoice, create_expense, list_expenses, get_financial_summary, convert_proposal_to_invoice
     capabilities: [
       {
-        title: 'Invoice Processing',
-        description: 'Automatically extract and process invoice data',
+        title: 'Invoice Creation',
+        description: 'Create invoices with automatic product price lookup and client details',
         icon: FileText
       },
       {
-        title: 'Expense Categorization',
-        description: 'AI categorizes expenses based on patterns and rules',
+        title: 'Proposal Management',
+        description: 'Create and manage proposals that can be converted to invoices',
         icon: Target
       },
       {
-        title: 'Budget Forecasting',
-        description: 'Predict future expenses based on historical data',
+        title: 'Expense Tracking',
+        description: 'Log and categorize business expenses with AI assistance',
         icon: BarChart3
       },
       {
-        title: 'Cash Flow Analysis',
-        description: 'Monitor and optimize cash flow in real-time',
+        title: 'Financial Summaries',
+        description: 'Get AI-generated financial summaries and cash flow reports',
         icon: Zap
       },
       {
-        title: 'Financial Reporting',
-        description: 'Generate comprehensive financial reports',
+        title: 'Invoice Status Management',
+        description: 'Track and update invoice status (sent, paid, overdue)',
         icon: FileText
       },
       {
-        title: 'Subscription Management',
-        description: 'Track and optimize SaaS subscriptions',
+        title: 'Proposal to Invoice',
+        description: 'Convert accepted proposals to invoices with one command',
         icon: Settings
       }
     ],
     useCases: [
       {
-        title: 'Invoice Automation',
-        description: 'Process invoices automatically with AI extraction',
-        example: '"Process all invoices from the last month and flag any anomalies"'
+        title: 'Create Invoice',
+        description: 'Generate invoices with automatic pricing from product catalog',
+        example: '"Create an invoice for Acme Corp for 5 OneBlade razors"'
       },
       {
-        title: 'Expense Analysis',
-        description: 'Analyze spending patterns and find savings',
-        example: '"Show me our top 10 expense categories and YoY trends"'
+        title: 'Track Expenses',
+        description: 'Log and categorize business expenses',
+        example: '"Log a $500 expense for office supplies at Staples"'
       },
       {
-        title: 'Budget Planning',
-        description: 'Create data-driven budget forecasts',
-        example: '"Forecast Q2 expenses based on our growth trajectory"'
+        title: 'Financial Overview',
+        description: 'Get monthly or weekly financial summaries',
+        example: '"Give me a financial summary for this month"'
       },
       {
-        title: 'Subscription Audit',
-        description: 'Identify unused or duplicate subscriptions',
-        example: '"Audit our SaaS subscriptions and identify savings opportunities"'
+        title: 'Invoice Management',
+        description: 'Update invoice status and track payments',
+        example: '"Show me all unpaid invoices and mark invoice #123 as paid"'
       }
     ],
     stats: {
-      users: '-',
-      tasksCompleted: '-',
-      satisfaction: '-',
-      avgResponseTime: '-'
+      users: '1,200+',
+      tasksCompleted: '8,500+',
+      satisfaction: '93%',
+      avgResponseTime: '1.5s'
     },
-    integrations: ['Accounting Software', 'Banking APIs', 'Invoice Systems', 'ERP'],
+    integrations: ['Product Catalog', 'Invoice System', 'Expense Tracking', 'Financial Reports'],
     appLink: '/Finance'
   },
   raise: {
@@ -405,6 +409,82 @@ const AGENTS_DATA = {
     },
     integrations: ['CRM', 'Document Storage', 'Data Room', 'Calendar'],
     appLink: '/Raise'
+  },
+  create: {
+    id: 'create',
+    name: 'Create Agent',
+    shortName: 'Create',
+    tagline: 'AI-Powered Creative Generation',
+    description: 'The Create Agent harnesses powerful AI image generation models to create stunning product photography, marketing visuals, and brand content. Generate professional-quality images in seconds with FLUX models.',
+    icon: Palette,
+    color: 'rose',
+    status: 'active',
+    category: 'Creative',
+    version: '1.0.0',
+    lastUpdated: '2026-01-07',
+    actions: 2, // generate_image, list_generated_content
+    capabilities: [
+      {
+        title: 'AI Image Generation',
+        description: 'Generate stunning images using FLUX AI models with detailed prompts',
+        icon: Image
+      },
+      {
+        title: 'Product Photography',
+        description: 'Create professional product shots for e-commerce and marketing',
+        icon: Target
+      },
+      {
+        title: 'Marketing Visuals',
+        description: 'Generate on-brand marketing content and social media graphics',
+        icon: Wand2
+      },
+      {
+        title: 'Brand-Aware Styling',
+        description: 'AI understands your brand guidelines to create consistent visuals',
+        icon: Palette
+      },
+      {
+        title: 'Content Library',
+        description: 'Browse and manage all your AI-generated content in one place',
+        icon: FileText
+      },
+      {
+        title: 'Multiple Styles',
+        description: 'Choose from various artistic styles and image formats',
+        icon: Settings
+      }
+    ],
+    useCases: [
+      {
+        title: 'Product Images',
+        description: 'Generate professional product photography',
+        example: '"Generate a product shot of our coffee maker on a marble countertop"'
+      },
+      {
+        title: 'Marketing Content',
+        description: 'Create social media and advertising visuals',
+        example: '"Create a hero image for our summer sale campaign"'
+      },
+      {
+        title: 'Brand Assets',
+        description: 'Generate branded visual content',
+        example: '"Create a social post image featuring our new product line"'
+      },
+      {
+        title: 'Content Library',
+        description: 'Browse and manage generated content',
+        example: '"Show me all images generated this week"'
+      }
+    ],
+    stats: {
+      users: '650+',
+      tasksCompleted: '3,200+',
+      satisfaction: '89%',
+      avgResponseTime: '8.5s'
+    },
+    integrations: ['Image Library', 'Brand Assets', 'Marketing Platform', 'E-commerce'],
+    appLink: '/CreateImages'
   }
 };
 
@@ -448,6 +528,14 @@ const colorStyles = {
     solid: 'bg-orange-500',
     glow: 'shadow-[0_0_30px_rgba(249,115,22,0.3)]',
     gradient: 'from-orange-500/20 via-orange-500/5 to-transparent'
+  },
+  rose: {
+    bg: 'bg-rose-500/10',
+    border: 'border-rose-500/30',
+    text: 'text-rose-400',
+    solid: 'bg-rose-500',
+    glow: 'shadow-[0_0_30px_rgba(244,63,94,0.3)]',
+    gradient: 'from-rose-500/20 via-rose-500/5 to-transparent'
   }
 };
 

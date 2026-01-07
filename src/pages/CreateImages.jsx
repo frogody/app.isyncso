@@ -533,7 +533,7 @@ export default function CreateImages() {
           thumbnail_url: data.url,
           generation_config: {
             prompt: prompt,
-            enhanced_prompt: enhancedPrompt,
+            enhanced_prompt: finalPrompt,
             style: selectedStyle,
             aspect_ratio: aspectRatio,
             model: data.model || 'nano-banana-pro',
