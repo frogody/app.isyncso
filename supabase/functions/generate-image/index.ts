@@ -51,98 +51,31 @@ serve(async (req) => {
     let model = 'unknown';
     let errorDetails: string | null = null;
 
-    // Try Google Imagen 3 for image generation
-    try {
-      console.log('Attempting Imagen 3 generation...');
+    // Try Nano Banana Pro (gemini-3-pro-image-preview) first for best quality
+    const modelsToTry = [
+      'gemini-3-pro-image-preview',  // Nano Banana Pro - best quality
+      'gemini-2.5-flash-image',      // Nano Banana - faster
+      'gemini-2.0-flash-exp',        // Fallback
+    ];
 
-      // Map aspect ratio to Imagen format
-      let imagenAspectRatio = "1:1";
-      if (aspect_ratio === "16:9") imagenAspectRatio = "16:9";
-      else if (aspect_ratio === "9:16") imagenAspectRatio = "9:16";
-      else if (aspect_ratio === "4:3") imagenAspectRatio = "4:3";
-      else if (aspect_ratio === "3:4") imagenAspectRatio = "3:4";
+    for (const modelName of modelsToTry) {
+      if (imageUrl) break;
 
-      const imagenResponse = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${GOOGLE_API_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            instances: [{
-              prompt: prompt
-            }],
-            parameters: {
-              sampleCount: 1,
-              aspectRatio: imagenAspectRatio,
-              safetyFilterLevel: "block_only_high",
-              personGeneration: "allow_adult"
-            }
-          })
-        }
-      );
-
-      const imagenText = await imagenResponse.text();
-      console.log('Imagen response status:', imagenResponse.status);
-
-      if (imagenResponse.ok) {
-        const imagenData = JSON.parse(imagenText);
-        console.log('Imagen response data:', JSON.stringify(imagenData).substring(0, 500));
-
-        // Check for predictions with base64 image
-        if (imagenData.predictions?.[0]?.bytesBase64Encoded) {
-          const base64Image = imagenData.predictions[0].bytesBase64Encoded;
-
-          // Upload to Supabase Storage
-          const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-          const fileName = `generated-${Date.now()}-${Math.random().toString(36).substring(7)}.png`;
-          const imageData = Uint8Array.from(atob(base64Image), c => c.charCodeAt(0));
-
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('generated-content')
-            .upload(fileName, imageData, {
-              contentType: 'image/png',
-              upsert: false
-            });
-
-          if (uploadError) {
-            console.error('Storage upload error:', uploadError);
-            throw new Error(`Failed to upload generated image: ${uploadError.message}`);
-          }
-
-          const { data: urlData } = supabase.storage
-            .from('generated-content')
-            .getPublicUrl(fileName);
-
-          imageUrl = urlData.publicUrl;
-          model = 'imagen-3.0-generate-002';
-          console.log('Successfully generated image with Imagen 3');
-        } else {
-          errorDetails = 'Imagen returned no image data: ' + JSON.stringify(imagenData).substring(0, 200);
-          console.error(errorDetails);
-        }
-      } else {
-        errorDetails = `Imagen API error (${imagenResponse.status}): ${imagenText.substring(0, 500)}`;
-        console.error(errorDetails);
-      }
-    } catch (imagenError) {
-      errorDetails = `Imagen error: ${imagenError.message}`;
-      console.error('Imagen error:', imagenError);
-    }
-
-    // Fallback: Try Gemini 2.0 Flash with image generation
-    if (!imageUrl) {
       try {
-        console.log('Falling back to Gemini 2.0 Flash...');
+        console.log(`Attempting image generation with ${modelName}...`);
 
-        const geminiResponse = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GOOGLE_API_KEY}`,
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GOOGLE_API_KEY}`,
           {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'x-goog-api-key': GOOGLE_API_KEY
+            },
             body: JSON.stringify({
               contents: [{
                 parts: [{
-                  text: `Create a detailed, high-quality image: ${prompt}`
+                  text: prompt
                 }]
               }],
               generationConfig: {
@@ -152,49 +85,72 @@ serve(async (req) => {
           }
         );
 
-        const geminiText = await geminiResponse.text();
-        console.log('Gemini response status:', geminiResponse.status);
+        const responseText = await response.text();
+        console.log(`${modelName} response status:`, response.status);
 
-        if (geminiResponse.ok) {
-          const geminiData = JSON.parse(geminiText);
+        if (response.ok) {
+          const data = JSON.parse(responseText);
+          console.log(`${modelName} response structure:`, JSON.stringify(data).substring(0, 300));
 
-          // Check if we got image data
-          const imagePart = geminiData.candidates?.[0]?.content?.parts?.find(
-            (part: any) => part.inlineData?.mimeType?.startsWith('image/')
-          );
+          // Look for image data in the response
+          const candidate = data.candidates?.[0];
+          if (candidate?.content?.parts) {
+            for (const part of candidate.content.parts) {
+              if (part.inlineData?.mimeType?.startsWith('image/')) {
+                const base64Image = part.inlineData.data;
+                const mimeType = part.inlineData.mimeType;
 
-          if (imagePart?.inlineData?.data) {
-            // Upload to Supabase Storage
-            const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-            const fileName = `generated-${Date.now()}-${Math.random().toString(36).substring(7)}.png`;
-            const imageData = Uint8Array.from(atob(imagePart.inlineData.data), c => c.charCodeAt(0));
+                // Determine file extension
+                let extension = 'png';
+                if (mimeType.includes('jpeg') || mimeType.includes('jpg')) extension = 'jpg';
+                else if (mimeType.includes('webp')) extension = 'webp';
 
-            const { data: uploadData, error: uploadError } = await supabase.storage
-              .from('generated-content')
-              .upload(fileName, imageData, {
-                contentType: imagePart.inlineData.mimeType || 'image/png',
-                upsert: false
-              });
+                // Upload to Supabase Storage
+                const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+                const fileName = `generated-${Date.now()}-${Math.random().toString(36).substring(7)}.${extension}`;
+                const imageData = Uint8Array.from(atob(base64Image), c => c.charCodeAt(0));
 
-            if (uploadError) {
-              console.error('Storage upload error:', uploadError);
-            } else {
-              const { data: urlData } = supabase.storage
-                .from('generated-content')
-                .getPublicUrl(fileName);
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                  .from('generated-content')
+                  .upload(fileName, imageData, {
+                    contentType: mimeType,
+                    upsert: false
+                  });
 
-              imageUrl = urlData.publicUrl;
-              model = 'gemini-2.0-flash-exp';
-              console.log('Successfully generated image with Gemini 2.0 Flash');
+                if (uploadError) {
+                  console.error('Storage upload error:', uploadError);
+                  errorDetails = `Storage error: ${uploadError.message}`;
+                  continue;
+                }
+
+                const { data: urlData } = supabase.storage
+                  .from('generated-content')
+                  .getPublicUrl(fileName);
+
+                imageUrl = urlData.publicUrl;
+                model = modelName;
+                console.log(`Successfully generated image with ${modelName}`);
+                break;
+              }
             }
-          } else {
-            console.log('Gemini did not return image data:', JSON.stringify(geminiData).substring(0, 500));
+          }
+
+          if (!imageUrl && candidate) {
+            // Check if there's text response but no image
+            const textPart = candidate.content?.parts?.find((p: any) => p.text);
+            if (textPart) {
+              console.log(`${modelName} returned text instead of image:`, textPart.text?.substring(0, 200));
+            }
           }
         } else {
-          console.error('Gemini API error:', geminiText.substring(0, 500));
+          const errorInfo = `${modelName} API error (${response.status}): ${responseText.substring(0, 300)}`;
+          console.error(errorInfo);
+          if (!errorDetails) errorDetails = errorInfo;
         }
-      } catch (geminiError) {
-        console.error('Gemini error:', geminiError);
+      } catch (modelError: any) {
+        const errorInfo = `${modelName} error: ${modelError.message}`;
+        console.error(errorInfo);
+        if (!errorDetails) errorDetails = errorInfo;
       }
     }
 
@@ -203,8 +159,9 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           error: 'Failed to generate image',
-          details: errorDetails || 'Image generation APIs did not return valid image data',
-          apiKeyPresent: !!GOOGLE_API_KEY,
+          details: errorDetails || 'No image models returned valid image data. The API may not support image generation with your current API key.',
+          apiKeyPresent: true,
+          modelsAttempted: modelsToTry
         }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -221,7 +178,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in generate-image:', error);
     return new Response(
       JSON.stringify({ error: error.message || 'Internal server error' }),
