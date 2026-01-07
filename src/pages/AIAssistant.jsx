@@ -23,8 +23,10 @@ import {
   MoreHorizontal,
   ChevronRight,
   Network,
-  Workflow
+  Workflow,
+  X,
 } from "lucide-react";
+import SyncChat from "@/components/sync/SyncChat";
 import { base44 } from "@/api/base44Client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -194,6 +196,8 @@ function OrbitVisualization() {
 
 export default function AIAssistant() {
   const [user, setUser] = useState(null);
+  const [showChat, setShowChat] = useState(false);
+  const [chatExpanded, setChatExpanded] = useState(false);
 
   const loadUserData = React.useCallback(async () => {
     try {
@@ -288,8 +292,9 @@ export default function AIAssistant() {
                 <Button
                   variant="outline"
                   className="border-cyan-500/30 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20"
+                  onClick={() => setShowChat(true)}
                 >
-                  <Sparkles className="w-4 h-4 mr-2" /> Try Sync in Inbox
+                  <Sparkles className="w-4 h-4 mr-2" /> Try Sync Now
                 </Button>
               </div>
             </div>
@@ -380,6 +385,53 @@ export default function AIAssistant() {
           </div>
         </GlassCard>
       </div>
+
+      {/* Sync Chat Interface */}
+      <AnimatePresence>
+        {showChat && (
+          <>
+            {/* Backdrop */}
+            {chatExpanded && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+                onClick={() => setChatExpanded(false)}
+              />
+            )}
+
+            {/* Chat container */}
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              className={chatExpanded ? "fixed inset-4 z-50" : "fixed bottom-6 right-6 z-50 w-[420px]"}
+            >
+              <SyncChat
+                onClose={() => {
+                  setShowChat(false);
+                  setChatExpanded(false);
+                }}
+                expanded={chatExpanded}
+                onToggleExpand={() => setChatExpanded(!chatExpanded)}
+              />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Floating chat button when chat is closed */}
+      {!showChat && (
+        <motion.button
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-600 text-white shadow-lg shadow-cyan-500/30 flex items-center justify-center hover:scale-105 transition-transform"
+          onClick={() => setShowChat(true)}
+        >
+          <Brain className="w-7 h-7" />
+        </motion.button>
+      )}
     </div>
   );
 }
