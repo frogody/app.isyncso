@@ -66,6 +66,10 @@ import {
   PackageCheck,
   Wallet,
   FileSpreadsheet,
+  UserCheck,
+  Handshake,
+  UserPlus,
+  Crosshair,
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -203,6 +207,25 @@ const PRODUCTS_SETTINGS_KEY = 'isyncso_products_settings';
 function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
   // Convert to lowercase for case-insensitive matching
   const path = pathname.toLowerCase();
+
+  // CRM routes
+  if (path.includes('crm') || path.includes('contacts-import')) {
+    return {
+      title: 'CRM',
+      color: 'cyan',
+      items: [
+        { label: 'All Contacts', path: createPageUrl('CRMContacts'), icon: Users, badge: stats.contacts },
+        { label: 'Leads', path: createPageUrl('CRMContacts') + '?type=lead', icon: Target },
+        { label: 'Prospects', path: createPageUrl('CRMContacts') + '?type=prospect', icon: TrendingUp },
+        { label: 'Customers', path: createPageUrl('CRMContacts') + '?type=customer', icon: UserCheck },
+        { label: 'Suppliers', path: createPageUrl('CRMContacts') + '?type=supplier', icon: Truck },
+        { label: 'Partners', path: createPageUrl('CRMContacts') + '?type=partner', icon: Handshake },
+        { label: 'Candidates', path: createPageUrl('CRMContacts') + '?type=candidate', icon: UserPlus },
+        { label: 'Targets', path: createPageUrl('CRMContacts') + '?type=target', icon: Crosshair },
+        { label: 'Import', path: createPageUrl('ContactsImport'), icon: FileSpreadsheet },
+      ]
+    };
+  }
 
   // SENTINEL routes
       if (path.includes('sentinel') || path.includes('aisystem') || path.includes('compliance') || path.includes('document') || path.includes('riskassessment')) {
