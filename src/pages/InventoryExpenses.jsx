@@ -533,20 +533,32 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId }) {
       // Process the invoice with AI via edge function
       toast.info("Factuur wordt geanalyseerd met AI...");
 
+      console.log("Calling process-invoice edge function with:", { storagePath: path, companyId });
+
       const { data: processResult, error: processError } = await supabase.functions.invoke(
         "process-invoice",
         {
           body: {
-            imageUrl: result.url,
+            storagePath: path,
+            bucket: DOCUMENTS_BUCKET,
             companyId: companyId,
           },
         }
       );
 
+      console.log("Edge function response:", { processResult, processError });
+
       setUploadProgress(100);
 
       if (processError) {
-        toast.error("Kon factuur niet verwerken: " + processError.message);
+        console.error("Process error:", processError);
+        toast.error("Kon factuur niet verwerken: " + (processError.message || JSON.stringify(processError)));
+        return;
+      }
+
+      if (!processResult) {
+        console.error("No result from edge function");
+        toast.error("Geen respons van de server");
         return;
       }
 
@@ -562,6 +574,7 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId }) {
         onUploadComplete?.();
         handleClose();
       } else {
+        console.error("Process failed:", processResult);
         toast.error("Kon factuur niet verwerken: " + (processResult.errors?.join(", ") || processResult.error || "Onbekende fout"));
       }
     } catch (error) {

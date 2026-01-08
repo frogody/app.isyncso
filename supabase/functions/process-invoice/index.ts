@@ -134,17 +134,49 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const together = new Together({ apiKey: togetherApiKey });
 
-    const { imageUrl, companyId, sourceEmailId } = await req.json();
+    const { storagePath, bucket, companyId, sourceEmailId, imageUrl: directImageUrl } = await req.json();
 
-    if (!imageUrl || !companyId) {
+    console.log("Received request:", { storagePath, bucket, companyId, directImageUrl: !!directImageUrl });
+
+    if ((!storagePath || !bucket) && !directImageUrl) {
       return new Response(
-        JSON.stringify({ success: false, error: "imageUrl and companyId are required" }),
+        JSON.stringify({ success: false, error: "storagePath/bucket or imageUrl is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    if (!companyId) {
+      return new Response(
+        JSON.stringify({ success: false, error: "companyId is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Get image URL - either from signed URL or direct URL
+    let imageUrl = directImageUrl;
+
+    if (!imageUrl && storagePath && bucket) {
+      // Create a signed URL for the private storage file
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+        .from(bucket)
+        .createSignedUrl(storagePath, 3600); // 1 hour expiration
+
+      if (signedUrlError) {
+        console.error("Error creating signed URL:", signedUrlError);
+        return new Response(
+          JSON.stringify({ success: false, error: "Could not access uploaded file: " + signedUrlError.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      imageUrl = signedUrlData.signedUrl;
+      console.log("Created signed URL for image");
+    }
+
     // Extract data from image
+    console.log("Starting AI extraction...");
     const extraction = await extractFromImage(together, imageUrl);
+    console.log("Extraction result:", { success: extraction.success, confidence: extraction.confidence });
 
     if (!extraction.success || !extraction.data) {
       return new Response(
@@ -169,7 +201,7 @@ Deno.serve(async (req) => {
         document_type: "invoice",
         source_type: sourceEmailId ? "email" : "manual",
         source_email_id: sourceEmailId || null,
-        original_file_url: imageUrl,
+        original_file_url: imageUrl, // This is a signed URL (1hr expiry)
         external_reference: extraction.data.invoice_number,
         invoice_date: extraction.data.invoice_date,
         due_date: extraction.data.due_date,
