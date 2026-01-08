@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
+import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Receipt, Search, Filter, Clock, Check, X, AlertTriangle,
@@ -43,8 +44,8 @@ import {
 import { MIN_CONFIDENCE } from "@/lib/db/schema";
 import { storage, supabase } from "@/api/supabaseClient";
 
-// Set up PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// Set up PDF.js worker using bundled worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 const DOCUMENTS_BUCKET = "documents";
 
