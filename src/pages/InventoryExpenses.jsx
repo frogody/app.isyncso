@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Receipt, Search, Filter, Clock, Check, X, AlertTriangle,
   Eye, FileText, Upload, Sparkles, ChevronRight, Edit2,
   CheckCircle2, XCircle, RefreshCw, DollarSign, Calendar,
-  Building, Percent, ExternalLink
+  Building, Percent, ExternalLink, Image, FileUp, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Tabs,
@@ -40,6 +41,9 @@ import {
 } from "@/lib/db/queries";
 import { processInvoiceImage } from "@/lib/services/inventory-service";
 import { MIN_CONFIDENCE } from "@/lib/db/schema";
+import { storage } from "@/api/supabaseClient";
+
+const DOCUMENTS_BUCKET = "documents";
 
 const STATUS_STYLES = {
   draft: {
@@ -451,6 +455,262 @@ function ReviewQueueBanner({ count, onClick }) {
   );
 }
 
+// Upload invoice modal
+function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId }) {
+  const fileInputRef = useRef(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const acceptedTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+
+  const handleFileSelect = (file) => {
+    if (!file) return;
+
+    if (!acceptedTypes.includes(file.type)) {
+      toast.error("Ongeldig bestandstype. Upload een afbeelding (JPG, PNG, WebP) of PDF.");
+      return;
+    }
+
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error("Bestand is te groot. Maximum is 50MB.");
+      return;
+    }
+
+    setSelectedFile(file);
+
+    // Create preview for images
+    if (file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onload = (e) => setPreviewUrl(e.target.result);
+      reader.readAsDataURL(file);
+    } else {
+      setPreviewUrl(null);
+    }
+  };
+
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    handleFileSelect(file);
+  }, []);
+
+  const handleUpload = async () => {
+    if (!selectedFile || !companyId) return;
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      // Generate unique filename
+      const fileId = crypto.randomUUID();
+      const ext = selectedFile.name.split(".").pop();
+      const path = `${companyId}/invoices/${fileId}.${ext}`;
+
+      // Simulate progress
+      const progressInterval = setInterval(() => {
+        setUploadProgress((prev) => Math.min(prev + 10, 80));
+      }, 200);
+
+      // Upload to storage
+      const result = await storage.upload(DOCUMENTS_BUCKET, path, selectedFile);
+
+      clearInterval(progressInterval);
+      setUploadProgress(90);
+
+      // Process the invoice with AI
+      toast.info("Factuur wordt geanalyseerd met AI...");
+
+      const processResult = await processInvoiceImage(companyId, result.url);
+
+      setUploadProgress(100);
+
+      if (processResult.success) {
+        if (processResult.needsReview) {
+          toast.warning(
+            `Factuur geüpload maar vereist handmatige beoordeling (${Math.round(processResult.confidence * 100)}% betrouwbaarheid)`,
+            { duration: 5000 }
+          );
+        } else {
+          toast.success("Factuur succesvol verwerkt!");
+        }
+        onUploadComplete?.();
+        handleClose();
+      } else {
+        toast.error("Kon factuur niet verwerken: " + (processResult.errors?.join(", ") || "Onbekende fout"));
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Upload mislukt: " + (error.message || "Onbekende fout"));
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
+  };
+
+  const handleClose = () => {
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setUploadProgress(0);
+    onClose();
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Upload className="w-5 h-5 text-cyan-400" />
+            Factuur uploaden
+          </DialogTitle>
+          <DialogDescription>
+            Upload een factuurafbeelding of PDF. AI zal automatisch de gegevens extraheren.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-4">
+          {/* Drop zone */}
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`
+              relative cursor-pointer rounded-xl border-2 border-dashed transition-all
+              ${isDragging
+                ? "border-cyan-500 bg-cyan-500/10"
+                : selectedFile
+                  ? "border-green-500/50 bg-green-500/5"
+                  : "border-white/20 hover:border-cyan-500/50 hover:bg-cyan-500/5"
+              }
+            `}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,application/pdf"
+              onChange={(e) => handleFileSelect(e.target.files[0])}
+              className="hidden"
+            />
+
+            {selectedFile ? (
+              <div className="p-6">
+                {previewUrl ? (
+                  <img
+                    src={previewUrl}
+                    alt="Preview"
+                    className="max-h-48 mx-auto rounded-lg object-contain"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center py-8">
+                    <FileText className="w-16 h-16 text-cyan-400" />
+                  </div>
+                )}
+                <div className="mt-4 text-center">
+                  <p className="text-white font-medium truncate">{selectedFile.name}</p>
+                  <p className="text-sm text-zinc-400">
+                    {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mt-2 text-zinc-400"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedFile(null);
+                      setPreviewUrl(null);
+                    }}
+                  >
+                    <X className="w-4 h-4 mr-1" />
+                    Verwijderen
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="p-8 text-center">
+                <div className="w-16 h-16 mx-auto rounded-full bg-cyan-500/10 flex items-center justify-center mb-4">
+                  <FileUp className="w-8 h-8 text-cyan-400" />
+                </div>
+                <p className="text-white font-medium">
+                  Sleep een bestand hierheen of klik om te selecteren
+                </p>
+                <p className="text-sm text-zinc-400 mt-1">
+                  JPG, PNG, WebP of PDF (max 50MB)
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Upload progress */}
+          {isUploading && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-zinc-400">
+                  {uploadProgress < 90 ? "Uploaden..." : "Verwerken..."}
+                </span>
+                <span className="text-cyan-400">{uploadProgress}%</span>
+              </div>
+              <Progress value={uploadProgress} className="h-2" />
+            </div>
+          )}
+
+          {/* Info box */}
+          <div className="p-3 rounded-lg bg-zinc-900/50 border border-white/10">
+            <div className="flex items-start gap-2">
+              <Sparkles className="w-4 h-4 text-cyan-400 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-zinc-400">
+                <p>AI zal automatisch extracten:</p>
+                <ul className="mt-1 space-y-0.5 text-zinc-500">
+                  <li>• Leveranciersgegevens</li>
+                  <li>• Factuurnummer en datum</li>
+                  <li>• Bedragen en BTW</li>
+                  <li>• Regelitems indien beschikbaar</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={handleClose} disabled={isUploading}>
+            Annuleren
+          </Button>
+          <Button
+            onClick={handleUpload}
+            disabled={!selectedFile || isUploading}
+            className="bg-cyan-600 hover:bg-cyan-700"
+          >
+            {isUploading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Verwerken...
+              </>
+            ) : (
+              <>
+                <Upload className="w-4 h-4 mr-2" />
+                Uploaden & Verwerken
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function InventoryExpenses() {
   const { user } = useUser();
   const [expenses, setExpenses] = useState([]);
@@ -460,32 +720,34 @@ export default function InventoryExpenses() {
   const [search, setSearch] = useState("");
   const [selectedExpense, setSelectedExpense] = useState(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
 
   const companyId = user?.company_id;
 
-  // Load expenses
-  useEffect(() => {
+  // Load expenses function (can be called for refresh)
+  const loadExpenses = useCallback(async () => {
     if (!companyId) return;
 
-    const loadExpenses = async () => {
-      setIsLoading(true);
-      try {
-        const [expenseData, queueData] = await Promise.all([
-          listExpenses(companyId),
-          getReviewQueue(companyId),
-        ]);
-        setExpenses(expenseData);
-        setReviewQueue(queueData);
-      } catch (error) {
-        console.error("Failed to load expenses:", error);
-        toast.error("Kon uitgaven niet laden");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadExpenses();
+    setIsLoading(true);
+    try {
+      const [expenseData, queueData] = await Promise.all([
+        listExpenses(companyId),
+        getReviewQueue(companyId),
+      ]);
+      setExpenses(expenseData);
+      setReviewQueue(queueData);
+    } catch (error) {
+      console.error("Failed to load expenses:", error);
+      toast.error("Kon uitgaven niet laden");
+    } finally {
+      setIsLoading(false);
+    }
   }, [companyId]);
+
+  // Load expenses on mount
+  useEffect(() => {
+    loadExpenses();
+  }, [loadExpenses]);
 
   // Filter expenses
   const filteredExpenses = expenses.filter((expense) => {
@@ -559,7 +821,10 @@ export default function InventoryExpenses() {
             subtitle="Beheer facturen en AI-extractie reviews"
             icon={Receipt}
             actions={
-              <Button className="bg-cyan-600 hover:bg-cyan-700">
+              <Button
+                className="bg-cyan-600 hover:bg-cyan-700"
+                onClick={() => setShowUploadModal(true)}
+              >
                 <Upload className="w-4 h-4 mr-2" />
                 Factuur uploaden
               </Button>
@@ -666,6 +931,14 @@ export default function InventoryExpenses() {
           }}
           onApprove={handleApprove}
           onReject={handleReject}
+        />
+
+        {/* Upload invoice modal */}
+        <UploadInvoiceModal
+          isOpen={showUploadModal}
+          onClose={() => setShowUploadModal(false)}
+          onUploadComplete={loadExpenses}
+          companyId={companyId}
         />
       </div>
     </PermissionGuard>
