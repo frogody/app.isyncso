@@ -19,6 +19,7 @@ interface ResearchInput {
 interface ProductResearchResult {
   ean: string | null;
   name: string | null;
+  tagline: string | null;
   description: string | null;
   brand: string | null;
   category: string | null;
@@ -295,21 +296,23 @@ ${JSON.stringify(searchContent, null, 2)}
 
 Extract ALL available information about this product. Focus on:
 1. Official product name (clean, proper capitalization)
-2. Detailed description (2-3 paragraphs about features and benefits)
-3. Brand name
-4. Product category
-5. Product images (direct URLs to high-quality product photos)
-6. Technical specifications (size, power, capacity, etc.)
-7. Weight and dimensions
-8. Source URL (most reliable product page)
+2. Short tagline (catchy 5-15 word marketing phrase highlighting key benefit)
+3. Detailed description (2-3 paragraphs about features and benefits)
+4. Brand name
+5. Product category
+6. Product images (direct URLs to high-quality product photos - jpg, png, webp only)
+7. Technical specifications (size, power, capacity, etc.)
+8. Weight and dimensions
+9. Source URL (most reliable product page)
 
 Respond with ONLY this JSON:
 {
   "name": "Official product name",
+  "tagline": "Short catchy marketing tagline (5-15 words)",
   "description": "Detailed product description with features and benefits",
   "brand": "Brand name",
-  "category": "Product category (e.g., 'Vacuum Cleaners', 'Electronics')",
-  "images": ["url1", "url2", "url3"],
+  "category": "Product category (e.g., 'Monitors', 'Electronics', 'Kitchen Appliances')",
+  "images": ["https://example.com/image1.jpg", "https://example.com/image2.png"],
   "specifications": [
     {"name": "Specification name", "value": "Value"}
   ],
@@ -348,13 +351,29 @@ Respond with ONLY this JSON:
 
     const parsed = JSON.parse(jsonMatch[0]);
 
+    const productName = parsed.name || input.productDescription.substring(0, 100);
+    const productBrand = parsed.brand || null;
+    const productDescription = parsed.description || null;
+
+    // Use AI tagline or generate one from name/description
+    const tagline = parsed.tagline || generateTagline(productName, productDescription, productBrand);
+
+    // Filter images and log for debugging
+    const rawImages = Array.isArray(parsed.images) ? parsed.images : [];
+    const validImages = rawImages.filter(isValidImageUrl);
+    console.log(`Images: ${rawImages.length} raw, ${validImages.length} valid`);
+    if (rawImages.length > 0 && validImages.length === 0) {
+      console.log('Raw image URLs rejected:', rawImages.slice(0, 3));
+    }
+
     const result: ProductResearchResult = {
       ean,
-      name: parsed.name || null,
-      description: parsed.description || null,
-      brand: parsed.brand || null,
+      name: productName,
+      tagline,
+      description: productDescription,
+      brand: productBrand,
       category: parsed.category || null,
-      images: Array.isArray(parsed.images) ? parsed.images.filter(isValidImageUrl) : [],
+      images: validImages,
       specifications: Array.isArray(parsed.specifications) ? parsed.specifications : [],
       weight: typeof parsed.weight === 'number' ? parsed.weight : null,
       dimensions: parsed.dimensions || null,
@@ -371,11 +390,14 @@ Respond with ONLY this JSON:
 }
 
 function createResultWithEan(ean: string | null, input: ResearchInput): ProductResearchResult {
+  const name = input.productDescription.substring(0, 200);
+  const brand = input.productDescription.split(/\s+/)[0] || null;
   return {
     ean,
-    name: input.productDescription.substring(0, 200),
+    name,
+    tagline: generateTagline(name, null, brand),
     description: null,
-    brand: input.productDescription.split(/\s+/)[0] || null,
+    brand,
     category: null,
     images: [],
     specifications: [],
@@ -390,6 +412,7 @@ function createEmptyResult(): ProductResearchResult {
   return {
     ean: null,
     name: null,
+    tagline: 'Quality Product',
     description: null,
     brand: null,
     category: null,
@@ -415,11 +438,35 @@ function isValidImageUrl(url: string): boolean {
   if (!url || typeof url !== 'string') return false;
   try {
     const parsed = new URL(url);
+    // Accept HTTP/HTTPS URLs that either:
+    // 1. Have image extensions
+    // 2. Are from known CDN/image hosting domains
+    // 3. Have image-related query params
+    const hasImageExtension = /\.(jpg|jpeg|png|webp|gif|avif)($|\?)/i.test(url);
+    const isImageCdn = /(images|img|cdn|media|static|assets)/i.test(parsed.hostname) ||
+                       /(images|img|cdn|media|photo|product)/i.test(parsed.pathname);
+    const hasImageParams = /image|img|photo|product/i.test(parsed.search);
+
     return ['http:', 'https:'].includes(parsed.protocol) &&
-           /\.(jpg|jpeg|png|webp|gif)($|\?)/i.test(url);
+           (hasImageExtension || isImageCdn || hasImageParams);
   } catch {
     return false;
   }
+}
+
+// Generate a tagline from product name and description
+function generateTagline(name: string, description: string | null, brand: string | null): string {
+  // Extract key features from name/description
+  const cleanName = name.replace(/[,\-]/g, ' ').trim();
+  const words = cleanName.split(/\s+/).slice(0, 8);
+
+  if (brand && words.length > 0) {
+    // "Brand Product - Key feature"
+    const feature = description ? description.split('.')[0].substring(0, 50) : words.slice(1).join(' ');
+    return `${brand} ${words.slice(0, 3).join(' ')} - Premium Quality`;
+  }
+
+  return `${words.slice(0, 6).join(' ')} - Quality Product`;
 }
 
 // Download and store product images
@@ -607,6 +654,7 @@ Deno.serve(async (req) => {
             p_dimensions: researchResult.dimensions,
             p_source_url: researchResult.sourceUrl,
             p_confidence: researchResult.confidence,
+            p_tagline: researchResult.tagline,
           });
 
         if (processError) {
