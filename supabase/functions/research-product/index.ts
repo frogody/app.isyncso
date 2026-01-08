@@ -247,21 +247,26 @@ async function enrichProduct(
   // Build enrichment search queries
   const enrichQueries: string[] = [];
 
-  // If we have EAN, search by EAN first (most accurate)
+  // Search by product name for details
+  const words = input.productDescription.split(/\s+/);
+  const possibleBrand = words[0];
+  const shortName = input.productDescription.substring(0, 60);
+
+  // Priority 1: Amazon search (best for CDN images that allow hotlinking)
+  enrichQueries.push(`${shortName} site:amazon.de OR site:amazon.nl OR site:amazon.com`);
+
+  // Priority 2: bol.com search (Dutch retailer with accessible CDN)
+  enrichQueries.push(`${shortName} site:bol.com`);
+
+  // If we have EAN, search by EAN
   if (ean) {
     enrichQueries.push(`${ean} product specifications features`);
   }
 
-  // Search by product name for details
-  const words = input.productDescription.split(/\s+/);
-  const possibleBrand = words[0];
-
+  // Model number search
   if (input.modelNumber) {
     enrichQueries.push(`${possibleBrand} ${input.modelNumber} specifications features review`);
   }
-
-  // Manufacturer website search
-  enrichQueries.push(`${possibleBrand} ${input.productDescription.substring(0, 50)} official site`);
 
   // Execute enrichment searches
   const allSearchResults: any[] = [];
@@ -300,7 +305,11 @@ Extract ALL available information about this product. Focus on:
 3. Detailed description (2-3 paragraphs about features and benefits)
 4. Brand name
 5. Product category
-6. Product images (direct URLs to high-quality product photos - jpg, png, webp only)
+6. Product images - IMPORTANT: Use CDN/media URLs that allow direct access:
+   - Preferred: Amazon CDN (images-na.ssl-images-amazon.com, m.media-amazon.com)
+   - Preferred: bol.com CDN (media.s-bol.com)
+   - Preferred: Other retailer CDNs (media.*, cdn.*, assets.*, static.*)
+   - AVOID: Manufacturer website URLs (samsung.com, philips.com, etc.) as they block direct access
 7. Technical specifications (size, power, capacity, etc.)
 8. Weight and dimensions
 9. Source URL (most reliable product page)
@@ -312,7 +321,7 @@ Respond with ONLY this JSON:
   "description": "Detailed product description with features and benefits",
   "brand": "Brand name",
   "category": "Product category (e.g., 'Monitors', 'Electronics', 'Kitchen Appliances')",
-  "images": ["https://example.com/image1.jpg", "https://example.com/image2.png"],
+  "images": ["https://m.media-amazon.com/images/...", "https://media.s-bol.com/..."],
   "specifications": [
     {"name": "Specification name", "value": "Value"}
   ],
@@ -482,19 +491,47 @@ async function downloadAndStoreImages(
   for (let i = 0; i < Math.min(images.length, maxImages); i++) {
     try {
       const imageUrl = images[i];
+      console.log(`Downloading image ${i + 1}: ${imageUrl.substring(0, 80)}...`);
+
+      // Use browser-like headers to bypass hotlink protection
       const response = await fetch(imageUrl, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; ProductResearchBot/1.0)',
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Referer': new URL(imageUrl).origin + '/',
+          'Sec-Fetch-Dest': 'image',
+          'Sec-Fetch-Mode': 'no-cors',
+          'Sec-Fetch-Site': 'same-origin',
         },
+        redirect: 'follow',
       });
 
-      if (!response.ok) continue;
+      if (!response.ok) {
+        console.log(`Failed to download image ${i + 1}: HTTP ${response.status}`);
+        continue;
+      }
 
       const contentType = response.headers.get('content-type') || 'image/jpeg';
+
+      // Verify it's actually an image
+      if (!contentType.startsWith('image/')) {
+        console.log(`Not an image (${contentType}), skipping`);
+        continue;
+      }
+
       const extension = contentType.includes('png') ? 'png' :
-                       contentType.includes('webp') ? 'webp' : 'jpg';
+                       contentType.includes('webp') ? 'webp' :
+                       contentType.includes('gif') ? 'gif' : 'jpg';
 
       const blob = await response.blob();
+
+      // Check file size (skip if too small - likely an error image)
+      if (blob.size < 1000) {
+        console.log(`Image too small (${blob.size} bytes), skipping`);
+        continue;
+      }
+
       const arrayBuffer = await blob.arrayBuffer();
       const buffer = new Uint8Array(arrayBuffer);
 
@@ -509,7 +546,12 @@ async function downloadAndStoreImages(
           upsert: false,
         });
 
-      if (!error && data) {
+      if (error) {
+        console.log(`Failed to upload image ${i + 1}: ${error.message}`);
+        continue;
+      }
+
+      if (data) {
         const { data: urlData } = supabase.storage
           .from('product-images')
           .getPublicUrl(filename);
@@ -627,18 +669,23 @@ Deno.serve(async (req) => {
       // Download and store images if found
       let storedImages: string[] = [];
       if (researchResult.images.length > 0 && queueRecord?.company_id) {
+        console.log(`Attempting to download ${researchResult.images.length} images...`);
         storedImages = await downloadAndStoreImages(
           supabase,
           queueRecord.company_id,
           researchResult.images,
           researchResult.name || productDescription
         );
-        console.log(`Stored ${storedImages.length} images`);
+        console.log(`Successfully stored ${storedImages.length} of ${researchResult.images.length} images`);
       }
 
       // Always create product - use name from research or fall back to description
       const productName = researchResult.name || productDescription.substring(0, 200);
       if (productName) {
+        // Only pass images that were successfully stored (not external URLs)
+        // External URLs often have hotlink protection and won't load in browsers
+        const imagesToStore = storedImages; // Only use successfully downloaded images
+
         // Call database function to create/match product
         const { data: processResult, error: processError } = await supabase
           .rpc('process_research_result', {
@@ -648,7 +695,7 @@ Deno.serve(async (req) => {
             p_description: researchResult.description,
             p_brand: researchResult.brand,
             p_category: researchResult.category,
-            p_images: storedImages.length > 0 ? storedImages : researchResult.images,
+            p_images: imagesToStore,
             p_specifications: researchResult.specifications,
             p_weight: researchResult.weight,
             p_dimensions: researchResult.dimensions,
