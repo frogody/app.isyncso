@@ -12,14 +12,17 @@ serve(async (req) => {
   }
 
   try {
-    const { headers, sampleData, detectedTypes } = await req.json();
+    const { headers: rawHeaders, sampleData, detectedTypes } = await req.json();
 
-    if (!headers || !Array.isArray(headers)) {
+    if (!rawHeaders || !Array.isArray(rawHeaders)) {
       return new Response(
         JSON.stringify({ error: 'Headers array is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Trim whitespace from headers - CSV files often have trailing spaces
+    const headers = rawHeaders.map((h: string) => h.trim());
 
     const TOGETHER_API_KEY = Deno.env.get('TOGETHER_API_KEY');
     if (!TOGETHER_API_KEY) {
@@ -51,12 +54,14 @@ Target fields to map to:
 
 IMPORTANT - Dutch terms:
 - "Artikelnaam" = Product name (name)
-- "Prijs per stuk" or "stukprijs" or "prijs (ex btw)" = Unit price (purchase_price)
-- "Aantal ontvangen" or "ontvangen" = Quantity received (quantity) - PREFER this over "aantal ingekocht"
-- "Aantal ingekocht" = Quantity ordered (less preferred for quantity)
+- "Prijs per stuk" or "stukprijs" or "Prijs per stuk (ex btw)" = Unit price (purchase_price)
+- "Aantal ingekocht" = Quantity ordered/purchased (quantity) - PREFER this for inventory tracking
+- "Aantal ontvangen" = Quantity received (alternative for quantity if "ingekocht" not available)
 - "Leverancier" = Supplier (supplier)
 - "Datum inkoop" = Purchase date (purchase_date)
 - "Bestelnummer" = Order number (order_number)
+
+NOTE: For inventory import, prefer "Aantal ingekocht" (ordered) over "Aantal ontvangen" (received) because items may be ordered but not yet received.
 
 The detected_type field gives hints:
 - currency = price field (likely purchase_price)

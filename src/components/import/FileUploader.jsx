@@ -40,11 +40,15 @@ export function FileUploader({ onFileProcessed, isProcessing }) {
         throw new Error('File must contain at least a header row and one data row');
       }
 
-      const headers = rawData[0].map((h, i) => ({
-        index: i,
-        name: String(h || `Column ${i + 1}`).trim(),
-        originalName: String(h || '').trim()
-      }));
+      const headers = rawData[0].map((h, i) => {
+        // Trim whitespace from column names - CSV often has trailing spaces
+        const name = String(h || `Column ${i + 1}`).trim();
+        return {
+          index: i,
+          name: name,
+          originalName: name
+        };
+      });
 
       const rows = rawData.slice(1).filter(row =>
         row.some(cell => cell !== null && cell !== undefined && cell !== '')

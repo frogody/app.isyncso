@@ -221,9 +221,14 @@ export function ValidationPreview({
 
       // Apply mappings and transformations
       Object.entries(mappings).forEach(([sourceCol, targetField]) => {
-        const colIndex = sourceColumns.findIndex(c => c.name === sourceCol);
+        // Try exact match first, then try trimmed match (handles trailing spaces in column names)
+        let colIndex = sourceColumns.findIndex(c => c.name === sourceCol);
         if (colIndex === -1) {
-          console.warn(`Column not found: "${sourceCol}"`);
+          // Try trimmed match - CSV columns often have trailing spaces
+          colIndex = sourceColumns.findIndex(c => c.name.trim() === sourceCol.trim());
+        }
+        if (colIndex === -1) {
+          console.warn(`Column not found: "${sourceCol}" (available: ${sourceColumns.map(c => `"${c.name}"`).join(', ')})`);
           return;
         }
 
