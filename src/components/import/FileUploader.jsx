@@ -16,14 +16,25 @@ export function FileUploader({ onFileProcessed, isProcessing }) {
 
     try {
       const arrayBuffer = await file.arrayBuffer();
-      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      // Read with options to preserve raw values and handle encoding
+      const workbook = XLSX.read(arrayBuffer, {
+        type: 'array',
+        raw: false,         // Get formatted values (includes currency symbols)
+        cellDates: true,    // Parse dates as JS Date objects
+        codepage: 65001     // UTF-8 encoding
+      });
 
       // Get the first sheet
       const sheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
 
-      // Convert to JSON with headers
-      const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+      // Convert to JSON with headers - preserve types
+      const rawData = XLSX.utils.sheet_to_json(sheet, {
+        header: 1,
+        defval: '',
+        raw: false,         // Get formatted strings to preserve currency symbols
+        dateNF: 'yyyy-mm-dd' // Standardize date format
+      });
 
       if (rawData.length < 2) {
         throw new Error('File must contain at least a header row and one data row');
@@ -40,19 +51,46 @@ export function FileUploader({ onFileProcessed, isProcessing }) {
       );
 
       // Get sample data for each column (first 5 non-empty values)
+      // Preserve both raw and display values for better AI analysis
       const sampleData = headers.map((header, colIndex) => {
         const samples = [];
+        const rawSamples = [];
         for (let i = 0; i < rows.length && samples.length < 5; i++) {
           const value = rows[i][colIndex];
           if (value !== null && value !== undefined && value !== '') {
+            // Keep original value for display and type detection
             samples.push(String(value));
+            rawSamples.push(value);
           }
         }
         return {
           ...header,
-          samples
+          samples,
+          rawSamples, // Preserve original types (number, Date, etc.)
+          // Detect likely data type from samples
+          detectedType: detectDataType(rawSamples)
         };
       });
+
+      // Helper function to detect data type
+      function detectDataType(values) {
+        if (!values.length) return 'unknown';
+
+        const types = values.map(v => {
+          if (typeof v === 'number') return 'number';
+          if (v instanceof Date) return 'date';
+          const str = String(v);
+          if (/^[\d.,\s€$£¥]+$/i.test(str) && str.match(/[€$£¥]|eur|usd/i)) return 'currency';
+          if (/^\d{8,13}$/.test(str)) return 'barcode';
+          if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}$/.test(str)) return 'date';
+          return 'text';
+        });
+
+        // Return most common type
+        const counts = {};
+        types.forEach(t => counts[t] = (counts[t] || 0) + 1);
+        return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+      }
 
       setParseStatus('success');
 

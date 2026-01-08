@@ -8,26 +8,80 @@ import { cn } from '@/lib/utils';
 // Transform functions
 const transformers = {
   // Parse European price format "€ 53,64" → 53.64
+  // Handles: "€ 53,64", "â ¬53,64" (encoding issue), "53.64", 53.64 (number)
   parsePrice: (value) => {
-    if (!value) return 0;
-    const str = String(value);
-    const cleaned = str
-      .replace(/[€$£]/g, '')
-      .replace(/\s/g, '')
-      .replace(/\./g, '') // Remove thousand separators
-      .replace(',', '.'); // Convert decimal separator
-    return parseFloat(cleaned) || 0;
+    if (value === null || value === undefined || value === '') return null;
+
+    // If already a number, return it directly
+    if (typeof value === 'number') {
+      return value > 0 ? value : null;
+    }
+
+    let str = String(value).trim();
+
+    // Remove common currency symbols and encoding variations
+    // â ¬ is UTF-8 encoded € displayed in wrong encoding
+    str = str
+      .replace(/â\s*¬/g, '')  // UTF-8 encoding issue for €
+      .replace(/[€$£¤]/g, '') // Currency symbols
+      .replace(/EUR|USD|GBP/gi, '') // Currency codes
+      .trim();
+
+    // If empty after cleaning, return null
+    if (!str) return null;
+
+    // Detect format: European (1.234,56) vs US (1,234.56)
+    const hasComma = str.includes(',');
+    const hasDot = str.includes('.');
+
+    let cleaned;
+    if (hasComma && hasDot) {
+      // Both present - determine which is decimal separator
+      const lastComma = str.lastIndexOf(',');
+      const lastDot = str.lastIndexOf('.');
+
+      if (lastComma > lastDot) {
+        // European: 1.234,56 - comma is decimal
+        cleaned = str.replace(/\./g, '').replace(',', '.');
+      } else {
+        // US: 1,234.56 - dot is decimal
+        cleaned = str.replace(/,/g, '');
+      }
+    } else if (hasComma) {
+      // Only comma - likely European decimal: 53,64
+      cleaned = str.replace(',', '.');
+    } else {
+      // Only dot or no separator - treat as standard decimal
+      cleaned = str;
+    }
+
+    // Remove any remaining non-numeric chars except dot
+    cleaned = cleaned.replace(/[^\d.]/g, '');
+
+    const result = parseFloat(cleaned);
+    return isNaN(result) ? null : (result > 0 ? result : null);
   },
 
-  // Parse quantity
+  // Parse quantity - allows 0 as valid
   parseQuantity: (value) => {
-    const num = parseInt(String(value), 10);
-    return isNaN(num) ? 0 : Math.max(0, num);
+    if (value === null || value === undefined || value === '') return null;
+
+    // If already a number
+    if (typeof value === 'number') {
+      return Math.max(0, Math.round(value));
+    }
+
+    const str = String(value).trim();
+    // Remove any non-numeric characters
+    const cleaned = str.replace(/[^\d.-]/g, '');
+    const num = parseInt(cleaned, 10);
+
+    return isNaN(num) ? null : Math.max(0, num);
   },
 
   // Extract EAN from mixed data (order numbers, etc.)
   extractEAN: (value) => {
-    if (!value || value === 'X') return null;
+    if (!value || value === 'X' || value === 'x') return null;
     const str = String(value).trim();
 
     // EAN-13: exactly 13 digits
@@ -36,11 +90,18 @@ const transformers = {
     // EAN-8: exactly 8 digits
     if (/^\d{8}$/.test(str)) return str;
 
-    // Try to extract EAN from mixed string
-    const match13 = str.match(/\b(\d{13})\b/);
+    // Could also be 12 digits (UPC-A)
+    if (/^\d{12}$/.test(str)) return str;
+
+    // Try to extract EAN from mixed string (e.g., "SO11012418" has no EAN)
+    // Only extract if it's clearly a standalone number
+    const match13 = str.match(/^(\d{13})$/);
     if (match13) return match13[1];
 
-    const match8 = str.match(/\b(\d{8})\b/);
+    const match12 = str.match(/^(\d{12})$/);
+    if (match12) return match12[1];
+
+    const match8 = str.match(/^(\d{8})$/);
     if (match8) return match8[1];
 
     return null;
@@ -49,6 +110,16 @@ const transformers = {
   // Parse date (multiple formats)
   parseDate: (value) => {
     if (!value) return null;
+
+    // If it's a number, treat as Excel serial date
+    if (typeof value === 'number') {
+      if (value > 25000 && value < 60000) {
+        const date = new Date((value - 25569) * 86400 * 1000);
+        return date.toISOString().split('T')[0];
+      }
+      return null;
+    }
+
     const str = String(value).trim();
 
     // Try DD/MM/YYYY or DD-MM-YYYY
@@ -62,10 +133,10 @@ const transformers = {
     const isoMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})$/);
     if (isoMatch) return str;
 
-    // Try to parse as Excel date number
+    // Try to parse as Excel date number (string)
     if (/^\d+$/.test(str)) {
       const excelDate = parseInt(str, 10);
-      if (excelDate > 25000 && excelDate < 50000) {
+      if (excelDate > 25000 && excelDate < 60000) {
         const date = new Date((excelDate - 25569) * 86400 * 1000);
         return date.toISOString().split('T')[0];
       }
@@ -76,7 +147,8 @@ const transformers = {
 
   // Clean string value
   cleanString: (value) => {
-    return value ? String(value).trim() : '';
+    if (value === null || value === undefined) return '';
+    return String(value).trim();
   }
 };
 
@@ -90,12 +162,16 @@ const validateRow = (row) => {
     errors.push('Product name is required');
   }
 
-  if (row.purchase_price === undefined || row.purchase_price <= 0) {
+  // Price must be present and positive
+  if (row.purchase_price === null || row.purchase_price === undefined) {
+    errors.push('Price is required');
+  } else if (row.purchase_price <= 0) {
     errors.push('Price must be greater than 0');
   }
 
-  if (row.quantity === undefined || row.quantity <= 0) {
-    errors.push('Quantity must be greater than 0');
+  // Quantity must be present (0 is valid for "not yet received")
+  if (row.quantity === null || row.quantity === undefined) {
+    errors.push('Quantity is required');
   }
 
   // Warnings
@@ -357,9 +433,9 @@ export function ValidationPreview({
                   <td className="px-4 py-3 text-right">
                     <span className={cn(
                       "font-mono text-sm",
-                      row.quantity > 0 ? "text-white" : "text-red-400"
+                      row.quantity !== null && row.quantity !== undefined ? "text-white" : "text-red-400"
                     )}>
-                      {row.quantity > 0 ? row.quantity : '(missing)'}
+                      {row.quantity !== null && row.quantity !== undefined ? row.quantity : '(missing)'}
                     </span>
                   </td>
                   <td className="px-4 py-3">

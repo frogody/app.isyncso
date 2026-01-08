@@ -81,7 +81,10 @@ export default function InventoryImport() {
           },
           body: JSON.stringify({
             headers: headers.map(h => h.name),
-            sampleData: headers.map(h => h.samples?.[0] || '')
+            // Send multiple samples for better analysis
+            sampleData: headers.map(h => h.samples?.slice(0, 3).join(' | ') || ''),
+            // Send detected types to help AI
+            detectedTypes: headers.map(h => h.detectedType || 'unknown')
           })
         }
       );

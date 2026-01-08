@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { headers, sampleData } = await req.json();
+    const { headers, sampleData, detectedTypes } = await req.json();
 
     if (!headers || !Array.isArray(headers)) {
       return new Response(
@@ -26,44 +26,56 @@ serve(async (req) => {
       throw new Error('TOGETHER_API_KEY not configured');
     }
 
+    // Build detailed column info for the AI
+    const columnInfo = headers.map((h, i) => {
+      const samples = sampleData?.[i] || '';
+      const detectedType = detectedTypes?.[i] || 'unknown';
+      return `- Column "${h}": samples=[${samples}], detected_type=${detectedType}`;
+    }).join('\n');
+
     const prompt = `You are a data mapping assistant. Analyze these spreadsheet column headers and their sample data to suggest mappings to our product database fields.
 
-Source columns (with sample values):
-${headers.map((h, i) => `- "${h}": "${sampleData?.[i] || ''}"`).join('\n')}
+Source columns:
+${columnInfo}
 
 Target fields to map to:
-- name: Product name/title (required) - Look for columns like "product", "name", "item", "artikel", "artikelnaam"
-- purchase_price: Unit cost/price (required) - Look for columns with "price", "prijs", "cost", "kosten", currency symbols
-- quantity: Stock quantity (required) - Look for columns with "qty", "quantity", "aantal", "stock", "ontvangen"
-- ean: EAN/GTIN barcode (13 digits) - Look for columns with "ean", "gtin", "barcode", or 13-digit numbers
-- sku: Internal product code - Look for columns with "sku", "code", "artikelnummer"
+- name: Product name/title (REQUIRED) - Look for columns like "product", "name", "item", "artikel", "artikelnaam", "productnaam"
+- purchase_price: Unit cost/price (REQUIRED) - Look for columns with "price", "prijs", "cost", "kosten", "per stuk", "stukprijs", currency symbols like €
+- quantity: Stock quantity (REQUIRED) - Look for columns with "qty", "quantity", "aantal", "stock", "ontvangen", "received"
+- ean: EAN/GTIN barcode (8-13 digits) - Look for columns with "ean", "gtin", "barcode", or 8-13 digit numbers
+- sku: Internal product code - Look for columns with "sku", "code", "artikelnummer", "artikel nr"
 - supplier: Supplier/vendor name - Look for columns with "supplier", "vendor", "leverancier"
-- purchase_date: Purchase date - Look for columns with "date", "datum"
-- order_number: Order/invoice reference - Look for columns with "order", "invoice", "bestelling"
+- purchase_date: Purchase date - Look for columns with "date", "datum", "inkoop"
+- order_number: Order/invoice reference - Look for columns with "order", "invoice", "bestelling", "bestelnummer"
 - category: Product category - Look for columns with "category", "categorie", "type"
 
-Important considerations:
-- Column names may be in Dutch, German, French, or other languages
-- Price columns often have currency symbols (€, $) and use comma as decimal separator
-- If a column contains mixed data (like order numbers AND EAN codes), only map it if the majority are EANs
-- "Aantal ontvangen" (quantity received) is better for quantity than "Aantal ingekocht" (quantity ordered)
-- Be conservative - only map columns you're confident about
+IMPORTANT - Dutch terms:
+- "Artikelnaam" = Product name (name)
+- "Prijs per stuk" or "stukprijs" or "prijs (ex btw)" = Unit price (purchase_price)
+- "Aantal ontvangen" or "ontvangen" = Quantity received (quantity) - PREFER this over "aantal ingekocht"
+- "Aantal ingekocht" = Quantity ordered (less preferred for quantity)
+- "Leverancier" = Supplier (supplier)
+- "Datum inkoop" = Purchase date (purchase_date)
+- "Bestelnummer" = Order number (order_number)
+
+The detected_type field gives hints:
+- currency = price field (likely purchase_price)
+- number = could be quantity or price
+- barcode = EAN/GTIN
+- date = date field
+- text = name, supplier, or other text
 
 Respond with a valid JSON object:
 {
   "mappings": {
-    "source_column_exact_name": "target_field",
+    "exact_column_name_from_source": "target_field_id",
     ...
-  },
-  "transformations": {
-    "purchase_price": { "type": "european_currency" },
-    "purchase_date": { "type": "date", "format": "DD/MM/YYYY" }
   },
   "confidence": 0.85,
   "notes": ["Any observations about the data"]
 }
 
-Only include mappings you're reasonably confident about (>70% certainty).`;
+CRITICAL: Use the EXACT column names from the source (including spaces, capitalization). Map all required fields if possible.`;
 
     console.log('Sending to Together AI for column mapping...');
 
