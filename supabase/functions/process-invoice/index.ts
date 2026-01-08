@@ -73,7 +73,7 @@ async function extractFromImage(client: Together, imageUrl: string): Promise<Ext
   try {
     console.log("Calling Together AI vision model...");
     const response = await client.chat.completions.create({
-      model: "meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo",
+      model: "meta-llama/Llama-4-Scout-17B-16E-Instruct",
       messages: [
         {
           role: "user",
