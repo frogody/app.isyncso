@@ -284,13 +284,18 @@ function createEntityWrapper(entityName) {
 
     /**
      * Delete a record by ID
+     * Note: Some tables use product_id as primary key (digital_products, physical_products)
      */
     async delete(id) {
       try {
+        // Tables that use product_id instead of id as primary key
+        const productIdTables = ['digital_products', 'physical_products'];
+        const idColumn = productIdTables.includes(tableName) ? 'product_id' : 'id';
+
         const { error } = await supabase
           .from(tableName)
           .delete()
-          .eq('id', id);
+          .eq(idColumn, id);
 
         if (error) throw error;
         return true;

@@ -122,7 +122,7 @@ export default function ProductsPhysical() {
     try {
       // Delete physical product details first if they exist
       if (physicalProducts[product.id]) {
-        await PhysicalProduct.delete(physicalProducts[product.id].id);
+        await PhysicalProduct.delete(product.id);
       }
       // Delete the main product
       await Product.delete(product.id);
