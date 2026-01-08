@@ -73,7 +73,7 @@ async function extractFromImage(client: Together, imageUrl: string): Promise<Ext
   try {
     console.log("Calling Together AI vision model...");
     const response = await client.chat.completions.create({
-      model: "meta-llama/Llama-4-Scout-17B-16E-Instruct",
+      model: "Qwen/Qwen3-VL-8B-Instruct",
       messages: [
         {
           role: "user",
@@ -139,9 +139,9 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const together = new Together({ apiKey: togetherApiKey });
 
-    const { storagePath, bucket, companyId, sourceEmailId, imageUrl: directImageUrl } = await req.json();
+    const { storagePath, bucket, companyId, userId, sourceEmailId, imageUrl: directImageUrl } = await req.json();
 
-    console.log("Received request:", { storagePath, bucket, companyId, directImageUrl: !!directImageUrl });
+    console.log("Received request:", { storagePath, bucket, companyId, userId, directImageUrl: !!directImageUrl });
 
     if ((!storagePath || !bucket) && !directImageUrl) {
       return new Response(
@@ -153,6 +153,13 @@ Deno.serve(async (req) => {
     if (!companyId) {
       return new Response(
         JSON.stringify({ success: false, error: "companyId is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!userId) {
+      return new Response(
+        JSON.stringify({ success: false, error: "userId is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -208,13 +215,14 @@ Deno.serve(async (req) => {
       .from("expenses")
       .insert({
         company_id: companyId,
+        user_id: userId,
         document_type: "invoice",
         source_type: sourceEmailId ? "email" : "manual",
         source_email_id: sourceEmailId || null,
         original_file_url: imageUrl, // This is a signed URL (1hr expiry)
         external_reference: extraction.data.invoice_number,
         invoice_date: extraction.data.invoice_date,
-        due_date: extraction.data.due_date,
+        payment_due_date: extraction.data.due_date,
         subtotal: extraction.data.subtotal,
         tax_amount: extraction.data.tax_amount,
         tax_percent: extraction.data.tax_percent,

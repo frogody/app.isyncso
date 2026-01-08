@@ -507,7 +507,7 @@ function ReviewQueueBanner({ count, onClick }) {
 }
 
 // Upload invoice modal
-function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId }) {
+function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, userId }) {
   const fileInputRef = useRef(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -602,7 +602,7 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId }) {
       // Process the invoice with AI via edge function
       toast.info("Factuur wordt geanalyseerd met AI...");
 
-      console.log("Calling process-invoice edge function with:", { storagePath: path, companyId });
+      console.log("Calling process-invoice edge function with:", { storagePath: path, companyId, userId });
 
       const { data: processResult, error: processError } = await supabase.functions.invoke(
         "process-invoice",
@@ -611,6 +611,7 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId }) {
             storagePath: path,
             bucket: DOCUMENTS_BUCKET,
             companyId: companyId,
+            userId: userId,
           },
         }
       );
@@ -1036,6 +1037,7 @@ export default function InventoryExpenses() {
           onClose={() => setShowUploadModal(false)}
           onUploadComplete={loadExpenses}
           companyId={companyId}
+          userId={user?.id}
         />
       </div>
     </PermissionGuard>
