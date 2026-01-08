@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import {
   Upload, Columns, CheckCircle, Download, Sparkles,
-  ArrowLeft, ArrowRight, FileSpreadsheet, Package
+  ArrowLeft, ArrowRight, FileSpreadsheet, Package, Building2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -115,19 +115,21 @@ export default function InventoryImport() {
     setValidationResult(result);
   }, []);
 
-  // Find or create supplier
-  const findOrCreateSupplier = async (supplierName, companyId) => {
+  // Find or create supplier - returns { id, isNew, name }
+  const findOrCreateSupplier = async (supplierName, companyId, hintEmail = null) => {
     if (!supplierName) return null;
 
     // Try to find existing supplier
     const { data: existing } = await supabase
       .from('suppliers')
-      .select('id')
+      .select('id, name')
       .eq('company_id', companyId)
       .ilike('name', supplierName)
       .single();
 
-    if (existing) return existing.id;
+    if (existing) {
+      return { id: existing.id, isNew: false, name: existing.name };
+    }
 
     // Create new supplier
     const { data: created, error } = await supabase
@@ -137,7 +139,7 @@ export default function InventoryImport() {
         name: supplierName,
         status: 'active'
       })
-      .select('id')
+      .select('id, name')
       .single();
 
     if (error) {
@@ -145,7 +147,100 @@ export default function InventoryImport() {
       return null;
     }
 
-    return created?.id;
+    return { id: created.id, isNew: true, name: created.name };
+  };
+
+  // Queue supplier for enrichment - returns queue ID
+  const queueSupplierForEnrichment = async (supplierId, supplierName, companyId, hintEmail = null) => {
+    const { data, error } = await supabase
+      .from('supplier_research_queue')
+      .insert({
+        company_id: companyId,
+        supplier_id: supplierId,
+        supplier_name: supplierName,
+        hint_email: hintEmail,
+        hint_country: 'NL',  // Default to Netherlands
+        status: 'pending'
+      })
+      .select('id')
+      .single();
+
+    if (error) {
+      console.error('Failed to queue supplier for enrichment:', error);
+      return null;
+    }
+
+    return data?.id;
+  };
+
+  // Trigger supplier research
+  const triggerSupplierResearch = async (queueIds) => {
+    if (!queueIds || queueIds.length === 0) return;
+
+    // Get queue items with their details
+    const { data: queueItems, error: fetchError } = await supabase
+      .from('supplier_research_queue')
+      .select('id, supplier_name, hint_email, hint_country')
+      .in('id', queueIds);
+
+    if (fetchError || !queueItems?.length) {
+      console.error('Failed to fetch supplier queue items:', fetchError);
+      return;
+    }
+
+    const researchItems = queueItems.map(q => ({
+      queueId: q.id,
+      supplierName: q.supplier_name,
+      hintEmail: q.hint_email,
+      hintCountry: q.hint_country,
+    }));
+
+    // Call the research function
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/research-supplier`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({ items: researchItems })
+        }
+      );
+
+      if (!response.ok) {
+        console.error('Supplier research function error:', await response.text());
+      } else {
+        const result = await response.json();
+        console.log('Supplier research triggered successfully:', result);
+      }
+    } catch (error) {
+      console.error('Failed to trigger supplier research:', error);
+    }
+  };
+
+  // Link supplier to product
+  const linkSupplierToProduct = async (productId, supplierId, companyId, purchasePrice, purchaseDate) => {
+    if (!supplierId) return;
+
+    const { error } = await supabase
+      .from('product_suppliers')
+      .upsert({
+        company_id: companyId,
+        product_id: productId,
+        supplier_id: supplierId,
+        last_purchase_price: purchasePrice,
+        last_purchase_date: purchaseDate || new Date().toISOString().split('T')[0],
+        is_preferred: true,
+        is_active: true
+      }, {
+        onConflict: 'product_id,supplier_id'
+      });
+
+    if (error) {
+      console.error('Failed to link supplier to product:', error);
+    }
   };
 
   // Import a single product
@@ -254,20 +349,76 @@ export default function InventoryImport() {
       });
   };
 
-  // Queue product for enrichment
+  // Queue product for enrichment - returns the queue ID
   const queueForEnrichment = async (productId, name, ean, companyId) => {
-    if (!ean) return;
+    if (!ean) return null;
 
-    await supabase
+    const { data, error } = await supabase
       .from('product_research_queue')
       .insert({
         company_id: companyId,
-        source_type: 'import',
-        original_name: name,
-        ean: ean,
+        product_description: name,  // Correct column name
+        extracted_ean: ean,         // Correct column name
         status: 'pending',
         matched_product_id: productId
-      });
+      })
+      .select('id')
+      .single();
+
+    if (error) {
+      console.error('Failed to queue for enrichment:', error);
+      return null;
+    }
+
+    return data?.id;
+  };
+
+  // Trigger the research function for queued items
+  const triggerResearch = async (queueIds) => {
+    if (!queueIds || queueIds.length === 0) return;
+
+    // Get queue items with their details
+    const { data: queueItems, error: fetchError } = await supabase
+      .from('product_research_queue')
+      .select('id, product_description, model_number, supplier_name, extracted_ean')
+      .in('id', queueIds);
+
+    if (fetchError || !queueItems?.length) {
+      console.error('Failed to fetch queue items:', fetchError);
+      return;
+    }
+
+    const researchItems = queueItems.map(q => ({
+      queueId: q.id,
+      productDescription: q.product_description,
+      modelNumber: q.model_number,
+      supplierName: q.supplier_name,
+      extractedEan: q.extracted_ean,
+    }));
+
+    // Call the research function
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/research-product`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({ items: researchItems })
+        }
+      );
+
+      if (!response.ok) {
+        console.error('Research function error:', await response.text());
+      } else {
+        const result = await response.json();
+        console.log('Research triggered successfully:', result);
+      }
+    } catch (error) {
+      console.error('Failed to trigger research:', error);
+    }
   };
 
   // Execute import
@@ -283,12 +434,16 @@ export default function InventoryImport() {
       created: 0,
       updated: 0,
       failed: 0,
-      toEnrich: 0
+      toEnrich: 0,
+      suppliersCreated: 0
     };
     const errors = [];
+    const enrichmentQueueIds = []; // Collect queue IDs for product enrichment
+    const supplierEnrichmentQueueIds = []; // Collect queue IDs for supplier enrichment
 
-    // Cache suppliers
+    // Cache suppliers - stores { id, isNew, name }
     const supplierCache = new Map();
+    const newSupplierIds = new Set(); // Track which suppliers are new and need enrichment
 
     for (let i = 0; i < validationResult.transformedData.length; i++) {
       const row = validationResult.transformedData[i];
@@ -302,15 +457,36 @@ export default function InventoryImport() {
 
       try {
         // Get or create supplier
-        let supplierId = null;
+        let supplierInfo = null;
         if (row.supplier) {
-          if (supplierCache.has(row.supplier)) {
-            supplierId = supplierCache.get(row.supplier);
+          const supplierKey = row.supplier.toLowerCase().trim();
+          if (supplierCache.has(supplierKey)) {
+            supplierInfo = supplierCache.get(supplierKey);
           } else {
-            supplierId = await findOrCreateSupplier(row.supplier, user.company_id);
-            supplierCache.set(row.supplier, supplierId);
+            // Pass email hint if available
+            const hintEmail = row.email || null;
+            supplierInfo = await findOrCreateSupplier(row.supplier, user.company_id, hintEmail);
+            if (supplierInfo) {
+              supplierCache.set(supplierKey, supplierInfo);
+              // If this is a new supplier, queue it for enrichment (only once)
+              if (supplierInfo.isNew && !newSupplierIds.has(supplierInfo.id)) {
+                newSupplierIds.add(supplierInfo.id);
+                const supplierQueueId = await queueSupplierForEnrichment(
+                  supplierInfo.id,
+                  supplierInfo.name,
+                  user.company_id,
+                  hintEmail
+                );
+                if (supplierQueueId) {
+                  supplierEnrichmentQueueIds.push(supplierQueueId);
+                  results.suppliersCreated++;
+                }
+              }
+            }
           }
         }
+
+        const supplierId = supplierInfo?.id || null;
 
         // Import product
         const importResult = await importProduct(row, user.company_id);
@@ -318,10 +494,24 @@ export default function InventoryImport() {
         // Create stock purchase record
         await createStockPurchase(importResult.productId, row, supplierId, user.company_id);
 
+        // Link supplier to product (creates product_suppliers record)
+        if (supplierId) {
+          await linkSupplierToProduct(
+            importResult.productId,
+            supplierId,
+            user.company_id,
+            row.purchase_price,
+            row.purchase_date
+          );
+        }
+
         // Queue for enrichment if has EAN
         if (importResult.hasEan) {
-          await queueForEnrichment(importResult.productId, row.name, row.ean, user.company_id);
-          results.toEnrich++;
+          const queueId = await queueForEnrichment(importResult.productId, row.name, row.ean, user.company_id);
+          if (queueId) {
+            enrichmentQueueIds.push(queueId);
+            results.toEnrich++;
+          }
         }
 
         if (importResult.action === 'created') {
@@ -348,13 +538,36 @@ export default function InventoryImport() {
     setImportErrors(errors);
 
     if (results.failed === 0) {
-      toast.success(`Successfully imported ${results.created} products!`);
+      const supplierMsg = results.suppliersCreated > 0 ? `, ${results.suppliersCreated} new suppliers` : '';
+      toast.success(`Successfully imported ${results.created} products${supplierMsg}!`);
     } else {
       toast.warning(`Import completed with ${results.failed} errors`);
     }
 
     // Move to enrichment step
     setCurrentStep(4);
+
+    // Trigger AI enrichment for queued products (async - don't wait)
+    if (enrichmentQueueIds.length > 0) {
+      toast.info(`Starting AI enrichment for ${enrichmentQueueIds.length} products...`);
+      triggerResearch(enrichmentQueueIds).then(() => {
+        toast.success('Product enrichment started! Products will be updated with images and details.');
+      }).catch((err) => {
+        console.error('Product enrichment trigger failed:', err);
+        toast.error('Failed to start product enrichment. You can retry from the products page.');
+      });
+    }
+
+    // Trigger AI enrichment for new suppliers (async - don't wait)
+    if (supplierEnrichmentQueueIds.length > 0) {
+      toast.info(`Starting AI enrichment for ${supplierEnrichmentQueueIds.length} suppliers...`);
+      triggerSupplierResearch(supplierEnrichmentQueueIds).then(() => {
+        toast.success('Supplier enrichment started! Suppliers will be updated with website, logo, and contact info.');
+      }).catch((err) => {
+        console.error('Supplier enrichment trigger failed:', err);
+        toast.error('Failed to start supplier enrichment.');
+      });
+    }
   };
 
   // Check if can proceed to next step
@@ -564,16 +777,29 @@ export default function InventoryImport() {
                     Import Complete!
                   </h3>
 
-                  <p className="text-zinc-400 mb-6">
+                  <p className="text-zinc-400 mb-4">
                     {importResults.created} products created, {importResults.updated} updated
+                    {importResults.suppliersCreated > 0 && (
+                      <span className="block mt-1 text-cyan-400">
+                        {importResults.suppliersCreated} new suppliers added
+                      </span>
+                    )}
                   </p>
 
-                  {importResults.toEnrich > 0 && (
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 mb-6">
-                      <Sparkles className="w-4 h-4" />
-                      <span>{importResults.toEnrich} products queued for AI enrichment</span>
-                    </div>
-                  )}
+                  <div className="flex flex-wrap justify-center gap-3 mb-6">
+                    {importResults.toEnrich > 0 && (
+                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400">
+                        <Sparkles className="w-4 h-4" />
+                        <span>{importResults.toEnrich} products queued for AI enrichment</span>
+                      </div>
+                    )}
+                    {importResults.suppliersCreated > 0 && (
+                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+                        <Building2 className="w-4 h-4" />
+                        <span>{importResults.suppliersCreated} suppliers queued for AI enrichment</span>
+                      </div>
+                    )}
+                  </div>
 
                   <div className="flex items-center justify-center gap-4">
                     <Button

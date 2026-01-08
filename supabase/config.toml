@@ -18,3 +18,6 @@ verify_jwt = false
 
 [functions.map-import-columns]
 verify_jwt = false
+
+[functions.research-supplier]
+verify_jwt = false
