@@ -621,7 +621,7 @@ function PagesContent() {
 
                 <Route path="/InventoryImport" element={<InventoryImport />} />
 
-                <Route path="/contacts-import" element={<ContactsImport />} />
+                <Route path="/ContactsImport" element={<ContactsImport />} />
 
             </Routes>
         </Layout>
