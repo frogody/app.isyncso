@@ -9,3 +9,6 @@ verify_jwt = false
 
 [functions.enhance-prompt]
 verify_jwt = false
+
+[functions.process-invoice]
+verify_jwt = false

@@ -39,9 +39,8 @@ import {
   approveExpense,
   rejectExpense,
 } from "@/lib/db/queries";
-import { processInvoiceImage } from "@/lib/services/inventory-service";
 import { MIN_CONFIDENCE } from "@/lib/db/schema";
-import { storage } from "@/api/supabaseClient";
+import { storage, supabase } from "@/api/supabaseClient";
 
 const DOCUMENTS_BUCKET = "documents";
 
@@ -531,12 +530,25 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId }) {
       clearInterval(progressInterval);
       setUploadProgress(90);
 
-      // Process the invoice with AI
+      // Process the invoice with AI via edge function
       toast.info("Factuur wordt geanalyseerd met AI...");
 
-      const processResult = await processInvoiceImage(companyId, result.url);
+      const { data: processResult, error: processError } = await supabase.functions.invoke(
+        "process-invoice",
+        {
+          body: {
+            imageUrl: result.url,
+            companyId: companyId,
+          },
+        }
+      );
 
       setUploadProgress(100);
+
+      if (processError) {
+        toast.error("Kon factuur niet verwerken: " + processError.message);
+        return;
+      }
 
       if (processResult.success) {
         if (processResult.needsReview) {
@@ -550,7 +562,7 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId }) {
         onUploadComplete?.();
         handleClose();
       } else {
-        toast.error("Kon factuur niet verwerken: " + (processResult.errors?.join(", ") || "Onbekende fout"));
+        toast.error("Kon factuur niet verwerken: " + (processResult.errors?.join(", ") || processResult.error || "Onbekende fout"));
       }
     } catch (error) {
       console.error("Upload error:", error);
