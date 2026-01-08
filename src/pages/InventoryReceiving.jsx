@@ -511,11 +511,13 @@ export default function InventoryReceiving() {
   return (
     <PermissionGuard permission="inventory.manage" showMessage>
       <div className="min-h-screen bg-background">
-        <PageHeader
-          title="Ontvangst"
-          subtitle="Scan producten om voorraad te ontvangen"
-          icon={Package}
-        />
+        <div className="container mx-auto px-4 pt-6">
+          <PageHeader
+            title="Ontvangst"
+            subtitle="Scan producten om voorraad te ontvangen"
+            icon={Package}
+          />
+        </div>
 
         <div className="container mx-auto px-4 py-6">
           {/* Stats */}

@@ -486,11 +486,13 @@ export default function InventoryShipping() {
   return (
     <PermissionGuard permission="shipping.manage" showMessage>
       <div className="min-h-screen bg-background">
-        <PageHeader
-          title="Verzendingen"
-          subtitle="Beheer verzendtaken en track & trace"
-          icon={Truck}
-        />
+        <div className="container mx-auto px-4 pt-6">
+          <PageHeader
+            title="Verzendingen"
+            subtitle="Beheer verzendtaken en track & trace"
+            icon={Truck}
+          />
+        </div>
 
         <div className="container mx-auto px-4 py-6">
           {/* Overdue alert */}

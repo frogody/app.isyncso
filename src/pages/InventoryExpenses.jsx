@@ -553,17 +553,19 @@ export default function InventoryExpenses() {
   return (
     <PermissionGuard permission="finance.view" showMessage>
       <div className="min-h-screen bg-background">
-        <PageHeader
-          title="Uitgaven"
-          subtitle="Beheer facturen en AI-extractie reviews"
-          icon={Receipt}
-          actions={
-            <Button className="bg-cyan-600 hover:bg-cyan-700">
-              <Upload className="w-4 h-4 mr-2" />
-              Factuur uploaden
-            </Button>
-          }
-        />
+        <div className="container mx-auto px-4 pt-6">
+          <PageHeader
+            title="Uitgaven"
+            subtitle="Beheer facturen en AI-extractie reviews"
+            icon={Receipt}
+            actions={
+              <Button className="bg-cyan-600 hover:bg-cyan-700">
+                <Upload className="w-4 h-4 mr-2" />
+                Factuur uploaden
+              </Button>
+            }
+          />
+        </div>
 
         <div className="container mx-auto px-4 py-6">
           {/* Review queue banner */}
