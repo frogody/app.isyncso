@@ -138,6 +138,7 @@ export default function ProductModal({
 
   // Supplier management state
   const [productSuppliers, setProductSuppliers] = useState([]);
+  const [pendingSuppliers, setPendingSuppliers] = useState([]); // For new products before save
   const [purchaseHistory, setPurchaseHistory] = useState([]);
   const [availableSuppliers, setAvailableSuppliers] = useState([]);
   const [suppliersLoading, setSuppliersLoading] = useState(false);
@@ -283,6 +284,10 @@ export default function ProductModal({
         },
         country_of_origin: '',
       });
+      // Reset supplier state for new products
+      setPendingSuppliers([]);
+      setProductSuppliers([]);
+      setPurchaseHistory([]);
       setActiveTab('basic');
     }
   }, [product, open, productType]);
@@ -374,51 +379,79 @@ export default function ProductModal({
 
   // Supplier management handlers
   const handleAddSupplier = async () => {
-    if (!selectedSupplierId || !product?.id) return;
+    if (!selectedSupplierId) return;
 
-    try {
-      const supplier = await addProductSupplier({
-        company_id: user.company_id,
-        product_id: product.id,
+    const selectedSupplier = availableSuppliers.find(s => s.id === selectedSupplierId);
+    if (!selectedSupplier) return;
+
+    if (isEdit && product?.id) {
+      // For existing products, add via API
+      try {
+        const supplier = await addProductSupplier({
+          company_id: user.company_id,
+          product_id: product.id,
+          supplier_id: selectedSupplierId,
+          is_preferred: productSuppliers.length === 0
+        });
+        setProductSuppliers(prev => [...prev, supplier]);
+        toast.success('Supplier added');
+      } catch (e) {
+        console.error('Failed to add supplier:', e);
+        toast.error('Failed to add supplier');
+        return;
+      }
+    } else {
+      // For new products, add to pending list
+      const allSuppliers = [...pendingSuppliers];
+      const newSupplier = {
+        id: `pending-${Date.now()}`,
         supplier_id: selectedSupplierId,
-        is_preferred: productSuppliers.length === 0 // First supplier is preferred
-      });
-      setProductSuppliers(prev => [...prev, supplier]);
-      setSelectedSupplierId('');
-      setShowAddSupplier(false);
-      toast.success('Supplier added');
-    } catch (e) {
-      console.error('Failed to add supplier:', e);
-      toast.error('Failed to add supplier');
+        is_preferred: allSuppliers.length === 0,
+        suppliers: { id: selectedSupplier.id, name: selectedSupplier.name }
+      };
+      setPendingSuppliers([...allSuppliers, newSupplier]);
     }
+    setSelectedSupplierId('');
+    setShowAddSupplier(false);
   };
 
   const handleRemoveSupplier = async (supplierId) => {
-    if (!product?.id) return;
-
-    try {
-      await removeProductSupplier(product.id, supplierId);
-      setProductSuppliers(prev => prev.filter(s => s.supplier_id !== supplierId));
-      toast.success('Supplier removed');
-    } catch (e) {
-      console.error('Failed to remove supplier:', e);
-      toast.error('Failed to remove supplier');
+    if (isEdit && product?.id) {
+      // For existing products, remove via API
+      try {
+        await removeProductSupplier(product.id, supplierId);
+        setProductSuppliers(prev => prev.filter(s => s.supplier_id !== supplierId));
+        toast.success('Supplier removed');
+      } catch (e) {
+        console.error('Failed to remove supplier:', e);
+        toast.error('Failed to remove supplier');
+      }
+    } else {
+      // For new products, remove from pending list
+      setPendingSuppliers(prev => prev.filter(s => s.supplier_id !== supplierId));
     }
   };
 
   const handleSetPreferred = async (supplierId) => {
-    if (!product?.id) return;
-
-    try {
-      await setPreferredSupplier(product.id, supplierId);
-      setProductSuppliers(prev => prev.map(s => ({
+    if (isEdit && product?.id) {
+      // For existing products, update via API
+      try {
+        await setPreferredSupplier(product.id, supplierId);
+        setProductSuppliers(prev => prev.map(s => ({
+          ...s,
+          is_preferred: s.supplier_id === supplierId
+        })));
+        toast.success('Preferred supplier updated');
+      } catch (e) {
+        console.error('Failed to set preferred supplier:', e);
+        toast.error('Failed to update preferred supplier');
+      }
+    } else {
+      // For new products, update pending list
+      setPendingSuppliers(prev => prev.map(s => ({
         ...s,
         is_preferred: s.supplier_id === supplierId
       })));
-      toast.success('Preferred supplier updated');
-    } catch (e) {
-      console.error('Failed to set preferred supplier:', e);
-      toast.error('Failed to update preferred supplier');
     }
   };
 
@@ -529,6 +562,22 @@ export default function ProductModal({
           await PhysicalProduct.update(savedProduct.id, physicalPayload);
         } else {
           await PhysicalProduct.create(physicalPayload);
+        }
+
+        // Link pending suppliers for new physical products
+        if (!isEdit && pendingSuppliers.length > 0) {
+          for (const ps of pendingSuppliers) {
+            try {
+              await addProductSupplier({
+                company_id: user.company_id,
+                product_id: savedProduct.id,
+                supplier_id: ps.supplier_id,
+                is_preferred: ps.is_preferred
+              });
+            } catch (e) {
+              console.warn('Failed to link supplier:', ps.supplier_id, e);
+            }
+          }
         }
       }
 
@@ -1081,140 +1130,141 @@ export default function ProductModal({
                   </div>
                 </div>
 
-                {/* Suppliers Section - Only for existing products */}
-                {isEdit && (
-                  <div className="border-t border-white/5 pt-4 mt-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <h4 className="text-white font-medium flex items-center gap-2">
-                        <Users className="w-4 h-4 text-amber-400" /> Suppliers
-                      </h4>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowAddSupplier(!showAddSupplier)}
-                        className="border-zinc-700 text-zinc-400 hover:text-white"
+                {/* Suppliers Section */}
+                <div className="border-t border-white/5 pt-4 mt-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-white font-medium flex items-center gap-2">
+                      <Users className="w-4 h-4 text-amber-400" /> Suppliers
+                    </h4>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowAddSupplier(!showAddSupplier)}
+                      className="border-zinc-700 text-zinc-400 hover:text-white"
+                    >
+                      <Plus className="w-4 h-4 mr-1" /> Add Supplier
+                    </Button>
+                  </div>
+
+                  {/* Add Supplier Form */}
+                  <AnimatePresence>
+                    {showAddSupplier && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mb-4 p-3 rounded-lg bg-zinc-800/50 border border-white/5"
                       >
-                        <Plus className="w-4 h-4 mr-1" /> Add Supplier
-                      </Button>
-                    </div>
-
-                    {/* Add Supplier Form */}
-                    <AnimatePresence>
-                      {showAddSupplier && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="mb-4 p-3 rounded-lg bg-zinc-800/50 border border-white/5"
-                        >
-                          <div className="flex gap-3 items-end">
-                            <div className="flex-1">
-                              <Label className="text-zinc-300 text-sm mb-2 block">Select Supplier</Label>
-                              <Select value={selectedSupplierId} onValueChange={setSelectedSupplierId}>
-                                <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
-                                  <SelectValue placeholder="Choose a supplier..." />
-                                </SelectTrigger>
-                                <SelectContent className="bg-zinc-800 border-zinc-700">
-                                  {availableSuppliers
-                                    .filter(s => !productSuppliers.some(ps => ps.supplier_id === s.id))
-                                    .map(s => (
-                                      <SelectItem key={s.id} value={s.id} className="text-white">
-                                        {s.name}
-                                      </SelectItem>
-                                    ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <Button
-                              type="button"
-                              onClick={handleAddSupplier}
-                              disabled={!selectedSupplierId}
-                              className="bg-amber-500 hover:bg-amber-600 text-black"
-                            >
-                              Add
-                            </Button>
+                        <div className="flex gap-3 items-end">
+                          <div className="flex-1">
+                            <Label className="text-zinc-300 text-sm mb-2 block">Select Supplier</Label>
+                            <Select value={selectedSupplierId} onValueChange={setSelectedSupplierId}>
+                              <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
+                                <SelectValue placeholder="Choose a supplier..." />
+                              </SelectTrigger>
+                              <SelectContent className="bg-zinc-800 border-zinc-700">
+                                {availableSuppliers
+                                  .filter(s =>
+                                    !productSuppliers.some(ps => ps.supplier_id === s.id) &&
+                                    !pendingSuppliers.some(ps => ps.supplier_id === s.id)
+                                  )
+                                  .map(s => (
+                                    <SelectItem key={s.id} value={s.id} className="text-white">
+                                      {s.name}
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
                           </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-
-                    {/* Suppliers List */}
-                    {suppliersLoading ? (
-                      <div className="flex items-center justify-center p-4">
-                        <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
-                      </div>
-                    ) : productSuppliers.length === 0 ? (
-                      <p className="text-sm text-zinc-500 text-center py-4">
-                        No suppliers linked to this product yet
-                      </p>
-                    ) : (
-                      <div className="space-y-2">
-                        {productSuppliers.map(ps => (
-                          <div
-                            key={ps.id}
-                            className="flex items-center gap-3 p-3 rounded-lg bg-zinc-800/50 border border-white/5"
+                          <Button
+                            type="button"
+                            onClick={handleAddSupplier}
+                            disabled={!selectedSupplierId}
+                            className="bg-amber-500 hover:bg-amber-600 text-black"
                           >
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="text-white font-medium truncate">
-                                  {ps.suppliers?.name || 'Unknown Supplier'}
-                                </span>
-                                {ps.is_preferred && (
-                                  <Badge className="bg-amber-500/20 text-amber-400 border-0 text-xs">
-                                    <Star className="w-3 h-3 mr-1" /> Preferred
-                                  </Badge>
-                                )}
-                              </div>
-                              <div className="text-sm text-zinc-400 mt-1">
-                                {ps.last_purchase_price ? (
-                                  <span>
-                                    Last: €{parseFloat(ps.last_purchase_price).toFixed(2)}
-                                    {ps.last_purchase_date && (
-                                      <span className="text-zinc-500 ml-2">
-                                        ({new Date(ps.last_purchase_date).toLocaleDateString()})
-                                      </span>
-                                    )}
-                                  </span>
-                                ) : (
-                                  <span className="text-zinc-500">No purchase history</span>
-                                )}
-                                {ps.average_purchase_price && (
-                                  <span className="ml-3">
-                                    Avg: €{parseFloat(ps.average_purchase_price).toFixed(2)}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              {!ps.is_preferred && (
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleSetPreferred(ps.supplier_id)}
-                                  className="text-zinc-500 hover:text-amber-400 h-8 w-8 p-0"
-                                  title="Set as preferred"
-                                >
-                                  <Star className="w-4 h-4" />
-                                </Button>
+                            Add
+                          </Button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Suppliers List */}
+                  {suppliersLoading ? (
+                    <div className="flex items-center justify-center p-4">
+                      <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
+                    </div>
+                  ) : (isEdit ? productSuppliers : pendingSuppliers).length === 0 ? (
+                    <p className="text-sm text-zinc-500 text-center py-4">
+                      No suppliers linked to this product yet
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {(isEdit ? productSuppliers : pendingSuppliers).map(ps => (
+                        <div
+                          key={ps.id}
+                          className="flex items-center gap-3 p-3 rounded-lg bg-zinc-800/50 border border-white/5"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-white font-medium truncate">
+                                {ps.suppliers?.name || 'Unknown Supplier'}
+                              </span>
+                              {ps.is_preferred && (
+                                <Badge className="bg-amber-500/20 text-amber-400 border-0 text-xs">
+                                  <Star className="w-3 h-3 mr-1" /> Preferred
+                                </Badge>
                               )}
+                            </div>
+                            <div className="text-sm text-zinc-400 mt-1">
+                              {ps.last_purchase_price ? (
+                                <span>
+                                  Last: €{parseFloat(ps.last_purchase_price).toFixed(2)}
+                                  {ps.last_purchase_date && (
+                                    <span className="text-zinc-500 ml-2">
+                                      ({new Date(ps.last_purchase_date).toLocaleDateString()})
+                                    </span>
+                                  )}
+                                </span>
+                              ) : (
+                                <span className="text-zinc-500">No purchase history</span>
+                              )}
+                              {ps.average_purchase_price && (
+                                <span className="ml-3">
+                                  Avg: €{parseFloat(ps.average_purchase_price).toFixed(2)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {!ps.is_preferred && (
                               <Button
                                 type="button"
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleRemoveSupplier(ps.supplier_id)}
-                                className="text-zinc-500 hover:text-red-400 h-8 w-8 p-0"
+                                onClick={() => handleSetPreferred(ps.supplier_id)}
+                                className="text-zinc-500 hover:text-amber-400 h-8 w-8 p-0"
+                                title="Set as preferred"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Star className="w-4 h-4" />
                               </Button>
-                            </div>
+                            )}
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveSupplier(ps.supplier_id)}
+                              className="text-zinc-500 hover:text-red-400 h-8 w-8 p-0"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
                 {/* Purchase History Section - Only for existing products */}
                 {isEdit && (
