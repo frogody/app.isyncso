@@ -221,11 +221,10 @@ export default function ProductsPhysical() {
       // Search filter
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const pp = physicalProducts[p.id];
         const matches = p.name?.toLowerCase().includes(q) ||
           p.tagline?.toLowerCase().includes(q) ||
           p.category?.toLowerCase().includes(q) ||
-          pp?.ean?.toLowerCase().includes(q);
+          p.ean?.toLowerCase().includes(q);
         if (!matches) return false;
       }
 

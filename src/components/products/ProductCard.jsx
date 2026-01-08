@@ -153,8 +153,8 @@ export function ProductGridCard({
                     )}
                   </>
                 )}
-                {!isDigital && details?.ean && (
-                  <span className="text-xs text-zinc-500">EAN: {details.ean}</span>
+                {!isDigital && product.ean && (
+                  <span className="text-xs text-zinc-500">EAN: {product.ean}</span>
                 )}
               </div>
 
@@ -305,7 +305,7 @@ export function ProductListRow({
             <span className="text-sm text-zinc-400">
               {isDigital
                 ? product.category || 'Uncategorized'
-                : details?.ean || 'No EAN'}
+                : product.ean || 'No EAN'}
             </span>
           </div>
 
