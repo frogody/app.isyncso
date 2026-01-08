@@ -42,6 +42,24 @@ import {
 } from "@/components/products";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import {
+  getProductSuppliers,
+  addProductSupplier,
+  removeProductSupplier,
+  setPreferredSupplier,
+  getProductPurchaseHistory,
+  addStockPurchase
+} from '@/lib/db/queries';
+import { supabase } from '@/api/supabaseClient';
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // ============= CONSTANTS =============
 
@@ -743,10 +761,167 @@ function BundlesSection({ product, details, currency }) {
 
 // ============= INVENTORY SECTION =============
 
-function InventorySection({ details, onDetailsUpdate, currency }) {
+function InventorySection({ product, details, onDetailsUpdate, currency }) {
+  const { user } = useUser();
   const inventory = details?.inventory || {};
   const shipping = details?.shipping || {};
   const variants = details?.variants || [];
+
+  // Supplier management state
+  const [productSuppliers, setProductSuppliers] = useState([]);
+  const [availableSuppliers, setAvailableSuppliers] = useState([]);
+  const [purchaseHistory, setPurchaseHistory] = useState([]);
+  const [loadingSuppliers, setLoadingSuppliers] = useState(false);
+  const [loadingPurchases, setLoadingPurchases] = useState(false);
+  const [showAddSupplier, setShowAddSupplier] = useState(false);
+  const [selectedSupplierId, setSelectedSupplierId] = useState('');
+  const [showAddPurchase, setShowAddPurchase] = useState(false);
+  const [purchaseForm, setPurchaseForm] = useState({
+    supplier_id: '',
+    quantity: '',
+    unit_price: '',
+    purchase_date: new Date().toISOString().split('T')[0],
+    invoice_number: '',
+  });
+
+  // Load suppliers when product changes
+  useEffect(() => {
+    if (product?.id) {
+      loadProductSuppliers();
+      loadPurchaseHistory();
+    }
+  }, [product?.id]);
+
+  // Load available suppliers (all company suppliers)
+  useEffect(() => {
+    if (user?.company_id) {
+      loadAvailableSuppliers();
+    }
+  }, [user?.company_id]);
+
+  const loadProductSuppliers = async () => {
+    if (!product?.id) return;
+    setLoadingSuppliers(true);
+    try {
+      const suppliers = await getProductSuppliers(product.id);
+      setProductSuppliers(suppliers);
+    } catch (err) {
+      console.error('Failed to load product suppliers:', err);
+    } finally {
+      setLoadingSuppliers(false);
+    }
+  };
+
+  const loadAvailableSuppliers = async () => {
+    try {
+      const { data } = await supabase
+        .from('suppliers')
+        .select('id, name')
+        .eq('company_id', user.company_id)
+        .order('name');
+      setAvailableSuppliers(data || []);
+    } catch (err) {
+      console.error('Failed to load suppliers:', err);
+    }
+  };
+
+  const loadPurchaseHistory = async () => {
+    if (!product?.id) return;
+    setLoadingPurchases(true);
+    try {
+      const purchases = await getProductPurchaseHistory(product.id, { limit: 20 });
+      setPurchaseHistory(purchases);
+    } catch (err) {
+      console.error('Failed to load purchase history:', err);
+    } finally {
+      setLoadingPurchases(false);
+    }
+  };
+
+  const handleAddSupplier = async () => {
+    if (!selectedSupplierId || !product?.id) return;
+    const selectedSupplier = availableSuppliers.find(s => s.id === selectedSupplierId);
+    if (!selectedSupplier) return;
+
+    try {
+      const newSupplier = await addProductSupplier({
+        company_id: user.company_id,
+        product_id: product.id,
+        supplier_id: selectedSupplierId,
+        is_preferred: productSuppliers.length === 0,
+      });
+      setProductSuppliers(prev => [...prev, newSupplier]);
+      setSelectedSupplierId('');
+      setShowAddSupplier(false);
+      toast.success(`Added ${selectedSupplier.name} as supplier`);
+    } catch (err) {
+      console.error('Failed to add supplier:', err);
+      toast.error('Failed to add supplier');
+    }
+  };
+
+  const handleRemoveSupplier = async (supplierId) => {
+    if (!product?.id) return;
+    try {
+      await removeProductSupplier(product.id, supplierId);
+      setProductSuppliers(prev => prev.filter(ps => ps.supplier_id !== supplierId));
+      toast.success('Supplier removed');
+    } catch (err) {
+      console.error('Failed to remove supplier:', err);
+      toast.error('Failed to remove supplier');
+    }
+  };
+
+  const handleSetPreferred = async (supplierId) => {
+    if (!product?.id) return;
+    try {
+      await setPreferredSupplier(product.id, supplierId);
+      setProductSuppliers(prev => prev.map(ps => ({
+        ...ps,
+        is_preferred: ps.supplier_id === supplierId,
+      })));
+      toast.success('Preferred supplier updated');
+    } catch (err) {
+      console.error('Failed to set preferred supplier:', err);
+      toast.error('Failed to update preferred supplier');
+    }
+  };
+
+  const handleAddPurchase = async () => {
+    if (!product?.id || !purchaseForm.quantity || !purchaseForm.unit_price) {
+      toast.error('Please fill in quantity and unit price');
+      return;
+    }
+
+    try {
+      const newPurchase = await addStockPurchase({
+        company_id: user.company_id,
+        product_id: product.id,
+        supplier_id: purchaseForm.supplier_id || null,
+        quantity: parseFloat(purchaseForm.quantity),
+        unit_price: parseFloat(purchaseForm.unit_price),
+        currency: currency || 'EUR',
+        purchase_date: purchaseForm.purchase_date,
+        invoice_number: purchaseForm.invoice_number || null,
+        source_type: 'manual',
+      });
+      setPurchaseHistory(prev => [newPurchase, ...prev]);
+      setPurchaseForm({
+        supplier_id: '',
+        quantity: '',
+        unit_price: '',
+        purchase_date: new Date().toISOString().split('T')[0],
+        invoice_number: '',
+      });
+      setShowAddPurchase(false);
+      toast.success('Purchase recorded');
+      // Reload suppliers to get updated pricing
+      loadProductSuppliers();
+    } catch (err) {
+      console.error('Failed to add purchase:', err);
+      toast.error('Failed to record purchase');
+    }
+  };
 
   const handleInventoryUpdate = (field, value) => {
     onDetailsUpdate({ inventory: { ...inventory, [field]: value } });
@@ -761,6 +936,11 @@ function InventorySection({ details, onDetailsUpdate, currency }) {
   };
 
   const stock = getStockStatus(inventory);
+
+  // Filter out suppliers already linked to product
+  const unlinkedSuppliers = availableSuppliers.filter(
+    s => !productSuppliers.some(ps => ps.supplier_id === s.id)
+  );
 
   return (
     <div className="space-y-6">
@@ -899,6 +1079,303 @@ function InventorySection({ details, onDetailsUpdate, currency }) {
           </div>
         </GlassCard>
       </div>
+
+      {/* Suppliers Section */}
+      <GlassCard className="p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <Building2 className="w-5 h-5 text-purple-400" />
+            <span className="font-medium text-white">Suppliers</span>
+            {productSuppliers.length > 0 && (
+              <Badge variant="secondary" className="ml-2 bg-purple-500/20 text-purple-300">
+                {productSuppliers.length}
+              </Badge>
+            )}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAddSupplier(true)}
+            className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
+            disabled={unlinkedSuppliers.length === 0}
+          >
+            <Building2 className="w-4 h-4 mr-2" />
+            Add Supplier
+          </Button>
+        </div>
+
+        {/* Add Supplier Form */}
+        {showAddSupplier && (
+          <div className="mb-4 p-4 rounded-lg bg-zinc-900/50 border border-white/5 space-y-3">
+            <Label className="text-zinc-400">Select Supplier</Label>
+            <div className="flex gap-2">
+              <Select value={selectedSupplierId} onValueChange={setSelectedSupplierId}>
+                <SelectTrigger className="flex-1 bg-zinc-800/50 border-white/10">
+                  <SelectValue placeholder="Choose a supplier..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {unlinkedSuppliers.map(s => (
+                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button onClick={handleAddSupplier} disabled={!selectedSupplierId} size="sm">
+                Add
+              </Button>
+              <Button variant="ghost" onClick={() => {setShowAddSupplier(false); setSelectedSupplierId('');}} size="sm">
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Suppliers List */}
+        {loadingSuppliers ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="w-6 h-6 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : productSuppliers.length === 0 ? (
+          <div className="text-center py-8">
+            <Building2 className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
+            <p className="text-sm text-zinc-500">No suppliers linked yet</p>
+            <p className="text-xs text-zinc-600 mt-1">Add suppliers to track purchase pricing</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {productSuppliers.map(ps => (
+              <div
+                key={ps.id}
+                className={cn(
+                  "flex items-center justify-between p-3 rounded-lg border transition-colors",
+                  ps.is_preferred
+                    ? "bg-purple-500/10 border-purple-500/30"
+                    : "bg-zinc-900/50 border-white/5 hover:bg-zinc-800/50"
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={cn(
+                    "w-10 h-10 rounded-lg flex items-center justify-center",
+                    ps.is_preferred ? "bg-purple-500/20" : "bg-zinc-800"
+                  )}>
+                    <Building2 className={cn(
+                      "w-5 h-5",
+                      ps.is_preferred ? "text-purple-400" : "text-zinc-400"
+                    )} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-white">{ps.suppliers?.name || 'Unknown'}</span>
+                      {ps.is_preferred && (
+                        <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30">
+                          <Star className="w-3 h-3 mr-1" />
+                          Preferred
+                        </Badge>
+                      )}
+                    </div>
+                    {ps.last_purchase_price && (
+                      <p className="text-sm text-zinc-400">
+                        Last: {formatPrice(ps.last_purchase_price, currency)}
+                        {ps.last_purchase_date && (
+                          <span className="text-zinc-500 ml-1">
+                            ({new Date(ps.last_purchase_date).toLocaleDateString()})
+                          </span>
+                        )}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {!ps.is_preferred && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleSetPreferred(ps.supplier_id)}
+                      className="text-zinc-400 hover:text-purple-400"
+                      title="Set as preferred"
+                    >
+                      <Star className="w-4 h-4" />
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRemoveSupplier(ps.supplier_id)}
+                    className="text-zinc-400 hover:text-red-400"
+                  >
+                    <XCircle className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </GlassCard>
+
+      {/* Purchase History Section */}
+      <GlassCard className="p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <History className="w-5 h-5 text-green-400" />
+            <span className="font-medium text-white">Purchase History</span>
+            {purchaseHistory.length > 0 && (
+              <Badge variant="secondary" className="ml-2 bg-green-500/20 text-green-300">
+                {purchaseHistory.length}
+              </Badge>
+            )}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAddPurchase(true)}
+            className="border-green-500/30 text-green-400 hover:bg-green-500/10"
+          >
+            <DollarSign className="w-4 h-4 mr-2" />
+            Add Purchase
+          </Button>
+        </div>
+
+        {/* Add Purchase Form */}
+        {showAddPurchase && (
+          <div className="mb-4 p-4 rounded-lg bg-zinc-900/50 border border-white/5 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-zinc-400 mb-1.5 block">Supplier (optional)</Label>
+                <Select
+                  value={purchaseForm.supplier_id}
+                  onValueChange={(val) => setPurchaseForm(prev => ({...prev, supplier_id: val}))}
+                >
+                  <SelectTrigger className="bg-zinc-800/50 border-white/10">
+                    <SelectValue placeholder="Select supplier..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableSuppliers.map(s => (
+                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-zinc-400 mb-1.5 block">Purchase Date</Label>
+                <Input
+                  type="date"
+                  value={purchaseForm.purchase_date}
+                  onChange={(e) => setPurchaseForm(prev => ({...prev, purchase_date: e.target.value}))}
+                  className="bg-zinc-800/50 border-white/10"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label className="text-zinc-400 mb-1.5 block">Quantity *</Label>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  value={purchaseForm.quantity}
+                  onChange={(e) => setPurchaseForm(prev => ({...prev, quantity: e.target.value}))}
+                  className="bg-zinc-800/50 border-white/10"
+                  min="0"
+                  step="1"
+                />
+              </div>
+              <div>
+                <Label className="text-zinc-400 mb-1.5 block">Unit Price *</Label>
+                <Input
+                  type="number"
+                  placeholder="0.00"
+                  value={purchaseForm.unit_price}
+                  onChange={(e) => setPurchaseForm(prev => ({...prev, unit_price: e.target.value}))}
+                  className="bg-zinc-800/50 border-white/10"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+              <div>
+                <Label className="text-zinc-400 mb-1.5 block">Invoice # (optional)</Label>
+                <Input
+                  placeholder="INV-001"
+                  value={purchaseForm.invoice_number}
+                  onChange={(e) => setPurchaseForm(prev => ({...prev, invoice_number: e.target.value}))}
+                  className="bg-zinc-800/50 border-white/10"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="ghost" onClick={() => setShowAddPurchase(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleAddPurchase} className="bg-green-600 hover:bg-green-700">
+                Record Purchase
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Purchase History Table */}
+        {loadingPurchases ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="w-6 h-6 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : purchaseHistory.length === 0 ? (
+          <div className="text-center py-8">
+            <History className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
+            <p className="text-sm text-zinc-500">No purchase history yet</p>
+            <p className="text-xs text-zinc-600 mt-1">Purchases from invoices will appear here automatically</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-left border-b border-white/5">
+                  <th className="pb-3 text-xs font-medium text-zinc-500 uppercase tracking-wider">Date</th>
+                  <th className="pb-3 text-xs font-medium text-zinc-500 uppercase tracking-wider">Supplier</th>
+                  <th className="pb-3 text-xs font-medium text-zinc-500 uppercase tracking-wider text-right">Qty</th>
+                  <th className="pb-3 text-xs font-medium text-zinc-500 uppercase tracking-wider text-right">Unit Price</th>
+                  <th className="pb-3 text-xs font-medium text-zinc-500 uppercase tracking-wider text-right">Total</th>
+                  <th className="pb-3 text-xs font-medium text-zinc-500 uppercase tracking-wider">Invoice</th>
+                  <th className="pb-3 text-xs font-medium text-zinc-500 uppercase tracking-wider">Source</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {purchaseHistory.map(purchase => (
+                  <tr key={purchase.id} className="hover:bg-white/2">
+                    <td className="py-3 text-sm text-zinc-300">
+                      {new Date(purchase.purchase_date).toLocaleDateString()}
+                    </td>
+                    <td className="py-3 text-sm text-white">
+                      {purchase.suppliers?.name || <span className="text-zinc-500">-</span>}
+                    </td>
+                    <td className="py-3 text-sm text-zinc-300 text-right">
+                      {formatNumber(purchase.quantity)}
+                    </td>
+                    <td className="py-3 text-sm text-zinc-300 text-right">
+                      {formatPrice(purchase.unit_price, purchase.currency)}
+                    </td>
+                    <td className="py-3 text-sm text-white font-medium text-right">
+                      {formatPrice(purchase.total_amount, purchase.currency)}
+                    </td>
+                    <td className="py-3 text-sm text-zinc-400 font-mono">
+                      {purchase.invoice_number || <span className="text-zinc-600">-</span>}
+                    </td>
+                    <td className="py-3">
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "text-xs",
+                          purchase.source_type === 'invoice'
+                            ? "border-blue-500/30 text-blue-400"
+                            : "border-zinc-500/30 text-zinc-400"
+                        )}
+                      >
+                        {purchase.source_type}
+                      </Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </GlassCard>
 
       {/* Variants */}
       <VariantsManager
@@ -1320,6 +1797,7 @@ export default function ProductDetail() {
 
             {activeSection === 'inventory' && isPhysical && (
               <InventorySection
+                product={product}
                 details={details}
                 onDetailsUpdate={handleDetailsUpdate}
                 currency={currency}
