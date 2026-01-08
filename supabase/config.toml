@@ -15,3 +15,6 @@ verify_jwt = false
 
 [functions.research-product]
 verify_jwt = false
+
+[functions.map-import-columns]
+verify_jwt = false

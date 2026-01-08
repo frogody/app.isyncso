@@ -192,6 +192,8 @@ import InventoryShipping from "./InventoryShipping";
 
 import InventoryExpenses from "./InventoryExpenses";
 
+import InventoryImport from "./InventoryImport";
+
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 
 const PAGES = {
@@ -389,6 +391,8 @@ const PAGES = {
     InventoryShipping: InventoryShipping,
 
     InventoryExpenses: InventoryExpenses,
+
+    InventoryImport: InventoryImport,
 
 }
 
@@ -610,6 +614,8 @@ function PagesContent() {
                 <Route path="/InventoryShipping" element={<InventoryShipping />} />
 
                 <Route path="/InventoryExpenses" element={<InventoryExpenses />} />
+
+                <Route path="/InventoryImport" element={<InventoryImport />} />
 
             </Routes>
         </Layout>

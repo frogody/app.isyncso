@@ -65,6 +65,7 @@ import {
   Truck,
   PackageCheck,
   Wallet,
+  FileSpreadsheet,
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -269,6 +270,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       items.push({ label: 'Receiving', path: createPageUrl('InventoryReceiving'), icon: PackageCheck });
       items.push({ label: 'Shipping', path: createPageUrl('InventoryShipping'), icon: Truck });
       items.push({ label: 'Expenses', path: createPageUrl('InventoryExpenses'), icon: Wallet });
+      items.push({ label: 'Import', path: createPageUrl('InventoryImport'), icon: FileSpreadsheet });
     }
 
     return {
