@@ -547,26 +547,10 @@ Deno.serve(async (req) => {
         })
         .eq('id', queueId);
 
-      // If no EAN found and confidence is too low, mark for manual review
-      if (!eanResult.ean && eanResult.confidence < 0.5) {
-        console.log('EAN not found with sufficient confidence - marking for manual review');
-
-        await supabase
-          .from('product_research_queue')
-          .update({
-            status: 'manual_review',
-            error_message: 'Could not find EAN with sufficient confidence. Please enter EAN manually.',
-          })
-          .eq('id', queueId);
-
-        results.push({
-          queueId,
-          success: false,
-          needsReview: true,
-          reason: 'EAN not found',
-          confidence: eanResult.confidence,
-        });
-        continue;
+      // Note: Even without EAN, we proceed to create the product
+      // Products without EAN will be marked as draft for review
+      if (!eanResult.ean) {
+        console.log('EAN not found - will create product without EAN (marked as draft)');
       }
 
       // ===========================================
@@ -605,14 +589,15 @@ Deno.serve(async (req) => {
         console.log(`Stored ${storedImages.length} images`);
       }
 
-      // Process the result if we have enough confidence
-      if (researchResult.confidence >= 0.6 && (researchResult.ean || researchResult.name)) {
+      // Always create product - use name from research or fall back to description
+      const productName = researchResult.name || productDescription.substring(0, 200);
+      if (productName) {
         // Call database function to create/match product
         const { data: processResult, error: processError } = await supabase
           .rpc('process_research_result', {
             p_queue_id: queueId,
             p_ean: researchResult.ean,
-            p_name: researchResult.name,
+            p_name: productName,
             p_description: researchResult.description,
             p_brand: researchResult.brand,
             p_category: researchResult.category,
@@ -647,33 +632,6 @@ Deno.serve(async (req) => {
             confidence: researchResult.confidence,
           });
         }
-      } else {
-        // Low confidence - mark for manual review
-        await supabase
-          .from('product_research_queue')
-          .update({
-            status: 'manual_review',
-            researched_ean: researchResult.ean,
-            researched_name: researchResult.name,
-            researched_description: researchResult.description,
-            researched_brand: researchResult.brand,
-            researched_category: researchResult.category,
-            researched_images: storedImages.length > 0 ? storedImages : researchResult.images,
-            researched_specifications: researchResult.specifications,
-            researched_weight: researchResult.weight,
-            researched_dimensions: researchResult.dimensions,
-            researched_source_url: researchResult.sourceUrl,
-            research_confidence: researchResult.confidence,
-            error_message: 'Low confidence - requires manual review',
-          })
-          .eq('id', queueId);
-
-        results.push({
-          queueId,
-          success: false,
-          needsReview: true,
-          confidence: researchResult.confidence,
-        });
       }
     }
 
