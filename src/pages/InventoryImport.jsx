@@ -6,7 +6,7 @@ import {
   ArrowLeft, ArrowRight, FileSpreadsheet, Package
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { GlassCard } from '@/components/ui/glass-card';
+import { GlassCard } from '@/components/ui/GlassCard';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/components/context/UserContext';
 import { Product, PhysicalProduct, Supplier } from '@/api/entities';
