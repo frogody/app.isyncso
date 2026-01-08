@@ -96,13 +96,16 @@ export function FileUploader({ onFileProcessed, isProcessing }) {
         return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
       }
 
+      // Filter out empty columns (columns with no sample data)
+      const filteredSampleData = sampleData.filter(col => col.samples.length > 0);
+
       setParseStatus('success');
 
       onFileProcessed({
         fileName: file.name,
         fileSize: file.size,
         sheetName,
-        headers: sampleData,
+        headers: filteredSampleData,  // Use filtered columns (no empty columns)
         rows,
         totalRows: rows.length
       });

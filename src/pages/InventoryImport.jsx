@@ -537,6 +537,7 @@ export default function InventoryImport() {
                   progress={importProgress}
                   results={importResults}
                   errors={importErrors}
+                  totalToImport={validationResult?.transformedData?.length || 0}
                 />
               </div>
             )}

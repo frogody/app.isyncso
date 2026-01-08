@@ -8,7 +8,8 @@ export function ImportProgress({
   isImporting = false,
   progress = { current: 0, total: 0 },
   results = null,
-  errors = []
+  errors = [],
+  totalToImport = 0  // Total products ready to import (from validation)
 }) {
   const percentage = progress.total > 0
     ? Math.round((progress.current / progress.total) * 100)
@@ -53,12 +54,12 @@ export function ImportProgress({
           </>
         ) : (
           <>
-            <div className="w-16 h-16 rounded-full bg-zinc-500/20 border border-zinc-500/30 flex items-center justify-center mx-auto mb-4">
-              <Package className="w-8 h-8 text-zinc-400" />
+            <div className="w-16 h-16 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center mx-auto mb-4">
+              <Package className="w-8 h-8 text-cyan-400" />
             </div>
             <h3 className="text-xl font-medium text-white">Ready to Import</h3>
             <p className="text-sm text-zinc-500 mt-1">
-              {progress.total} products will be imported
+              {totalToImport || progress.total} products will be imported
             </p>
           </>
         )}
