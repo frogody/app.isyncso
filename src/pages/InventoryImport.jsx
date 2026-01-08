@@ -367,7 +367,12 @@ export default function InventoryImport() {
         return mappedFields.has('name') && mappedFields.has('purchase_price') && mappedFields.has('quantity');
       }
       case 2: return validationResult?.canImport;
-      case 3: return importResults !== null;
+      case 3: {
+        // Allow clicking "Start Import" if we have data to import, OR if import is complete
+        const hasDataToImport = validationResult?.transformedData?.length > 0;
+        const importComplete = importResults !== null;
+        return hasDataToImport || importComplete;
+      }
       default: return false;
     }
   };
