@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import * as pdfjsLib from "pdfjs-dist";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Receipt, Search, Filter, Clock, Check, X, AlertTriangle,
@@ -42,7 +43,57 @@ import {
 import { MIN_CONFIDENCE } from "@/lib/db/schema";
 import { storage, supabase } from "@/api/supabaseClient";
 
+// Set up PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+
 const DOCUMENTS_BUCKET = "documents";
+
+/**
+ * Convert a PDF file to a PNG image (first page)
+ * @param {File} pdfFile - The PDF file to convert
+ * @returns {Promise<File>} - A PNG image file
+ */
+async function convertPdfToImage(pdfFile) {
+  const arrayBuffer = await pdfFile.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+  // Get the first page
+  const page = await pdf.getPage(1);
+
+  // Set scale for good quality (2x for retina-like quality)
+  const scale = 2;
+  const viewport = page.getViewport({ scale });
+
+  // Create canvas
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+
+  // Render PDF page to canvas
+  await page.render({
+    canvasContext: context,
+    viewport: viewport,
+  }).promise;
+
+  // Convert canvas to blob
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (blob) {
+          // Create a new File from the blob
+          const fileName = pdfFile.name.replace(/\.pdf$/i, ".png");
+          const imageFile = new File([blob], fileName, { type: "image/png" });
+          resolve(imageFile);
+        } else {
+          reject(new Error("Failed to convert PDF to image"));
+        }
+      },
+      "image/png",
+      0.95
+    );
+  });
+}
 
 const STATUS_STYLES = {
   draft: {
@@ -514,9 +565,26 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId }) {
     setUploadProgress(0);
 
     try {
-      // Generate unique filename
+      let fileToUpload = selectedFile;
+
+      // Convert PDF to image if necessary
+      if (selectedFile.type === "application/pdf") {
+        toast.info("PDF wordt geconverteerd naar afbeelding...");
+        setUploadProgress(10);
+        try {
+          fileToUpload = await convertPdfToImage(selectedFile);
+          console.log("PDF converted to image:", fileToUpload.name, fileToUpload.size);
+        } catch (conversionError) {
+          console.error("PDF conversion failed:", conversionError);
+          toast.error("Kon PDF niet converteren: " + conversionError.message);
+          return;
+        }
+        setUploadProgress(30);
+      }
+
+      // Generate unique filename with correct extension
       const fileId = crypto.randomUUID();
-      const ext = selectedFile.name.split(".").pop();
+      const ext = fileToUpload.name.split(".").pop();
       const path = `${companyId}/invoices/${fileId}.${ext}`;
 
       // Simulate progress
@@ -525,7 +593,7 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId }) {
       }, 200);
 
       // Upload to storage
-      const result = await storage.upload(DOCUMENTS_BUCKET, path, selectedFile);
+      const result = await storage.upload(DOCUMENTS_BUCKET, path, fileToUpload);
 
       clearInterval(progressInterval);
       setUploadProgress(90);
@@ -574,8 +642,11 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId }) {
         onUploadComplete?.();
         handleClose();
       } else {
-        console.error("Process failed:", processResult);
-        toast.error("Kon factuur niet verwerken: " + (processResult.errors?.join(", ") || processResult.error || "Onbekende fout"));
+        console.error("Process failed - Full result:", processResult);
+        console.error("Errors array:", processResult.errors);
+        const errorMsg = processResult.errors?.join(", ") || processResult.error || "Onbekende fout";
+        console.error("Error message:", errorMsg);
+        toast.error("Kon factuur niet verwerken: " + errorMsg);
       }
     } catch (error) {
       console.error("Upload error:", error);
