@@ -212,15 +212,27 @@ export function ValidationPreview({
 
   // Transform all rows based on mappings
   const transformedData = useMemo(() => {
+    // Debug: log mappings on first run
+    console.log('Current mappings:', mappings);
+    console.log('Source columns:', sourceColumns.map(c => c.name));
+
     return rows.map((row, index) => {
       const transformed = { _rowIndex: index + 2 }; // +2 for 1-based index + header row
 
       // Apply mappings and transformations
       Object.entries(mappings).forEach(([sourceCol, targetField]) => {
         const colIndex = sourceColumns.findIndex(c => c.name === sourceCol);
-        if (colIndex === -1) return;
+        if (colIndex === -1) {
+          console.warn(`Column not found: "${sourceCol}"`);
+          return;
+        }
 
         const rawValue = row[colIndex];
+
+        // Debug first few rows
+        if (index < 3) {
+          console.log(`Row ${index}, ${sourceCol} -> ${targetField}:`, rawValue, typeof rawValue);
+        }
 
         switch (targetField) {
           case 'purchase_price':
@@ -229,6 +241,7 @@ export function ValidationPreview({
             break;
           case 'quantity':
             transformed.quantity = transformers.parseQuantity(rawValue);
+            transformed._raw_quantity = rawValue;
             break;
           case 'ean':
             transformed.ean = transformers.extractEAN(rawValue);
@@ -242,6 +255,11 @@ export function ValidationPreview({
             transformed[targetField] = transformers.cleanString(rawValue);
         }
       });
+
+      // Debug: log transformed row for first few
+      if (index < 3) {
+        console.log(`Transformed row ${index}:`, transformed);
+      }
 
       // Validate
       const validation = validateRow(transformed);
@@ -305,6 +323,27 @@ export function ValidationPreview({
 
   return (
     <div className="space-y-6">
+      {/* Debug: Current Mappings */}
+      <div className="p-3 rounded-lg bg-zinc-800/50 border border-white/10 text-xs">
+        <div className="font-medium text-zinc-400 mb-2">Current Column Mappings:</div>
+        <div className="flex flex-wrap gap-2">
+          {Object.entries(mappings).map(([source, target]) => (
+            <span key={source} className="px-2 py-1 rounded bg-zinc-700 text-zinc-300">
+              {source} → <span className="text-cyan-400">{target}</span>
+            </span>
+          ))}
+          {Object.keys(mappings).length === 0 && (
+            <span className="text-red-400">No mappings defined!</span>
+          )}
+        </div>
+        <div className="mt-2 text-zinc-500">
+          Required: name, purchase_price, quantity |
+          Mapped: {Object.values(mappings).includes('name') ? '✓' : '✗'} name,
+          {Object.values(mappings).includes('purchase_price') ? '✓' : '✗'} price,
+          {Object.values(mappings).includes('quantity') ? '✓' : '✗'} qty
+        </div>
+      </div>
+
       {/* Stats Summary */}
       <div className="grid grid-cols-4 gap-4">
         <div
@@ -426,16 +465,38 @@ export function ValidationPreview({
                     <span className={cn(
                       "font-mono text-sm",
                       row.purchase_price > 0 ? "text-white" : "text-red-400"
-                    )}>
-                      {row.purchase_price > 0 ? `€${row.purchase_price.toFixed(2)}` : '(missing)'}
+                    )}
+                    title={row._raw_price !== undefined ? `Raw: ${JSON.stringify(row._raw_price)}` : 'No mapping'}
+                    >
+                      {row.purchase_price > 0 ? `€${row.purchase_price.toFixed(2)}` : (
+                        <span>
+                          (missing)
+                          {row._raw_price !== undefined && (
+                            <span className="block text-xs text-zinc-500 mt-0.5">
+                              raw: {String(row._raw_price).substring(0, 20)}
+                            </span>
+                          )}
+                        </span>
+                      )}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
                     <span className={cn(
                       "font-mono text-sm",
                       row.quantity !== null && row.quantity !== undefined ? "text-white" : "text-red-400"
-                    )}>
-                      {row.quantity !== null && row.quantity !== undefined ? row.quantity : '(missing)'}
+                    )}
+                    title={row._raw_quantity !== undefined ? `Raw: ${JSON.stringify(row._raw_quantity)}` : 'No mapping'}
+                    >
+                      {row.quantity !== null && row.quantity !== undefined ? row.quantity : (
+                        <span>
+                          (missing)
+                          {row._raw_quantity !== undefined && (
+                            <span className="block text-xs text-zinc-500 mt-0.5">
+                              raw: {String(row._raw_quantity).substring(0, 20)}
+                            </span>
+                          )}
+                        </span>
+                      )}
                     </span>
                   </td>
                   <td className="px-4 py-3">
