@@ -90,19 +90,38 @@ async function extractFromImage(client: Together, imageUrl: string): Promise<Ext
     console.log("Together AI response received");
     const content = response.choices[0]?.message?.content;
     console.log("AI content length:", content?.length || 0);
+    console.log("AI raw content (first 500 chars):", content?.substring(0, 500));
 
     if (!content) {
       console.log("No content in AI response");
       return { success: false, confidence: 0, errors: ["No response from AI"] };
     }
 
-    // Parse JSON from response
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    // Clean the content - remove thinking tags, markdown code blocks, etc.
+    let cleanedContent = content
+      .replace(/<think>[\s\S]*?<\/think>/gi, '') // Remove thinking tags
+      .replace(/```json\s*/gi, '') // Remove markdown json blocks
+      .replace(/```\s*/g, '') // Remove other code blocks
+      .trim();
+
+    console.log("Cleaned content (first 500 chars):", cleanedContent.substring(0, 500));
+
+    // Parse JSON from response - find the outermost JSON object
+    const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      return { success: false, confidence: 0, errors: ["Could not parse AI response"] };
+      console.log("No JSON found in response. Full content:", content);
+      return { success: false, confidence: 0, errors: ["Could not parse AI response - no JSON found"] };
     }
 
-    const data = JSON.parse(jsonMatch[0]) as InvoiceData & { confidence?: number };
+    let data: InvoiceData & { confidence?: number };
+    try {
+      data = JSON.parse(jsonMatch[0]) as InvoiceData & { confidence?: number };
+    } catch (parseError) {
+      console.error("JSON parse error:", parseError);
+      console.log("Attempted to parse:", jsonMatch[0].substring(0, 500));
+      return { success: false, confidence: 0, errors: ["Could not parse AI response - invalid JSON"] };
+    }
+
     const confidence = data.confidence ?? 0.8;
     delete (data as any).confidence;
 
