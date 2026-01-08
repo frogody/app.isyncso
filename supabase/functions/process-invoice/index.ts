@@ -269,48 +269,51 @@ Deno.serve(async (req) => {
     let supplierId: string | null = null;
 
     if (extraction.data.supplier_name) {
-      // Try to find existing supplier by name (fuzzy match) or VAT number
-      const { data: existingSuppliers } = await supabase
-        .from("suppliers")
-        .select("id, name")
-        .eq("company_id", companyId)
-        .or(
-          extraction.data.supplier_vat
-            ? `name.ilike.%${extraction.data.supplier_name}%,contact->>'vat_number'.eq.${extraction.data.supplier_vat}`
-            : `name.ilike.%${extraction.data.supplier_name}%`
-        )
-        .limit(1);
-
-      if (existingSuppliers && existingSuppliers.length > 0) {
-        supplierId = existingSuppliers[0].id;
-        console.log("Found existing supplier:", existingSuppliers[0].name);
-      } else {
-        // Create new supplier
-        const { data: newSupplier, error: supplierError } = await supabase
+      try {
+        // Try to find existing supplier by name (simple ilike match)
+        const { data: existingSuppliers } = await supabase
           .from("suppliers")
-          .insert({
-            company_id: companyId,
-            name: extraction.data.supplier_name,
-            contact: {
-              address: extraction.data.supplier_address,
-              vat_number: extraction.data.supplier_vat,
-            },
-          })
-          .select("id")
-          .single();
+          .select("id, name")
+          .eq("company_id", companyId)
+          .ilike("name", `%${extraction.data.supplier_name}%`)
+          .limit(1);
 
-        if (!supplierError && newSupplier) {
-          supplierId = newSupplier.id;
-          console.log("Created new supplier:", extraction.data.supplier_name);
+        if (existingSuppliers && existingSuppliers.length > 0) {
+          supplierId = existingSuppliers[0].id;
+          console.log("Found existing supplier:", existingSuppliers[0].name);
+        } else {
+          // Create new supplier
+          const { data: newSupplier, error: supplierError } = await supabase
+            .from("suppliers")
+            .insert({
+              company_id: companyId,
+              name: extraction.data.supplier_name,
+              contact: {
+                address: extraction.data.supplier_address || null,
+                vat_number: extraction.data.supplier_vat || null,
+              },
+            })
+            .select("id")
+            .single();
+
+          if (!supplierError && newSupplier) {
+            supplierId = newSupplier.id;
+            console.log("Created new supplier:", extraction.data.supplier_name);
+          } else if (supplierError) {
+            console.error("Error creating supplier:", supplierError);
+          }
         }
-      }
 
-      // Update expense with supplier_id
-      if (supplierId) {
-        await supabase
-          .from("expenses")
-          .update({ supplier_id: supplierId })
-          .eq("id", expense.id);
+        // Update expense with supplier_id
+        if (supplierId) {
+          await supabase
+            .from("expenses")
+            .update({ supplier_id: supplierId })
+            .eq("id", expense.id);
+        }
+      } catch (supplierErr) {
+        console.error("Error processing supplier:", supplierErr);
+        // Continue without supplier - don't fail the whole request
       }
     }
 
@@ -341,57 +344,62 @@ Deno.serve(async (req) => {
     // Create stock_purchases for line items that match products by EAN
     let stockPurchasesCreated = 0;
 
-    if (createdLineItems.length > 0) {
-      // Get all EANs from line items
-      const eansToMatch = createdLineItems
-        .filter((item) => item.ean)
-        .map((item) => item.ean);
+    try {
+      if (createdLineItems.length > 0) {
+        // Get all EANs from line items
+        const eansToMatch = createdLineItems
+          .filter((item) => item.ean)
+          .map((item) => item.ean);
 
-      if (eansToMatch.length > 0) {
-        // Find products matching these EANs (physical_products uses 'barcode' column)
-        const { data: matchedProducts } = await supabase
-          .from("physical_products")
-          .select("product_id, barcode")
-          .in("barcode", eansToMatch);
+        if (eansToMatch.length > 0) {
+          // Find products matching these EANs (physical_products uses 'barcode' column)
+          const { data: matchedProducts } = await supabase
+            .from("physical_products")
+            .select("product_id, barcode")
+            .in("barcode", eansToMatch);
 
-        if (matchedProducts && matchedProducts.length > 0) {
-          // Create barcode/EAN to product_id mapping
-          const eanToProductMap = new Map(
-            matchedProducts.map((p) => [p.barcode, p.product_id])
-          );
+          if (matchedProducts && matchedProducts.length > 0) {
+            // Create barcode/EAN to product_id mapping
+            const eanToProductMap = new Map(
+              matchedProducts.map((p) => [p.barcode, p.product_id])
+            );
 
-          // Create stock_purchases for matched items
-          const stockPurchases = createdLineItems
-            .filter((item) => item.ean && eanToProductMap.has(item.ean))
-            .map((item) => ({
-              company_id: companyId,
-              product_id: eanToProductMap.get(item.ean),
-              supplier_id: supplierId,
-              expense_id: expense.id,
-              expense_line_item_id: item.id,
-              quantity: item.quantity,
-              unit_price: item.unit_price,
-              currency: extraction.data.currency || "EUR",
-              purchase_date: extraction.data.invoice_date || new Date().toISOString().split("T")[0],
-              invoice_number: extraction.data.invoice_number,
-              ean: item.ean,
-              source_type: "invoice",
-            }));
+            // Create stock_purchases for matched items
+            const stockPurchases = createdLineItems
+              .filter((item) => item.ean && eanToProductMap.has(item.ean))
+              .map((item) => ({
+                company_id: companyId,
+                product_id: eanToProductMap.get(item.ean),
+                supplier_id: supplierId,
+                expense_id: expense.id,
+                expense_line_item_id: item.id,
+                quantity: item.quantity,
+                unit_price: item.unit_price,
+                currency: extraction.data.currency || "EUR",
+                purchase_date: extraction.data.invoice_date || new Date().toISOString().split("T")[0],
+                invoice_number: extraction.data.invoice_number,
+                ean: item.ean,
+                source_type: "invoice",
+              }));
 
-          if (stockPurchases.length > 0) {
-            const { error: stockError } = await supabase
-              .from("stock_purchases")
-              .insert(stockPurchases);
+            if (stockPurchases.length > 0) {
+              const { error: stockError } = await supabase
+                .from("stock_purchases")
+                .insert(stockPurchases);
 
-            if (stockError) {
-              console.error("Error creating stock purchases:", stockError);
-            } else {
-              stockPurchasesCreated = stockPurchases.length;
-              console.log(`Created ${stockPurchasesCreated} stock purchase records`);
+              if (stockError) {
+                console.error("Error creating stock purchases:", stockError);
+              } else {
+                stockPurchasesCreated = stockPurchases.length;
+                console.log(`Created ${stockPurchasesCreated} stock purchase records`);
+              }
             }
           }
         }
       }
+    } catch (stockErr) {
+      console.error("Error processing stock purchases:", stockErr);
+      // Continue without stock purchases - don't fail the whole request
     }
 
     return new Response(
