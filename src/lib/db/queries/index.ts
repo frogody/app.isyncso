@@ -24,3 +24,6 @@ export * from './notifications';
 
 // Product Suppliers & Stock Purchases
 export * from './productSuppliers';
+
+// Product Research Queue
+export * from './productResearch';

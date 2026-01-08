@@ -26,6 +26,8 @@ interface InvoiceData {
     unit_price: number;
     line_total: number;
     ean?: string;
+    model_number?: string;
+    brand?: string;
   }>;
 }
 
@@ -44,6 +46,9 @@ CRITICAL RULES:
 3. For dates, use ISO format (YYYY-MM-DD)
 4. If a field is not visible or unclear, omit it entirely
 5. Line items must have description, quantity, unit_price, and line_total
+6. For line items, extract model_number if present (often at end like "- 3681N" or "Model: ABC123")
+7. Extract brand name if visible (usually the first word of product name)
+8. EAN/barcode is typically 13 digits, look for it near line items
 
 Respond with ONLY a JSON object (no markdown, no explanation) in this exact format:
 {
@@ -60,11 +65,13 @@ Respond with ONLY a JSON object (no markdown, no explanation) in this exact form
   "currency": "EUR" or "USD" etc,
   "line_items": [
     {
-      "description": "string",
+      "description": "Full product description as shown",
       "quantity": number,
       "unit_price": number,
       "line_total": number,
-      "ean": "string or null"
+      "ean": "13-digit barcode if visible, or null",
+      "model_number": "Model/article number if present (e.g., 3681N), or null",
+      "brand": "Brand name (e.g., BISSELL, Apple, Samsung), or null"
     }
   ],
   "confidence": 0.0 to 1.0
@@ -327,17 +334,88 @@ Deno.serve(async (req) => {
         unit_price: item.unit_price,
         line_total: item.line_total,
         ean: item.ean,
+        model_number: item.model_number,
+        brand: item.brand,
+        research_status: 'pending',
       }));
 
       const { data: insertedLineItems, error: lineItemsError } = await supabase
         .from("expense_line_items")
         .insert(lineItems)
-        .select("id, ean, quantity, unit_price");
+        .select("id, ean, quantity, unit_price, description, model_number, brand");
 
       if (lineItemsError) {
         console.error("Error creating line items:", lineItemsError);
       } else {
         createdLineItems = insertedLineItems || [];
+      }
+    }
+
+    // Queue line items for product research
+    let researchQueuedCount = 0;
+    const researchQueueItems: any[] = [];
+
+    if (createdLineItems.length > 0) {
+      for (const item of createdLineItems) {
+        // Queue for research - the research function will check if product exists
+        const queueItem = {
+          company_id: companyId,
+          expense_id: expense.id,
+          expense_line_item_id: item.id,
+          product_description: item.description,
+          model_number: item.model_number,
+          supplier_name: extraction.data.supplier_name,
+          supplier_id: supplierId,
+          extracted_ean: item.ean,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          currency: extraction.data.currency || 'EUR',
+          purchase_date: extraction.data.invoice_date,
+          invoice_number: extraction.data.invoice_number,
+          status: 'pending',
+        };
+
+        researchQueueItems.push(queueItem);
+      }
+
+      if (researchQueueItems.length > 0) {
+        const { data: queuedItems, error: queueError } = await supabase
+          .from("product_research_queue")
+          .insert(researchQueueItems)
+          .select("id, product_description");
+
+        if (queueError) {
+          console.error("Error queuing research items:", queueError);
+        } else {
+          researchQueuedCount = queuedItems?.length || 0;
+          console.log(`Queued ${researchQueuedCount} items for product research`);
+
+          // Trigger research function asynchronously (fire and forget)
+          try {
+            const researchItems = queuedItems?.map((q: any, idx: number) => ({
+              queueId: q.id,
+              productDescription: q.product_description,
+              modelNumber: researchQueueItems[idx].model_number,
+              supplierName: researchQueueItems[idx].supplier_name,
+              extractedEan: researchQueueItems[idx].extracted_ean,
+            }));
+
+            // Call research-product function asynchronously
+            const researchUrl = `${supabaseUrl}/functions/v1/research-product`;
+            fetch(researchUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseServiceKey}`,
+              },
+              body: JSON.stringify({ items: researchItems }),
+            }).catch(err => console.error('Failed to trigger research:', err));
+
+            console.log('Triggered async product research');
+          } catch (triggerErr) {
+            console.error('Error triggering research:', triggerErr);
+          }
+        }
       }
     }
 
@@ -410,6 +488,8 @@ Deno.serve(async (req) => {
         expenseId: expense.id,
         supplierId,
         stockPurchasesCreated,
+        researchQueuedCount,
+        lineItemsCount: createdLineItems.length,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
