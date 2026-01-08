@@ -71,6 +71,7 @@ Respond with ONLY a JSON object (no markdown, no explanation) in this exact form
 
 async function extractFromImage(client: Together, imageUrl: string): Promise<ExtractionResult> {
   try {
+    console.log("Calling Together AI vision model...");
     const response = await client.chat.completions.create({
       model: "meta-llama/Llama-3.2-90B-Vision-Instruct-Turbo",
       messages: [
@@ -86,8 +87,12 @@ async function extractFromImage(client: Together, imageUrl: string): Promise<Ext
       temperature: 0.1,
     });
 
+    console.log("Together AI response received");
     const content = response.choices[0]?.message?.content;
+    console.log("AI content length:", content?.length || 0);
+
     if (!content) {
+      console.log("No content in AI response");
       return { success: false, confidence: 0, errors: ["No response from AI"] };
     }
 
@@ -174,9 +179,14 @@ Deno.serve(async (req) => {
     }
 
     // Extract data from image
-    console.log("Starting AI extraction...");
+    console.log("Starting AI extraction with URL:", imageUrl.substring(0, 100) + "...");
     const extraction = await extractFromImage(together, imageUrl);
-    console.log("Extraction result:", { success: extraction.success, confidence: extraction.confidence });
+    console.log("Extraction result:", JSON.stringify({
+      success: extraction.success,
+      confidence: extraction.confidence,
+      hasData: !!extraction.data,
+      errors: extraction.errors
+    }));
 
     if (!extraction.success || !extraction.data) {
       return new Response(
