@@ -144,17 +144,17 @@ export function ProductGridCard({
                 {!isDigital && pricing?.base_price && (
                   <>
                     <span className="text-sm font-medium text-white">
-                      ${parseFloat(pricing.base_price).toFixed(2)}
+                      €{parseFloat(pricing.base_price).toFixed(2)}
                     </span>
                     {pricing.compare_at_price && (
                       <span className="text-xs text-zinc-500 line-through">
-                        ${parseFloat(pricing.compare_at_price).toFixed(2)}
+                        €{parseFloat(pricing.compare_at_price).toFixed(2)}
                       </span>
                     )}
                   </>
                 )}
-                {!isDigital && details?.sku && (
-                  <span className="text-xs text-zinc-500">SKU: {details.sku}</span>
+                {!isDigital && details?.ean && (
+                  <span className="text-xs text-zinc-500">EAN: {details.ean}</span>
                 )}
               </div>
 
@@ -289,7 +289,7 @@ export function ProductListRow({
             {!isDigital && pricing?.base_price && (
               <>
                 <span className="text-sm font-medium text-white">
-                  ${parseFloat(pricing.base_price).toFixed(2)}
+                  €{parseFloat(pricing.base_price).toFixed(2)}
                 </span>
                 <p className="text-xs text-zinc-500">
                   {details?.inventory?.quantity > 0
@@ -300,12 +300,12 @@ export function ProductListRow({
             )}
           </div>
 
-          {/* Category / SKU */}
+          {/* Category / EAN */}
           <div className="text-right flex-shrink-0 w-32 hidden lg:block">
             <span className="text-sm text-zinc-400">
               {isDigital
                 ? product.category || 'Uncategorized'
-                : details?.sku || 'No SKU'}
+                : details?.ean || 'No EAN'}
             </span>
           </div>
 

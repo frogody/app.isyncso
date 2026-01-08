@@ -225,7 +225,7 @@ export default function ProductsPhysical() {
         const matches = p.name?.toLowerCase().includes(q) ||
           p.tagline?.toLowerCase().includes(q) ||
           p.category?.toLowerCase().includes(q) ||
-          pp?.sku?.toLowerCase().includes(q);
+          pp?.ean?.toLowerCase().includes(q);
         if (!matches) return false;
       }
 
@@ -313,7 +313,7 @@ export default function ProductsPhysical() {
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
               <Input
-                placeholder="Search by name, SKU..."
+                placeholder="Search by name, EAN..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 bg-zinc-900/50 border-white/10 text-white placeholder:text-zinc-500"
