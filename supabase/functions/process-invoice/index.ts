@@ -460,26 +460,18 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`Created expense ${expense.id} - processing synchronously`);
+    console.log(`Created expense ${expense.id} - database trigger will handle async processing`);
 
-    // Process the expense synchronously (more reliable than async HTTP calls in Edge Functions)
-    await processExpenseAsync(supabase, together, expense.id, imageUrl, companyId);
+    // The database trigger (trigger_expense_processing) will automatically call
+    // this function with _mode='process' via pg_net when the expense is inserted.
+    // This happens asynchronously, so we return immediately.
 
-    // Fetch the updated expense to return full data
-    const { data: updatedExpense } = await supabase
-      .from("expenses")
-      .select("*")
-      .eq("id", expense.id)
-      .single();
-
-    // Return with the processed expense data
     return new Response(
       JSON.stringify({
         success: true,
-        processed: true,
+        processing: true,
         expenseId: expense.id,
-        expense: updatedExpense,
-        message: "Invoice processed successfully",
+        message: "Invoice uploaded. Processing will complete in background.",
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
