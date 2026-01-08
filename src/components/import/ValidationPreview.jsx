@@ -1,15 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { CheckCircle, AlertCircle, AlertTriangle, Filter, Search } from 'lucide-react';
+import { CheckCircle, AlertCircle, AlertTriangle, Search, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
 // Transform functions
@@ -125,10 +118,21 @@ export function ValidationPreview({
   sourceColumns = [],
   rows = [],
   mappings = {},
-  onValidationComplete
+  onValidationComplete,
+  onDeleteRows
 }) {
   const [filter, setFilter] = useState('all'); // all, valid, warnings, errors
   const [searchQuery, setSearchQuery] = useState('');
+  const [deletedIndices, setDeletedIndices] = useState(new Set());
+
+  // Handle row deletion
+  const handleDeleteRow = (rowIndex) => {
+    setDeletedIndices(prev => {
+      const newSet = new Set(prev);
+      newSet.add(rowIndex);
+      return newSet;
+    });
+  };
 
   // Transform all rows based on mappings
   const transformedData = useMemo(() => {
@@ -173,9 +177,14 @@ export function ValidationPreview({
     });
   }, [rows, mappings, sourceColumns]);
 
+  // Get non-deleted data
+  const activeData = useMemo(() => {
+    return transformedData.filter(r => !deletedIndices.has(r._rowIndex));
+  }, [transformedData, deletedIndices]);
+
   // Filter data
   const filteredData = useMemo(() => {
-    let data = transformedData;
+    let data = activeData;
 
     // Apply status filter
     if (filter === 'valid') {
@@ -197,25 +206,26 @@ export function ValidationPreview({
     }
 
     return data;
-  }, [transformedData, filter, searchQuery]);
+  }, [activeData, filter, searchQuery]);
 
-  // Calculate stats
+  // Calculate stats (excluding deleted rows)
   const stats = useMemo(() => {
-    const valid = transformedData.filter(r => r._validation.isValid && r._validation.warnings.length === 0).length;
-    const warnings = transformedData.filter(r => r._validation.isValid && r._validation.warnings.length > 0).length;
-    const errors = transformedData.filter(r => !r._validation.isValid).length;
+    const valid = activeData.filter(r => r._validation.isValid && r._validation.warnings.length === 0).length;
+    const warnings = activeData.filter(r => r._validation.isValid && r._validation.warnings.length > 0).length;
+    const errors = activeData.filter(r => !r._validation.isValid).length;
+    const deleted = deletedIndices.size;
 
-    return { total: transformedData.length, valid, warnings, errors };
-  }, [transformedData]);
+    return { total: activeData.length, valid, warnings, errors, deleted };
+  }, [activeData, deletedIndices]);
 
-  // Notify parent of validation results
+  // Notify parent of validation results (only non-deleted rows)
   React.useEffect(() => {
     onValidationComplete?.({
-      transformedData,
+      transformedData: activeData,
       stats,
       canImport: stats.errors === 0 && stats.total > 0
     });
-  }, [transformedData, stats, onValidationComplete]);
+  }, [activeData, stats, onValidationComplete]);
 
   return (
     <div className="space-y-6">
@@ -235,15 +245,15 @@ export function ValidationPreview({
         <div
           className={cn(
             "p-4 rounded-lg border cursor-pointer transition-colors",
-            filter === 'valid' ? "bg-green-500/20 border-green-500/30" : "bg-green-500/10 border-green-500/20 hover:border-green-500/30"
+            filter === 'valid' ? "bg-cyan-500/20 border-cyan-500/30" : "bg-cyan-500/10 border-cyan-500/20 hover:border-cyan-500/30"
           )}
           onClick={() => setFilter('valid')}
         >
           <div className="flex items-center gap-2">
-            <CheckCircle className="w-5 h-5 text-green-400" />
-            <div className="text-2xl font-bold text-green-400">{stats.valid}</div>
+            <CheckCircle className="w-5 h-5 text-cyan-400" />
+            <div className="text-2xl font-bold text-cyan-400">{stats.valid}</div>
           </div>
-          <div className="text-sm text-green-400/70">Valid</div>
+          <div className="text-sm text-cyan-400/70">Valid</div>
         </div>
 
         <div
@@ -300,6 +310,7 @@ export function ValidationPreview({
                 <th className="px-4 py-3 text-left text-sm font-medium text-zinc-400">EAN</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-zinc-400">Supplier</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-zinc-400">Issues</th>
+                <th className="px-4 py-3 text-center text-sm font-medium text-zinc-400 w-12"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -324,7 +335,7 @@ export function ValidationPreview({
                     ) : row._validation.warnings.length > 0 ? (
                       <AlertTriangle className="w-4 h-4 text-amber-400" />
                     ) : (
-                      <CheckCircle className="w-4 h-4 text-green-400" />
+                      <CheckCircle className="w-4 h-4 text-cyan-400" />
                     )}
                   </td>
                   <td className="px-4 py-3">
@@ -376,6 +387,16 @@ export function ValidationPreview({
                         </Badge>
                       ))}
                     </div>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteRow(row._rowIndex)}
+                      className="h-7 w-7 p-0 text-zinc-500 hover:text-red-400 hover:bg-red-500/10"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </td>
                 </tr>
               ))}

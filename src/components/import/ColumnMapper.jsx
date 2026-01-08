@@ -167,9 +167,7 @@ export function ColumnMapper({
                   key={column.index}
                   className={cn(
                     "transition-colors",
-                    currentMapping && targetField?.required
-                      ? "bg-green-500/5"
-                      : currentMapping
+                    currentMapping
                       ? "bg-cyan-500/5"
                       : "hover:bg-white/5"
                   )}
@@ -216,9 +214,7 @@ export function ColumnMapper({
                     >
                       <SelectTrigger className={cn(
                         "w-[200px] bg-zinc-900/50 border-white/10",
-                        currentMapping && targetField?.required
-                          ? "border-green-500/30 text-green-400"
-                          : currentMapping
+                        currentMapping
                           ? "border-cyan-500/30 text-cyan-400"
                           : "text-zinc-400"
                       )}>
@@ -274,20 +270,20 @@ export function ColumnMapper({
                     <div className={cn(
                       "flex items-center gap-2 p-2 rounded-lg text-sm",
                       sourceColumn
-                        ? "bg-green-500/10 border border-green-500/20"
+                        ? "bg-cyan-500/10 border border-cyan-500/20"
                         : field.required
                         ? "bg-red-500/10 border border-red-500/20"
                         : "bg-zinc-800/50 border border-white/5"
                     )}>
                       {sourceColumn ? (
-                        <Check className="w-4 h-4 text-green-400 flex-shrink-0" />
+                        <Check className="w-4 h-4 text-cyan-400 flex-shrink-0" />
                       ) : field.required ? (
                         <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
                       ) : (
                         <HelpCircle className="w-4 h-4 text-zinc-500 flex-shrink-0" />
                       )}
                       <span className={cn(
-                        sourceColumn ? "text-green-400" :
+                        sourceColumn ? "text-cyan-400" :
                         field.required ? "text-red-400" : "text-zinc-400"
                       )}>
                         {field.label}
@@ -298,7 +294,7 @@ export function ColumnMapper({
                   <TooltipContent>
                     <p>{field.description}</p>
                     {sourceColumn && (
-                      <p className="text-green-400 mt-1">Mapped from: {sourceColumn}</p>
+                      <p className="text-cyan-400 mt-1">Mapped from: {sourceColumn}</p>
                     )}
                   </TooltipContent>
                 </Tooltip>
