@@ -21,3 +21,6 @@ verify_jwt = false
 
 [functions.research-supplier]
 verify_jwt = false
+
+[functions.map-contact-columns]
+verify_jwt = false

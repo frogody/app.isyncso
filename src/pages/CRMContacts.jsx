@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { useNavigate } from "react-router-dom";
+import { base44, supabase } from "@/api/base44Client";
 import { useUser } from "@/components/context/UserContext";
+import CRMSidebar, { CONTACT_TYPES } from "@/components/crm/CRMSidebar";
 import {
   Plus, Search, Filter, Mail, Phone, Building2, MapPin, MoreVertical, X,
   Download, Upload, Trash2, Tag, User, Calendar, MessageSquare, ExternalLink,
@@ -73,6 +75,7 @@ const emptyContact = {
   location: "",
   stage: "new",
   source: "website",
+  contact_type: "lead",
   industry: "",
   company_size: "",
   website: "",
@@ -687,7 +690,9 @@ function CRMAnalytics({ contacts }) {
 // Main CRM Component
 export default function CRMContacts() {
   const { user } = useUser();
+  const navigate = useNavigate();
   const [contacts, setContacts] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedContacts, setSelectedContacts] = useState([]);
   const [detailContact, setDetailContact] = useState(null);
@@ -695,6 +700,7 @@ export default function CRMContacts() {
   const [searchQuery, setSearchQuery] = useState("");
   const [stageFilter, setStageFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
+  const [selectedContactType, setSelectedContactType] = useState("all");
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyContact);
   const [editingContact, setEditingContact] = useState(null);
@@ -703,6 +709,7 @@ export default function CRMContacts() {
   const [activities, setActivities] = useState([]);
   const [deals, setDeals] = useState([]);
   const [enriching, setEnriching] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(true);
 
   useEffect(() => {
     if (user?.id) loadContacts();
@@ -723,6 +730,7 @@ export default function CRMContacts() {
         location: p.location,
         stage: p.stage || "new",
         source: p.source || "website",
+        contact_type: p.contact_type || "prospect",
         industry: p.industry,
         company_size: p.company_size,
         website: p.website,
@@ -737,8 +745,24 @@ export default function CRMContacts() {
         next_follow_up: p.next_follow_up,
         created_date: p.created_date,
         updated_date: p.updated_date,
+        // Type-specific fields
+        lifetime_value: p.lifetime_value,
+        contract_date: p.contract_date,
+        renewal_date: p.renewal_date,
+        partnership_type: p.partnership_type,
+        candidate_status: p.candidate_status,
+        target_priority: p.target_priority,
       }));
       setContacts(contactList);
+
+      // Also load suppliers for the supplier type view
+      if (user?.company_id) {
+        const { data: supplierData } = await supabase
+          .from('suppliers')
+          .select('*')
+          .eq('company_id', user.company_id);
+        setSuppliers(supplierData || []);
+      }
     } catch (error) {
       console.error("Failed to load contacts:", error);
       toast.error("Failed to load contacts");
@@ -760,7 +784,38 @@ export default function CRMContacts() {
     }
   };
 
+  // Calculate contact counts by type for sidebar
+  const contactCounts = useMemo(() => {
+    const counts = {};
+    contacts.forEach(c => {
+      const type = c.contact_type || 'prospect';
+      counts[type] = (counts[type] || 0) + 1;
+    });
+    return counts;
+  }, [contacts]);
+
   const filteredContacts = useMemo(() => {
+    // If supplier view is selected, show suppliers instead
+    if (selectedContactType === 'supplier') {
+      return suppliers.map(s => ({
+        id: s.id,
+        name: s.name,
+        email: s.contact?.email,
+        phone: s.contact?.phone,
+        company_name: s.name,
+        website: s.website,
+        location: s.address?.country || '',
+        stage: 'won',
+        contact_type: 'supplier',
+        is_supplier: true,
+      })).filter(c => {
+        const matchesSearch = !searchQuery ||
+          c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          c.email?.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesSearch;
+      });
+    }
+
     return contacts.filter(c => {
       const matchesSearch = !searchQuery ||
         c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -768,9 +823,10 @@ export default function CRMContacts() {
         c.company_name?.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStage = stageFilter === "all" || c.stage === stageFilter;
       const matchesSource = sourceFilter === "all" || c.source === sourceFilter;
-      return matchesSearch && matchesStage && matchesSource;
+      const matchesType = selectedContactType === "all" || c.contact_type === selectedContactType;
+      return matchesSearch && matchesStage && matchesSource && matchesType;
     });
-  }, [contacts, searchQuery, stageFilter, sourceFilter]);
+  }, [contacts, suppliers, searchQuery, stageFilter, sourceFilter, selectedContactType]);
 
   const contactsByStage = useMemo(() => {
     const grouped = {};
@@ -826,6 +882,7 @@ export default function CRMContacts() {
         company: formData.company_name,
         stage: formData.stage,
         source: formData.source,
+        contact_type: formData.contact_type || 'lead',
         linkedin_url: formData.linkedin_url,
         twitter_url: formData.twitter_url,
         website: formData.website,
@@ -838,6 +895,13 @@ export default function CRMContacts() {
         notes: formData.notes,
         is_starred: formData.is_starred || false,
         next_follow_up: formData.next_follow_up,
+        // Type-specific fields
+        lifetime_value: formData.lifetime_value ? parseFloat(formData.lifetime_value) : null,
+        contract_date: formData.contract_date,
+        renewal_date: formData.renewal_date,
+        partnership_type: formData.partnership_type,
+        candidate_status: formData.candidate_status,
+        target_priority: formData.target_priority,
       };
 
       if (editingContact) {
@@ -997,31 +1061,81 @@ export default function CRMContacts() {
     setShowModal(true);
   };
 
+  // Navigate to import page
+  const handleImportContacts = () => {
+    navigate('/contacts-import');
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-4 sm:p-6">
-        <div className="max-w-7xl mx-auto">
-          <Skeleton className="h-10 w-48 bg-zinc-800 mb-6" />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24 bg-zinc-800 rounded-xl" />)}
+      <div className="flex min-h-screen bg-black">
+        {showSidebar && (
+          <div className="w-64 bg-zinc-950 border-r border-zinc-800/50">
+            <Skeleton className="h-full w-full" />
           </div>
-          <div className="flex gap-4 overflow-x-auto">
-            {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="w-72 h-96 bg-zinc-800 rounded-xl flex-shrink-0" />)}
+        )}
+        <div className="flex-1 p-4 sm:p-6">
+          <div className="max-w-7xl mx-auto">
+            <Skeleton className="h-10 w-48 bg-zinc-800 mb-6" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24 bg-zinc-800 rounded-xl" />)}
+            </div>
+            <div className="flex gap-4 overflow-x-auto">
+              {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="w-72 h-96 bg-zinc-800 rounded-xl flex-shrink-0" />)}
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
+  // Get current type label for display
+  const currentTypeLabel = CONTACT_TYPES.find(t => t.id === selectedContactType)?.label || 'Contacts';
+
   return (
-    <div className="min-h-screen bg-black">
-      <div className="max-w-full mx-auto p-4 sm:p-6">
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-white">CRM</h1>
-            <p className="text-sm text-zinc-400">{contacts.length} contacts in pipeline</p>
-          </div>
+    <div className="flex min-h-screen bg-black">
+      {/* CRM Sidebar */}
+      {showSidebar && (
+        <CRMSidebar
+          selectedType={selectedContactType}
+          onSelectType={setSelectedContactType}
+          contactCounts={contactCounts}
+          suppliers={suppliers}
+          onAddContact={() => {
+            setEditingContact(null);
+            setFormData({
+              ...emptyContact,
+              contact_type: selectedContactType !== 'all' ? selectedContactType : 'lead'
+            });
+            setShowModal(true);
+          }}
+          onImportContacts={handleImportContacts}
+          onOpenSettings={() => {}}
+        />
+      )}
+
+      {/* Main Content */}
+      <div className="flex-1 overflow-auto">
+        <div className="max-w-full mx-auto p-4 sm:p-6">
+          {/* Header */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+            <div className="flex items-center gap-3">
+              {/* Toggle Sidebar Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowSidebar(!showSidebar)}
+                className="text-zinc-400 hover:text-white"
+              >
+                <ChevronLeft className={`w-5 h-5 transition-transform ${!showSidebar ? 'rotate-180' : ''}`} />
+              </Button>
+              <div>
+                <h1 className="text-2xl font-bold text-white">{currentTypeLabel}</h1>
+                <p className="text-sm text-zinc-400">
+                  {filteredContacts.length} {selectedContactType === 'all' ? 'contacts' : currentTypeLabel.toLowerCase()} in pipeline
+                </p>
+              </div>
+            </div>
 
           <div className="flex flex-wrap items-center gap-2">
             {/* View Mode Toggle */}
@@ -1348,7 +1462,20 @@ export default function CRMContacts() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs text-zinc-500 mb-1 block">Contact Type</label>
+                <Select value={formData.contact_type} onValueChange={(v) => setFormData(prev => ({ ...prev, contact_type: v }))}>
+                  <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-zinc-800">
+                    {CONTACT_TYPES.filter(t => t.id !== 'all' && t.id !== 'supplier').map(t => (
+                      <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div>
                 <label className="text-xs text-zinc-500 mb-1 block">Stage</label>
                 <Select value={formData.stage} onValueChange={(v) => setFormData(prev => ({ ...prev, stage: v }))}>
@@ -1360,6 +1487,9 @@ export default function CRMContacts() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="text-xs text-zinc-500 mb-1 block">Source</label>
                 <Select value={formData.source} onValueChange={(v) => setFormData(prev => ({ ...prev, source: v }))}>
@@ -1471,6 +1601,8 @@ export default function CRMContacts() {
           </div>
         </DialogContent>
       </Dialog>
+        </div>
+      </div>
     </div>
   );
 }
