@@ -1601,7 +1601,6 @@ export default function CRMContacts() {
           </div>
         </DialogContent>
       </Dialog>
-        </div>
       </div>
     </div>
   );
