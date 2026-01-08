@@ -265,7 +265,57 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Find or create supplier based on extracted data
+    let supplierId: string | null = null;
+
+    if (extraction.data.supplier_name) {
+      // Try to find existing supplier by name (fuzzy match) or VAT number
+      const { data: existingSuppliers } = await supabase
+        .from("suppliers")
+        .select("id, name")
+        .eq("company_id", companyId)
+        .or(
+          extraction.data.supplier_vat
+            ? `name.ilike.%${extraction.data.supplier_name}%,contact->>'vat_number'.eq.${extraction.data.supplier_vat}`
+            : `name.ilike.%${extraction.data.supplier_name}%`
+        )
+        .limit(1);
+
+      if (existingSuppliers && existingSuppliers.length > 0) {
+        supplierId = existingSuppliers[0].id;
+        console.log("Found existing supplier:", existingSuppliers[0].name);
+      } else {
+        // Create new supplier
+        const { data: newSupplier, error: supplierError } = await supabase
+          .from("suppliers")
+          .insert({
+            company_id: companyId,
+            name: extraction.data.supplier_name,
+            contact: {
+              address: extraction.data.supplier_address,
+              vat_number: extraction.data.supplier_vat,
+            },
+          })
+          .select("id")
+          .single();
+
+        if (!supplierError && newSupplier) {
+          supplierId = newSupplier.id;
+          console.log("Created new supplier:", extraction.data.supplier_name);
+        }
+      }
+
+      // Update expense with supplier_id
+      if (supplierId) {
+        await supabase
+          .from("expenses")
+          .update({ supplier_id: supplierId })
+          .eq("id", expense.id);
+      }
+    }
+
     // Create line items if present
+    let createdLineItems: any[] = [];
     if (extraction.data.line_items && extraction.data.line_items.length > 0) {
       const lineItems = extraction.data.line_items.map((item) => ({
         expense_id: expense.id,
@@ -276,12 +326,71 @@ Deno.serve(async (req) => {
         ean: item.ean,
       }));
 
-      const { error: lineItemsError } = await supabase
+      const { data: insertedLineItems, error: lineItemsError } = await supabase
         .from("expense_line_items")
-        .insert(lineItems);
+        .insert(lineItems)
+        .select("id, ean, quantity, unit_price");
 
       if (lineItemsError) {
         console.error("Error creating line items:", lineItemsError);
+      } else {
+        createdLineItems = insertedLineItems || [];
+      }
+    }
+
+    // Create stock_purchases for line items that match products by EAN
+    let stockPurchasesCreated = 0;
+
+    if (createdLineItems.length > 0) {
+      // Get all EANs from line items
+      const eansToMatch = createdLineItems
+        .filter((item) => item.ean)
+        .map((item) => item.ean);
+
+      if (eansToMatch.length > 0) {
+        // Find products matching these EANs (physical_products uses 'barcode' column)
+        const { data: matchedProducts } = await supabase
+          .from("physical_products")
+          .select("product_id, barcode")
+          .in("barcode", eansToMatch);
+
+        if (matchedProducts && matchedProducts.length > 0) {
+          // Create barcode/EAN to product_id mapping
+          const eanToProductMap = new Map(
+            matchedProducts.map((p) => [p.barcode, p.product_id])
+          );
+
+          // Create stock_purchases for matched items
+          const stockPurchases = createdLineItems
+            .filter((item) => item.ean && eanToProductMap.has(item.ean))
+            .map((item) => ({
+              company_id: companyId,
+              product_id: eanToProductMap.get(item.ean),
+              supplier_id: supplierId,
+              expense_id: expense.id,
+              expense_line_item_id: item.id,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              currency: extraction.data.currency || "EUR",
+              purchase_date: extraction.data.invoice_date || new Date().toISOString().split("T")[0],
+              invoice_number: extraction.data.invoice_number,
+              ean: item.ean,
+              source_type: "invoice",
+            }));
+
+          if (stockPurchases.length > 0) {
+            const { error: stockError } = await supabase
+              .from("stock_purchases")
+              .insert(stockPurchases);
+
+            if (stockError) {
+              console.error("Error creating stock purchases:", stockError);
+            } else {
+              stockPurchasesCreated = stockPurchases.length;
+              console.log(`Created ${stockPurchasesCreated} stock purchase records`);
+            }
+          }
+        }
       }
     }
 
@@ -291,6 +400,8 @@ Deno.serve(async (req) => {
         needsReview,
         confidence: extraction.confidence,
         expenseId: expense.id,
+        supplierId,
+        stockPurchasesCreated,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
