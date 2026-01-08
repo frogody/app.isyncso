@@ -25,8 +25,7 @@ export async function listExpenses(
       *,
       suppliers (id, name),
       expense_line_items (
-        id, description, quantity, unit_price, line_total, ean,
-        products (id, name, sku)
+        id, description, quantity, unit_price, line_total, ean
       )
     `)
     .eq('company_id', companyId);
@@ -62,8 +61,7 @@ export async function getExpense(id: string): Promise<Expense | null> {
       expense_line_items (
         id, description, quantity, unit, unit_price, discount_percent,
         discount_amount, tax_percent, tax_amount, line_total, sku, ean,
-        is_physical_product, expected_delivery_id, ai_confidence, line_number,
-        products (id, name, sku, ean, price)
+        is_physical_product, expected_delivery_id, ai_confidence, line_number
       )
     `)
     .eq('id', id)
