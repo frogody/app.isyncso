@@ -460,45 +460,26 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`Created expense ${expense.id} - triggering async processing via HTTP`);
+    console.log(`Created expense ${expense.id} - processing synchronously`);
 
-    // Trigger async processing by calling ourselves with _mode='process'
-    // We need to await at least the initial connection to ensure the request is sent
-    try {
-      const asyncResponse = await Promise.race([
-        fetch(`${supabaseUrl}/functions/v1/process-invoice`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabaseServiceKey}`,
-          },
-          body: JSON.stringify({
-            _mode: 'process',
-            _expenseId: expense.id,
-            _imageUrl: imageUrl,
-            companyId: companyId,
-          }),
-        }),
-        // Timeout after 500ms - just enough to ensure request is dispatched
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 500))
-      ]);
-      console.log(`Async processing triggered, status: ${(asyncResponse as Response).status}`);
-    } catch (err) {
-      // Timeout is expected and OK - the request was sent
-      if (err instanceof Error && err.message !== 'timeout') {
-        console.error('Failed to trigger async processing:', err);
-      } else {
-        console.log('Async processing request dispatched (timeout is expected)');
-      }
-    }
+    // Process the expense synchronously (more reliable than async HTTP calls in Edge Functions)
+    await processExpenseAsync(supabase, together, expense.id, imageUrl, companyId);
 
-    // Return with the expense ID
+    // Fetch the updated expense to return full data
+    const { data: updatedExpense } = await supabase
+      .from("expenses")
+      .select("*")
+      .eq("id", expense.id)
+      .single();
+
+    // Return with the processed expense data
     return new Response(
       JSON.stringify({
         success: true,
-        processing: true,
+        processed: true,
         expenseId: expense.id,
-        message: "Invoice uploaded. Processing in background...",
+        expense: updatedExpense,
+        message: "Invoice processed successfully",
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
