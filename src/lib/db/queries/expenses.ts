@@ -57,7 +57,7 @@ export async function getExpense(id: string): Promise<Expense | null> {
     .from('expenses')
     .select(`
       *,
-      suppliers (id, name, email),
+      suppliers (id, name, contact),
       expense_line_items (
         id, description, quantity, unit, unit_price, discount_percent,
         discount_amount, tax_percent, tax_amount, line_total, sku, ean,
