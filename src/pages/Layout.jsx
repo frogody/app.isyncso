@@ -114,7 +114,7 @@ const navigationItems = [
   },
   {
     title: "CRM",
-    url: createPageUrl("CRMContacts"),
+    url: createPageUrl("CRMContacts") + "?type=lead",
     icon: Contact,
     permission: "users.view", // Basic permission
   },
@@ -214,14 +214,14 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       title: 'CRM',
       color: 'cyan',
       items: [
-        { label: 'All Contacts', path: createPageUrl('CRMContacts'), icon: Users, badge: stats.contacts },
-        { label: 'Leads', path: createPageUrl('CRMContacts') + '?type=lead', icon: Target },
+        { label: 'Leads', path: createPageUrl('CRMContacts') + '?type=lead', icon: Target, badge: stats.contacts },
         { label: 'Prospects', path: createPageUrl('CRMContacts') + '?type=prospect', icon: TrendingUp },
         { label: 'Customers', path: createPageUrl('CRMContacts') + '?type=customer', icon: UserCheck },
         { label: 'Suppliers', path: createPageUrl('CRMContacts') + '?type=supplier', icon: Truck },
         { label: 'Partners', path: createPageUrl('CRMContacts') + '?type=partner', icon: Handshake },
         { label: 'Candidates', path: createPageUrl('CRMContacts') + '?type=candidate', icon: UserPlus },
         { label: 'Targets', path: createPageUrl('CRMContacts') + '?type=target', icon: Crosshair },
+        { label: 'All Contacts', path: createPageUrl('CRMContacts'), icon: Users },
         { label: 'Import', path: createPageUrl('ContactsImport'), icon: FileSpreadsheet },
       ]
     };
