@@ -261,19 +261,14 @@ export default function FinanceOverview() {
         />
 
         {/* Key Metrics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div ref={statsGridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { title: 'Total Revenue', value: `$${metrics.totalRevenue.toLocaleString()}`, change: '+12.5%', trend: 'up', icon: DollarSign, color: 'amber' },
-            { title: 'Total Expenses', value: `$${metrics.totalExpenses.toLocaleString()}`, change: '-3.2%', trend: 'down', icon: CreditCard, color: 'red' },
-            { title: 'Pending Invoices', value: `$${metrics.pendingInvoices.toLocaleString()}`, change: `${metrics.pendingCount} invoices`, trend: 'neutral', icon: Receipt, color: 'orange' },
-            { title: 'Monthly Recurring', value: `$${metrics.monthlyRecurring.toLocaleString()}`, change: `${metrics.activeSubscriptions} active`, trend: 'up', icon: TrendingUp, color: 'amber' }
+            { title: 'Total Revenue', value: metrics.totalRevenue, displayValue: `$${metrics.totalRevenue.toLocaleString()}`, change: '+12.5%', trend: 'up', icon: DollarSign, color: 'amber' },
+            { title: 'Total Expenses', value: metrics.totalExpenses, displayValue: `$${metrics.totalExpenses.toLocaleString()}`, change: '-3.2%', trend: 'down', icon: CreditCard, color: 'red' },
+            { title: 'Pending Invoices', value: metrics.pendingInvoices, displayValue: `$${metrics.pendingInvoices.toLocaleString()}`, change: `${metrics.pendingCount} invoices`, trend: 'neutral', icon: Receipt, color: 'orange' },
+            { title: 'Monthly Recurring', value: metrics.monthlyRecurring, displayValue: `$${metrics.monthlyRecurring.toLocaleString()}`, change: `${metrics.activeSubscriptions} active`, trend: 'up', icon: TrendingUp, color: 'amber' }
           ].map((metric, index) => (
-            <motion.div
-              key={metric.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
+            <div key={metric.title} className="stat-card">
               <Card className="bg-zinc-900/50 border-zinc-800 hover:border-zinc-700 transition-colors">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
@@ -298,11 +293,11 @@ export default function FinanceOverview() {
                       </Badge>
                     )}
                   </div>
-                  <p className="text-2xl font-bold text-white">{metric.value}</p>
+                  <p className="stat-number text-2xl font-bold text-white" data-value={metric.value} data-prefix="$">{metric.displayValue}</p>
                   <p className="text-sm text-zinc-500">{metric.title}</p>
                 </CardContent>
               </Card>
-            </motion.div>
+            </div>
           ))}
         </div>
 
