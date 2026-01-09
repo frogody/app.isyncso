@@ -726,23 +726,6 @@ export default function CRMContacts() {
   const [enriching, setEnriching] = useState(false);
   const tableBodyRef = useRef(null);
 
-  // Animate table rows on load
-  useEffect(() => {
-    if (tableBodyRef.current && viewMode === 'table' && !prefersReducedMotion()) {
-      const rows = tableBodyRef.current.querySelectorAll('tr');
-      if (rows.length > 0) {
-        anime({
-          targets: rows,
-          opacity: [0, 1],
-          translateX: [-15, 0],
-          delay: anime.stagger(25, { start: 100 }),
-          duration: 300,
-          easing: 'easeOutQuad',
-        });
-      }
-    }
-  }, [filteredContacts, viewMode]);
-
   useEffect(() => {
     if (user?.id) loadContacts();
   }, [user]);
@@ -867,6 +850,23 @@ export default function CRMContacts() {
     });
     return grouped;
   }, [filteredContacts]);
+
+  // Animate table rows on load (after filteredContacts is defined)
+  useEffect(() => {
+    if (tableBodyRef.current && viewMode === 'table' && !prefersReducedMotion()) {
+      const rows = tableBodyRef.current.querySelectorAll('tr');
+      if (rows.length > 0) {
+        anime({
+          targets: rows,
+          opacity: [0, 1],
+          translateX: [-15, 0],
+          delay: anime.stagger(25, { start: 100 }),
+          duration: 300,
+          easing: 'easeOutQuad',
+        });
+      }
+    }
+  }, [filteredContacts, viewMode]);
 
   const handleDragEnd = async (result) => {
     if (!result.destination) return;
