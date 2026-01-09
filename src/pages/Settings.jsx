@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import anime from 'animejs';
+import { animate } from 'animejs';
 import { prefersReducedMotion } from '@/lib/animations';
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -579,7 +579,7 @@ export default function Settings() {
   useEffect(() => {
     if (!headerRef.current || prefersReducedMotion()) return;
 
-    anime({
+    animate({
       targets: headerRef.current,
       translateY: [-20, 0],
       opacity: [0, 1],
@@ -592,7 +592,7 @@ export default function Settings() {
   useEffect(() => {
     if (!contentRef.current || prefersReducedMotion()) return;
 
-    anime({
+    animate({
       targets: contentRef.current,
       translateY: [15, 0],
       opacity: [0, 1],

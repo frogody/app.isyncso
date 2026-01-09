@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
-import anime from 'animejs';
+import { animate } from 'animejs';
 import { prefersReducedMotion } from '@/lib/animations';
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -271,7 +271,7 @@ export default function ProductsPhysical() {
   useEffect(() => {
     if (!headerRef.current || prefersReducedMotion()) return;
 
-    anime({
+    animate({
       targets: headerRef.current,
       translateY: [-20, 0],
       opacity: [0, 1],
@@ -285,7 +285,7 @@ export default function ProductsPhysical() {
     if (loading || !statsRef.current || prefersReducedMotion()) return;
 
     // Entrance animation for stats bar
-    anime({
+    animate({
       targets: statsRef.current,
       translateY: [15, 0],
       opacity: [0, 1],
@@ -300,7 +300,7 @@ export default function ProductsPhysical() {
       const endValue = parseFloat(el.dataset.value) || 0;
       const obj = { value: 0 };
 
-      anime({
+      animate({
         targets: obj,
         value: endValue,
         round: 1,
@@ -328,12 +328,12 @@ export default function ProductsPhysical() {
     });
 
     // Staggered entrance animation
-    anime({
+    animate({
       targets: cards,
       translateY: [25, 0],
       scale: [0.96, 1],
       opacity: [0, 1],
-      delay: anime.stagger(40, { start: 150 }),
+      delay: stagger(40, { start: 150 }),
       duration: 450,
       easing: 'easeOutQuart',
     });

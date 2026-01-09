@@ -1,4 +1,4 @@
-import anime from 'animejs';
+import { animate, stagger } from 'animejs';
 
 // Respect user preferences
 export const prefersReducedMotion = () =>
@@ -8,9 +8,9 @@ export const prefersReducedMotion = () =>
 // Safe animate wrapper
 export const safeAnimate = (targets, params) => {
   if (prefersReducedMotion()) {
-    return anime({ targets, ...params, duration: 0 });
+    return animate({ targets, ...params, duration: 0 });
   }
-  return anime({ targets, ...params });
+  return animate({ targets, ...params });
 };
 
 // Staggered list entrance
@@ -18,7 +18,7 @@ export const staggerIn = (selector, delay = 50) =>
   safeAnimate(selector, {
     translateY: [20, 0],
     opacity: [0, 1],
-    delay: anime.stagger(delay),
+    delay: stagger(delay),
     duration: 400,
     easing: 'easeOutQuad',
   });
@@ -125,7 +125,7 @@ export const countUp = (element, endValue, duration = 1000) => {
   }
 
   const obj = { value: 0 };
-  return anime({
+  return animate({
     targets: obj,
     value: endValue,
     round: 1,
@@ -186,7 +186,7 @@ export const tableRowsIn = (selector, delay = 30) =>
   safeAnimate(selector, {
     opacity: [0, 1],
     translateX: [-10, 0],
-    delay: anime.stagger(delay),
+    delay: stagger(delay),
     duration: 300,
     easing: 'easeOutQuad',
   });
@@ -196,9 +196,9 @@ export const gridCardsIn = (selector, delay = 50) =>
   safeAnimate(selector, {
     opacity: [0, 1],
     scale: [0.95, 1],
-    delay: anime.stagger(delay, { grid: [4, 4], from: 'first' }),
+    delay: stagger(delay, { grid: [4, 4], from: 'first' }),
     duration: 400,
     easing: 'easeOutQuad',
   });
 
-export default anime;
+export default { animate, stagger };

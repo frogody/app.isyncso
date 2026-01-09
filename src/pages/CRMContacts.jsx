@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import anime from 'animejs';
+import { animate, stagger } from 'animejs';
 import { base44, supabase } from "@/api/base44Client";
 import { useUser } from "@/components/context/UserContext";
 import { prefersReducedMotion } from "@/lib/animations";
@@ -856,11 +856,11 @@ export default function CRMContacts() {
     if (tableBodyRef.current && viewMode === 'table' && !prefersReducedMotion()) {
       const rows = tableBodyRef.current.querySelectorAll('tr');
       if (rows.length > 0) {
-        anime({
+        animate({
           targets: rows,
           opacity: [0, 1],
           translateX: [-15, 0],
-          delay: anime.stagger(25, { start: 100 }),
+          delay: stagger(25, { start: 100 }),
           duration: 300,
           easing: 'easeOutQuad',
         });

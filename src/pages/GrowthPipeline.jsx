@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import anime from 'animejs';
+import { animate, stagger } from 'animejs';
 import { prefersReducedMotion } from '@/lib/animations';
 import { base44 } from "@/api/base44Client";
 import { useUser } from "@/components/context/UserContext";
@@ -419,7 +419,7 @@ export default function GrowthPipeline() {
   useEffect(() => {
     if (loading || !headerRef.current || prefersReducedMotion()) return;
 
-    anime({
+    animate({
       targets: headerRef.current,
       translateY: [-20, 0],
       opacity: [0, 1],
@@ -442,11 +442,11 @@ export default function GrowthPipeline() {
     });
 
     // Staggered entrance animation
-    anime({
+    animate({
       targets: cards,
       translateY: [20, 0],
       opacity: [0, 1],
-      delay: anime.stagger(60, { start: 100 }),
+      delay: stagger(60, { start: 100 }),
       duration: 450,
       easing: 'easeOutQuart',
     });
@@ -459,7 +459,7 @@ export default function GrowthPipeline() {
       const suffix = el.dataset.suffix || '';
       const obj = { value: 0 };
 
-      anime({
+      animate({
         targets: obj,
         value: endValue,
         round: 1,
@@ -487,11 +487,11 @@ export default function GrowthPipeline() {
     });
 
     // Staggered entrance animation
-    anime({
+    animate({
       targets: columns,
       translateX: [-20, 0],
       opacity: [0, 1],
-      delay: anime.stagger(70, { start: 200 }),
+      delay: stagger(70, { start: 200 }),
       duration: 500,
       easing: 'easeOutQuart',
     });

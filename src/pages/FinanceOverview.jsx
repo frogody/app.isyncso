@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
-import anime from 'animejs';
+import { animate, stagger } from 'animejs';
 import { prefersReducedMotion } from '@/lib/animations';
 import {
   DollarSign, TrendingUp, TrendingDown, CreditCard, Receipt,
@@ -44,11 +44,11 @@ export default function FinanceOverview() {
     });
 
     // Staggered entrance animation
-    anime({
+    animate({
       targets: cards,
       translateY: [20, 0],
       opacity: [0, 1],
-      delay: anime.stagger(70, { start: 100 }),
+      delay: stagger(70, { start: 100 }),
       duration: 500,
       easing: 'easeOutQuart',
     });
@@ -61,7 +61,7 @@ export default function FinanceOverview() {
       const suffix = el.dataset.suffix || '';
 
       const obj = { value: 0 };
-      anime({
+      animate({
         targets: obj,
         value: endValue,
         round: 1,
@@ -89,12 +89,12 @@ export default function FinanceOverview() {
     });
 
     // Staggered entrance animation
-    anime({
+    animate({
       targets: cards,
       translateY: [30, 0],
       scale: [0.97, 1],
       opacity: [0, 1],
-      delay: anime.stagger(100, { start: 400 }),
+      delay: stagger(100, { start: 400 }),
       duration: 600,
       easing: 'easeOutQuart',
     });

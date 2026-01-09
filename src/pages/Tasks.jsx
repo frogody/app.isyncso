@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import anime from 'animejs';
+import { animate, stagger } from 'animejs';
 import { prefersReducedMotion } from '@/lib/animations';
 import { base44 } from "@/api/base44Client";
 import { useUser } from "@/components/context/UserContext";
@@ -229,7 +229,7 @@ export default function Tasks() {
   useEffect(() => {
     if (!headerRef.current || prefersReducedMotion()) return;
 
-    anime({
+    animate({
       targets: headerRef.current,
       translateY: [-20, 0],
       opacity: [0, 1],
@@ -252,11 +252,11 @@ export default function Tasks() {
     });
 
     // Staggered entrance animation
-    anime({
+    animate({
       targets: columns,
       translateY: [30, 0],
       opacity: [0, 1],
-      delay: anime.stagger(80, { start: 150 }),
+      delay: stagger(80, { start: 150 }),
       duration: 600,
       easing: 'easeOutQuart',
     });
@@ -271,7 +271,7 @@ export default function Tasks() {
       const endValue = parseInt(el.dataset.count) || 0;
       const obj = { value: 0 };
 
-      anime({
+      animate({
         targets: obj,
         value: endValue,
         round: 1,
@@ -295,7 +295,7 @@ export default function Tasks() {
   const animateTaskComplete = useCallback((taskElement) => {
     if (!taskElement || prefersReducedMotion()) return;
 
-    anime({
+    animate({
       targets: taskElement,
       scale: [1, 1.05, 1],
       backgroundColor: ['rgba(6, 182, 212, 0)', 'rgba(6, 182, 212, 0.1)', 'rgba(6, 182, 212, 0)'],

@@ -5,7 +5,7 @@ import { createPageUrl } from "@/utils";
 import { useUser } from "@/components/context/UserContext";
 import { usePermissions } from "@/components/context/PermissionContext";
 import { motion } from "framer-motion";
-import anime from 'animejs';
+import { animate, stagger } from 'animejs';
 import { prefersReducedMotion } from '@/lib/animations';
 import { Plus, LayoutGrid, Users, TrendingUp, Award, Target, BookOpen, Briefcase, Shield, DollarSign, AlertTriangle, FileCheck, Activity, PieChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -452,12 +452,12 @@ export default function Dashboard() {
     });
 
     // Staggered entrance animation
-    anime({
+    animate({
       targets: cards,
       translateY: [20, 0],
       scale: [0.95, 1],
       opacity: [0, 1],
-      delay: anime.stagger(60, { start: 100 }),
+      delay: stagger(60, { start: 100 }),
       duration: 500,
       easing: 'easeOutQuart',
     });
@@ -474,7 +474,7 @@ export default function Dashboard() {
       const prefix = el.dataset.prefix || '';
 
       const obj = { value: 0 };
-      anime({
+      animate({
         targets: obj,
         value: endValue,
         round: 1,

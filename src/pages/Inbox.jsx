@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import anime from 'animejs';
+import { animate, stagger } from 'animejs';
 import { prefersReducedMotion } from '@/lib/animations';
 import {
   Hash, Lock, Users, Pin, Search, Info,
@@ -760,7 +760,7 @@ export default function InboxPage() {
   useEffect(() => {
     if (loading || !sidebarRef.current || prefersReducedMotion()) return;
 
-    anime({
+    animate({
       targets: sidebarRef.current,
       translateX: [-30, 0],
       opacity: [0, 1],
@@ -773,7 +773,7 @@ export default function InboxPage() {
   useEffect(() => {
     if (loading || !mainContentRef.current || prefersReducedMotion()) return;
 
-    anime({
+    animate({
       targets: mainContentRef.current,
       translateY: [20, 0],
       opacity: [0, 1],

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
-import anime from 'animejs';
+import { animate, stagger } from 'animejs';
 import { prefersReducedMotion } from '@/lib/animations';
 
 /**
@@ -23,11 +23,11 @@ export function useStaggeredEntrance(deps = []) {
     });
 
     // Animate
-    anime({
+    animate({
       targets: children,
       translateY: [20, 0],
       opacity: [0, 1],
-      delay: anime.stagger(50),
+      delay: stagger(50),
       duration: 400,
       easing: 'easeOutQuad',
     });
@@ -44,7 +44,7 @@ export function useButtonFeedback() {
   const handlePress = useCallback((e) => {
     if (prefersReducedMotion()) return;
 
-    anime({
+    animate({
       targets: e.currentTarget,
       scale: [1, 0.97, 1],
       duration: 150,
@@ -66,9 +66,11 @@ export function useHoverLift() {
     const el = ref.current;
     if (!el || prefersReducedMotion()) return;
 
+    let currentAnimation = null;
+
     const enter = () => {
-      anime.remove(el);
-      anime({
+      if (currentAnimation) currentAnimation.cancel();
+      currentAnimation = animate({
         targets: el,
         translateY: -4,
         duration: 200,
@@ -77,8 +79,8 @@ export function useHoverLift() {
     };
 
     const leave = () => {
-      anime.remove(el);
-      anime({
+      if (currentAnimation) currentAnimation.cancel();
+      currentAnimation = animate({
         targets: el,
         translateY: 0,
         duration: 200,
@@ -115,7 +117,7 @@ export function useCountUp(endValue, duration = 1000) {
     }
 
     const obj = { value: 0 };
-    anime({
+    animate({
       targets: obj,
       value: endValue,
       round: 1,
@@ -144,7 +146,7 @@ export function useModalAnimation(isOpen) {
     if (!ref.current || prefersReducedMotion()) return;
 
     if (isOpen) {
-      anime({
+      animate({
         targets: ref.current,
         scale: [0.95, 1],
         opacity: [0, 1],
@@ -170,7 +172,7 @@ export function useFadeIn(deps = []) {
 
     ref.current.style.opacity = '0';
 
-    anime({
+    animate({
       targets: ref.current,
       opacity: [0, 1],
       duration: 300,
@@ -193,7 +195,7 @@ export function useSlideUp(deps = [], distance = 20) {
   useEffect(() => {
     if (!ref.current || prefersReducedMotion()) return;
 
-    anime({
+    animate({
       targets: ref.current,
       translateY: [distance, 0],
       opacity: [0, 1],
@@ -219,11 +221,11 @@ export function useTableRowsAnimation(deps = []) {
     const rows = ref.current.querySelectorAll('tr');
     if (rows.length === 0) return;
 
-    anime({
+    animate({
       targets: rows,
       opacity: [0, 1],
       translateX: [-10, 0],
-      delay: anime.stagger(30),
+      delay: stagger(30),
       duration: 300,
       easing: 'easeOutQuad',
     });
@@ -242,7 +244,7 @@ export function useSuccessAnimation() {
   const trigger = useCallback(() => {
     if (!ref.current || prefersReducedMotion()) return;
 
-    anime({
+    animate({
       targets: ref.current,
       scale: [0, 1.1, 1],
       opacity: [0, 1],
@@ -264,7 +266,7 @@ export function useErrorShake() {
   const trigger = useCallback(() => {
     if (!ref.current || prefersReducedMotion()) return;
 
-    anime({
+    animate({
       targets: ref.current,
       translateX: [0, -8, 8, -8, 8, -4, 4, 0],
       duration: 400,

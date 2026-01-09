@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import anime from 'animejs';
+import { animate, stagger } from 'animejs';
 import { prefersReducedMotion } from '@/lib/animations';
 import { base44 } from "@/api/base44Client";
 import { useUser } from "@/components/context/UserContext";
@@ -2916,7 +2916,7 @@ export default function Projects() {
   useEffect(() => {
     if (!headerRef.current || prefersReducedMotion()) return;
 
-    anime({
+    animate({
       targets: headerRef.current,
       translateY: [-20, 0],
       opacity: [0, 1],
@@ -2939,12 +2939,12 @@ export default function Projects() {
     });
 
     // Staggered entrance animation
-    anime({
+    animate({
       targets: cards,
       translateY: [25, 0],
       scale: [0.96, 1],
       opacity: [0, 1],
-      delay: anime.stagger(50, { start: 100 }),
+      delay: stagger(50, { start: 100 }),
       duration: 500,
       easing: 'easeOutQuart',
     });
@@ -2961,7 +2961,7 @@ export default function Projects() {
       const prefix = el.dataset.prefix || '';
 
       const obj = { value: 0 };
-      anime({
+      animate({
         targets: obj,
         value: endValue,
         round: endValue < 100 ? 1 : 1,

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import anime from 'animejs';
+import { animate, stagger } from 'animejs';
 import { prefersReducedMotion } from '@/lib/animations';
 import { base44 } from "@/api/base44Client";
 import { useSearchParams } from "react-router-dom";
@@ -419,7 +419,7 @@ export default function GrowthProspects() {
   useEffect(() => {
     if (loading || !headerRef.current || prefersReducedMotion()) return;
 
-    anime({
+    animate({
       targets: headerRef.current,
       translateY: [-20, 0],
       opacity: [0, 1],
@@ -442,11 +442,11 @@ export default function GrowthProspects() {
     });
 
     // Staggered entrance animation
-    anime({
+    animate({
       targets: cards,
       translateY: [20, 0],
       opacity: [0, 1],
-      delay: anime.stagger(50, { start: 150 }),
+      delay: stagger(50, { start: 150 }),
       duration: 450,
       easing: 'easeOutQuart',
     });
