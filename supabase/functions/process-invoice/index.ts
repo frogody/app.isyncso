@@ -306,6 +306,54 @@ async function processExpenseAsync(
       }
     }
 
+    // Create stock_purchases for inventory tracking
+    if (createdLineItems.length > 0 && supplierId) {
+      console.log(`[ASYNC] Creating stock purchases for ${createdLineItems.length} line items`);
+
+      for (const item of createdLineItems) {
+        let productId: string | null = null;
+
+        // Try to match product by EAN if available
+        if (item.ean) {
+          const { data: matchingProduct } = await supabase
+            .from('physical_products')
+            .select('product_id')
+            .eq('barcode', item.ean)
+            .limit(1)
+            .single();
+
+          if (matchingProduct) {
+            productId = matchingProduct.product_id;
+            console.log(`[ASYNC] Matched EAN ${item.ean} to product ${productId}`);
+          }
+        }
+
+        // Create stock_purchase record (even without product match - EAN stored for later linking)
+        const { error: purchaseError } = await supabase
+          .from('stock_purchases')
+          .insert({
+            company_id: companyId,
+            product_id: productId,
+            supplier_id: supplierId,
+            expense_id: expenseId,
+            expense_line_item_id: item.id,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            currency: extraction.data?.currency || 'EUR',
+            purchase_date: extraction.data?.invoice_date || new Date().toISOString().split('T')[0],
+            invoice_number: extraction.data?.invoice_number,
+            ean: item.ean,
+            source_type: 'invoice',
+          });
+
+        if (purchaseError) {
+          console.warn(`[ASYNC] Failed to create stock purchase for line item ${item.id}:`, purchaseError.message);
+        }
+      }
+
+      console.log(`[ASYNC] Stock purchases created`);
+    }
+
     // Queue line items for product research
     if (createdLineItems.length > 0) {
       const researchQueueItems = createdLineItems.map((item: any) => ({
