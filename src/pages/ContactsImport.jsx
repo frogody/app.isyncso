@@ -16,8 +16,6 @@ import { supabase } from '@/api/supabaseClient';
 
 import { FileUploader } from '@/components/import/FileUploader';
 import { ColumnMapper } from '@/components/import/ColumnMapper';
-import { ValidationPreview } from '@/components/import/ValidationPreview';
-import { ImportProgress } from '@/components/import/ImportProgress';
 
 const STEPS = [
   { id: 'upload', title: 'Upload File', icon: Upload, description: 'Upload your contacts spreadsheet' },
@@ -426,28 +424,74 @@ export default function ContactsImport() {
         );
 
       case 3: // Validate
+        const previewData = validateData();
         return (
           <GlassCard className="p-6">
             <div className="mb-6">
               <h2 className="text-xl font-semibold text-white mb-2">Review Data</h2>
               <p className="text-zinc-400 text-sm">
-                Review the data before importing
+                Review the data before importing ({previewData?.validRows?.length || 0} valid contacts found)
               </p>
             </div>
-            <ValidationPreview
-              fileData={fileData}
-              mappings={mappings}
-              onValidationComplete={handleValidationComplete}
-            />
-            {validationResult && (
-              <div className="mt-4 grid grid-cols-2 gap-4">
-                <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
-                  <div className="text-2xl font-bold text-green-400">{validationResult.validCount}</div>
-                  <div className="text-xs text-zinc-400">Valid contacts</div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+                <div className="text-2xl font-bold text-green-400">{previewData?.validRows?.length || 0}</div>
+                <div className="text-xs text-zinc-400">Valid contacts</div>
+              </div>
+              <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+                <div className="text-2xl font-bold text-red-400">{previewData?.invalidRows?.length || 0}</div>
+                <div className="text-xs text-zinc-400">Invalid rows</div>
+              </div>
+            </div>
+
+            {/* Preview Table */}
+            {previewData?.validRows?.length > 0 && (
+              <div className="rounded-xl border border-white/10 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-zinc-900/50 border-b border-white/10">
+                        <th className="px-4 py-3 text-left text-sm font-medium text-zinc-400">Name</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-zinc-400">Email</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-zinc-400">Company</th>
+                        <th className="px-4 py-3 text-left text-sm font-medium text-zinc-400">Phone</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {previewData.validRows.slice(0, 10).map((row, idx) => (
+                        <tr key={idx} className="hover:bg-white/5">
+                          <td className="px-4 py-3 text-white">
+                            {row.data.first_name || row.data.full_name || '-'} {row.data.last_name || ''}
+                          </td>
+                          <td className="px-4 py-3 text-zinc-400">{row.data.email || '-'}</td>
+                          <td className="px-4 py-3 text-zinc-400">{row.data.company || '-'}</td>
+                          <td className="px-4 py-3 text-zinc-400">{row.data.phone || '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-                <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
-                  <div className="text-2xl font-bold text-red-400">{validationResult.invalidCount}</div>
-                  <div className="text-xs text-zinc-400">Invalid rows</div>
+                {previewData.validRows.length > 10 && (
+                  <div className="p-3 text-center text-sm text-zinc-500 border-t border-white/10">
+                    Showing first 10 of {previewData.validRows.length} contacts
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Errors */}
+            {previewData?.invalidRows?.length > 0 && (
+              <div className="mt-4">
+                <h4 className="text-sm font-medium text-red-400 mb-2">Rows with errors:</h4>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {previewData.invalidRows.slice(0, 5).map((item, idx) => (
+                    <div key={idx} className="p-2 bg-red-500/10 border border-red-500/20 rounded text-sm">
+                      <span className="text-red-400">Row {item.index + 2}:</span>
+                      <span className="text-zinc-400 ml-2">{item.errors.join(', ')}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -525,7 +569,11 @@ export default function ContactsImport() {
       case 0: return !!fileData;
       case 1: return !!selectedContactType;
       case 2: return Object.keys(mappings).length > 0;
-      case 3: return validationResult && validationResult.validCount > 0;
+      case 3: {
+        // Check if we have valid data
+        const result = validateData();
+        return result && result.validRows && result.validRows.length > 0;
+      }
       case 4: return !!importResults;
       default: return false;
     }
@@ -536,7 +584,7 @@ export default function ContactsImport() {
     if (currentStep === 1) {
       handleTypeSelected();
     } else if (currentStep === 3) {
-      // Validate before advancing
+      // Validate and store result before advancing to import
       const result = validateData();
       setValidationResult(result);
       setCurrentStep(currentStep + 1);
