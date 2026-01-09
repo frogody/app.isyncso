@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import {
   Upload, Columns, CheckCircle, Download, Sparkles, Users,
   ArrowLeft, ArrowRight, FileSpreadsheet, Building2, Target,
-  TrendingUp, UserCheck, Handshake, UserPlus, Crosshair
+  TrendingUp, UserCheck, Handshake, UserPlus, Crosshair, Truck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -30,6 +30,7 @@ const CONTACT_TYPES = [
   { id: 'lead', label: 'Leads', icon: Target, description: 'Unqualified contacts for initial outreach', color: 'zinc' },
   { id: 'prospect', label: 'Prospects', icon: TrendingUp, description: 'Qualified leads in sales pipeline', color: 'blue' },
   { id: 'customer', label: 'Customers', icon: UserCheck, description: 'Paying customers with active relationships', color: 'green' },
+  { id: 'supplier', label: 'Suppliers', icon: Truck, description: 'Vendors and product suppliers', color: 'orange' },
   { id: 'partner', label: 'Partners', icon: Handshake, description: 'Business partners and affiliates', color: 'purple' },
   { id: 'candidate', label: 'Candidates', icon: UserPlus, description: 'Job applicants and HR contacts', color: 'rose' },
   { id: 'target', label: 'Targets', icon: Crosshair, description: 'Target accounts for outbound', color: 'amber' },
