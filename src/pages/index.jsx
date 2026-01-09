@@ -623,6 +623,16 @@ function PagesContent() {
 
                 <Route path="/ContactsImport" element={<ContactsImport />} />
 
+                {/* 404 catch-all route */}
+                <Route path="*" element={
+                  <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
+                    <div className="text-center">
+                      <h1 className="text-4xl font-bold mb-4" style={{ color: 'var(--txt)' }}>404</h1>
+                      <p style={{ color: 'var(--muted)' }}>Page not found</p>
+                    </div>
+                  </div>
+                } />
+
             </Routes>
         </Layout>
     );

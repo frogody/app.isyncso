@@ -125,12 +125,6 @@ const navigationItems = [
     permission: "projects.view",
   },
   {
-    title: "Tasks",
-    url: createPageUrl("Tasks"),
-    icon: ListTodo,
-    permission: "projects.view", // Tasks are part of projects
-  },
-  {
     title: "Products",
     url: createPageUrl("Products"),
     icon: Package,
