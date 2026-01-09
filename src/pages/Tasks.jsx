@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   DropdownMenu,
@@ -562,6 +562,9 @@ export default function Tasks() {
             <DialogTitle className="text-white">
               {editingTask ? "Edit Task" : "New Task"}
             </DialogTitle>
+            <DialogDescription className="text-zinc-400">
+              {editingTask ? "Update the task details below" : "Create a new task to track your work"}
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 mt-4">
