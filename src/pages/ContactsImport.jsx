@@ -318,7 +318,7 @@ export default function ContactsImport() {
 
   // Navigate back to CRM
   const goToCRM = () => {
-    navigate('/crm-contacts');
+    navigate('/crmcontacts');
   };
 
   // Render step content
