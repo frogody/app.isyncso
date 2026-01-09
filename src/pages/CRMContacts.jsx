@@ -717,7 +717,7 @@ export default function CRMContacts() {
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyContact);
   const [editingContact, setEditingContact] = useState(null);
-  const [viewMode, setViewMode] = useState("pipeline"); // 'grid', 'table', 'pipeline'
+  const [viewMode, setViewMode] = useState("table"); // 'grid', 'table', 'pipeline'
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [activities, setActivities] = useState([]);
   const [deals, setDeals] = useState([]);
