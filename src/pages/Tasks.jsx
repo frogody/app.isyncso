@@ -148,7 +148,7 @@ function TaskColumn({ column, tasks, onAddTask, onEdit, onDelete, className = ""
   };
 
   return (
-    <div className={`flex-shrink-0 w-72 sm:w-80 ${className}`}>
+    <div className={`flex-shrink-0 w-[260px] sm:w-72 md:w-[280px] lg:w-80 ${className}`}>
       {/* Column Header */}
       <div className="flex items-center justify-between mb-3 px-1">
         <div className="flex items-center gap-2">
@@ -560,7 +560,7 @@ export default function Tasks() {
         {/* Kanban Board */}
         {viewMode === "kanban" ? (
           <DragDropContext onDragEnd={handleDragEnd}>
-            <div ref={columnsRef} className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+            <div ref={columnsRef} className="flex gap-3 md:gap-4 overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 tablet-scroll scroll-smooth-ios">
               {TASK_COLUMNS.map(column => (
                 <TaskColumn
                   key={column.id}

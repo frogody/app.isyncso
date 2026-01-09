@@ -425,7 +425,7 @@ function SecondarySidebar({ config, location }) {
   const colors = COLOR_CLASSES[config.color] || COLOR_CLASSES.cyan;
   
   return (
-    <div className="hidden md:flex flex-col w-[80px] bg-black border-r border-white/5 relative z-10 animate-in slide-in-from-left duration-300 overflow-hidden">
+    <div className="hidden lg:flex flex-col w-[80px] bg-black border-r border-white/5 relative z-10 animate-in slide-in-from-left duration-300 overflow-hidden">
       {/* Header */}
       <div className={`px-4 py-4 flex items-center justify-center ${SECONDARY_SIDEBAR_HEADER_OFFSET} relative z-10`}>
         <h3 className={`text-[10px] font-bold uppercase tracking-widest ${colors.text}`}>

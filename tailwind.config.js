@@ -3,6 +3,16 @@ module.exports = {
     darkMode: ["class"],
     content: ["./index.html", "./src/**/*.{ts,tsx,js,jsx}"],
   theme: {
+  	// Add tablet breakpoint for iPad optimization
+  	screens: {
+  		'xs': '475px',
+  		'sm': '640px',
+  		'md': '768px',
+  		'tablet': '820px',  // iPad mini/Air portrait
+  		'lg': '1024px',
+  		'xl': '1280px',
+  		'2xl': '1536px',
+  	},
   	extend: {
   		borderRadius: {
   			lg: 'var(--radius)',
