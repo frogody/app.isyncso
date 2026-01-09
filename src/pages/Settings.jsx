@@ -107,8 +107,23 @@ export default function Settings() {
   const companyLogoInputRef = useRef(null);
 
   useEffect(() => {
-    if (user && userSettings) {
-      setSettings(userSettings);
+    if (user) {
+      // Initialize settings with defaults if not present
+      const defaultSettings = {
+        theme: 'dark',
+        sound_effects: false,
+        achievement_toasts: true,
+        notification_email: true,
+        notification_push: false,
+        notification_frequency: 'daily',
+        notify_courses: true,
+        notify_streaks: true,
+        notify_badges: true,
+        notify_compliance: true,
+        ...userSettings
+      };
+      setSettings(defaultSettings);
+      
       setProfileForm({
         full_name: user.full_name || "",
         avatar_url: user.avatar_url || "",
@@ -215,7 +230,7 @@ export default function Settings() {
   const saveNotifications = async () => {
     setSaving(true);
     try {
-      await updateSettings(settings);
+      await updateSettings(safeSettings);
       toast.success('Notification settings saved!');
     } catch (error) {
       console.error("Failed to save notifications:", error);
@@ -229,9 +244,9 @@ export default function Settings() {
     setSaving(true);
     try {
       await updateSettings({ 
-        theme: settings.theme, 
-        sound_effects: settings.sound_effects,
-        achievement_toasts: settings.achievement_toasts
+        theme: safeSettings.theme, 
+        sound_effects: safeSettings.sound_effects,
+        achievement_toasts: safeSettings.achievement_toasts
       });
       toast.success('Appearance settings saved!');
     } catch (error) {
@@ -509,7 +524,21 @@ export default function Settings() {
     }
   };
 
-  if (userLoading || !settings) {
+  // Ensure settings is initialized with defaults (before early return)
+  const safeSettings = settings || {
+    theme: 'dark',
+    sound_effects: false,
+    achievement_toasts: true,
+    notification_email: true,
+    notification_push: false,
+    notification_frequency: 'daily',
+    notify_courses: true,
+    notify_streaks: true,
+    notify_badges: true,
+    notify_compliance: true
+  };
+
+  if (userLoading || !user) {
     return (
       <div className="min-h-screen bg-black p-6">
         <div className="max-w-6xl mx-auto space-y-6">
@@ -875,7 +904,7 @@ export default function Settings() {
               )}
 
               {/* NOTIFICATIONS TAB */}
-              {activeTab === 'notifications' && settings && (
+              {activeTab === 'notifications' && (
                 <motion.div
                   key="notifications"
                   initial={{ opacity: 0, y: 20 }}
@@ -906,13 +935,13 @@ export default function Settings() {
                               <div className="text-sm text-zinc-500">{desc}</div>
                             </div>
                           </div>
-                          <Switch checked={settings[key]} onCheckedChange={(v) => setSettings({ ...settings, [key]: v })} />
+                          <Switch checked={safeSettings[key]} onCheckedChange={(v) => setSettings({ ...safeSettings, [key]: v })} />
                         </div>
                       ))}
 
                       <div className="pt-4 border-t border-zinc-800">
                         <Label className="text-zinc-400 text-sm">Notification Frequency</Label>
-                        <Select value={settings.notification_frequency} onValueChange={(v) => setSettings({ ...settings, notification_frequency: v })}>
+                        <Select value={safeSettings.notification_frequency} onValueChange={(v) => setSettings({ ...safeSettings, notification_frequency: v })}>
                           <SelectTrigger className="mt-1.5 bg-zinc-800/50 border-zinc-700 text-white">
                             <SelectValue />
                           </SelectTrigger>
@@ -935,7 +964,7 @@ export default function Settings() {
                           ].map(({ key, label }) => (
                             <div key={key} className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/30">
                               <span className="text-zinc-300 text-sm">{label}</span>
-                              <Switch checked={settings[key]} onCheckedChange={(v) => setSettings({ ...settings, [key]: v })} />
+                              <Switch checked={safeSettings[key]} onCheckedChange={(v) => setSettings({ ...safeSettings, [key]: v })} />
                             </div>
                           ))}
                         </div>
@@ -953,7 +982,7 @@ export default function Settings() {
               )}
 
               {/* APPEARANCE TAB */}
-              {activeTab === 'appearance' && settings && (
+              {activeTab === 'appearance' && (
                 <motion.div
                   key="appearance"
                   initial={{ opacity: 0, y: 20 }}
@@ -1000,7 +1029,7 @@ export default function Settings() {
                               <div className="text-white font-medium">{label}</div>
                               <div className="text-sm text-zinc-500">{desc}</div>
                             </div>
-                            <Switch checked={settings[key]} onCheckedChange={(v) => setSettings({ ...settings, [key]: v })} />
+                            <Switch checked={safeSettings[key]} onCheckedChange={(v) => setSettings({ ...safeSettings, [key]: v })} />
                           </div>
                         ))}
                       </div>

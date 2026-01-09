@@ -109,9 +109,9 @@ export default function FinanceOverview() {
         setLoading(true);
 
         const [expensesData, invoicesData, subscriptionsData] = await Promise.all([
-          base44.entities.Expense?.list?.({ limit: 100 }).catch(() => []) || Promise.resolve([]),
-          base44.entities.Invoice?.list?.({ limit: 100 }).catch(() => []) || Promise.resolve([]),
-          base44.entities.Subscription?.list?.({ limit: 100 }).catch(() => []) || Promise.resolve([])
+          (base44.entities.Expense?.list ? base44.entities.Expense.list({ limit: 100 }).catch(() => []) : Promise.resolve([])),
+          (base44.entities.Invoice?.list ? base44.entities.Invoice.list({ limit: 100 }).catch(() => []) : Promise.resolve([])),
+          (base44.entities.Subscription?.list ? base44.entities.Subscription.list({ limit: 100 }).catch(() => []) : Promise.resolve([]))
         ]);
 
         if (!isMounted) return;
