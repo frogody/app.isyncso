@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import anime from 'animejs';
+import { prefersReducedMotion } from '@/lib/animations';
 import { base44 } from "@/api/base44Client";
 import { useUser } from "@/components/context/UserContext";
 import {
@@ -260,6 +262,11 @@ export default function GrowthPipeline() {
   const [selectedOpp, setSelectedOpp] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
 
+  // Refs for anime.js animations
+  const headerRef = useRef(null);
+  const statsGridRef = useRef(null);
+  const pipelineRef = useRef(null);
+
   useEffect(() => {
     let isMounted = true;
 
@@ -408,6 +415,88 @@ export default function GrowthPipeline() {
     return { totalPipeline, weightedPipeline, wonValue, avgDealSize, activeDeals: activeOpps.length, wonDeals: wonOpps.length };
   }, [opportunities]);
 
+  // Animate header on mount
+  useEffect(() => {
+    if (loading || !headerRef.current || prefersReducedMotion()) return;
+
+    anime({
+      targets: headerRef.current,
+      translateY: [-20, 0],
+      opacity: [0, 1],
+      duration: 500,
+      easing: 'easeOutQuart',
+    });
+  }, [loading]);
+
+  // Animate stats grid with count-up
+  useEffect(() => {
+    if (loading || !statsGridRef.current || prefersReducedMotion()) return;
+
+    const cards = statsGridRef.current.querySelectorAll('.stat-card');
+    if (cards.length === 0) return;
+
+    // Set initial state
+    Array.from(cards).forEach(card => {
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(20px)';
+    });
+
+    // Staggered entrance animation
+    anime({
+      targets: cards,
+      translateY: [20, 0],
+      opacity: [0, 1],
+      delay: anime.stagger(60, { start: 100 }),
+      duration: 450,
+      easing: 'easeOutQuart',
+    });
+
+    // Count-up animation for stat numbers
+    const statValues = statsGridRef.current.querySelectorAll('.stat-number');
+    statValues.forEach(el => {
+      const endValue = parseFloat(el.dataset.value) || 0;
+      const prefix = el.dataset.prefix || '';
+      const suffix = el.dataset.suffix || '';
+      const obj = { value: 0 };
+
+      anime({
+        targets: obj,
+        value: endValue,
+        round: 1,
+        duration: 1000,
+        delay: 200,
+        easing: 'easeOutExpo',
+        update: () => {
+          el.textContent = prefix + obj.value.toLocaleString() + suffix;
+        },
+      });
+    });
+  }, [loading, stats]);
+
+  // Animate pipeline columns
+  useEffect(() => {
+    if (loading || !pipelineRef.current || prefersReducedMotion()) return;
+
+    const columns = pipelineRef.current.querySelectorAll('.pipeline-column');
+    if (columns.length === 0) return;
+
+    // Set initial state
+    Array.from(columns).forEach(col => {
+      col.style.opacity = '0';
+      col.style.transform = 'translateX(-20px)';
+    });
+
+    // Staggered entrance animation
+    anime({
+      targets: columns,
+      translateX: [-20, 0],
+      opacity: [0, 1],
+      delay: anime.stagger(70, { start: 200 }),
+      duration: 500,
+      easing: 'easeOutQuart',
+    });
+  }, [loading, opportunities]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black p-6">
@@ -434,29 +523,31 @@ export default function GrowthPipeline() {
 
       <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
         {/* Header */}
-        <PageHeader
-          icon={Target}
-          title="Sales Pipeline"
-          subtitle={`${stats.activeDeals} active deals · €${stats.totalPipeline.toLocaleString()} in pipeline`}
-          color="indigo"
-          actions={
-            <Button 
-              onClick={() => openNewModal()} 
-              className="bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/30"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Deal
-            </Button>
-          }
-        />
+        <div ref={headerRef} style={{ opacity: 0 }}>
+          <PageHeader
+            icon={Target}
+            title="Sales Pipeline"
+            subtitle={`${stats.activeDeals} active deals · €${stats.totalPipeline.toLocaleString()} in pipeline`}
+            color="indigo"
+            actions={
+              <Button
+                onClick={() => openNewModal()}
+                className="bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/30"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Deal
+              </Button>
+            }
+          />
+        </div>
 
         {/* Stats Row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+        <div ref={statsGridRef} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="stat-card p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-zinc-500 text-sm">Total Pipeline</p>
-                <p className="text-2xl font-bold text-white mt-1">€{stats.totalPipeline.toLocaleString()}</p>
+                <p className="stat-number text-2xl font-bold text-white mt-1" data-value={stats.totalPipeline} data-prefix="€">€0</p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center">
                 <DollarSign className="w-6 h-6 text-indigo-400/70" />
@@ -464,11 +555,11 @@ export default function GrowthPipeline() {
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className="stat-card p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-zinc-500 text-sm">Weighted Value</p>
-                <p className="text-2xl font-bold text-white mt-1">€{Math.round(stats.weightedPipeline).toLocaleString()}</p>
+                <p className="stat-number text-2xl font-bold text-white mt-1" data-value={Math.round(stats.weightedPipeline)} data-prefix="€">€0</p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center">
                 <TrendingUp className="w-6 h-6 text-indigo-400/70" />
@@ -476,11 +567,11 @@ export default function GrowthPipeline() {
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className="stat-card p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-zinc-500 text-sm">Won This Period</p>
-                <p className="text-2xl font-bold text-white mt-1">€{stats.wonValue.toLocaleString()}</p>
+                <p className="stat-number text-2xl font-bold text-white mt-1" data-value={stats.wonValue} data-prefix="€">€0</p>
                 <p className="text-xs text-indigo-400/70 mt-0.5">{stats.wonDeals} deals closed</p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center">
@@ -489,11 +580,11 @@ export default function GrowthPipeline() {
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className="stat-card p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-zinc-500 text-sm">Avg Deal Size</p>
-                <p className="text-2xl font-bold text-white mt-1">€{Math.round(stats.avgDealSize).toLocaleString()}</p>
+                <p className="stat-number text-2xl font-bold text-white mt-1" data-value={Math.round(stats.avgDealSize)} data-prefix="€">€0</p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-indigo-500/15 flex items-center justify-center">
                 <Target className="w-6 h-6 text-indigo-400/60" />
@@ -519,16 +610,17 @@ export default function GrowthPipeline() {
           </div>
         ) : (
           <DragDropContext onDragEnd={handleDragEnd}>
-            <div className="flex gap-4 overflow-x-auto pb-6 -mx-6 px-6">
+            <div ref={pipelineRef} className="flex gap-4 overflow-x-auto pb-6 -mx-6 px-6">
               {STAGES.map((stage) => (
-                <StageColumn
-                  key={stage.id}
-                  stage={stage}
-                  opportunities={opportunities.filter(o => o.stage === stage.id)}
-                  onEdit={openEditModal}
-                  onDelete={handleDelete}
-                  onAddDeal={openNewModal}
-                />
+                <div key={stage.id} className="pipeline-column">
+                  <StageColumn
+                    stage={stage}
+                    opportunities={opportunities.filter(o => o.stage === stage.id)}
+                    onEdit={openEditModal}
+                    onDelete={handleDelete}
+                    onAddDeal={openNewModal}
+                  />
+                </div>
               ))}
             </div>
           </DragDropContext>

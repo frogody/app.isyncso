@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
+import anime from 'animejs';
+import { prefersReducedMotion } from '@/lib/animations';
 import {
   DollarSign, TrendingUp, TrendingDown, CreditCard, Receipt,
   PieChart, BarChart3, ArrowUpRight, ArrowDownRight, Plus,
@@ -23,6 +25,80 @@ export default function FinanceOverview() {
   const [subscriptions, setSubscriptions] = useState([]);
 
   const { hasPermission, isLoading: permLoading } = usePermissions();
+
+  // Refs for anime.js animations
+  const statsGridRef = useRef(null);
+  const cardsGridRef = useRef(null);
+
+  // Animate stat cards on load
+  useEffect(() => {
+    if (loading || !statsGridRef.current || prefersReducedMotion()) return;
+
+    const cards = statsGridRef.current.querySelectorAll('.stat-card');
+    if (cards.length === 0) return;
+
+    // Set initial state
+    Array.from(cards).forEach(card => {
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(20px)';
+    });
+
+    // Staggered entrance animation
+    anime({
+      targets: cards,
+      translateY: [20, 0],
+      opacity: [0, 1],
+      delay: anime.stagger(70, { start: 100 }),
+      duration: 500,
+      easing: 'easeOutQuart',
+    });
+
+    // Count up animation for stat values
+    const statValues = statsGridRef.current.querySelectorAll('.stat-number');
+    statValues.forEach(el => {
+      const endValue = parseFloat(el.dataset.value) || 0;
+      const prefix = el.dataset.prefix || '';
+      const suffix = el.dataset.suffix || '';
+
+      const obj = { value: 0 };
+      anime({
+        targets: obj,
+        value: endValue,
+        round: 1,
+        duration: 1200,
+        delay: 200,
+        easing: 'easeOutExpo',
+        update: () => {
+          el.textContent = prefix + obj.value.toLocaleString() + suffix;
+        },
+      });
+    });
+  }, [loading]);
+
+  // Animate content cards
+  useEffect(() => {
+    if (loading || !cardsGridRef.current || prefersReducedMotion()) return;
+
+    const cards = cardsGridRef.current.querySelectorAll('.content-card');
+    if (cards.length === 0) return;
+
+    // Set initial state
+    Array.from(cards).forEach(card => {
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(30px) scale(0.97)';
+    });
+
+    // Staggered entrance animation
+    anime({
+      targets: cards,
+      translateY: [30, 0],
+      scale: [0.97, 1],
+      opacity: [0, 1],
+      delay: anime.stagger(100, { start: 400 }),
+      duration: 600,
+      easing: 'easeOutQuart',
+    });
+  }, [loading]);
 
   useEffect(() => {
     let isMounted = true;

@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import anime from 'animejs';
+import { prefersReducedMotion } from '@/lib/animations';
 import { base44 } from "@/api/base44Client";
 import { useUser } from "@/components/context/UserContext";
 import {
@@ -138,7 +140,7 @@ function TaskCard({ task, index, onEdit, onDelete }) {
   );
 }
 
-function TaskColumn({ column, tasks, onAddTask, onEdit, onDelete }) {
+function TaskColumn({ column, tasks, onAddTask, onEdit, onDelete, className = "" }) {
   const Icon = column.icon;
   const colorClasses = {
     zinc: "text-zinc-400 bg-zinc-500/10",
@@ -146,7 +148,7 @@ function TaskColumn({ column, tasks, onAddTask, onEdit, onDelete }) {
   };
 
   return (
-    <div className="flex-shrink-0 w-72 sm:w-80">
+    <div className={`flex-shrink-0 w-72 sm:w-80 ${className}`}>
       {/* Column Header */}
       <div className="flex items-center justify-between mb-3 px-1">
         <div className="flex items-center gap-2">
@@ -217,6 +219,90 @@ export default function Tasks() {
   const [formData, setFormData] = useState(emptyTask);
   const [editingTask, setEditingTask] = useState(null);
   const [viewMode, setViewMode] = useState("kanban");
+
+  // Refs for anime.js animations
+  const columnsRef = useRef(null);
+  const headerRef = useRef(null);
+  const statsRef = useRef(null);
+
+  // Animate header on mount
+  useEffect(() => {
+    if (!headerRef.current || prefersReducedMotion()) return;
+
+    anime({
+      targets: headerRef.current,
+      translateY: [-20, 0],
+      opacity: [0, 1],
+      duration: 500,
+      easing: 'easeOutQuart',
+    });
+  }, []);
+
+  // Animate columns when tasks load
+  useEffect(() => {
+    if (loading || !columnsRef.current || prefersReducedMotion()) return;
+
+    const columns = columnsRef.current.querySelectorAll('.task-column');
+    if (columns.length === 0) return;
+
+    // Set initial state
+    Array.from(columns).forEach(col => {
+      col.style.opacity = '0';
+      col.style.transform = 'translateY(30px)';
+    });
+
+    // Staggered entrance animation
+    anime({
+      targets: columns,
+      translateY: [30, 0],
+      opacity: [0, 1],
+      delay: anime.stagger(80, { start: 150 }),
+      duration: 600,
+      easing: 'easeOutQuart',
+    });
+  }, [loading]);
+
+  // Animate task count stats
+  const animateStats = useCallback(() => {
+    if (!statsRef.current || prefersReducedMotion()) return;
+
+    const statElements = statsRef.current.querySelectorAll('.stat-count');
+    statElements.forEach(el => {
+      const endValue = parseInt(el.dataset.count) || 0;
+      const obj = { value: 0 };
+
+      anime({
+        targets: obj,
+        value: endValue,
+        round: 1,
+        duration: 800,
+        easing: 'easeOutExpo',
+        update: () => {
+          el.textContent = obj.value;
+        },
+      });
+    });
+  }, []);
+
+  // Trigger stats animation when tasks change
+  useEffect(() => {
+    if (!loading && tasks.length > 0) {
+      setTimeout(animateStats, 300);
+    }
+  }, [loading, tasks.length, animateStats]);
+
+  // Success animation for task completion
+  const animateTaskComplete = useCallback((taskElement) => {
+    if (!taskElement || prefersReducedMotion()) return;
+
+    anime({
+      targets: taskElement,
+      scale: [1, 1.05, 1],
+      backgroundColor: ['rgba(6, 182, 212, 0)', 'rgba(6, 182, 212, 0.1)', 'rgba(6, 182, 212, 0)'],
+      duration: 400,
+      easing: 'easeOutQuad',
+    });
+  }, []);
 
   useEffect(() => {
     if (user?.id) loadTasks();
@@ -414,13 +500,13 @@ export default function Tasks() {
     <div className="min-h-screen bg-black">
       <div className="max-w-full mx-auto p-4 sm:p-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div ref={headerRef} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-white">Tasks</h1>
-            <div className="flex items-center gap-4 mt-1 text-sm text-zinc-400">
-              <span>{stats.total} total</span>
-              <span className="text-cyan-400/80">{stats.completed} completed</span>
-              {stats.overdue > 0 && <span className="text-cyan-300">{stats.overdue} overdue</span>}
+            <div ref={statsRef} className="flex items-center gap-4 mt-1 text-sm text-zinc-400">
+              <span><span className="stat-count" data-count={stats.total}>{stats.total}</span> total</span>
+              <span className="text-cyan-400/80"><span className="stat-count" data-count={stats.completed}>{stats.completed}</span> completed</span>
+              {stats.overdue > 0 && <span className="text-cyan-300"><span className="stat-count" data-count={stats.overdue}>{stats.overdue}</span> overdue</span>}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -474,7 +560,7 @@ export default function Tasks() {
         {/* Kanban Board */}
         {viewMode === "kanban" ? (
           <DragDropContext onDragEnd={handleDragEnd}>
-            <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+            <div ref={columnsRef} className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
               {TASK_COLUMNS.map(column => (
                 <TaskColumn
                   key={column.id}
@@ -483,6 +569,7 @@ export default function Tasks() {
                   onAddTask={handleAddTask}
                   onEdit={handleEditTask}
                   onDelete={handleDeleteTask}
+                  className="task-column"
                 />
               ))}
             </div>

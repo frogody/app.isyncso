@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import anime from 'animejs';
+import { prefersReducedMotion } from '@/lib/animations';
 import {
   Hash, Lock, Users, Pin, Search, Info,
   Loader2, MessageSquare, Inbox as InboxIcon, Keyboard,
@@ -66,6 +68,10 @@ export default function InboxPage() {
   const pollIntervalRef = useRef(null);
   const lastMessageTimeRef = useRef(null);
   const lastReadRef = useRef({});
+
+  // Refs for anime.js animations
+  const sidebarRef = useRef(null);
+  const mainContentRef = useRef(null);
 
   // Load last read data from localStorage
   useEffect(() => {
@@ -750,6 +756,32 @@ export default function InboxPage() {
     { icon: Info, panel: 'details', title: 'Channel Details' }
   ], [pinnedMessages.length]);
 
+  // Animate sidebar on mount
+  useEffect(() => {
+    if (loading || !sidebarRef.current || prefersReducedMotion()) return;
+
+    anime({
+      targets: sidebarRef.current,
+      translateX: [-30, 0],
+      opacity: [0, 1],
+      duration: 400,
+      easing: 'easeOutQuart',
+    });
+  }, [loading]);
+
+  // Animate main content on mount and channel change
+  useEffect(() => {
+    if (loading || !mainContentRef.current || prefersReducedMotion()) return;
+
+    anime({
+      targets: mainContentRef.current,
+      translateY: [20, 0],
+      opacity: [0, 1],
+      duration: 400,
+      easing: 'easeOutQuad',
+    });
+  }, [loading, selectedChannel]);
+
   // Loading state
   if (loading) {
     return (
@@ -768,22 +800,24 @@ export default function InboxPage() {
   return (
     <div className="h-screen bg-black flex overflow-hidden">
       {/* Channel Sidebar */}
-      <ChannelSidebar
-        channels={channels}
-        directMessages={directMessages}
-        selectedChannel={selectedChannel}
-        onSelectChannel={setSelectedChannel}
-        onCreateChannel={() => setShowCreateChannel(true)}
-        onCreateDM={() => setShowNewDM(true)}
-        user={user}
-        unreadCounts={unreadCounts}
-        onArchiveChannel={handleArchiveChannel}
-        onDeleteChannel={handleDeleteChannelClick}
-        onOpenSettings={() => setShowWorkspaceSettings(true)}
-      />
+      <div ref={sidebarRef} style={{ opacity: 0 }}>
+        <ChannelSidebar
+          channels={channels}
+          directMessages={directMessages}
+          selectedChannel={selectedChannel}
+          onSelectChannel={setSelectedChannel}
+          onCreateChannel={() => setShowCreateChannel(true)}
+          onCreateDM={() => setShowNewDM(true)}
+          user={user}
+          unreadCounts={unreadCounts}
+          onArchiveChannel={handleArchiveChannel}
+          onDeleteChannel={handleDeleteChannelClick}
+          onOpenSettings={() => setShowWorkspaceSettings(true)}
+        />
+      </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 bg-gradient-to-br from-zinc-950 via-zinc-950 to-cyan-950/10">
+      <div ref={mainContentRef} className="flex-1 flex flex-col min-w-0 bg-gradient-to-br from-zinc-950 via-zinc-950 to-cyan-950/10" style={{ opacity: 0 }}>
         {selectedChannel ? (
           <>
             {/* Channel Header */}

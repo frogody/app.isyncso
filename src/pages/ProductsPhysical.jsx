@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
+import anime from 'animejs';
+import { prefersReducedMotion } from '@/lib/animations';
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
@@ -69,6 +71,11 @@ export default function ProductsPhysical() {
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+
+  // Refs for anime.js animations
+  const headerRef = useRef(null);
+  const statsRef = useRef(null);
+  const productsGridRef = useRef(null);
 
   const handleAddProduct = () => {
     setEditingProduct(null);
@@ -260,6 +267,78 @@ export default function ProductsPhysical() {
     };
   }, [products, physicalProducts]);
 
+  // Animate header on mount
+  useEffect(() => {
+    if (!headerRef.current || prefersReducedMotion()) return;
+
+    anime({
+      targets: headerRef.current,
+      translateY: [-20, 0],
+      opacity: [0, 1],
+      duration: 500,
+      easing: 'easeOutQuart',
+    });
+  }, []);
+
+  // Animate stats bar with count-up
+  useEffect(() => {
+    if (loading || !statsRef.current || prefersReducedMotion()) return;
+
+    // Entrance animation for stats bar
+    anime({
+      targets: statsRef.current,
+      translateY: [15, 0],
+      opacity: [0, 1],
+      duration: 400,
+      easing: 'easeOutQuad',
+      delay: 100,
+    });
+
+    // Count-up animation for stat numbers
+    const statValues = statsRef.current.querySelectorAll('.stat-number');
+    statValues.forEach(el => {
+      const endValue = parseFloat(el.dataset.value) || 0;
+      const obj = { value: 0 };
+
+      anime({
+        targets: obj,
+        value: endValue,
+        round: 1,
+        duration: 1000,
+        delay: 200,
+        easing: 'easeOutExpo',
+        update: () => {
+          el.textContent = obj.value;
+        },
+      });
+    });
+  }, [loading, stats]);
+
+  // Animate product cards when loaded
+  useEffect(() => {
+    if (loading || !productsGridRef.current || prefersReducedMotion()) return;
+
+    const cards = productsGridRef.current.querySelectorAll('.product-card');
+    if (cards.length === 0) return;
+
+    // Set initial state
+    Array.from(cards).forEach(card => {
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(25px) scale(0.96)';
+    });
+
+    // Staggered entrance animation
+    anime({
+      targets: cards,
+      translateY: [25, 0],
+      scale: [0.96, 1],
+      opacity: [0, 1],
+      delay: anime.stagger(40, { start: 150 }),
+      duration: 450,
+      easing: 'easeOutQuart',
+    });
+  }, [loading, filteredProducts, viewMode]);
+
   return (
     <div className="min-h-screen bg-black relative">
       {/* Background */}
@@ -270,37 +349,39 @@ export default function ProductsPhysical() {
 
       <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
         {/* Page Header */}
-        <PageHeader
-          title="Physical Products"
-          subtitle="Hardware, merchandise, equipment, and tangible goods"
-          icon={Box}
-          color="cyan"
-          actions={
-            <Button onClick={handleAddProduct} className="bg-cyan-500 hover:bg-cyan-600 text-white">
-              <Plus className="w-4 h-4 mr-2" /> New Physical Product
-            </Button>
-          }
-        />
+        <div ref={headerRef} style={{ opacity: 0 }}>
+          <PageHeader
+            title="Physical Products"
+            subtitle="Hardware, merchandise, equipment, and tangible goods"
+            icon={Box}
+            color="cyan"
+            actions={
+              <Button onClick={handleAddProduct} className="bg-cyan-500 hover:bg-cyan-600 text-white">
+                <Plus className="w-4 h-4 mr-2" /> New Physical Product
+              </Button>
+            }
+          />
+        </div>
 
         {/* Stats Bar */}
-        <div className="flex items-center gap-6 p-4 rounded-xl bg-zinc-900/50 border border-white/5">
+        <div ref={statsRef} className="flex items-center gap-6 p-4 rounded-xl bg-zinc-900/50 border border-white/5" style={{ opacity: 0 }}>
           <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-white">{stats.total}</span>
+            <span className="stat-number text-2xl font-bold text-white" data-value={stats.total}>0</span>
             <span className="text-sm text-zinc-500">total</span>
           </div>
           <div className="w-px h-8 bg-white/10" />
           <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-green-400">{stats.in_stock}</span>
+            <span className="stat-number text-2xl font-bold text-green-400" data-value={stats.in_stock}>0</span>
             <span className="text-sm text-zinc-500">in stock</span>
           </div>
           <div className="w-px h-8 bg-white/10" />
           <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-cyan-400">{stats.low_stock}</span>
+            <span className="stat-number text-2xl font-bold text-cyan-400" data-value={stats.low_stock}>0</span>
             <span className="text-sm text-zinc-500">low stock</span>
           </div>
           <div className="w-px h-8 bg-white/10" />
           <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-red-400">{stats.out_of_stock}</span>
+            <span className="stat-number text-2xl font-bold text-red-400" data-value={stats.out_of_stock}>0</span>
             <span className="text-sm text-zinc-500">out of stock</span>
           </div>
         </div>
@@ -395,33 +476,35 @@ export default function ProductsPhysical() {
           </div>
         ) : filteredProducts.length > 0 ? (
           viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div ref={productsGridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {filteredProducts.map((product, index) => (
-                <ProductGridCard
-                  key={product.id}
-                  product={product}
-                  productType="physical"
-                  details={physicalProducts[product.id]}
-                  index={index}
-                  onEdit={handleEditProduct}
-                  onArchive={handleArchiveProduct}
-                  onDelete={handleDeleteProduct}
-                />
+                <div key={product.id} className="product-card">
+                  <ProductGridCard
+                    product={product}
+                    productType="physical"
+                    details={physicalProducts[product.id]}
+                    index={index}
+                    onEdit={handleEditProduct}
+                    onArchive={handleArchiveProduct}
+                    onDelete={handleDeleteProduct}
+                  />
+                </div>
               ))}
             </div>
           ) : (
-            <div className="space-y-3">
+            <div ref={productsGridRef} className="space-y-3">
               {filteredProducts.map((product, index) => (
-                <ProductListRow
-                  key={product.id}
-                  product={product}
-                  productType="physical"
-                  details={physicalProducts[product.id]}
-                  index={index}
-                  onEdit={handleEditProduct}
-                  onArchive={handleArchiveProduct}
-                  onDelete={handleDeleteProduct}
-                />
+                <div key={product.id} className="product-card">
+                  <ProductListRow
+                    product={product}
+                    productType="physical"
+                    details={physicalProducts[product.id]}
+                    index={index}
+                    onEdit={handleEditProduct}
+                    onArchive={handleArchiveProduct}
+                    onDelete={handleDeleteProduct}
+                  />
+                </div>
               ))}
             </div>
           )

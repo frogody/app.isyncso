@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import anime from 'animejs';
+import { prefersReducedMotion } from '@/lib/animations';
 import { base44 } from "@/api/base44Client";
 import { useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -58,7 +60,11 @@ export default function GrowthProspects() {
   const { user } = useUser();
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("lists");
-  
+
+  // Refs for anime.js animations
+  const headerRef = useRef(null);
+  const contentRef = useRef(null);
+
   // Lists state
   const [lists, setLists] = useState([]);
   const [selectedList, setSelectedList] = useState(null);
@@ -404,10 +410,47 @@ export default function GrowthProspects() {
     return matchesSearch;
   });
 
-  const filteredTemplates = templates.filter(t => 
+  const filteredTemplates = templates.filter(t =>
     t.name?.toLowerCase().includes(templateSearchTerm.toLowerCase()) ||
     t.industry?.toLowerCase().includes(templateSearchTerm.toLowerCase())
   );
+
+  // Animate header on mount
+  useEffect(() => {
+    if (loading || !headerRef.current || prefersReducedMotion()) return;
+
+    anime({
+      targets: headerRef.current,
+      translateY: [-20, 0],
+      opacity: [0, 1],
+      duration: 500,
+      easing: 'easeOutQuart',
+    });
+  }, [loading]);
+
+  // Animate content area
+  useEffect(() => {
+    if (loading || !contentRef.current || prefersReducedMotion()) return;
+
+    const cards = contentRef.current.querySelectorAll('.animate-card');
+    if (cards.length === 0) return;
+
+    // Set initial state
+    Array.from(cards).forEach(card => {
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(20px)';
+    });
+
+    // Staggered entrance animation
+    anime({
+      targets: cards,
+      translateY: [20, 0],
+      opacity: [0, 1],
+      delay: anime.stagger(50, { start: 150 }),
+      duration: 450,
+      easing: 'easeOutQuart',
+    });
+  }, [loading, activeTab]);
 
   if (loading) {
     return (
@@ -429,20 +472,22 @@ export default function GrowthProspects() {
       </div>
 
       <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
-        <PageHeader
-          icon={Users}
-          title="Prospects"
-          subtitle="Manage your prospect lists, templates, and research"
-          color="indigo"
-          badge={`${totalProspects} total`}
-        />
+        <div ref={headerRef} style={{ opacity: 0 }}>
+          <PageHeader
+            icon={Users}
+            title="Prospects"
+            subtitle="Manage your prospect lists, templates, and research"
+            color="indigo"
+            badge={`${totalProspects} total`}
+          />
+        </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard icon={Users} label="Total Prospects" value={totalProspects} color="indigo" delay={0} />
-          <StatCard icon={Building2} label="Active Lists" value={activeListsCount} color="indigo" delay={0.1} />
-          <StatCard icon={Mail} label="Enriched" value={enrichedCount} color="indigo" delay={0.2} />
-          <StatCard icon={Send} label="In Campaigns" value={inCampaignsCount} color="indigo" delay={0.3} />
+        <div ref={contentRef} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="animate-card"><StatCard icon={Users} label="Total Prospects" value={totalProspects} color="indigo" delay={0} /></div>
+          <div className="animate-card"><StatCard icon={Building2} label="Active Lists" value={activeListsCount} color="indigo" delay={0.1} /></div>
+          <div className="animate-card"><StatCard icon={Mail} label="Enriched" value={enrichedCount} color="indigo" delay={0.2} /></div>
+          <div className="animate-card"><StatCard icon={Send} label="In Campaigns" value={inCampaignsCount} color="indigo" delay={0.3} /></div>
         </div>
 
         {/* Tabs */}

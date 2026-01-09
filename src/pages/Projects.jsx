@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import anime from 'animejs';
+import { prefersReducedMotion } from '@/lib/animations';
 import { base44 } from "@/api/base44Client";
 import { useUser } from "@/components/context/UserContext";
 import {
@@ -2904,6 +2906,73 @@ export default function Projects() {
   const [folderFormData, setFolderFormData] = useState(emptyFolder);
   const [editingFolder, setEditingFolder] = useState(null);
   const [showFoldersSection, setShowFoldersSection] = useState(true);
+
+  // Refs for anime.js animations
+  const headerRef = useRef(null);
+  const projectsGridRef = useRef(null);
+  const statsRef = useRef(null);
+
+  // Animate header on mount
+  useEffect(() => {
+    if (!headerRef.current || prefersReducedMotion()) return;
+
+    anime({
+      targets: headerRef.current,
+      translateY: [-20, 0],
+      opacity: [0, 1],
+      duration: 500,
+      easing: 'easeOutQuart',
+    });
+  }, []);
+
+  // Animate project cards when loaded
+  useEffect(() => {
+    if (loading || !projectsGridRef.current || prefersReducedMotion()) return;
+
+    const cards = projectsGridRef.current.querySelectorAll('.project-card');
+    if (cards.length === 0) return;
+
+    // Set initial state
+    Array.from(cards).forEach(card => {
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(25px) scale(0.96)';
+    });
+
+    // Staggered entrance animation
+    anime({
+      targets: cards,
+      translateY: [25, 0],
+      scale: [0.96, 1],
+      opacity: [0, 1],
+      delay: anime.stagger(50, { start: 100 }),
+      duration: 500,
+      easing: 'easeOutQuart',
+    });
+  }, [loading, viewMode, statusFilter, searchQuery]);
+
+  // Animate project stats with count-up
+  useEffect(() => {
+    if (loading || !statsRef.current || prefersReducedMotion()) return;
+
+    const statElements = statsRef.current.querySelectorAll('.stat-value');
+    statElements.forEach(el => {
+      const endValue = parseFloat(el.dataset.value) || 0;
+      const suffix = el.dataset.suffix || '';
+      const prefix = el.dataset.prefix || '';
+
+      const obj = { value: 0 };
+      anime({
+        targets: obj,
+        value: endValue,
+        round: endValue < 100 ? 1 : 1,
+        duration: 1000,
+        easing: 'easeOutExpo',
+        update: () => {
+          el.textContent = prefix + obj.value.toLocaleString() + suffix;
+        },
+      });
+    });
+  }, [loading, projects]);
 
   // Load folders from localStorage on mount
   useEffect(() => {

@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import anime from 'animejs';
+import { prefersReducedMotion } from '@/lib/animations';
 import { base44 } from "@/api/base44Client";
 import {
   Plus, Send, Linkedin, Mail, Phone, Zap, Users, ChevronDown, ChevronUp, Play, Pause,
@@ -159,6 +161,11 @@ export default function GrowthCampaigns() {
   const [modalTab, setModalTab] = useState('details');
   const [detailCampaign, setDetailCampaign] = useState(null);
 
+  // Refs for anime.js animations
+  const headerRef = useRef(null);
+  const statsGridRef = useRef(null);
+  const campaignsGridRef = useRef(null);
+
   useEffect(() => {
     let isMounted = true;
 
@@ -271,6 +278,85 @@ export default function GrowthCampaigns() {
     return campaigns.filter(c => c.status === activeFilter);
   }, [campaigns, activeFilter]);
 
+  // Animate header on mount
+  useEffect(() => {
+    if (loading || !headerRef.current || prefersReducedMotion()) return;
+
+    anime({
+      targets: headerRef.current,
+      translateY: [-20, 0],
+      opacity: [0, 1],
+      duration: 500,
+      easing: 'easeOutQuart',
+    });
+  }, [loading]);
+
+  // Animate stats grid with count-up
+  useEffect(() => {
+    if (loading || !statsGridRef.current || prefersReducedMotion()) return;
+
+    const cards = statsGridRef.current.querySelectorAll('.stat-card');
+    if (cards.length === 0) return;
+
+    Array.from(cards).forEach(card => {
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(20px)';
+    });
+
+    anime({
+      targets: cards,
+      translateY: [20, 0],
+      opacity: [0, 1],
+      delay: anime.stagger(60, { start: 100 }),
+      duration: 450,
+      easing: 'easeOutQuart',
+    });
+
+    // Count-up animation
+    const statValues = statsGridRef.current.querySelectorAll('.stat-number');
+    statValues.forEach(el => {
+      const endValue = parseFloat(el.dataset.value) || 0;
+      const prefix = el.dataset.prefix || '';
+      const suffix = el.dataset.suffix || '';
+      const obj = { value: 0 };
+
+      anime({
+        targets: obj,
+        value: endValue,
+        round: 1,
+        duration: 1000,
+        delay: 200,
+        easing: 'easeOutExpo',
+        update: () => {
+          el.textContent = prefix + obj.value.toLocaleString() + suffix;
+        },
+      });
+    });
+  }, [loading, stats]);
+
+  // Animate campaign cards
+  useEffect(() => {
+    if (loading || !campaignsGridRef.current || prefersReducedMotion()) return;
+
+    const cards = campaignsGridRef.current.querySelectorAll('.campaign-card');
+    if (cards.length === 0) return;
+
+    Array.from(cards).forEach(card => {
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(25px) scale(0.96)';
+    });
+
+    anime({
+      targets: cards,
+      translateY: [25, 0],
+      scale: [0.96, 1],
+      opacity: [0, 1],
+      delay: anime.stagger(50, { start: 200 }),
+      duration: 450,
+      easing: 'easeOutQuart',
+    });
+  }, [loading, filteredCampaigns]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black p-6">
@@ -295,36 +381,38 @@ export default function GrowthCampaigns() {
       </div>
 
       <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
-        <PageHeader
-          icon={Send}
-          title="Campaigns"
-          subtitle={`${stats.active} active · ${stats.totalContacted.toLocaleString()} contacts reached`}
-          color="indigo"
-          actions={
-            <Button onClick={openNewModal} className="bg-indigo-500 hover:bg-indigo-400 text-white">
-              <Plus className="w-4 h-4 mr-2" /> New Campaign
-            </Button>
-          }
-        />
+        <div ref={headerRef} style={{ opacity: 0 }}>
+          <PageHeader
+            icon={Send}
+            title="Campaigns"
+            subtitle={`${stats.active} active · ${stats.totalContacted.toLocaleString()} contacts reached`}
+            color="indigo"
+            actions={
+              <Button onClick={openNewModal} className="bg-indigo-500 hover:bg-indigo-400 text-white">
+                <Plus className="w-4 h-4 mr-2" /> New Campaign
+              </Button>
+            }
+          />
+        </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+        <div ref={statsGridRef} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="stat-card p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-zinc-500 text-sm">Active</p>
-                <p className="text-2xl font-bold text-white mt-1">{stats.active}</p>
+                <p className="stat-number text-2xl font-bold text-white mt-1" data-value={stats.active}>0</p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center">
                 <Play className="w-6 h-6 text-indigo-400/70" />
               </div>
             </div>
           </div>
-          <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className="stat-card p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-zinc-500 text-sm">Contacted</p>
-                <p className="text-2xl font-bold text-white mt-1">{stats.totalContacted.toLocaleString()}</p>
+                <p className="stat-number text-2xl font-bold text-white mt-1" data-value={stats.totalContacted}>0</p>
                 <p className="text-xs text-indigo-400/80">{stats.avgResponseRate}% response</p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center">
@@ -332,22 +420,22 @@ export default function GrowthCampaigns() {
               </div>
             </div>
           </div>
-          <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className="stat-card p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-zinc-500 text-sm">Meetings</p>
-                <p className="text-2xl font-bold text-white mt-1">{stats.totalMeetings}</p>
+                <p className="stat-number text-2xl font-bold text-white mt-1" data-value={stats.totalMeetings}>0</p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-indigo-500/15 flex items-center justify-center">
                 <Calendar className="w-6 h-6 text-indigo-400/60" />
               </div>
             </div>
           </div>
-          <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className="stat-card p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-zinc-500 text-sm">Revenue</p>
-                <p className="text-2xl font-bold text-white mt-1">€{stats.totalRevenue.toLocaleString()}</p>
+                <p className="stat-number text-2xl font-bold text-white mt-1" data-value={stats.totalRevenue} data-prefix="€">€0</p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-indigo-500/15 flex items-center justify-center">
                 <TrendingUp className="w-6 h-6 text-indigo-400/60" />
@@ -391,17 +479,18 @@ export default function GrowthCampaigns() {
             </Button>
           </div>
         ) : (
-          <div className="grid gap-4">
+          <div ref={campaignsGridRef} className="grid gap-4">
             <AnimatePresence>
               {filteredCampaigns.map((campaign) => (
-                <CampaignCard
-                  key={campaign.id}
-                  campaign={campaign}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onStatusChange={handleStatusChange}
-                  onViewDetails={handleViewDetails}
-                />
+                <div key={campaign.id} className="campaign-card">
+                  <CampaignCard
+                    campaign={campaign}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    onStatusChange={handleStatusChange}
+                    onViewDetails={handleViewDetails}
+                  />
+                </div>
               ))}
             </AnimatePresence>
           </div>

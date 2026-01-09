@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import anime from 'animejs';
+import { prefersReducedMotion } from '@/lib/animations';
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -98,6 +100,10 @@ export default function Settings() {
   
   const fileInputRef = useRef(null);
   const companyFileInputRef = useRef(null);
+
+  // Refs for anime.js animations
+  const headerRef = useRef(null);
+  const contentRef = useRef(null);
   const companyLogoInputRef = useRef(null);
 
   useEffect(() => {
@@ -540,6 +546,32 @@ export default function Settings() {
   const currentTabConfig = tabConfig.find(t => t.id === activeTab);
   const currentColor = colorClasses[currentTabConfig?.color || 'cyan'];
 
+  // Animate header on mount
+  useEffect(() => {
+    if (!headerRef.current || prefersReducedMotion()) return;
+
+    anime({
+      targets: headerRef.current,
+      translateY: [-20, 0],
+      opacity: [0, 1],
+      duration: 500,
+      easing: 'easeOutQuart',
+    });
+  }, []);
+
+  // Animate content area when tab changes
+  useEffect(() => {
+    if (!contentRef.current || prefersReducedMotion()) return;
+
+    anime({
+      targets: contentRef.current,
+      translateY: [15, 0],
+      opacity: [0, 1],
+      duration: 400,
+      easing: 'easeOutQuad',
+    });
+  }, [activeTab]);
+
   return (
     <div className="min-h-screen bg-black relative">
       {/* Animated Background */}
@@ -550,15 +582,17 @@ export default function Settings() {
 
       <div className="relative z-10 w-full px-6 py-6 space-y-6">
         {/* Header */}
-        <PageHeader 
-          title="Settings" 
-          subtitle="Manage your profile, preferences, and account"
-          icon={SettingsIcon}
-          color="cyan"
-        />
+        <div ref={headerRef} style={{ opacity: 0 }}>
+          <PageHeader
+            title="Settings"
+            subtitle="Manage your profile, preferences, and account"
+            icon={SettingsIcon}
+            color="cyan"
+          />
+        </div>
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div ref={contentRef} className="grid grid-cols-1 lg:grid-cols-4 gap-6" style={{ opacity: 0 }}>
           {/* Sidebar Navigation */}
           <div className="lg:col-span-1">
             <GlassCard className="p-4 sticky top-6">

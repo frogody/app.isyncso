@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useUser } from "@/components/context/UserContext";
 import { usePermissions } from "@/components/context/PermissionContext";
 import { motion } from "framer-motion";
+import anime from 'animejs';
+import { prefersReducedMotion } from '@/lib/animations';
 import { Plus, LayoutGrid, Users, TrendingUp, Award, Target, BookOpen, Briefcase, Shield, DollarSign, AlertTriangle, FileCheck, Activity, PieChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -431,6 +433,59 @@ export default function Dashboard() {
     window.addEventListener('dashboard-config-updated', handleConfigUpdate);
     return () => window.removeEventListener('dashboard-config-updated', handleConfigUpdate);
   }, [loadDashboardData]);
+
+  // Refs for anime.js animations
+  const widgetsGridRef = useRef(null);
+  const teamStatsRef = useRef(null);
+
+  // Animate widgets grid on load
+  useEffect(() => {
+    if (dataLoading || !widgetsGridRef.current || prefersReducedMotion()) return;
+
+    const cards = widgetsGridRef.current.querySelectorAll('.widget-card');
+    if (cards.length === 0) return;
+
+    // Set initial state
+    Array.from(cards).forEach(card => {
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(20px) scale(0.95)';
+    });
+
+    // Staggered entrance animation
+    anime({
+      targets: cards,
+      translateY: [20, 0],
+      scale: [0.95, 1],
+      opacity: [0, 1],
+      delay: anime.stagger(60, { start: 100 }),
+      duration: 500,
+      easing: 'easeOutQuart',
+    });
+  }, [dataLoading, enabledWidgets]);
+
+  // Animate team stats with count-up
+  useEffect(() => {
+    if (!teamData || !teamStatsRef.current || prefersReducedMotion()) return;
+
+    const statValues = teamStatsRef.current.querySelectorAll('.stat-value');
+    statValues.forEach(el => {
+      const endValue = parseFloat(el.dataset.value) || 0;
+      const suffix = el.dataset.suffix || '';
+      const prefix = el.dataset.prefix || '';
+
+      const obj = { value: 0 };
+      anime({
+        targets: obj,
+        value: endValue,
+        round: 1,
+        duration: 1200,
+        easing: 'easeOutExpo',
+        update: () => {
+          el.textContent = prefix + obj.value.toLocaleString() + suffix;
+        },
+      });
+    });
+  }, [teamData]);
 
   const loading = userLoading || dataLoading || permLoading;
   
