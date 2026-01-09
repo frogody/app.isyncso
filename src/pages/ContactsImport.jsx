@@ -414,12 +414,13 @@ export default function ContactsImport() {
               )}
             </div>
             <ColumnMapper
-              headers={fileData?.headers || []}
+              sourceColumns={fileData?.headers || []}
               targetFields={CONTACT_TARGET_FIELDS}
-              mappings={mappings}
               aiSuggestions={aiSuggestions}
+              aiConfidence={aiConfidence}
               isLoadingAI={isLoadingAI}
               onMappingChange={handleMappingChange}
+              onRequestAISuggestions={requestAISuggestions}
             />
           </GlassCard>
         );

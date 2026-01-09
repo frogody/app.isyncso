@@ -17,8 +17,8 @@ import {
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
-// Target fields for product import
-const TARGET_FIELDS = [
+// Default target fields for product import (legacy support)
+const DEFAULT_TARGET_FIELDS = [
   { id: 'name', label: 'Product Name', required: true, description: 'The product title/name' },
   { id: 'purchase_price', label: 'Purchase Price', required: true, description: 'Unit cost/price (will be parsed from currency format)' },
   { id: 'quantity', label: 'Quantity', required: true, description: 'Stock quantity to import' },
@@ -32,6 +32,7 @@ const TARGET_FIELDS = [
 
 export function ColumnMapper({
   sourceColumns = [],
+  targetFields = DEFAULT_TARGET_FIELDS,
   aiSuggestions = {},
   aiConfidence = 0,
   isLoadingAI = false,
@@ -82,7 +83,7 @@ export function ColumnMapper({
 
   const getUnmappedRequiredFields = () => {
     const mapped = getMappedFields();
-    return TARGET_FIELDS.filter(f => f.required && !mapped.has(f.id));
+    return targetFields.filter(f => f.required && !mapped.has(f.id));
   };
 
   const isFieldMapped = (fieldId) => {
@@ -159,7 +160,7 @@ export function ColumnMapper({
           <tbody className="divide-y divide-white/5">
             {sourceColumns.map((column) => {
               const currentMapping = mappings[column.name];
-              const targetField = TARGET_FIELDS.find(f => f.id === currentMapping);
+              const targetField = targetFields.find(f => f.id === currentMapping);
               const isAISuggested = aiSuggestions[column.name] === currentMapping;
 
               return (
@@ -224,7 +225,7 @@ export function ColumnMapper({
                         <SelectItem value="skip" className="text-zinc-400">
                           Skip this column
                         </SelectItem>
-                        {TARGET_FIELDS.map((field) => {
+                        {targetFields.map((field) => {
                           const alreadyMapped = isFieldMapped(field.id) && mappings[column.name] !== field.id;
                           return (
                             <SelectItem
@@ -261,7 +262,7 @@ export function ColumnMapper({
       <div className="p-4 rounded-lg bg-zinc-900/50 border border-white/5">
         <h4 className="text-sm font-medium text-white mb-3">Target Fields</h4>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {TARGET_FIELDS.map((field) => {
+          {targetFields.map((field) => {
             const sourceColumn = getSourceColumnForTarget(field.id);
             return (
               <TooltipProvider key={field.id}>
