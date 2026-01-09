@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import anime from 'animejs';
 import { base44, supabase } from "@/api/base44Client";
 import { useUser } from "@/components/context/UserContext";
+import { prefersReducedMotion } from "@/lib/animations";
 
 // Contact type definitions
 const CONTACT_TYPES = [
@@ -722,6 +724,24 @@ export default function CRMContacts() {
   const [activities, setActivities] = useState([]);
   const [deals, setDeals] = useState([]);
   const [enriching, setEnriching] = useState(false);
+  const tableBodyRef = useRef(null);
+
+  // Animate table rows on load
+  useEffect(() => {
+    if (tableBodyRef.current && viewMode === 'table' && !prefersReducedMotion()) {
+      const rows = tableBodyRef.current.querySelectorAll('tr');
+      if (rows.length > 0) {
+        anime({
+          targets: rows,
+          opacity: [0, 1],
+          translateX: [-15, 0],
+          delay: anime.stagger(25, { start: 100 }),
+          duration: 300,
+          easing: 'easeOutQuad',
+        });
+      }
+    }
+  }, [filteredContacts, viewMode]);
 
   useEffect(() => {
     if (user?.id) loadContacts();
@@ -1267,11 +1287,11 @@ export default function CRMContacts() {
                     <th className="p-3 text-left text-xs font-medium text-zinc-500 uppercase">Actions</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody ref={tableBodyRef}>
                   {filteredContacts.map(contact => {
                     const stageConfig = PIPELINE_STAGES.find(s => s.id === contact.stage) || PIPELINE_STAGES[0];
                     return (
-                      <tr key={contact.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors">
+                      <tr key={contact.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors" style={{ opacity: 0 }}>
                         <td className="p-3">
                           <Checkbox
                             checked={selectedContacts.includes(contact.id)}
