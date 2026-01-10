@@ -670,20 +670,30 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
       console.log("Calling process-invoice edge function with:", { storagePath: path, companyId, userId, hasPdfText: !!pdfText });
 
       // Call edge function - give it time for LLM processing
+      const requestBody = {
+        storagePath: path,
+        bucket: DOCUMENTS_BUCKET,
+        companyId: companyId,
+        userId: userId,
+        pdfText: pdfText, // Send extracted PDF text
+      };
+
+      console.log("Request body being sent:", {
+        ...requestBody,
+        pdfText: pdfText ? `${pdfText.length} chars` : null,
+        pdfTextPreview: pdfText ? pdfText.substring(0, 100) : null,
+      });
+
+      const startTime = Date.now();
       const { data: processResult, error: processError } = await supabase.functions.invoke(
         "process-invoice",
         {
-          body: {
-            storagePath: path,
-            bucket: DOCUMENTS_BUCKET,
-            companyId: companyId,
-            userId: userId,
-            pdfText: pdfText, // Send extracted PDF text
-          },
+          body: requestBody,
         }
       );
+      const duration = Date.now() - startTime;
 
-      console.log("Edge function response:", { processResult, processError });
+      console.log(`Edge function response (took ${duration}ms):`, { processResult, processError });
 
       setUploadProgress(100);
 
