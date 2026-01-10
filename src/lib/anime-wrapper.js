@@ -1,10 +1,6 @@
 // Wrapper to ensure proper ES module export of anime.js
-// This file acts as a stable interface for anime.js imports
-// eslint-disable-next-line import/no-unresolved
-import * as animeModule from 'animejs/lib/anime.es.js';
-
-// anime.es.js exports anime as default
-const anime = animeModule.default || animeModule;
+// Import from the package root which resolves to the "module" field in package.json
+import anime from 'animejs';
 
 // Re-export as default
 export default anime;
