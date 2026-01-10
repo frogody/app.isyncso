@@ -159,7 +159,7 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject }) {
     try {
       await onApprove(expense.id, notes);
       onClose();
-      toast.success("Factuur goedgekeurd");
+      toast.success("Invoice approved");
     } catch (error) {
       toast.error("Fout bij goedkeuren: " + error.message);
     } finally {
@@ -176,7 +176,7 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject }) {
     try {
       await onReject(expense.id, notes);
       onClose();
-      toast.success("Factuur afgewezen");
+      toast.success("Invoice rejected");
     } catch (error) {
       toast.error("Fout bij afwijzen: " + error.message);
     } finally {
@@ -194,7 +194,7 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject }) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-cyan-400" />
-            Factuur beoordelen
+            Review Invoice
           </DialogTitle>
         </DialogHeader>
 
@@ -240,13 +240,13 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject }) {
               </p>
             </div>
             <div>
-              <Label className="text-zinc-400">Factuurnummer</Label>
+              <Label className="text-zinc-400">Invoice Number</Label>
               <p className="text-white font-medium">
                 {expense.external_reference || "-"}
               </p>
             </div>
             <div>
-              <Label className="text-zinc-400">Factuurdatum</Label>
+              <Label className="text-zinc-400">Invoice Date</Label>
               <p className="text-white font-medium">
                 {expense.invoice_date
                   ? new Date(expense.invoice_date).toLocaleDateString("nl-NL")
@@ -254,7 +254,7 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject }) {
               </p>
             </div>
             <div>
-              <Label className="text-zinc-400">Totaal</Label>
+              <Label className="text-zinc-400">Total</Label>
               <p className="text-white font-medium text-lg">
                 € {expense.total?.toFixed(2) || "0.00"}
               </p>
@@ -264,15 +264,15 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject }) {
           {/* Line items */}
           {expense.expense_line_items && expense.expense_line_items.length > 0 && (
             <div>
-              <Label className="text-zinc-400 mb-2 block">Regelitems</Label>
+              <Label className="text-zinc-400 mb-2 block">Line Items</Label>
               <div className="rounded-lg border border-white/10 overflow-hidden">
                 <table className="w-full text-sm">
                   <thead className="bg-zinc-900/50">
                     <tr className="text-left text-zinc-500">
                       <th className="px-3 py-2">Omschrijving</th>
                       <th className="px-3 py-2 text-right">Aantal</th>
-                      <th className="px-3 py-2 text-right">Prijs</th>
-                      <th className="px-3 py-2 text-right">Totaal</th>
+                      <th className="px-3 py-2 text-right">Price</th>
+                      <th className="px-3 py-2 text-right">Total</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
@@ -317,7 +317,7 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject }) {
                     </tr>
                     <tr className="font-medium">
                       <td colSpan={3} className="px-3 py-2 text-right text-white">
-                        Totaal
+                        Total
                       </td>
                       <td className="px-3 py-2 text-right text-cyan-400">
                         € {expense.total?.toFixed(2)}
@@ -348,7 +348,7 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject }) {
             disabled={isSubmitting}
           >
             <XCircle className="w-4 h-4 mr-2" />
-            Afwijzen
+            Reject
           </Button>
           <Button
             onClick={handleApprove}
@@ -360,7 +360,7 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject }) {
             ) : (
               <CheckCircle2 className="w-4 h-4 mr-2" />
             )}
-            Goedkeuren
+            Approve
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -410,7 +410,7 @@ function ExpenseCard({ expense, onReview, onRetry }) {
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-medium text-white">
-                {expense.expense_number || expense.external_reference || "Factuur"}
+                {expense.expense_number || expense.external_reference || "Invoice"}
               </h3>
               <Badge className={`${status.bg} ${status.text} ${status.border}`}>
                 {expense.status.replace("_", " ")}
@@ -418,12 +418,12 @@ function ExpenseCard({ expense, onReview, onRetry }) {
               {needsReview && (
                 <Badge className="bg-yellow-500/10 text-yellow-400 border-yellow-500/30">
                   <AlertTriangle className="w-3 h-3 mr-1" />
-                  Review vereist
+                  Review Required
                 </Badge>
               )}
             </div>
             <p className="text-sm text-zinc-400 mt-1">
-              {expense.suppliers?.name || "Onbekende leverancier"}
+              {expense.suppliers?.name || "Unknown supplier"}
             </p>
           </div>
         </div>
@@ -452,7 +452,7 @@ function ExpenseCard({ expense, onReview, onRetry }) {
           )}
           {expense.source_type === "email" && (
             <Badge variant="outline" className="text-xs">
-              Via e-mail
+              Via email
             </Badge>
           )}
         </div>
@@ -461,38 +461,50 @@ function ExpenseCard({ expense, onReview, onRetry }) {
           <div className="flex items-center gap-2">
             <Button
               size="sm"
-              onClick={() => onRetry(expense)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onRetry(expense);
+              }}
               className="bg-amber-600 hover:bg-amber-700"
             >
               <RefreshCw className="w-4 h-4 mr-2" />
-              Opnieuw proberen
+              Retry Processing
             </Button>
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => onReview(expense)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onReview(expense);
+              }}
             >
               <Eye className="w-4 h-4 mr-2" />
-              Details
+              View Details
             </Button>
           </div>
         ) : needsReview ? (
           <Button
             size="sm"
-            onClick={() => onReview(expense)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onReview(expense);
+            }}
             className="bg-yellow-600 hover:bg-yellow-700"
           >
             <Eye className="w-4 h-4 mr-2" />
-            Beoordelen
+            Review
           </Button>
         ) : (
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => onReview(expense)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onReview(expense);
+            }}
           >
             <Eye className="w-4 h-4 mr-2" />
-            Bekijken
+            View
           </Button>
         )}
       </div>
@@ -516,10 +528,10 @@ function ReviewQueueBanner({ count, onClick }) {
           <AlertTriangle className="w-6 h-6 text-yellow-400" />
           <div>
             <h3 className="font-medium text-yellow-400">
-              {count} factuur{count > 1 ? "en" : ""} wachten op beoordeling
+              {count} invoice{count > 1 ? "s" : ""} awaiting review
             </h3>
             <p className="text-sm text-yellow-400/70">
-              AI-extractie had &lt;{Math.round(MIN_CONFIDENCE * 100)}% betrouwbaarheid
+              AI extraction had &lt;{Math.round(MIN_CONFIDENCE * 100)}% confidence
             </p>
           </div>
         </div>
@@ -623,7 +635,7 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
       setUploadProgress(90);
 
       // Process the invoice with AI via edge function
-      toast.info("Factuur wordt geanalyseerd met AI...");
+      toast.info("Analyzing invoice with AI...");
 
       console.log("Calling process-invoice edge function with:", { storagePath: path, companyId, userId });
 
@@ -645,7 +657,7 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
 
       if (processError) {
         console.error("Process error:", processError);
-        toast.error("Kon factuur niet verwerken: " + (processError.message || JSON.stringify(processError)));
+        toast.error("Failed to process invoice: " + (processError.message || JSON.stringify(processError)));
         return;
       }
 
@@ -658,24 +670,24 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
       if (processResult.success) {
         if (processResult.needsReview) {
           toast.warning(
-            `Factuur geüpload maar vereist handmatige beoordeling (${Math.round(processResult.confidence * 100)}% betrouwbaarheid)`,
+            `Invoice uploaded but requires manual review (${Math.round(processResult.confidence * 100)}% confidence)`,
             { duration: 5000 }
           );
         } else {
-          toast.success("Factuur succesvol verwerkt!");
+          toast.success("Invoice processed successfully!");
         }
         onUploadComplete?.();
         handleClose();
       } else {
         console.error("Process failed - Full result:", processResult);
         console.error("Errors array:", processResult.errors);
-        const errorMsg = processResult.errors?.join(", ") || processResult.error || "Onbekende fout";
+        const errorMsg = processResult.errors?.join(", ") || processResult.error || "Unknown error";
         console.error("Error message:", errorMsg);
-        toast.error("Kon factuur niet verwerken: " + errorMsg);
+        toast.error("Failed to process invoice: " + errorMsg);
       }
     } catch (error) {
       console.error("Upload error:", error);
-      toast.error("Upload mislukt: " + (error.message || "Onbekende fout"));
+      toast.error("Upload failed: " + (error.message || "Unknown error"));
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
@@ -695,10 +707,10 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Upload className="w-5 h-5 text-cyan-400" />
-            Factuur uploaden
+            Upload Invoice
           </DialogTitle>
           <DialogDescription>
-            Upload een factuurafbeelding of PDF. AI zal automatisch de gegevens extraheren.
+            Upload an invoice image or PDF. AI will automatically extract the data.
           </DialogDescription>
         </DialogHeader>
 
@@ -796,9 +808,9 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
                 <p>AI zal automatisch extracten:</p>
                 <ul className="mt-1 space-y-0.5 text-zinc-500">
                   <li>• Leveranciersgegevens</li>
-                  <li>• Factuurnummer en datum</li>
-                  <li>• Bedragen en BTW</li>
-                  <li>• Regelitems indien beschikbaar</li>
+                  <li>• Invoice Number en datum</li>
+                  <li>• Amounts and VAT</li>
+                  <li>• Line Items indien beschikbaar</li>
                 </ul>
               </div>
             </div>
@@ -807,7 +819,7 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
 
         <DialogFooter>
           <Button variant="outline" onClick={handleClose} disabled={isUploading}>
-            Annuleren
+            Cancel
           </Button>
           <Button
             onClick={handleUpload}
@@ -863,7 +875,7 @@ export default function InventoryExpenses() {
       setReviewQueue(queueData);
     } catch (error) {
       console.error("Failed to load expenses:", error);
-      toast.error("Kon uitgaven niet laden");
+      toast.error("Failed to load expenses");
     } finally {
       setIsLoading(false);
     }
@@ -938,13 +950,13 @@ export default function InventoryExpenses() {
       setSelectedExpense(fullExpense);
       setShowReviewModal(true);
     } catch (error) {
-      toast.error("Kon factuur niet laden");
+      toast.error("Failed to load invoice");
     }
   };
 
   const handleRetry = async (expense) => {
     try {
-      toast.loading("Opnieuw verwerken...", { id: "retry-expense" });
+      toast.loading("Reprocessing...", { id: "retry-expense" });
 
       // Call process-invoice edge function with retry mode
       const response = await fetch(
@@ -967,7 +979,7 @@ export default function InventoryExpenses() {
       const result = await response.json();
 
       if (result.success) {
-        toast.success("Factuur wordt opnieuw verwerkt", { id: "retry-expense" });
+        toast.success("Invoice is being reprocessed", { id: "retry-expense" });
 
         // Wait a moment then refresh
         setTimeout(async () => {
@@ -979,11 +991,11 @@ export default function InventoryExpenses() {
           setReviewQueue(queueData);
         }, 2000);
       } else {
-        toast.error("Verwerking mislukt: " + (result.error || "Onbekende fout"), { id: "retry-expense" });
+        toast.error("Processing failed: " + (result.error || "Unknown error"), { id: "retry-expense" });
       }
     } catch (error) {
       console.error("Retry error:", error);
-      toast.error("Kon factuur niet opnieuw verwerken", { id: "retry-expense" });
+      toast.error("Failed to reprocess invoice", { id: "retry-expense" });
     }
   };
 
@@ -1021,7 +1033,7 @@ export default function InventoryExpenses() {
         <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
           <div ref={headerRef} style={{ opacity: 0 }}>
             <PageHeader
-              title="Uitgaven"
+              title="Expenses"
               subtitle="Beheer facturen en AI-extractie reviews"
               icon={Receipt}
               actions={
@@ -1030,7 +1042,7 @@ export default function InventoryExpenses() {
                   onClick={() => setShowUploadModal(true)}
                 >
                   <Upload className="w-4 h-4 mr-2" />
-                  Factuur uploaden
+                  Upload Invoice
                 </Button>
               }
             />
@@ -1047,25 +1059,25 @@ export default function InventoryExpenses() {
           <div ref={statsRef} className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6" style={{ opacity: 0 }}>
             <StatCard
               icon={Receipt}
-              label="Totaal facturen"
+              label="Total facturen"
               value={stats.total}
               color="cyan"
             />
             <StatCard
               icon={AlertTriangle}
-              label="Te beoordelen"
+              label="To Review"
               value={stats.pendingReview}
               color="yellow"
             />
             <StatCard
               icon={Check}
-              label="Goedgekeurd"
+              label="Approved"
               value={stats.approved}
               color="green"
             />
             <StatCard
               icon={DollarSign}
-              label="Totaal bedrag"
+              label="Total bedrag"
               value={`€ ${stats.totalAmount.toFixed(0)}`}
               color="purple"
             />
@@ -1077,7 +1089,7 @@ export default function InventoryExpenses() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                 <Input
-                  placeholder="Zoek op factuurnummer of leverancier..."
+                  placeholder="Search by invoice number or supplier..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pl-9 bg-zinc-900/50 border-white/10"
@@ -1086,8 +1098,8 @@ export default function InventoryExpenses() {
               <Tabs value={filter} onValueChange={setFilter}>
                 <TabsList className="bg-zinc-900/50">
                   <TabsTrigger value="all">Alles</TabsTrigger>
-                  <TabsTrigger value="review">Te beoordelen</TabsTrigger>
-                  <TabsTrigger value="approved">Goedgekeurd</TabsTrigger>
+                  <TabsTrigger value="review">To Review</TabsTrigger>
+                  <TabsTrigger value="approved">Approved</TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>
@@ -1109,7 +1121,7 @@ export default function InventoryExpenses() {
               <p className="text-zinc-500">
                 {search
                   ? "Probeer een andere zoekopdracht"
-                  : "Upload een factuur om te beginnen"}
+                  : "Upload an invoice to get started"}
               </p>
             </GlassCard>
           ) : (
