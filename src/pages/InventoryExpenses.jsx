@@ -969,9 +969,12 @@ export default function InventoryExpenses() {
   };
 
   const handleRetry = async (expense) => {
+    console.log('handleRetry called with expense:', expense.id);
     try {
+      console.log('Showing loading toast...');
       toast.loading("Reprocessing...", { id: "retry-expense" });
 
+      console.log('Making API call to process-invoice...');
       // Call process-invoice edge function with retry mode
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-invoice`,
@@ -990,26 +993,33 @@ export default function InventoryExpenses() {
         }
       );
 
+      console.log('Response status:', response.status);
       const result = await response.json();
+      console.log('Response result:', result);
 
       if (result.success) {
+        console.log('Success! Showing success toast...');
         toast.success("Invoice is being reprocessed", { id: "retry-expense" });
 
         // Wait a moment then refresh
+        console.log('Waiting 2s before refresh...');
         setTimeout(async () => {
+          console.log('Refreshing expense list...');
           const [expenseData, queueData] = await Promise.all([
             listExpenses(companyId),
             getReviewQueue(companyId),
           ]);
           setExpenses(expenseData);
           setReviewQueue(queueData);
+          console.log('Expenses refreshed');
         }, 2000);
       } else {
+        console.error('API returned error:', result.error);
         toast.error("Processing failed: " + (result.error || "Unknown error"), { id: "retry-expense" });
       }
     } catch (error) {
       console.error("Retry error:", error);
-      toast.error("Failed to reprocess invoice", { id: "retry-expense" });
+      toast.error("Failed to reprocess invoice: " + error.message, { id: "retry-expense" });
     }
   };
 
