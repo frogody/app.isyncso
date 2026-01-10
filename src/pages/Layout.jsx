@@ -91,6 +91,7 @@ import SyncOrbitIcon from "@/components/icons/SyncOrbitIcon";
 import CoursesOrbitIcon from "@/components/icons/CoursesOrbitIcon";
 
 import GrowthOrbitIcon from "@/components/icons/GrowthOrbitIcon";
+import AnimatedAvatar from "@/components/icons/AnimatedAvatar";
 
 // Direct imports to avoid lazy loading issues
 import OnboardingGuard from "@/components/layout/OnboardingGuard";
@@ -567,25 +568,11 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
       {/* Top Profile Section */}
       <div className="flex flex-col items-center justify-center py-6 gap-4 transition-all duration-300 px-2">
         
-        {/* Settings via Avatar */}
+        {/* Settings via Animated Avatar */}
         <Link to={createPageUrl("Settings")} className="relative group cursor-pointer flex flex-col items-center" aria-label="Go to Settings">
-          {me?.avatar_url ? (
-            <div className="rounded-full overflow-hidden border-2 border-white/10 w-10 h-10 transition-all duration-300 shadow-xl relative z-10">
-              <img 
-                src={me.avatar_url} 
-                alt="Profile" 
-                className="w-full h-full object-cover" 
-              />
-            </div>
-          ) : (
-            <div className="rounded-full overflow-hidden border-2 border-white/10 w-10 h-10 transition-all duration-300 shadow-xl relative z-10">
-              <img 
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ebfb48566133bc1cface8c/97c0a3206_GeneratedImageDecember082025-5_28PM.jpeg" 
-                alt="Profile" 
-                className="w-full h-full object-cover" 
-              />
-            </div>
-          )}
+          <div className="relative z-10">
+            <AnimatedAvatar size={40} className="transition-all duration-300" />
+          </div>
           <div className="absolute inset-0 rounded-full bg-cyan-500/20 blur-md -z-0 transition-opacity duration-300 opacity-0 group-hover:opacity-100" />
         </Link>
 
