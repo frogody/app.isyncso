@@ -1,6 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import Anthropic from "npm:@anthropic-ai/sdk@0.28.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -77,11 +76,11 @@ Respond with ONLY a JSON object (no markdown, no explanation) in this exact form
   "confidence": 0.0 to 1.0
 }`;
 
-async function extractFromImage(client: Anthropic, imageUrl: string, retryCount = 0): Promise<ExtractionResult> {
+async function extractFromImage(googleApiKey: string, imageUrl: string, retryCount = 0): Promise<ExtractionResult> {
   const MAX_RETRIES = 2;
 
   try {
-    console.log(`Calling Claude vision model (attempt ${retryCount + 1}/${MAX_RETRIES + 1})...`);
+    console.log(`Calling Google Gemini model (attempt ${retryCount + 1}/${MAX_RETRIES + 1})...`);
 
     // Fetch the image and convert to base64
     console.log("Fetching image from URL:", imageUrl);
@@ -91,39 +90,52 @@ async function extractFromImage(client: Anthropic, imageUrl: string, retryCount 
     }
 
     const imageBuffer = await imageResponse.arrayBuffer();
-    const base64Image = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)));
+    // Convert to base64 without spreading large arrays (prevents stack overflow)
+    const bytes = new Uint8Array(imageBuffer);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const base64Image = btoa(binary);
 
     // Determine media type from URL
-    const mediaType = imageUrl.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
-    console.log(`Image fetched, size: ${imageBuffer.byteLength} bytes, type: ${mediaType}`);
+    const mimeType = imageUrl.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+    console.log(`Image fetched, size: ${imageBuffer.byteLength} bytes, type: ${mimeType}`);
 
-    const response = await client.messages.create({
-      model: "claude-3-5-sonnet-20241022", // Claude 3.5 Sonnet (new)
-      max_tokens: 4096,
-      temperature: 0,
-      messages: [
-        {
-          role: "user",
-          content: [
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro-vision:generateContent?key=${googleApiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
             {
-              type: "image",
-              source: {
-                type: "base64",
-                media_type: mediaType,
+              text: EXTRACTION_PROMPT + "\n\nIMPORTANT: Respond with ONLY the JSON object, nothing else. No markdown, no explanation.",
+            },
+            {
+              inline_data: {
+                mime_type: mimeType,
                 data: base64Image,
               },
             },
-            {
-              type: "text",
-              text: EXTRACTION_PROMPT + "\n\nIMPORTANT: Respond with ONLY the JSON object, nothing else. No markdown, no explanation.",
-            },
           ],
+        }],
+        generationConfig: {
+          temperature: 0,
+          maxOutputTokens: 4096,
         },
-      ],
+      }),
     });
 
-    console.log("Claude response received");
-    const content = response.content[0]?.type === 'text' ? response.content[0].text : '';
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Google Gemini API error: ${response.status} ${errorText}`);
+    }
+
+    const apiResponse = await response.json();
+    console.log("Google Gemini response received");
+    const content = apiResponse.candidates?.[0]?.content?.parts?.[0]?.text || '';
     console.log("AI content length:", content?.length || 0);
 
     if (!content) {
@@ -202,7 +214,7 @@ async function extractFromImage(client: Anthropic, imageUrl: string, retryCount 
     if (isRetryable && retryCount < MAX_RETRIES) {
       console.log(`Retrying extraction in 2 seconds...`);
       await new Promise(resolve => setTimeout(resolve, 2000));
-      return extractFromImage(client, imageUrl, retryCount + 1);
+      return extractFromImage(googleApiKey, imageUrl, retryCount + 1);
     }
 
     return {
@@ -216,7 +228,7 @@ async function extractFromImage(client: Anthropic, imageUrl: string, retryCount 
 // Process the expense asynchronously (called after initial response)
 async function processExpenseAsync(
   supabase: any,
-  anthropic: Anthropic,
+  googleApiKey: string,
   expenseId: string,
   imageUrl: string,
   companyId: string,
@@ -225,7 +237,7 @@ async function processExpenseAsync(
     console.log(`[ASYNC] Starting extraction for expense ${expenseId}`);
 
     // Extract data from image
-    const extraction = await extractFromImage(anthropic, imageUrl);
+    const extraction = await extractFromImage(googleApiKey, imageUrl);
     console.log(`[ASYNC] Extraction complete:`, { success: extraction.success, confidence: extraction.confidence });
 
     if (!extraction.success || !extraction.data) {
@@ -445,28 +457,11 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Try to get Anthropic API key from database first, fallback to env var
-    let anthropicApiKey = Deno.env.get("ANTHROPIC_API_KEY");
-    try {
-      const { data: setting } = await supabase
-        .from("app_settings")
-        .select("value")
-        .eq("key", "anthropic_api_key")
-        .single();
-
-      if (setting?.value) {
-        anthropicApiKey = setting.value;
-        console.log("Using Anthropic API key from database");
-      }
-    } catch (dbError) {
-      console.log("Could not fetch API key from database, using env var");
+    // Get Google API key from env
+    const googleApiKey = Deno.env.get("GOOGLE_API_KEY");
+    if (!googleApiKey) {
+      throw new Error("GOOGLE_API_KEY not configured");
     }
-
-    if (!anthropicApiKey) {
-      throw new Error("ANTHROPIC_API_KEY not configured");
-    }
-
-    const anthropic = new Anthropic({ apiKey: anthropicApiKey });
 
     const body = await req.json();
     const { storagePath, bucket, companyId, userId, sourceEmailId, imageUrl: directImageUrl, _mode, _expenseId, _imageUrl } = body;
@@ -474,7 +469,7 @@ Deno.serve(async (req) => {
     // ASYNC MODE: Process existing expense (called by ourselves)
     if (_mode === 'process' && _expenseId && _imageUrl) {
       console.log(`[ASYNC MODE] Processing expense ${_expenseId}`);
-      await processExpenseAsync(supabase, anthropic, _expenseId, _imageUrl, companyId);
+      await processExpenseAsync(supabase, googleApiKey, _expenseId, _imageUrl, companyId);
       return new Response(
         JSON.stringify({ success: true, processed: true, expenseId: _expenseId }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
