@@ -448,7 +448,7 @@ export default function GrowthPipeline() {
       targets: cards,
       translateY: [20, 0],
       opacity: [0, 1],
-      delay: stagger(60, { start: 100 }),
+      delay: anime.stagger(60, { start: 100 }),
       duration: 450,
       easing: 'easeOutQuart',
     });
@@ -493,7 +493,7 @@ export default function GrowthPipeline() {
       targets: columns,
       translateX: [-20, 0],
       opacity: [0, 1],
-      delay: stagger(70, { start: 200 }),
+      delay: anime.stagger(70, { start: 200 }),
       duration: 500,
       easing: 'easeOutQuart',
     });

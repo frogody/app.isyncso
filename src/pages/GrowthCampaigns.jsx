@@ -309,7 +309,7 @@ export default function GrowthCampaigns() {
       targets: cards,
       translateY: [20, 0],
       opacity: [0, 1],
-      delay: stagger(60, { start: 100 }),
+      delay: anime.stagger(60, { start: 100 }),
       duration: 450,
       easing: 'easeOutQuart',
     });
@@ -353,7 +353,7 @@ export default function GrowthCampaigns() {
       translateY: [25, 0],
       scale: [0.96, 1],
       opacity: [0, 1],
-      delay: stagger(50, { start: 200 }),
+      delay: anime.stagger(50, { start: 200 }),
       duration: 450,
       easing: 'easeOutQuart',
     });

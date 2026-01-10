@@ -300,7 +300,7 @@ export default function ProductsDigital() {
       translateY: [25, 0],
       scale: [0.96, 1],
       opacity: [0, 1],
-      delay: stagger(40, { start: 150 }),
+      delay: anime.stagger(40, { start: 150 }),
       duration: 450,
       easing: 'easeOutQuart',
     });

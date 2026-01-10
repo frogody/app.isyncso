@@ -448,7 +448,7 @@ export default function GrowthProspects() {
       targets: cards,
       translateY: [20, 0],
       opacity: [0, 1],
-      delay: stagger(50, { start: 150 }),
+      delay: anime.stagger(50, { start: 150 }),
       duration: 450,
       easing: 'easeOutQuart',
     });

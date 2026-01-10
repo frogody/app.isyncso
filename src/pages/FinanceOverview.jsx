@@ -50,7 +50,7 @@ export default function FinanceOverview() {
       targets: cards,
       translateY: [20, 0],
       opacity: [0, 1],
-      delay: stagger(70, { start: 100 }),
+      delay: anime.stagger(70, { start: 100 }),
       duration: 500,
       easing: 'easeOutQuart',
     });
@@ -96,7 +96,7 @@ export default function FinanceOverview() {
       translateY: [30, 0],
       scale: [0.97, 1],
       opacity: [0, 1],
-      delay: stagger(100, { start: 400 }),
+      delay: anime.stagger(100, { start: 400 }),
       duration: 600,
       easing: 'easeOutQuart',
     });

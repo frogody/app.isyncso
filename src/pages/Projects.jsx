@@ -2946,7 +2946,7 @@ export default function Projects() {
       translateY: [25, 0],
       scale: [0.96, 1],
       opacity: [0, 1],
-      delay: stagger(50, { start: 100 }),
+      delay: anime.stagger(50, { start: 100 }),
       duration: 500,
       easing: 'easeOutQuart',
     });

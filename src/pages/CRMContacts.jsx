@@ -862,7 +862,7 @@ export default function CRMContacts() {
           targets: rows,
           opacity: [0, 1],
           translateX: [-15, 0],
-          delay: stagger(25, { start: 100 }),
+          delay: anime.stagger(25, { start: 100 }),
           duration: 300,
           easing: 'easeOutQuad',
         });

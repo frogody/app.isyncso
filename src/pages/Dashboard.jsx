@@ -459,7 +459,7 @@ export default function Dashboard() {
       translateY: [20, 0],
       scale: [0.95, 1],
       opacity: [0, 1],
-      delay: stagger(60, { start: 100 }),
+      delay: anime.stagger(60, { start: 100 }),
       duration: 500,
       easing: 'easeOutQuart',
     });

@@ -258,7 +258,7 @@ export default function Tasks() {
       targets: columns,
       translateY: [30, 0],
       opacity: [0, 1],
-      delay: stagger(80, { start: 150 }),
+      delay: anime.stagger(80, { start: 150 }),
       duration: 600,
       easing: 'easeOutQuart',
     });
