@@ -392,13 +392,6 @@ function ExpenseCard({ expense, onReview, onRetry }) {
   const needsReview = expense.needs_review && expense.review_status === "pending";
   const isFailed = expense.status === 'failed';
 
-  console.log('ExpenseCard render:', {
-    id: expense.id,
-    status: expense.status,
-    isFailed,
-    hasOnRetry: !!onRetry
-  });
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -471,13 +464,7 @@ function ExpenseCard({ expense, onReview, onRetry }) {
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('Retry button clicked', expense.id);
-                console.log('onRetry function:', onRetry);
-                if (onRetry) {
-                  onRetry(expense);
-                } else {
-                  console.error('onRetry is not defined!');
-                }
+                onRetry(expense);
               }}
               className="bg-amber-600 hover:bg-amber-700"
             >
@@ -969,12 +956,9 @@ export default function InventoryExpenses() {
   };
 
   const handleRetry = async (expense) => {
-    console.log('handleRetry called with expense:', expense.id);
     try {
-      console.log('Showing loading toast...');
-      toast.loading("Reprocessing...", { id: "retry-expense" });
+      toast.loading("Reprocessing invoice...", { id: "retry-expense" });
 
-      console.log('Making API call to process-invoice...');
       // Call process-invoice edge function with retry mode
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-invoice`,
@@ -993,29 +977,43 @@ export default function InventoryExpenses() {
         }
       );
 
-      console.log('Response status:', response.status);
       const result = await response.json();
-      console.log('Response result:', result);
 
       if (result.success) {
-        console.log('Success! Showing success toast...');
-        toast.success("Invoice is being reprocessed", { id: "retry-expense" });
+        toast.success("Processing triggered. Checking results...", { id: "retry-expense" });
 
-        // Wait a moment then refresh
-        console.log('Waiting 2s before refresh...');
+        // Wait longer for async processing to complete
         setTimeout(async () => {
-          console.log('Refreshing expense list...');
           const [expenseData, queueData] = await Promise.all([
             listExpenses(companyId),
             getReviewQueue(companyId),
           ]);
           setExpenses(expenseData);
           setReviewQueue(queueData);
-          console.log('Expenses refreshed');
-        }, 2000);
+
+          // Check if it's still failed
+          const updatedExpense = expenseData.find(e => e.id === expense.id);
+          if (updatedExpense?.status === 'failed') {
+            const errorMsg = updatedExpense.ai_extracted_data?.error || "Unknown error";
+            if (errorMsg.includes("Service unavailable") || errorMsg.includes("503")) {
+              toast.error("AI service is temporarily unavailable. Please try again in a few minutes.", {
+                id: "retry-expense",
+                duration: 5000
+              });
+            } else {
+              toast.error("Processing failed: " + errorMsg, {
+                id: "retry-expense",
+                duration: 5000
+              });
+            }
+          } else if (updatedExpense?.status === 'processing') {
+            toast.info("Still processing... Refresh the page in a moment.", { id: "retry-expense" });
+          } else {
+            toast.success("Invoice processed successfully!", { id: "retry-expense" });
+          }
+        }, 5000); // Wait 5 seconds for processing
       } else {
-        console.error('API returned error:', result.error);
-        toast.error("Processing failed: " + (result.error || "Unknown error"), { id: "retry-expense" });
+        toast.error("Failed to trigger processing: " + (result.error || "Unknown error"), { id: "retry-expense" });
       }
     } catch (error) {
       console.error("Retry error:", error);
