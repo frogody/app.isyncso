@@ -83,35 +83,6 @@ export function ProductGridCard({
                 )} />
               </div>
             )}
-            <div className="absolute top-3 right-3">
-              <Badge className={`${status.bg} ${status.text} ${status.border} text-xs`}>
-                {status.label}
-              </Badge>
-            </div>
-
-            {/* Digital: Trial badge */}
-            {isDigital && details?.trial_available && (
-              <div className="absolute bottom-3 left-3">
-                <Badge className="bg-green-500/90 text-white text-xs">
-                  {details.trial_days}d Trial
-                </Badge>
-              </div>
-            )}
-
-            {/* Physical: Stock badge */}
-            {!isDigital && details?.inventory && (
-              <div className="absolute bottom-3 left-3">
-                {details.inventory.quantity > 0 ? (
-                  <Badge className="bg-green-500/20 text-green-400 border border-green-500/30 text-xs">
-                    <Check className="w-3 h-3 mr-1" /> In Stock
-                  </Badge>
-                ) : (
-                  <Badge className="bg-red-500/20 text-red-400 border border-red-500/30 text-xs">
-                    Out of Stock
-                  </Badge>
-                )}
-              </div>
-            )}
           </div>
 
           {/* Content */}
