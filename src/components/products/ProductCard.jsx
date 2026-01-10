@@ -97,6 +97,33 @@ export function ProductGridCard({
               {product.tagline || product.short_description || 'No description'}
             </p>
 
+            {/* Status Badges */}
+            <div className="flex items-center gap-2 mt-3">
+              <Badge className={`${status.bg} ${status.text} ${status.border} text-xs`}>
+                {status.label}
+              </Badge>
+
+              {/* Physical: Stock badge */}
+              {!isDigital && details?.inventory && (
+                details.inventory.quantity > 0 ? (
+                  <Badge className="bg-green-500/20 text-green-400 border border-green-500/30 text-xs">
+                    <Check className="w-3 h-3 mr-1" /> In Stock
+                  </Badge>
+                ) : (
+                  <Badge className="bg-red-500/20 text-red-400 border border-red-500/30 text-xs">
+                    Out of Stock
+                  </Badge>
+                )
+              )}
+
+              {/* Digital: Trial badge */}
+              {isDigital && details?.trial_available && (
+                <Badge className="bg-green-500/20 text-green-400 border border-green-500/30 text-xs">
+                  {details.trial_days}d Trial
+                </Badge>
+              )}
+            </div>
+
             <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/5">
               <div className="flex items-center gap-2">
                 {isDigital && pricingModel && (
@@ -229,7 +256,7 @@ export function ProductListRow({
 
           {/* Main Content */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 flex-wrap">
               <h3 className={cn(
                 "font-medium text-white truncate transition-colors",
                 isDigital ? "group-hover:text-cyan-400" : "group-hover:text-amber-400"
@@ -239,6 +266,26 @@ export function ProductListRow({
               <Badge className={`${status.bg} ${status.text} ${status.border} text-xs`}>
                 {status.label}
               </Badge>
+
+              {/* Physical: Stock badge */}
+              {!isDigital && details?.inventory && (
+                details.inventory.quantity > 0 ? (
+                  <Badge className="bg-green-500/20 text-green-400 border border-green-500/30 text-xs">
+                    <Check className="w-3 h-3 mr-1" /> In Stock
+                  </Badge>
+                ) : (
+                  <Badge className="bg-red-500/20 text-red-400 border border-red-500/30 text-xs">
+                    Out of Stock
+                  </Badge>
+                )
+              )}
+
+              {/* Digital: Trial badge */}
+              {isDigital && details?.trial_available && (
+                <Badge className="bg-green-500/20 text-green-400 border border-green-500/30 text-xs">
+                  {details.trial_days}d Trial
+                </Badge>
+              )}
             </div>
             <p className="text-sm text-zinc-500 mt-0.5 truncate">
               {product.tagline || product.short_description || 'No description'}
@@ -262,11 +309,11 @@ export function ProductListRow({
                 <span className="text-sm font-medium text-white">
                   €{parseFloat(pricing.base_price).toFixed(2)}
                 </span>
-                <p className="text-xs text-zinc-500">
-                  {details?.inventory?.quantity > 0
-                    ? `${details.inventory.quantity} in stock`
-                    : 'Out of stock'}
-                </p>
+                {details?.inventory?.quantity > 0 && (
+                  <p className="text-xs text-zinc-500">
+                    {details.inventory.quantity} units
+                  </p>
+                )}
               </>
             )}
           </div>
