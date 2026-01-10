@@ -414,7 +414,7 @@ function SecondarySidebar({ config, location }) {
   const colors = COLOR_CLASSES[config.color] || COLOR_CLASSES.cyan;
   
   return (
-    <div className="hidden lg:flex flex-col w-[80px] bg-black border-r border-white/5 relative z-10 animate-in slide-in-from-left duration-300 overflow-hidden">
+    <div className="hidden lg:flex flex-col w-[80px] bg-black border-r border-white/5 relative z-0 animate-in slide-in-from-left duration-300 overflow-hidden">
       {/* Header */}
       <div className={`px-4 py-4 flex items-center justify-center ${SECONDARY_SIDEBAR_HEADER_OFFSET} relative z-10`}>
         <h3 className={`text-[10px] font-bold uppercase tracking-widest ${colors.text}`}>
@@ -560,10 +560,10 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
       )}
 
       {/* Top Profile Section with Circular Bulge */}
-      <div className="relative flex flex-col items-center justify-center pt-10 pb-8 transition-all duration-300">
+      <div className="relative flex flex-col items-center justify-center pt-10 pb-8 transition-all duration-300 z-30">
         {/* Circular Background Bulge - extends beyond sidebar */}
         <div
-          className="absolute top-6 left-1/2 -translate-x-1/2 w-[150px] h-[150px] rounded-full border border-white/10"
+          className="absolute top-6 left-1/2 -translate-x-1/2 w-[150px] h-[150px] rounded-full border border-white/10 z-30"
           style={{
             background: 'radial-gradient(circle at center, rgba(20,20,30,0.8) 0%, rgba(10,10,15,0.95) 100%)',
             boxShadow: '0 0 40px rgba(0,0,0,0.6), inset 0 0 20px rgba(255,255,255,0.02)'
@@ -571,7 +571,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
         ></div>
 
         {/* SYNC via Animated Avatar */}
-        <Link to={createPageUrl("Sync")} className="relative z-10 group cursor-pointer flex flex-col items-center" aria-label="Go to SYNC">
+        <Link to={createPageUrl("Sync")} className="relative z-40 group cursor-pointer flex flex-col items-center" aria-label="Go to SYNC">
           <AnimatedAvatar size={120} className="transition-all duration-300" />
         </Link>
         </div>
@@ -1052,7 +1052,7 @@ export default function Layout({ children, currentPageName }) {
 
         <div className="flex h-screen">
           {/* Desktop/Tablet Sidebar - Wider for avatar */}
-          <div className="hidden md:flex flex-col sidebar-shell w-[80px] overflow-visible">
+          <div className="hidden md:flex flex-col sidebar-shell w-[80px] overflow-visible relative z-20">
             <SidebarContent
               currentPageName={currentPageName}
               secondaryNavConfig={secondaryNavConfig}
