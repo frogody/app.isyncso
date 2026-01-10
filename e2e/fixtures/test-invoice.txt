@@ -1,0 +1,30 @@
+INVOICE
+
+Invoice #: INV-2026-001
+Date: January 10, 2026
+
+Bill To:
+iSyncSO Company
+123 Business Street
+Amsterdam, Netherlands
+
+From:
+Test Supplier Inc.
+456 Vendor Avenue
+Rotterdam, Netherlands
+
+ITEMS:
+Description          Quantity    Unit Price    Total
+----------------------------------------------------
+Office Supplies         10         €25.00      €250.00
+Printer Paper           5          €15.00      €75.00
+Desk Organizers        3          €30.00      €90.00
+
+                              Subtotal:        €415.00
+                              VAT (21%):       €87.15
+                              TOTAL:           €502.15
+
+Payment Terms: Net 30
+Due Date: February 10, 2026
+
+Thank you for your business!
