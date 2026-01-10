@@ -405,7 +405,7 @@ const COLOR_CLASSES = {
 };
 
 // Header offset constant for secondary sidebar alignment - adjusted for smaller avatar bulge
-const SECONDARY_SIDEBAR_HEADER_OFFSET = 'pt-[90px]';
+const SECONDARY_SIDEBAR_HEADER_OFFSET = 'pt-[70px]';
 
 // Secondary Sidebar Component
 function SecondarySidebar({ config, location }) {
@@ -552,7 +552,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
       {!isMobile && (
         <button
           onClick={onOpenAppsManager}
-          className="absolute -right-3 top-16 bg-black border border-gray-700 text-gray-400 rounded-full p-1.5 hover:text-cyan-400 hover:border-cyan-500/50 transition-all z-50 shadow-lg"
+          className="absolute -right-3 top-24 bg-black border border-gray-700 text-gray-400 rounded-full p-1.5 hover:text-cyan-400 hover:border-cyan-500/50 transition-all z-50 shadow-lg"
           title="Manage Apps"
         >
           <SettingsIcon size={12} />
@@ -560,19 +560,19 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
       )}
 
       {/* Top Profile Section with Circular Bulge */}
-      <div className="relative flex flex-col items-center justify-center pt-6 pb-4 transition-all duration-300 z-30">
+      <div className="relative flex flex-col items-center justify-center pt-4 pb-3 transition-all duration-300 z-30">
         {/* Circular Background Bulge - extends beyond sidebar */}
         <div
-          className="absolute top-4 left-1/2 -translate-x-1/2 w-[75px] h-[75px] rounded-full border border-white/10 z-30"
+          className="absolute top-3 left-1/2 -translate-x-1/2 w-[60px] h-[60px] rounded-full border border-white/10 z-30"
           style={{
             background: 'radial-gradient(circle at center, rgba(20,20,30,0.8) 0%, rgba(10,10,15,0.95) 100%)',
-            boxShadow: '0 0 20px rgba(0,0,0,0.6), inset 0 0 10px rgba(255,255,255,0.02)'
+            boxShadow: '0 0 15px rgba(0,0,0,0.6), inset 0 0 8px rgba(255,255,255,0.02)'
           }}
         ></div>
 
         {/* SYNC via Animated Avatar */}
         <Link to={createPageUrl("Sync")} className="relative z-40 group cursor-pointer flex flex-col items-center" aria-label="Go to SYNC">
-          <AnimatedAvatar size={60} className="transition-all duration-300" />
+          <AnimatedAvatar size={48} className="transition-all duration-300" />
         </Link>
         </div>
 
