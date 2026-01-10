@@ -24,6 +24,10 @@ export default defineConfig({
     },
   },
   build: {
+    commonjsOptions: {
+      include: [/animejs/, /node_modules/],
+      transformMixedEsModules: true,
+    },
     rollupOptions: {
       // Externalize Node.js-only dependencies that together-ai optionally uses
       external: ['parquetjs'],
