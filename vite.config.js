@@ -11,7 +11,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      'animejs': 'animejs/lib/anime.es.js',
+      'animejs': path.resolve(__dirname, './src/lib/anime-wrapper.js'),
     },
     extensions: ['.mjs', '.js', '.jsx', '.ts', '.tsx', '.json']
   },
