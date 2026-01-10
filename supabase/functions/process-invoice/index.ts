@@ -498,20 +498,20 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get image URL
+    // Get image URL (using public URL for permanent bookkeeping access)
     let imageUrl = directImageUrl;
     if (!imageUrl && storagePath && bucket) {
-      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+      const { data: publicUrlData } = supabase.storage
         .from(bucket)
-        .createSignedUrl(storagePath, 3600);
+        .getPublicUrl(storagePath);
 
-      if (signedUrlError) {
+      if (!publicUrlData?.publicUrl) {
         return new Response(
-          JSON.stringify({ success: false, error: "Could not access uploaded file: " + signedUrlError.message }),
+          JSON.stringify({ success: false, error: "Could not get public URL for uploaded file" }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      imageUrl = signedUrlData.signedUrl;
+      imageUrl = publicUrlData.publicUrl;
     }
 
     // Create expense record immediately with "processing" status

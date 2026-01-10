@@ -50,7 +50,7 @@ import { storage, supabase } from "@/api/supabaseClient";
 // Set up PDF.js worker using bundled worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
-const DOCUMENTS_BUCKET = "documents";
+const DOCUMENTS_BUCKET = "attachments";
 
 /**
  * Convert a PDF file to a PNG image (first page)
