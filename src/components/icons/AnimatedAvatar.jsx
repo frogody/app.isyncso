@@ -30,7 +30,7 @@ const AnimatedAvatar = ({ size = 160, className = "" }) => {
     ctx.scale(dpr, dpr);
 
     const center = size / 2;
-    const radius = size / 2 - 10; // Reduced padding for smaller sizes
+    const radius = size / 2 - 5; // Minimal padding for small sizes
 
     // Animation timelines with anime.js
     const outerRingAnim = anime({
@@ -99,8 +99,8 @@ const AnimatedAvatar = ({ size = 160, className = "" }) => {
     // Draw functions
     const drawOuterRing = () => {
       const rotation = (stateRef.current.outerRingRotation * Math.PI) / 180;
-      const segments = 360;
-      const strokeWidth = Math.max(2, size / 20); // Proportional stroke width
+      const segments = size < 80 ? 120 : 360; // Fewer segments for small sizes
+      const strokeWidth = Math.max(1.5, size / 24); // Thinner stroke for small sizes
 
       for (let i = 0; i < segments; i++) {
         const angle = (i / segments) * Math.PI * 2 + rotation;
@@ -121,18 +121,18 @@ const AnimatedAvatar = ({ size = 160, className = "" }) => {
     };
 
     const drawTickMarks = () => {
-      const numTicks = 72;
-      const tickRadius = radius * 0.85;
+      const numTicks = size < 80 ? 24 : 72; // Fewer ticks for small sizes
+      const tickRadius = radius * 0.80;
 
       for (let i = 0; i < numTicks; i++) {
         const angle = (i / numTicks) * Math.PI * 2;
         const wave = Math.sin(angle * 3 + stateRef.current.tickWaveOffset);
-        const baseTickLength = size / 30;
-        const tickLength = baseTickLength + wave * (baseTickLength * 0.5);
+        const baseTickLength = Math.max(1.5, size / 35);
+        const tickLength = baseTickLength + wave * (baseTickLength * 0.4);
         const highlight = wave > 0.5;
 
         ctx.strokeStyle = highlight ? '#555566' : '#333344';
-        ctx.lineWidth = 1.5;
+        ctx.lineWidth = size < 80 ? 0.8 : 1.5;
         ctx.lineCap = 'butt';
 
         const x1 = center + Math.cos(angle) * tickRadius;
@@ -151,26 +151,26 @@ const AnimatedAvatar = ({ size = 160, className = "" }) => {
       // Arc trail 1
       const rotation1 = (stateRef.current.arcTrail1Rotation * Math.PI) / 180;
       ctx.strokeStyle = 'rgba(255, 136, 102, 0.4)';
-      ctx.lineWidth = Math.max(2, size / 30);
+      ctx.lineWidth = Math.max(1, size / 40);
       ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.arc(center, center, radius * 0.7, rotation1, rotation1 + Math.PI / 2);
+      ctx.arc(center, center, radius * 0.65, rotation1, rotation1 + Math.PI / 2);
       ctx.stroke();
 
       // Arc trail 2
       const rotation2 = (stateRef.current.arcTrail2Rotation * Math.PI) / 180;
       ctx.strokeStyle = 'rgba(255, 136, 102, 0.3)';
-      ctx.lineWidth = Math.max(2, size / 40);
+      ctx.lineWidth = Math.max(0.8, size / 50);
       ctx.beginPath();
-      ctx.arc(center, center, radius * 0.55, rotation2, rotation2 + Math.PI / 3);
+      ctx.arc(center, center, radius * 0.50, rotation2, rotation2 + Math.PI / 3);
       ctx.stroke();
 
       // Arc trail 3
       const rotation3 = (stateRef.current.arcTrail3Rotation * Math.PI) / 180;
       ctx.strokeStyle = 'rgba(255, 136, 102, 0.35)';
-      ctx.lineWidth = Math.max(2, size / 35);
+      ctx.lineWidth = Math.max(0.9, size / 45);
       ctx.beginPath();
-      ctx.arc(center, center, radius * 0.62, rotation3, rotation3 + Math.PI / 2.5);
+      ctx.arc(center, center, radius * 0.57, rotation3, rotation3 + Math.PI / 2.5);
       ctx.stroke();
     };
 
@@ -197,7 +197,7 @@ const AnimatedAvatar = ({ size = 160, className = "" }) => {
       ctx.strokeStyle = '#ff6b6b';
       ctx.fillStyle = '#ff6b6b';
 
-      const shapeSize = size * 0.3; // Proportional shape size
+      const shapeSize = size * 0.25; // Smaller shape for better spacing
       const shapeHeight = shapeSize * 1.25;
 
       for (let i = 0; i < numLines; i++) {
@@ -229,10 +229,10 @@ const AnimatedAvatar = ({ size = 160, className = "" }) => {
     };
 
     const drawOrbitingDots = () => {
-      const numDots = 20;
+      const numDots = size < 80 ? 12 : 20; // Fewer dots for small sizes
       const orbitRotation = (stateRef.current.orbitRotation * Math.PI) / 180;
-      const ellipseA = radius * 0.45; // Major axis
-      const ellipseB = radius * 0.3; // Minor axis
+      const ellipseA = radius * 0.38; // Smaller orbit
+      const ellipseB = radius * 0.25; // Smaller orbit
 
       for (let i = 0; i < numDots; i++) {
         const angle = (i / numDots) * Math.PI * 2;
@@ -241,7 +241,7 @@ const AnimatedAvatar = ({ size = 160, className = "" }) => {
 
         const x = center + Math.cos(adjustedAngle) * ellipseA;
         const y = center + Math.sin(adjustedAngle) * ellipseB;
-        const dotSize = Math.max(1.5, size / 50) + Math.sin(angle * 3) * (size / 100);
+        const dotSize = Math.max(0.8, size / 60) + Math.sin(angle * 3) * (size / 120);
 
         ctx.fillStyle = '#ff6b6b';
         ctx.beginPath();
@@ -251,7 +251,7 @@ const AnimatedAvatar = ({ size = 160, className = "" }) => {
     };
 
     const drawGlow = () => {
-      const glowRadius = Math.max(radius * 0.4, 5); // Proportional glow, minimum 5px
+      const glowRadius = Math.max(radius * 0.35, 3); // Smaller glow for compact look
       const gradient = ctx.createRadialGradient(center, center, 0, center, center, glowRadius);
       gradient.addColorStop(0, 'rgba(255, 107, 107, 0.15)');
       gradient.addColorStop(1, 'rgba(255, 107, 107, 0)');
