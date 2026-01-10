@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { animate, stagger } from 'animejs';
+import anime from 'animejs';
+const animate = anime;
+const stagger = anime.stagger;
 import { prefersReducedMotion } from '@/lib/animations';
 import { base44 } from "@/api/base44Client";
 import { useSearchParams } from "react-router-dom";

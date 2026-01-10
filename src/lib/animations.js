@@ -1,4 +1,8 @@
-import { animate, stagger } from 'animejs';
+import anime from 'animejs';
+
+// Extract animate and stagger from anime
+const animate = anime;
+const stagger = anime.stagger;
 
 // Respect user preferences
 export const prefersReducedMotion = () =>
@@ -201,4 +205,4 @@ export const gridCardsIn = (selector, delay = 50) =>
     easing: 'easeOutQuad',
   });
 
-export default { animate, stagger };
+export { animate, stagger };
