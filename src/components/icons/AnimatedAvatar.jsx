@@ -1,9 +1,10 @@
 import React, { useEffect, useRef } from 'react';
 import anime from '@/lib/anime-wrapper';
 
-const AnimatedAvatar = ({ size = 40, className = "" }) => {
+const AnimatedAvatar = ({ size = 40, className = "", state = 'idle' }) => {
   const containerRef = useRef(null);
   const timelineRef = useRef(null);
+  const elementsRef = useRef({});
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -23,18 +24,20 @@ const AnimatedAvatar = ({ size = 40, className = "" }) => {
     // Create gradient definitions
     const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
 
-    // Professional gradient - subtle blues and purples
+    // Gradient for rings
     const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
-    gradient.setAttribute('id', 'avatar-gradient');
+    gradient.setAttribute('id', 'sync-gradient');
     gradient.setAttribute('x1', '0%');
     gradient.setAttribute('y1', '0%');
     gradient.setAttribute('x2', '100%');
     gradient.setAttribute('y2', '100%');
 
     const stops = [
-      { offset: '0%', color: '#667eea' },   // Purple-blue
-      { offset: '50%', color: '#06b6d4' },  // Cyan
-      { offset: '100%', color: '#667eea' }  // Purple-blue
+      { offset: '0%', color: '#10b981' },   // green
+      { offset: '25%', color: '#06b6d4' },  // cyan
+      { offset: '50%', color: '#f59e0b' },  // amber
+      { offset: '75%', color: '#ef4444' },  // red
+      { offset: '100%', color: '#10b981' }  // green
     ];
 
     stops.forEach(stop => {
@@ -47,111 +50,126 @@ const AnimatedAvatar = ({ size = 40, className = "" }) => {
     defs.appendChild(gradient);
     svg.appendChild(defs);
 
-    // Create outer ring with dots
-    const outerRing = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    outerRing.setAttribute('cx', center);
-    outerRing.setAttribute('cy', center);
-    outerRing.setAttribute('r', center - 3);
-    outerRing.setAttribute('fill', 'none');
-    outerRing.setAttribute('stroke', 'url(#avatar-gradient)');
-    outerRing.setAttribute('stroke-width', '1');
-    outerRing.setAttribute('opacity', '0.3');
-    outerRing.setAttribute('stroke-dasharray', '2 4');
-    svg.appendChild(outerRing);
+    // Create 3 concentric rotating rings
+    const rings = [];
+    for (let i = 0; i < 3; i++) {
+      const radius = center - (i * 4) - 2;
+      const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      ring.setAttribute('cx', center);
+      ring.setAttribute('cy', center);
+      ring.setAttribute('r', radius);
+      ring.setAttribute('fill', 'none');
+      ring.setAttribute('stroke', 'url(#sync-gradient)');
+      ring.setAttribute('stroke-width', '0.5');
+      ring.setAttribute('opacity', 0.3 + (i * 0.1));
+      ring.setAttribute('stroke-dasharray', `${2 + i} ${3 + i}`);
+      ring.style.transformOrigin = '50% 50%';
+      svg.appendChild(ring);
+      rings.push(ring);
+    }
 
-    // Create pulsing dots around the perimeter
+    // Create orbital dots (like homepage)
     const dots = [];
-    const numDots = 8;
+    const numDots = 12;
     for (let i = 0; i < numDots; i++) {
-      const angle = (i / numDots) * Math.PI * 2 - Math.PI / 2;
-      const radius = center - 3;
-      const x = center + Math.cos(angle) * radius;
-      const y = center + Math.sin(angle) * radius;
+      const angle = (i / numDots) * Math.PI * 2;
+      const orbitRadius = center - 2;
+      const x = center + Math.cos(angle) * orbitRadius;
+      const y = center + Math.sin(angle) * orbitRadius;
 
       const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
       dot.setAttribute('cx', x);
       dot.setAttribute('cy', y);
-      dot.setAttribute('r', 1.5);
-      dot.setAttribute('fill', '#06b6d4');
-      dot.setAttribute('opacity', '0');
+      dot.setAttribute('r', 0.8);
+      dot.setAttribute('fill', '#ef4444');
+      dot.setAttribute('opacity', 0.6);
       svg.appendChild(dot);
       dots.push(dot);
     }
 
-    // Create center circle
-    const centerCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    centerCircle.setAttribute('cx', center);
-    centerCircle.setAttribute('cy', center);
-    centerCircle.setAttribute('r', center - 12);
-    centerCircle.setAttribute('fill', 'rgba(102, 126, 234, 0.08)');
-    centerCircle.setAttribute('stroke', 'url(#avatar-gradient)');
-    centerCircle.setAttribute('stroke-width', '1.5');
-    centerCircle.setAttribute('opacity', '0.6');
-    svg.appendChild(centerCircle);
-
-    // Create inner accent lines - more subtle
-    const accentLines = [];
-    const numLines = 3;
-    for (let i = 0; i < numLines; i++) {
-      const angle = (i / numLines) * Math.PI * 2;
-      const innerRadius = 6;
-      const outerRadius = 10;
+    // Create center neural network lines (like brain pattern on homepage)
+    const centerLines = [];
+    const numCenterLines = 8;
+    for (let i = 0; i < numCenterLines; i++) {
+      const angle = (i / numCenterLines) * Math.PI * 2;
+      const innerR = 3;
+      const outerR = center - 14;
 
       const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      line.setAttribute('x1', center + Math.cos(angle) * innerRadius);
-      line.setAttribute('y1', center + Math.sin(angle) * innerRadius);
-      line.setAttribute('x2', center + Math.cos(angle) * outerRadius);
-      line.setAttribute('y2', center + Math.sin(angle) * outerRadius);
-      line.setAttribute('stroke', '#667eea');
-      line.setAttribute('stroke-width', '1.5');
+      line.setAttribute('x1', center + Math.cos(angle) * innerR);
+      line.setAttribute('y1', center + Math.sin(angle) * innerR);
+      line.setAttribute('x2', center + Math.cos(angle) * outerR);
+      line.setAttribute('y2', center + Math.sin(angle) * outerR);
+      line.setAttribute('stroke', '#ef4444');
+      line.setAttribute('stroke-width', '0.5');
+      line.setAttribute('opacity', 0.4);
       line.setAttribute('stroke-linecap', 'round');
-      line.setAttribute('opacity', '0.4');
       svg.appendChild(line);
-      accentLines.push(line);
+      centerLines.push(line);
     }
 
-    // Create coordinated timeline animation
+    // Create pulsing center core
+    const centerCore = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    centerCore.setAttribute('cx', center);
+    centerCore.setAttribute('cy', center);
+    centerCore.setAttribute('r', 3);
+    centerCore.setAttribute('fill', '#ef4444');
+    centerCore.setAttribute('opacity', 0.8);
+    svg.appendChild(centerCore);
+
+    // Store elements for state changes
+    elementsRef.current = {
+      rings,
+      dots,
+      centerLines,
+      centerCore
+    };
+
+    // Create main timeline animation (like homepage)
     const timeline = anime.timeline({
       loop: true,
-      easing: 'easeInOutQuad'
+      easing: 'linear'
     });
 
-    // Rotate outer ring smoothly
-    timeline.add({
-      targets: outerRing,
-      rotate: 360,
-      duration: 8000,
-      easing: 'linear'
-    }, 0);
+    // Rotate each ring at different speeds
+    rings.forEach((ring, i) => {
+      timeline.add({
+        targets: ring,
+        rotate: i % 2 === 0 ? 360 : -360,
+        duration: 20000 - (i * 3000),
+        easing: 'linear'
+      }, 0);
+    });
 
-    // Pulse center circle elegantly
+    // Animate dots in orbital pattern with stagger
     timeline.add({
-      targets: centerCircle,
-      scale: [1, 1.08, 1],
-      opacity: [0.6, 0.8, 0.6],
-      duration: 3000,
+      targets: dots,
+      opacity: [0.2, 0.8, 0.2],
+      scale: [0.8, 1.3, 0.8],
+      duration: 2000,
+      delay: anime.stagger(150, {from: 'center'}),
       easing: 'easeInOutSine'
     }, 0);
 
-    // Staggered dot appearance with smooth fade
+    // Pulse center core
     timeline.add({
-      targets: dots,
-      opacity: [0, 1, 0],
-      scale: [0.5, 1.2, 0.5],
+      targets: centerCore,
+      scale: [1, 1.4, 1],
+      opacity: [0.8, 1, 0.8],
       duration: 2000,
-      delay: anime.stagger(200, {start: 0}),
       easing: 'easeInOutQuad'
     }, 0);
 
-    // Rotate accent lines in opposite direction - very slow
+    // Animate center lines radiating outward
     timeline.add({
-      targets: accentLines,
-      rotate: -360,
-      duration: 12000,
-      easing: 'linear'
+      targets: centerLines,
+      opacity: [0.2, 0.6, 0.2],
+      strokeWidth: [0.3, 0.8, 0.3],
+      duration: 3000,
+      delay: anime.stagger(100),
+      easing: 'easeInOutSine'
     }, 0);
 
-    // Store timeline reference for cleanup
     timelineRef.current = timeline;
 
     return () => {
@@ -160,7 +178,7 @@ const AnimatedAvatar = ({ size = 40, className = "" }) => {
         timelineRef.current = null;
       }
     };
-  }, [size]);
+  }, [size, state]);
 
   return (
     <div
