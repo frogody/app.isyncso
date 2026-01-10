@@ -691,7 +691,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
         </nav>
 
       {/* Bottom Section */}
-      <div className="p-4 space-y-4 bg-gradient-to-t from-black via-black to-transparent">
+      <div className="p-4 space-y-3 bg-gradient-to-t from-black via-black to-transparent">
         {/* Credits / CTA */}
         {me ? (
         <div className="relative group flex justify-center" title="Top up coming soon">
@@ -700,13 +700,24 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
             </div>
         </div>
         ) : (
-          <Button 
+          <Button
              onClick={handleLogin}
              className="p-0 w-10 h-10 rounded-full flex items-center justify-center bg-cyan-600 hover:bg-cyan-500 text-white border-0 shadow-lg shadow-cyan-900/20"
           >
              <LogIn size={16} />
           </Button>
         )}
+
+        {/* Settings Icon */}
+        <Link
+          to={createPageUrl("Settings")}
+          className="relative group flex justify-center"
+          aria-label="Settings"
+        >
+          <div className="w-10 h-10 rounded-full border-2 border-white/10 flex items-center justify-center relative transition-all duration-200 hover:border-cyan-500/50 hover:bg-cyan-950/20 cursor-pointer">
+            <SettingsIcon className="w-5 h-5 text-gray-400 group-hover:text-cyan-400 transition-colors" />
+          </div>
+        </Link>
         </div>
     </div>
   );
