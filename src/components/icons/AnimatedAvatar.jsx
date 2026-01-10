@@ -1,194 +1,306 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef } from 'react';
 import anime from '@/lib/anime-wrapper';
 
-const AnimatedAvatar = ({ size = 40, className = "", state = 'idle' }) => {
-  const containerRef = useRef(null);
-  const timelineRef = useRef(null);
-  const elementsRef = useRef({});
-  const [isHovered, setIsHovered] = useState(false);
-
-  // Helper function to get color based on angle (rainbow gradient around the circle)
-  const getColorForAngle = (angle) => {
-    const normalized = ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2) / (Math.PI * 2);
-
-    if (normalized < 0.166) return `hsl(${normalized * 6 * 60}, 100%, 50%)`;
-    else if (normalized < 0.333) return `hsl(${60 + (normalized - 0.166) * 6 * 60}, 100%, 50%)`;
-    else if (normalized < 0.5) return `hsl(${120 + (normalized - 0.333) * 6 * 60}, 100%, 50%)`;
-    else if (normalized < 0.666) return `hsl(${180 + (normalized - 0.5) * 6 * 60}, 100%, 50%)`;
-    else if (normalized < 0.833) return `hsl(${240 + (normalized - 0.666) * 6 * 60}, 100%, 50%)`;
-    else return `hsl(${300 + (normalized - 0.833) * 6 * 60}, 100%, 50%)`;
-  };
+const AnimatedAvatar = ({ size = 160, className = "" }) => {
+  const canvasRef = useRef(null);
+  const animationRef = useRef(null);
+  const stateRef = useRef({
+    outerRingRotation: 0,
+    tickWaveOffset: 0,
+    arcTrail1Rotation: 0,
+    arcTrail2Rotation: 0,
+    arcTrail3Rotation: 0,
+    orbitRotation: 0,
+    morphProgress: 0,
+    morphState: 0, // 0, 1, 2 for three states
+  });
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-    const container = containerRef.current;
-    container.innerHTML = '';
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
 
-    // Create SVG
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('width', size);
-    svg.setAttribute('height', size);
-    svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
-    container.appendChild(svg);
+    // Set canvas size with retina support
+    canvas.width = size * dpr;
+    canvas.height = size * dpr;
+    canvas.style.width = `${size}px`;
+    canvas.style.height = `${size}px`;
+    ctx.scale(dpr, dpr);
 
     const center = size / 2;
+    const radius = size / 2 - 15;
 
-    // Create rings with reduced segments for performance
-    const rings = [];
-    const ringConfigs = [
-      { radius: center - 3, segments: 24, tickHeight: 2, tickWidth: 0.8, opacity: 0.8 },
-      { radius: center - 7, segments: 20, tickHeight: 1.8, tickWidth: 0.7, opacity: 0.6 },
-      { radius: center - 11, segments: 16, tickHeight: 1.6, tickWidth: 0.6, opacity: 0.4 },
-    ];
-
-    ringConfigs.forEach((config) => {
-      const ringGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      ringGroup.style.transformOrigin = '50% 50%';
-
-      const segments = [];
-      for (let i = 0; i < config.segments; i++) {
-        const angle = (i / config.segments) * Math.PI * 2 - Math.PI / 2;
-        const color = getColorForAngle(angle);
-
-        const x = center + Math.cos(angle) * config.radius;
-        const y = center + Math.sin(angle) * config.radius;
-
-        const segment = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        segment.setAttribute('x', x - config.tickWidth / 2);
-        segment.setAttribute('y', y - config.tickHeight / 2);
-        segment.setAttribute('width', config.tickWidth);
-        segment.setAttribute('height', config.tickHeight);
-        segment.setAttribute('fill', color);
-        segment.setAttribute('opacity', config.opacity);
-        segment.setAttribute('rx', 0.2);
-
-        segment.style.transformOrigin = `${x}px ${y}px`;
-        segment.style.transform = `rotate(${(angle + Math.PI / 2) * 180 / Math.PI}deg)`;
-
-        ringGroup.appendChild(segment);
-        segments.push(segment);
-      }
-
-      svg.appendChild(ringGroup);
-      rings.push({ group: ringGroup, segments, config });
+    // Animation timelines with anime.js
+    const outerRingAnim = anime({
+      targets: stateRef.current,
+      outerRingRotation: 360,
+      duration: 30000,
+      easing: 'linear',
+      loop: true
     });
 
-    // Center dot
-    const centerDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    centerDot.setAttribute('cx', center);
-    centerDot.setAttribute('cy', center);
-    centerDot.setAttribute('r', 2);
-    centerDot.setAttribute('fill', '#ef4444');
-    centerDot.setAttribute('opacity', 1);
-    svg.appendChild(centerDot);
+    const tickWaveAnim = anime({
+      targets: stateRef.current,
+      tickWaveOffset: Math.PI * 2,
+      duration: 4000,
+      easing: 'linear',
+      loop: true
+    });
 
-    // White highlight
-    const centerHighlight = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    centerHighlight.setAttribute('cx', center);
-    centerHighlight.setAttribute('cy', center);
-    centerHighlight.setAttribute('r', 0.8);
-    centerHighlight.setAttribute('fill', '#ffffff');
-    centerHighlight.setAttribute('opacity', 0.9);
-    svg.appendChild(centerHighlight);
+    const arcTrail1Anim = anime({
+      targets: stateRef.current,
+      arcTrail1Rotation: 360,
+      duration: 20000,
+      easing: 'linear',
+      loop: true
+    });
 
-    // Store elements
-    elementsRef.current = {
-      rings,
-      centerDot,
-      centerHighlight,
-      svg
-    };
+    const arcTrail2Anim = anime({
+      targets: stateRef.current,
+      arcTrail2Rotation: -360,
+      duration: 25000,
+      easing: 'linear',
+      loop: true
+    });
 
-    // Create efficient timeline
-    const timeline = anime.timeline({
+    const arcTrail3Anim = anime({
+      targets: stateRef.current,
+      arcTrail3Rotation: 360,
+      duration: 35000,
+      easing: 'linear',
+      loop: true
+    });
+
+    const orbitAnim = anime({
+      targets: stateRef.current,
+      orbitRotation: 360,
+      duration: 15000,
+      easing: 'linear',
+      loop: true
+    });
+
+    // Morph animation - cycles through 3 states
+    const morphAnim = anime({
+      targets: stateRef.current,
+      morphProgress: [
+        { value: 1, duration: 3500, easing: 'easeInOutQuad' },
+        { value: 0, duration: 100, easing: 'linear' }
+      ],
       loop: true,
-      easing: 'linear'
+      update: () => {
+        if (stateRef.current.morphProgress >= 0.99) {
+          stateRef.current.morphState = (stateRef.current.morphState + 1) % 3;
+        }
+      }
     });
 
-    // Rotate rings only - no complex animations
-    rings.forEach((ring, i) => {
-      timeline.add({
-        targets: ring.group,
-        rotate: i % 2 === 0 ? 360 : -360,
-        duration: 30000 - (i * 5000),
-        easing: 'linear'
-      }, 0);
-    });
+    // Draw functions
+    const drawOuterRing = () => {
+      const rotation = (stateRef.current.outerRingRotation * Math.PI) / 180;
+      const segments = 360;
+      const strokeWidth = 8;
 
-    // Simple center pulse
-    timeline.add({
-      targets: centerDot,
-      scale: [1, 1.2, 1],
-      opacity: [0.9, 1, 0.9],
-      duration: 2000,
-      easing: 'easeInOutQuad'
-    }, 0);
+      for (let i = 0; i < segments; i++) {
+        const angle = (i / segments) * Math.PI * 2 + rotation;
+        const nextAngle = ((i + 1) / segments) * Math.PI * 2 + rotation;
 
-    timelineRef.current = timeline;
+        // Color gradient around the circle
+        const hue = (i / segments) * 360;
+        const color = `hsl(${hue}, 100%, 60%)`;
 
-    return () => {
-      if (timelineRef.current) {
-        timelineRef.current.pause();
-        timelineRef.current = null;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = strokeWidth;
+        ctx.lineCap = 'round';
+
+        ctx.beginPath();
+        ctx.arc(center, center, radius, angle, nextAngle);
+        ctx.stroke();
       }
     };
-  }, [size, state]);
 
-  // Simplified hover - no complex stagger or parallax
-  useEffect(() => {
-    if (!elementsRef.current.svg) return;
+    const drawTickMarks = () => {
+      const numTicks = 72;
+      const tickRadius = radius - 12;
 
-    if (isHovered) {
-      anime({
-        targets: elementsRef.current.svg,
-        scale: [1, 1.08],
-        duration: 300,
-        easing: 'easeOutQuad'
-      });
+      for (let i = 0; i < numTicks; i++) {
+        const angle = (i / numTicks) * Math.PI * 2;
+        const wave = Math.sin(angle * 3 + stateRef.current.tickWaveOffset);
+        const tickLength = 4 + wave * 2;
+        const highlight = wave > 0.5;
 
-      if (timelineRef.current) {
-        anime({
-          targets: timelineRef.current,
-          timeScale: 1.5,
-          duration: 200,
-          easing: 'easeOutQuad'
-        });
+        ctx.strokeStyle = highlight ? '#555566' : '#333344';
+        ctx.lineWidth = 1.5;
+        ctx.lineCap = 'butt';
+
+        const x1 = center + Math.cos(angle) * tickRadius;
+        const y1 = center + Math.sin(angle) * tickRadius;
+        const x2 = center + Math.cos(angle) * (tickRadius - tickLength);
+        const y2 = center + Math.sin(angle) * (tickRadius - tickLength);
+
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
       }
-    } else {
-      anime({
-        targets: elementsRef.current.svg,
-        scale: [1.08, 1],
-        duration: 300,
-        easing: 'easeOutQuad'
-      });
+    };
 
-      if (timelineRef.current) {
-        anime({
-          targets: timelineRef.current,
-          timeScale: 1,
-          duration: 200,
-          easing: 'easeOutQuad'
-        });
+    const drawArcTrails = () => {
+      // Arc trail 1
+      const rotation1 = (stateRef.current.arcTrail1Rotation * Math.PI) / 180;
+      ctx.strokeStyle = 'rgba(255, 136, 102, 0.4)';
+      ctx.lineWidth = 6;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(center, center, radius - 20, rotation1, rotation1 + Math.PI / 2);
+      ctx.stroke();
+
+      // Arc trail 2
+      const rotation2 = (stateRef.current.arcTrail2Rotation * Math.PI) / 180;
+      ctx.strokeStyle = 'rgba(255, 136, 102, 0.3)';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(center, center, radius - 30, rotation2, rotation2 + Math.PI / 3);
+      ctx.stroke();
+
+      // Arc trail 3
+      const rotation3 = (stateRef.current.arcTrail3Rotation * Math.PI) / 180;
+      ctx.strokeStyle = 'rgba(255, 136, 102, 0.35)';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.arc(center, center, radius - 25, rotation3, rotation3 + Math.PI / 2.5);
+      ctx.stroke();
+    };
+
+    const drawCentralShape = () => {
+      const numLines = 35;
+      const { morphProgress, morphState } = stateRef.current;
+
+      // Define three states for morphing
+      const states = [
+        { type: 'diamond', scaleX: 1, scaleY: 1.4 }, // Vertical diamond
+        { type: 'diamond', scaleX: 1.4, scaleY: 1 }, // Horizontal diamond
+        { type: 'circle', scaleX: 1.2, scaleY: 1.2 } // Circular blob
+      ];
+
+      const currentState = states[morphState];
+      const nextState = states[(morphState + 1) % 3];
+
+      // Interpolate between states
+      const t = morphProgress;
+      const scaleX = currentState.scaleX + (nextState.scaleX - currentState.scaleX) * t;
+      const scaleY = currentState.scaleY + (nextState.scaleY - currentState.scaleY) * t;
+      const isCircle = nextState.type === 'circle' && t > 0.5;
+
+      ctx.strokeStyle = '#ff6b6b';
+      ctx.fillStyle = '#ff6b6b';
+
+      for (let i = 0; i < numLines; i++) {
+        const yOffset = (i / numLines - 0.5) * 50;
+
+        let lineWidth;
+        if (isCircle) {
+          // Circular shape
+          const distFromCenter = Math.abs(yOffset) / 25;
+          lineWidth = Math.sqrt(1 - distFromCenter * distFromCenter) * 30 * scaleX;
+        } else {
+          // Diamond shape
+          const distFromCenter = Math.abs(yOffset) / 25;
+          lineWidth = (1 - distFromCenter) * 30 * scaleX;
+        }
+
+        if (lineWidth > 0) {
+          const y = center + yOffset * scaleY;
+          const lineHeight = 1.2;
+
+          ctx.fillRect(
+            center - lineWidth / 2,
+            y - lineHeight / 2,
+            lineWidth,
+            lineHeight
+          );
+        }
       }
-    }
-  }, [isHovered]);
+    };
+
+    const drawOrbitingDots = () => {
+      const numDots = 20;
+      const orbitRotation = (stateRef.current.orbitRotation * Math.PI) / 180;
+      const ellipseA = radius - 35; // Major axis
+      const ellipseB = radius - 45; // Minor axis
+
+      for (let i = 0; i < numDots; i++) {
+        const angle = (i / numDots) * Math.PI * 2;
+        const stagger = Math.sin(angle * 2) * 0.2;
+        const adjustedAngle = angle + orbitRotation + stagger;
+
+        const x = center + Math.cos(adjustedAngle) * ellipseA;
+        const y = center + Math.sin(adjustedAngle) * ellipseB;
+        const dotSize = 3 + Math.sin(angle * 3) * 1.5;
+
+        ctx.fillStyle = '#ff6b6b';
+        ctx.beginPath();
+        ctx.arc(x, y, dotSize, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    };
+
+    const drawGlow = () => {
+      const gradient = ctx.createRadialGradient(center, center, 0, center, center, radius - 40);
+      gradient.addColorStop(0, 'rgba(255, 107, 107, 0.15)');
+      gradient.addColorStop(1, 'rgba(255, 107, 107, 0)');
+
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(center, center, radius - 40, 0, Math.PI * 2);
+      ctx.fill();
+    };
+
+    // Main animation loop
+    const animate = () => {
+      // Clear canvas
+      ctx.fillStyle = '#1a1a2e';
+      ctx.fillRect(0, 0, size, size);
+
+      // Draw layers from back to front
+      drawGlow();
+      drawArcTrails();
+      drawTickMarks();
+      drawOuterRing();
+      drawOrbitingDots();
+      drawCentralShape();
+
+      animationRef.current = requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    // Cleanup
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+      outerRingAnim.pause();
+      tickWaveAnim.pause();
+      arcTrail1Anim.pause();
+      arcTrail2Anim.pause();
+      arcTrail3Anim.pause();
+      orbitAnim.pause();
+      morphAnim.pause();
+    };
+  }, [size]);
 
   return (
-    <div
-      ref={containerRef}
-      className={className}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      style={{
-        width: size,
-        height: size,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: 'pointer',
-      }}
-    />
+    <div className={className}>
+      <canvas
+        ref={canvasRef}
+        style={{
+          borderRadius: '50%',
+          boxShadow: '0 0 20px rgba(255, 107, 107, 0.3)',
+        }}
+      />
+    </div>
   );
 };
 

@@ -561,13 +561,10 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
 
       {/* Top Profile Section */}
       <div className="flex flex-col items-center justify-center py-6 gap-4 transition-all duration-300 px-2">
-        
+
         {/* SYNC via Animated Avatar */}
         <Link to={createPageUrl("Sync")} className="relative group cursor-pointer flex flex-col items-center" aria-label="Go to SYNC">
-          <div className="relative z-10">
-            <AnimatedAvatar size={40} className="transition-all duration-300" />
-          </div>
-          <div className="absolute inset-0 rounded-full bg-cyan-500/20 blur-md -z-0 transition-opacity duration-300 opacity-0 group-hover:opacity-100" />
+          <AnimatedAvatar size={160} className="transition-all duration-300" />
         </Link>
 
         </div>
@@ -583,7 +580,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
                               <Link
                                 key={item.title}
                                 to={item.url}
-                                className={`flex items-center ${isMobile ? 'justify-start gap-3 px-4' : 'justify-center'} min-h-[44px] py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative active:scale-[0.98]
+                                className={`flex items-center justify-start gap-3 px-4 min-h-[44px] py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative active:scale-[0.98]
                                   ${isActive
                                     ? 'text-cyan-400 bg-cyan-950/30'
                                     : 'text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
@@ -592,7 +589,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
                                 title={item.title}
                               >
                                 <item.icon isActive={isActive} className={`w-5 h-5 flex-shrink-0 transition-colors ${isActive ? 'text-cyan-400' : 'group-hover:text-white'}`} />
-                                {isMobile && <span>{item.title}</span>}
+                                <span>{item.title}</span>
                                 {isActive && (
                                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-cyan-500 rounded-l-full shadow-[0_0_10px_rgba(6,182,212,0.5)]" />
                                 )}
@@ -630,7 +627,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
               <Link
                 key={item.title}
                 to={item.url}
-                className={`flex items-center ${isMobile ? 'justify-start gap-3 px-4' : 'justify-center'} min-h-[44px] py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative active:scale-[0.98]
+                className={`flex items-center justify-start gap-3 px-4 min-h-[44px] py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative active:scale-[0.98]
                   ${isActive
                     ? `${colors.text} ${colors.bg}`
                     : 'text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
@@ -641,7 +638,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
                 <item.icon isActive={isActive} className={`w-5 h-5 flex-shrink-0 transition-colors ${
                   isActive ? colors.text : 'group-hover:text-white'
                 }`} />
-                {isMobile ? <span>{item.title}</span> : <span className="sr-only">{item.title}</span>}
+                <span>{item.title}</span>
                 {isActive && (
                   <div className={`absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-l-full ${colors.solid} ${colors.glow}`} />
                 )}
@@ -660,7 +657,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
                 <Link
                   key={item.title}
                   to={item.url}
-                  className={`flex items-center ${isMobile ? 'justify-start gap-3 px-4' : 'justify-center'} min-h-[44px] py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative active:scale-[0.98]
+                  className={`flex items-center justify-start gap-3 px-4 min-h-[44px] py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative active:scale-[0.98]
                     ${isActive
                       ? 'text-purple-400 bg-purple-950/30'
                       : 'text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
@@ -669,7 +666,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
                   title={item.title}
                 >
                   <item.icon className={`w-5 h-5 flex-shrink-0 transition-colors ${isActive ? 'text-purple-400' : 'group-hover:text-white'}`} />
-                  {isMobile ? <span>{item.title}</span> : <span className="sr-only">{item.title}</span>}
+                  <span>{item.title}</span>
                 </Link>
               );
             })}
@@ -685,32 +682,33 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
         </nav>
 
       {/* Bottom Section */}
-      <div className="p-4 space-y-3 bg-gradient-to-t from-black via-black to-transparent">
+      <div className="px-3 py-4 space-y-1 bg-gradient-to-t from-black via-black to-transparent">
         {/* Credits / CTA */}
         {me ? (
-        <div className="relative group flex justify-center" title="Top up coming soon">
-            <div className="w-10 h-10 rounded-full border-2 border-white/10 flex items-center justify-center relative transition-colors cursor-not-allowed opacity-70">
-               <span className="text-[9px] font-bold text-cyan-400">{me.credits || 0}</span>
+        <div className="relative group flex items-center justify-start gap-3 px-4 min-h-[44px] py-2.5 rounded-xl text-sm font-medium transition-all duration-200 cursor-not-allowed opacity-70" title="Top up coming soon">
+            <div className="w-5 h-5 rounded-full border-2 border-cyan-400/30 flex items-center justify-center relative flex-shrink-0">
+               <span className="text-[8px] font-bold text-cyan-400">{me.credits || 0}</span>
             </div>
+            <span className="text-gray-400">Credits</span>
         </div>
         ) : (
-          <Button
+          <button
              onClick={handleLogin}
-             className="p-0 w-10 h-10 rounded-full flex items-center justify-center bg-cyan-600 hover:bg-cyan-500 text-white border-0 shadow-lg shadow-cyan-900/20"
+             className="flex items-center justify-start gap-3 px-4 min-h-[44px] py-2.5 rounded-xl text-sm font-medium transition-all duration-200 text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10 w-full"
           >
-             <LogIn size={16} />
-          </Button>
+             <LogIn size={20} className="flex-shrink-0" />
+             <span>Login</span>
+          </button>
         )}
 
         {/* Settings Icon */}
         <Link
           to={createPageUrl("Settings")}
-          className="relative group flex justify-center"
+          className="flex items-center justify-start gap-3 px-4 min-h-[44px] py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10"
           aria-label="Settings"
         >
-          <div className="w-10 h-10 rounded-full border-2 border-white/10 flex items-center justify-center relative transition-all duration-200 hover:border-cyan-500/50 hover:bg-cyan-950/20 cursor-pointer">
-            <SettingsIcon className="w-5 h-5 text-gray-400 group-hover:text-cyan-400 transition-colors" />
-          </div>
+          <SettingsIcon className="w-5 h-5 flex-shrink-0 transition-colors group-hover:text-white" />
+          <span>Settings</span>
         </Link>
         </div>
     </div>
@@ -1050,11 +1048,11 @@ export default function Layout({ children, currentPageName }) {
           `}</style>
 
         <div className="flex h-screen">
-          {/* Desktop/Tablet Sidebar - Always collapsed */}
-          <div className="hidden md:flex flex-col sidebar-shell w-[80px]">
-            <SidebarContent 
-              currentPageName={currentPageName} 
-              secondaryNavConfig={secondaryNavConfig} 
+          {/* Desktop/Tablet Sidebar - Wider for avatar */}
+          <div className="hidden md:flex flex-col sidebar-shell w-[200px]">
+            <SidebarContent
+              currentPageName={currentPageName}
+              secondaryNavConfig={secondaryNavConfig}
               enabledApps={enabledApps}
               onOpenAppsManager={() => setAppsManagerOpen(true)}
             />
