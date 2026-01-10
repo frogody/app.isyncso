@@ -102,7 +102,7 @@ async function extractFromImage(googleApiKey: string, imageUrl: string, retryCou
     const mimeType = imageUrl.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
     console.log(`Image fetched, size: ${imageBuffer.byteLength} bytes, type: ${mimeType}`);
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${googleApiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${googleApiKey}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
