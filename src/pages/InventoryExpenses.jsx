@@ -669,6 +669,7 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
 
       console.log("Calling process-invoice edge function with:", { storagePath: path, companyId, userId, hasPdfText: !!pdfText });
 
+      // Call edge function - give it time for LLM processing
       const { data: processResult, error: processError } = await supabase.functions.invoke(
         "process-invoice",
         {
