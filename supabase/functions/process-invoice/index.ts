@@ -76,6 +76,129 @@ Respond with ONLY a JSON object (no markdown, no explanation) in this exact form
   "confidence": 0.0 to 1.0
 }`;
 
+async function extractFromText(groqApiKey: string, pdfText: string, retryCount = 0): Promise<ExtractionResult> {
+  const MAX_RETRIES = 2;
+
+  try {
+    console.log(`Calling Groq LLM for text extraction (attempt ${retryCount + 1}/${MAX_RETRIES + 1})...`);
+    console.log("Text length:", pdfText.length);
+
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${groqApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          {
+            role: 'user',
+            content: EXTRACTION_PROMPT + `\n\nHere is the invoice text:\n\n${pdfText}`,
+          },
+        ],
+        max_tokens: 4096,
+        temperature: 0,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Groq API error: ${response.status} ${errorText}`);
+    }
+
+    const apiResponse = await response.json();
+    console.log("Groq response received");
+    const content = apiResponse.choices?.[0]?.message?.content || '';
+    console.log("AI content length:", content?.length || 0);
+
+    if (!content) {
+      console.log("No content in AI response");
+      return { success: false, confidence: 0, errors: ["No response from AI"] };
+    }
+
+    // Clean up response - remove markdown code blocks if present
+    let cleanedContent = content
+      .replace(/```json\s*/gi, '')
+      .replace(/```\s*/g, '')
+      .trim();
+
+    // Find JSON object
+    let jsonString: string | null = null;
+    const firstBrace = cleanedContent.indexOf('{');
+    const lastBrace = cleanedContent.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      jsonString = cleanedContent.substring(firstBrace, lastBrace + 1);
+    }
+
+    if (!jsonString) {
+      const originalMatch = content.match(/\{[\s\S]*?"supplier_name"[\s\S]*?\}/);
+      if (originalMatch) {
+        const startIdx = content.indexOf(originalMatch[0]);
+        let braceCount = 0;
+        let endIdx = startIdx;
+        for (let i = startIdx; i < content.length; i++) {
+          if (content[i] === '{') braceCount++;
+          if (content[i] === '}') braceCount--;
+          if (braceCount === 0) {
+            endIdx = i + 1;
+            break;
+          }
+        }
+        jsonString = content.substring(startIdx, endIdx);
+      }
+    }
+
+    if (!jsonString) {
+      console.log("No JSON found in response");
+      return { success: false, confidence: 0, errors: ["Could not parse AI response - no JSON found"] };
+    }
+
+    // Clean up JSON
+    jsonString = jsonString
+      .replace(/,\s*}/g, '}')
+      .replace(/,\s*]/g, ']')
+      .replace(/[\x00-\x1F\x7F]/g, ' ')
+      .replace(/\n\s*\n/g, '\n');
+
+    let data: InvoiceData & { confidence?: number };
+    try {
+      data = JSON.parse(jsonString) as InvoiceData & { confidence?: number };
+    } catch (parseError) {
+      console.error("JSON parse error:", parseError);
+      return { success: false, confidence: 0, errors: ["Could not parse AI response - invalid JSON"] };
+    }
+
+    const confidence = data.confidence ?? 0.9; // Higher confidence for text extraction
+    delete (data as any).confidence;
+
+    return { success: true, data, confidence };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error(`Extraction error (attempt ${retryCount + 1}):`, errorMessage);
+
+    // Retry on timeout or server errors
+    const isRetryable = errorMessage.includes('timeout') ||
+                        errorMessage.includes('timed out') ||
+                        errorMessage.includes('ETIMEDOUT') ||
+                        errorMessage.includes('502') ||
+                        errorMessage.includes('503') ||
+                        errorMessage.includes('504');
+
+    if (isRetryable && retryCount < MAX_RETRIES) {
+      console.log(`Retrying extraction in 2 seconds...`);
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      return extractFromText(groqApiKey, pdfText, retryCount + 1);
+    }
+
+    return {
+      success: false,
+      confidence: 0,
+      errors: [errorMessage],
+    };
+  }
+}
+
 async function extractFromImage(googleApiKey: string, imageUrl: string, retryCount = 0): Promise<ExtractionResult> {
   const MAX_RETRIES = 2;
 
@@ -228,16 +351,25 @@ async function extractFromImage(googleApiKey: string, imageUrl: string, retryCou
 // Process the expense asynchronously (called after initial response)
 async function processExpenseAsync(
   supabase: any,
-  googleApiKey: string,
+  groqApiKey: string,
   expenseId: string,
   imageUrl: string,
   companyId: string,
+  pdfText?: string,
 ) {
   try {
-    console.log(`[ASYNC] Starting extraction for expense ${expenseId}`);
+    console.log(`[ASYNC] Starting extraction for expense ${expenseId}`, { hasPdfText: !!pdfText });
 
-    // Extract data from image
-    const extraction = await extractFromImage(googleApiKey, imageUrl);
+    // Extract data from PDF text (preferred) or image (fallback)
+    let extraction: ExtractionResult;
+    if (pdfText && pdfText.trim().length > 0) {
+      console.log('[ASYNC] Using text extraction (PDF text provided)');
+      extraction = await extractFromText(groqApiKey, pdfText);
+    } else {
+      console.log('[ASYNC] Using image extraction (fallback)');
+      // Note: This will fail without a valid Google API key
+      extraction = await extractFromImage(groqApiKey, imageUrl);
+    }
     console.log(`[ASYNC] Extraction complete:`, { success: extraction.success, confidence: extraction.confidence });
 
     if (!extraction.success || !extraction.data) {
@@ -457,19 +589,19 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get Google API key from env
-    const googleApiKey = Deno.env.get("GOOGLE_API_KEY");
-    if (!googleApiKey) {
-      throw new Error("GOOGLE_API_KEY not configured");
+    // Get Groq API key from env (fast text model for PDF extraction)
+    const groqApiKey = Deno.env.get("GROQ_API_KEY");
+    if (!groqApiKey) {
+      throw new Error("GROQ_API_KEY not configured");
     }
 
     const body = await req.json();
-    const { storagePath, bucket, companyId, userId, sourceEmailId, imageUrl: directImageUrl, _mode, _expenseId, _imageUrl } = body;
+    const { storagePath, bucket, companyId, userId, sourceEmailId, imageUrl: directImageUrl, pdfText, _mode, _expenseId, _imageUrl, _pdfText } = body;
 
     // ASYNC MODE: Process existing expense (called by ourselves)
     if (_mode === 'process' && _expenseId && _imageUrl) {
-      console.log(`[ASYNC MODE] Processing expense ${_expenseId}`);
-      await processExpenseAsync(supabase, googleApiKey, _expenseId, _imageUrl, companyId);
+      console.log(`[ASYNC MODE] Processing expense ${_expenseId}`, { hasPdfText: !!_pdfText });
+      await processExpenseAsync(supabase, groqApiKey, _expenseId, _imageUrl, companyId, _pdfText);
       return new Response(
         JSON.stringify({ success: true, processed: true, expenseId: _expenseId }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -532,6 +664,22 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ success: false, error: expenseError.message }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // If we have PDF text, process immediately (faster and more reliable)
+    if (pdfText && pdfText.trim().length > 0) {
+      console.log(`Processing expense ${expense.id} immediately with PDF text`);
+      await processExpenseAsync(supabase, groqApiKey, expense.id, imageUrl, companyId, pdfText);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          processing: false,
+          expenseId: expense.id,
+          message: "Invoice processed successfully.",
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 

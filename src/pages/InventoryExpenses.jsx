@@ -53,6 +53,28 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 const DOCUMENTS_BUCKET = "attachments";
 
 /**
+ * Extract text from all pages of a PDF
+ * @param {File} pdfFile - The PDF file to extract text from
+ * @returns {Promise<string>} - Extracted text from all pages
+ */
+async function extractPdfText(pdfFile) {
+  const arrayBuffer = await pdfFile.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+  let fullText = '';
+
+  // Extract text from all pages
+  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+    const page = await pdf.getPage(pageNum);
+    const textContent = await page.getTextContent();
+    const pageText = textContent.items.map(item => item.str).join(' ');
+    fullText += pageText + '\n';
+  }
+
+  return fullText.trim();
+}
+
+/**
  * Convert a PDF file to a PNG image (first page)
  * @param {File} pdfFile - The PDF file to convert
  * @returns {Promise<File>} - A PNG image file
@@ -603,17 +625,24 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
 
     try {
       let fileToUpload = selectedFile;
+      let pdfText = null;
 
-      // Convert PDF to image if necessary
+      // Convert PDF to image if necessary AND extract text
       if (selectedFile.type === "application/pdf") {
-        toast.info("PDF wordt geconverteerd naar afbeelding...");
+        toast.info("PDF wordt geconverteerd en tekst wordt geëxtraheerd...");
         setUploadProgress(10);
         try {
+          // Extract text first (faster)
+          pdfText = await extractPdfText(selectedFile);
+          console.log("PDF text extracted, length:", pdfText.length);
+          setUploadProgress(20);
+
+          // Then convert to image for preview
           fileToUpload = await convertPdfToImage(selectedFile);
           console.log("PDF converted to image:", fileToUpload.name, fileToUpload.size);
         } catch (conversionError) {
-          console.error("PDF conversion failed:", conversionError);
-          toast.error("Kon PDF niet converteren: " + conversionError.message);
+          console.error("PDF processing failed:", conversionError);
+          toast.error("Kon PDF niet verwerken: " + conversionError.message);
           return;
         }
         setUploadProgress(30);
@@ -638,7 +667,7 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
       // Process the invoice with AI via edge function
       toast.info("Analyzing invoice with AI...");
 
-      console.log("Calling process-invoice edge function with:", { storagePath: path, companyId, userId });
+      console.log("Calling process-invoice edge function with:", { storagePath: path, companyId, userId, hasPdfText: !!pdfText });
 
       const { data: processResult, error: processError } = await supabase.functions.invoke(
         "process-invoice",
@@ -648,6 +677,7 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
             bucket: DOCUMENTS_BUCKET,
             companyId: companyId,
             userId: userId,
+            pdfText: pdfText, // Send extracted PDF text
           },
         }
       );
