@@ -392,6 +392,13 @@ function ExpenseCard({ expense, onReview, onRetry }) {
   const needsReview = expense.needs_review && expense.review_status === "pending";
   const isFailed = expense.status === 'failed';
 
+  console.log('ExpenseCard render:', {
+    id: expense.id,
+    status: expense.status,
+    isFailed,
+    hasOnRetry: !!onRetry
+  });
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -462,8 +469,15 @@ function ExpenseCard({ expense, onReview, onRetry }) {
             <Button
               size="sm"
               onClick={(e) => {
+                e.preventDefault();
                 e.stopPropagation();
-                onRetry(expense);
+                console.log('Retry button clicked', expense.id);
+                console.log('onRetry function:', onRetry);
+                if (onRetry) {
+                  onRetry(expense);
+                } else {
+                  console.error('onRetry is not defined!');
+                }
               }}
               className="bg-amber-600 hover:bg-amber-700"
             >
