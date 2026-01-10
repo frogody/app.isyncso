@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import Together from "npm:together-ai";
+import Anthropic from "npm:@anthropic-ai/sdk@0.28.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -77,29 +77,53 @@ Respond with ONLY a JSON object (no markdown, no explanation) in this exact form
   "confidence": 0.0 to 1.0
 }`;
 
-async function extractFromImage(client: Together, imageUrl: string, retryCount = 0): Promise<ExtractionResult> {
+async function extractFromImage(client: Anthropic, imageUrl: string, retryCount = 0): Promise<ExtractionResult> {
   const MAX_RETRIES = 2;
 
   try {
-    console.log(`Calling Together AI vision model (attempt ${retryCount + 1}/${MAX_RETRIES + 1})...`);
+    console.log(`Calling Claude vision model (attempt ${retryCount + 1}/${MAX_RETRIES + 1})...`);
 
-    const response = await client.chat.completions.create({
-      model: "Qwen/Qwen3-VL-8B-Instruct",
+    // Fetch the image and convert to base64
+    console.log("Fetching image from URL:", imageUrl);
+    const imageResponse = await fetch(imageUrl);
+    if (!imageResponse.ok) {
+      throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
+    }
+
+    const imageBuffer = await imageResponse.arrayBuffer();
+    const base64Image = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)));
+
+    // Determine media type from URL
+    const mediaType = imageUrl.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+    console.log(`Image fetched, size: ${imageBuffer.byteLength} bytes, type: ${mediaType}`);
+
+    const response = await client.messages.create({
+      model: "claude-3-5-sonnet-20241022",
+      max_tokens: 4096,
+      temperature: 0,
       messages: [
         {
           role: "user",
           content: [
-            { type: "text", text: EXTRACTION_PROMPT + "\n\nIMPORTANT: After your thinking, output ONLY the JSON object, nothing else." },
-            { type: "image_url", image_url: { url: imageUrl } },
+            {
+              type: "image",
+              source: {
+                type: "base64",
+                media_type: mediaType,
+                data: base64Image,
+              },
+            },
+            {
+              type: "text",
+              text: EXTRACTION_PROMPT + "\n\nIMPORTANT: Respond with ONLY the JSON object, nothing else. No markdown, no explanation.",
+            },
           ],
         },
       ],
-      max_tokens: 8192,
-      temperature: 0.1,
     });
 
-    console.log("Together AI response received");
-    const content = response.choices[0]?.message?.content;
+    console.log("Claude response received");
+    const content = response.content[0]?.type === 'text' ? response.content[0].text : '';
     console.log("AI content length:", content?.length || 0);
 
     if (!content) {
@@ -107,17 +131,8 @@ async function extractFromImage(client: Together, imageUrl: string, retryCount =
       return { success: false, confidence: 0, errors: ["No response from AI"] };
     }
 
-    // Qwen3 uses thinking mode - extract content after </think> tag if present
-    let cleanedContent = content;
-    const thinkEndIndex = content.indexOf('</think>');
-    if (thinkEndIndex !== -1) {
-      cleanedContent = content.substring(thinkEndIndex + 8).trim();
-      console.log("Found </think> tag, extracted content after it");
-    }
-
-    cleanedContent = cleanedContent
-      .replace(/<think>[\s\S]*?<\/think>/gi, '')
-      .replace(/<\|im_start\|>[\s\S]*?<\|im_end\|>/gi, '')
+    // Clean up response - remove markdown code blocks if present
+    let cleanedContent = content
       .replace(/```json\s*/gi, '')
       .replace(/```\s*/g, '')
       .trim();
@@ -201,7 +216,7 @@ async function extractFromImage(client: Together, imageUrl: string, retryCount =
 // Process the expense asynchronously (called after initial response)
 async function processExpenseAsync(
   supabase: any,
-  together: Together,
+  anthropic: Anthropic,
   expenseId: string,
   imageUrl: string,
   companyId: string,
@@ -210,7 +225,7 @@ async function processExpenseAsync(
     console.log(`[ASYNC] Starting extraction for expense ${expenseId}`);
 
     // Extract data from image
-    const extraction = await extractFromImage(together, imageUrl);
+    const extraction = await extractFromImage(anthropic, imageUrl);
     console.log(`[ASYNC] Extraction complete:`, { success: extraction.success, confidence: extraction.confidence });
 
     if (!extraction.success || !extraction.data) {
@@ -430,28 +445,28 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Try to get API key from database first, fallback to env var
-    let togetherApiKey = Deno.env.get("TOGETHER_API_KEY");
+    // Try to get Anthropic API key from database first, fallback to env var
+    let anthropicApiKey = Deno.env.get("ANTHROPIC_API_KEY");
     try {
       const { data: setting } = await supabase
         .from("app_settings")
         .select("value")
-        .eq("key", "together_api_key")
+        .eq("key", "anthropic_api_key")
         .single();
 
       if (setting?.value) {
-        togetherApiKey = setting.value;
-        console.log("Using Together API key from database");
+        anthropicApiKey = setting.value;
+        console.log("Using Anthropic API key from database");
       }
     } catch (dbError) {
       console.log("Could not fetch API key from database, using env var");
     }
 
-    if (!togetherApiKey) {
-      throw new Error("TOGETHER_API_KEY not configured");
+    if (!anthropicApiKey) {
+      throw new Error("ANTHROPIC_API_KEY not configured");
     }
 
-    const together = new Together({ apiKey: togetherApiKey });
+    const anthropic = new Anthropic({ apiKey: anthropicApiKey });
 
     const body = await req.json();
     const { storagePath, bucket, companyId, userId, sourceEmailId, imageUrl: directImageUrl, _mode, _expenseId, _imageUrl } = body;
@@ -459,7 +474,7 @@ Deno.serve(async (req) => {
     // ASYNC MODE: Process existing expense (called by ourselves)
     if (_mode === 'process' && _expenseId && _imageUrl) {
       console.log(`[ASYNC MODE] Processing expense ${_expenseId}`);
-      await processExpenseAsync(supabase, together, _expenseId, _imageUrl, companyId);
+      await processExpenseAsync(supabase, anthropic, _expenseId, _imageUrl, companyId);
       return new Response(
         JSON.stringify({ success: true, processed: true, expenseId: _expenseId }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
