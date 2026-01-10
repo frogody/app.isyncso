@@ -113,7 +113,7 @@ BEGIN
         '_imageUrl', NEW.original_file_url,
         'companyId', NEW.company_id
       ),
-      timeout_milliseconds := 30000
+      timeout_milliseconds := 90000
     ) INTO request_id;
 
     RAISE LOG 'Triggered async processing for expense % with request_id %', NEW.id, request_id;
