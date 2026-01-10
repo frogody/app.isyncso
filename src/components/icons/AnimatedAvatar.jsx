@@ -36,39 +36,14 @@ const AnimatedAvatar = ({ size = 40, className = "", state = 'idle' }) => {
 
     const center = size / 2;
 
-    // Create gradient definitions
-    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-
-    // Radial gradient for center glow
-    const radialGradient = document.createElementNS('http://www.w3.org/2000/svg', 'radialGradient');
-    radialGradient.setAttribute('id', 'center-glow');
-    radialGradient.setAttribute('cx', '50%');
-    radialGradient.setAttribute('cy', '50%');
-
-    const radialStops = [
-      { offset: '0%', color: '#ff0000', opacity: 1 },
-      { offset: '50%', color: '#ff3333', opacity: 0.8 },
-      { offset: '100%', color: '#ff0000', opacity: 0.3 }
-    ];
-
-    radialStops.forEach(stop => {
-      const stopEl = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-      stopEl.setAttribute('offset', stop.offset);
-      stopEl.setAttribute('stop-color', stop.color);
-      stopEl.setAttribute('stop-opacity', stop.opacity);
-      radialGradient.appendChild(stopEl);
-    });
-
-    defs.appendChild(radialGradient);
-    svg.appendChild(defs);
-
-    // Create segmented rings - exactly like the reference
+    // Create segmented rings - small squares arranged in circles
     const rings = [];
     const ringConfigs = [
-      { radius: center - 3, segments: 24, segmentLength: 2.5, gap: 1.5, color: '#ef4444', opacity: 0.8 }, // Red/orange inner
-      { radius: center - 7, segments: 28, segmentLength: 2.8, gap: 1.8, color: '#f97316', opacity: 0.7 }, // Orange
-      { radius: center - 11, segments: 32, segmentLength: 3, gap: 2, color: '#f59e0b', opacity: 0.6 },    // Amber
-      { radius: center - 15, segments: 36, segmentLength: 3.2, gap: 2.2, color: '#06b6d4', opacity: 0.5 }, // Cyan outer
+      // Outer to inner: red/pink → orange → amber
+      { radius: center - 4, segments: 20, squareSize: 2, color: '#ef4444', opacity: 0.9 },   // Red outer
+      { radius: center - 8, segments: 18, squareSize: 2, color: '#f97316', opacity: 0.85 },  // Orange
+      { radius: center - 12, segments: 16, squareSize: 2, color: '#f59e0b', opacity: 0.8 },  // Amber
+      { radius: center - 16, segments: 14, squareSize: 2, color: '#fbbf24', opacity: 0.75 }, // Yellow
     ];
 
     ringConfigs.forEach((config, ringIndex) => {
@@ -78,25 +53,20 @@ const AnimatedAvatar = ({ size = 40, className = "", state = 'idle' }) => {
       const segments = [];
       for (let i = 0; i < config.segments; i++) {
         const angle = (i / config.segments) * Math.PI * 2;
-        const nextAngle = ((i + 0.5) / config.segments) * Math.PI * 2;
 
-        // Calculate start and end points for segment arc
-        const x1 = center + Math.cos(angle) * config.radius;
-        const y1 = center + Math.sin(angle) * config.radius;
-        const x2 = center + Math.cos(nextAngle) * config.radius;
-        const y2 = center + Math.sin(nextAngle) * config.radius;
+        // Position square on the circle
+        const x = center + Math.cos(angle) * config.radius;
+        const y = center + Math.sin(angle) * config.radius;
 
-        // Create rectangular segment
+        // Create small square segment
         const segment = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        segment.setAttribute('x', x1 - 1);
-        segment.setAttribute('y', y1 - config.segmentLength / 2);
-        segment.setAttribute('width', 2);
-        segment.setAttribute('height', config.segmentLength);
+        segment.setAttribute('x', x - config.squareSize / 2);
+        segment.setAttribute('y', y - config.squareSize / 2);
+        segment.setAttribute('width', config.squareSize);
+        segment.setAttribute('height', config.squareSize);
         segment.setAttribute('fill', config.color);
         segment.setAttribute('opacity', config.opacity);
-        segment.setAttribute('rx', 0.5);
-        segment.style.transformOrigin = `${center}px ${center}px`;
-        segment.style.transform = `rotate(${(angle * 180 / Math.PI)}deg)`;
+        segment.setAttribute('rx', 0.3); // Slightly rounded corners
 
         ringGroup.appendChild(segment);
         segments.push(segment);
@@ -106,37 +76,49 @@ const AnimatedAvatar = ({ size = 40, className = "", state = 'idle' }) => {
       rings.push({ group: ringGroup, segments, config });
     });
 
-    // Create bright red pulsing center core
-    const centerCoreOuter = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    centerCoreOuter.setAttribute('cx', center);
-    centerCoreOuter.setAttribute('cy', center);
-    centerCoreOuter.setAttribute('r', 4);
-    centerCoreOuter.setAttribute('fill', 'url(#center-glow)');
-    centerCoreOuter.setAttribute('opacity', 0.6);
-    svg.appendChild(centerCoreOuter);
+    // Teal/cyan middle circle (solid circle, not segments)
+    const middleCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    middleCircle.setAttribute('cx', center);
+    middleCircle.setAttribute('cy', center);
+    middleCircle.setAttribute('r', 7);
+    middleCircle.setAttribute('fill', '#06b6d4');
+    middleCircle.setAttribute('opacity', 0.9);
+    svg.appendChild(middleCircle);
 
-    const centerCore = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    centerCore.setAttribute('cx', center);
-    centerCore.setAttribute('cy', center);
-    centerCore.setAttribute('r', 2.5);
-    centerCore.setAttribute('fill', '#ff0000');
-    centerCore.setAttribute('opacity', 1);
-    svg.appendChild(centerCore);
+    // Dark inner circle for depth
+    const innerDarkCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    innerDarkCircle.setAttribute('cx', center);
+    innerDarkCircle.setAttribute('cy', center);
+    innerDarkCircle.setAttribute('r', 4);
+    innerDarkCircle.setAttribute('fill', '#0e7490');
+    innerDarkCircle.setAttribute('opacity', 1);
+    svg.appendChild(innerDarkCircle);
 
-    const centerCoreInner = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    centerCoreInner.setAttribute('cx', center);
-    centerCoreInner.setAttribute('cy', center);
-    centerCoreInner.setAttribute('r', 1.2);
-    centerCoreInner.setAttribute('fill', '#ffffff');
-    centerCoreInner.setAttribute('opacity', 1);
-    svg.appendChild(centerCoreInner);
+    // Bright red center dot
+    const centerDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    centerDot.setAttribute('cx', center);
+    centerDot.setAttribute('cy', center);
+    centerDot.setAttribute('r', 2);
+    centerDot.setAttribute('fill', '#ff0000');
+    centerDot.setAttribute('opacity', 1);
+    svg.appendChild(centerDot);
+
+    // White highlight in center
+    const centerHighlight = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    centerHighlight.setAttribute('cx', center);
+    centerHighlight.setAttribute('cy', center);
+    centerHighlight.setAttribute('r', 0.8);
+    centerHighlight.setAttribute('fill', '#ffffff');
+    centerHighlight.setAttribute('opacity', 1);
+    svg.appendChild(centerHighlight);
 
     // Store elements for state changes
     elementsRef.current = {
       rings,
-      centerCore,
-      centerCoreOuter,
-      centerCoreInner,
+      middleCircle,
+      innerDarkCircle,
+      centerDot,
+      centerHighlight,
       svg
     };
 
@@ -151,32 +133,34 @@ const AnimatedAvatar = ({ size = 40, className = "", state = 'idle' }) => {
       timeline.add({
         targets: ring.group,
         rotate: i % 2 === 0 ? 360 : -360,
-        duration: 20000 - (i * 3000), // Slower outer rings
+        duration: 25000 - (i * 4000), // Slower rotation for smoother look
         easing: 'linear'
       }, 0);
     });
 
-    // Pulse center core
+    // Pulse middle teal circle
     timeline.add({
-      targets: centerCoreOuter,
-      scale: [1, 1.4, 1],
-      opacity: [0.4, 0.8, 0.4],
-      duration: 2000,
+      targets: middleCircle,
+      scale: [1, 1.1, 1],
+      opacity: [0.8, 1, 0.8],
+      duration: 3000,
       easing: 'easeInOutQuad'
     }, 0);
 
+    // Pulse center red dot
     timeline.add({
-      targets: centerCore,
-      scale: [1, 1.2, 1],
-      opacity: [0.9, 1, 0.9],
-      duration: 2000,
-      easing: 'easeInOutQuad'
-    }, 0);
-
-    timeline.add({
-      targets: centerCoreInner,
+      targets: centerDot,
       scale: [1, 1.3, 1],
       opacity: [0.9, 1, 0.9],
+      duration: 2000,
+      easing: 'easeInOutQuad'
+    }, 0);
+
+    // Pulse white highlight
+    timeline.add({
+      targets: centerHighlight,
+      scale: [1, 1.2, 1],
+      opacity: [0.8, 1, 0.8],
       duration: 2000,
       easing: 'easeInOutQuad'
     }, 0);
@@ -234,26 +218,32 @@ const AnimatedAvatar = ({ size = 40, className = "", state = 'idle' }) => {
 
   // Click/active effects
   useEffect(() => {
-    if (!elementsRef.current.centerCore) return;
+    if (!elementsRef.current.centerDot) return;
 
     if (isActive) {
       // Burst effect
       anime({
-        targets: elementsRef.current.centerCore,
+        targets: elementsRef.current.centerDot,
         scale: [1, 1.8, 1],
         duration: 500,
+        easing: 'easeOutElastic(1, .7)'
+      });
+
+      anime({
+        targets: elementsRef.current.middleCircle,
+        scale: [1, 1.3, 1],
+        duration: 600,
         easing: 'easeOutElastic(1, .7)'
       });
 
       if (elementsRef.current.rings) {
         elementsRef.current.rings.forEach((ring, i) => {
           anime({
-            targets: ring.group,
-            scale: [1, 1.1, 1],
-            opacity: [ring.config.opacity, ring.config.opacity * 1.5, ring.config.opacity],
+            targets: ring.segments,
+            scale: [1, 1.4, 1],
             duration: 600,
             easing: 'easeOutQuad',
-            delay: i * 50
+            delay: anime.stagger(15, {from: 'center'})
           });
         });
       }
