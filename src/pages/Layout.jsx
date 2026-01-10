@@ -137,12 +137,6 @@ const navigationItems = [
     icon: Inbox,
     permission: "inbox.view",
   },
-  {
-    title: "Sync",
-    url: createPageUrl("Sync"),
-    icon: Brain,
-    permission: null, // Always visible - core feature
-  },
 ];
 
 // Engine apps with permission requirements
@@ -568,8 +562,8 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
       {/* Top Profile Section */}
       <div className="flex flex-col items-center justify-center py-6 gap-4 transition-all duration-300 px-2">
         
-        {/* Settings via Animated Avatar */}
-        <Link to={createPageUrl("Settings")} className="relative group cursor-pointer flex flex-col items-center" aria-label="Go to Settings">
+        {/* SYNC via Animated Avatar */}
+        <Link to={createPageUrl("Sync")} className="relative group cursor-pointer flex flex-col items-center" aria-label="Go to SYNC">
           <div className="relative z-10">
             <AnimatedAvatar size={40} className="transition-all duration-300" />
           </div>
