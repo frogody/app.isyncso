@@ -103,6 +103,7 @@ import AppsManagerModal, { AVAILABLE_APPS } from "@/components/layout/AppsManage
 import { AchievementProvider } from "@/components/learn/AchievementContext";
 import { UserProvider, useTeamAccess } from "@/components/context/UserContext";
 import { PermissionProvider, usePermissions } from "@/components/context/PermissionContext";
+import { AnimationProvider, useAnimation } from "@/components/context/AnimationContext";
 
 // Navigation items with permission requirements
 // permission: null = always visible, string = requires that permission
@@ -472,6 +473,9 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
   // Get permission context - use the hook directly
   const { hasPermission, isAdmin, isManager, isLoading: permLoading } = usePermissions();
 
+  // Get animation context for avatar state
+  const { avatarState, triggerActivity } = useAnimation();
+
   // Get team-based app access
   const { effectiveApps, hasTeams, isLoading: teamLoading } = useTeamAccess();
 
@@ -572,7 +576,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
 
         {/* SYNC via Animated Avatar */}
         <Link to={createPageUrl("Sync")} className="relative z-40 group cursor-pointer flex flex-col items-center" aria-label="Go to SYNC">
-          <AnimatedAvatar size={48} className="transition-all duration-300" />
+          <AnimatedAvatar size={48} state={avatarState} className="transition-all duration-300" />
         </Link>
         </div>
 
@@ -587,6 +591,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
                               <Link
                                 key={item.title}
                                 to={item.url}
+                                onClick={triggerActivity}
                                 className={`flex items-center justify-center min-h-[44px] p-3 rounded-xl transition-all duration-200 group relative active:scale-[0.98]
                                   ${isActive
                                     ? 'text-cyan-400 bg-cyan-950/30'
@@ -633,6 +638,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
               <Link
                 key={item.title}
                 to={item.url}
+                onClick={triggerActivity}
                 className={`flex items-center justify-center min-h-[44px] p-3 rounded-xl transition-all duration-200 group relative active:scale-[0.98]
                   ${isActive
                     ? `${colors.text} ${colors.bg}`
@@ -662,6 +668,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
                 <Link
                   key={item.title}
                   to={item.url}
+                  onClick={triggerActivity}
                   className={`flex items-center justify-center min-h-[44px] p-3 rounded-xl transition-all duration-200 group relative active:scale-[0.98]
                     ${isActive
                       ? 'text-purple-400 bg-purple-950/30'
@@ -875,6 +882,7 @@ export default function Layout({ children, currentPageName }) {
     <ErrorBoundary>
       <OnboardingGuard>
           <UserProvider>
+          <AnimationProvider>
           <PermissionProvider>
             <AchievementProvider>
               <Toaster />
@@ -1124,6 +1132,7 @@ export default function Layout({ children, currentPageName }) {
         </div>
           </AchievementProvider>
           </PermissionProvider>
+          </AnimationProvider>
         </UserProvider>
         </OnboardingGuard>
         </ErrorBoundary>

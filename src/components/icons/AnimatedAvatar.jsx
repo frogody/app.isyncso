@@ -1,16 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import anime from '@/lib/anime-wrapper';
 
-const AnimatedAvatar = ({ size = 160, className = "" }) => {
+const AnimatedAvatar = ({ size = 160, state = 'idle', className = "" }) => {
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
   const stateRef = useRef({
     outerRingRotation: 0,
-    tickWaveOffset: 0,
-    arcTrail1Rotation: 0,
-    arcTrail2Rotation: 0,
-    arcTrail3Rotation: 0,
-    orbitRotation: 0,
     morphProgress: 0,
     morphState: 0, // 0, 1, 2 for three states
   });
@@ -32,51 +27,22 @@ const AnimatedAvatar = ({ size = 160, className = "" }) => {
     const center = size / 2;
     const radius = size / 2 - 5; // Minimal padding for small sizes
 
+    // State-based animation speed
+    const getAnimationSpeed = (state) => {
+      switch(state) {
+        case 'idle': return 1.0;    // Normal speed
+        case 'active': return 2.5;  // 2.5x faster
+        case 'loading': return 0.5; // Slower, pulsing
+        default: return 1.0;
+      }
+    };
+    const speedMultiplier = getAnimationSpeed(state);
+
     // Animation timelines with anime.js
     const outerRingAnim = anime({
       targets: stateRef.current,
       outerRingRotation: 360,
-      duration: 30000,
-      easing: 'linear',
-      loop: true
-    });
-
-    const tickWaveAnim = anime({
-      targets: stateRef.current,
-      tickWaveOffset: Math.PI * 2,
-      duration: 4000,
-      easing: 'linear',
-      loop: true
-    });
-
-    const arcTrail1Anim = anime({
-      targets: stateRef.current,
-      arcTrail1Rotation: 360,
-      duration: 20000,
-      easing: 'linear',
-      loop: true
-    });
-
-    const arcTrail2Anim = anime({
-      targets: stateRef.current,
-      arcTrail2Rotation: -360,
-      duration: 25000,
-      easing: 'linear',
-      loop: true
-    });
-
-    const arcTrail3Anim = anime({
-      targets: stateRef.current,
-      arcTrail3Rotation: 360,
-      duration: 35000,
-      easing: 'linear',
-      loop: true
-    });
-
-    const orbitAnim = anime({
-      targets: stateRef.current,
-      orbitRotation: 360,
-      duration: 15000,
+      duration: 30000 / speedMultiplier,
       easing: 'linear',
       loop: true
     });
@@ -85,7 +51,7 @@ const AnimatedAvatar = ({ size = 160, className = "" }) => {
     const morphAnim = anime({
       targets: stateRef.current,
       morphProgress: [
-        { value: 1, duration: 3500, easing: 'easeInOutQuad' },
+        { value: 1, duration: 3500 / speedMultiplier, easing: 'easeInOutQuad' },
         { value: 0, duration: 100, easing: 'linear' }
       ],
       loop: true,
@@ -99,8 +65,8 @@ const AnimatedAvatar = ({ size = 160, className = "" }) => {
     // Draw functions
     const drawOuterRing = () => {
       const rotation = (stateRef.current.outerRingRotation * Math.PI) / 180;
-      const segments = size < 80 ? 120 : 360; // Fewer segments for small sizes
-      const strokeWidth = Math.max(1.5, size / 24); // Thinner stroke for small sizes
+      const segments = size < 80 ? 180 : 360; // More segments for smoother edges
+      const strokeWidth = Math.max(1.2, size / 28); // Thinner stroke for cleaner edges
 
       for (let i = 0; i < segments; i++) {
         const angle = (i / segments) * Math.PI * 2 + rotation;
@@ -118,60 +84,6 @@ const AnimatedAvatar = ({ size = 160, className = "" }) => {
         ctx.arc(center, center, radius, angle, nextAngle);
         ctx.stroke();
       }
-    };
-
-    const drawTickMarks = () => {
-      const numTicks = size < 80 ? 24 : 72; // Fewer ticks for small sizes
-      const tickRadius = radius * 0.80;
-
-      for (let i = 0; i < numTicks; i++) {
-        const angle = (i / numTicks) * Math.PI * 2;
-        const wave = Math.sin(angle * 3 + stateRef.current.tickWaveOffset);
-        const baseTickLength = Math.max(1.5, size / 35);
-        const tickLength = baseTickLength + wave * (baseTickLength * 0.4);
-        const highlight = wave > 0.5;
-
-        ctx.strokeStyle = highlight ? '#555566' : '#333344';
-        ctx.lineWidth = size < 80 ? 0.8 : 1.5;
-        ctx.lineCap = 'butt';
-
-        const x1 = center + Math.cos(angle) * tickRadius;
-        const y1 = center + Math.sin(angle) * tickRadius;
-        const x2 = center + Math.cos(angle) * (tickRadius - tickLength);
-        const y2 = center + Math.sin(angle) * (tickRadius - tickLength);
-
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.stroke();
-      }
-    };
-
-    const drawArcTrails = () => {
-      // Arc trail 1
-      const rotation1 = (stateRef.current.arcTrail1Rotation * Math.PI) / 180;
-      ctx.strokeStyle = 'rgba(255, 136, 102, 0.4)';
-      ctx.lineWidth = Math.max(1, size / 40);
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.arc(center, center, radius * 0.65, rotation1, rotation1 + Math.PI / 2);
-      ctx.stroke();
-
-      // Arc trail 2
-      const rotation2 = (stateRef.current.arcTrail2Rotation * Math.PI) / 180;
-      ctx.strokeStyle = 'rgba(255, 136, 102, 0.3)';
-      ctx.lineWidth = Math.max(0.8, size / 50);
-      ctx.beginPath();
-      ctx.arc(center, center, radius * 0.50, rotation2, rotation2 + Math.PI / 3);
-      ctx.stroke();
-
-      // Arc trail 3
-      const rotation3 = (stateRef.current.arcTrail3Rotation * Math.PI) / 180;
-      ctx.strokeStyle = 'rgba(255, 136, 102, 0.35)';
-      ctx.lineWidth = Math.max(0.9, size / 45);
-      ctx.beginPath();
-      ctx.arc(center, center, radius * 0.57, rotation3, rotation3 + Math.PI / 2.5);
-      ctx.stroke();
     };
 
     const drawCentralShape = () => {
@@ -228,28 +140,6 @@ const AnimatedAvatar = ({ size = 160, className = "" }) => {
       }
     };
 
-    const drawOrbitingDots = () => {
-      const numDots = size < 80 ? 12 : 20; // Fewer dots for small sizes
-      const orbitRotation = (stateRef.current.orbitRotation * Math.PI) / 180;
-      const ellipseA = radius * 0.38; // Smaller orbit
-      const ellipseB = radius * 0.25; // Smaller orbit
-
-      for (let i = 0; i < numDots; i++) {
-        const angle = (i / numDots) * Math.PI * 2;
-        const stagger = Math.sin(angle * 2) * 0.2;
-        const adjustedAngle = angle + orbitRotation + stagger;
-
-        const x = center + Math.cos(adjustedAngle) * ellipseA;
-        const y = center + Math.sin(adjustedAngle) * ellipseB;
-        const dotSize = Math.max(0.8, size / 60) + Math.sin(angle * 3) * (size / 120);
-
-        ctx.fillStyle = '#ff6b6b';
-        ctx.beginPath();
-        ctx.arc(x, y, dotSize, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    };
-
     const drawGlow = () => {
       const glowRadius = Math.max(radius * 0.35, 3); // Smaller glow for compact look
       const gradient = ctx.createRadialGradient(center, center, 0, center, center, glowRadius);
@@ -264,17 +154,25 @@ const AnimatedAvatar = ({ size = 160, className = "" }) => {
 
     // Main animation loop
     const animate = () => {
-      // Clear canvas
-      ctx.fillStyle = '#1a1a2e';
+      // Clear canvas with pure black to match app background
+      ctx.fillStyle = '#000000';
       ctx.fillRect(0, 0, size, size);
 
-      // Draw layers from back to front
+      // Apply pulsing effect for loading state
+      if (state === 'loading') {
+        const pulse = Math.sin(Date.now() / 300) * 0.15 + 0.85; // 0.7-1.0 range
+        ctx.globalAlpha = pulse;
+      } else {
+        ctx.globalAlpha = 1.0;
+      }
+
+      // Draw simplified 3-layer design
       drawGlow();
-      drawArcTrails();
-      drawTickMarks();
       drawOuterRing();
-      drawOrbitingDots();
       drawCentralShape();
+
+      // Reset global alpha
+      ctx.globalAlpha = 1.0;
 
       animationRef.current = requestAnimationFrame(animate);
     };
@@ -287,14 +185,9 @@ const AnimatedAvatar = ({ size = 160, className = "" }) => {
         cancelAnimationFrame(animationRef.current);
       }
       outerRingAnim.pause();
-      tickWaveAnim.pause();
-      arcTrail1Anim.pause();
-      arcTrail2Anim.pause();
-      arcTrail3Anim.pause();
-      orbitAnim.pause();
       morphAnim.pause();
     };
-  }, [size]);
+  }, [size, state]);
 
   return (
     <div className={className}>
