@@ -383,13 +383,14 @@ function getExpenseStatusStyle(statusKey) {
 }
 
 // Expense card
-function ExpenseCard({ expense, onReview }) {
+function ExpenseCard({ expense, onReview, onRetry }) {
   // Defensive: ensure expense exists
   if (!expense) return null;
 
   // Get safe style object
   const status = getExpenseStatusStyle(expense.status);
   const needsReview = expense.needs_review && expense.review_status === "pending";
+  const isFailed = expense.status === 'failed';
 
   return (
     <motion.div
@@ -456,7 +457,26 @@ function ExpenseCard({ expense, onReview }) {
           )}
         </div>
 
-        {needsReview ? (
+        {isFailed ? (
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              onClick={() => onRetry(expense)}
+              className="bg-amber-600 hover:bg-amber-700"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Opnieuw proberen
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onReview(expense)}
+            >
+              <Eye className="w-4 h-4 mr-2" />
+              Details
+            </Button>
+          </div>
+        ) : needsReview ? (
           <Button
             size="sm"
             onClick={() => onReview(expense)}
@@ -922,6 +942,51 @@ export default function InventoryExpenses() {
     }
   };
 
+  const handleRetry = async (expense) => {
+    try {
+      toast.loading("Opnieuw verwerken...", { id: "retry-expense" });
+
+      // Call process-invoice edge function with retry mode
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-invoice`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            _mode: "process",
+            _expenseId: expense.id,
+            _imageUrl: expense.original_file_url,
+            companyId: companyId,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success("Factuur wordt opnieuw verwerkt", { id: "retry-expense" });
+
+        // Wait a moment then refresh
+        setTimeout(async () => {
+          const [expenseData, queueData] = await Promise.all([
+            listExpenses(companyId),
+            getReviewQueue(companyId),
+          ]);
+          setExpenses(expenseData);
+          setReviewQueue(queueData);
+        }, 2000);
+      } else {
+        toast.error("Verwerking mislukt: " + (result.error || "Onbekende fout"), { id: "retry-expense" });
+      }
+    } catch (error) {
+      console.error("Retry error:", error);
+      toast.error("Kon factuur niet opnieuw verwerken", { id: "retry-expense" });
+    }
+  };
+
   const handleApprove = async (expenseId, notes) => {
     await approveExpense(expenseId, user?.id, notes);
     // Refresh
@@ -1054,6 +1119,7 @@ export default function InventoryExpenses() {
                   key={expense.id}
                   expense={expense}
                   onReview={handleReview}
+                  onRetry={handleRetry}
                 />
               ))}
             </div>
