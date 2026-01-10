@@ -598,6 +598,9 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { storagePath, bucket, companyId, userId, sourceEmailId, imageUrl: directImageUrl, pdfText, _mode, _expenseId, _imageUrl, _pdfText } = body;
 
+    console.log('Request body keys:', Object.keys(body));
+    console.log('PDF text present:', !!pdfText, 'Length:', pdfText?.length || 0);
+
     // ASYNC MODE: Process existing expense (called by ourselves)
     if (_mode === 'process' && _expenseId && _imageUrl) {
       console.log(`[ASYNC MODE] Processing expense ${_expenseId}`, { hasPdfText: !!_pdfText });
@@ -669,7 +672,7 @@ Deno.serve(async (req) => {
 
     // If we have PDF text, process immediately (faster and more reliable)
     if (pdfText && pdfText.trim().length > 0) {
-      console.log(`Processing expense ${expense.id} immediately with PDF text`);
+      console.log(`Processing expense ${expense.id} immediately with PDF text (length: ${pdfText.length})`);
       await processExpenseAsync(supabase, groqApiKey, expense.id, imageUrl, companyId, pdfText);
 
       return new Response(
