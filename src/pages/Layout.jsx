@@ -547,7 +547,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
   };
 
   return (
-    <div className="flex flex-col h-full relative">
+    <div className="flex flex-col h-full relative overflow-visible">
       {/* Apps Manager Button (Desktop only) */}
       {!isMobile && (
         <button
@@ -559,14 +559,21 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
         </button>
       )}
 
-      {/* Top Profile Section */}
-      <div className="flex flex-col items-center justify-center py-6 gap-4 transition-all duration-300 px-2">
+      {/* Top Profile Section with Circular Bulge */}
+      <div className="relative flex flex-col items-center justify-center pt-8 pb-6 transition-all duration-300">
+        {/* Circular Background Bulge - extends beyond sidebar */}
+        <div
+          className="absolute top-4 left-1/2 -translate-x-1/2 w-[150px] h-[150px] rounded-full border border-white/10"
+          style={{
+            background: 'radial-gradient(circle at center, rgba(20,20,30,0.8) 0%, rgba(10,10,15,0.95) 100%)',
+            boxShadow: '0 0 40px rgba(0,0,0,0.6), inset 0 0 20px rgba(255,255,255,0.02)'
+          }}
+        ></div>
 
         {/* SYNC via Animated Avatar */}
-        <Link to={createPageUrl("Sync")} className="relative group cursor-pointer flex flex-col items-center" aria-label="Go to SYNC">
-          <AnimatedAvatar size={80} className="transition-all duration-300" />
+        <Link to={createPageUrl("Sync")} className="relative z-10 group cursor-pointer flex flex-col items-center" aria-label="Go to SYNC">
+          <AnimatedAvatar size={120} className="transition-all duration-300" />
         </Link>
-
         </div>
 
       {/* Navigation - Mobile optimized with larger touch targets */}
@@ -1045,7 +1052,7 @@ export default function Layout({ children, currentPageName }) {
 
         <div className="flex h-screen">
           {/* Desktop/Tablet Sidebar - Wider for avatar */}
-          <div className="hidden md:flex flex-col sidebar-shell w-[120px]">
+          <div className="hidden md:flex flex-col sidebar-shell w-[80px] overflow-visible">
             <SidebarContent
               currentPageName={currentPageName}
               secondaryNavConfig={secondaryNavConfig}
