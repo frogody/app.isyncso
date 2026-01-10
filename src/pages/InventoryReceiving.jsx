@@ -781,8 +781,14 @@ export default function InventoryReceiving() {
 
   return (
     <PermissionGuard permission="inventory.manage" showMessage>
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 pt-6">
+      <div className="min-h-screen bg-black relative">
+        {/* Background */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-20 right-1/4 w-96 h-96 bg-cyan-900/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-cyan-950/10 rounded-full blur-3xl" />
+        </div>
+
+        <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
           <div ref={headerRef} style={{ opacity: 0 }}>
             <PageHeader
               title="Ontvangst"
@@ -790,9 +796,8 @@ export default function InventoryReceiving() {
               icon={Package}
             />
           </div>
-        </div>
 
-        <div className="container mx-auto px-4 py-6">
+          <div>
           {/* Stats */}
           <div ref={statsRef} className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6" style={{ opacity: 0 }}>
             <StatCard
@@ -928,6 +933,7 @@ export default function InventoryReceiving() {
               </div>
             )}
           </GlassCard>
+        </div>
         </div>
       </div>
     </PermissionGuard>

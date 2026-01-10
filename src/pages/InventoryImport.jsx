@@ -662,8 +662,14 @@ export default function InventoryImport() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 p-6">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div className="min-h-screen bg-black relative">
+      {/* Background */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-20 right-1/4 w-96 h-96 bg-cyan-900/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-cyan-950/10 rounded-full blur-3xl" />
+      </div>
+
+      <div className="relative z-10 max-w-6xl mx-auto px-6 py-6 space-y-8">
         {/* Header */}
         <div ref={headerRef} className="flex items-center justify-between" style={{ opacity: 0 }}>
           <div>
