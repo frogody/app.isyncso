@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
-import anime from 'animejs';
+import anime from '@/lib/anime-wrapper';
 const animate = anime;
 const stagger = anime.stagger;
 import { prefersReducedMotion } from '@/lib/animations';

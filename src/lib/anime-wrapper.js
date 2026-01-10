@@ -1,9 +1,10 @@
 // Wrapper to ensure proper ES module export of anime.js
-// Import directly from node_modules to avoid alias issues
-import animeLib from '../../node_modules/animejs/lib/anime.es.js';
+// This file acts as a stable interface for anime.js imports
+// eslint-disable-next-line import/no-unresolved
+import * as animeModule from 'animejs/lib/anime.es.js';
+
+// anime.es.js exports anime as default
+const anime = animeModule.default || animeModule;
 
 // Re-export as default
-export default animeLib;
-
-// Also export as named export for flexibility
-export const anime = animeLib;
+export default anime;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import anime from 'animejs';
+import anime from '@/lib/anime-wrapper';
 const animate = anime;
 const stagger = anime.stagger;
 import { base44, supabase } from "@/api/base44Client";

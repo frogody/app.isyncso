@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
-import anime from 'animejs';
+import anime from '@/lib/anime-wrapper';
 const animate = anime;
 import { prefersReducedMotion } from '@/lib/animations';
 import { Link } from "react-router-dom";

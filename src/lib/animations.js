@@ -1,4 +1,4 @@
-import anime from 'animejs';
+import anime from '@/lib/anime-wrapper';
 
 // Extract animate and stagger from anime
 const animate = anime;

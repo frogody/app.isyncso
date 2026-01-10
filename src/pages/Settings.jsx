@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import anime from 'animejs';
+import anime from '@/lib/anime-wrapper';
 const animate = anime;
 import { prefersReducedMotion } from '@/lib/animations';
 import { base44 } from "@/api/base44Client";

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
-import anime from 'animejs';
+import anime from '@/lib/anime-wrapper';
 const animate = anime;
 const stagger = anime.stagger;
 import { prefersReducedMotion } from '@/lib/animations';

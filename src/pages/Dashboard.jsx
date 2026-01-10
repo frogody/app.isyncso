@@ -5,7 +5,7 @@ import { createPageUrl } from "@/utils";
 import { useUser } from "@/components/context/UserContext";
 import { usePermissions } from "@/components/context/PermissionContext";
 import { motion } from "framer-motion";
-import anime from 'animejs';
+import anime from '@/lib/anime-wrapper';
 const animate = anime;
 const stagger = anime.stagger;
 import { prefersReducedMotion } from '@/lib/animations';
