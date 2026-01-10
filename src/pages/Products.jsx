@@ -1,5 +1,8 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
+import anime from '@/lib/anime-wrapper';
+const animate = anime;
+import { prefersReducedMotion } from '@/lib/animations';
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
@@ -101,6 +104,9 @@ function QuickStatCard({ icon: Icon, label, value, sublabel, color = 'purple' })
     green: 'bg-green-500/10 border-green-500/30 text-green-400',
   };
 
+  // Parse numeric value for count-up animation
+  const numValue = typeof value === 'string' && value !== '-' ? parseInt(value) || 0 : (typeof value === 'number' ? value : 0);
+
   return (
     <div className="p-4 rounded-xl bg-zinc-900/50 border border-white/5">
       <div className="flex items-center gap-3">
@@ -108,7 +114,11 @@ function QuickStatCard({ icon: Icon, label, value, sublabel, color = 'purple' })
           <Icon className="w-5 h-5" />
         </div>
         <div>
-          <div className="text-2xl font-bold text-white">{value}</div>
+          {value === '-' ? (
+            <div className="text-2xl font-bold text-white">-</div>
+          ) : (
+            <div className="stat-number text-2xl font-bold text-white" data-value={numValue}>0</div>
+          )}
           <div className="text-sm text-zinc-500">{label}</div>
         </div>
       </div>
@@ -133,6 +143,11 @@ export default function Products() {
   const [digitalEnabled, setDigitalEnabled] = useState(true);
   const [physicalEnabled, setPhysicalEnabled] = useState(true);
   const [settingsSaving, setSettingsSaving] = useState(false);
+
+  // Refs for anime.js animations
+  const headerRef = useRef(null);
+  const statsRef = useRef(null);
+  const productsGridRef = useRef(null);
 
   // SEO: Set page title
   useEffect(() => {
@@ -303,6 +318,78 @@ export default function Products() {
     ).slice(0, 6);
   }, [products, digitalEnabled, physicalEnabled, searchQuery]);
 
+  // Animate header on mount
+  useEffect(() => {
+    if (!headerRef.current || prefersReducedMotion()) return;
+
+    animate({
+      targets: headerRef.current,
+      translateY: [-20, 0],
+      opacity: [0, 1],
+      duration: 500,
+      easing: 'easeOutQuart',
+    });
+  }, []);
+
+  // Animate stats bar with count-up
+  useEffect(() => {
+    if (loading || !statsRef.current || prefersReducedMotion()) return;
+
+    // Entrance animation for stats bar
+    animate({
+      targets: statsRef.current,
+      translateY: [15, 0],
+      opacity: [0, 1],
+      duration: 400,
+      easing: 'easeOutQuad',
+      delay: 100,
+    });
+
+    // Count-up animation for stat numbers
+    const statValues = statsRef.current.querySelectorAll('.stat-number');
+    statValues.forEach(el => {
+      const endValue = parseFloat(el.dataset.value) || 0;
+      const obj = { value: 0 };
+
+      animate({
+        targets: obj,
+        value: endValue,
+        round: 1,
+        duration: 1000,
+        delay: 200,
+        easing: 'easeOutExpo',
+        update: () => {
+          el.textContent = obj.value;
+        },
+      });
+    });
+  }, [loading, stats]);
+
+  // Animate product cards when loaded
+  useEffect(() => {
+    if (loading || !productsGridRef.current || prefersReducedMotion()) return;
+
+    const cards = productsGridRef.current.querySelectorAll('.product-card');
+    if (cards.length === 0) return;
+
+    // Set initial state
+    Array.from(cards).forEach(card => {
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(25px) scale(0.96)';
+    });
+
+    // Staggered entrance animation
+    animate({
+      targets: cards,
+      translateY: [25, 0],
+      scale: [0.96, 1],
+      opacity: [0, 1],
+      delay: anime.stagger(40, { start: 150 }),
+      duration: 450,
+      easing: 'easeOutQuart',
+    });
+  }, [loading, filteredProducts]);
+
   return (
     <div className="min-h-screen bg-black relative">
       {/* Background */}
@@ -313,11 +400,12 @@ export default function Products() {
 
       <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
         {/* Page Header */}
-        <PageHeader
-          title="Products"
-          subtitle="Manage your digital and physical product catalog"
-          icon={Package}
-          color="cyan"
+        <div ref={headerRef} style={{ opacity: 0 }}>
+          <PageHeader
+            title="Products"
+            subtitle="Manage your digital and physical product catalog"
+            icon={Package}
+            color="cyan"
           actions={
             <div className="flex items-center gap-3">
               {/* Settings Popover */}
@@ -388,10 +476,11 @@ export default function Products() {
               </Button>
             </div>
           }
-        />
+          />
+        </div>
 
         {/* Stats Row */}
-        <div className={`grid gap-4 ${digitalEnabled && physicalEnabled ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-6' : 'grid-cols-2 md:grid-cols-4'}`}>
+        <div ref={statsRef} className={`grid gap-4 ${digitalEnabled && physicalEnabled ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-6' : 'grid-cols-2 md:grid-cols-4'}`} style={{ opacity: 0 }}>
           <QuickStatCard
             icon={Package}
             label="Total Products"
@@ -522,16 +611,11 @@ export default function Products() {
               ))}
             </div>
           ) : filteredProducts.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div ref={productsGridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredProducts.map((product, index) => (
-                <motion.div
-                  key={product.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                >
+                <div key={product.id} className="product-card">
                   <ProductCard product={product} />
-                </motion.div>
+                </div>
               ))}
             </div>
           ) : (

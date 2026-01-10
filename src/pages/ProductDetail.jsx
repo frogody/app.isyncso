@@ -1,5 +1,8 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import anime from '@/lib/anime-wrapper';
+const animate = anime;
+import { prefersReducedMotion } from '@/lib/animations';
 import { Link, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
@@ -143,7 +146,7 @@ function StatCard({ icon: Icon, label, value, subtext, trend, color = "cyan" }) 
   };
 
   return (
-    <div className="p-4 rounded-xl bg-zinc-900/50 border border-white/5">
+    <div className="stat-card p-4 rounded-xl bg-zinc-900/50 border border-white/5">
       <div className="flex items-start justify-between mb-2">
         <div className={cn("w-10 h-10 rounded-lg border flex items-center justify-center", colors[color])}>
           <Icon className="w-5 h-5" />
@@ -205,7 +208,8 @@ function OverviewSection({
   isPhysical,
   onUpdate,
   onDetailsUpdate,
-  saving
+  saving,
+  statsGridRef
 }) {
   const [localImages, setLocalImages] = useState(product.gallery || []);
   const [localFeatured, setLocalFeatured] = useState(product.featured_image);
@@ -384,10 +388,10 @@ function OverviewSection({
         </GlassCard>
 
         {/* Key Info Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div ref={statsGridRef} className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {isPhysical && (
             <>
-              <div className="p-3 rounded-xl bg-zinc-900/50 border border-white/5">
+              <div className="stat-card p-3 rounded-xl bg-zinc-900/50 border border-white/5">
                 <InlineEditText
                   value={details?.country_of_origin}
                   onSave={(val) => onDetailsUpdate({ country_of_origin: val })}
@@ -396,7 +400,7 @@ function OverviewSection({
                   textClassName="text-sm"
                 />
               </div>
-              <div className="p-3 rounded-xl bg-zinc-900/50 border border-white/5">
+              <div className="stat-card p-3 rounded-xl bg-zinc-900/50 border border-white/5">
                 <InlineEditText
                   value={details?.mpn}
                   onSave={(val) => onDetailsUpdate({ mpn: val })}
@@ -408,7 +412,7 @@ function OverviewSection({
             </>
           )}
           {supplier && (
-            <div className="p-3 rounded-xl bg-zinc-900/50 border border-white/5">
+            <div className="stat-card p-3 rounded-xl bg-zinc-900/50 border border-white/5">
               <div className="flex items-center gap-2 text-zinc-500 mb-1">
                 <Building2 className="w-3 h-3" />
                 <span className="text-xs">Supplier</span>
@@ -416,7 +420,7 @@ function OverviewSection({
               <p className="text-white text-sm">{supplier.name}</p>
             </div>
           )}
-          <div className="p-3 rounded-xl bg-zinc-900/50 border border-white/5">
+          <div className="stat-card p-3 rounded-xl bg-zinc-900/50 border border-white/5">
             <InlineEditText
               value={product.category}
               onSave={(val) => onUpdate({ category: val })}
@@ -1533,6 +1537,10 @@ export default function ProductDetail() {
   // Modal states
   const [inquiryModalOpen, setInquiryModalOpen] = useState(false);
 
+  // Refs for anime.js animations
+  const headerRef = useRef(null);
+  const statsGridRef = useRef(null);
+
   const isPhysical = type === 'physical';
   const currency = details?.pricing?.currency || 'EUR';
 
@@ -1597,6 +1605,43 @@ export default function ProductDetail() {
   useEffect(() => {
     loadProduct();
   }, [slug, type]);
+
+  // Animate header on load
+  useEffect(() => {
+    if (loading || !headerRef.current || prefersReducedMotion()) return;
+
+    animate({
+      targets: headerRef.current,
+      translateY: [-20, 0],
+      opacity: [0, 1],
+      duration: 500,
+      easing: 'easeOutQuart',
+    });
+  }, [loading]);
+
+  // Animate stats cards when in overview section
+  useEffect(() => {
+    if (loading || activeSection !== 'overview' || !statsGridRef.current || prefersReducedMotion()) return;
+
+    const statCards = statsGridRef.current.querySelectorAll('.stat-card');
+    if (statCards.length === 0) return;
+
+    // Set initial state
+    Array.from(statCards).forEach(card => {
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(20px)';
+    });
+
+    // Staggered entrance animation
+    animate({
+      targets: statCards,
+      translateY: [20, 0],
+      opacity: [0, 1],
+      delay: anime.stagger(60, { start: 100 }),
+      duration: 400,
+      easing: 'easeOutQuart',
+    });
+  }, [loading, activeSection]);
 
   // Handle product update
   const handleProductUpdate = async (updates) => {
@@ -1726,7 +1771,7 @@ export default function ProductDetail() {
 
       <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div ref={headerRef} style={{ opacity: 0 }} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Link to={createPageUrl(backUrl)}>
               <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white -ml-2">
@@ -1776,6 +1821,7 @@ export default function ProductDetail() {
                 onUpdate={handleProductUpdate}
                 onDetailsUpdate={handleDetailsUpdate}
                 saving={saving}
+                statsGridRef={statsGridRef}
               />
             )}
 

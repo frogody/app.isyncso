@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import anime from '@/lib/anime-wrapper';
+const animate = anime;
+import { prefersReducedMotion } from '@/lib/animations';
 import {
   Package, Scan, Check, AlertTriangle, Plus, Minus,
   Camera, Barcode, Boxes, ArrowRight, X, RefreshCw,
@@ -628,6 +631,11 @@ export default function InventoryReceiving() {
 
   const companyId = user?.company_id;
 
+  // Refs for anime.js animations
+  const headerRef = useRef(null);
+  const statsRef = useRef(null);
+  const [dataLoaded, setDataLoaded] = useState(false);
+
   // Load initial data
   useEffect(() => {
     if (!companyId) return;
@@ -655,14 +663,43 @@ export default function InventoryReceiving() {
           receivedToday: todayReceiving.reduce((sum, r) => sum + r.quantity_received, 0),
           partialDeliveries: deliveries.filter((d) => d.status === 'partial').length,
         });
+        setDataLoaded(true);
       } catch (error) {
         console.error('Failed to load receiving data:', error);
         toast.error('Kon gegevens niet laden');
+        setDataLoaded(true); // Set to true even on error to show UI
       }
     };
 
     loadData();
   }, [companyId]);
+
+  // Animate header on mount
+  useEffect(() => {
+    if (!headerRef.current || prefersReducedMotion()) return;
+
+    animate({
+      targets: headerRef.current,
+      translateY: [-20, 0],
+      opacity: [0, 1],
+      duration: 500,
+      easing: 'easeOutQuart',
+    });
+  }, []);
+
+  // Animate stats bar with entrance animation
+  useEffect(() => {
+    if (!dataLoaded || !statsRef.current || prefersReducedMotion()) return;
+
+    animate({
+      targets: statsRef.current,
+      translateY: [15, 0],
+      opacity: [0, 1],
+      duration: 400,
+      easing: 'easeOutQuad',
+      delay: 100,
+    });
+  }, [dataLoaded]);
 
   // Handle barcode scan
   const handleScan = async (ean) => {
@@ -746,16 +783,18 @@ export default function InventoryReceiving() {
     <PermissionGuard permission="inventory.manage" showMessage>
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 pt-6">
-          <PageHeader
-            title="Ontvangst"
-            subtitle="Scan producten om voorraad te ontvangen"
-            icon={Package}
-          />
+          <div ref={headerRef} style={{ opacity: 0 }}>
+            <PageHeader
+              title="Ontvangst"
+              subtitle="Scan producten om voorraad te ontvangen"
+              icon={Package}
+            />
+          </div>
         </div>
 
         <div className="container mx-auto px-4 py-6">
           {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div ref={statsRef} className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6" style={{ opacity: 0 }}>
             <StatCard
               icon={Boxes}
               label="Verwachte leveringen"

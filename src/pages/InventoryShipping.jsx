@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import anime from '@/lib/anime-wrapper';
+const animate = anime;
+import { prefersReducedMotion } from '@/lib/animations';
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
@@ -411,6 +414,10 @@ export default function InventoryShipping() {
 
   const companyId = user?.company_id;
 
+  // Refs for anime.js animations
+  const headerRef = useRef(null);
+  const statsRef = useRef(null);
+
   // Load tasks
   useEffect(() => {
     if (!companyId) return;
@@ -434,6 +441,33 @@ export default function InventoryShipping() {
 
     loadTasks();
   }, [companyId]);
+
+  // Animate header on mount
+  useEffect(() => {
+    if (!headerRef.current || prefersReducedMotion()) return;
+
+    animate({
+      targets: headerRef.current,
+      translateY: [-20, 0],
+      opacity: [0, 1],
+      duration: 500,
+      easing: 'easeOutQuart',
+    });
+  }, []);
+
+  // Animate stats bar
+  useEffect(() => {
+    if (isLoading || !statsRef.current || prefersReducedMotion()) return;
+
+    animate({
+      targets: statsRef.current,
+      translateY: [15, 0],
+      opacity: [0, 1],
+      duration: 400,
+      easing: 'easeOutQuad',
+      delay: 100,
+    });
+  }, [isLoading]);
 
   // Filter tasks
   const filteredTasks = tasks.filter((task) => {
@@ -487,11 +521,13 @@ export default function InventoryShipping() {
     <PermissionGuard permission="shipping.manage" showMessage>
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 pt-6">
-          <PageHeader
-            title="Verzendingen"
-            subtitle="Beheer verzendtaken en track & trace"
-            icon={Truck}
-          />
+          <div ref={headerRef} style={{ opacity: 0 }}>
+            <PageHeader
+              title="Verzendingen"
+              subtitle="Beheer verzendtaken en track & trace"
+              icon={Truck}
+            />
+          </div>
         </div>
 
         <div className="container mx-auto px-4 py-6">
@@ -502,7 +538,7 @@ export default function InventoryShipping() {
           />
 
           {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div ref={statsRef} className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6" style={{ opacity: 0 }}>
             <StatCard
               icon={Clock}
               label="Te verzenden"

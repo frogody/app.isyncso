@@ -2,6 +2,9 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { motion, AnimatePresence } from "framer-motion";
+import anime from '@/lib/anime-wrapper';
+const animate = anime;
+import { prefersReducedMotion } from '@/lib/animations';
 import {
   Receipt, Search, Filter, Clock, Check, X, AlertTriangle,
   Eye, FileText, Upload, Sparkles, ChevronRight, Edit2,
@@ -822,6 +825,10 @@ export default function InventoryExpenses() {
 
   const companyId = user?.company_id;
 
+  // Refs for anime.js animations
+  const headerRef = useRef(null);
+  const statsRef = useRef(null);
+
   // Load expenses function (can be called for refresh)
   const loadExpenses = useCallback(async () => {
     if (!companyId) return;
@@ -846,6 +853,33 @@ export default function InventoryExpenses() {
   useEffect(() => {
     loadExpenses();
   }, [loadExpenses]);
+
+  // Animate header on mount
+  useEffect(() => {
+    if (!headerRef.current || prefersReducedMotion()) return;
+
+    animate({
+      targets: headerRef.current,
+      translateY: [-20, 0],
+      opacity: [0, 1],
+      duration: 500,
+      easing: 'easeOutQuart',
+    });
+  }, []);
+
+  // Animate stats bar
+  useEffect(() => {
+    if (isLoading || !statsRef.current || prefersReducedMotion()) return;
+
+    animate({
+      targets: statsRef.current,
+      translateY: [15, 0],
+      opacity: [0, 1],
+      duration: 400,
+      easing: 'easeOutQuad',
+      delay: 100,
+    });
+  }, [isLoading]);
 
   // Filter expenses
   const filteredExpenses = expenses.filter((expense) => {
@@ -914,20 +948,22 @@ export default function InventoryExpenses() {
     <PermissionGuard permission="finance.view" showMessage>
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 pt-6">
-          <PageHeader
-            title="Uitgaven"
-            subtitle="Beheer facturen en AI-extractie reviews"
-            icon={Receipt}
-            actions={
-              <Button
-                className="bg-cyan-600 hover:bg-cyan-700"
-                onClick={() => setShowUploadModal(true)}
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                Factuur uploaden
-              </Button>
-            }
-          />
+          <div ref={headerRef} style={{ opacity: 0 }}>
+            <PageHeader
+              title="Uitgaven"
+              subtitle="Beheer facturen en AI-extractie reviews"
+              icon={Receipt}
+              actions={
+                <Button
+                  className="bg-cyan-600 hover:bg-cyan-700"
+                  onClick={() => setShowUploadModal(true)}
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Factuur uploaden
+                </Button>
+              }
+            />
+          </div>
         </div>
 
         <div className="container mx-auto px-4 py-6">
@@ -938,7 +974,7 @@ export default function InventoryExpenses() {
           />
 
           {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div ref={statsRef} className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6" style={{ opacity: 0 }}>
             <StatCard
               icon={Receipt}
               label="Totaal facturen"

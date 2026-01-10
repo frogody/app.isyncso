@@ -1,5 +1,8 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import anime from '@/lib/anime-wrapper';
+const animate = anime;
+import { prefersReducedMotion } from '@/lib/animations';
 import { toast } from 'sonner';
 import {
   Upload, Columns, CheckCircle, Download, Sparkles,
@@ -57,6 +60,10 @@ export default function InventoryImport() {
   const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
   const [importResults, setImportResults] = useState(null);
   const [importErrors, setImportErrors] = useState([]);
+
+  // Refs for anime.js animations
+  const headerRef = useRef(null);
+  const stepsRef = useRef(null);
 
   // Handle file processed
   const handleFileProcessed = useCallback((data) => {
@@ -617,11 +624,48 @@ export default function InventoryImport() {
     setImportErrors([]);
   };
 
+  // Animate header on mount
+  useEffect(() => {
+    if (!headerRef.current || prefersReducedMotion()) return;
+
+    animate({
+      targets: headerRef.current,
+      translateY: [-20, 0],
+      opacity: [0, 1],
+      duration: 500,
+      easing: 'easeOutQuart',
+    });
+  }, []);
+
+  // Animate step cards on mount
+  useEffect(() => {
+    if (!stepsRef.current || prefersReducedMotion()) return;
+
+    const stepCards = stepsRef.current.querySelectorAll('.step-card');
+    if (stepCards.length === 0) return;
+
+    // Set initial state
+    Array.from(stepCards).forEach(card => {
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(15px)';
+    });
+
+    // Staggered entrance animation
+    animate({
+      targets: stepCards,
+      translateY: [15, 0],
+      opacity: [0, 1],
+      delay: anime.stagger(60, { start: 100 }),
+      duration: 400,
+      easing: 'easeOutQuart',
+    });
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 p-6">
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div ref={headerRef} className="flex items-center justify-between" style={{ opacity: 0 }}>
           <div>
             <h1 className="text-3xl font-bold text-white flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
@@ -642,7 +686,7 @@ export default function InventoryImport() {
         </div>
 
         {/* Progress Steps */}
-        <div className="flex items-center justify-between">
+        <div ref={stepsRef} className="flex items-center justify-between">
           {STEPS.map((step, index) => {
             const isActive = index === currentStep;
             const isCompleted = index < currentStep;
@@ -650,7 +694,7 @@ export default function InventoryImport() {
 
             return (
               <React.Fragment key={step.id}>
-                <div className="flex flex-col items-center gap-2">
+                <div className="step-card flex flex-col items-center gap-2">
                   <div
                     className={cn(
                       "w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all",
