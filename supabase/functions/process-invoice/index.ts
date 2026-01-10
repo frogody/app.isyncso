@@ -425,15 +425,32 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const togetherApiKey = Deno.env.get("TOGETHER_API_KEY");
-    if (!togetherApiKey) {
-      throw new Error("TOGETHER_API_KEY not configured");
-    }
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Try to get API key from database first, fallback to env var
+    let togetherApiKey = Deno.env.get("TOGETHER_API_KEY");
+    try {
+      const { data: setting } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "together_api_key")
+        .single();
+
+      if (setting?.value) {
+        togetherApiKey = setting.value;
+        console.log("Using Together API key from database");
+      }
+    } catch (dbError) {
+      console.log("Could not fetch API key from database, using env var");
+    }
+
+    if (!togetherApiKey) {
+      throw new Error("TOGETHER_API_KEY not configured");
+    }
+
     const together = new Together({ apiKey: togetherApiKey });
 
     const body = await req.json();
