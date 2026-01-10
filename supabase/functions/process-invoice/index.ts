@@ -98,7 +98,7 @@ async function extractFromImage(client: Anthropic, imageUrl: string, retryCount 
     console.log(`Image fetched, size: ${imageBuffer.byteLength} bytes, type: ${mediaType}`);
 
     const response = await client.messages.create({
-      model: "claude-3-5-sonnet-20241022",
+      model: "claude-3-5-sonnet-20241022", // Claude 3.5 Sonnet (new)
       max_tokens: 4096,
       temperature: 0,
       messages: [

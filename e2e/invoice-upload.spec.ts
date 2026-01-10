@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 
 // Test configuration
 const TEST_INVOICE_PATH = path.join(__dirname, 'fixtures', 'test-invoice.pdf');
-const EXPENSES_PAGE_URL = '/FinanceExpenses'; // Finance expenses page, not inventory
+const EXPENSES_PAGE_URL = '/inventoryexpenses'; // Product inventory expenses page
 const UPLOAD_TIMEOUT = 60000; // 60 seconds for AI processing
 
 // Helper to save screenshots with timestamps

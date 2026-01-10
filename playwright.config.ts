@@ -11,9 +11,10 @@ export default defineConfig({
   reporter: [['html'], ['list']],
   use: {
     baseURL: process.env.TEST_URL || 'http://localhost:5173',
+    headless: false, // Always show browser
     trace: 'on-first-retry',
-    screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    screenshot: 'on', // Always capture screenshots
+    video: 'on', // Always record video
   },
   projects: [
     {
