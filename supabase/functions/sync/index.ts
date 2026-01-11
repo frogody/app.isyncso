@@ -42,6 +42,7 @@ import { executeTeamAction } from './tools/team.ts';
 import { executeLearnAction } from './tools/learn.ts';
 import { executeSentinelAction } from './tools/sentinel.ts';
 import { executeCreateAction } from './tools/create.ts';
+import { executeResearchAction } from './tools/research.ts';
 import { ActionContext, ActionResult } from './tools/types.ts';
 
 const corsHeaders = {
@@ -141,6 +142,11 @@ const CREATE_ACTIONS = [
   'list_generated_content',
 ];
 
+const RESEARCH_ACTIONS = [
+  'web_search',
+  'lookup_product_info',
+];
+
 // ============================================================================
 // Action Parsing and Execution
 // ============================================================================
@@ -204,6 +210,10 @@ async function executeAction(
 
   if (CREATE_ACTIONS.includes(action.action)) {
     return executeCreateAction(ctx, action.action, action.data);
+  }
+
+  if (RESEARCH_ACTIONS.includes(action.action)) {
+    return executeResearchAction(ctx, action.action, action.data);
   }
 
   // Unknown action
@@ -339,6 +349,21 @@ const AGENTS: Record<string, AgentRouting> = {
       /create\s+(an?\s+)?(image|visual|graphic)/i,
       /marketing\s+(creative|visual|image)/i,
       /product\s+(photo|image)/i,
+    ],
+  },
+  research: {
+    id: 'research',
+    name: 'Research Agent',
+    description: 'Web search, product lookup, market research, information gathering',
+    keywords: ['search', 'look up', 'lookup', 'find out', 'research', 'what is', 'tell me about', 'information', 'learn about', 'understand'],
+    priority: 50,
+    patterns: [
+      /what\s+(is|are)\s+/i,
+      /tell\s+me\s+about/i,
+      /look\s*up/i,
+      /search\s+(for|the\s+web)/i,
+      /find\s+(out|information)/i,
+      /research\s+/i,
     ],
   },
 };
@@ -711,6 +736,67 @@ Within a conversation, remember:
 ### Create/AI Generation
 [ACTION]{"action": "generate_image", "data": {"prompt": "Professional product photo of smartphone on white background", "style": "photorealistic"}}[/ACTION]
 [ACTION]{"action": "list_generated_content", "data": {"content_type": "image", "limit": 10}}[/ACTION]
+
+### Research/Web Search (2 actions)
+- **web_search**: Search the internet for information
+- **lookup_product_info**: Look up product details, specs, pricing from the web
+
+[ACTION]{"action": "web_search", "data": {"query": "Philips OneBlade specifications features"}}[/ACTION]
+[ACTION]{"action": "lookup_product_info", "data": {"product_name": "OneBlade", "brand": "Philips", "info_type": "specs"}}[/ACTION]
+
+## CRITICAL: Use Web Search to Be Smarter
+
+**You have internet access!** Use it to be helpful and knowledgeable.
+
+### When to Use Web Search:
+
+1. **Unknown Products**: If user mentions a product you don't recognize, search for it!
+   - "oral b toothbrush" → Search to understand it's an Oral-B brand electric toothbrush
+   - "these oneblade razors" → Search "Philips OneBlade" to understand the product
+
+2. **Product Information**: When user needs details you don't have
+   - Specifications, features, comparisons
+   - Typical pricing/MSRP
+   - Product variations and models
+
+3. **Business Research**: Help users research
+   - Competitor analysis
+   - Market information
+   - Industry trends
+
+4. **Clarifying Ambiguity**: When you're not sure what user means
+   - Search to understand the context before asking clarifying questions
+
+### Example - Smart Product Understanding:
+
+**BEFORE (Dumb):**
+User: "I need images of oral b products"
+You: "Let me search inventory..."
+(Finds nothing, gives up)
+
+**AFTER (Smart):**
+User: "I need images of oral b products"
+You: "Let me look that up..."
+[ACTION]{"action": "web_search", "data": {"query": "Oral-B products electric toothbrush"}}[/ACTION]
+(Learns it's a Braun/P&G brand of electric toothbrushes)
+You: "Oral-B makes electric toothbrushes and dental care products. I don't see any in your inventory yet. Would you like me to:
+1. Generate product images of Oral-B style toothbrushes?
+2. Add Oral-B products to your catalog?
+3. Search for similar dental care products you might have?"
+
+### Example - Understanding User Intent:
+
+User: "these oneblade razors"
+You: [ACTION]{"action": "lookup_product_info", "data": {"product_name": "OneBlade", "brand": "Philips"}}[/ACTION]
+(Learns: Philips OneBlade is a hybrid electric trimmer and shaver)
+You: "Ah, you mean the Philips OneBlade - the hybrid trimmer/shaver! Let me check your inventory for those..."
+[ACTION]{"action": "search_products", "data": {"query": "philips oneblade"}}[/ACTION]
+
+### Pro Tips:
+- **Search FIRST when unsure** - It's fast and makes you much more helpful
+- **Combine knowledge** - Use web info + inventory to give complete answers
+- **Be specific** - "Philips OneBlade 360 specifications" > "oneblade info"
+- **Learn context** - If user's business sells razors, remember that for future queries
 
 ## CRITICAL: Image Generation - Deliver Excellence
 
