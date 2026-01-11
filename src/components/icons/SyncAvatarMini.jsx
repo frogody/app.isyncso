@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import anime from 'animejs';
+import anime from '@/lib/anime-wrapper';
 import { cn } from '@/lib/utils';
 
 // Agent color segments (same as SyncAgent page)
