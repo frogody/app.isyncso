@@ -169,29 +169,59 @@ OBSERVATION: ${step.observation}
 // ============================================================================
 
 async function callLLM(prompt: string, systemPrompt: string): Promise<string> {
-  const response = await fetch('https://api.together.xyz/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${TOGETHER_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'moonshotai/Kimi-K2-Instruct',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: prompt },
-      ],
-      max_tokens: 1500,
-      temperature: 0.3, // Lower temperature for more focused reasoning
-    }),
-  });
+  try {
+    const response = await fetch('https://api.together.xyz/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${TOGETHER_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'moonshotai/Kimi-K2-Instruct',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: prompt },
+        ],
+        max_tokens: 1500,
+        temperature: 0.3, // Lower temperature for more focused reasoning
+      }),
+    });
 
-  if (!response.ok) {
-    throw new Error(`LLM call failed: ${response.statusText}`);
+    if (!response.ok) {
+      // Try fallback model
+      console.warn('[ReAct] Primary model failed, trying fallback...');
+      const fallbackResponse = await fetch('https://api.together.xyz/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${TOGETHER_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'meta-llama/Llama-3.3-70B-Instruct-Turbo-Free',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: prompt },
+          ],
+          max_tokens: 1500,
+          temperature: 0.3,
+        }),
+      });
+
+      if (!fallbackResponse.ok) {
+        console.error('[ReAct] Both models failed');
+        return 'FINAL_ANSWER: I encountered an issue processing this request. Please try a simpler query or try again in a moment.';
+      }
+
+      const fallbackData = await fallbackResponse.json();
+      return fallbackData.choices?.[0]?.message?.content || '';
+    }
+
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content || '';
+  } catch (err) {
+    console.error('[ReAct] LLM call error:', err);
+    return 'FINAL_ANSWER: I encountered a temporary issue. Please try again.';
   }
-
-  const data = await response.json();
-  return data.choices?.[0]?.message?.content || '';
 }
 
 function parseReActResponse(response: string, iteration: number): ReActStep {
@@ -248,6 +278,16 @@ async function synthesizeFinalAnswer(
     .map(s => `- ${s.action?.name}: ${s.observation}`)
     .join('\n');
 
+  // Handle case where no observations were made (empty results)
+  if (!observations || observations.trim() === '') {
+    return `I searched for data matching your request "${query}" but didn't find any matching records. This could mean:
+- The data doesn't exist in the system yet
+- The filters or date range didn't match any records
+- The search terms need adjustment
+
+Would you like me to try a broader search, or help you create some new records?`;
+  }
+
   const synthesisPrompt = `Based on the following observations, provide a comprehensive answer to: "${query}"
 
 Observations:
@@ -255,8 +295,13 @@ ${observations}
 
 Synthesize these findings into a clear, helpful response. Group by relevant categories if applicable.`;
 
-  const response = await callLLM(synthesisPrompt, 'You are a helpful assistant that synthesizes information into clear summaries.');
-  return response;
+  try {
+    const response = await callLLM(synthesisPrompt, 'You are a helpful assistant that synthesizes information into clear summaries.');
+    return response || 'I found some data but had trouble summarizing it. Please try rephrasing your question.';
+  } catch (err) {
+    console.error('[ReAct] Synthesis failed:', err);
+    return 'I gathered some information but had trouble summarizing it. Here are the raw findings:\n\n' + observations;
+  }
 }
 
 // ============================================================================

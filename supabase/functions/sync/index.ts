@@ -203,6 +203,91 @@ const RESEARCH_ACTIONS = [
 ];
 
 // ============================================================================
+// Typo Correction / Fuzzy Matching
+// ============================================================================
+
+const COMMON_TYPOS: Record<string, string> = {
+  // Invoice variations
+  'invocies': 'invoices',
+  'invocie': 'invoice',
+  'invioce': 'invoice',
+  'invoive': 'invoice',
+  'invoces': 'invoices',
+  'invocice': 'invoice',
+  'inovice': 'invoice',
+  // Client variations
+  'clent': 'client',
+  'clinet': 'client',
+  'cleint': 'client',
+  'clents': 'clients',
+  'clinets': 'clients',
+  // Proposal variations
+  'prposal': 'proposal',
+  'proposla': 'proposal',
+  'porposal': 'proposal',
+  'propsal': 'proposal',
+  'propsoal': 'proposal',
+  // Product variations
+  'prodcut': 'product',
+  'pruduct': 'product',
+  'prodctu': 'product',
+  'prodcuts': 'products',
+  'pruducts': 'products',
+  // Task variations
+  'taks': 'task',
+  'tsak': 'task',
+  'takss': 'tasks',
+  // Expense variations
+  'expnese': 'expense',
+  'expesne': 'expense',
+  'expneses': 'expenses',
+  // Pipeline variations
+  'pipleine': 'pipeline',
+  'pipline': 'pipeline',
+  'piplene': 'pipeline',
+  // Revenue variations
+  'revnue': 'revenue',
+  'reveune': 'revenue',
+  // Summary variations
+  'sumamry': 'summary',
+  'summray': 'summary',
+  'sumarry': 'summary',
+  // Create variations
+  'craete': 'create',
+  'creat': 'create',
+  'crate': 'create',
+  // Show variations
+  'shwo': 'show',
+  'hsow': 'show',
+  // List variations
+  'lsit': 'list',
+  'lst': 'list',
+  // Prospect variations
+  'prospec': 'prospect',
+  'prsopect': 'prospect',
+  'porspect': 'prospect',
+};
+
+/**
+ * Correct common typos in user message to improve intent matching
+ */
+function correctTypos(message: string): { corrected: string; corrections: string[] } {
+  let corrected = message;
+  const corrections: string[] = [];
+
+  for (const [typo, correct] of Object.entries(COMMON_TYPOS)) {
+    // Case-insensitive word boundary matching
+    const regex = new RegExp(`\\b${typo}\\b`, 'gi');
+    if (regex.test(corrected)) {
+      corrected = corrected.replace(regex, correct);
+      corrections.push(`${typo} → ${correct}`);
+    }
+  }
+
+  return { corrected, corrections };
+}
+
+// ============================================================================
 // Action Parsing and Execution
 // ============================================================================
 
@@ -1776,13 +1861,21 @@ serve(async (req) => {
     }
 
     const body: SyncRequest = await req.json();
-    const { message, sessionId, stream = false, mode = 'auto', context } = body;
+    let { message } = body;
+    const { sessionId, stream = false, mode = 'auto', context } = body;
 
     if (!message?.trim()) {
       return new Response(
         JSON.stringify({ error: 'Message is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // Apply typo correction to user message
+    const { corrected: correctedMessage, corrections } = correctTypos(message);
+    if (corrections.length > 0) {
+      console.log(`[SYNC] Corrected typos: ${corrections.join(', ')}`);
+      message = correctedMessage; // Use corrected message for all downstream processing
     }
 
     if (!TOGETHER_API_KEY) {
@@ -2658,13 +2751,26 @@ Output the create_${docType} [ACTION] block NOW. Do NOT ask any more questions!`
 
     const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
 
+    // Provide user-friendly error messages based on error type
+    let userMessage = 'I encountered an issue processing your request. ';
+
+    if (errorMessage.includes('API error') || errorMessage.includes('LLM') || errorMessage.includes('fetch')) {
+      userMessage += 'There was a temporary connection issue. Please try again in a moment.';
+    } else if (errorMessage.includes('not found') || errorMessage.includes('No') || errorMessage.includes('empty')) {
+      userMessage += 'No matching data was found. Try adjusting your search criteria or date range.';
+    } else if (errorMessage.includes('timeout')) {
+      userMessage += 'The request took too long. Please try a simpler query.';
+    } else {
+      userMessage += 'Please try rephrasing your request or breaking it into smaller steps.';
+    }
+
     return new Response(
       JSON.stringify({
         error: errorMessage,
-        response: 'I apologize, but I encountered an error processing your request. Please try again.',
+        response: userMessage,
         sessionId: null,
       }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }  // Return 200 to prevent client-side error handling
     );
   }
 });
