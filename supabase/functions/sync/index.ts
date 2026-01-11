@@ -69,6 +69,9 @@ import {
   generateContextualSuggestions,
   formatInsightsForResponse,
   ProactiveInsight,
+  enrichContextForQuery,
+  formatEnrichmentForPrompt,
+  ContextEnrichment,
 } from './tools/proactive.ts';
 import {
   detectOrchestrationWorkflow,
@@ -79,6 +82,23 @@ import {
   OrchestrationResult,
   ORCHESTRATION_WORKFLOWS,
 } from './tools/orchestration.ts';
+import {
+  executeReActLoop,
+  shouldUseReAct,
+  formatReActStepsForUser,
+  ReActContext,
+  ReActResult,
+} from './tools/react.ts';
+import {
+  KnowledgeGraph,
+  extractEntityMentions,
+  formatEntityContext,
+} from './tools/knowledge-graph.ts';
+import {
+  synthesizeResults,
+  formatSynthesizedResult,
+  SynthesizedResult,
+} from './tools/synthesis.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -492,6 +512,23 @@ const AGENTS: Record<string, AgentRouting> = {
       /research\s+/i,
     ],
   },
+  integrations: {
+    id: 'integrations',
+    name: 'Integrations Agent',
+    description: 'Third-party app connections: Gmail, Slack, HubSpot, Calendar, etc.',
+    keywords: ['integration', 'integrations', 'connected', 'connect', 'apps', 'gmail', 'slack', 'hubspot', 'calendar', 'notion', 'trello', 'asana', 'linkedin', 'github', 'jira', 'google drive', 'third party', 'third-party'],
+    priority: 85,
+    patterns: [
+      /what\s+(integrations?|apps?)\s+(do\s+i\s+have|are)\s+connected/i,
+      /show\s+(my\s+)?(integrations?|connected\s+apps?)/i,
+      /list\s+(my\s+)?(integrations?|connected\s+apps?)/i,
+      /(connect|disconnect)\s+(to\s+)?(\w+)/i,
+      /send\s+(an?\s+)?email/i,
+      /check\s+(my\s+)?(email|calendar|slack)/i,
+      /create\s+(a\s+)?(hubspot|notion|trello|asana|linear|jira)/i,
+      /what\s+can\s+i\s+do\s+with\s+(my\s+)?integrations/i,
+    ],
+  },
 };
 
 // ============================================================================
@@ -575,12 +612,32 @@ const memorySystem = getMemorySystem(supabase);
 const SYNC_SYSTEM_PROMPT = `You are SYNC, the central AI orchestrator for iSyncSO - an intelligent business platform.
 
 ## Your Personality
-You are helpful, friendly, and conversational - like a smart colleague who wants to get things right. You:
-- Speak naturally and warmly
+You are helpful, friendly, and conversational - like a smart personal assistant who anticipates needs. You:
+- Speak naturally and warmly, like a trusted colleague
+- Vary your responses - don't always start with the same phrases
 - Ask ONE question at a time (never overwhelm with multiple questions)
 - Verify each piece of information before moving on
 - Search the database to find matching records and confirm with the user
-- Use casual language ("Got it!", "Amazing!", "Ah, I see...", "Let me check...")
+- Complete multi-step requests efficiently without re-asking for info already provided
+
+### Natural Response Starters (VARY these!)
+Instead of always saying "I'll help you with...":
+- "Sure thing!" / "On it!" / "Absolutely!"
+- "Let me grab that..." / "Pulling that up now..."
+- "Got it!" / "Perfect!" / "Nice!"
+- "Alright!" / "Here we go!" / "Let's do it!"
+
+### After Completing Tasks:
+- "All done! ✨" / "Done and dusted!" / "There you go!"
+- "That's sorted!" / "All set!" / "Boom, done!"
+- Offer relevant next steps naturally
+
+### Time-Aware Context
+Acknowledge the time when relevant (the system provides today's date):
+- Morning (before 12pm): Can say "Good morning!" when starting fresh conversations
+- Afternoon (12pm-5pm): Can say "Good afternoon!"
+- Evening (after 5pm): Can say "Good evening!"
+- Don't force greetings - only use when it feels natural (like starting a new session)
 
 ## CRITICAL: Step-by-Step Conversation Flow
 
@@ -625,6 +682,12 @@ You: "Let me search for that..."
 You: "I couldn't find 'oral b' in your inventory. Want to try a different name or add it as a new product?"
 
 ### CRITICAL Response Rules:
+
+0. **INTEGRATIONS = ACTION BLOCK REQUIRED** - When user asks about integrations, connected apps, or wants to use Gmail/Slack/HubSpot/etc:
+   - IMMEDIATELY output: [ACTION]{"action": "composio_list_integrations", "data": {}}[/ACTION]
+   - Example: "What integrations do I have?" → Reply with text + [ACTION] block
+   - Example: "What apps are connected?" → Reply with text + [ACTION] block
+   - DO NOT just say "Let me check" without the [ACTION] block!
 
 1. **REMEMBER THE GOAL** - The user already told you what they want. DON'T ask again.
    - User said "create a proposal" → Goal is CREATE PROPOSAL. Don't ask "what's the purpose?"
@@ -744,6 +807,26 @@ Within a conversation, remember:
 - Products already added to proposal/invoice
 - Preferred product categories based on conversation
 
+### CRITICAL: Complete Multi-Step Intents Without Re-Asking
+
+**When the user gives you a COMPLETE request, EXECUTE IT FULLY without asking questions you already have answers to!**
+
+**Example of COMPLETE request:**
+User: "make a proposal for 17x philips oneblade and send it to godyduins@gmail.com. His name is Gody"
+
+This contains: Intent (proposal), Quantity (17), Product (philips oneblade), Email (godyduins@gmail.com), Name (Gody)
+
+**CORRECT behavior:**
+1. Search for product → Find it
+2. IMMEDIATELY create the proposal (you have ALL the info!)
+3. Confirm: "Done! Created proposal for Gody (godyduins@gmail.com): 17× Philips OneBlade 360 Face @ €35.19 = €598.23 + BTW = €723.86. Want me to send it now?"
+
+**WRONG behavior:**
+1. Search for product → Find it
+2. Stop and say "Found 1 product! Philips OneBlade 360 Face..." ← NO! User already told you what to do!
+
+**Key rule**: If user's original message contains ALL required info → COMPLETE THE TASK, don't ask again.
+
 ### CRITICAL: Always Continue After Search Results
 
 **NEVER just show search results and stop!** After finding a product or completing any search:
@@ -844,10 +927,13 @@ You: "Found it! Philips OneBlade 360 Face. What kind of images do you need - cle
 - **generate_image**: Generate an AI image (product, marketing, creative)
 - **list_generated_content**: List generated AI content
 
-### INTEGRATIONS (Third-Party Apps via Composio)
-The user may have connected third-party apps like Gmail, Slack, HubSpot, Notion, etc. Use these actions to interact with them:
+### INTEGRATIONS (Third-Party Apps via Composio) ⚡ ALWAYS USE [ACTION] BLOCK
 
-- **composio_list_integrations**: List user's connected apps (check this first to see what's available!)
+**CRITICAL**: When user asks about integrations, you MUST include [ACTION] block in your response!
+
+Available integration actions:
+
+- **composio_list_integrations**: List user's connected apps ← USE THIS FIRST!
 - **composio_send_email**: Send email via Gmail (to, subject, body)
 - **composio_fetch_emails**: Fetch recent emails from Gmail
 - **composio_search_emails**: Search emails in Gmail (query)
@@ -863,7 +949,10 @@ The user may have connected third-party apps like Gmail, Slack, HubSpot, Notion,
 - **composio_create_linear_issue**: Create Linear issue (title, description)
 - **composio_execute_tool**: Generic tool execution (toolkit, tool_name, arguments)
 
-**TIP**: Always check what integrations the user has connected first with composio_list_integrations!
+**MANDATORY FORMAT for integration queries:**
+User: "What integrations do I have?"
+You: Let me check!
+[ACTION]{"action": "composio_list_integrations", "data": {}}[/ACTION]
 
 ## Action Examples
 
@@ -1256,18 +1345,41 @@ After creating invoice/proposal:
 - "Should I create a follow-up task to check on this in a week?"
 - "Want me to add this client to your CRM if they're not already there?"
 
-## Proactive Intelligence
+## Proactive Intelligence - ALWAYS OFFER NEXT STEPS
 
-### Anticipate Next Steps
-Based on what user just did, offer logical next actions:
+### Anticipate Next Steps (MANDATORY after every action!)
+**Never leave the conversation dead-ended.** After EVERY action, offer a relevant next step:
 
-| After This | Suggest This |
-|------------|--------------|
-| Created proposal | "Want me to schedule a follow-up?" |
-| Created invoice | "Should I mark it as sent?" |
-| Added prospect | "Want me to create an outreach task?" |
-| Searched products | "Need to check stock levels?" |
-| Generated image | "Want variations or different angles?" |
+| After This | ALWAYS Offer This |
+|------------|-------------------|
+| Created proposal | "Want me to send it to their email right now?" |
+| Created invoice | "Should I mark it as sent, or email it to the client?" |
+| Added prospect | "Should I create a follow-up task or send an intro email?" |
+| Searched products | "What would you like to do with this - proposal, invoice, or check stock?" |
+| Fetched emails | "Want me to reply to any of these, or create tasks from them?" |
+| Listed calendar events | "Need to add a new event or reschedule something?" |
+| Generated image | "Want me to generate variations, different angles, or for other products?" |
+| Listed invoices | "Want to send reminders for unpaid ones, or create a new invoice?" |
+| Completed task | "Great! What's next on your list?" |
+
+### Smart Follow-Up Patterns
+**For proposals/invoices just created:**
+"Done! ✨ Proposal ready for [Client]. Quick options:
+• Send via email now?
+• Schedule a reminder to follow up?
+• Add another item?"
+
+**For emails fetched:**
+"📬 Here are your recent emails. Want me to:
+• Reply to any of these?
+• Create tasks from action items?
+• Search for something specific?"
+
+**For product searches:**
+"Found it! [Product]. What's the play:
+• Add to proposal/invoice?
+• Check or update stock?
+• Generate product images?"
 
 ### Handle Vague Requests
 When user is vague, ask clarifying questions that move toward action:
@@ -1984,8 +2096,178 @@ serve(async (req) => {
     }
 
     // =========================================================================
+    // REACT PATH: Use ReAct loop for complex multi-step queries
+    // Pattern: Thought → Action → Observation → Repeat
+    // =========================================================================
+    if (shouldUseReAct(message)) {
+      console.log(`[SYNC] Using ReAct loop for complex query: "${message.substring(0, 50)}..."`);
+
+      try {
+        // ---------------------------------------------------------------------
+        // KNOWLEDGE GRAPH CONTEXT ENRICHMENT
+        // Provides entity context for complex multi-entity queries
+        // ---------------------------------------------------------------------
+        const knowledgeGraph = new KnowledgeGraph(supabase, companyId);
+        let entityContext = '';
+
+        // Check for "clients I worked with" type queries
+        const clientPatterns = [
+          /\b(clients?|prospects?|customers?|contacts?)\s+(i|we)\s+(worked|interacted|communicated|met)\s+with/i,
+          /\bfor each\s+(client|prospect|customer|contact)/i,
+          /\ball\s+(my|our)\s+(clients?|prospects?)/i,
+        ];
+
+        const needsClientContext = clientPatterns.some(p => p.test(message));
+        if (needsClientContext) {
+          console.log('[SYNC] Enriching with active client context from Knowledge Graph');
+          const activeClients = await knowledgeGraph.getActiveEntities('client', undefined, 10);
+          const activeProspects = await knowledgeGraph.getActiveEntities('prospect', undefined, 10);
+          const allContacts = [...activeClients, ...activeProspects];
+
+          if (allContacts.length > 0) {
+            entityContext += '\n\n## ACTIVE CLIENTS/PROSPECTS (from Knowledge Graph)\n';
+            entityContext += 'These are the people the user has interacted with recently:\n';
+            for (const contact of allContacts) {
+              entityContext += `- **${contact.entity_name}** (${contact.entity_type})`;
+              if (contact.attributes && typeof contact.attributes === 'object') {
+                const attrs = contact.attributes as Record<string, unknown>;
+                if (attrs.email) entityContext += ` - ${attrs.email}`;
+                if (attrs.company) entityContext += ` at ${attrs.company}`;
+              }
+              entityContext += '\n';
+            }
+          }
+        }
+
+        // Extract explicit entity mentions
+        const mentions = extractEntityMentions(message);
+        if (mentions.length > 0) {
+          console.log(`[SYNC] Found ${mentions.length} entity mentions: ${mentions.map(m => m.name).join(', ')}`);
+          for (const mention of mentions) {
+            const entities = await knowledgeGraph.searchEntities(mention.name, mention.type, 3);
+            if (entities.length > 0) {
+              const graph = await knowledgeGraph.getEntityGraph(entities[0].id);
+              if (graph) {
+                entityContext += '\n\n## ENTITY CONTEXT\n';
+                entityContext += formatEntityContext(graph);
+              }
+            }
+          }
+        }
+
+        // Get all available actions for ReAct
+        const allActions = [
+          ...FINANCE_ACTIONS,
+          ...PRODUCT_ACTIONS,
+          ...GROWTH_ACTIONS,
+          ...TASK_ACTIONS,
+          ...INBOX_ACTIONS,
+          ...TEAM_ACTIONS,
+          ...LEARN_ACTIONS,
+          ...COMPOSIO_ACTIONS,
+          ...RESEARCH_ACTIONS,
+        ];
+
+        // Enrich system prompt with entity context
+        const enrichedSystemPrompt = enhancedSystemPrompt + entityContext;
+
+        const reactContext: ReActContext = {
+          userQuery: message,
+          systemPrompt: enrichedSystemPrompt,
+          availableActions: allActions,
+          ctx: { supabase, companyId, userId },
+          executeAction,
+          onStep: (step) => {
+            console.log(`[ReAct] Step ${step.iteration}: ${step.thought.substring(0, 100)}...`);
+          },
+        };
+
+        const reactResult = await executeReActLoop(reactContext);
+
+        // Format the response with steps for transparency
+        let reactResponse = '';
+        if (reactResult.steps.length > 1) {
+          reactResponse = `🧠 **Reasoning through your request...**\n`;
+          reactResponse += formatReActStepsForUser(reactResult.steps);
+          reactResponse += `\n---\n\n**Summary:**\n${reactResult.finalAnswer}`;
+        } else {
+          reactResponse = reactResult.finalAnswer;
+        }
+
+        // Store assistant message
+        const reactAssistantMsg: ChatMessage = {
+          role: 'assistant',
+          content: reactResponse,
+          timestamp: new Date().toISOString(),
+          agentId: 'react-orchestrator',
+          actionExecuted: reactResult.actionsExecuted.length > 0 ? {
+            type: `react:${reactResult.actionsExecuted.join(',')}`,
+            success: reactResult.success,
+            result: reactResult.intermediateResults,
+          } : undefined,
+        };
+        await memorySystem.session.addMessage(session, reactAssistantMsg);
+        await memorySystem.session.updateSession(session);
+
+        // Return ReAct response
+        return new Response(
+          JSON.stringify({
+            response: reactResponse,
+            sessionId: session.session_id,
+            delegatedTo: 'react-orchestrator',
+            routing: {
+              confidence: routingResult.confidence,
+              matchedKeywords: routingResult.matchedKeywords,
+              matchedPatterns: routingResult.matchedPatterns,
+            },
+            workflow: {
+              type: 'react',
+              agentsUsed: ['react-orchestrator'],
+              executionTimeMs: 0, // TODO: track timing
+              iterations: reactResult.totalIterations,
+            },
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+
+      } catch (reactError) {
+        console.error('[SYNC] ReAct loop failed, falling back to standard path:', reactError);
+        // Fall through to standard path
+      }
+    }
+
+    // =========================================================================
     // STANDARD PATH: Direct LLM call for simple action-oriented requests
     // =========================================================================
+
+    // ---------------------------------------------------------------------
+    // PROACTIVE CONTEXT ENRICHMENT (Pre-call middleware)
+    // Injects relevant context based on query patterns
+    // ---------------------------------------------------------------------
+    let enrichedApiMessages = [...apiMessages];
+    try {
+      const contextEnrichment = await enrichContextForQuery(
+        message,
+        { supabase, companyId, userId },
+        session
+      );
+      const enrichmentText = formatEnrichmentForPrompt(contextEnrichment);
+
+      if (enrichmentText) {
+        console.log(`[SYNC] Proactive context enrichment added (${enrichmentText.length} chars)`);
+        // Inject enrichment into system message
+        const systemIdx = enrichedApiMessages.findIndex(m => m.role === 'system');
+        if (systemIdx >= 0) {
+          enrichedApiMessages[systemIdx] = {
+            ...enrichedApiMessages[systemIdx],
+            content: enrichedApiMessages[systemIdx].content + '\n\n' + enrichmentText,
+          };
+        }
+      }
+    } catch (enrichError) {
+      console.warn('[SYNC] Context enrichment failed, continuing without:', enrichError);
+    }
+
     const response = await fetch('https://api.together.xyz/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -1994,7 +2276,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: 'moonshotai/Kimi-K2-Instruct',
-        messages: apiMessages,
+        messages: enrichedApiMessages,
         temperature: 0.7,
         max_tokens: 2048,
       }),
@@ -2013,7 +2295,7 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           model: 'meta-llama/Llama-3.3-70B-Instruct-Turbo-Free',
-          messages: apiMessages,
+          messages: enrichedApiMessages,
           temperature: 0.7,
           max_tokens: 2048,
         }),
@@ -2121,7 +2403,28 @@ serve(async (req) => {
       assistantMessage = assistantMessage.replace(/\[ACTION\][\s\S]*?\[\/ACTION\]/g, '').trim();
 
       if (actionExecuted) {
-        assistantMessage = assistantMessage + '\n\n' + actionExecuted.message;
+        // ---------------------------------------------------------------------
+        // DATA SYNTHESIS: Transform raw results into meaningful insights
+        // ---------------------------------------------------------------------
+        let synthesizedMessage = actionExecuted.message;
+        try {
+          const synthesized = await synthesizeResults(
+            actionData.action,
+            actionExecuted.result,
+            message, // Original query for intent detection
+            supabase,
+            companyId
+          );
+
+          if (synthesized) {
+            synthesizedMessage = formatSynthesizedResult(synthesized);
+            console.log(`[SYNC] Data synthesized for ${actionData.action} (${synthesized.type})`);
+          }
+        } catch (synthError) {
+          console.warn('[SYNC] Data synthesis failed, using raw result:', synthError);
+        }
+
+        assistantMessage = assistantMessage + '\n\n' + synthesizedMessage;
 
         // Generate proactive insights
         const ctx: ActionContext = { supabase, companyId, userId };
@@ -2154,6 +2457,86 @@ serve(async (req) => {
           assistantMessage,
           { type: actionData.action, success: actionExecuted.success, result: actionExecuted.result }
         ).catch(err => console.warn('Failed to store conversation memory:', err));
+
+        // ================================================================
+        // CONTINUATION: If search_products succeeded but user wanted more,
+        // call LLM again to complete the multi-step request
+        // ================================================================
+        const isSearchAction = actionData.action === 'search_products';
+        const hasMultiStepIntent = /\b(proposal|invoice|create|make|send|email)\b/i.test(message);
+        const searchFoundProducts = actionExecuted.success && actionExecuted.result &&
+          (Array.isArray(actionExecuted.result) ? actionExecuted.result.length > 0 : true);
+
+        if (isSearchAction && hasMultiStepIntent && searchFoundProducts) {
+          console.log('[CONTINUATION] Search completed, continuing multi-step intent...');
+
+          // Build continuation prompt
+          const wantsSend = /\bsend\s*(it)?\s*(to)?\b/i.test(message);
+          const docType = /proposal/i.test(message) ? 'proposal' : 'invoice';
+
+          const continuationPrompt = `The user originally asked: "${message}"
+
+You already searched and found the product. Here are the search results:
+${actionExecuted.message}
+
+NOW CONTINUE to complete their request. Create the ${docType} with ALL info from the original message:
+- Product name: Use the EXACT product name from search results above
+- Quantity: Extract from original message (e.g., "17x" means quantity 17)
+- Client name: Extract from original message
+- Client email: Extract from original message if provided
+${wantsSend ? `- Status: The user said "send" so set status to "sent" and include the email` : ''}
+
+IMPORTANT: The items array must use the EXACT product name from search results.
+Example: {"action": "create_${docType}", "data": {"client_name": "Name Here", "client_email": "email@here.com", "items": [{"name": "Philips OneBlade 360 Face", "quantity": 17}]}}
+
+Output the create_${docType} [ACTION] block NOW. Do NOT ask any more questions!`;
+
+          // Call LLM again for continuation
+          const continuationMessages = [
+            { role: 'system', content: enhancedSystemPrompt },
+            ...apiMessages.slice(1), // Include conversation history
+            { role: 'assistant', content: assistantMessage },
+            { role: 'user', content: continuationPrompt },
+          ];
+
+          try {
+            const contResponse = await fetch('https://api.together.xyz/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${TOGETHER_API_KEY}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                model: 'moonshotai/Kimi-K2-Instruct',
+                messages: continuationMessages,
+                max_tokens: 2000,
+                temperature: 0.7,
+              }),
+            });
+
+            if (contResponse.ok) {
+              const contData = await contResponse.json();
+              const continuationContent = contData.choices?.[0]?.message?.content || '';
+
+              // Check for action in continuation response
+              const contAction = parseActionFromResponse(continuationContent);
+              if (contAction && (contAction.action === 'create_proposal' || contAction.action === 'create_invoice')) {
+                // Execute the continuation action
+                const contResult = await executeAction(contAction, companyId, userId);
+                const contCleanMsg = continuationContent.replace(/\[ACTION\][\s\S]*?\[\/ACTION\]/g, '').trim();
+
+                if (contResult) {
+                  assistantMessage = assistantMessage + '\n\n' + contCleanMsg + '\n\n' + contResult.message;
+                  actionExecuted = contResult;
+                  console.log('[CONTINUATION] Successfully created:', contAction.action);
+                }
+              }
+            }
+          } catch (contError) {
+            console.warn('[CONTINUATION] Failed:', contError);
+            // Continue without continuation - don't break the flow
+          }
+        }
       }
     }
 

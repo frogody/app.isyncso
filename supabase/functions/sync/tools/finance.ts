@@ -60,11 +60,12 @@ export async function createProposal(
     const validUntil = new Date();
     validUntil.setDate(validUntil.getDate() + 30);
 
+    const status = data.status || 'draft';
     const proposalRecord = {
       company_id: ctx.companyId,
       proposal_number: generateDocNumber('PROP'),
-      title: data.title,
-      status: 'draft',
+      title: data.title || `Proposal for ${data.client_name}`,
+      status,
       client_name: data.client_name,
       client_email: data.client_email || null,
       client_company: data.client_company || null,
@@ -92,8 +93,13 @@ export async function createProposal(
       return errorResult(`Failed to create proposal: ${error.message}`, error.message);
     }
 
+    const titleLine = proposal.title ? `**${proposal.title}**\n` : '';
+    const statusText = proposal.status === 'sent' ? 'Sent ✉️' : 'Draft';
+    const followUp = proposal.status === 'sent'
+      ? `\n\n✅ Proposal sent to ${proposal.client_email || 'the client'}!`
+      : `\n\nWant me to send this to ${proposal.client_email || 'the client'}?`;
     return successResult(
-      `✅ Proposal created successfully!\n\n**${proposal.title}**\n- Client: ${proposal.client_name}\n- Total: ${formatCurrency(proposal.total)} (incl. BTW)\n- Status: Draft\n- Valid until: ${formatDate(proposal.valid_until)}`,
+      `✅ Proposal created successfully!\n\n${titleLine}- Client: ${proposal.client_name}\n- Total: ${formatCurrency(proposal.total)} (incl. BTW)\n- Status: ${statusText}\n- Valid until: ${formatDate(proposal.valid_until)}${followUp}`,
       proposal,
       '/financeproposals'
     );

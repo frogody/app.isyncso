@@ -7,7 +7,8 @@ import { ActionContext, ActionResult } from './types.ts';
 
 // Composio API configuration
 const COMPOSIO_API_KEY = Deno.env.get("COMPOSIO_API_KEY");
-const COMPOSIO_V1_URL = "https://backend.composio.dev/api/v1";
+const COMPOSIO_BASE_URL = "https://backend.composio.dev";
+const COMPOSIO_V3_URL = `${COMPOSIO_BASE_URL}/api/v3`;
 
 // Common toolkit slugs and their popular actions
 export const COMPOSIO_INTEGRATIONS: Record<string, { name: string; actions: string[] }> = {
@@ -94,7 +95,7 @@ export const COMPOSIO_ACTIONS = [
 ];
 
 /**
- * Helper to make Composio API calls
+ * Helper to make Composio API calls (v3)
  */
 async function composioFetch<T = unknown>(
   endpoint: string,
@@ -104,9 +105,10 @@ async function composioFetch<T = unknown>(
     return { success: false, error: "COMPOSIO_API_KEY not configured" };
   }
 
-  const url = endpoint.startsWith("http") ? endpoint : `${COMPOSIO_V1_URL}${endpoint}`;
+  const url = endpoint.startsWith("http") ? endpoint : `${COMPOSIO_V3_URL}${endpoint}`;
 
   try {
+    console.log(`[Composio] Calling: ${url}`);
     const response = await fetch(url, {
       ...options,
       headers: {
@@ -126,14 +128,24 @@ async function composioFetch<T = unknown>(
     }
 
     if (!response.ok) {
-      const errorMsg = (data as Record<string, unknown>)?.message ||
-        (data as Record<string, unknown>)?.error ||
-        `HTTP ${response.status}`;
-      return { success: false, error: String(errorMsg) };
+      console.error(`[Composio] Error response (${response.status}):`, text);
+      // Extract error message from various formats
+      let errorMsg = `HTTP ${response.status}`;
+      if (data) {
+        const d = data as Record<string, unknown>;
+        if (typeof d.message === 'string') errorMsg = d.message;
+        else if (typeof d.error === 'string') errorMsg = d.error;
+        else if (typeof d.detail === 'string') errorMsg = d.detail;
+        else if (d.message && typeof d.message === 'object') errorMsg = JSON.stringify(d.message);
+        else if (d.error && typeof d.error === 'object') errorMsg = JSON.stringify(d.error);
+        else errorMsg = text || `HTTP ${response.status}`;
+      }
+      return { success: false, error: errorMsg };
     }
 
     return { success: true, data };
   } catch (error) {
+    console.error(`[Composio] Fetch error:`, error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Network error",
@@ -178,38 +190,145 @@ async function getConnectionForToolkit(
 }
 
 /**
- * Execute a Composio tool action
+ * Helper to extract error message from various error formats
+ * Handles deeply nested error objects common in API responses
+ */
+function extractErrorMessage(error: unknown, depth = 0): string {
+  // Prevent infinite recursion
+  if (depth > 5) return JSON.stringify(error);
+
+  if (!error) return 'Unknown error';
+  if (typeof error === 'string') return error;
+  if (typeof error === 'number') return String(error);
+
+  if (typeof error === 'object') {
+    const err = error as Record<string, unknown>;
+
+    // Try common error message fields (in order of priority)
+    if (typeof err.message === 'string' && err.message) return err.message;
+    if (typeof err.detail === 'string' && err.detail) return err.detail;
+    if (typeof err.details === 'string' && err.details) return err.details;
+    if (typeof err.description === 'string' && err.description) return err.description;
+    if (typeof err.reason === 'string' && err.reason) return err.reason;
+
+    // Handle nested error objects
+    if (err.message && typeof err.message === 'object') {
+      return extractErrorMessage(err.message, depth + 1);
+    }
+    if (err.error && typeof err.error === 'object') {
+      return extractErrorMessage(err.error, depth + 1);
+    }
+    if (typeof err.error === 'string' && err.error) {
+      return err.error;
+    }
+
+    // Handle array of errors
+    if (Array.isArray(err.errors) && err.errors.length > 0) {
+      return extractErrorMessage(err.errors[0], depth + 1);
+    }
+
+    // Try to find any string value in the object
+    for (const key of ['msg', 'err', 'errorMessage', 'error_message', 'statusText']) {
+      if (typeof err[key] === 'string' && err[key]) {
+        return err[key] as string;
+      }
+    }
+
+    // Fallback to JSON stringify (pretty print for readability, but truncate)
+    const jsonStr = JSON.stringify(error, null, 0);
+    return jsonStr.length > 200 ? jsonStr.substring(0, 200) + '...' : jsonStr;
+  }
+
+  return String(error);
+}
+
+/**
+ * Execute a Composio tool action (v3 API)
  */
 async function executeComposioTool(
   connectedAccountId: string,
   toolSlug: string,
-  args: Record<string, unknown>
+  args: Record<string, unknown>,
+  entityId?: string
 ): Promise<ActionResult> {
+  console.log(`[Composio] Executing tool: ${toolSlug}`);
+  console.log(`[Composio] connected_account_id: ${connectedAccountId}`);
+  console.log(`[Composio] entity_id: ${entityId}`);
+  console.log(`[Composio] Arguments:`, JSON.stringify(args));
+
+  // v3 API endpoint format: /tools/execute/{tool_slug}
+  const requestBody: Record<string, unknown> = {
+    connected_account_id: connectedAccountId,
+    arguments: args,
+  };
+
+  // Add entity_id if provided (required by v3 API)
+  if (entityId) {
+    requestBody.entity_id = entityId;
+  }
+
   const result = await composioFetch<{
     successful?: boolean;
-    execution_details?: { executed: boolean };
-    response_data?: unknown;
     data?: unknown;
-    error?: string;
-  }>(`/actions/${toolSlug}/execute`, {
+    error?: unknown;
+    log_id?: string;
+    message?: string;
+  }>(`/tools/execute/${toolSlug}`, {
     method: "POST",
-    body: JSON.stringify({
-      connectedAccountId,
-      input: args,
-    }),
+    body: JSON.stringify(requestBody),
   });
 
+  console.log(`[Composio] Raw result:`, JSON.stringify(result, null, 2));
+
   if (!result.success) {
+    const errorMsg = extractErrorMessage(result.error);
+    console.log(`[Composio] Error (fetch failed):`, errorMsg);
     return {
       success: false,
-      error: result.error,
-      message: `Failed to execute ${toolSlug}: ${result.error}`,
+      error: errorMsg,
+      message: `Failed to execute ${toolSlug}: ${errorMsg}`,
+    };
+  }
+
+  // Parse the response data carefully
+  const responseData = result.data as Record<string, unknown> | undefined;
+  console.log(`[Composio] Response data type:`, typeof responseData);
+  console.log(`[Composio] Response data keys:`, responseData ? Object.keys(responseData) : 'undefined');
+
+  // Check for error in response
+  if (responseData?.error) {
+    const errorMsg = extractErrorMessage(responseData.error);
+    console.log(`[Composio] Error in response.error:`, errorMsg);
+    return {
+      success: false,
+      error: errorMsg,
+      message: `Failed to execute ${toolSlug}: ${errorMsg}`,
+    };
+  }
+
+  // Check for successful flag being false
+  if (responseData?.successful === false) {
+    const errorMsg = extractErrorMessage(responseData?.message || responseData?.error || responseData);
+    console.log(`[Composio] Error (successful=false):`, errorMsg);
+    return {
+      success: false,
+      error: errorMsg,
+      message: `Failed to execute ${toolSlug}: ${errorMsg}`,
+    };
+  }
+
+  // Check if the data field contains the actual result
+  if (responseData?.data !== undefined) {
+    return {
+      success: true,
+      result: responseData.data,
+      message: `Successfully executed ${toolSlug}`,
     };
   }
 
   return {
     success: true,
-    result: result.data?.response_data || result.data?.data || result.data,
+    result: result.data?.data || result.data,
     message: `Successfully executed ${toolSlug}`,
   };
 }
@@ -286,7 +405,7 @@ export async function executeComposioAction(
         body,
         cc,
         bcc,
-      });
+      }, ctx.userId);
     }
 
     case 'composio_fetch_emails': {
@@ -301,10 +420,63 @@ export async function executeComposioAction(
 
       const { query, max_results } = data as { query?: string; max_results?: number };
 
-      return executeComposioTool(connId, 'GMAIL_FETCH_EMAILS', {
+      const result = await executeComposioTool(connId, 'GMAIL_FETCH_EMAILS', {
         query: query || 'in:inbox',
         max_results: max_results || 10,
-      });
+      }, ctx.userId);
+
+      // Format the email results nicely
+      if (result.success && result.result) {
+        const rawData = result.result as Record<string, unknown>;
+        const emails = Array.isArray(result.result) ? result.result :
+          rawData?.messages ||
+          rawData?.data ||
+          (rawData?.response_data as Record<string, unknown>)?.messages ||
+          [];
+
+        if (Array.isArray(emails) && emails.length > 0) {
+          const formattedEmails = emails.slice(0, 5).map((email: Record<string, unknown>, i: number) => {
+            // Extract headers from various possible formats
+            const headers = (email.payload as Record<string, unknown>)?.headers as Array<{name: string; value: string}> || [];
+            const getHeader = (name: string) => headers.find(h => h.name?.toLowerCase() === name.toLowerCase())?.value;
+
+            // Get email fields - try multiple possible locations
+            let from = email.from || email.sender || getHeader('From') || 'Unknown sender';
+            let subject = email.subject || getHeader('Subject') || '(No subject)';
+            let snippet = email.snippet || email.preview || email.body_preview || '';
+
+            // Clean up the from field to just show name/email
+            if (typeof from === 'string' && from.includes('<')) {
+              const match = from.match(/^([^<]+)/);
+              if (match) from = match[1].trim();
+            }
+
+            // Clean up snippet - ensure it's a string and truncate
+            if (typeof snippet !== 'string') snippet = '';
+            snippet = snippet.replace(/\s+/g, ' ').trim();
+            if (snippet.length > 80) snippet = snippet.substring(0, 80) + '...';
+
+            return `📧 **${i + 1}. ${subject}**\n   From: ${from}${snippet ? `\n   "${snippet}"` : ''}`;
+          }).join('\n\n');
+
+          const totalCount = emails.length;
+          const shownCount = Math.min(5, totalCount);
+
+          return {
+            success: true,
+            result: emails,
+            message: `📬 **Your Recent Emails** (showing ${shownCount} of ${totalCount})\n\n${formattedEmails}${totalCount > 5 ? `\n\n_...and ${totalCount - 5} more emails_` : ''}`,
+          };
+        }
+
+        return {
+          success: true,
+          result: result.result,
+          message: "📭 No emails found matching your criteria.",
+        };
+      }
+
+      return result;
     }
 
     case 'composio_search_emails': {
@@ -329,7 +501,7 @@ export async function executeComposioAction(
       return executeComposioTool(connId, 'GMAIL_SEARCH_EMAILS', {
         query,
         max_results: max_results || 20,
-      });
+      }, ctx.userId);
     }
 
     // ========================================
@@ -357,7 +529,7 @@ export async function executeComposioAction(
       return executeComposioTool(connId, 'SLACK_SEND_MESSAGE', {
         channel,
         text: message,
-      });
+      }, ctx.userId);
     }
 
     case 'composio_list_slack_channels': {
@@ -370,7 +542,7 @@ export async function executeComposioAction(
         };
       }
 
-      return executeComposioTool(connId, 'SLACK_LIST_CHANNELS', {});
+      return executeComposioTool(connId, 'SLACK_LIST_CHANNELS', {}, ctx.userId);
     }
 
     // ========================================
@@ -407,7 +579,7 @@ export async function executeComposioAction(
         lastname: last_name,
         company,
         phone,
-      });
+      }, ctx.userId);
     }
 
     case 'composio_create_hubspot_deal': {
@@ -439,7 +611,7 @@ export async function executeComposioAction(
         amount,
         dealstage: stage || 'appointmentscheduled',
         closedate: close_date,
-      });
+      }, ctx.userId);
     }
 
     // ========================================
@@ -476,7 +648,7 @@ export async function executeComposioAction(
         end: { dateTime: end_time },
         description,
         attendees: attendees?.map(email => ({ email })),
-      });
+      }, ctx.userId);
     }
 
     case 'composio_list_calendar_events': {
@@ -499,7 +671,7 @@ export async function executeComposioAction(
         timeMin: time_min || new Date().toISOString(),
         timeMax: time_max,
         maxResults: max_results || 10,
-      });
+      }, ctx.userId);
     }
 
     // ========================================
@@ -532,7 +704,7 @@ export async function executeComposioAction(
         title,
         content,
         parent_id,
-      });
+      }, ctx.userId);
     }
 
     // ========================================
@@ -565,7 +737,7 @@ export async function executeComposioAction(
         name,
         desc: description,
         idList: list_id,
-      });
+      }, ctx.userId);
     }
 
     // ========================================
@@ -600,7 +772,7 @@ export async function executeComposioAction(
         notes,
         projects: project_id ? [project_id] : undefined,
         due_on: due_date,
-      });
+      }, ctx.userId);
     }
 
     // ========================================
@@ -635,7 +807,7 @@ export async function executeComposioAction(
         description,
         teamId: team_id,
         priority,
-      });
+      }, ctx.userId);
     }
 
     // ========================================
@@ -664,7 +836,7 @@ export async function executeComposioAction(
         };
       }
 
-      return executeComposioTool(connId, tool_name, toolArgs || {});
+      return executeComposioTool(connId, tool_name, toolArgs || {}, ctx.userId);
     }
 
     default:

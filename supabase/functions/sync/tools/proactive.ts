@@ -2,6 +2,7 @@
  * Proactive Intelligence System for SYNC
  *
  * Provides intelligent, contextual insights:
+ * - PRE-CALL context enrichment (middleware before LLM calls)
  * - Post-action insights (revenue impact, stock warnings, etc.)
  * - Pattern recognition (billing cycles, common clients)
  * - Smart suggestions based on context
@@ -11,6 +12,300 @@
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { ActionResult, ActionContext } from './types.ts';
 import { SyncSession, ActiveEntities } from '../memory/types.ts';
+
+// ============================================================================
+// PRE-CALL CONTEXT ENRICHMENT (Middleware)
+// ============================================================================
+
+export interface ContextEnrichment {
+  summaryContext: string;       // Recent activity summary
+  relevantEntities: string;     // Entities likely relevant to query
+  pendingItems: string;         // Pending tasks, invoices, etc.
+  timeContext: string;          // Time-aware context
+  userPreferences: string;      // Known user preferences
+}
+
+/**
+ * Enrich context BEFORE making LLM call
+ * This is the proactive context middleware Vy recommended
+ */
+export async function enrichContextForQuery(
+  query: string,
+  ctx: ActionContext,
+  session: SyncSession
+): Promise<ContextEnrichment> {
+  const enrichment: ContextEnrichment = {
+    summaryContext: '',
+    relevantEntities: '',
+    pendingItems: '',
+    timeContext: '',
+    userPreferences: '',
+  };
+
+  try {
+    const now = new Date();
+    const supabase = ctx.supabase;
+    const companyId = ctx.companyId;
+
+    // 1. TIME CONTEXT - Always include
+    enrichment.timeContext = generateTimeContext(now);
+
+    // 2. RECENT ACTIVITY SUMMARY - Based on query patterns
+    if (shouldFetchRecentActivity(query)) {
+      enrichment.summaryContext = await fetchRecentActivitySummary(supabase, companyId, now);
+    }
+
+    // 3. PENDING ITEMS - Based on query patterns
+    if (shouldFetchPendingItems(query)) {
+      enrichment.pendingItems = await fetchPendingItemsSummary(supabase, companyId, now);
+    }
+
+    // 4. USER PREFERENCES - If available
+    enrichment.userPreferences = await fetchUserPreferences(supabase, ctx.userId, companyId);
+
+    // 5. SESSION ENTITIES - From current conversation
+    if (session.active_entities.clients.length > 0 || session.active_entities.products.length > 0) {
+      enrichment.relevantEntities = formatSessionEntities(session);
+    }
+
+  } catch (error) {
+    console.warn('[ProactiveContext] Error enriching context:', error);
+  }
+
+  return enrichment;
+}
+
+/**
+ * Format enrichment for injection into system prompt
+ */
+export function formatEnrichmentForPrompt(enrichment: ContextEnrichment): string {
+  const sections: string[] = [];
+
+  if (enrichment.timeContext) {
+    sections.push(enrichment.timeContext);
+  }
+
+  if (enrichment.summaryContext) {
+    sections.push(`\n## RECENT ACTIVITY\n${enrichment.summaryContext}`);
+  }
+
+  if (enrichment.pendingItems) {
+    sections.push(`\n## PENDING ITEMS\n${enrichment.pendingItems}`);
+  }
+
+  if (enrichment.relevantEntities) {
+    sections.push(`\n## CONVERSATION CONTEXT\n${enrichment.relevantEntities}`);
+  }
+
+  if (enrichment.userPreferences) {
+    sections.push(`\n## USER PREFERENCES\n${enrichment.userPreferences}`);
+  }
+
+  return sections.join('\n');
+}
+
+// Helper: Determine if query needs recent activity
+function shouldFetchRecentActivity(query: string): boolean {
+  const patterns = [
+    /\b(summary|summarize|overview|report|weekly|monthly|review)\b/i,
+    /\b(recent|latest|last|this week|today|yesterday)\b/i,
+    /\b(how (am i|are we) doing|status|progress)\b/i,
+  ];
+  return patterns.some(p => p.test(query));
+}
+
+// Helper: Determine if query needs pending items
+function shouldFetchPendingItems(query: string): boolean {
+  const patterns = [
+    /\b(pending|overdue|due|outstanding|open|unpaid)\b/i,
+    /\b(what('s| is) (left|remaining|next)|to-?do)\b/i,
+    /\b(tasks?|invoices?|proposals?)\b/i,
+  ];
+  return patterns.some(p => p.test(query));
+}
+
+// Generate time-aware context
+function generateTimeContext(now: Date): string {
+  const hour = now.getHours();
+  const dayOfWeek = now.toLocaleDateString('en-US', { weekday: 'long' });
+  const dateStr = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+  let greeting = 'Hello';
+  if (hour < 12) greeting = 'Good morning';
+  else if (hour < 17) greeting = 'Good afternoon';
+  else greeting = 'Good evening';
+
+  let timeNote = '';
+  if (now.getDay() === 1) timeNote = ' Start of the work week.';
+  else if (now.getDay() === 5) timeNote = ' End of the work week approaching.';
+
+  const dayOfMonth = now.getDate();
+  const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  if (dayOfMonth >= lastDayOfMonth - 2) {
+    timeNote += ' End of month.';
+  }
+
+  return `## TIME CONTEXT\nToday is ${dayOfWeek}, ${dateStr}.${timeNote}`;
+}
+
+// Fetch recent activity summary
+async function fetchRecentActivitySummary(
+  supabase: SupabaseClient,
+  companyId: string,
+  now: Date
+): Promise<string> {
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const lines: string[] = [];
+
+  try {
+    // Recent invoices
+    const { data: invoices } = await supabase
+      .from('invoices')
+      .select('total, status')
+      .eq('company_id', companyId)
+      .gte('created_at', weekAgo.toISOString());
+
+    if (invoices && invoices.length > 0) {
+      const invoiceTotal = invoices.reduce((sum, i) => sum + (i.total || 0), 0);
+      const paidCount = invoices.filter(i => i.status === 'paid').length;
+      lines.push(`- Invoices this week: ${invoices.length} created (${paidCount} paid), €${invoiceTotal.toFixed(2)} total`);
+    }
+
+    // Recent expenses
+    const { data: expenses } = await supabase
+      .from('expenses')
+      .select('amount')
+      .eq('company_id', companyId)
+      .gte('date', weekAgo.toISOString().split('T')[0]);
+
+    if (expenses && expenses.length > 0) {
+      const expenseTotal = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+      lines.push(`- Expenses this week: ${expenses.length} logged, €${expenseTotal.toFixed(2)} total`);
+    }
+
+    // Recent tasks completed
+    const { data: tasks } = await supabase
+      .from('tasks')
+      .select('status')
+      .eq('company_id', companyId)
+      .gte('updated_at', weekAgo.toISOString());
+
+    if (tasks && tasks.length > 0) {
+      const completed = tasks.filter(t => t.status === 'complete').length;
+      lines.push(`- Tasks this week: ${completed} completed of ${tasks.length} total activity`);
+    }
+
+  } catch (error) {
+    console.warn('[ProactiveContext] Error fetching activity summary:', error);
+  }
+
+  return lines.length > 0 ? lines.join('\n') : '';
+}
+
+// Fetch pending items summary
+async function fetchPendingItemsSummary(
+  supabase: SupabaseClient,
+  companyId: string,
+  now: Date
+): Promise<string> {
+  const lines: string[] = [];
+  const today = now.toISOString().split('T')[0];
+
+  try {
+    // Pending invoices
+    const { data: pendingInvoices } = await supabase
+      .from('invoices')
+      .select('total, client_name, due_date')
+      .eq('company_id', companyId)
+      .in('status', ['sent', 'draft']);
+
+    if (pendingInvoices && pendingInvoices.length > 0) {
+      const pendingTotal = pendingInvoices.reduce((sum, i) => sum + (i.total || 0), 0);
+      const overdue = pendingInvoices.filter(i => i.due_date && i.due_date < today).length;
+      lines.push(`- Pending invoices: ${pendingInvoices.length} (€${pendingTotal.toFixed(2)})${overdue > 0 ? ` - ${overdue} overdue!` : ''}`);
+    }
+
+    // Pending tasks
+    const { data: pendingTasks } = await supabase
+      .from('tasks')
+      .select('title, due_date, priority')
+      .eq('company_id', companyId)
+      .in('status', ['pending', 'in_progress'])
+      .order('due_date', { ascending: true })
+      .limit(5);
+
+    if (pendingTasks && pendingTasks.length > 0) {
+      const overdue = pendingTasks.filter(t => t.due_date && t.due_date < today).length;
+      const highPriority = pendingTasks.filter(t => t.priority === 'high').length;
+      lines.push(`- Pending tasks: ${pendingTasks.length} open${overdue > 0 ? ` (${overdue} overdue)` : ''}${highPriority > 0 ? ` - ${highPriority} high priority` : ''}`);
+    }
+
+    // Draft proposals
+    const { data: draftProposals } = await supabase
+      .from('proposals')
+      .select('id, client_name')
+      .eq('company_id', companyId)
+      .eq('status', 'draft');
+
+    if (draftProposals && draftProposals.length > 0) {
+      lines.push(`- Draft proposals: ${draftProposals.length} waiting to be sent`);
+    }
+
+  } catch (error) {
+    console.warn('[ProactiveContext] Error fetching pending items:', error);
+  }
+
+  return lines.length > 0 ? lines.join('\n') : '';
+}
+
+// Fetch user preferences
+async function fetchUserPreferences(
+  supabase: SupabaseClient,
+  userId: string | undefined,
+  companyId: string
+): Promise<string> {
+  if (!userId) return '';
+
+  const lines: string[] = [];
+
+  try {
+    const { data: prefs } = await supabase
+      .from('sync_user_preferences')
+      .select('preference_key, preference_value, confidence')
+      .eq('user_id', userId)
+      .gte('confidence', 0.6)
+      .order('confidence', { ascending: false })
+      .limit(5);
+
+    if (prefs && prefs.length > 0) {
+      for (const pref of prefs) {
+        const key = pref.preference_key.replace(/_/g, ' ');
+        lines.push(`- ${key}: ${JSON.stringify(pref.preference_value)}`);
+      }
+    }
+  } catch (error) {
+    // Table might not exist, ignore
+  }
+
+  return lines.length > 0 ? `Known preferences:\n${lines.join('\n')}` : '';
+}
+
+// Format session entities for context
+function formatSessionEntities(session: SyncSession): string {
+  const lines: string[] = [];
+
+  if (session.active_entities.clients.length > 0) {
+    const clients = session.active_entities.clients.slice(0, 3).map(c => c.name).join(', ');
+    lines.push(`- Recently mentioned clients: ${clients}`);
+  }
+
+  if (session.active_entities.products.length > 0) {
+    const products = session.active_entities.products.slice(0, 3).map(p => p.name).join(', ');
+    lines.push(`- Recently mentioned products: ${products}`);
+  }
+
+  return lines.join('\n');
+}
 
 // ============================================================================
 // Types

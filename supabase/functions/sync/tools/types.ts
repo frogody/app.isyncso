@@ -67,7 +67,7 @@ export interface ProposalData {
   client_name: string;
   client_email?: string;
   client_company?: string;
-  title: string;
+  title?: string;
   items: Array<{
     name: string;
     quantity: number;
@@ -76,6 +76,7 @@ export interface ProposalData {
   }>;
   tax_percent?: number;
   notes?: string;
+  status?: 'draft' | 'sent' | 'viewed' | 'accepted' | 'declined';
 }
 
 export interface InvoiceData {
