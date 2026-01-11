@@ -544,6 +544,141 @@ test.describe('SYNC API - Performance', () => {
 // EDGE CASES
 // ============================================================================
 
+// ============================================================================
+// ORCHESTRATION WORKFLOW TESTS
+// ============================================================================
+
+test.describe('SYNC API - Orchestration Workflows', () => {
+  test('should detect client onboarding workflow', async () => {
+    console.log('\n🎭 Test: Orchestration - Client Onboarding Detection');
+
+    const response = await callSyncAPI(
+      'Onboard new client Jan de Vries from Tech Solutions BV at jan@techsolutions.nl',
+      `${testSessionId}_orch_1`
+    );
+
+    console.log('   Response:', response.response.substring(0, 300));
+    console.log('   Orchestration:', JSON.stringify((response as any).orchestration || {}, null, 2));
+
+    // Should detect orchestration workflow
+    expect(response.delegatedTo).toBe('orchestrator');
+    expect((response as any).orchestration).toBeDefined();
+    expect((response as any).orchestration?.workflowName).toMatch(/onboarding/i);
+
+    console.log('   ✅ Client onboarding workflow detected');
+  });
+
+  test('should execute weekly review workflow', async () => {
+    console.log('\n🎭 Test: Orchestration - Weekly Review');
+
+    const response = await callSyncAPI(
+      'Give me a weekly business review',
+      `${testSessionId}_orch_2`
+    );
+
+    console.log('   Response:', response.response.substring(0, 400));
+    console.log('   Orchestration status:', (response as any).orchestration?.status);
+
+    // Should execute the weekly review
+    expect(response.response.toLowerCase()).toMatch(/review|summary|financial|pipeline|tasks/i);
+
+    if ((response as any).orchestration) {
+      expect((response as any).orchestration.workflowId).toBe('weekly_review');
+    }
+
+    console.log('   ✅ Weekly review workflow executed');
+  });
+
+  test('should execute monthly close workflow', async () => {
+    console.log('\n🎭 Test: Orchestration - Monthly Close');
+
+    const response = await callSyncAPI(
+      'Do the monthly financial close',
+      `${testSessionId}_orch_3`
+    );
+
+    console.log('   Response:', response.response.substring(0, 400));
+
+    // Should show financial data
+    expect(response.response.toLowerCase()).toMatch(/financial|invoice|expense|revenue|month/i);
+
+    console.log('   ✅ Monthly close workflow executed');
+  });
+
+  test('should detect product launch workflow', async () => {
+    console.log('\n🎭 Test: Orchestration - Product Launch');
+
+    const response = await callSyncAPI(
+      'Launch a new product called SuperWidget Pro for €299 - a premium productivity tool',
+      `${testSessionId}_orch_4`
+    );
+
+    console.log('   Response:', response.response.substring(0, 400));
+
+    // Should handle product launch
+    if ((response as any).orchestration) {
+      expect((response as any).orchestration.workflowId).toBe('product_launch');
+    } else {
+      // If not detected as workflow, should still understand the intent
+      expect(response.response.toLowerCase()).toMatch(/product|launch|superwidget|€299/i);
+    }
+
+    console.log('   ✅ Product launch workflow handled');
+  });
+
+  test('should handle customer issue resolution', async () => {
+    console.log('\n🎭 Test: Orchestration - Issue Resolution');
+
+    const response = await callSyncAPI(
+      'Customer Jan Bakker has an issue with his order arriving damaged',
+      `${testSessionId}_orch_5`
+    );
+
+    console.log('   Response:', response.response.substring(0, 400));
+
+    // Should handle issue resolution
+    expect(response.response.toLowerCase()).toMatch(/issue|customer|resolution|jan|bakker|damage/i);
+
+    console.log('   ✅ Issue resolution workflow handled');
+  });
+
+  test('should handle inventory restock workflow', async () => {
+    console.log('\n🎭 Test: Orchestration - Inventory Restock');
+
+    const response = await callSyncAPI(
+      'Restock the inventory for low stock items',
+      `${testSessionId}_orch_6`
+    );
+
+    console.log('   Response:', response.response.substring(0, 400));
+
+    // Should check inventory
+    expect(response.response.toLowerCase()).toMatch(/stock|inventory|product|restock|low/i);
+
+    console.log('   ✅ Inventory restock workflow handled');
+  });
+
+  test('should ask for missing context when needed', async () => {
+    console.log('\n🎭 Test: Orchestration - Context Collection');
+
+    const response = await callSyncAPI(
+      'Start client onboarding',  // Missing client details
+      `${testSessionId}_orch_7`
+    );
+
+    console.log('   Response:', response.response.substring(0, 300));
+
+    // Should ask for missing information
+    expect(response.response.toLowerCase()).toMatch(/name|email|company|need|details|what|who/i);
+
+    if ((response as any).orchestration?.status === 'awaiting_context') {
+      console.log('   Missing inputs:', (response as any).orchestration.missingInputs);
+    }
+
+    console.log('   ✅ Context collection working');
+  });
+});
+
 test.describe('SYNC API - Edge Cases', () => {
   test('should handle empty message gracefully', async () => {
     console.log('\n🔮 Test: Edge Case - Empty Message');

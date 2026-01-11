@@ -290,15 +290,16 @@ function ImageCard({ url }) {
 // ============================================================================
 
 // Agent segments configuration - each segment represents an agent SYNC can delegate to
-// Matches the 7 agents in the SYNC edge function
+// Matches the agents in the SYNC edge function + orchestrator
 const AGENT_SEGMENTS = [
-  { id: 'learn', name: 'Learn', color: '#06b6d4', from: 0.00, to: 0.12 },       // cyan
-  { id: 'growth', name: 'Growth', color: '#6366f1', from: 0.14, to: 0.26 },     // indigo
-  { id: 'products', name: 'Products', color: '#10b981', from: 0.28, to: 0.40 }, // emerald
-  { id: 'sentinel', name: 'Sentinel', color: '#86EFAC', from: 0.42, to: 0.54 }, // sage
-  { id: 'finance', name: 'Finance', color: '#f59e0b', from: 0.56, to: 0.68 },   // amber
-  { id: 'create', name: 'Create', color: '#f43f5e', from: 0.70, to: 0.82 },     // rose
-  { id: 'raise', name: 'Raise', color: '#f97316', from: 0.84, to: 0.96 },       // orange
+  { id: 'orchestrator', name: 'Orchestrator', color: '#ec4899', from: 0.00, to: 0.10 },  // pink - multi-agent workflows
+  { id: 'learn', name: 'Learn', color: '#06b6d4', from: 0.12, to: 0.22 },       // cyan
+  { id: 'growth', name: 'Growth', color: '#6366f1', from: 0.24, to: 0.34 },     // indigo
+  { id: 'products', name: 'Products', color: '#10b981', from: 0.36, to: 0.46 }, // emerald
+  { id: 'sentinel', name: 'Sentinel', color: '#86EFAC', from: 0.48, to: 0.58 }, // sage
+  { id: 'finance', name: 'Finance', color: '#f59e0b', from: 0.60, to: 0.70 },   // amber
+  { id: 'create', name: 'Create', color: '#f43f5e', from: 0.72, to: 0.82 },     // rose
+  { id: 'tasks', name: 'Tasks', color: '#f97316', from: 0.84, to: 0.94 },       // orange
 ];
 
 function OuterRing({ size = 360, mood = 'listening', level = 0.2, activeAgent = null }) {
@@ -1116,12 +1117,14 @@ export default function SyncAgent() {
     }
   };
 
-  // Quick suggestions
+  // Quick suggestions - including orchestration workflows
   const suggestions = [
+    { label: 'Weekly Review', action: 'Give me a weekly business review', isOrchestration: true },
+    { label: 'Onboard Client', action: 'Onboard new client', isOrchestration: true },
+    { label: 'Monthly Close', action: 'Do the monthly financial close', isOrchestration: true },
     { label: 'Create invoice', action: 'Help me create an invoice for a client' },
+    { label: 'Product Launch', action: 'Launch a new product', isOrchestration: true },
     { label: 'Find prospects', action: 'Find prospects in the SaaS industry' },
-    { label: 'Compliance check', action: 'Check my AI system compliance status' },
-    { label: 'Learning path', action: 'Recommend a learning path for AI development' },
   ];
 
   return (
@@ -1205,8 +1208,13 @@ export default function SyncAgent() {
 
             <div className="rounded-2xl border border-white/10 bg-black/30 p-3 text-xs text-white/70">
               <div className="mb-2 text-[11px] text-white/50">Capabilities</div>
-              <div className="text-white/65">
-                SYNC routes your requests to specialized agents: <span className="text-purple-400">Finance</span>, <span className="text-cyan-400">Learn</span>, <span className="text-emerald-400">Sentinel</span>, <span className="text-indigo-400">Growth</span>, and more.
+              <div className="text-white/65 space-y-2">
+                <div>
+                  SYNC routes your requests to specialized agents: <span className="text-purple-400">Finance</span>, <span className="text-cyan-400">Learn</span>, <span className="text-emerald-400">Products</span>, <span className="text-indigo-400">Growth</span>, and more.
+                </div>
+                <div className="pt-1 border-t border-white/10">
+                  <span className="text-pink-400">Orchestration Workflows</span>: Complex multi-agent tasks like client onboarding, weekly reviews, product launches, and monthly close.
+                </div>
               </div>
             </div>
           </div>
@@ -1244,8 +1252,14 @@ export default function SyncAgent() {
                         setInput(suggestion.action);
                         setTimeout(() => send(), 100);
                       }}
-                      className="px-3 py-1.5 text-xs rounded-full bg-zinc-800 border border-white/10 text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors"
+                      className={cn(
+                        "px-3 py-1.5 text-xs rounded-full border transition-colors",
+                        suggestion.isOrchestration
+                          ? "bg-pink-950/40 border-pink-500/30 text-pink-300 hover:bg-pink-900/50 hover:border-pink-400/40"
+                          : "bg-zinc-800 border-white/10 text-zinc-300 hover:bg-zinc-700 hover:text-white"
+                      )}
                     >
+                      {suggestion.isOrchestration && <span className="mr-1">🎭</span>}
                       {suggestion.label}
                     </button>
                   ))}

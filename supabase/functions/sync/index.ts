@@ -69,6 +69,15 @@ import {
   formatInsightsForResponse,
   ProactiveInsight,
 } from './tools/proactive.ts';
+import {
+  detectOrchestrationWorkflow,
+  extractWorkflowContext,
+  executeOrchestrationWorkflow,
+  getContextQuestions,
+  OrchestrationWorkflow,
+  OrchestrationResult,
+  ORCHESTRATION_WORKFLOWS,
+} from './tools/orchestration.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -1636,6 +1645,171 @@ serve(async (req) => {
 
     // Detect agent routing
     const routingResult = detectAgentFromMessage(message);
+
+    // =========================================================================
+    // ORCHESTRATION PATH: Detect complex multi-agent workflows
+    // =========================================================================
+    const detectedWorkflow = detectOrchestrationWorkflow(message);
+
+    if (detectedWorkflow) {
+      console.log(`[SYNC] Detected orchestration workflow: ${detectedWorkflow.name}`);
+
+      // Extract context from the message
+      const { inputs, missing } = extractWorkflowContext(message, detectedWorkflow);
+
+      // If we have missing required context, ask for it
+      if (missing.length > 0) {
+        const questionsResponse = getContextQuestions(missing);
+        const contextMsg = `I can help you with **${detectedWorkflow.name}**! ${detectedWorkflow.description}\n\n${questionsResponse}`;
+
+        // Store in session
+        const contextChatMsg: ChatMessage = {
+          role: 'assistant',
+          content: contextMsg,
+          timestamp: new Date().toISOString(),
+          agentId: 'orchestrator',
+        };
+
+        // Get session first
+        const orchestrationSession = await memorySystem.session.getOrCreateSession(
+          sessionId,
+          userId,
+          companyId
+        );
+
+        // Store the user message
+        await memorySystem.session.addMessage(orchestrationSession, {
+          role: 'user',
+          content: message,
+          timestamp: new Date().toISOString(),
+        });
+
+        await memorySystem.session.addMessage(orchestrationSession, contextChatMsg);
+        await memorySystem.session.updateSession(orchestrationSession);
+
+        return new Response(
+          JSON.stringify({
+            response: contextMsg,
+            sessionId: orchestrationSession.session_id,
+            delegatedTo: 'orchestrator',
+            orchestration: {
+              workflowId: detectedWorkflow.id,
+              workflowName: detectedWorkflow.name,
+              status: 'awaiting_context',
+              missingInputs: missing,
+              providedInputs: Object.keys(inputs),
+            },
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // We have all required context, execute the workflow
+      console.log(`[SYNC] Executing orchestration workflow with inputs:`, inputs);
+
+      // Get session for orchestration
+      const orchestrationSession = await memorySystem.session.getOrCreateSession(
+        sessionId,
+        userId,
+        companyId
+      );
+
+      // Store user message
+      await memorySystem.session.addMessage(orchestrationSession, {
+        role: 'user',
+        content: message,
+        timestamp: new Date().toISOString(),
+      });
+
+      const ctx: ActionContext = { supabase, companyId, userId };
+      const progressMessages: string[] = [];
+
+      const orchestrationResult = await executeOrchestrationWorkflow(
+        detectedWorkflow,
+        inputs,
+        ctx,
+        executeAction,
+        (progress) => progressMessages.push(progress)
+      );
+
+      // Build comprehensive response
+      let orchestrationResponse = orchestrationResult.summary;
+
+      if (orchestrationResult.nextSteps && orchestrationResult.nextSteps.length > 0) {
+        orchestrationResponse += `\n\n### Suggested Next Steps:\n`;
+        orchestrationResult.nextSteps.forEach((step, i) => {
+          orchestrationResponse += `${i + 1}. ${step}\n`;
+        });
+      }
+
+      if (orchestrationResult.errors && orchestrationResult.errors.length > 0) {
+        orchestrationResponse += `\n\n⚠️ **Some tasks had issues:**\n`;
+        orchestrationResult.errors.forEach(err => {
+          orchestrationResponse += `- ${err}\n`;
+        });
+      }
+
+      orchestrationResponse += `\n\n---\n*Workflow completed in ${orchestrationResult.completedPhases}/${orchestrationResult.totalPhases} phases*`;
+
+      // Store assistant message
+      const orchestrationAssistantMsg: ChatMessage = {
+        role: 'assistant',
+        content: orchestrationResponse,
+        timestamp: new Date().toISOString(),
+        agentId: 'orchestrator',
+        actionExecuted: {
+          type: `orchestration:${detectedWorkflow.id}`,
+          success: orchestrationResult.success,
+          result: orchestrationResult.results,
+        },
+      };
+      await memorySystem.session.addMessage(orchestrationSession, orchestrationAssistantMsg);
+      await memorySystem.session.updateSession(orchestrationSession);
+
+      // Log orchestration usage
+      if (context?.companyId) {
+        try {
+          await supabase.from('ai_usage_log').insert({
+            company_id: context.companyId,
+            user_id: context.userId || null,
+            model: 'orchestration',
+            cost_usd: 0,
+            content_type: 'orchestration',
+            metadata: {
+              sessionId: orchestrationSession.session_id,
+              workflowId: detectedWorkflow.id,
+              workflowName: detectedWorkflow.name,
+              success: orchestrationResult.success,
+              completedPhases: orchestrationResult.completedPhases,
+              totalPhases: orchestrationResult.totalPhases,
+              inputs: Object.keys(inputs),
+            },
+          });
+        } catch (logError) {
+          console.error('Failed to log orchestration usage:', logError);
+        }
+      }
+
+      return new Response(
+        JSON.stringify({
+          response: orchestrationResponse,
+          sessionId: orchestrationSession.session_id,
+          delegatedTo: 'orchestrator',
+          orchestration: {
+            workflowId: orchestrationResult.workflowId,
+            workflowName: orchestrationResult.workflowName,
+            status: orchestrationResult.status,
+            success: orchestrationResult.success,
+            completedPhases: orchestrationResult.completedPhases,
+            totalPhases: orchestrationResult.totalPhases,
+            results: orchestrationResult.results,
+            nextSteps: orchestrationResult.nextSteps,
+            errors: orchestrationResult.errors,
+          },
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Create user message with timestamp
     const userMessage: ChatMessage = {
