@@ -10,7 +10,7 @@ import {
   RefreshCw, AtSign, Bookmark
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/supabaseClient';
 import { useUser } from '@/components/context/UserContext';
 import {
   detectAgentMentions,
@@ -122,12 +122,12 @@ export default function InboxPage() {
     setLoading(true);
     try {
       // Load channels - RLS handles access
-      const channelsData = await base44.entities.Channel.list({ limit: 100 }).catch(() => []);
+      const channelsData = await db.entities.Channel.list({ limit: 100 }).catch(() => []);
 
       // Try to get team members - this edge function may not be available
       let usersData = [];
       try {
-        const usersResponse = await base44.functions.invoke('getTeamMembers');
+        const usersResponse = await db.functions.invoke('getTeamMembers');
         usersData = usersResponse?.data?.users || [];
       } catch (e) {
         console.warn('getTeamMembers not available, using empty list:', e.message);
@@ -163,14 +163,14 @@ export default function InboxPage() {
         ];
 
         for (const ch of defaultChannels) {
-          await base44.entities.Channel.create({
+          await db.entities.Channel.create({
             ...ch,
             user_id: user.id,  // Set creator
             members: []
           });
         }
 
-        const newChannels = await base44.entities.Channel.list({ limit: 100 }).catch(() => []);
+        const newChannels = await db.entities.Channel.list({ limit: 100 }).catch(() => []);
         setChannels(newChannels.filter(c => c.type !== 'dm'));
 
         if (newChannels.length > 0) {
@@ -203,19 +203,19 @@ export default function InboxPage() {
     try {
       // Handle special views
       if (channelId === 'threads') {
-        const allMsgs = await base44.entities.Message.filter({ reply_count: { $gt: 0 } }, '-created_date', 50);
+        const allMsgs = await db.entities.Message.filter({ reply_count: { $gt: 0 } }, '-created_date', 50);
         setMessages(allMsgs);
       } else if (channelId === 'mentions') {
-        const mentionedMsgs = await base44.entities.Message.filter({ 
+        const mentionedMsgs = await db.entities.Message.filter({ 
           mentions: { $in: [user?.id] }
         }, '-created_date', 50);
         setMessages(mentionedMsgs);
       } else if (channelId === 'saved') {
-        const savedMsgs = await base44.entities.Message.filter({ is_saved: true }, '-created_date', 50);
+        const savedMsgs = await db.entities.Message.filter({ is_saved: true }, '-created_date', 50);
         setMessages(savedMsgs);
       } else {
         // Regular channel
-        const msgs = await base44.entities.Message.filter(
+        const msgs = await db.entities.Message.filter(
           { channel_id: channelId },
           'created_date',
           100
@@ -240,7 +240,7 @@ export default function InboxPage() {
     if (!selectedChannel?.id) return;
 
     try {
-      const msgs = await base44.entities.Message.filter(
+      const msgs = await db.entities.Message.filter(
         { channel_id: selectedChannel.id },
         '-created_date',
         10
@@ -312,7 +312,7 @@ export default function InboxPage() {
   // Load thread replies (for side panel)
   const loadThreadReplies = useCallback(async (parentMessageId) => {
     try {
-      const replies = await base44.entities.Message.filter(
+      const replies = await db.entities.Message.filter(
         { thread_id: parentMessageId },
         'created_date',
         50
@@ -326,7 +326,7 @@ export default function InboxPage() {
   // Load inline thread replies (returns replies for inline display)
   const loadInlineReplies = useCallback(async (parentMessageId) => {
     try {
-      const replies = await base44.entities.Message.filter(
+      const replies = await db.entities.Message.filter(
         { thread_id: parentMessageId },
         'created_date',
         50
@@ -357,7 +357,7 @@ export default function InboxPage() {
     if (!selectedChannel || !user) return null;
 
     try {
-      const newReply = await base44.entities.Message.create({
+      const newReply = await db.entities.Message.create({
         channel_id: selectedChannel.id,
         sender_id: user.id,
         sender_name: user.full_name || user.email,
@@ -371,7 +371,7 @@ export default function InboxPage() {
       // Update parent message reply count
       const parentMsg = messages.find(m => m.id === parentMessageId);
       if (parentMsg) {
-        await base44.entities.Message.update(parentMessageId, {
+        await db.entities.Message.update(parentMessageId, {
           reply_count: (parentMsg.reply_count || 0) + 1
         });
         setMessages(prev => prev.map(m =>
@@ -419,7 +419,7 @@ export default function InboxPage() {
 
       setMessages(prev => prev.filter(m => m.id !== typingMessage.id));
 
-      const agentMessage = await base44.entities.Message.create({
+      const agentMessage = await db.entities.Message.create({
         channel_id: selectedChannel.id,
         sender_id: user.id,
         sender_name: `${user.full_name}'s ${agent.displayName}`,
@@ -439,7 +439,7 @@ export default function InboxPage() {
 
       setMessages(prev => prev.filter(m => m.id !== typingMessage.id));
 
-      const errorMessage = await base44.entities.Message.create({
+      const errorMessage = await db.entities.Message.create({
         channel_id: selectedChannel.id,
         sender_id: user.id,
         sender_name: `${user.full_name}'s ${agent.displayName}`,
@@ -459,7 +459,7 @@ export default function InboxPage() {
     if (!selectedChannel || !user) return;
 
     try {
-      const newMessage = await base44.entities.Message.create({
+      const newMessage = await db.entities.Message.create({
         channel_id: selectedChannel.id,
         sender_id: user.id,
         sender_name: user.full_name || user.email,
@@ -472,7 +472,7 @@ export default function InboxPage() {
         mentions: extractMentions(messageData.content)
       });
 
-      await base44.entities.Channel.update(selectedChannel.id, {
+      await db.entities.Channel.update(selectedChannel.id, {
         last_message_at: new Date().toISOString()
       });
 
@@ -481,7 +481,7 @@ export default function InboxPage() {
 
         const parentMsg = messages.find(m => m.id === messageData.thread_id);
         if (parentMsg) {
-          await base44.entities.Message.update(parentMsg.id, {
+          await db.entities.Message.update(parentMsg.id, {
             reply_count: (parentMsg.reply_count || 0) + 1
           });
           setMessages(prev => prev.map(m =>
@@ -529,7 +529,7 @@ export default function InboxPage() {
     ));
 
     try {
-      await base44.entities.Message.update(messageId, { reactions });
+      await db.entities.Message.update(messageId, { reactions });
     } catch (error) {
       console.error('Failed to add reaction:', error);
       // Revert
@@ -542,7 +542,7 @@ export default function InboxPage() {
   // Edit message
   const handleEditMessage = useCallback(async (messageId, newContent) => {
     try {
-      await base44.entities.Message.update(messageId, {
+      await db.entities.Message.update(messageId, {
         content: newContent,
         is_edited: true
       });
@@ -559,7 +559,7 @@ export default function InboxPage() {
   // Delete message
   const handleDeleteMessage = useCallback(async (messageId) => {
     try {
-      await base44.entities.Message.delete(messageId);
+      await db.entities.Message.delete(messageId);
       setMessages(prev => prev.filter(m => m.id !== messageId));
       toast.success('Message deleted');
     } catch (error) {
@@ -574,7 +574,7 @@ export default function InboxPage() {
     if (!message) return;
 
     try {
-      await base44.entities.Message.update(messageId, {
+      await db.entities.Message.update(messageId, {
         is_pinned: !message.is_pinned
       });
       setMessages(prev => prev.map(m =>
@@ -607,7 +607,7 @@ export default function InboxPage() {
         ? [...new Set([user.id, ...(channelData.members || [])])]
         : [];
 
-      const newChannel = await base44.entities.Channel.create({
+      const newChannel = await db.entities.Channel.create({
         ...channelData,
         user_id: user.id,  // Set creator
         members: members,  // Include creator in members
@@ -625,7 +625,7 @@ export default function InboxPage() {
 
       // Create system message (don't block on this)
       try {
-        await base44.entities.Message.create({
+        await db.entities.Message.create({
           channel_id: newChannel.id,
           sender_id: user.id,
           sender_name: 'System',
@@ -658,7 +658,7 @@ export default function InboxPage() {
     }
 
     try {
-      const newDM = await base44.entities.Channel.create({
+      const newDM = await db.entities.Channel.create({
         name: targetUser.full_name || targetUser.email,
         type: 'dm',
         user_id: user.id,  // Creator
@@ -677,7 +677,7 @@ export default function InboxPage() {
   // Archive channel
   const handleArchiveChannel = useCallback(async (channel) => {
     try {
-      await base44.entities.Channel.update(channel.id, { is_archived: true });
+      await db.entities.Channel.update(channel.id, { is_archived: true });
       setChannels(prev => prev.filter(c => c.id !== channel.id));
       if (selectedChannel?.id === channel.id) {
         setSelectedChannel(channels.find(c => c.id !== channel.id) || null);
@@ -700,7 +700,7 @@ export default function InboxPage() {
 
     setIsDeleting(true);
     try {
-      await base44.entities.Channel.delete(channelToDelete.id);
+      await db.entities.Channel.delete(channelToDelete.id);
       setChannels(prev => prev.filter(c => c.id !== channelToDelete.id));
       if (selectedChannel?.id === channelToDelete.id) {
         setSelectedChannel(channels.find(c => c.id !== channelToDelete.id) || null);
@@ -721,7 +721,7 @@ export default function InboxPage() {
   const handleUpdateChannel = useCallback(async (updates) => {
     if (!selectedChannel) return;
     try {
-      await base44.entities.Channel.update(selectedChannel.id, updates);
+      await db.entities.Channel.update(selectedChannel.id, updates);
       setChannels(prev => prev.map(c =>
         c.id === selectedChannel.id ? { ...c, ...updates } : c
       ));

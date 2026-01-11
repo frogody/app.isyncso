@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -250,8 +250,8 @@ export default function ComplianceRoadmap() {
   const loadRoadmapData = React.useCallback(async () => {
     try {
       const [systemsData, obligationsData] = await Promise.all([
-        base44.entities.AISystem.list(),
-        base44.entities.Obligation.list()
+        db.entities.AISystem.list(),
+        db.entities.Obligation.list()
       ]);
       setAISystems(systemsData);
       setObligations(obligationsData);
@@ -316,7 +316,7 @@ export default function ComplianceRoadmap() {
   const generateAIPlan = async () => {
     setGeneratingPlan(true);
     try {
-      const response = await base44.integrations.Core.InvokeLLM({
+      const response = await db.integrations.Core.InvokeLLM({
         prompt: `Analyze these AI systems and provide compliance recommendations:\n${JSON.stringify(aiSystems.map(s => ({ name: s.name, classification: s.risk_classification, status: s.compliance_status })), null, 2)}\n\nUrgent tasks: ${stats.urgentTasks.length}\nOverdue: ${stats.overdueTasks}\n\nProvide:\n1. Top 3 immediate actions\n2. Quick wins\n3. Risk priorities\n4. 30-day plan`,
         response_json_schema: {
           type: "object",

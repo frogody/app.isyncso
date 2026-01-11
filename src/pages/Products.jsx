@@ -20,7 +20,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@/components/context/UserContext";
 import { Product, ProductCategory } from "@/api/entities";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import {
   Popover,
   PopoverContent,
@@ -173,7 +173,7 @@ export default function Products() {
       // Then try to load from UserAppConfig
       if (user?.id) {
         try {
-          const configs = await base44.entities.UserAppConfig.filter({ user_id: user.id });
+          const configs = await db.entities.UserAppConfig.filter({ user_id: user.id });
           if (configs.length > 0 && configs[0].products_settings) {
             const settings = configs[0].products_settings;
             setDigitalEnabled(settings.digitalEnabled ?? true);
@@ -204,13 +204,13 @@ export default function Products() {
     if (user?.id) {
       setSettingsSaving(true);
       try {
-        const configs = await base44.entities.UserAppConfig.filter({ user_id: user.id });
+        const configs = await db.entities.UserAppConfig.filter({ user_id: user.id });
         if (configs.length > 0) {
-          await base44.entities.UserAppConfig.update(configs[0].id, {
+          await db.entities.UserAppConfig.update(configs[0].id, {
             products_settings: settings
           });
         } else {
-          await base44.entities.UserAppConfig.create({
+          await db.entities.UserAppConfig.create({
             user_id: user.id,
             products_settings: settings
           });

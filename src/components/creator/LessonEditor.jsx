@@ -11,7 +11,7 @@ import {
   Sparkles,
   Undo2
 } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { toast } from "sonner";
 import InteractiveLesson from "../lessons/InteractiveLesson";
 
@@ -35,7 +35,7 @@ export default function LessonEditor({ lesson, onSave, onCancel }) {
 
     setIsSaving(true);
     try {
-      await base44.entities.Lesson.update(lesson.id, {
+      await db.entities.Lesson.update(lesson.id, {
         content: content
       });
       
@@ -70,7 +70,7 @@ export default function LessonEditor({ lesson, onSave, onCancel }) {
 
     setIsRemixing(true);
     try {
-      const { data } = await base44.functions.invoke('remixContent', {
+      const { data } = await db.functions.invoke('remixContent', {
         current_content: contentToRemix,
         instruction: remixInstruction,
         context: lesson.title

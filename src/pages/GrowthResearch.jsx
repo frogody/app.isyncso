@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -84,7 +84,7 @@ export default function GrowthResearch() {
     
     try {
       // Call Explorium-powered backend function
-      const response = await base44.functions.invoke('searchProspects', {
+      const response = await db.functions.invoke('searchProspects', {
         searchType,
         filters: {
           query: filters.query,
@@ -148,7 +148,7 @@ export default function GrowthResearch() {
     try {
       const selectedProspects = results.filter(r => selectedResults.has(r.id));
       
-      await base44.entities.ProspectList.create({
+      await db.entities.ProspectList.create({
         name: `${filters.query || 'Research'} - ${new Date().toLocaleDateString()}`,
         description: `${searchType} research results`,
         prospect_count: selectedProspects.length,

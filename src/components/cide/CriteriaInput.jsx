@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Search, Sparkles, X, Bookmark } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 
 const SIZE_OPTIONS = ["1-10", "11-50", "51-200", "201-500", "501-1000", "1001-5000", "5001-10000", "10001+"];
 
@@ -27,14 +27,14 @@ export default function CriteriaInput({ onSubmit, isProcessing, initialCriteria 
 
   const prefillFromUserContext = React.useCallback(async () => {
     try {
-      const user = await base44.auth.me();
+      const user = await db.auth.me();
       if (!user) return;
 
       let companyData = null;
 
       // NEW structure: user has company_id linking to Company entity
       if (user.company_id) {
-        companyData = await base44.entities.Company.get(user.company_id);
+        companyData = await db.entities.Company.get(user.company_id);
       }
       // LEGACY structure: user has company_data embedded directly
       else if (user.company_data) {
@@ -89,7 +89,7 @@ export default function CriteriaInput({ onSubmit, isProcessing, initialCriteria 
   }, [loadTemplates, prefillFromUserContext, initialCriteria]);
 
     try {
-      const response = await base44.functions.invoke('getICPTemplates');
+      const response = await db.functions.invoke('getICPTemplates');
       if (response.data?.success) {
         setTemplates(response.data.templates || []);
       }
@@ -111,7 +111,7 @@ export default function CriteriaInput({ onSubmit, isProcessing, initialCriteria 
     if (!selectedTemplate) return;
     
     try {
-      const response = await base44.functions.invoke('loadICPTemplate', {
+      const response = await db.functions.invoke('loadICPTemplate', {
         template_id: selectedTemplate
       });
       
@@ -151,7 +151,7 @@ export default function CriteriaInput({ onSubmit, isProcessing, initialCriteria 
     // Save as template if requested
     if (saveAsTemplate && templateName.trim()) {
       try {
-        await base44.functions.invoke('saveICPTemplate', {
+        await db.functions.invoke('saveICPTemplate', {
           name: templateName,
           description: `Template based on: ${description.substring(0, 100)}...`,
           criteria

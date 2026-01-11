@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
@@ -264,7 +264,7 @@ export default function GrowthSignals() {
 
     const loadSignals = async () => {
       try {
-        const sigs = await base44.entities.GrowthSignal.list({ limit: 100 }).catch(() => []);
+        const sigs = await db.entities.GrowthSignal.list({ limit: 100 }).catch(() => []);
         if (isMounted) setSignals(sigs || []);
       } catch (error) {
         console.error('Failed to load:', error);
@@ -280,13 +280,13 @@ export default function GrowthSignals() {
   const handleCreateOpportunity = async (signal) => {
     try {
       // Create Prospect entity (synced with CRM and GrowthPipeline)
-      await base44.entities.Prospect.create({
+      await db.entities.Prospect.create({
         company_name: signal.company_name,
         source: `Signal: ${signal.signal_type}`,
         notes: `${signal.headline}\n\n${signal.description || ''}\n\nSource: ${signal.source_url || 'N/A'}`,
         stage: 'new'
       });
-      await base44.entities.GrowthSignal.update(signal.id, { is_actioned: true, is_read: true });
+      await db.entities.GrowthSignal.update(signal.id, { is_actioned: true, is_read: true });
       setSignals(sigs => sigs.map(s => s.id === signal.id ? { ...s, is_actioned: true, is_read: true } : s));
       toast.success('Opportunity created from signal');
     } catch (error) {
@@ -297,7 +297,7 @@ export default function GrowthSignals() {
 
   const handleDismiss = async (signal) => {
     try {
-      await base44.entities.GrowthSignal.update(signal.id, { is_read: true });
+      await db.entities.GrowthSignal.update(signal.id, { is_read: true });
       setSignals(sigs => sigs.map(s => s.id === signal.id ? { ...s, is_read: true } : s));
       toast.success('Signal dismissed');
     } catch (error) {

@@ -27,7 +27,7 @@ import {
   X,
 } from "lucide-react";
 import SyncChat from "@/components/sync/SyncChat";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -281,7 +281,7 @@ export default function AIAssistant() {
               {/* CTA */}
               <div className="flex flex-wrap gap-3">
                 <a
-                  href={base44.agents.getWhatsAppConnectURL('sync')}
+                  href={db.agents.getWhatsAppConnectURL('sync')}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-green-500 hover:bg-green-400 text-white font-medium transition-colors"

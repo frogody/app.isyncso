@@ -1,5 +1,5 @@
 import React from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,7 +30,7 @@ export default function CompanyDashboard() {
   const load = async () => {
     setLoading(true);
     try {
-      const u = await base44.auth.me();
+      const u = await db.auth.me();
       setMe(u);
 
       // If no company, show empty state - never load other users' data
@@ -47,16 +47,16 @@ export default function CompanyDashboard() {
 
       // Load company-scoped data
       const [allCourses, companyAssignments, companyDepts, companyReqs] = await Promise.all([
-        base44.entities.Course.list(), // Courses are shared content
-        base44.entities.Assignment.filter({ company_id: u.company_id }),
-        base44.entities.Department.filter({ company_id: u.company_id }),
-        base44.entities.ComplianceRequirement.filter({ company_id: u.company_id })
+        db.entities.Course.list(), // Courses are shared content
+        db.entities.Assignment.filter({ company_id: u.company_id }),
+        db.entities.Department.filter({ company_id: u.company_id }),
+        db.entities.ComplianceRequirement.filter({ company_id: u.company_id })
       ]);
 
       // Get company users via secure function
       let companyUsers = [];
       try {
-        const usersResponse = await base44.functions.invoke('getCompanyUsers', { company_id: u.company_id });
+        const usersResponse = await db.functions.invoke('getCompanyUsers', { company_id: u.company_id });
         companyUsers = usersResponse.data || [];
       } catch {
         // If function fails, only include current user
@@ -66,7 +66,7 @@ export default function CompanyDashboard() {
       // Get progress only for company users
       const userIds = companyUsers.map(cu => cu.id);
       const progressPromises = userIds.map(uid =>
-        base44.entities.UserProgress.filter({ user_id: uid }).catch(() => [])
+        db.entities.UserProgress.filter({ user_id: uid }).catch(() => [])
       );
       const progressArrays = await Promise.all(progressPromises);
       const companyProgress = progressArrays.flat();

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -155,7 +155,7 @@ export default function RiskAssessmentWizard({ systemId, onComplete }) {
   // Auto-load system data and pre-populate URLs and assessment answers
   React.useEffect(() => {
     if (systemId) {
-      base44.entities.AISystem.get(systemId).then(system => {
+      db.entities.AISystem.get(systemId).then(system => {
         console.log('Loaded system for assessment:', system);
         console.log('Assessment answers from system:', system.assessment_answers);
         console.log('Assessment answers JSON:', JSON.stringify(system.assessment_answers, null, 2));
@@ -281,7 +281,7 @@ export default function RiskAssessmentWizard({ systemId, onComplete }) {
       setResult(assessmentResult);
 
       // Update AI system with classification
-      await base44.entities.AISystem.update(systemId, {
+      await db.entities.AISystem.update(systemId, {
         risk_classification: assessmentResult.classification,
         classification_reasoning: assessmentResult.reasoning,
         assessment_answers: answers,
@@ -291,8 +291,8 @@ export default function RiskAssessmentWizard({ systemId, onComplete }) {
       // Check for compliance training recommendations
       if (assessmentResult.classification === 'high-risk' || assessmentResult.classification === 'gpai') {
         try {
-          const user = await base44.auth.me();
-          const trainingResult = await base44.functions.invoke('createComplianceTrainingRecommendation', {
+          const user = await db.auth.me();
+          const trainingResult = await db.functions.invoke('createComplianceTrainingRecommendation', {
             user_id: user.id,
             system_id: systemId,
             classification: assessmentResult.classification
@@ -333,7 +333,7 @@ export default function RiskAssessmentWizard({ systemId, onComplete }) {
     setResearching(true);
     try {
       // Call the analysis function directly
-      const response = await base44.functions.invoke('analyzeAISystem', {
+      const response = await db.functions.invoke('analyzeAISystem', {
         productName: "AI System", // Default placeholder if not collected
         productUrl: urls.product,
         providerName: "Provider", // Default placeholder

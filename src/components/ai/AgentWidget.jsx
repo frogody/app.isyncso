@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bot, Send, X, Sparkles, Paperclip, Image as ImageIcon, Monitor, StopCircle, Mic, MicOff, Volume2, VolumeX, Video as VideoIcon, Camera, Radio, Plug } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { createPageUrl } from "@/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useMCP } from "@/components/context/MCPContext";
@@ -197,7 +197,7 @@ export default function AgentWidget() {
   React.useEffect(() => {
     (async () => {
       try {
-        const u = await base44.auth.me();
+        const u = await db.auth.me();
         setMe(u);
         setMemory(u.agent_memory || null);
       } catch {
@@ -387,7 +387,7 @@ export default function AgentWidget() {
     }
     const file = new File([blob], "screen.jpg", { type: "image/jpeg" });
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await db.integrations.Core.UploadFile({ file });
       await analyzeScreen([file_url]);
     } catch (error) {
       console.error("Error uploading snapshot:", error);
@@ -414,7 +414,7 @@ User profile (for tailoring): ${JSON.stringify(profile)}
 Recent activity: ${lastActivity ? JSON.stringify(lastActivity) : "none"}`;
 
     try {
-      const reply = await base44.integrations.Core.InvokeLLM({
+      const reply = await db.integrations.Core.InvokeLLM({
         prompt,
         file_urls: fileUrls
       });
@@ -517,11 +517,11 @@ Recent activity: ${lastActivity ? JSON.stringify(lastActivity) : "none"}`;
   };
 
   const updateCourseQuota = async () => {
-    const u = await base44.auth.me();
+    const u = await db.auth.me();
     const last = u.agent_course_last_date || "";
     const count = u.agent_course_requests_today || 0;
     const isSameDay = last === todayStr();
-    await base44.auth.updateMe({
+    await db.auth.updateMe({
       agent_course_last_date: todayStr(),
       agent_course_requests_today: isSameDay ? Math.min(count + 1, 99) : 1
     });
@@ -603,7 +603,7 @@ Recent activity: ${lastActivity ? JSON.stringify(lastActivity) : "none"}`;
   };
 
   const requestCourseConfirmation = async (topic) => {
-    const user = await base44.auth.me();
+    const user = await db.auth.me();
     const quota = checkCourseQuota(user);
     if (!quota.allowed) {
       addBotMessage(
@@ -627,8 +627,8 @@ Recent activity: ${lastActivity ? JSON.stringify(lastActivity) : "none"}`;
 
   const buildCourse = async (topic) => {
     setThinking(true);
-    const meNow = await base44.auth.me();
-    const job = await base44.entities.CourseBuild.create({
+    const meNow = await db.auth.me();
+    const job = await db.entities.CourseBuild.create({
       user_id: meNow.id,
       requested_topic: topic || "role-specific AI workflows",
       status: "building",
@@ -639,7 +639,7 @@ Recent activity: ${lastActivity ? JSON.stringify(lastActivity) : "none"}`;
 
     const updateJob = async (patch) => {
       // eslint-disable-next-line no-await-in-loop
-      await base44.entities.CourseBuild.update(job.id, patch);
+      await db.entities.CourseBuild.update(job.id, patch);
     };
 
     const pushLog = async (msg, percent) => {
@@ -655,7 +655,7 @@ Recent activity: ${lastActivity ? JSON.stringify(lastActivity) : "none"}`;
       });
 
       // Ensure blueprint has necessary fields or provide defaults
-      const course = await base44.entities.Course.create({
+      const course = await db.entities.Course.create({
         title: blueprint.title || `AI Course: ${topic || "Workflows"}`,
         description: blueprint.description || "A practical course focused on implementing AI in your day-to-day work.",
         difficulty: blueprint.difficulty || (meNow?.experience_level || "beginner"),
@@ -670,7 +670,7 @@ Recent activity: ${lastActivity ? JSON.stringify(lastActivity) : "none"}`;
 
       for (const moduleData of blueprint.modules) {
         // eslint-disable-next-line no-await-in-loop
-        const module = await base44.entities.Module.create({
+        const module = await db.entities.Module.create({
           course_id: course.id,
           title: moduleData.title,
           order_index: moduleData.order_index
@@ -682,7 +682,7 @@ Recent activity: ${lastActivity ? JSON.stringify(lastActivity) : "none"}`;
 
         for (const lessonData of moduleLessons) {
           // eslint-disable-next-line no-await-in-loop
-          await base44.entities.Lesson.create({
+          await db.entities.Lesson.create({
             module_id: module.id,
             title: lessonData.title,
             content: lessonData.content,
@@ -698,7 +698,7 @@ Recent activity: ${lastActivity ? JSON.stringify(lastActivity) : "none"}`;
       await updateCourseQuota();
       
       // Update memory for user profile
-      await base44.auth.updateMe({
+      await db.auth.updateMe({
         courses_created: (meNow?.courses_created || 0) + 1,
         agent_memory: {
           ...(memory || {}),
@@ -747,7 +747,7 @@ Recent activity: ${lastActivity ? JSON.stringify(lastActivity) : "none"}`;
       const f = files[i];
       // eslint-disable-next-line no-await-in-loop
       try {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file: f });
+        const { file_url } = await db.integrations.Core.UploadFile({ file: f });
         setAttachments(prev =>
           prev.map(a => (a.name === f.name && a.uploading) ? { ...a, url: file_url, uploading: false } : a)
         );
@@ -793,7 +793,7 @@ ${lastActivity ? JSON.stringify(lastActivity) : "none"}
 Existing memory:
 ${JSON.stringify(memory || {}, null, 2)}`;
     try {
-      const result = await base44.integrations.Core.InvokeLLM({
+      const result = await db.integrations.Core.InvokeLLM({
         prompt: summarizerPrompt,
         response_json_schema: {
           type: "object",
@@ -807,7 +807,7 @@ ${JSON.stringify(memory || {}, null, 2)}`;
         }
       });
       setMemory(result);
-      await base44.auth.updateMe({
+      await db.auth.updateMe({
         agent_memory: {
           summary: result.summary || "",
           workflows_of_interest: Array.isArray(result.workflows_of_interest) ? result.workflows_of_interest : [],
@@ -916,7 +916,7 @@ Reply now (concise).`;
 
     const fileUrls = readyAttachments.map(a => a.url);
     try {
-      const reply = await base44.integrations.Core.InvokeLLM({
+      const reply = await db.integrations.Core.InvokeLLM({
         prompt,
         file_urls: fileUrls.length ? fileUrls : undefined
       });

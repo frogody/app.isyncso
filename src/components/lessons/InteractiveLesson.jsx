@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 
 // Lazy load interactive blocks
 const MermaidBlock = React.lazy(() => import('./renderers/MermaidBlock'));
@@ -111,7 +111,7 @@ export default function InteractiveLesson({ lesson, onComplete }) {
   // Reset block counters on lesson change
   useEffect(() => {
     blockCounters = { reflection: 0, tryit: 0, decision: 0, poll: 0, application: 0 };
-    base44.auth.me().then(setUser).catch(console.error);
+    db.auth.me().then(setUser).catch(console.error);
   }, [lesson?.id]);
 
   // Track reading progress

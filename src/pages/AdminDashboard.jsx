@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
-const { Course, User, UserProgress } = base44.entities;
+import { db } from "@/api/supabaseClient";
+const { Course, User, UserProgress } = db.entities;
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,7 +32,7 @@ export default function AdminDashboard() {
   const loadAdminData = React.useCallback(async () => {
     try {
       // Get current user to scope data to their company
-      const currentUser = await base44.auth.me();
+      const currentUser = await db.auth.me();
 
       // Courses are shared content, but filter users/progress by company
       const coursesData = await Course.list();
@@ -43,7 +43,7 @@ export default function AdminDashboard() {
       if (currentUser.company_id) {
         // Use company-scoped function if available, otherwise filter
         try {
-          const usersResponse = await base44.functions.invoke('getCompanyUsers', { company_id: currentUser.company_id });
+          const usersResponse = await db.functions.invoke('getCompanyUsers', { company_id: currentUser.company_id });
           companyUsers = usersResponse.data || [];
         } catch {
           // Fallback: filter by company_id

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -47,7 +47,7 @@ export default function Login() {
   // Check if already logged in
   useEffect(() => {
     const checkAuth = async () => {
-      const isAuth = await base44.auth.isAuthenticated();
+      const isAuth = await db.auth.isAuthenticated();
       if (isAuth) {
         const returnUrl = localStorage.getItem('returnUrl') || '/Dashboard';
         localStorage.removeItem('returnUrl');
@@ -74,7 +74,7 @@ export default function Login() {
     try {
       if (isSignUp) {
         // Sign up
-        const { user, error } = await base44.auth.signUpWithEmail(
+        const { user, error } = await db.auth.signUpWithEmail(
           formData.email,
           formData.password,
           { full_name: formData.fullName }
@@ -89,12 +89,12 @@ export default function Login() {
           setSuccess("Check your email for a confirmation link to complete registration.");
         } else {
           // Auto-confirmed (if email confirmation is disabled)
-          await base44.auth.ensureUserProfile();
+          await db.auth.ensureUserProfile();
           navigate('/Onboarding', { replace: true });
         }
       } else {
         // Sign in
-        const { user, error } = await base44.auth.signInWithEmail(
+        const { user, error } = await db.auth.signInWithEmail(
           formData.email,
           formData.password
         );
@@ -111,7 +111,7 @@ export default function Login() {
         }
 
         if (user) {
-          await base44.auth.ensureUserProfile();
+          await db.auth.ensureUserProfile();
           const returnUrl = localStorage.getItem('returnUrl') || '/Dashboard';
           localStorage.removeItem('returnUrl');
           navigate(returnUrl, { replace: true });
@@ -129,7 +129,7 @@ export default function Login() {
     setError(null);
 
     try {
-      const { error } = await base44.auth.signInWithGoogle();
+      const { error } = await db.auth.signInWithGoogle();
       if (error) {
         setError(error.message || "Failed to connect to Google");
         setGoogleLoading(false);
@@ -151,7 +151,7 @@ export default function Login() {
     setError(null);
 
     try {
-      const { error } = await base44.auth.resetPassword(formData.email);
+      const { error } = await db.auth.resetPassword(formData.email);
       if (error) {
         setError(error.message || "Failed to send reset email");
       } else {

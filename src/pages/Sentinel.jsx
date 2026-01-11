@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
 import { Shield, Search, FileText, AlertTriangle, CheckCircle } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
@@ -20,7 +20,7 @@ export default function SentinelChat() {
   const initConversation = async () => {
     if (!user) return;
     try {
-      const conversation = await base44.agents.createConversation({
+      const conversation = await db.agents.createConversation({
         agent_name: "sentinel",
         metadata: { name: "Compliance Session", user_id: user.id }
       });
@@ -38,10 +38,10 @@ export default function SentinelChat() {
     setIsLoading(true);
 
     try {
-      const conversation = await base44.agents.getConversation(conversationId);
-      await base44.agents.addMessage(conversation, { role: 'user', content });
+      const conversation = await db.agents.getConversation(conversationId);
+      await db.agents.addMessage(conversation, { role: 'user', content });
 
-      const unsubscribe = base44.agents.subscribeToConversation(conversationId, (data) => {
+      const unsubscribe = db.agents.subscribeToConversation(conversationId, (data) => {
         if (data.messages) {
           setMessages(data.messages);
         }

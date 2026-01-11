@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { base44 } from "@/api/base44Client";
-const { Course, Module, Lesson, UserProgress, User, CourseBuild } = base44.entities;
-// Using base44.integrations.Core.InvokeLLM instead of direct import to avoid circular deps
-const InvokeLLM = base44.integrations.Core.InvokeLLM;
+import { db } from "@/api/supabaseClient";
+const { Course, Module, Lesson, UserProgress, User, CourseBuild } = db.entities;
+// Using db.integrations.Core.InvokeLLM instead of direct import to avoid circular deps
+const InvokeLLM = db.integrations.Core.InvokeLLM;
 import { useDebounce } from "@/components/hooks/useDebounce";
 import { useLocalStorage } from "@/components/hooks/useLocalStorage";
 import { 
@@ -230,7 +230,7 @@ export default function Courses() {
       const [coursesData, progressData, userData] = await Promise.all([
         Course.list('-created_date', 100),
         UserProgress.list(),
-        base44.auth.me()
+        db.auth.me()
       ]);
       
       console.log('Loaded courses:', coursesData.length);
@@ -438,7 +438,7 @@ export default function Courses() {
         completion_percentage: 0
       });
 
-      await base44.auth.updateMe({
+      await db.auth.updateMe({
         primary_courses: [...(user.primary_courses || []), course.id],
         courses_created: (user.courses_created || 0) + 1
       });

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { formatMinutes } from '@/utils/dateUtils';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/supabaseClient';
 import { useUser } from '@/components/context/UserContext';
 import { 
   BookOpen, Trophy, Flame, Target, Clock, Zap, 
@@ -139,14 +139,14 @@ export default function LearnDashboard() {
     try {
       // RLS handles data isolation - no need for user_id filters
       const [progressData, gamificationData, allCourses, sessionsData, certsData, skillsData] = await Promise.all([
-        base44.entities.UserProgress.list({ limit: 100 }).catch(() => []),
+        db.entities.UserProgress.list({ limit: 100 }).catch(() => []),
         // UserGamification may not exist
-        base44.entities.UserGamification?.list?.({ limit: 1 }).catch(() => []) || Promise.resolve([]),
+        db.entities.UserGamification?.list?.({ limit: 1 }).catch(() => []) || Promise.resolve([]),
         // List all courses - is_template/is_published columns may not exist
-        base44.entities.Course.list({ limit: 100 }).catch(() => []),
-        base44.entities.ActivitySession.list({ limit: 200 }).catch(() => []),
-        base44.entities.Certificate.list({ limit: 50 }).catch(() => []),
-        base44.entities.UserSkill.list({ limit: 20 }).catch(() => [])
+        db.entities.Course.list({ limit: 100 }).catch(() => []),
+        db.entities.ActivitySession.list({ limit: 200 }).catch(() => []),
+        db.entities.Certificate.list({ limit: 50 }).catch(() => []),
+        db.entities.UserSkill.list({ limit: 20 }).catch(() => [])
       ]);
 
       const totalTimeMinutes = sessionsData.reduce((sum, s) => sum + (s.total_active_minutes || 0), 0);

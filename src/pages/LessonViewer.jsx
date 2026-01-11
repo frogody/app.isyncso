@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, Suspense, lazy } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
-const { Course, Module, Lesson, UserProgress } = base44.entities;
+import { db } from "@/api/supabaseClient";
+const { Course, Module, Lesson, UserProgress } = db.entities;
 import { createPageUrl } from "@/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -214,7 +214,7 @@ export default function LessonViewer() {
       let currentStreak = 1;
 
       try {
-        const gamificationResult = await base44.functions.invoke('updateGamification', {
+        const gamificationResult = await db.functions.invoke('updateGamification', {
           user_id: me.id,
           action: 'lesson_complete',
           metadata: { lesson_id: currentLesson.id, course_id: courseId }

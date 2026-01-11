@@ -9,7 +9,7 @@ import {
   Upload,
   Clock
 } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { motion } from "framer-motion";
 
 import CourseGenerator from "../components/ai/CourseGenerator";
@@ -31,12 +31,12 @@ export default function LearnAITools() {
 
     try {
       console.log("Uploading file:", file.name);
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await db.integrations.Core.UploadFile({ file });
       console.log("File uploaded:", file_url);
 
       setImportStatus("parsing");
       console.log("Parsing PDF...");
-      const parseResponse = await base44.functions.invoke("parsePdfCourses", { file_url });
+      const parseResponse = await db.functions.invoke("parsePdfCourses", { file_url });
       console.log("Parse response:", parseResponse);
 
       if (!parseResponse.data?.success) {
@@ -59,7 +59,7 @@ export default function LearnAITools() {
 
         try {
            console.log(`Creating course: ${course.title}`);
-           const createResponse = await base44.functions.invoke("createCourseFromTemplate", { course });
+           const createResponse = await db.functions.invoke("createCourseFromTemplate", { course });
            console.log(`Course created:`, createResponse);
 
            if (createResponse.data?.success) {

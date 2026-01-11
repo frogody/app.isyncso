@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -206,7 +206,7 @@ export default function SkillMap() {
   const loadSkillMap = React.useCallback(async () => {
     if (!user) return;
     try {
-      const response = await base44.functions.invoke('getUserSkillMap', { user_id: user.id });
+      const response = await db.functions.invoke('getUserSkillMap', { user_id: user.id });
       setSkillData(response.data);
     } catch (error) {
       console.error("Failed to load skill map:", error);

@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/supabaseClient';
 import {
   Loader2,
   CheckCircle,
@@ -115,7 +115,7 @@ export default function ConnectIntegrationModal({
     setLoading(true);
 
     try {
-      const response = await base44.functions.invoke('mergeCreateLinkToken', {
+      const response = await db.functions.invoke('mergeCreateLinkToken', {
         categories: [category.id]
       });
 
@@ -185,7 +185,7 @@ export default function ConnectIntegrationModal({
     setStep('connecting');
 
     try {
-      const response = await base44.functions.invoke('mergeCheckLinkedAccount', {
+      const response = await db.functions.invoke('mergeCheckLinkedAccount', {
         category: categoryId,
         link_token: linkToken
       });
@@ -211,7 +211,7 @@ export default function ConnectIntegrationModal({
   const exchangeToken = async (publicToken, categoryId) => {
     setStep('connecting');
     try {
-      const response = await base44.functions.invoke('mergeExchangeToken', {
+      const response = await db.functions.invoke('mergeExchangeToken', {
         public_token: publicToken,
         category: categoryId
       });

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, MessageSquare, Loader2, X, Lock } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/supabaseClient';
 
 // Helper to extract domain from email
 const getDomain = (email) => email?.split('@')[1]?.toLowerCase() || '';
@@ -49,13 +49,13 @@ export default function NewDMModal({
     setLoading(true);
     try {
       // Get current user first
-      const me = await base44.auth.me().catch(() => null);
+      const me = await db.auth.me().catch(() => null);
       setCurrentUser(me);
 
       // Try to get team members - edge function may not be available
       let allUsers = [];
       try {
-        const usersResponse = await base44.functions.invoke('getTeamMembers');
+        const usersResponse = await db.functions.invoke('getTeamMembers');
         allUsers = usersResponse?.data?.users || [];
       } catch (e) {
         console.warn('getTeamMembers not available:', e.message);

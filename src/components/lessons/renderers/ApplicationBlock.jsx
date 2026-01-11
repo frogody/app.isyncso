@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Briefcase, Save, Sparkles } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 
 /**
  * ApplicationBlock - "How does this apply to YOUR work?" reflection
@@ -26,7 +26,7 @@ export default function ApplicationBlock({ content, lessonId, blockIndex, userId
   const [user, setUser] = useState(null);
 
   React.useEffect(() => {
-    base44.auth.me().then(setUser).catch(console.error);
+    db.auth.me().then(setUser).catch(console.error);
   }, []);
 
   let config;
@@ -47,9 +47,9 @@ export default function ApplicationBlock({ content, lessonId, blockIndex, userId
 
     setSaving(true);
     try {
-      const currentUser = user || await base44.auth.me();
+      const currentUser = user || await db.auth.me();
       
-      await base44.entities.LessonInteraction.create({
+      await db.entities.LessonInteraction.create({
         user_id: currentUser.id,
         lesson_id: lessonId,
         interaction_key: `application_${blockIndex}`,

@@ -6,7 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Download, FileText, Table, Save, Check } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 
 const EXPORT_FORMATS = [
   {
@@ -52,7 +52,7 @@ export default function ExportConfig({ onExport, onBack, selectedCount, isProces
     setError(null);
 
     try {
-      const response = await base44.functions.invoke('saveProspectList', {
+      const response = await db.functions.invoke('saveProspectList', {
         list_name: listName,
         description: listDescription,
         prospects: enrichedData,

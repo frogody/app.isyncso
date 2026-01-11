@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Award, Download, Share2, CheckCircle, ExternalLink, X, Linkedin, Calendar, Star } from "lucide-react";
@@ -30,7 +30,7 @@ export default function Certificates() {
     if (!user) return;
     try {
       // RLS handles filtering - list all accessible certificates
-      const certs = await base44.entities.Certificate?.list?.({ limit: 200 }).catch(() => []) || [];
+      const certs = await db.entities.Certificate?.list?.({ limit: 200 }).catch(() => []) || [];
       certs.sort((a, b) => new Date(b.issued_at) - new Date(a.issued_at));
       setCertificates(certs);
     } catch (error) {

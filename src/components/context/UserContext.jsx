@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/supabaseClient';
 import { supabase } from '@/api/supabaseClient';
 import { logError, isRecoverableError, retryWithBackoff } from '@/components/utils/errorHandler';
 
@@ -57,7 +57,7 @@ export function UserProvider({ children }) {
 
       // Fetch user with retry for network errors
       const userData = await retryWithBackoff(
-        () => base44.auth.me(),
+        () => db.auth.me(),
         RETRY_OPTIONS
       );
       setUser(userData);
@@ -73,7 +73,7 @@ export function UserProvider({ children }) {
         userData.company_id
           ? retryWithBackoff(
               async () => {
-                const companies = await base44.entities.Company.filter({ id: userData.company_id });
+                const companies = await db.entities.Company.filter({ id: userData.company_id });
                 return companies.length > 0 ? companies[0] : null;
               },
               RETRY_OPTIONS
@@ -83,7 +83,7 @@ export function UserProvider({ children }) {
         // Load user settings from database (not edge function)
         retryWithBackoff(
           async () => {
-            const configs = await base44.entities.UserAppConfig.filter({ user_id: userData.id });
+            const configs = await db.entities.UserAppConfig.filter({ user_id: userData.id });
             return configs.length > 0 ? configs[0] : null;
           },
           RETRY_OPTIONS
@@ -194,7 +194,7 @@ export function UserProvider({ children }) {
     setUser((prev) => ({ ...prev, ...updates }));
 
     try {
-      await base44.auth.updateMe(updates);
+      await db.auth.updateMe(updates);
     } catch (err) {
       // Rollback on error
       setUser(previousUser);
@@ -213,7 +213,7 @@ export function UserProvider({ children }) {
     setCompany((prev) => ({ ...prev, ...updates }));
 
     try {
-      await base44.entities.Company.update(company.id, updates);
+      await db.entities.Company.update(company.id, updates);
     } catch (err) {
       // Rollback on error
       setCompany(previousCompany);
@@ -230,10 +230,10 @@ export function UserProvider({ children }) {
     try {
       if (settings?.id) {
         // Update existing settings
-        await base44.entities.UserAppConfig.update(settings.id, updates);
+        await db.entities.UserAppConfig.update(settings.id, updates);
       } else if (user?.id) {
         // Create new settings record
-        const newSettings = await base44.entities.UserAppConfig.create({
+        const newSettings = await db.entities.UserAppConfig.create({
           user_id: user.id,
           ...updates
         });

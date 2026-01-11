@@ -7,7 +7,7 @@ import {
   Send, RotateCcw, Lightbulb, Copy, Check,
   Play, ChevronDown, ChevronUp
 } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { cn } from "@/lib/utils";
 
 export default function TryItBlock({ content, lessonId, blockIndex }) {
@@ -40,8 +40,8 @@ export default function TryItBlock({ content, lessonId, blockIndex }) {
   useEffect(() => {
     const loadPrevious = async () => {
       try {
-        const user = await base44.auth.me();
-        const interactions = await base44.entities.LessonInteraction.filter({
+        const user = await db.auth.me();
+        const interactions = await db.entities.LessonInteraction.filter({
           user_id: user.id,
           lesson_id: lessonId,
           interaction_key: interactionKey
@@ -68,9 +68,9 @@ export default function TryItBlock({ content, lessonId, blockIndex }) {
 
     setIsSubmitting(true);
     try {
-      const user = await base44.auth.me();
+      const user = await db.auth.me();
 
-      const aiResponse = await base44.integrations.Core.InvokeLLM({
+      const aiResponse = await db.integrations.Core.InvokeLLM({
         prompt: `You are a supportive coding coach. Review this exercise submission:
 
 Exercise: ${exercise.prompt}
@@ -93,7 +93,7 @@ Provide brief, encouraging feedback (2-3 sentences). Highlight what they did wel
       setFeedback(aiResponse);
       setIsCompleted(true);
 
-      await base44.entities.LessonInteraction.create({
+      await db.entities.LessonInteraction.create({
         user_id: user.id,
         lesson_id: lessonId,
         interaction_key: interactionKey,
@@ -102,7 +102,7 @@ Provide brief, encouraging feedback (2-3 sentences). Highlight what they did wel
       });
 
       try {
-        await base44.functions.invoke('updateGamification', {
+        await db.functions.invoke('updateGamification', {
           user_id: user.id,
           action_type: 'exercise_complete',
           metadata: { lesson_id: lessonId }

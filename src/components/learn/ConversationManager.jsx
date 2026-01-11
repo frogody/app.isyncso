@@ -1,6 +1,6 @@
 // Manages conversation persistence across sessions
 
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/supabaseClient';
 
 class ConversationManager {
   constructor() {
@@ -78,7 +78,7 @@ class ConversationManager {
 
     try {
       // Try to get the conversation from Base44
-      const conversation = await base44.agents.getConversation(storedId);
+      const conversation = await db.agents.getConversation(storedId);
       
       if (conversation && conversation.messages?.length > 0) {
         console.log('[ConversationManager] Resumed conversation with', conversation.messages.length, 'messages');

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Brain, Send, X, Loader2 } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 
 import MicrophonePrompt from "./MicrophonePrompt";
 import VoiceStatusIndicator from "./VoiceStatusIndicator";
@@ -90,7 +90,7 @@ export default function AIChatInterface({ lesson, isVisible, onClose, onConversa
       // Initialize conversation
       (async () => {
         try {
-          const user = await base44.auth.me();
+          const user = await db.auth.me();
 
           // Initialize learning tracker
           learningTracker.initialize(user.id, lesson.id);
@@ -101,7 +101,7 @@ export default function AIChatInterface({ lesson, isVisible, onClose, onConversa
           if (!newConversation) {
             // Create new conversation if no resume
             // Fetch user's interactions for this lesson
-            const interactions = await base44.entities.LessonInteraction.filter({
+            const interactions = await db.entities.LessonInteraction.filter({
               user_id: user.id,
               lesson_id: lesson.id
             });
@@ -137,7 +137,7 @@ export default function AIChatInterface({ lesson, isVisible, onClose, onConversa
           let companyName = null;
           if (user.company_id) {
             try {
-              const company = await base44.entities.Company.get(user.company_id);
+              const company = await db.entities.Company.get(user.company_id);
               companyName = company?.name;
             } catch (e) {
               console.error('Failed to load company:', e);
@@ -166,7 +166,7 @@ export default function AIChatInterface({ lesson, isVisible, onClose, onConversa
           const userRoleType = detectRoleType(user.job_title);
           const contentStyle = userRoleType === 'technical' ? 'code_examples' : 'business_scenarios';
 
-          newConversation = await base44.agents.createConversation({
+          newConversation = await db.agents.createConversation({
             agent_name: "learn_assistant",
             metadata: {
               lesson_id: lesson.id,
@@ -211,7 +211,7 @@ export default function AIChatInterface({ lesson, isVisible, onClose, onConversa
           }
 
           // Subscribe to conversation updates
-          unsubscribe = base44.agents.subscribeToConversation(
+          unsubscribe = db.agents.subscribeToConversation(
             newConversation.id,
             (data) => {
               console.log('[Agent] Subscription update, messages:', data?.messages?.length);
@@ -265,7 +265,7 @@ export default function AIChatInterface({ lesson, isVisible, onClose, onConversa
       // Track the question
       learningTracker.trackQuestion(userMessage, hasVisionContext);
 
-      await base44.agents.addMessage(conversation, {
+      await db.agents.addMessage(conversation, {
         role: "user",
         content: messageContent,
       });
@@ -332,7 +332,7 @@ export default function AIChatInterface({ lesson, isVisible, onClose, onConversa
         }
       }
 
-      await base44.agents.addMessage(conversation, {
+      await db.agents.addMessage(conversation, {
         role: 'user',
         content: messageContent
       });
@@ -521,7 +521,7 @@ export default function AIChatInterface({ lesson, isVisible, onClose, onConversa
       console.log('[Voice Premium] Requesting TTS, length:', cleanText.length);
       const startTime = Date.now();
 
-      const { data } = await base44.functions.invoke('generateVoice', { 
+      const { data } = await db.functions.invoke('generateVoice', { 
         text: cleanText, 
         voice_id: voiceId 
       });
@@ -779,7 +779,7 @@ export default function AIChatInterface({ lesson, isVisible, onClose, onConversa
     try {
       // Upload audio file first
       const audioFile = new File([audioBlob], 'recording.webm', { type: 'audio/webm' });
-      const { file_url } = await base44.integrations.Core.UploadFile({ file: audioFile });
+      const { file_url } = await db.integrations.Core.UploadFile({ file: audioFile });
 
       // Include recent chat history
       const recentMessages = messages.slice(-5).map(m => ({
@@ -788,7 +788,7 @@ export default function AIChatInterface({ lesson, isVisible, onClose, onConversa
       }));
 
       // Call voice chat function through SDK (includes auth automatically)
-      const { data } = await base44.functions.invoke('voiceChat', {
+      const { data } = await db.functions.invoke('voiceChat', {
         audio_url: file_url,
         lesson_context: `${lesson.title}\n\n${lesson.content.substring(0, 2000)}`,
         chat_history: recentMessages
@@ -796,13 +796,13 @@ export default function AIChatInterface({ lesson, isVisible, onClose, onConversa
 
       if (data.success) {
         // Add user's transcribed question to chat
-        await base44.agents.addMessage(conversation, {
+        await db.agents.addMessage(conversation, {
           role: 'user',
           content: data.user_question
         });
 
         // Add AI's text response to chat
-        await base44.agents.addMessage(conversation, {
+        await db.agents.addMessage(conversation, {
           role: 'assistant',
           content: data.text_response
         });

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Hand, Play, ExternalLink } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
 import { ChatInterface } from "@/components/ui/ChatInterface";
 import { Shield, TrendingUp, BookOpen, FileText, AlertTriangle, CheckCircle, Building2, Search, Target, Mail } from "lucide-react";
@@ -193,7 +193,7 @@ export default function FloatingAgentTrigger({ agentType, autoOpen = false, onTo
       // Create conversation if needed
       let convId = conversationId;
       if (!convId) {
-        const conversation = await base44.agents.createConversation({
+        const conversation = await db.agents.createConversation({
           agent_name: config.name,
           metadata: { name: `${config.title} Session`, user_id: user?.id }
         });
@@ -201,10 +201,10 @@ export default function FloatingAgentTrigger({ agentType, autoOpen = false, onTo
         setConversationId(convId);
       }
 
-      const conversation = await base44.agents.getConversation(convId);
+      const conversation = await db.agents.getConversation(convId);
       
       // Subscribe before sending message to catch the response
-      unsubscribe = base44.agents.subscribeToConversation(convId, (data) => {
+      unsubscribe = db.agents.subscribeToConversation(convId, (data) => {
         if (data && data.messages && Array.isArray(data.messages)) {
           setMessages(data.messages);
           
@@ -225,7 +225,7 @@ export default function FloatingAgentTrigger({ agentType, autoOpen = false, onTo
       });
 
       // Send the message after subscribing
-      await base44.agents.addMessage(conversation, { role: 'user', content });
+      await db.agents.addMessage(conversation, { role: 'user', content });
 
       // Cleanup after 60 seconds
       setTimeout(() => {
@@ -396,9 +396,9 @@ export default function FloatingAgentTrigger({ agentType, autoOpen = false, onTo
                                 onClick={async () => {
                                   // Save company data for the profile page
                                   try {
-                                    const existing = await base44.entities.Company.filter({ domain: action.data.domain });
+                                    const existing = await db.entities.Company.filter({ domain: action.data.domain });
                                     if (existing.length === 0) {
-                                      await base44.entities.Company.create({
+                                      await db.entities.Company.create({
                                         name: action.data.company_name,
                                         domain: action.data.domain,
                                         description: action.data.description,

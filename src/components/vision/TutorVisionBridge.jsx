@@ -1,4 +1,4 @@
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/supabaseClient';
 import { visionContextProvider } from './VisionContextProvider';
 
 class TutorVisionBridge {
@@ -110,7 +110,7 @@ Share a brief, relevant tip or insight. Keep it under 35 words. Make it feel nat
     try {
       console.log(`[TutorVisionBridge] Sending proactive help: ${reason}`);
       
-      await base44.agents.addMessage(this.conversation, {
+      await db.agents.addMessage(this.conversation, {
         role: 'user',
         content: prompts[reason]
       });

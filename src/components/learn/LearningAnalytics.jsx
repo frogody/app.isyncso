@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/supabaseClient';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   MessageSquare, Clock, Mic, Brain, TrendingUp, Target 
@@ -13,7 +13,7 @@ export function LearningAnalytics({ courseId, userId }) {
     async function loadStats() {
       try {
         // Fetch all interactions for this user
-        const interactions = await base44.entities.LessonInteraction.filter({
+        const interactions = await db.entities.LessonInteraction.filter({
           user_id: userId
         });
 

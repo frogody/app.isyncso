@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { 
   Popover,
   PopoverContent,
@@ -21,13 +21,13 @@ export default function AgentChatSidebar({
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    base44.auth.me()
+    db.auth.me()
       .then(u => setUser(u))
       .catch(e => console.error("Failed to load user:", e));
   }, []);
 
   const handleLogout = async () => {
-    await base44.auth.logout();
+    await db.auth.logout();
   };
 
   const filteredConversations = conversations.filter(conv => 

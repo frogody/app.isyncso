@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { motion } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,7 @@ export default function SentinelDashboard() {
 
     const loadData = async () => {
       try {
-        const userData = await base44.auth.me();
+        const userData = await db.auth.me();
         if (!isMounted) return;
         setUser(userData);
 
@@ -40,7 +40,7 @@ export default function SentinelDashboard() {
         }
 
         // RLS handles data access - just list all systems
-        const systems = await base44.entities.AISystem.list({ limit: 100 }).catch(() => []);
+        const systems = await db.entities.AISystem.list({ limit: 100 }).catch(() => []);
         if (!isMounted) return;
         setAISystems(systems || []);
       } catch (error) {

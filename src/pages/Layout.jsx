@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { SENTINEL, THEME_COLORS, UI, FEATURES } from "@/lib/constants";
 import { logError } from "@/components/utils/errorHandler";
 import {
@@ -256,7 +256,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
         { label: 'Overview', path: createPageUrl('FinanceOverview'), icon: PieChart },
         { label: 'Invoices', path: createPageUrl('FinanceInvoices'), icon: Receipt },
         { label: 'Proposals', path: createPageUrl('FinanceProposals'), icon: FileText },
-        { label: 'Expenses', path: createPageUrl('FinanceExpenses'), icon: DollarSign },
+        { label: 'Business Expenses', path: createPageUrl('FinanceExpenses'), icon: DollarSign },
         { label: 'Subscriptions', path: createPageUrl('FinanceSubscriptions'), icon: CreditCard },
       ]
     };
@@ -282,7 +282,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
     if (physicalEnabled) {
       items.push({ label: 'Receiving', path: createPageUrl('InventoryReceiving'), icon: PackageCheck });
       items.push({ label: 'Shipping', path: createPageUrl('InventoryShipping'), icon: Truck });
-      items.push({ label: 'Expenses', path: createPageUrl('InventoryExpenses'), icon: Wallet });
+      items.push({ label: 'Stock Purchases', path: createPageUrl('StockPurchases'), icon: Receipt });
       items.push({ label: 'Import', path: createPageUrl('InventoryImport'), icon: FileSpreadsheet });
     }
 
@@ -483,7 +483,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
     let isMounted = true;
     (async () => {
       try {
-        const u = await base44.auth.me();
+        const u = await db.auth.me();
         if (isMounted) {
           setMe(u);
         }
@@ -547,7 +547,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
   }, [enabledApps, effectiveApps, hasTeams, isAdmin, teamLoading, hasPermission, permLoading]);
 
   const handleLogin = async () => {
-    base44.auth.redirectToLogin(window.location.href);
+    db.auth.redirectToLogin(window.location.href);
   };
 
   return (
@@ -736,11 +736,11 @@ export default function Layout({ children, currentPageName }) {
   // Load user app config
   const loadUserAppConfig = React.useCallback(async () => {
     try {
-      const user = await base44.auth.me();
+      const user = await db.auth.me();
       if (!user) return;
 
       // RLS handles filtering - list all accessible configs
-      const configs = await base44.entities.UserAppConfig?.list?.({ limit: 10 }).catch(() => []) || [];
+      const configs = await db.entities.UserAppConfig?.list?.({ limit: 10 }).catch(() => []) || [];
       if (configs.length > 0) {
         setEnabledApps(configs[0].enabled_apps || FEATURES.DEFAULT_ENABLED_APPS);
       }
@@ -799,14 +799,14 @@ export default function Layout({ children, currentPageName }) {
     // Load stats for secondary nav badges
     const loadStats = async () => {
       try {
-        const { base44 } = await import("@/api/base44Client");
+        const { db } = await import("@/api/supabaseClient");
         // Convert pathname to lowercase for case-insensitive matching
         const path = location.pathname.toLowerCase();
 
         // SENTINEL stats
         if (path.includes('sentinel') || path.includes('aisystem') || path.includes('compliance')) {
           try {
-            const systems = await base44.entities.AISystem.list();
+            const systems = await db.entities.AISystem.list();
             if (!isMounted) return;
             const highRiskCount = (systems || []).filter(s => s.risk_classification === 'high-risk').length;
             setSecondaryNavStats(prev => ({
@@ -823,7 +823,7 @@ export default function Layout({ children, currentPageName }) {
         if (path.includes('growth') || path.includes('cide')) {
           try {
             // Only load ProspectList - getICPTemplates edge function has CORS issues
-            const lists = await base44.entities.ProspectList.list().catch(() => []);
+            const lists = await db.entities.ProspectList.list().catch(() => []);
             if (!isMounted) return;
             setSecondaryNavStats(prev => ({
               ...prev,
@@ -838,13 +838,13 @@ export default function Layout({ children, currentPageName }) {
         // LEARN stats
         if (path.includes('learn') || path.includes('course') || path.includes('certificate') || path.includes('skill') || path.includes('leaderboard')) {
           try {
-            const currentUser = await base44.auth.me();
+            const currentUser = await db.auth.me();
             if (!isMounted) return;
             if (currentUser?.id) {
               // RLS handles filtering - list all accessible items
               const [certificates, userSkills] = await Promise.all([
-                base44.entities.Certificate?.list?.({ limit: 100 }).catch(() => []) || Promise.resolve([]),
-                base44.entities.UserSkill?.list?.({ limit: 100 }).catch(() => []) || Promise.resolve([])
+                db.entities.Certificate?.list?.({ limit: 100 }).catch(() => []) || Promise.resolve([]),
+                db.entities.UserSkill?.list?.({ limit: 100 }).catch(() => []) || Promise.resolve([])
               ]);
               if (!isMounted) return;
               setSecondaryNavStats(prev => ({
@@ -1077,7 +1077,7 @@ export default function Layout({ children, currentPageName }) {
             <div className="flex items-center justify-between px-4 h-14 sm:h-16">
               <div className="flex items-center">
                 <img
-                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ebfb48566133bc1cface8c/3bee25c45_logoisyncso1.png"
+                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/db-prod/public/68ebfb48566133bc1cface8c/3bee25c45_logoisyncso1.png"
                   alt="ISYNCSO"
                   className="h-7 sm:h-8 w-auto object-contain"
                 />

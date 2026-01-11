@@ -16,7 +16,7 @@
  * Full Deno code for each function is provided below in comments.
  */
 
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 
 /**
  * BACKEND FUNCTION CODE FOR: explorium/firmographics
@@ -102,7 +102,7 @@ import { base44 } from "@/api/base44Client";
  */
 export async function getFirmographicData({ businesses }) {
   try {
-    const response = await base44.functions.invoke('exploriumFirmographics', { businesses });
+    const response = await db.functions.invoke('exploriumFirmographics', { businesses });
     return response.data;
   } catch (error) {
     console.error('Firmographic data fetch failed:', error);
@@ -194,7 +194,7 @@ export async function getFirmographicData({ businesses }) {
  */
 export async function getFundingAndAcquisitionData({ businesses }) {
   try {
-    const response = await base44.functions.invoke('exploriumFunding', { businesses });
+    const response = await db.functions.invoke('exploriumFunding', { businesses });
     return response.data;
   } catch (error) {
     console.error('Funding data fetch failed:', error);
@@ -286,7 +286,7 @@ export async function getFundingAndAcquisitionData({ businesses }) {
  */
 export async function getTechnographicsData({ businesses }) {
   try {
-    const response = await base44.functions.invoke('exploriumTechnographics', { businesses });
+    const response = await db.functions.invoke('exploriumTechnographics', { businesses });
     return response.data;
   } catch (error) {
     console.error('Technographic data fetch failed:', error);
@@ -357,7 +357,7 @@ export async function getTechnographicsData({ businesses }) {
  */
 export async function getCompanies({ filters, page = 1, page_size = 20 }) {
   try {
-    const response = await base44.functions.invoke('exploriumCompanies', { filters, page, page_size });
+    const response = await db.functions.invoke('exploriumCompanies', { filters, page, page_size });
     return response.data;
   } catch (error) {
     console.error('Companies fetch failed:', error);
@@ -451,7 +451,7 @@ export async function getCompanies({ filters, page = 1, page_size = 20 }) {
  */
 export async function getPeopleData({ contacts }) {
   try {
-    const response = await base44.functions.invoke('exploriumPeople', { contacts });
+    const response = await db.functions.invoke('exploriumPeople', { contacts });
     return response.data;
   } catch (error) {
     console.error('People data fetch failed:', error);

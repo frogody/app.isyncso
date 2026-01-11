@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
@@ -39,10 +39,10 @@ export default function Growth() {
       try {
         // Fetch all data without user_id filter (RLS handles access control)
         const [prospects, allCamps, sigs, lists] = await Promise.all([
-          base44.entities.Prospect.list({ limit: 50 }).catch(() => []),
-          base44.entities.GrowthCampaign.list({ limit: 50 }).catch(() => []),
-          base44.entities.GrowthSignal.list({ limit: 10 }).catch(() => []),
-          base44.entities.ProspectList.list({ limit: 10 }).catch(() => [])
+          db.entities.Prospect.list({ limit: 50 }).catch(() => []),
+          db.entities.GrowthCampaign.list({ limit: 50 }).catch(() => []),
+          db.entities.GrowthSignal.list({ limit: 10 }).catch(() => []),
+          db.entities.ProspectList.list({ limit: 10 }).catch(() => [])
         ]);
 
         if (!isMounted) return;

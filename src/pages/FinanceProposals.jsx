@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { base44, auth } from '@/api/base44Client';
+import { db, auth } from '@/api/supabaseClient';
 import { Proposal, Prospect, Invoice, Subscription } from '@/api/entities';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
@@ -180,7 +180,7 @@ export default function FinanceProposals() {
 
     try {
       // Get current user info for sender details
-      const me = await base44.auth.me();
+      const me = await db.auth.me();
 
       // Send the email via edge function
       const emailResponse = await fetch(
@@ -189,7 +189,7 @@ export default function FinanceProposals() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${(await base44.auth.getSession())?.access_token || ''}`
+            'Authorization': `Bearer ${(await db.auth.getSession())?.access_token || ''}`
           },
           body: JSON.stringify({
             to: proposal.client_email,
@@ -232,7 +232,7 @@ export default function FinanceProposals() {
   const handleConvertToInvoice = async (proposal) => {
     setConverting(true);
     try {
-      const me = await base44.auth.me();
+      const me = await db.auth.me();
 
       // Create invoice from proposal
       const invoiceData = {

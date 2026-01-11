@@ -4,7 +4,7 @@ import anime from '@/lib/anime-wrapper';
 const animate = anime;
 const stagger = anime.stagger;
 import { prefersReducedMotion } from '@/lib/animations';
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
 import {
   Plus, GripVertical, Building2, User, DollarSign, Calendar, Target, Clock,
@@ -279,7 +279,7 @@ export default function GrowthPipeline() {
       }
       try {
         // Use Prospect entity - RLS handles access control
-        const prospects = await base44.entities.Prospect.list({ limit: 100 }).catch(() => []);
+        const prospects = await db.entities.Prospect.list({ limit: 100 }).catch(() => []);
         if (!isMounted) return;
         // Map Prospect fields to opportunity format for display
         const opps = (prospects || []).map(p => ({
@@ -318,7 +318,7 @@ export default function GrowthPipeline() {
 
     try {
       // Use Prospect entity (synced with CRM)
-      await base44.entities.Prospect.update(oppId, { stage: newStage });
+      await db.entities.Prospect.update(oppId, { stage: newStage });
       toast.success(`Deal moved to ${STAGES.find(s => s.id === newStage)?.label}`);
     } catch (error) {
       console.error('Failed to update:', error);
@@ -347,10 +347,10 @@ export default function GrowthPipeline() {
       };
 
       if (selectedOpp) {
-        await base44.entities.Prospect.update(selectedOpp.id, prospectData);
+        await db.entities.Prospect.update(selectedOpp.id, prospectData);
         toast.success('Deal updated');
       } else {
-        await base44.entities.Prospect.create(prospectData);
+        await db.entities.Prospect.create(prospectData);
         toast.success('Deal created');
       }
 
@@ -368,7 +368,7 @@ export default function GrowthPipeline() {
     if (!confirm('Delete this deal?')) return;
     try {
       // Use Prospect entity (synced with CRM)
-      await base44.entities.Prospect.delete(id);
+      await db.entities.Prospect.delete(id);
       setOpportunities(prev => prev.filter(o => o.id !== id));
       toast.success('Deal deleted');
     } catch (error) {

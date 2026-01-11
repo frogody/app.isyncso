@@ -6,7 +6,7 @@ import {
   Loader2, AlertTriangle, Settings, Trash2, ChevronRight, Sparkles, BarChart3, ArrowUpRight
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -21,9 +21,9 @@ import {
 } from "@/components/sync/supabaseSync";
 import { formatTimeAgo } from "@/utils/dateUtils";
 
-const CLAY_ICON_URL = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ebfb48566133bc1cface8c/d80dd1b25_ClayArchMarque.png";
-const LINKEDIN_ICON_URL = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ebfb48566133bc1cface8c/6c9d5c78c_linkedin.png";
-const CLAUDE_ICON_URL = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ebfb48566133bc1cface8c/1850cd012_claude-color.png";
+const CLAY_ICON_URL = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/db-prod/public/68ebfb48566133bc1cface8c/d80dd1b25_ClayArchMarque.png";
+const LINKEDIN_ICON_URL = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/db-prod/public/68ebfb48566133bc1cface8c/6c9d5c78c_linkedin.png";
+const CLAUDE_ICON_URL = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/db-prod/public/68ebfb48566133bc1cface8c/1850cd012_claude-color.png";
 
 const PLATFORM_CONFIG = {
   linkedin: { icon: null, image: LINKEDIN_ICON_URL, color: 'blue', label: 'LinkedIn', gradient: 'from-blue-500 to-blue-600' },
@@ -84,7 +84,7 @@ export default function Activity() {
 
   const loadUser = async () => {
     try {
-      const userData = await base44.auth.me();
+      const userData = await db.auth.me();
       setUser(userData);
       const storedSession = localStorage.getItem(`sync_session_${userData.id}`);
       if (storedSession) {

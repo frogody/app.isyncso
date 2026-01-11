@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/supabaseClient';
 import { toast } from 'sonner';
 import {
   Mail, Users, Calendar, Ticket, Building2, FileText, MessageSquare,
@@ -62,7 +62,7 @@ export default function CreateActionModal({ open, onClose, onSuccess, userId }) 
     
     setLoading(true);
     try {
-      await base44.entities.ActionLog.create({
+      await db.entities.ActionLog.create({
         user_id: userId,
         action_type: selectedType.value,
         category: selectedType.category,

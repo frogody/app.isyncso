@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 
 const STEP_TYPES = [
   { id: 'email', label: 'Email', icon: Mail, color: 'from-violet-500 to-violet-600' },
@@ -27,7 +27,7 @@ function SequenceStep({ step, index, onUpdate, onDelete, isExpanded, onToggle })
   const generateContent = async () => {
     setIsGenerating(true);
     try {
-      const result = await base44.integrations.Core.InvokeLLM({
+      const result = await db.integrations.Core.InvokeLLM({
         prompt: `Generate a brief, personalized ${step.type === 'email' ? 'cold email' : step.type === 'linkedin_message' ? 'LinkedIn message' : 'outreach message'} for step ${index + 1} of a sales sequence.
         
 This is ${index === 0 ? 'the first touch' : `follow-up #${index}`}.

@@ -33,7 +33,7 @@ export default function DownloadApp() {
           <div className="text-center space-y-8">
             <div className="flex items-center justify-center gap-3 mb-6">
               <img
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/4314197e6_logoisyncso1.png"
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/db-prod/public/4314197e6_logoisyncso1.png"
                 alt="ISYNCSO"
                 className="w-20 h-20 rounded-2xl"
               />

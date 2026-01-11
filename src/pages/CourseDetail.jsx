@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { base44 } from "@/api/base44Client";
-const { Course, Module, Lesson, UserProgress } = base44.entities;
+import { db } from "@/api/supabaseClient";
+const { Course, Module, Lesson, UserProgress } = db.entities;
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -117,7 +117,7 @@ export default function CourseDetail() {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 180000);
 
-        const response = await base44.functions.invoke('personalizeCourse', {
+        const response = await db.functions.invoke('personalizeCourse', {
           templateCourseId: course.id.toString()
         }, { signal: controller.signal });
 

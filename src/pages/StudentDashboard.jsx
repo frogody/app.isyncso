@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,7 +31,7 @@ export default function StudentDashboard() {
 
   const loadDashboard = async () => {
     try {
-      const { data } = await base44.functions.invoke('user/dashboard');
+      const { data } = await db.functions.invoke('user/dashboard');
       setDashboardData(data);
     } catch (err) {
       console.error("Error loading dashboard:", err);

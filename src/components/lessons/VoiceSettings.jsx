@@ -7,7 +7,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/supabaseClient';
 
 // PREMIUM VOICES - Upgraded selection
 const AVAILABLE_VOICES = [
@@ -67,7 +67,7 @@ export function VoiceSelector({ voiceId, onVoiceChange }) {
         ? "Hi! I'm here to help you learn. This is what I sound like."
         : "Hi! I'm here to help you learn. This is what I sound like.";
       
-      const { data } = await base44.functions.invoke('generateVoice', {
+      const { data } = await db.functions.invoke('generateVoice', {
         text: previewText,
         voice_id: voice.id
       });

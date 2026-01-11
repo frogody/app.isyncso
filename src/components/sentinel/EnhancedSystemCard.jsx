@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,7 +34,7 @@ export default function EnhancedSystemCard({ system, onEdit }) {
   const handleDelete = React.useCallback(async () => {
     if (confirm(`Are you sure you want to delete "${system.name}"? This action cannot be undone.`)) {
       try {
-        await base44.entities.AISystem.delete(system.id);
+        await db.entities.AISystem.delete(system.id);
         window.location.reload();
       } catch (error) {
         console.error("Failed to delete system:", error);
@@ -46,7 +46,7 @@ export default function EnhancedSystemCard({ system, onEdit }) {
   const loadObligations = React.useCallback(async () => {
 
     try {
-      const allObligations = await base44.entities.Obligation.list();
+      const allObligations = await db.entities.Obligation.list();
       
       // Filter obligations applicable to this system
       const applicable = allObligations.filter(obl => {

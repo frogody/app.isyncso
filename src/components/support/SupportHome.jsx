@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { createPageUrl } from "@/utils";
 import { Link } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { useQuery } from "@tanstack/react-query";
 
 export default function SupportHome({ setView }) {
@@ -24,13 +24,13 @@ export default function SupportHome({ setView }) {
 
   const { data: recentTickets } = useQuery({
     queryKey: ['recentTickets'],
-    queryFn: () => base44.entities.SupportTicket.filter({}, '-created_date', 3),
+    queryFn: () => db.entities.SupportTicket.filter({}, '-created_date', 3),
     initialData: []
   });
 
   const { data: popularArticles } = useQuery({
     queryKey: ['popularArticles'],
-    queryFn: () => base44.entities.HelpArticle.filter({ is_published: true }, '-views', 3),
+    queryFn: () => db.entities.HelpArticle.filter({ is_published: true }, '-views', 3),
     initialData: []
   });
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, lazy, Suspense, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -191,7 +191,7 @@ export default function AISystemInventory() {
 
   const loadSystems = React.useCallback(async () => {
     try {
-      const systems = await base44.entities.AISystem.list('-created_date');
+      const systems = await db.entities.AISystem.list('-created_date');
       setAISystems(systems);
     } catch (error) {
       console.error("Failed to load AI systems:", error);
@@ -220,7 +220,7 @@ export default function AISystemInventory() {
   const handleDelete = async (id) => {
     if (!confirm('Delete this AI system?')) return;
     try {
-      await base44.entities.AISystem.delete(id);
+      await db.entities.AISystem.delete(id);
       setAISystems(prev => prev.filter(s => s.id !== id));
       toast.success('System deleted');
     } catch (error) {

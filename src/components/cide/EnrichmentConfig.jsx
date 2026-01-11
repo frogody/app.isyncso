@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, ArrowRight, Database, Globe, BarChart3, TrendingUp, Zap, Save } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 
 const ENRICHMENT_OPTIONS = [
   {
@@ -42,8 +42,8 @@ export default function EnrichmentConfig({ config, onSubmit, onBack, selectedCou
   const loadUserSettings = React.useCallback(async () => {
 
     try {
-      const user = await base44.auth.me();
-      const settings = await base44.entities.UserSettings.filter({ user_id: user.id });
+      const user = await db.auth.me();
+      const settings = await db.entities.UserSettings.filter({ user_id: user.id });
       if (settings.length > 0 && settings[0].cide_enrichment_defaults) {
         setUserSettings(settings[0]);
         // Pre-populate with saved defaults
@@ -64,15 +64,15 @@ export default function EnrichmentConfig({ config, onSubmit, onBack, selectedCou
   const saveAsDefaults = React.useCallback(async () => {
     setSavingDefaults(true);
     try {
-      const user = await base44.auth.me();
-      const settings = await base44.entities.UserSettings.filter({ user_id: user.id });
+      const user = await db.auth.me();
+      const settings = await db.entities.UserSettings.filter({ user_id: user.id });
       
       if (settings.length > 0) {
-        await base44.entities.UserSettings.update(settings[0].id, {
+        await db.entities.UserSettings.update(settings[0].id, {
           cide_enrichment_defaults: localConfig
         });
       } else {
-        await base44.entities.UserSettings.create({
+        await db.entities.UserSettings.create({
           user_id: user.id,
           cide_enrichment_defaults: localConfig
         });

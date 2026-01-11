@@ -4,7 +4,7 @@ import anime from '@/lib/anime-wrapper';
 const animate = anime;
 const stagger = anime.stagger;
 import { prefersReducedMotion } from '@/lib/animations';
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -104,7 +104,7 @@ export default function GrowthProspects() {
 
     const loadLists = async () => {
       try {
-        const data = await base44.entities.ProspectList.list({ limit: 100 }).catch(() => []);
+        const data = await db.entities.ProspectList.list({ limit: 100 }).catch(() => []);
         if (isMounted) setLists(data || []);
       } catch (error) {
         console.error("Failed to load lists:", error);
@@ -124,7 +124,7 @@ export default function GrowthProspects() {
       if (activeTab !== 'templates' || templates.length > 0) return;
       setTemplatesLoading(true);
       try {
-        const response = await base44.functions.invoke('getICPTemplates').catch(() => ({ data: null }));
+        const response = await db.functions.invoke('getICPTemplates').catch(() => ({ data: null }));
         if (isMounted) setTemplates(response?.data?.templates || []);
       } catch (error) {
         console.error("Failed to load templates:", error);
@@ -151,7 +151,7 @@ export default function GrowthProspects() {
   const loadTemplatesManual = async () => {
     setTemplatesLoading(true);
     try {
-      const response = await base44.functions.invoke('getICPTemplates').catch(() => ({ data: null }));
+      const response = await db.functions.invoke('getICPTemplates').catch(() => ({ data: null }));
       setTemplates(response?.data?.templates || []);
     } catch (error) {
       console.error("Failed to load templates:", error);
@@ -170,7 +170,7 @@ export default function GrowthProspects() {
   const handleDeleteList = async (listId) => {
     if (!confirm('Delete this list?')) return;
     try {
-      await base44.entities.ProspectList.delete(listId);
+      await db.entities.ProspectList.delete(listId);
       setLists(prev => prev.filter(l => l.id !== listId));
       if (selectedList?.id === listId) {
         setSelectedList(null);
@@ -250,7 +250,7 @@ export default function GrowthProspects() {
         keywords: templateForm.keywords.split(',').map(s => s.trim()).filter(Boolean),
       };
       
-      await base44.functions.invoke('saveICPTemplate', {
+      await db.functions.invoke('saveICPTemplate', {
         template: editingTemplate ? { ...templateData, id: editingTemplate.id } : templateData
       });
       
@@ -267,7 +267,7 @@ export default function GrowthProspects() {
   const handleDeleteTemplate = async (templateId) => {
     if (!confirm('Delete this template?')) return;
     try {
-      await base44.entities.ICPTemplate.delete(templateId);
+      await db.entities.ICPTemplate.delete(templateId);
       setTemplates(prev => prev.filter(t => t.id !== templateId));
       toast.success('Template deleted');
     } catch (error) {
@@ -300,7 +300,7 @@ export default function GrowthProspects() {
     setResearchStep(1);
     
     try {
-      const response = await base44.integrations.Core.InvokeLLM({
+      const response = await db.integrations.Core.InvokeLLM({
         prompt: `Generate 10 realistic ${searchType} prospects based on these criteria:
           ${filters.query ? `Query: ${filters.query}` : ''}
           ${filters.industry ? `Industry: ${filters.industry}` : ''}
@@ -367,7 +367,7 @@ export default function GrowthProspects() {
     try {
       const selectedProspects = researchResults.filter(r => selectedResults.has(r.id));
       
-      await base44.entities.ProspectList.create({
+      await db.entities.ProspectList.create({
         name: `${filters.query || 'Research'} - ${new Date().toLocaleDateString()}`,
         description: `${searchType} research results`,
         prospect_count: selectedProspects.length,

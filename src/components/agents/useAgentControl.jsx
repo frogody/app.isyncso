@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 
 /**
  * Hook for managing AI agent control of the application
@@ -46,7 +46,7 @@ export function useAgentControl({ agentType, onActionComplete }) {
           // Create an entity
           setProgress(30);
           if (action.entity && action.data) {
-            await base44.entities[action.entity].create(action.data);
+            await db.entities[action.entity].create(action.data);
           }
           setProgress(100);
           break;
@@ -55,7 +55,7 @@ export function useAgentControl({ agentType, onActionComplete }) {
           // Update an entity
           setProgress(30);
           if (action.entity && action.id && action.data) {
-            await base44.entities[action.entity].update(action.id, action.data);
+            await db.entities[action.entity].update(action.id, action.data);
           }
           setProgress(100);
           break;
@@ -64,8 +64,8 @@ export function useAgentControl({ agentType, onActionComplete }) {
           // Enroll in a course
           setProgress(30);
           if (action.courseId) {
-            const user = await base44.auth.me();
-            await base44.entities.UserProgress.create({
+            const user = await db.auth.me();
+            await db.entities.UserProgress.create({
               user_id: user.id,
               course_id: action.courseId,
               status: "in_progress",
@@ -82,7 +82,7 @@ export function useAgentControl({ agentType, onActionComplete }) {
           // Execute research function
           setProgress(30);
           if (action.functionName && action.params) {
-            await base44.functions.invoke(action.functionName, action.params);
+            await db.functions.invoke(action.functionName, action.params);
           }
           setProgress(100);
           break;
@@ -91,7 +91,7 @@ export function useAgentControl({ agentType, onActionComplete }) {
           // Generate document or content
           setProgress(30);
           if (action.functionName && action.params) {
-            const result = await base44.functions.invoke(action.functionName, action.params);
+            const result = await db.functions.invoke(action.functionName, action.params);
             if (action.navigateOnComplete) {
               navigate(createPageUrl(action.navigateOnComplete));
             }
@@ -112,7 +112,7 @@ export function useAgentControl({ agentType, onActionComplete }) {
           // Custom action via function
           if (action.functionName) {
             setProgress(30);
-            await base44.functions.invoke(action.functionName, action.params || {});
+            await db.functions.invoke(action.functionName, action.params || {});
             setProgress(100);
           }
       }

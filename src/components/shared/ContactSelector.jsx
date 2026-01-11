@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
 import {
   Search, X, User, Building2, Mail, Phone, Plus, ChevronDown, Check, Loader2,
@@ -76,7 +76,7 @@ export default function ContactSelector({
     setLoading(true);
     try {
       // Use owner_id which is the actual column name in the prospects table
-      const prospects = await base44.entities.Prospect.filter({ owner_id: user.id });
+      const prospects = await db.entities.Prospect.filter({ owner_id: user.id });
       const contactList = prospects.map(p => ({
         id: p.id,
         name: [p.first_name, p.last_name].filter(Boolean).join(' ') || p.company || "Unknown",
@@ -303,7 +303,7 @@ export function ContactSelectorModal({
     setLoading(true);
     try {
       // Use owner_id which is the actual column name in the prospects table
-      const prospects = await base44.entities.Prospect.filter({ owner_id: user.id });
+      const prospects = await db.entities.Prospect.filter({ owner_id: user.id });
       const contactList = prospects.map(p => ({
         id: p.id,
         name: [p.first_name, p.last_name].filter(Boolean).join(' ') || p.company || "Unknown",

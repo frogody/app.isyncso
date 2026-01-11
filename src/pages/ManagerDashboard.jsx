@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { 
   Users, 
   TrendingUp, 
@@ -62,8 +62,8 @@ export default function ManagerDashboard() {
     setError(null);
     
     try {
-      const user = await base44.auth.me();
-      const { data } = await base44.functions.invoke('getTeamAnalytics', {
+      const user = await db.auth.me();
+      const { data } = await db.functions.invoke('getTeamAnalytics', {
         manager_id: user.id,
         time_range: timeRange
       });
@@ -463,17 +463,17 @@ function TeamAssignments() {
   const loadData = React.useCallback(async () => {
 
     try {
-      const user = await base44.auth.me();
+      const user = await db.auth.me();
       
       // Get company users
-      const { data: usersData } = await base44.functions.invoke('getCompanyUsers', { company_id: user.company_id });
+      const { data: usersData } = await db.functions.invoke('getCompanyUsers', { company_id: user.company_id });
       const users = usersData?.users || [];
       
       // Get published courses
-      const coursesData = await base44.entities.Course.filter({ is_published: true });
+      const coursesData = await db.entities.Course.filter({ is_published: true });
       
       // Get all assignments for company
-      const assignmentsData = await base44.entities.Assignment.filter({ company_id: user.company_id });
+      const assignmentsData = await db.entities.Assignment.filter({ company_id: user.company_id });
       
       setTeamMembers(users.filter(u => u.id !== user.id));
       setCourses(coursesData);
@@ -496,9 +496,9 @@ function TeamAssignments() {
     }
 
     try {
-      const user = await base44.auth.me();
+      const user = await db.auth.me();
       
-      await base44.entities.Assignment.create({
+      await db.entities.Assignment.create({
         company_id: user.company_id,
         course_id: selectedCourse,
         assigned_to_user_id: memberId,

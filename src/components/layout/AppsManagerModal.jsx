@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/supabaseClient';
 import {
   Settings, X, Check,
   GraduationCap, Rocket, Shield, Sparkles, LayoutGrid, Eye, EyeOff,
@@ -206,10 +206,10 @@ export default function AppsManagerModal({ isOpen, onClose, onConfigUpdate }) {
   const loadConfig = async () => {
     try {
       setLoading(true);
-      const user = await base44.auth.me();
+      const user = await db.auth.me();
       if (!user) return;
 
-      const configs = await base44.entities.UserAppConfig.filter({ user_id: user.id });
+      const configs = await db.entities.UserAppConfig.filter({ user_id: user.id });
       
       if (configs.length > 0) {
         const userConfig = configs[0];
@@ -224,7 +224,7 @@ export default function AppsManagerModal({ isOpen, onClose, onConfigUpdate }) {
           app_order: ['learn', 'growth', 'sentinel'],
           dashboard_widgets: defaultWidgets
         };
-        const newConfig = await base44.entities.UserAppConfig.create(defaultConfig);
+        const newConfig = await db.entities.UserAppConfig.create(defaultConfig);
         setConfig(newConfig);
         setEnabledApps(defaultConfig.enabled_apps);
         setEnabledWidgets(defaultWidgets);
@@ -284,7 +284,7 @@ export default function AppsManagerModal({ isOpen, onClose, onConfigUpdate }) {
         dashboard_widgets: enabledWidgets
       };
       
-      await base44.entities.UserAppConfig.update(config.id, updatedConfig);
+      await db.entities.UserAppConfig.update(config.id, updatedConfig);
       
       if (onConfigUpdate) {
         onConfigUpdate({ ...config, ...updatedConfig });

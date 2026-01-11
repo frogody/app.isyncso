@@ -3,7 +3,7 @@
  * Analyzes screen captures using Claude's vision capabilities
  */
 
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/supabaseClient';
 import { screenCaptureService } from './ScreenCaptureService';
 
 class VisionContextProvider {
@@ -122,7 +122,7 @@ class VisionContextProvider {
       console.log('[Vision] Analyzing with Claude...');
 
       // Call Claude Vision API
-      const { data } = await base44.functions.invoke('analyzeScreenWithClaude', {
+      const { data } = await db.functions.invoke('analyzeScreenWithClaude', {
         image_base64: base64,
         lesson_title: this.currentLesson?.title || 'Unknown',
         lesson_content: this.currentLesson?.content?.substring(0, 1500) || '',

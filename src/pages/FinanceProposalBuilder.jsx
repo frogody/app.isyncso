@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/supabaseClient';
 import { Proposal, Prospect, Product, DigitalProduct, PhysicalProduct } from '@/api/entities';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
@@ -156,7 +156,7 @@ export default function FinanceProposalBuilder() {
 
     setSaving(true);
     try {
-      const me = await base44.auth.me();
+      const me = await db.auth.me();
 
       // Verify user is authenticated and has a company
       if (!me) {

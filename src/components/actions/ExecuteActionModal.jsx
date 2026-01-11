@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/supabaseClient';
 import { Loader2, CheckCircle, AlertCircle, Send, Zap, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -224,7 +224,7 @@ export default function ExecuteActionModal({
     setResult(null);
 
     try {
-      const response = await base44.functions.invoke('mergeExecuteAction', {
+      const response = await db.functions.invoke('mergeExecuteAction', {
         integration_id: integration.id,
         action_type: selectedAction.id,
         payload: selectedAction.fields.length > 0 ? formData : undefined

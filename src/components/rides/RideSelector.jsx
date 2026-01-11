@@ -7,7 +7,7 @@ import {
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Badge } from '@/components/ui/badge';
 
-const CLAY_ICON_URL = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ebfb48566133bc1cface8c/d80dd1b25_ClayArchMarque.png";
+const CLAY_ICON_URL = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/db-prod/public/68ebfb48566133bc1cface8c/d80dd1b25_ClayArchMarque.png";
 const LINKEDIN_ICON_URL = "https://cdn.worldvectorlogo.com/logos/linkedin-icon-2.svg";
 
 const RIDES = [
@@ -82,7 +82,7 @@ export default function RideSelector({ onSelectRide, selectedRide }) {
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
         <div className="w-12 h-12 rounded-2xl bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center">
-          <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ebfb48566133bc1cface8c/1850cd012_claude-color.png" alt="Claude" className="w-7 h-7" />
+          <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/db-prod/public/68ebfb48566133bc1cface8c/1850cd012_claude-color.png" alt="Claude" className="w-7 h-7" />
         </div>
         <div>
           <h2 className="text-xl font-bold text-white">Claude Rides</h2>

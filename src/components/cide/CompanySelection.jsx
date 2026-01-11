@@ -27,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { toast } from "sonner";
 
 export default function CompanySelection({ companies, onSelect, onBack }) {
@@ -83,10 +83,10 @@ export default function CompanySelection({ companies, onSelect, onBack }) {
 
     setIsRegistering(true);
     try {
-      const user = await base44.auth.me();
+      const user = await db.auth.me();
       
       // Get or create company
-      let companyRecord = await base44.entities.Company.filter({ 
+      let companyRecord = await db.entities.Company.filter({ 
         domain: registrationModal.domain 
       });
       
@@ -94,7 +94,7 @@ export default function CompanySelection({ companies, onSelect, onBack }) {
       if (companyRecord.length > 0) {
         companyId = companyRecord[0].id;
       } else {
-        const newCompany = await base44.entities.Company.create({
+        const newCompany = await db.entities.Company.create({
           name: registrationModal.company_name,
           domain: registrationModal.domain,
           website_url: `https://${registrationModal.domain}`,
@@ -105,7 +105,7 @@ export default function CompanySelection({ companies, onSelect, onBack }) {
       }
 
       // Create AI system
-      await base44.entities.AISystem.create({
+      await db.entities.AISystem.create({
         company_id: companyId,
         name: systemName,
         purpose: purpose,

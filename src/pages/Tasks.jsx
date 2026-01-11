@@ -4,7 +4,7 @@ import anime from '@/lib/anime-wrapper';
 const animate = anime;
 const stagger = anime.stagger;
 import { prefersReducedMotion } from '@/lib/animations';
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
 import {
   Plus, GripVertical, Calendar, Clock, CheckCircle2, Circle, AlertCircle,
@@ -313,7 +313,7 @@ export default function Tasks() {
   const loadTasks = async () => {
     if (!user?.id) return;
     try {
-      const taskActions = await base44.entities.ActionLog.filter({
+      const taskActions = await db.entities.ActionLog.filter({
         user_id: user.id,
         action_type: "task"
       });
@@ -388,7 +388,7 @@ export default function Tasks() {
     );
 
     try {
-      await base44.entities.ActionLog.update(taskId, {
+      await db.entities.ActionLog.update(taskId, {
         status: mapStatusToDB(newStatus)
       });
 
@@ -424,10 +424,10 @@ export default function Tasks() {
       };
 
       if (editingTask) {
-        await base44.entities.ActionLog.update(editingTask.id, taskData);
+        await db.entities.ActionLog.update(editingTask.id, taskData);
         toast.success("Task updated");
       } else {
-        await base44.entities.ActionLog.create(taskData);
+        await db.entities.ActionLog.create(taskData);
         toast.success("Task created");
       }
 
@@ -460,7 +460,7 @@ export default function Tasks() {
     if (!confirm("Delete this task?")) return;
 
     try {
-      await base44.entities.ActionLog.delete(id);
+      await db.entities.ActionLog.delete(id);
       toast.success("Task deleted");
       loadTasks();
     } catch (error) {

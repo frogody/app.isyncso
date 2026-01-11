@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { SkillsMaster, SkillApplication } from "@/api/entities";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -34,7 +34,7 @@ export default function SkillsOverview() {
 
   const loadSkills = async () => {
     try {
-      const user = await base44.auth.me();
+      const user = await db.auth.me();
       
       // Get skill applications
       const applications = await SkillApplication.filter({

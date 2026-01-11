@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/supabaseClient';
 import { toast } from 'sonner';
 
 export function useThreads(messages, setMessages) {
@@ -11,7 +11,7 @@ export function useThreads(messages, setMessages) {
   const loadThreadReplies = useCallback(async (parentMessageId) => {
     setLoading(true);
     try {
-      const replies = await base44.entities.Message.filter(
+      const replies = await db.entities.Message.filter(
         { thread_id: parentMessageId },
         'created_date',
         50
@@ -42,7 +42,7 @@ export function useThreads(messages, setMessages) {
     if (!activeThread || !user || !channel) return null;
 
     try {
-      const reply = await base44.entities.Message.create({
+      const reply = await db.entities.Message.create({
         channel_id: channel.id,
         sender_id: user.id,
         sender_name: user.full_name || user.email,
@@ -61,7 +61,7 @@ export function useThreads(messages, setMessages) {
       const parentMsg = messages.find(m => m.id === activeThread.id);
       if (parentMsg) {
         const newReplyCount = (parentMsg.reply_count || 0) + 1;
-        await base44.entities.Message.update(parentMsg.id, {
+        await db.entities.Message.update(parentMsg.id, {
           reply_count: newReplyCount
         });
         setMessages(prev => prev.map(m =>

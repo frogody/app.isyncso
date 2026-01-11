@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { UserCircle, Send, Loader2 } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/supabaseClient';
 
 /**
  * ExpertBlock - Ask questions to an industry expert AI persona
@@ -30,7 +30,7 @@ They asked: "${userQuestion}"
 
 Respond as the expert with practical, real-world insights. Keep it under 100 words. Be conversational and helpful.`;
 
-      const result = await base44.integrations.Core.InvokeLLM({
+      const result = await db.integrations.Core.InvokeLLM({
         prompt: expertPrompt
       });
 

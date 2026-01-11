@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Building2, Users, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
@@ -28,11 +28,11 @@ export default function CompanyInvite() {
 
     try {
       // Check if user is authenticated
-      const user = await base44.auth.me();
+      const user = await db.auth.me();
       setCurrentUser(user);
 
       // Load invitation
-      const invite = await base44.entities.Invitation.get(token);
+      const invite = await db.entities.Invitation.get(token);
       if (!invite) {
         setError("Invitation not found");
         setLoading(false);
@@ -48,7 +48,7 @@ export default function CompanyInvite() {
       setInvitation(invite);
 
       // Load company
-      const companyData = await base44.entities.Company.get(invite.company_id);
+      const companyData = await db.entities.Company.get(invite.company_id);
       setCompany(companyData);
 
     } catch (err) {
@@ -66,17 +66,17 @@ export default function CompanyInvite() {
   const handleJoin = React.useCallback(async () => {
     if (!currentUser) {
       // Redirect to login with return URL
-      base44.auth.redirectToLogin(window.location.href);
+      db.auth.redirectToLogin(window.location.href);
       return;
     }
 
     setJoining(true);
     try {
       // Update user's company
-      await base44.auth.updateMe({ company_id: invitation.company_id });
+      await db.auth.updateMe({ company_id: invitation.company_id });
 
       // Mark invitation as accepted
-      await base44.entities.Invitation.update(invitation.id, { 
+      await db.entities.Invitation.update(invitation.id, { 
         status: 'accepted',
         email: currentUser.email
       });

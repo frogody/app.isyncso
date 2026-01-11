@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { 
   Sparkles, Loader2, Copy, Check, Play, Pause, RotateCcw, 
   Building2, Target, Users, Database, Wand2, Shield, Rocket,
@@ -294,7 +294,7 @@ Reply "Campaign complete!" when finished.`;
     setAiLoading(true);
     setAiSuggestion(null);
     try {
-      const result = await base44.functions.invoke('generateClaySuggestions', { config, suggestionType: type });
+      const result = await db.functions.invoke('generateClaySuggestions', { config, suggestionType: type });
       setAiSuggestion(result.data);
     } catch (err) {
       console.error("AI suggestion error:", err);

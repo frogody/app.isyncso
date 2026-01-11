@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, Package, Loader2, CheckCircle2 } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 
 export default function ProductResearch({ onSubmit, onBack, user }) {
   const [isResearching, setIsResearching] = useState(false);
@@ -15,7 +15,7 @@ export default function ProductResearch({ onSubmit, onBack, user }) {
     
     try {
       // Get normalized company context
-      const companyResponse = await base44.functions.invoke('getCompanyContext', { user_id: user.id });
+      const companyResponse = await db.functions.invoke('getCompanyContext', { user_id: user.id });
       const company = companyResponse.data || user?.company_data || {};
       const enrichedProfile = user?.enriched_profile || {};
       
@@ -39,7 +39,7 @@ export default function ProductResearch({ onSubmit, onBack, user }) {
 **Output Format:**
 Return structured data with product listings that can be selected to refine target company search.`;
 
-      const result = await base44.integrations.Core.InvokeLLM({
+      const result = await db.integrations.Core.InvokeLLM({
         prompt,
         add_context_from_internet: true,
         response_json_schema: {

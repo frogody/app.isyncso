@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, XCircle, Award } from "lucide-react";
 
@@ -24,7 +24,7 @@ export default function VerifyCertificate() {
   const verifyCertificate = async () => {
     try {
       // Search for certificate by verification code
-      const certs = await base44.entities.Certificate.filter({ 
+      const certs = await db.entities.Certificate.filter({ 
         verification_code: code 
       });
 
@@ -110,7 +110,7 @@ export default function VerifyCertificate() {
 
               <div className="mt-8">
                 <img 
-                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ebfb48566133bc1cface8c/3bee25c45_logoisyncso1.png" 
+                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/db-prod/public/68ebfb48566133bc1cface8c/3bee25c45_logoisyncso1.png" 
                   alt="ISYNCSO" 
                   className="h-12 mx-auto opacity-50"
                 />

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import ReactMarkdown from "react-markdown";
 
 // Message Bubble Component
@@ -143,13 +143,13 @@ export default function AITutorPanel({
 
       (async () => {
         try {
-          const user = await base44.auth.me();
+          const user = await db.auth.me();
 
           // Get enriched profile for personalization context
           const enrichedProfile = user.enriched_profile || {};
           const linkedinProfile = user.linkedin_profile || {};
 
-          const newConversation = await base44.agents.createConversation({
+          const newConversation = await db.agents.createConversation({
             agent_name: "learn_assistant",
             metadata: {
               lesson_id: lesson.id,
@@ -173,7 +173,7 @@ export default function AITutorPanel({
           setConversation(newConversation);
           onConversationReady?.(newConversation);
 
-          unsubscribe = base44.agents.subscribeToConversation(
+          unsubscribe = db.agents.subscribeToConversation(
             newConversation.id,
             (data) => {
               if (data?.messages && Array.isArray(data.messages)) {
@@ -204,7 +204,7 @@ export default function AITutorPanel({
     setIsLoading(true);
 
     try {
-      await base44.agents.addMessage(conversation, {
+      await db.agents.addMessage(conversation, {
         role: "user",
         content: text.trim(),
       });

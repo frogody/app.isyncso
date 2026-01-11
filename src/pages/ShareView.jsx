@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import {
   Folder, FolderOpen, Calendar, Clock, CheckCircle2, Circle, AlertCircle,
   ChevronRight, Target, Lock, Paperclip, Download, File, FileText, FileCode,
@@ -597,8 +597,8 @@ export default function ShareView() {
 
       // Fetch all data and find matching items
       const [projectActions, taskActions] = await Promise.all([
-        base44.entities.ActionLog.filter({ action_type: "project" }).catch(() => []),
-        base44.entities.ActionLog.filter({ action_type: "task" }).catch(() => []),
+        db.entities.ActionLog.filter({ action_type: "project" }).catch(() => []),
+        db.entities.ActionLog.filter({ action_type: "task" }).catch(() => []),
       ]);
 
       const allProjects = projectActions.map(p => ({

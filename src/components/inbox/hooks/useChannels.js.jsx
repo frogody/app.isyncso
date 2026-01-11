@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/supabaseClient';
 import { toast } from 'sonner';
 
 const DEFAULT_CHANNELS = [
@@ -19,7 +19,7 @@ export function useChannels(user) {
 
     setLoading(true);
     try {
-      const channelsData = await base44.entities.Channel.list('-last_message_at');
+      const channelsData = await db.entities.Channel.list('-last_message_at');
 
       const publicChannels = channelsData.filter(c => c.type !== 'dm' && !c.is_archived);
       const dms = channelsData.filter(c => c.type === 'dm' && !c.is_archived);
@@ -30,10 +30,10 @@ export function useChannels(user) {
       // Create default channels if none exist
       if (publicChannels.length === 0) {
         for (const ch of DEFAULT_CHANNELS) {
-          await base44.entities.Channel.create(ch);
+          await db.entities.Channel.create(ch);
         }
 
-        const newChannels = await base44.entities.Channel.list('-created_date');
+        const newChannels = await db.entities.Channel.list('-created_date');
         const newPublicChannels = newChannels.filter(c => c.type !== 'dm');
         setChannels(newPublicChannels);
 
@@ -57,7 +57,7 @@ export function useChannels(user) {
 
   const createChannel = useCallback(async (channelData) => {
     try {
-      const newChannel = await base44.entities.Channel.create({
+      const newChannel = await db.entities.Channel.create({
         ...channelData,
         members: channelData.members || [],
         created_by: user?.email
@@ -67,7 +67,7 @@ export function useChannels(user) {
       setSelectedChannel(newChannel);
 
       // Create system message
-      await base44.entities.Message.create({
+      await db.entities.Message.create({
         channel_id: newChannel.id,
         sender_id: user.id,
         sender_name: 'System',
@@ -96,7 +96,7 @@ export function useChannels(user) {
     }
 
     try {
-      const newDM = await base44.entities.Channel.create({
+      const newDM = await db.entities.Channel.create({
         name: targetUser.full_name || targetUser.email,
         type: 'dm',
         members: [user.id, targetUser.id]
@@ -115,7 +115,7 @@ export function useChannels(user) {
 
   const updateChannel = useCallback(async (channelId, updates) => {
     try {
-      await base44.entities.Channel.update(channelId, updates);
+      await db.entities.Channel.update(channelId, updates);
       setChannels(prev => prev.map(c =>
         c.id === channelId ? { ...c, ...updates } : c
       ));
@@ -132,7 +132,7 @@ export function useChannels(user) {
 
   const archiveChannel = useCallback(async (channel) => {
     try {
-      await base44.entities.Channel.update(channel.id, { is_archived: true });
+      await db.entities.Channel.update(channel.id, { is_archived: true });
       setChannels(prev => prev.filter(c => c.id !== channel.id));
       if (selectedChannel?.id === channel.id) {
         setSelectedChannel(channels.find(c => c.id !== channel.id) || null);
@@ -147,7 +147,7 @@ export function useChannels(user) {
 
   const deleteChannel = useCallback(async (channel) => {
     try {
-      await base44.entities.Channel.delete(channel.id);
+      await db.entities.Channel.delete(channel.id);
       setChannels(prev => prev.filter(c => c.id !== channel.id));
       if (selectedChannel?.id === channel.id) {
         setSelectedChannel(channels.find(c => c.id !== channel.id) || null);

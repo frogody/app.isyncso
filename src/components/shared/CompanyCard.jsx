@@ -1,5 +1,5 @@
 import React from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +13,7 @@ export default function CompanyCard({ companyId, showRefresh = false, onRefresh 
     queryKey: ['company', companyId],
     queryFn: async () => {
       if (!companyId) return null;
-      return await base44.entities.Company.get(companyId);
+      return await db.entities.Company.get(companyId);
     },
     enabled: !!companyId
   });

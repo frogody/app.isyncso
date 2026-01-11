@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/supabaseClient';
 import {
   Building2, Globe, Users, DollarSign, MapPin, Linkedin, TrendingUp,
   Server, ChevronLeft, ExternalLink, Briefcase, Calendar, Award,
@@ -37,7 +37,7 @@ export default function CompanyProfile() {
 
   const loadCompanyById = async (id) => {
     try {
-      const data = await base44.entities.Company.get(id);
+      const data = await db.entities.Company.get(id);
       setCompany(data);
     } catch (error) {
       console.error('Failed to load company:', error);
@@ -48,7 +48,7 @@ export default function CompanyProfile() {
 
   const loadCompanyByDomain = async (domain) => {
     try {
-      const companies = await base44.entities.Company.filter({ domain });
+      const companies = await db.entities.Company.filter({ domain });
       if (companies.length > 0) {
         setCompany(companies[0]);
       }
@@ -63,7 +63,7 @@ export default function CompanyProfile() {
     if (!company) return;
     setAddingToProspects(true);
     try {
-      await base44.entities.Prospect.create({
+      await db.entities.Prospect.create({
         company_name: company.name,
         domain: company.domain,
         description: company.description,

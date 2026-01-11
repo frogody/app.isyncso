@@ -3,10 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
 
 const PRESET_AVATARS = [
-  { id: 'avatar-1', url: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ebfb48566133bc1cface8c/b0c51c921_GeneratedImageDecember112025-7_04PM.jpg' },
-  { id: 'avatar-2', url: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ebfb48566133bc1cface8c/8830c8609_GeneratedImageDecember112025-7_04PM1.jpg' },
-  { id: 'avatar-3', url: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ebfb48566133bc1cface8c/39ca6df61_GeneratedImageDecember112025-7_03PM.jpeg' },
-  { id: 'avatar-4', url: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ebfb48566133bc1cface8c/8ac2bb9ca_GeneratedImageDecember112025-7_01PM.jpeg' },
+  { id: 'avatar-1', url: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/db-prod/public/68ebfb48566133bc1cface8c/b0c51c921_GeneratedImageDecember112025-7_04PM.jpg' },
+  { id: 'avatar-2', url: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/db-prod/public/68ebfb48566133bc1cface8c/8830c8609_GeneratedImageDecember112025-7_04PM1.jpg' },
+  { id: 'avatar-3', url: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/db-prod/public/68ebfb48566133bc1cface8c/39ca6df61_GeneratedImageDecember112025-7_03PM.jpeg' },
+  { id: 'avatar-4', url: 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/db-prod/public/68ebfb48566133bc1cface8c/8ac2bb9ca_GeneratedImageDecember112025-7_01PM.jpeg' },
 ];
 
 function AvatarIcon({ avatar, size = 64 }) {

@@ -22,8 +22,11 @@ export * from './tracking';
 // Notifications
 export * from './notifications';
 
-// Product Suppliers & Stock Purchases
+// Product Suppliers
 export * from './productSuppliers';
 
 // Product Research Queue
 export * from './productResearch';
+
+// Stock Purchases (supplier invoices for inventory)
+export * from './stockPurchases';

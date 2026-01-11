@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Link, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -152,7 +152,7 @@ export default function DocumentGenerator() {
 
   const loadSystems = React.useCallback(async () => {
     try {
-      const systems = await base44.entities.AISystem.list('-created_date');
+      const systems = await db.entities.AISystem.list('-created_date');
       const highRiskSystems = systems.filter(s => s.risk_classification === 'high-risk');
       setAISystems(highRiskSystems);
 

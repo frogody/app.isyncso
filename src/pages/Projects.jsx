@@ -4,7 +4,7 @@ import anime from '@/lib/anime-wrapper';
 const animate = anime;
 const stagger = anime.stagger;
 import { prefersReducedMotion } from '@/lib/animations';
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
 import {
   Plus, Search, Filter, Folder, FolderOpen, Calendar, Users, MoreVertical, X,
@@ -3002,8 +3002,8 @@ export default function Projects() {
   const loadData = async () => {
     try {
       const [projectActions, taskActions] = await Promise.all([
-        base44.entities.ActionLog.filter({ action_type: "project" }).catch(() => []),
-        base44.entities.ActionLog.filter({ action_type: "task" }).catch(() => []),
+        db.entities.ActionLog.filter({ action_type: "project" }).catch(() => []),
+        db.entities.ActionLog.filter({ action_type: "task" }).catch(() => []),
       ]);
 
       const projectList = projectActions.map(p => ({
@@ -3112,7 +3112,7 @@ export default function Projects() {
     setProjects(prev => prev.map(p => String(p.id) === projectId ? { ...p, status: newStatus } : p));
 
     try {
-      await base44.entities.ActionLog.update(projectId, { status: mapStatusToDB(newStatus) });
+      await db.entities.ActionLog.update(projectId, { status: mapStatusToDB(newStatus) });
       toast.success(`Project moved to ${PROJECT_STATUSES.find(s => s.id === newStatus)?.label}`);
     } catch (error) {
       console.error("Failed to update:", error);
@@ -3167,10 +3167,10 @@ export default function Projects() {
         if (editingProject.share_settings && !formData.share_settings) {
           projectData.share_settings = editingProject.share_settings;
         }
-        await base44.entities.ActionLog.update(editingProject.id, projectData);
+        await db.entities.ActionLog.update(editingProject.id, projectData);
         toast.success("Project updated");
       } else {
-        await base44.entities.ActionLog.create(projectData);
+        await db.entities.ActionLog.create(projectData);
         toast.success("Project created");
       }
 
@@ -3191,7 +3191,7 @@ export default function Projects() {
     }
 
     try {
-      await base44.entities.ActionLog.create({
+      await db.entities.ActionLog.create({
         action_type: "task",
         title: taskFormData.title,
         action_description: taskFormData.title,
@@ -3223,10 +3223,10 @@ export default function Projects() {
     if (!confirm("Delete this project and all its tasks?")) return;
 
     try {
-      await base44.entities.ActionLog.delete(id);
+      await db.entities.ActionLog.delete(id);
       // Also delete associated tasks
       const projectTasks = tasks.filter(t => t.project_id === id);
-      await Promise.all(projectTasks.map(t => base44.entities.ActionLog.delete(t.id)));
+      await Promise.all(projectTasks.map(t => db.entities.ActionLog.delete(t.id)));
 
       toast.success("Project deleted");
       if (selectedProject?.id === id) {
@@ -3242,7 +3242,7 @@ export default function Projects() {
 
   const handleUpdateTask = async (taskId, updates) => {
     try {
-      await base44.entities.ActionLog.update(taskId, {
+      await db.entities.ActionLog.update(taskId, {
         status: updates.status === "completed" ? "success" : updates.status === "todo" ? "pending" : updates.status,
       });
       loadData();
@@ -3309,11 +3309,11 @@ export default function Projects() {
           client_updates: mergedProject.client_updates || [],
           page_content: mergedProject.page_content || [],
         };
-        await base44.entities.ActionLog.update(projectId, fullProjectData);
+        await db.entities.ActionLog.update(projectId, fullProjectData);
       } else {
         // Fallback: try partial update if we can't find the project
         console.warn("Could not find project for full update, attempting partial update:", projectId);
-        await base44.entities.ActionLog.update(projectId, updates);
+        await db.entities.ActionLog.update(projectId, updates);
       }
     } catch (error) {
       console.error("Failed to update project data:", error, updates);

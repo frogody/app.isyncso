@@ -1,6 +1,6 @@
 // Learning interaction tracker for analytics
 
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/supabaseClient';
 
 class LearningTracker {
   constructor() {
@@ -37,7 +37,7 @@ class LearningTracker {
 
     // Save to database (fire and forget)
     try {
-      await base44.entities.LessonInteraction.create(interaction);
+      await db.entities.LessonInteraction.create(interaction);
     } catch (error) {
       console.error('[LearningTracker] Failed to save:', error);
     }

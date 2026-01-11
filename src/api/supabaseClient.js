@@ -812,10 +812,10 @@ export const integrations = {
 };
 
 /**
- * Base44-compatible client export
- * This provides the same interface as the Base44 SDK
+ * Database client export
+ * Provides unified access to all Supabase functionality
  */
-export const base44 = {
+export const db = {
   entities,
   auth,
   functions,
@@ -824,4 +824,4 @@ export const base44 = {
   integrations
 };
 
-export default base44;
+export default db;

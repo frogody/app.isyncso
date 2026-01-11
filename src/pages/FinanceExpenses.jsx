@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/supabaseClient';
 import { motion } from 'framer-motion';
 import {
   CreditCard, Plus, Search, Filter, Download, Calendar, Tag, Building,
@@ -74,7 +74,7 @@ export default function FinanceExpenses() {
   const loadExpenses = async () => {
     try {
       setLoading(true);
-      const data = await base44.entities.Expense?.list?.({ limit: 500 }).catch(() => []) || [];
+      const data = await db.entities.Expense?.list?.({ limit: 500 }).catch(() => []) || [];
       setExpenses(data);
     } catch (error) {
       console.error('Error loading expenses:', error);
@@ -206,7 +206,7 @@ export default function FinanceExpenses() {
     e.preventDefault();
     setSaving(true);
     try {
-      const user = await base44.auth.me();
+      const user = await db.auth.me();
       const expenseData = {
         user_id: user?.id,
         description: formData.description,
@@ -221,10 +221,10 @@ export default function FinanceExpenses() {
       };
 
       if (editMode && selectedExpense) {
-        await base44.entities.Expense.update(selectedExpense.id, expenseData);
+        await db.entities.Expense.update(selectedExpense.id, expenseData);
         toast.success('Expense updated successfully');
       } else {
-        const newExpense = await base44.entities.Expense.create(expenseData);
+        const newExpense = await db.entities.Expense.create(expenseData);
         setExpenses(prev => [newExpense, ...prev]);
         toast.success('Expense added successfully');
       }
@@ -244,7 +244,7 @@ export default function FinanceExpenses() {
     if (!confirm('Are you sure you want to delete this expense?')) return;
 
     try {
-      await base44.entities.Expense.delete(expense.id);
+      await db.entities.Expense.delete(expense.id);
       setExpenses(prev => prev.filter(e => e.id !== expense.id));
       toast.success('Expense deleted');
     } catch (error) {

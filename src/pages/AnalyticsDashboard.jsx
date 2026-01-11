@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -26,7 +26,7 @@ export default function AnalyticsDashboard() {
 
   const checkAdminAndLoadAnalytics = async () => {
     try {
-      const user = await base44.auth.me();
+      const user = await db.auth.me();
       
       if (!user || user.role !== 'admin') {
         setError('Access denied. Admin privileges required.');
@@ -36,7 +36,7 @@ export default function AnalyticsDashboard() {
 
       setIsAdmin(true);
       // TODO: Call backend function to get analytics
-      // const { data } = await base44.functions.invoke('admin/analytics');
+      // const { data } = await db.functions.invoke('admin/analytics');
       // setAnalytics(data);
       
       // Mock data for now

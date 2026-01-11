@@ -36,15 +36,15 @@ export default function OnboardingGuard({ children }) {
   useEffect(() => {
     const checkAuthAndOnboarding = async () => {
       try {
-        const { base44 } = await import("@/api/base44Client");
+        const { db } = await import("@/api/supabaseClient");
 
         // First check if user is authenticated
-        const authStatus = await base44.auth.isAuthenticated();
+        const authStatus = await db.auth.isAuthenticated();
         setIsAuthenticated(authStatus);
 
         if (authStatus) {
           // User is authenticated, get their data
-          const userData = await base44.auth.me();
+          const userData = await db.auth.me();
           setUser(userData);
         } else {
           setUser(null);

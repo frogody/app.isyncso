@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/supabaseClient';
 import { motion } from 'framer-motion';
 import {
   DollarSign, TrendingUp, TrendingDown, CreditCard, Receipt,
@@ -63,9 +63,9 @@ export default function Finance() {
         setLoading(true);
 
         const [expensesData, invoicesData, subscriptionsData] = await Promise.all([
-          (base44.entities.Expense?.list ? base44.entities.Expense.list({ limit: 100 }).catch(() => []) : Promise.resolve([])),
-          (base44.entities.Invoice?.list ? base44.entities.Invoice.list({ limit: 100 }).catch(() => []) : Promise.resolve([])),
-          (base44.entities.Subscription?.list ? base44.entities.Subscription.list({ limit: 100 }).catch(() => []) : Promise.resolve([]))
+          (db.entities.Expense?.list ? db.entities.Expense.list({ limit: 100 }).catch(() => []) : Promise.resolve([])),
+          (db.entities.Invoice?.list ? db.entities.Invoice.list({ limit: 100 }).catch(() => []) : Promise.resolve([])),
+          (db.entities.Subscription?.list ? db.entities.Subscription.list({ limit: 100 }).catch(() => []) : Promise.resolve([]))
         ]);
 
         if (!isMounted) return;
@@ -94,8 +94,8 @@ export default function Finance() {
     setSaving(true);
     try {
       const formData = new FormData(e.target);
-      const user = await base44.auth.me();
-      const invoice = await base44.entities.Invoice.create({
+      const user = await db.auth.me();
+      const invoice = await db.entities.Invoice.create({
         user_id: user?.id,
         invoice_number: `INV-${Date.now().toString().slice(-6)}`,
         client_name: formData.get('client_name'),
@@ -122,8 +122,8 @@ export default function Finance() {
     setSaving(true);
     try {
       const formData = new FormData(e.target);
-      const user = await base44.auth.me();
-      const expense = await base44.entities.Expense.create({
+      const user = await db.auth.me();
+      const expense = await db.entities.Expense.create({
         user_id: user?.id,
         description: formData.get('description'),
         amount: parseFloat(formData.get('amount')) || 0,
@@ -148,8 +148,8 @@ export default function Finance() {
     setSaving(true);
     try {
       const formData = new FormData(e.target);
-      const user = await base44.auth.me();
-      const subscription = await base44.entities.Subscription.create({
+      const user = await db.auth.me();
+      const subscription = await db.entities.Subscription.create({
         user_id: user?.id,
         name: formData.get('name'),
         amount: parseFloat(formData.get('amount')) || 0,

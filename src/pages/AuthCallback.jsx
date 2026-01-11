@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2, CheckCircle, XCircle } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 
 /**
  * AuthCallback - Handles Supabase OAuth redirect callbacks
@@ -22,17 +22,17 @@ export default function AuthCallback() {
         await new Promise(resolve => setTimeout(resolve, 500));
 
         // Check if we have a valid session now
-        const isAuth = await base44.auth.isAuthenticated();
+        const isAuth = await db.auth.isAuthenticated();
 
         if (isAuth) {
           setStatus("success");
           setMessage("Authentication successful!");
 
           // Ensure user profile exists
-          await base44.auth.ensureUserProfile();
+          await db.auth.ensureUserProfile();
 
           // Get user data to check onboarding status
-          const user = await base44.auth.me();
+          const user = await db.auth.me();
           const hasCompletedOnboarding = user?.job_title?.trim()?.length > 0 || user?.onboarding_completed === true;
 
           // Determine redirect destination

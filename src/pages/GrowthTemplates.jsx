@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -42,7 +42,7 @@ export default function GrowthTemplates() {
 
   const loadTemplates = async () => {
     try {
-      const response = await base44.functions.invoke('getICPTemplates');
+      const response = await db.functions.invoke('getICPTemplates');
       setTemplates(response.data?.templates || []);
     } catch (error) {
       console.error("Failed to load templates:", error);
@@ -91,7 +91,7 @@ export default function GrowthTemplates() {
         keywords: form.keywords.split(',').map(s => s.trim()).filter(Boolean),
       };
       
-      await base44.functions.invoke('saveICPTemplate', {
+      await db.functions.invoke('saveICPTemplate', {
         template: editingTemplate ? { ...templateData, id: editingTemplate.id } : templateData
       });
       
@@ -109,7 +109,7 @@ export default function GrowthTemplates() {
   const handleDelete = async (templateId) => {
     if (!confirm('Delete this template?')) return;
     try {
-      await base44.entities.ICPTemplate.delete(templateId);
+      await db.entities.ICPTemplate.delete(templateId);
       setTemplates(prev => prev.filter(t => t.id !== templateId));
       toast.success('Template deleted');
     } catch (error) {

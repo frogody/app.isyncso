@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/supabaseClient';
 import { motion } from 'framer-motion';
 import {
   TrendingUp, DollarSign, Users, FileText, Target, Rocket,
@@ -32,10 +32,10 @@ export default function Raise() {
 
       // Load raise-related data from database
       const [campaignsData, investorsData, pitchDecksData, dataRoomsData] = await Promise.all([
-        base44.entities.RaiseCampaign?.filter({}) || [],
-        base44.entities.RaiseInvestor?.filter({}) || [],
-        base44.entities.RaisePitchDeck?.filter({}) || [],
-        base44.entities.RaiseDataRoom?.filter({}) || []
+        db.entities.RaiseCampaign?.filter({}) || [],
+        db.entities.RaiseInvestor?.filter({}) || [],
+        db.entities.RaisePitchDeck?.filter({}) || [],
+        db.entities.RaiseDataRoom?.filter({}) || []
       ]);
 
       setCampaigns(campaignsData || []);

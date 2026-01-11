@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, ArrowRight, Sparkles, Loader2, CheckCircle2, Globe } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 
 export default function AIEnhancement({ enrichedData, onSubmit, onBack, productContext }) {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -29,7 +29,7 @@ export default function AIEnhancement({ enrichedData, onSubmit, onBack, productC
       setCurrentStage("Generating search prompts...");
       addLog("Creating tailored web search prompts");
 
-      const promptGeneration = await base44.integrations.Core.InvokeLLM({
+      const promptGeneration = await db.integrations.Core.InvokeLLM({
         prompt: `You are a data enrichment specialist. Given the following enriched company data and product context, create specific web search prompts that will uncover additional valuable insights.
 
 **Enriched Data Sample:**
@@ -92,7 +92,7 @@ Return an array of prompt templates with categories.`,
             .replace(/\{\{industry\}\}/g, company.industry || 'unknown');
 
           try {
-            const result = await base44.integrations.Core.InvokeLLM({
+            const result = await db.integrations.Core.InvokeLLM({
               prompt: `${prompt}\n\nProvide a concise, factual answer based on current web data.`,
               add_context_from_internet: true,
               response_json_schema: {
@@ -139,7 +139,7 @@ Extract and structure:
 
 Return well-structured data that goes beyond the original enrichment.`;
 
-          consolidatedData = await base44.integrations.Core.InvokeLLM({
+          consolidatedData = await db.integrations.Core.InvokeLLM({
           prompt: consolidationPrompt + `
 
 **CRITICAL: AI Vendor Detection**

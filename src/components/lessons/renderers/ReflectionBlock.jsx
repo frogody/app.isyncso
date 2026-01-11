@@ -6,7 +6,7 @@ import {
   Brain, CheckCircle2, Loader2, Sparkles, 
   Edit3, MessageSquare, Save
 } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { cn } from "@/lib/utils";
 
 export default function ReflectionBlock({ content, lessonId }) {
@@ -29,8 +29,8 @@ export default function ReflectionBlock({ content, lessonId }) {
       }
       
       try {
-        const user = await base44.auth.me();
-        const interactions = await base44.entities.LessonInteraction.filter({
+        const user = await db.auth.me();
+        const interactions = await db.entities.LessonInteraction.filter({
           user_id: user.id,
           lesson_id: lessonId,
           interaction_key: interactionKey
@@ -58,15 +58,15 @@ export default function ReflectionBlock({ content, lessonId }) {
 
     setIsSaving(true);
     try {
-      const user = await base44.auth.me();
+      const user = await db.auth.me();
       
       if (existingInteraction) {
-        await base44.entities.LessonInteraction.update(existingInteraction.id, {
+        await db.entities.LessonInteraction.update(existingInteraction.id, {
           user_input: userInput
         });
         setExistingInteraction({ ...existingInteraction, user_input: userInput });
       } else {
-        const newInteraction = await base44.entities.LessonInteraction.create({
+        const newInteraction = await db.entities.LessonInteraction.create({
           user_id: user.id,
           lesson_id: lessonId,
           interaction_key: interactionKey,

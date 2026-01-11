@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { createPageUrl } from "@/utils";
 import { ArrowLeft, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,7 @@ export default function RiskAssessment() {
     }
 
     try {
-      const systemData = await base44.entities.AISystem.get(systemId);
+      const systemData = await db.entities.AISystem.get(systemId);
       setSystem(systemData);
     } catch (error) {
       console.error("Failed to load system:", error);

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Play, Loader2, Terminal, StopCircle, Code, CheckCircle2, AlertCircle } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import Editor from "react-simple-code-editor";
 import { highlight, languages } from "prismjs";
 import "prismjs/components/prism-python";
@@ -243,9 +243,9 @@ export default function CodeSandbox({ initialCode, lessonId, blockIndex }) {
 
   const saveExecution = async (codeContent, result) => {
     try {
-      const user = await base44.auth.me();
+      const user = await db.auth.me();
       
-      await base44.entities.LessonInteraction.create({
+      await db.entities.LessonInteraction.create({
         user_id: user.id,
         lesson_id: lessonId,
         interaction_key: interactionKey,
@@ -259,9 +259,9 @@ export default function CodeSandbox({ initialCode, lessonId, blockIndex }) {
 
   const awardCodeXP = async () => {
     try {
-      const user = await base44.auth.me();
+      const user = await db.auth.me();
       
-      await base44.functions.invoke('updateGamification', {
+      await db.functions.invoke('updateGamification', {
         user_id: user.id,
         action_type: 'code_execute',
         metadata: { lesson_id: lessonId }

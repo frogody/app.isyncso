@@ -5,7 +5,7 @@ import {
   Link, List, X, Loader2, Paperclip
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/supabaseClient';
 import {
   Popover,
   PopoverContent,
@@ -73,7 +73,7 @@ export default function MessageInput({
     if (files.length > 0) {
       setUploading(true);
       try {
-        const result = await base44.integrations.Core.UploadFile({ file: files[0] });
+        const result = await db.integrations.Core.UploadFile({ file: files[0] });
         fileUrl = result.file_url;
         fileName = files[0].name;
         messageType = files[0].type.startsWith('image/') ? 'image' : 'file';

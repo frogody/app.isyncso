@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useUser } from "@/components/context/UserContext";
@@ -136,7 +136,7 @@ export default function Dashboard() {
 
     try {
       // Load user config first - RLS handles filtering
-      const configs = await base44.entities.UserAppConfig.list({ limit: 10 }).catch(() => []);
+      const configs = await db.entities.UserAppConfig.list({ limit: 10 }).catch(() => []);
       const defaultWidgets = [
         'learn_progress', 'learn_stats', 'learn_streak', 'learn_xp',
         'growth_pipeline', 'growth_stats', 'growth_deals',
@@ -159,25 +159,25 @@ export default function Dashboard() {
         invoicesResult, expensesResult, subscriptionsResult,
         raiseCampaignsResult, investorsResult
       ] = await Promise.allSettled([
-        base44.entities.Course.list({ limit: 50 }).catch(() => []),
-        base44.entities.UserProgress.list({ limit: 100 }).catch(() => []),
-        base44.entities.ActionLog.list({ limit: 5 }).catch(() => []),
-        base44.entities.GrowthOpportunity.list({ limit: 10 }).catch(() => []),
-        base44.entities.AISystem.list({ limit: 50 }).catch(() => []),
-        base44.entities.ActivitySession.list({ limit: 100 }).catch(() => []),
+        db.entities.Course.list({ limit: 50 }).catch(() => []),
+        db.entities.UserProgress.list({ limit: 100 }).catch(() => []),
+        db.entities.ActionLog.list({ limit: 5 }).catch(() => []),
+        db.entities.GrowthOpportunity.list({ limit: 10 }).catch(() => []),
+        db.entities.AISystem.list({ limit: 50 }).catch(() => []),
+        db.entities.ActivitySession.list({ limit: 100 }).catch(() => []),
         // UserGamification may not exist - wrap in try/catch
-        base44.entities.UserGamification?.list?.({ limit: 1 }).catch(() => []) || Promise.resolve([]),
-        base44.entities.UserSkill.list({ limit: 5 }).catch(() => []),
-        base44.entities.GrowthSignal.list({ limit: 5 }).catch(() => []),
-        base44.entities.GrowthCampaign.list({ limit: 10 }).catch(() => []),
-        base44.entities.Certificate.list({ limit: 50 }).catch(() => []),
+        db.entities.UserGamification?.list?.({ limit: 1 }).catch(() => []) || Promise.resolve([]),
+        db.entities.UserSkill.list({ limit: 5 }).catch(() => []),
+        db.entities.GrowthSignal.list({ limit: 5 }).catch(() => []),
+        db.entities.GrowthCampaign.list({ limit: 10 }).catch(() => []),
+        db.entities.Certificate.list({ limit: 50 }).catch(() => []),
         // Finance data
-        base44.entities.Invoice?.list?.({ limit: 20 }).catch(() => []) || Promise.resolve([]),
-        base44.entities.Expense?.list?.({ limit: 50 }).catch(() => []) || Promise.resolve([]),
-        base44.entities.Subscription?.list?.({ limit: 20 }).catch(() => []) || Promise.resolve([]),
+        db.entities.Invoice?.list?.({ limit: 20 }).catch(() => []) || Promise.resolve([]),
+        db.entities.Expense?.list?.({ limit: 50 }).catch(() => []) || Promise.resolve([]),
+        db.entities.Subscription?.list?.({ limit: 20 }).catch(() => []) || Promise.resolve([]),
         // Raise data
-        base44.entities.RaiseCampaign?.list?.({ limit: 1 }).catch(() => []) || Promise.resolve([]),
-        base44.entities.Investor?.list?.({ limit: 50 }).catch(() => []) || Promise.resolve([])
+        db.entities.RaiseCampaign?.list?.({ limit: 1 }).catch(() => []) || Promise.resolve([]),
+        db.entities.Investor?.list?.({ limit: 50 }).catch(() => []) || Promise.resolve([])
       ]);
 
       // Process Learn data
@@ -317,14 +317,14 @@ export default function Dashboard() {
         invoicesResult,
         expensesResult
       ] = await Promise.allSettled([
-        base44.entities.User?.list?.({ limit: 100 }).catch(() => []),
-        base44.entities.UserProgress?.list?.({ limit: 500 }).catch(() => []),
-        base44.entities.ActivitySession?.list?.({ limit: 500 }).catch(() => []),
-        base44.entities.GrowthOpportunity?.list?.({ limit: 100 }).catch(() => []),
-        base44.entities.AISystem?.list?.({ limit: 100 }).catch(() => []),
-        base44.entities.ActionLog?.list?.({ limit: 100 }).catch(() => []),
-        base44.entities.Invoice?.list?.({ limit: 100 }).catch(() => []),
-        base44.entities.Expense?.list?.({ limit: 100 }).catch(() => [])
+        db.entities.User?.list?.({ limit: 100 }).catch(() => []),
+        db.entities.UserProgress?.list?.({ limit: 500 }).catch(() => []),
+        db.entities.ActivitySession?.list?.({ limit: 500 }).catch(() => []),
+        db.entities.GrowthOpportunity?.list?.({ limit: 100 }).catch(() => []),
+        db.entities.AISystem?.list?.({ limit: 100 }).catch(() => []),
+        db.entities.ActionLog?.list?.({ limit: 100 }).catch(() => []),
+        db.entities.Invoice?.list?.({ limit: 100 }).catch(() => []),
+        db.entities.Expense?.list?.({ limit: 100 }).catch(() => [])
       ]);
 
       const allUsers = usersResult.status === 'fulfilled' ? usersResult.value : [];

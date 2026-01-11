@@ -390,7 +390,7 @@ async function processExpenseAsync(
 
     if (!extraction.success || !extraction.data) {
       await supabase
-        .from("expenses")
+        .from("stock_purchases")
         .update({
           status: 'failed',
           review_status: 'error',
@@ -441,20 +441,18 @@ async function processExpenseAsync(
       extraction.data.invoice_number ? `#${extraction.data.invoice_number}` : '',
     ].filter(Boolean).join(' ');
 
-    // Update expense with extracted data
-    // Note: We populate BOTH the invoice-specific fields AND the Finance-compatible fields
-    // so the expense appears correctly in both InventoryExpenses and FinanceExpenses pages
+    // Update stock_purchase with extracted data
     await supabase
-      .from("expenses")
+      .from("stock_purchases")
       .update({
-        // Finance-compatible fields (for FinanceExpenses page display)
+        // Finance-compatible fields (for backwards compatibility)
         description: invoiceDescription,
         vendor: extraction.data.supplier_name || null,
         amount: extraction.data.total || 0,
         date: extraction.data.invoice_date || null,
-        category: 'other', // Default category for uploaded invoices
+        category: 'other',
 
-        // Invoice-specific fields (for detailed invoice tracking)
+        // Invoice-specific fields
         supplier_id: supplierId,
         external_reference: extraction.data.invoice_number,
         invoice_date: extraction.data.invoice_date,
@@ -474,11 +472,12 @@ async function processExpenseAsync(
       })
       .eq("id", expenseId);
 
-    // Create line items
+    // Create line items in the new stock_purchase_line_items table
     let createdLineItems: any[] = [];
     if (extraction.data.line_items && extraction.data.line_items.length > 0) {
-      const lineItems = extraction.data.line_items.map((item) => ({
-        expense_id: expenseId,
+      const lineItems = extraction.data.line_items.map((item, index) => ({
+        stock_purchase_id: expenseId,
+        line_number: index + 1,
         description: item.description,
         quantity: item.quantity,
         unit_price: item.unit_price,
@@ -490,7 +489,7 @@ async function processExpenseAsync(
       }));
 
       const { data: insertedLineItems, error: lineItemsError } = await supabase
-        .from("expense_line_items")
+        .from("stock_purchase_line_items")
         .insert(lineItems)
         .select("id, ean, quantity, unit_price, description, model_number, brand");
 
@@ -499,9 +498,9 @@ async function processExpenseAsync(
       }
     }
 
-    // Create stock_purchases for inventory tracking
+    // Create stock_inventory_entries for inventory tracking (product-level)
     if (createdLineItems.length > 0 && supplierId) {
-      console.log(`[ASYNC] Creating stock purchases for ${createdLineItems.length} line items`);
+      console.log(`[ASYNC] Creating stock inventory entries for ${createdLineItems.length} line items`);
 
       for (const item of createdLineItems) {
         let productId: string | null = null;
@@ -521,15 +520,15 @@ async function processExpenseAsync(
           }
         }
 
-        // Create stock_purchase record (even without product match - EAN stored for later linking)
-        const { error: purchaseError } = await supabase
-          .from('stock_purchases')
+        // Create stock_inventory_entry record (even without product match - EAN stored for later linking)
+        const { error: entryError } = await supabase
+          .from('stock_inventory_entries')
           .insert({
             company_id: companyId,
             product_id: productId,
             supplier_id: supplierId,
-            expense_id: expenseId,
-            expense_line_item_id: item.id,
+            expense_id: expenseId, // Now references stock_purchases.id
+            expense_line_item_id: item.id, // Now references stock_purchase_line_items.id
             quantity: item.quantity,
             unit_price: item.unit_price,
             currency: extraction.data?.currency || 'EUR',
@@ -539,20 +538,22 @@ async function processExpenseAsync(
             source_type: 'invoice',
           });
 
-        if (purchaseError) {
-          console.warn(`[ASYNC] Failed to create stock purchase for line item ${item.id}:`, purchaseError.message);
+        if (entryError) {
+          console.warn(`[ASYNC] Failed to create stock inventory entry for line item ${item.id}:`, entryError.message);
         }
       }
 
-      console.log(`[ASYNC] Stock purchases created`);
+      console.log(`[ASYNC] Stock inventory entries created`);
     }
 
     // Queue line items for product research
+    // Note: Using expense_id/expense_line_item_id column names for backwards compatibility
+    // These now reference stock_purchases and stock_purchase_line_items tables
     if (createdLineItems.length > 0) {
       const researchQueueItems = createdLineItems.map((item: any) => ({
         company_id: companyId,
-        expense_id: expenseId,
-        expense_line_item_id: item.id,
+        expense_id: expenseId, // Now references stock_purchases.id
+        expense_line_item_id: item.id, // Now references stock_purchase_line_items.id
         product_description: item.description,
         model_number: item.model_number,
         supplier_name: extraction.data?.supplier_name,
@@ -597,11 +598,11 @@ async function processExpenseAsync(
       }
     }
 
-    console.log(`[ASYNC] Processing complete for expense ${expenseId}`);
+    console.log(`[ASYNC] Processing complete for stock purchase ${expenseId}`);
   } catch (error) {
-    console.error("[ASYNC] Error processing expense:", error);
+    console.error("[ASYNC] Error processing stock purchase:", error);
     await supabase
-      .from("expenses")
+      .from("stock_purchases")
       .update({
         status: 'failed',
         review_status: 'error',
@@ -687,11 +688,11 @@ Deno.serve(async (req) => {
     const hasPdfText = pdfText && pdfText.trim().length > 0;
     const initialStatus = hasPdfText ? "text_extraction" : "processing";
 
-    console.log(`Creating expense with status='${initialStatus}' (hasPdfText: ${hasPdfText})`);
+    console.log(`Creating stock_purchase with status='${initialStatus}' (hasPdfText: ${hasPdfText})`);
 
-    // Create expense record
-    const { data: expense, error: expenseError } = await supabase
-      .from("expenses")
+    // Create stock_purchase record
+    const { data: stockPurchase, error: stockPurchaseError } = await supabase
+      .from("stock_purchases")
       .insert({
         company_id: companyId,
         user_id: userId,
@@ -707,10 +708,10 @@ Deno.serve(async (req) => {
       .select()
       .single();
 
-    if (expenseError) {
-      console.error("Error creating expense:", expenseError);
+    if (stockPurchaseError) {
+      console.error("Error creating stock purchase:", stockPurchaseError);
       return new Response(
-        JSON.stringify({ success: false, error: expenseError.message }),
+        JSON.stringify({ success: false, error: stockPurchaseError.message }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -718,33 +719,35 @@ Deno.serve(async (req) => {
     // If we have PDF text, process immediately (faster and more reliable)
     // The hasPdfText variable was already calculated above to determine initial status
     if (hasPdfText) {
-      console.log(`✅ Processing expense ${expense.id} immediately with PDF text (length: ${pdfText.length})`);
+      console.log(`✅ Processing stock purchase ${stockPurchase.id} immediately with PDF text (length: ${pdfText.length})`);
       console.log(`PDF text preview (first 200 chars): ${pdfText.substring(0, 200)}`);
-      await processExpenseAsync(supabase, groqApiKey, googleApiKey, expense.id, imageUrl, companyId, pdfText);
+      await processExpenseAsync(supabase, groqApiKey, googleApiKey, stockPurchase.id, imageUrl, companyId, pdfText);
 
       return new Response(
         JSON.stringify({
           success: true,
           processing: false,
-          expenseId: expense.id,
+          stockPurchaseId: stockPurchase.id,
+          expenseId: stockPurchase.id, // Keep for backwards compatibility
           message: "Invoice processed successfully.",
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`Created expense ${expense.id} - database trigger will handle async processing`);
+    console.log(`Created stock purchase ${stockPurchase.id} - processing synchronously`);
 
-    // The database trigger (trigger_expense_processing) will automatically call
-    // this function with _mode='process' via pg_net when the expense is inserted.
-    // This happens asynchronously, so we return immediately.
+    // Note: For stock purchases without PDF text, we still process immediately
+    // The old database trigger mechanism is not needed with the new table
+    await processExpenseAsync(supabase, groqApiKey, googleApiKey, stockPurchase.id, imageUrl, companyId, undefined);
 
     return new Response(
       JSON.stringify({
         success: true,
-        processing: true,
-        expenseId: expense.id,
-        message: "Invoice uploaded. Processing will complete in background.",
+        processing: false,
+        stockPurchaseId: stockPurchase.id,
+        expenseId: stockPurchase.id, // Keep for backwards compatibility
+        message: "Invoice processed.",
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

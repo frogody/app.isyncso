@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, CheckCircle, XCircle, Play, RefreshCw, Database } from "lucide-react";
@@ -14,7 +14,7 @@ export default function AdminMigration() {
   const runVerification = async () => {
     setLoading(true);
     try {
-      const response = await base44.functions.invoke('verifyMigration');
+      const response = await db.functions.invoke('verifyMigration');
       setVerification(response.data.report);
     } catch (error) {
       console.error('Verification failed:', error);
@@ -33,12 +33,12 @@ export default function AdminMigration() {
     setLoading(true);
 
     try {
-      const response = await base44.functions.invoke('migrateCompanyData');
+      const response = await db.functions.invoke('migrateCompanyData');
       setResults(response.data.results);
       setStatus('verifying');
 
       // Auto-run verification after migration
-      const verifyResponse = await base44.functions.invoke('verifyMigration');
+      const verifyResponse = await db.functions.invoke('verifyMigration');
       setVerification(verifyResponse.data.report);
       setStatus('complete');
     } catch (error) {

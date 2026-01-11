@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/supabaseClient';
 import { motion } from 'framer-motion';
 import anime from '@/lib/anime-wrapper';
 const animate = anime;
@@ -111,9 +111,9 @@ export default function FinanceOverview() {
         setLoading(true);
 
         const [expensesData, invoicesData, subscriptionsData] = await Promise.all([
-          (base44.entities.Expense?.list ? base44.entities.Expense.list({ limit: 100 }).catch(() => []) : Promise.resolve([])),
-          (base44.entities.Invoice?.list ? base44.entities.Invoice.list({ limit: 100 }).catch(() => []) : Promise.resolve([])),
-          (base44.entities.Subscription?.list ? base44.entities.Subscription.list({ limit: 100 }).catch(() => []) : Promise.resolve([]))
+          (db.entities.Expense?.list ? db.entities.Expense.list({ limit: 100 }).catch(() => []) : Promise.resolve([])),
+          (db.entities.Invoice?.list ? db.entities.Invoice.list({ limit: 100 }).catch(() => []) : Promise.resolve([])),
+          (db.entities.Subscription?.list ? db.entities.Subscription.list({ limit: 100 }).catch(() => []) : Promise.resolve([]))
         ]);
 
         if (!isMounted) return;

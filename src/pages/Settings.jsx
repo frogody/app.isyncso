@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import anime from '@/lib/anime-wrapper';
 const animate = anime;
 import { prefersReducedMotion } from '@/lib/animations';
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -180,7 +180,7 @@ export default function Settings() {
         });
 
         if (user.company_id) {
-          base44.entities.Invitation.filter({ company_id: user.company_id })
+          db.entities.Invitation.filter({ company_id: user.company_id })
             .then(invites => setInvitations(invites || []))
             .catch(e => console.error("Error loading invitations:", e));
         }
@@ -192,9 +192,9 @@ export default function Settings() {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await db.integrations.Core.UploadFile({ file });
       setProfileForm(prev => ({ ...prev, avatar_url: file_url }));
-      await base44.auth.updateMe({ avatar_url: file_url });
+      await db.auth.updateMe({ avatar_url: file_url });
       toast.success('Avatar updated!');
     } catch (error) {
       console.error("Failed to upload avatar:", error);
@@ -262,7 +262,7 @@ export default function Settings() {
     if (!company?.id) return;
     setRefreshingCompany(true);
     try {
-      await base44.functions.invoke('refreshCompanyEnrichment', { company_id: company.id });
+      await db.functions.invoke('refreshCompanyEnrichment', { company_id: company.id });
       toast.success('Company data refreshed!');
       window.location.reload();
     } catch (error) {
@@ -277,12 +277,12 @@ export default function Settings() {
     setSaving(true);
     try {
       if (company?.id) {
-        await base44.entities.Company.update(company.id, companyData);
+        await db.entities.Company.update(company.id, companyData);
         toast.success('Company profile updated!');
         window.location.reload();
       } else {
-        const newCompany = await base44.entities.Company.create(companyData);
-        await base44.auth.updateMe({ company_id: newCompany.id });
+        const newCompany = await db.entities.Company.create(companyData);
+        await db.auth.updateMe({ company_id: newCompany.id });
         toast.success('Company profile created!');
         window.location.reload();
       }
@@ -301,7 +301,7 @@ export default function Settings() {
     setProfileForm(prev => ({ ...prev, personal_tech_stack: newStack }));
     setTechInput("");
     try {
-      await base44.auth.updateMe({ personal_tech_stack: newStack });
+      await db.auth.updateMe({ personal_tech_stack: newStack });
       toast.success('Tech added!');
     } catch (error) {
       console.error('Failed to save tech stack:', error);
@@ -313,7 +313,7 @@ export default function Settings() {
     const newStack = profileForm.personal_tech_stack.filter((_, i) => i !== idx);
     setProfileForm(prev => ({ ...prev, personal_tech_stack: newStack }));
     try {
-      await base44.auth.updateMe({ personal_tech_stack: newStack });
+      await db.auth.updateMe({ personal_tech_stack: newStack });
     } catch (error) {
       console.error('Failed to update tech stack:', error);
       toast.error('Failed to save');
@@ -324,11 +324,11 @@ export default function Settings() {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await db.integrations.Core.UploadFile({ file });
       const newFile = { name: file.name, url: file_url, type: file.type, size: file.size, uploaded_at: new Date().toISOString() };
       const newFiles = [...profileForm.personal_knowledge_files, newFile];
       setProfileForm(prev => ({ ...prev, personal_knowledge_files: newFiles }));
-      await base44.auth.updateMe({ personal_knowledge_files: newFiles });
+      await db.auth.updateMe({ personal_knowledge_files: newFiles });
       toast.success('File uploaded!');
     } catch (error) {
       console.error("Error uploading file:", error);
@@ -340,7 +340,7 @@ export default function Settings() {
     const newFiles = profileForm.personal_knowledge_files.filter((_, i) => i !== idx);
     setProfileForm(prev => ({ ...prev, personal_knowledge_files: newFiles }));
     try {
-      await base44.auth.updateMe({ personal_knowledge_files: newFiles });
+      await db.auth.updateMe({ personal_knowledge_files: newFiles });
     } catch (error) {
       console.error('Failed to remove file:', error);
       toast.error('Failed to save');
@@ -355,7 +355,7 @@ export default function Settings() {
     setCompanyTechInput("");
     if (company?.id) {
       try {
-        await base44.entities.Company.update(company.id, { tech_stack: newStack });
+        await db.entities.Company.update(company.id, { tech_stack: newStack });
         toast.success('Tech added!');
       } catch (error) {
         console.error('Failed to save company tech stack:', error);
@@ -369,7 +369,7 @@ export default function Settings() {
     setCompanyData(prev => ({ ...prev, tech_stack: newStack }));
     if (company?.id) {
       try {
-        await base44.entities.Company.update(company.id, { tech_stack: newStack });
+        await db.entities.Company.update(company.id, { tech_stack: newStack });
       } catch (error) {
         console.error('Failed to update company tech stack:', error);
         toast.error('Failed to save');
@@ -381,12 +381,12 @@ export default function Settings() {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await db.integrations.Core.UploadFile({ file });
       const newFile = { name: file.name, url: file_url, type: file.type, size: file.size, uploaded_at: new Date().toISOString() };
       const newFiles = [...companyData.knowledge_files, newFile];
       setCompanyData(prev => ({ ...prev, knowledge_files: newFiles }));
       if (company?.id) {
-        await base44.entities.Company.update(company.id, { knowledge_files: newFiles });
+        await db.entities.Company.update(company.id, { knowledge_files: newFiles });
       }
       toast.success('File uploaded!');
     } catch (error) {
@@ -400,7 +400,7 @@ export default function Settings() {
     setCompanyData(prev => ({ ...prev, knowledge_files: newFiles }));
     if (company?.id) {
       try {
-        await base44.entities.Company.update(company.id, { knowledge_files: newFiles });
+        await db.entities.Company.update(company.id, { knowledge_files: newFiles });
       } catch (error) {
         console.error('Failed to remove company file:', error);
         toast.error('Failed to save');
@@ -412,10 +412,10 @@ export default function Settings() {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { file_url } = await db.integrations.Core.UploadFile({ file });
       setCompanyData(prev => ({ ...prev, logo_url: file_url }));
       if (company?.id) {
-        await base44.entities.Company.update(company.id, { logo_url: file_url });
+        await db.entities.Company.update(company.id, { logo_url: file_url });
       }
       toast.success('Logo uploaded!');
     } catch (error) {
@@ -427,7 +427,7 @@ export default function Settings() {
   const sendInvite = async () => {
     if (!inviteEmail || !user?.company_id) return;
     try {
-      const newInvite = await base44.entities.Invitation.create({
+      const newInvite = await db.entities.Invitation.create({
         company_id: user.company_id,
         email: inviteEmail,
         role: inviteRole,
@@ -449,7 +449,7 @@ export default function Settings() {
       return;
     }
     try {
-      const newInvite = await base44.entities.Invitation.create({
+      const newInvite = await db.entities.Invitation.create({
         company_id: user.company_id,
         email: "link-invite@placeholder.com",
         role: "learner",
@@ -472,7 +472,7 @@ export default function Settings() {
 
   const revokeInvite = async (id) => {
     try {
-      await base44.entities.Invitation.delete(id);
+      await db.entities.Invitation.delete(id);
       setInvitations(invitations.filter(i => i.id !== id));
       toast.success('Invitation revoked');
     } catch (error) {
@@ -515,7 +515,7 @@ export default function Settings() {
       
       if (response.data?.success) {
         toast.success('Account deleted');
-        await base44.auth.logout(window.location.origin);
+        await db.auth.logout(window.location.origin);
       } else {
         throw new Error(response.data?.error || 'Deletion failed');
       }
@@ -631,7 +631,7 @@ export default function Settings() {
                 <div className="relative">
                   <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-zinc-700/50">
                     <img 
-                      src={profileForm.avatar_url || "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ebfb48566133bc1cface8c/97c0a3206_GeneratedImageDecember082025-5_28PM.jpeg"} 
+                      src={profileForm.avatar_url || "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/db-prod/public/68ebfb48566133bc1cface8c/97c0a3206_GeneratedImageDecember082025-5_28PM.jpeg"} 
                       alt="Avatar" 
                       className="w-full h-full object-cover" 
                     />
@@ -713,7 +713,7 @@ export default function Settings() {
                       <div className="relative group cursor-pointer" onClick={() => document.getElementById('avatar-upload').click()}>
                         <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-cyan-500/30 bg-zinc-800">
                           <img 
-                            src={profileForm.avatar_url || "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ebfb48566133bc1cface8c/97c0a3206_GeneratedImageDecember082025-5_28PM.jpeg"} 
+                            src={profileForm.avatar_url || "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/db-prod/public/68ebfb48566133bc1cface8c/97c0a3206_GeneratedImageDecember082025-5_28PM.jpeg"} 
                             alt="Avatar" 
                             className="w-full h-full object-cover" 
                           />
@@ -1404,7 +1404,7 @@ export default function Settings() {
                         </div>
                       </div>
                       <Button 
-                        onClick={() => base44.auth.logout(window.location.origin)}
+                        onClick={() => db.auth.logout(window.location.origin)}
                         className="bg-cyan-600/80 hover:bg-cyan-600 text-white font-medium"
                       >
                         <LogOut className="w-4 h-4 mr-2" />

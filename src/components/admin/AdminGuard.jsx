@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { createPageUrl } from "@/utils";
 import { Shield, AlertTriangle } from "lucide-react";
 
@@ -13,7 +13,7 @@ export default function AdminGuard({ children }) {
 
   const verifyAdmin = async () => {
     try {
-      const user = await base44.auth.me();
+      const user = await db.auth.me();
       
       if (!user || user.role !== 'admin') {
         // Not authorized - redirect to dashboard

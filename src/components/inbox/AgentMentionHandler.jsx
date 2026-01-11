@@ -1,4 +1,4 @@
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/supabaseClient';
 
 // Agent configurations
 export const AVAILABLE_AGENTS = {
@@ -81,7 +81,7 @@ export async function invokeAgentForChat(agentType, prompt, user, channelContext
   try {
     // For personal assistant, use our custom function that can execute actions
     if (agentType === 'assistant') {
-      const response = await base44.functions.invoke('personalAssistant', {
+      const response = await db.functions.invoke('personalAssistant', {
         prompt,
         user_id: user?.id,
         channel_id: channelContext?.channelId,
@@ -101,7 +101,7 @@ export async function invokeAgentForChat(agentType, prompt, user, channelContext
     }
 
     // For other agents, use the standard conversation flow
-    const conversation = await base44.agents.createConversation({
+    const conversation = await db.agents.createConversation({
       agent_name: agent.name,
       metadata: {
         name: `Chat - ${channelContext?.channelName || 'Channel'}`,
@@ -112,7 +112,7 @@ export async function invokeAgentForChat(agentType, prompt, user, channelContext
     });
 
     // Send the message and wait for response
-    await base44.agents.addMessage(conversation, {
+    await db.agents.addMessage(conversation, {
       role: 'user',
       content: prompt
     });
@@ -126,7 +126,7 @@ export async function invokeAgentForChat(agentType, prompt, user, channelContext
         attempts++;
 
         try {
-          const updatedConversation = await base44.agents.getConversation(conversation.id);
+          const updatedConversation = await db.agents.getConversation(conversation.id);
           const messages = updatedConversation.messages || [];
 
           // Find assistant response

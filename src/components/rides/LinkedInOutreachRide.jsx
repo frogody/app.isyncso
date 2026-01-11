@@ -4,7 +4,7 @@ import {
   Building2, ArrowRight, Loader2, Users, Send
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/supabaseClient';
 
 const Chip = ({ selected, onClick, children }) => (
   <button onClick={onClick} className={`px-3 py-1.5 rounded-lg text-xs transition-all ${selected ? 'bg-blue-500 text-white' : 'bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10'}`}>

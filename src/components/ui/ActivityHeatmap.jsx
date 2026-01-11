@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { cn } from '@/lib/utils';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/supabaseClient';
 import { Calendar, Clock, BookOpen, Zap, ArrowRight, X, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -36,7 +36,7 @@ export function ActivityHeatmap({ userId, color = 'cyan' }) {
 
   const loadActivityData = async () => {
     try {
-      const user = userId ? { id: userId } : await base44.auth.me();
+      const user = userId ? { id: userId } : await db.auth.me();
       if (!user) return;
 
       // Get activity sessions for the last 7 weeks
@@ -44,8 +44,8 @@ export function ActivityHeatmap({ userId, color = 'cyan' }) {
       startDate.setDate(startDate.getDate() - (weeks * 7));
       
       const [sessions, progressData] = await Promise.all([
-        base44.entities.ActivitySession.filter({ user_id: user.id }),
-        base44.entities.UserProgress.filter({ user_id: user.id })
+        db.entities.ActivitySession.filter({ user_id: user.id }),
+        db.entities.UserProgress.filter({ user_id: user.id })
       ]);
 
       // Group by date

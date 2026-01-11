@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Trophy, Flame, TrendingUp, Zap, Star } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/supabaseClient';
 import { motion } from 'framer-motion';
 
 /**
@@ -16,11 +16,11 @@ export function ProgressWidget({ userId, compact = false }) {
   const loadGamification = React.useCallback(async () => {
     try {
       // UserGamification table may not exist - handle gracefully
-      if (!base44.entities.UserGamification?.list) {
+      if (!db.entities.UserGamification?.list) {
         setLoading(false);
         return;
       }
-      const data = await base44.entities.UserGamification.list({ limit: 1 }).catch(() => []);
+      const data = await db.entities.UserGamification.list({ limit: 1 }).catch(() => []);
       if (data.length > 0) {
         setGamification(data[0]);
       }

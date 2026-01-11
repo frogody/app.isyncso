@@ -4,7 +4,7 @@ import anime from '@/lib/anime-wrapper';
 const animate = anime;
 const stagger = anime.stagger;
 import { prefersReducedMotion } from '@/lib/animations';
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import {
   Plus, Send, Linkedin, Mail, Phone, Zap, Users, ChevronDown, ChevronUp, Play, Pause,
   MoreHorizontal, Trash2, Edit, Calendar, Target, TrendingUp, MessageSquare, Eye,
@@ -173,7 +173,7 @@ export default function GrowthCampaigns() {
 
     const loadCampaigns = async () => {
       try {
-        const camps = await base44.entities.GrowthCampaign.list({ limit: 100 }).catch(() => []);
+        const camps = await db.entities.GrowthCampaign.list({ limit: 100 }).catch(() => []);
         if (isMounted) setCampaigns(camps || []);
       } catch (error) {
         console.error('Failed to load:', error);
@@ -199,10 +199,10 @@ export default function GrowthCampaigns() {
       };
 
       if (selectedCampaign) {
-        await base44.entities.GrowthCampaign.update(selectedCampaign.id, data);
+        await db.entities.GrowthCampaign.update(selectedCampaign.id, data);
         toast.success('Campaign updated');
       } else {
-        await base44.entities.GrowthCampaign.create(data);
+        await db.entities.GrowthCampaign.create(data);
         toast.success('Campaign created');
       }
       
@@ -236,7 +236,7 @@ export default function GrowthCampaigns() {
   const handleDelete = async (id) => {
     if (!confirm('Delete this campaign?')) return;
     try {
-      await base44.entities.GrowthCampaign.delete(id);
+      await db.entities.GrowthCampaign.delete(id);
       setCampaigns(prev => prev.filter(c => c.id !== id));
       toast.success('Campaign deleted');
     } catch (error) {
@@ -246,7 +246,7 @@ export default function GrowthCampaigns() {
 
   const handleStatusChange = async (id, status) => {
     try {
-      await base44.entities.GrowthCampaign.update(id, { status });
+      await db.entities.GrowthCampaign.update(id, { status });
       setCampaigns(camps => camps.map(c => c.id === id ? { ...c, status } : c));
       toast.success(`Campaign ${status === 'active' ? 'started' : status === 'paused' ? 'paused' : 'updated'}`);
     } catch (error) {

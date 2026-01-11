@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import anime from '@/lib/anime-wrapper';
 const animate = anime;
 const stagger = anime.stagger;
-import { base44, supabase } from "@/api/base44Client";
+import { db, supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
 import { prefersReducedMotion } from "@/lib/animations";
 
@@ -736,7 +736,7 @@ export default function CRMContacts() {
     if (!user?.id) return;
     try {
       // Use owner_id which is the actual column name in the prospects table
-      const prospects = await base44.entities.Prospect.filter({ owner_id: user.id });
+      const prospects = await db.entities.Prospect.filter({ owner_id: user.id });
       const contactList = prospects.map(p => ({
         id: p.id,
         name: [p.first_name, p.last_name].filter(Boolean).join(' ') || p.company || "Unknown",
@@ -791,8 +791,8 @@ export default function CRMContacts() {
   const loadContactDetails = async (contact) => {
     try {
       const [opps, acts] = await Promise.all([
-        base44.entities.GrowthOpportunity.filter({ contact_email: contact.email }).catch(() => []),
-        base44.entities.ActionLog.filter({ target_email: contact.email }).catch(() => []),
+        db.entities.GrowthOpportunity.filter({ contact_email: contact.email }).catch(() => []),
+        db.entities.ActionLog.filter({ target_email: contact.email }).catch(() => []),
       ]);
       setDeals(opps);
       setActivities(acts);
@@ -878,7 +878,7 @@ export default function CRMContacts() {
     setContacts(prev => prev.map(c => c.id === contactId ? { ...c, stage: newStage } : c));
 
     try {
-      await base44.entities.Prospect.update(contactId, { stage: newStage });
+      await db.entities.Prospect.update(contactId, { stage: newStage });
       const stageName = PIPELINE_STAGES.find(s => s.id === newStage)?.label;
       toast.success(`Moved to ${stageName}`);
     } catch (error) {
@@ -939,10 +939,10 @@ export default function CRMContacts() {
       };
 
       if (editingContact) {
-        await base44.entities.Prospect.update(editingContact.id, prospectData);
+        await db.entities.Prospect.update(editingContact.id, prospectData);
         toast.success("Contact updated");
       } else {
-        await base44.entities.Prospect.create(prospectData);
+        await db.entities.Prospect.create(prospectData);
         toast.success("Contact created");
       }
 
@@ -965,7 +965,7 @@ export default function CRMContacts() {
   const handleDelete = async (id) => {
     if (!confirm("Delete this contact?")) return;
     try {
-      await base44.entities.Prospect.delete(id);
+      await db.entities.Prospect.delete(id);
       toast.success("Contact deleted");
       setSelectedContacts(prev => prev.filter(cid => cid !== id));
       if (detailContact?.id === id) {
@@ -981,7 +981,7 @@ export default function CRMContacts() {
 
   const handleToggleStar = async (contact) => {
     try {
-      await base44.entities.Prospect.update(contact.id, { is_starred: !contact.is_starred });
+      await db.entities.Prospect.update(contact.id, { is_starred: !contact.is_starred });
       loadContacts();
     } catch (error) {
       console.error("Failed to update:", error);
@@ -1061,7 +1061,7 @@ export default function CRMContacts() {
   const handleBulkDelete = async () => {
     if (!confirm(`Delete ${selectedContacts.length} contacts?`)) return;
     try {
-      await Promise.all(selectedContacts.map(id => base44.entities.Prospect.delete(id)));
+      await Promise.all(selectedContacts.map(id => db.entities.Prospect.delete(id)));
       toast.success(`${selectedContacts.length} contacts deleted`);
       setSelectedContacts([]);
       loadContacts();

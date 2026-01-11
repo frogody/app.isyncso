@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -73,7 +73,7 @@ Generate a comprehensive Technical Documentation following Annex IV structure:
 
 Format as markdown with clear section headings. Be specific where data is provided, use [PLACEHOLDER: ...] where information is missing. Keep regulatory language formal and precise.`;
 
-      const response = await base44.integrations.Core.InvokeLLM({
+      const response = await db.integrations.Core.InvokeLLM({
         prompt: prompt,
         add_context_from_internet: false
       });

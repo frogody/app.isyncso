@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export default function FeatureList({ onBack }) {
@@ -24,14 +24,14 @@ export default function FeatureList({ onBack }) {
 
   const { data: features, isLoading } = useQuery({
     queryKey: ['features'],
-    queryFn: () => base44.entities.FeatureRequest.list(),
+    queryFn: () => db.entities.FeatureRequest.list(),
     initialData: []
   });
 
   const createFeatureMutation = useMutation({
     mutationFn: async (data) => {
-      const user = await base44.auth.me();
-      return base44.entities.FeatureRequest.create({
+      const user = await db.auth.me();
+      return db.entities.FeatureRequest.create({
         ...data,
         votes: [user.id], // Auto vote for own feature
         user_id: user.id
@@ -46,13 +46,13 @@ export default function FeatureList({ onBack }) {
 
   const voteMutation = useMutation({
     mutationFn: async (feature) => {
-      const user = await base44.auth.me();
+      const user = await db.auth.me();
       const currentVotes = feature.votes || [];
       const newVotes = currentVotes.includes(user.id) 
         ? currentVotes.filter(id => id !== user.id)
         : [...currentVotes, user.id];
       
-      return base44.entities.FeatureRequest.update(feature.id, { votes: newVotes });
+      return db.entities.FeatureRequest.update(feature.id, { votes: newVotes });
     },
     onSuccess: () => queryClient.invalidateQueries(['features'])
   });

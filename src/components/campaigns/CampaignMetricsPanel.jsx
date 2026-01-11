@@ -7,7 +7,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { toast } from "sonner";
 
 function MetricCard({ label, value, icon: Icon, color, onIncrement, onDecrement, editable = true }) {
@@ -51,7 +51,7 @@ export default function CampaignMetricsPanel({ campaign, onUpdate }) {
     setUpdating(true);
     
     try {
-      await base44.entities.GrowthCampaign.update(campaign.id, { [field]: newValue });
+      await db.entities.GrowthCampaign.update(campaign.id, { [field]: newValue });
       onUpdate({ ...campaign, [field]: newValue });
       toast.success('Metric updated');
     } catch (error) {
@@ -155,7 +155,7 @@ export default function CampaignMetricsPanel({ campaign, onUpdate }) {
               onBlur={(e) => {
                 const val = parseFloat(e.target.value) || 0;
                 if (val !== campaign.revenue_attributed) {
-                  base44.entities.GrowthCampaign.update(campaign.id, { revenue_attributed: val })
+                  db.entities.GrowthCampaign.update(campaign.id, { revenue_attributed: val })
                     .then(() => onUpdate({ ...campaign, revenue_attributed: val }));
                 }
               }}

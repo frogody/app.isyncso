@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/supabaseClient';
 import { useUser } from '@/components/context/UserContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -92,7 +92,7 @@ export default function Actions() {
 
     try {
       // RLS handles filtering - list all accessible integrations
-      const data = await base44.entities.MergeIntegration?.list?.({ limit: 50 }).catch(() => []) || [];
+      const data = await db.entities.MergeIntegration?.list?.({ limit: 50 }).catch(() => []) || [];
       setIntegrations((data || []).filter(i => i.status === 'active'));
     } catch (error) {
       console.warn('Error loading integrations:', error.message);
@@ -107,7 +107,7 @@ export default function Actions() {
     setLogsLoading(true);
     try {
       // RLS handles filtering - list all accessible logs
-      const data = await base44.entities.ActionLog?.list?.({ limit: 50 }).catch(() => []) || [];
+      const data = await db.entities.ActionLog?.list?.({ limit: 50 }).catch(() => []) || [];
       setActionLogs(data || []);
     } catch (error) {
       console.warn('Error loading action logs:', error.message);
@@ -128,7 +128,7 @@ export default function Actions() {
   const handleDisconnect = async (integrationId) => {
     setDisconnecting(integrationId);
     try {
-      await base44.functions.invoke('mergeDisconnect', {
+      await db.functions.invoke('mergeDisconnect', {
         integration_id: integrationId
       });
       setIntegrations(prev => prev.filter(i => i.id !== integrationId));
@@ -156,14 +156,14 @@ export default function Actions() {
   const handleExecuteAction = async (action) => {
     setExecutingAction(action.id);
     try {
-      await base44.entities.ActionLog.update(action.id, { 
+      await db.entities.ActionLog.update(action.id, { 
         status: 'in_progress',
         executed_at: new Date().toISOString()
       });
       
       // Simulate execution - in real app this would call the actual integration
       setTimeout(async () => {
-        await base44.entities.ActionLog.update(action.id, { status: 'success' });
+        await db.entities.ActionLog.update(action.id, { status: 'success' });
         toast.success(`Action "${action.title}" completed!`);
         loadActionLogs();
         setExecutingAction(null);
@@ -176,7 +176,7 @@ export default function Actions() {
 
   const handleCancelAction = async (action) => {
     try {
-      await base44.entities.ActionLog.update(action.id, { status: 'cancelled' });
+      await db.entities.ActionLog.update(action.id, { status: 'cancelled' });
       toast.success('Action cancelled');
       loadActionLogs();
     } catch (error) {
@@ -186,7 +186,7 @@ export default function Actions() {
 
   const handleRetryAction = async (action) => {
     try {
-      await base44.entities.ActionLog.update(action.id, { 
+      await db.entities.ActionLog.update(action.id, { 
         status: 'queued',
         retry_count: (action.retry_count || 0) + 1,
         error_message: null
@@ -200,7 +200,7 @@ export default function Actions() {
 
   const handleDeleteAction = async (action) => {
     try {
-      await base44.entities.ActionLog.delete(action.id);
+      await db.entities.ActionLog.delete(action.id);
       toast.success('Action deleted');
       loadActionLogs();
     } catch (error) {
@@ -336,7 +336,7 @@ export default function Actions() {
               {queuedActions.length > 0 && <Badge className="ml-2 bg-orange-950/40 text-orange-300/80 border-orange-800/30 text-[10px] px-1.5">{queuedActions.length}</Badge>}
             </TabsTrigger>
             <TabsTrigger value="rides" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-orange-300/90 text-zinc-500 px-4">
-              <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ebfb48566133bc1cface8c/1850cd012_claude-color.png" alt="Claude" className="w-4 h-4 mr-2" />Claude Rides
+              <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/db-prod/public/68ebfb48566133bc1cface8c/1850cd012_claude-color.png" alt="Claude" className="w-4 h-4 mr-2" />Claude Rides
               <Badge className="ml-2 bg-orange-950/40 text-orange-300/80 border-orange-800/30 text-[10px] px-1.5">New</Badge>
             </TabsTrigger>
             <TabsTrigger value="history" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-orange-300/90 text-zinc-500 px-4">

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { base44 } from '@/api/base44Client';
+import { supabase } from '@/api/supabaseClient';
+import { useUser } from '@/components/context/UserContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Receipt, Plus, Search, Filter, Download, Send, Check, Clock, AlertCircle,
@@ -9,7 +10,6 @@ import {
 } from 'lucide-react';
 import { downloadInvoicePDF, previewInvoicePDF } from '@/utils/generateInvoicePDF';
 import { ProductSelector } from '@/components/finance';
-import { Subscription } from '@/api/entities';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +28,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { toast } from 'sonner';
 
 export default function FinanceInvoices() {
+  const { user } = useUser();
   const [loading, setLoading] = useState(true);
   const [invoices, setInvoices] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,6 +45,7 @@ export default function FinanceInvoices() {
   const [editMode, setEditMode] = useState(false);
 
   const { hasPermission, isLoading: permLoading } = usePermissions();
+  const companyId = user?.company_id;
 
   // Form state
   const [formData, setFormData] = useState({
@@ -57,14 +59,24 @@ export default function FinanceInvoices() {
   });
 
   useEffect(() => {
-    loadInvoices();
-  }, []);
+    if (companyId) {
+      loadInvoices();
+    }
+  }, [companyId]);
 
   const loadInvoices = async () => {
+    if (!companyId) return;
+
     try {
       setLoading(true);
-      const data = await base44.entities.Invoice?.list?.({ limit: 500 }).catch(() => []) || [];
-      setInvoices(data);
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('*')
+        .eq('company_id', companyId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setInvoices(data || []);
     } catch (error) {
       console.error('Error loading invoices:', error);
       toast.error('Failed to load invoices');
@@ -171,7 +183,6 @@ export default function FinanceInvoices() {
     e.preventDefault();
     setSaving(true);
     try {
-      const user = await base44.auth.me();
       const validItems = formData.items.filter(item => (item.description || item.name) && item.unit_price);
       const calculatedTotal = validItems.reduce((sum, item) => {
         const quantity = item.quantity || 1;
@@ -181,32 +192,42 @@ export default function FinanceInvoices() {
 
       const invoiceData = {
         user_id: user?.id,
-        company_id: user?.company_id,
+        company_id: companyId,
         invoice_number: `INV-${Date.now().toString().slice(-6)}`,
         client_name: formData.client_name,
         client_email: formData.client_email,
         client_address: formData.client_address,
         total: calculatedTotal || parseFloat(formData.total) || 0,
         status: 'draft',
-        due_date: formData.due_date,
+        due_date: formData.due_date || null,
         description: formData.description,
         items: validItems
       };
 
-      let newInvoice;
       if (editMode && selectedInvoice) {
-        await base44.entities.Invoice.update(selectedInvoice.id, invoiceData);
+        const { error } = await supabase
+          .from('invoices')
+          .update(invoiceData)
+          .eq('id', selectedInvoice.id);
+
+        if (error) throw error;
         toast.success('Invoice updated successfully');
       } else {
-        newInvoice = await base44.entities.Invoice.create(invoiceData);
+        const { data: newInvoice, error } = await supabase
+          .from('invoices')
+          .insert(invoiceData)
+          .select()
+          .single();
+
+        if (error) throw error;
         setInvoices(prev => [newInvoice, ...prev]);
 
         // Auto-create subscriptions for subscription line items
         const subscriptionItems = validItems.filter(item => item.is_subscription);
         for (const item of subscriptionItems) {
           try {
-            await Subscription.create({
-              company_id: user?.company_id,
+            await supabase.from('subscriptions').insert({
+              company_id: companyId,
               product_id: item.product_id,
               plan_id: item.plan_id,
               plan_name: item.plan_name,
@@ -243,7 +264,12 @@ export default function FinanceInvoices() {
 
   const handleUpdateStatus = async (invoice, newStatus) => {
     try {
-      await base44.entities.Invoice.update(invoice.id, { status: newStatus });
+      const { error } = await supabase
+        .from('invoices')
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq('id', invoice.id);
+
+      if (error) throw error;
       setInvoices(prev => prev.map(i => i.id === invoice.id ? { ...i, status: newStatus } : i));
       toast.success(`Invoice marked as ${newStatus}`);
     } catch (error) {
@@ -256,7 +282,12 @@ export default function FinanceInvoices() {
     if (!confirm('Are you sure you want to delete this invoice?')) return;
 
     try {
-      await base44.entities.Invoice.delete(invoice.id);
+      const { error } = await supabase
+        .from('invoices')
+        .delete()
+        .eq('id', invoice.id);
+
+      if (error) throw error;
       setInvoices(prev => prev.filter(i => i.id !== invoice.id));
       toast.success('Invoice deleted');
     } catch (error) {
@@ -272,9 +303,8 @@ export default function FinanceInvoices() {
     }
 
     try {
-      // Get current user info for sender details
-      const me = await base44.auth.me();
-      const session = await base44.auth.getSession();
+      // Get current session for auth header
+      const { data: { session } } = await supabase.auth.getSession();
 
       // Send the email via edge function
       const emailResponse = await fetch(
@@ -290,8 +320,8 @@ export default function FinanceInvoices() {
             clientName: invoice.client_name,
             invoiceNumber: invoice.invoice_number || `INV-${invoice.id?.slice(0, 8)}`,
             invoiceId: invoice.id,
-            senderName: me?.full_name,
-            senderCompany: me?.company_name || 'iSyncSO',
+            senderName: user?.full_name,
+            senderCompany: user?.company_name || 'iSyncSO',
             total: invoice.total || 0,
             currency: 'EUR',
             dueDate: invoice.due_date,
@@ -308,13 +338,15 @@ export default function FinanceInvoices() {
       }
 
       // Update invoice status
-      await base44.entities.Invoice.update(invoice.id, {
-        status: 'sent',
-        sent_at: new Date().toISOString()
-      });
+      const { error } = await supabase
+        .from('invoices')
+        .update({ status: 'sent', updated_at: new Date().toISOString() })
+        .eq('id', invoice.id);
+
+      if (error) throw error;
 
       setInvoices(prev => prev.map(i =>
-        i.id === invoice.id ? { ...i, status: 'sent', sent_at: new Date().toISOString() } : i
+        i.id === invoice.id ? { ...i, status: 'sent', updated_at: new Date().toISOString() } : i
       ));
 
       toast.success('Invoice sent successfully');

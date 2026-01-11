@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
 import { TrendingUp, Search, Building2, Users, Mail, Target } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -19,7 +19,7 @@ export default function GrowthAssistant() {
   const initConversation = async () => {
     if (!user) return;
     try {
-      const conversation = await base44.agents.createConversation({
+      const conversation = await db.agents.createConversation({
         agent_name: "growth_assistant",
         metadata: { name: "Growth Research Session", user_id: user.id }
       });
@@ -37,10 +37,10 @@ export default function GrowthAssistant() {
     setIsLoading(true);
 
     try {
-      const conversation = await base44.agents.getConversation(conversationId);
-      await base44.agents.addMessage(conversation, { role: 'user', content });
+      const conversation = await db.agents.getConversation(conversationId);
+      await db.agents.addMessage(conversation, { role: 'user', content });
 
-      const unsubscribe = base44.agents.subscribeToConversation(conversationId, (data) => {
+      const unsubscribe = db.agents.subscribeToConversation(conversationId, (data) => {
         if (data.messages) {
           setMessages(data.messages);
         }

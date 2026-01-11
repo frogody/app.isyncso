@@ -9,7 +9,7 @@ import {
 import { GlassCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { toast } from "sonner";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 
 // Google OAuth Configuration
 const GOOGLE_CONFIG = {
@@ -149,7 +149,7 @@ export default function MCPIntegrations() {
 
   // Exchange authorization code for tokens
   const exchangeCodeForTokens = async (code) => {
-    const response = await base44.functions.invoke('googleOAuthCallback', {
+    const response = await db.functions.invoke('googleOAuthCallback', {
       code,
       redirect_uri: getRedirectUri()
     });

@@ -3,13 +3,13 @@ import { ArrowLeft, MessageSquarePlus, Clock, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { useQuery } from "@tanstack/react-query";
 
 export default function TicketList({ onBack, onCreateNew }) {
   const { data: tickets, isLoading } = useQuery({
     queryKey: ['myTickets'],
-    queryFn: () => base44.entities.SupportTicket.filter({}, '-created_date'), // Filter automatically applies user_id RLS usually, or we filter explicitly
+    queryFn: () => db.entities.SupportTicket.filter({}, '-created_date'), // Filter automatically applies user_id RLS usually, or we filter explicitly
     initialData: []
   });
 

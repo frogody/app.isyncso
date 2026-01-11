@@ -56,7 +56,7 @@ const contextMessage = {
   content: `I'm currently studying "${lesson.title}". 
   Here's the content: ${lesson.content.substring(0, 2000)}...`
 };
-await base44.agents.addMessage(newConversation, contextMessage);
+await db.agents.addMessage(newConversation, contextMessage);
 ```
 
 ---
@@ -101,7 +101,7 @@ for (const skillName of courseBlueprint.skills_targeted) {
   );
   
   if (!skill) {
-    skill = await base44.entities.Skill.create({
+    skill = await db.entities.Skill.create({
       name: skillName,
       category: courseBlueprint.category,
       description: `Auto-extracted from course: ${courseBlueprint.title}`
@@ -109,7 +109,7 @@ for (const skillName of courseBlueprint.skills_targeted) {
   }
   
   // Create CourseSkill mapping
-  await base44.entities.CourseSkill.create({
+  await db.entities.CourseSkill.create({
     course_id: course.id,
     skill_id: skill.id,
     weight: 2  // Medium relevance
@@ -154,13 +154,13 @@ Interactive Gamification Flow:
 ───────────────────────────────
 User submits reflection → ReflectionBlock.jsx
    ↓
-base44.functions.invoke('updateGamification', { action_type: 'reflection_submit' })
+db.functions.invoke('updateGamification', { action_type: 'reflection_submit' })
    ↓
 Awards 50 XP (new reflections only)
 
 User runs code successfully → CodeSandbox.jsx
    ↓
-base44.functions.invoke('updateGamification', { action_type: 'code_execute' })
+db.functions.invoke('updateGamification', { action_type: 'code_execute' })
    ↓
 Awards 10 XP (max 100 XP/day from code)
 ```
@@ -213,7 +213,7 @@ Extract: lesson.video_script.dialogue
 [CURRENT: Mock delay]
 [FUTURE: POST to TTS API with dialogue text]
   ↓
-[FUTURE: Upload audio blob via base44.integrations.Core.UploadFile]
+[FUTURE: Upload audio blob via db.integrations.Core.UploadFile]
   ↓
 Update: lesson.video_url = audio_file_url
   ↓
@@ -372,7 +372,7 @@ LessonInteraction {
 ```javascript
 // In ReflectionBlock.jsx - handleSave()
 if (isNewReflection) {
-  await base44.functions.invoke('updateGamification', {
+  await db.functions.invoke('updateGamification', {
     user_id: user.id,
     action_type: 'reflection_submit',
     metadata: { lesson_id: lessonId }
@@ -444,7 +444,7 @@ LessonInteraction {
 ```javascript
 // In CodeSandbox.jsx - worker message handler
 if (isSuccess) {
-  await base44.functions.invoke('updateGamification', {
+  await db.functions.invoke('updateGamification', {
     user_id: user.id,
     action_type: 'code_execute',
     metadata: { lesson_id: lessonId }
@@ -560,7 +560,7 @@ const audioBlob = await fetch('https://api.elevenlabs.io/v1/text-to-speech/{voic
   body: JSON.stringify({ text: lesson.video_script.dialogue })
 });
 
-const { file_url } = await base44.integrations.Core.UploadFile({ 
+const { file_url } = await db.integrations.Core.UploadFile({ 
   file: audioBlob 
 });
 ```
@@ -685,7 +685,7 @@ All features are **additive** and can be disabled without breaking core function
 **Issue 2: Audio Generation 404**
 - **Error:** `Failed to load resource: the server responded with a status of 404`
 - **Root Cause:** Incorrect function invocation pattern for Platform V2
-- **Fix:** Changed from `base44.functions.invoke()` to direct import `import { generateLessonAudio } from "@/api/functions"`
+- **Fix:** Changed from `db.functions.invoke()` to direct import `import { generateLessonAudio } from "@/api/functions"`
 - **Status:** ✅ Resolved
 
 ---
@@ -755,7 +755,7 @@ Frontend renders KPIs + Charts
 
 **Security Layer:**
 ```javascript
-const departments = await base44.asServiceRole.entities.Department.filter({
+const departments = await db.asServiceRole.entities.Department.filter({
   head_user_id: manager_id
 });
 
@@ -867,7 +867,7 @@ const top_performers = teamMembers
 const [isManager, setIsManager] = useState(false);
 
 useEffect(() => {
-  const departments = await base44.entities.Department.filter({
+  const departments = await db.entities.Department.filter({
     head_user_id: user.id
   });
   setIsManager(departments.length > 0);

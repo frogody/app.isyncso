@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { useDebounce } from "@/components/hooks/useDebounce";
 import { useLocalStorage } from "@/components/hooks/useLocalStorage";
 import { useUser } from "@/components/context/UserContext";
@@ -122,8 +122,8 @@ export default function Learn() {
     try {
       // RLS handles filtering - list all accessible items
       const [coursesData, progressData] = await Promise.allSettled([
-        base44.entities.Course.list({ limit: 100 }).catch(() => []),
-        base44.entities.UserProgress.list({ limit: 100 }).catch(() => [])
+        db.entities.Course.list({ limit: 100 }).catch(() => []),
+        db.entities.UserProgress.list({ limit: 100 }).catch(() => [])
       ]);
 
       setCourses(coursesData.status === 'fulfilled' ? coursesData.value || [] : []);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,7 @@ export default function Leaderboard() {
   const loadLeaderboard = React.useCallback(async () => {
     if (!user) return;
     try {
-      const response = await base44.functions.invoke('getLeaderboard', { timeframe, limit: 100 });
+      const response = await db.functions.invoke('getLeaderboard', { timeframe, limit: 100 });
       const data = response.data?.leaderboard || [];
       setLeaderboard(data);
       const rank = data.findIndex(entry => entry.user_id === user.id);

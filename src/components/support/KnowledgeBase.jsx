@@ -7,7 +7,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { useQuery } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
 
@@ -17,7 +17,7 @@ export default function KnowledgeBase({ onBack }) {
 
   const { data: articles, isLoading } = useQuery({
     queryKey: ['articles'],
-    queryFn: () => base44.entities.HelpArticle.filter({ is_published: true }),
+    queryFn: () => db.entities.HelpArticle.filter({ is_published: true }),
     initialData: []
   });
 

@@ -157,7 +157,7 @@ export const enrichLinkedInProfile = createFunction('enrichLinkedInProfile');
 export const libContextGatherer = createFunction('lib/contextGatherer');
 
 // Legacy function name mappings for backwards compatibility
-// (allows old code using base44.functions['activity/session'] to continue working)
+// (allows old code using db.functions['activity/session'] to continue working)
 export const functionMap = {
   'activity/session': activitySession,
   'activity/skillApplication': activitySkillApplication,

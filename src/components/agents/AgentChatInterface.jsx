@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { 
   Send, Plus, Lock, Menu, Upload, Cpu, FileText, BookOpen, X, Search, Brain, Zap, GraduationCap, Target, TrendingUp
 } from 'lucide-react';
@@ -103,7 +103,7 @@ export default function AgentChatInterface({
   const loadConversations = React.useCallback(async () => {
     if (!isComingSoon) {
       try {
-        const convs = await base44.agents.listConversations({ agent_name: agentName });
+        const convs = await db.agents.listConversations({ agent_name: agentName });
         setConversations(convs);
         if (convs.length > 0) setActiveConversationId(convs[0].id);
       } catch (e) {
@@ -127,7 +127,7 @@ export default function AgentChatInterface({
       // Better safety: clear pending if the conversation switch was NOT due to creation.
       // But we can rely on the deduplication in displayMessages.
       
-      const unsubscribe = base44.agents.subscribeToConversation(activeConversationId, (data) => {
+      const unsubscribe = db.agents.subscribeToConversation(activeConversationId, (data) => {
         setMessages(prev => {
           const newMessages = data.messages || [];
           // Protection against empty updates clearing the chat history
@@ -168,7 +168,7 @@ export default function AgentChatInterface({
 
   const handleCreateConversation = React.useCallback(async () => {
      try {
-       const newConv = await base44.agents.createConversation({
+       const newConv = await db.agents.createConversation({
          agent_name: agentName,
          metadata: { name: "New Conversation" }
        });
@@ -189,7 +189,7 @@ export default function AgentChatInterface({
     setUploading(true);
     try {
       const uploadPromises = files.map(async (file) => {
-        const result = await base44.integrations.Core.UploadFile({ file });
+        const result = await db.integrations.Core.UploadFile({ file });
         return {
           name: file.name,
           url: result.file_url,
@@ -279,7 +279,7 @@ export default function AgentChatInterface({
       
       // Create conversation if needed
       if (!convId) {
-        const newConv = await base44.agents.createConversation({
+        const newConv = await db.agents.createConversation({
           agent_name: agentName,
           metadata: { name: content.substring(0, 30) + "..." }
         });
@@ -289,8 +289,8 @@ export default function AgentChatInterface({
       }
 
       // Fetch full conversation object to ensure proper agent triggering
-      const conversation = await base44.agents.getConversation(convId);
-      await base44.agents.addMessage(conversation, {
+      const conversation = await db.agents.getConversation(convId);
+      await db.agents.addMessage(conversation, {
         role: "user",
         content: content,
         file_urls: fileUrls.length > 0 ? fileUrls : undefined

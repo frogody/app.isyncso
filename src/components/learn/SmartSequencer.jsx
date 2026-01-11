@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Zap, CheckCircle, ArrowRight, Brain, Target } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/supabaseClient';
 
 /**
  * SmartSequencer - Analyzes user performance and suggests optimal next steps
@@ -23,13 +23,13 @@ export function SmartSequencer({ lesson, nextLesson, onProceed, onSkip, userId, 
 
     try {
       // Get user's interactions for this lesson
-      const interactions = await base44.entities.LessonInteraction.filter({
+      const interactions = await db.entities.LessonInteraction.filter({
         user_id: userId,
         lesson_id: lesson.id
       });
 
       // Get quiz/assessment results if any
-      const assessments = await base44.entities.UserResult.filter({
+      const assessments = await db.entities.UserResult.filter({
         user_id: userId
       });
 

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,8 +65,8 @@ export default function AISystemModal({ system, onClose, onSave, onCreateAndAsse
     setLoadingCide(true);
     try {
       const [prospects, companies] = await Promise.all([
-        base44.entities.Prospect.list('-updated_date', 10),
-        base44.entities.Company.list('-updated_date', 10)
+        db.entities.Prospect.list('-updated_date', 10),
+        db.entities.Company.list('-updated_date', 10)
       ]);
       const combined = [
         ...prospects.map(p => ({ name: p.name, domain: p.domain, source: 'prospect' })),
@@ -127,7 +127,7 @@ export default function AISystemModal({ system, onClose, onSave, onCreateAndAsse
 
     try {
       // CIDE comprehensive research with full risk assessment
-      const response = await base44.functions.invoke('analyzeAISystem', {
+      const response = await db.functions.invoke('analyzeAISystem', {
         ...researchData,
         deepResearch: true,
         includeRiskAssessment: true
@@ -204,19 +204,19 @@ export default function AISystemModal({ system, onClose, onSave, onCreateAndAsse
     setError(null);
 
     try {
-      const user = await base44.auth.me();
+      const user = await db.auth.me();
       
       // Get user's company
       let companyId = user.company_id;
       
       // Fallback: If no company_id but has company_data, try to find/create company
       if (!companyId && user.company_data?.domain) {
-        const companies = await base44.entities.Company.filter({ domain: user.company_data.domain });
+        const companies = await db.entities.Company.filter({ domain: user.company_data.domain });
         if (companies.length > 0) {
           companyId = companies[0].id;
         } else {
           // Create company from legacy data
-          const newCompany = await base44.entities.Company.create({
+          const newCompany = await db.entities.Company.create({
             name: user.company_data.name || "My Company",
             domain: user.company_data.domain,
             industry: user.company_data.industry,
@@ -229,7 +229,7 @@ export default function AISystemModal({ system, onClose, onSave, onCreateAndAsse
       // Final fallback: Create company from email domain
       if (!companyId) {
         const domain = user.email.split('@')[1];
-        const newCompany = await base44.entities.Company.create({
+        const newCompany = await db.entities.Company.create({
           name: domain,
           domain: domain
         });
@@ -255,10 +255,10 @@ export default function AISystemModal({ system, onClose, onSave, onCreateAndAsse
 
       let savedSystem;
       if (system?.id) {
-        await base44.entities.AISystem.update(system.id, systemData);
+        await db.entities.AISystem.update(system.id, systemData);
         savedSystem = { ...system, ...systemData };
       } else {
-        savedSystem = await base44.entities.AISystem.create(systemData);
+        savedSystem = await db.entities.AISystem.create(systemData);
       }
 
       // If this is a new system and we have onCreateAndAssess, go directly to assessment

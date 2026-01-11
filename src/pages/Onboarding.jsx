@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPageUrl } from "@/utils";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { Sparkles } from "lucide-react";
 
 import {
@@ -64,7 +64,7 @@ export default function Onboarding() {
   React.useEffect(() => {
     const checkInvitedUser = async () => {
       try {
-        const user = await base44.auth.me();
+        const user = await db.auth.me();
         if (user?.company_id) {
           // User has a company_id - they were invited!
           // Mark as invited FIRST, even if company load fails
@@ -73,7 +73,7 @@ export default function Onboarding() {
 
           // Try to load company data for pre-filling form
           try {
-            const company = await base44.entities.Company.get(user.company_id);
+            const company = await db.entities.Company.get(user.company_id);
             if (company) {
               setExistingCompany(company);
               // Pre-fill form with company data
@@ -207,7 +207,7 @@ export default function Onboarding() {
       const [profileResult, companyResult, exploriumResult] = await Promise.allSettled([
         // 1. LinkedIn Profile Research
         formData.linkedinUrl?.trim()
-          ? base44.functions.invoke('enrichLinkedInProfile', {
+          ? db.functions.invoke('enrichLinkedInProfile', {
               linkedin_url: formData.linkedinUrl.trim(),
               full_name: formData.fullName,
               job_title: formData.jobTitle
@@ -215,7 +215,7 @@ export default function Onboarding() {
           : Promise.resolve({ data: null }),
 
         // 2. Company Web Research
-        base44.functions.invoke('researchCompany', {
+        db.functions.invoke('researchCompany', {
           company_name: formData.companyName,
           company_url: urlObj.origin,
           domain: companyDomain,
@@ -223,7 +223,7 @@ export default function Onboarding() {
         }),
 
         // 3. Explorium Deep Enrichment (firmographics, technographics, funding)
-        base44.functions.invoke('enrichCompanyFromExplorium', {
+        db.functions.invoke('enrichCompanyFromExplorium', {
           domain: companyDomain
         })
       ]);
@@ -311,11 +311,11 @@ export default function Onboarding() {
     setIsSubmitting(true);
 
     try {
-      const user = await base44.auth.me();
+      const user = await db.auth.me();
 
       // Update basic profile with all collected data
       try {
-        await base44.auth.updateMe({
+        await db.auth.updateMe({
           full_name: formData.fullName || user.full_name,
           job_title: formData.jobTitle,
           linkedin_url: formData.linkedinUrl || null,
@@ -333,7 +333,7 @@ export default function Onboarding() {
 
       if (isInvitedUser) {
         // Invited user - NEVER create a new company, use their existing company_id
-        const currentUser = await base44.auth.me();
+        const currentUser = await db.auth.me();
         companyId = existingCompany?.id || currentUser?.company_id;
 
         if (companyId) {
@@ -358,7 +358,7 @@ export default function Onboarding() {
         // Create or link Company entity - THIS IS CRITICAL for Settings page
         try {
           // Check if company with this domain already exists
-          const existingCompanies = await base44.entities.Company.filter({ domain: companyDomain });
+          const existingCompanies = await db.entities.Company.filter({ domain: companyDomain });
 
           if (existingCompanies.length > 0) {
             // Use existing company
@@ -366,7 +366,7 @@ export default function Onboarding() {
             console.log('[Onboarding] Found existing company:', companyId);
 
             // Update company with latest research data
-            await base44.entities.Company.update(companyId, {
+            await db.entities.Company.update(companyId, {
               name: dossier?.company_name || formData.companyName,
               description: dossier?.business_summary || '',
               industry: formData.industry || 'Technology',
@@ -377,7 +377,7 @@ export default function Onboarding() {
             });
           } else {
             // Create new company entity with all research data
-            const newCompany = await base44.entities.Company.create({
+            const newCompany = await db.entities.Company.create({
               domain: companyDomain,
               name: dossier?.company_name || formData.companyName,
               description: dossier?.business_summary || '',
@@ -396,7 +396,7 @@ export default function Onboarding() {
 
           // Link user to company - this makes Settings work!
           if (companyId) {
-            await base44.auth.updateMe({ company_id: companyId });
+            await db.auth.updateMe({ company_id: companyId });
           }
         } catch (companyError) {
           console.error('[Onboarding] Company creation/linking error:', companyError);
@@ -410,14 +410,14 @@ export default function Onboarding() {
       } else if (companyId && companyDomain) {
         // Try Explorium enrichment for additional company data (tech stack, firmographics)
         try {
-          const exploriumResult = await base44.functions.invoke('enrichCompanyFromExplorium', {
+          const exploriumResult = await db.functions.invoke('enrichCompanyFromExplorium', {
             domain: companyDomain
           });
 
           const enrichment = exploriumResult?.data;
           if (enrichment && !enrichment.error) {
             // Update company with ALL enrichment data from Explorium
-            await base44.entities.Company.update(companyId, {
+            await db.entities.Company.update(companyId, {
               // === BASIC INFO ===
               name: dossier?.company_name || enrichment.name || formData.companyName,
               description: dossier?.business_summary || enrichment.description || null,
@@ -483,7 +483,7 @@ export default function Onboarding() {
             // Update user profile enrichment with tech stack for personalization
             try {
               const techStackData = enrichment.tech_stack || [];
-              await base44.functions.invoke('enrichCompanyProfile', {
+              await db.functions.invoke('enrichCompanyProfile', {
                 company_name: dossier?.company_name || formData.companyName,
                 company_url: formData.companyWebsite,
                 job_title: formData.jobTitle,
@@ -519,7 +519,7 @@ export default function Onboarding() {
           console.warn('[Onboarding] Explorium enrichment failed:', exploriumError);
           // Run fallback profile enrichment without tech stack data
           try {
-            await base44.functions.invoke('enrichCompanyProfile', {
+            await db.functions.invoke('enrichCompanyProfile', {
               company_name: dossier?.company_name || formData.companyName,
               company_url: formData.companyWebsite,
               job_title: formData.jobTitle,
@@ -543,7 +543,7 @@ export default function Onboarding() {
       } else {
         // No company created/found - still run basic profile enrichment
         try {
-          await base44.functions.invoke('enrichCompanyProfile', {
+          await db.functions.invoke('enrichCompanyProfile', {
             company_name: dossier?.company_name || formData.companyName,
             company_url: formData.companyWebsite,
             job_title: formData.jobTitle,
@@ -567,25 +567,25 @@ export default function Onboarding() {
 
       // Grant onboarding credits
       try {
-        await base44.functions.invoke('grantOnboardingCredits', { user_id: user.id });
+        await db.functions.invoke('grantOnboardingCredits', { user_id: user.id });
       } catch (e) {
         console.warn('[Onboarding] Credits error:', e);
       }
 
       // Save app preferences
       try {
-        const existingConfigs = await base44.entities.UserAppConfig.filter({ user_id: user.id });
+        const existingConfigs = await db.entities.UserAppConfig.filter({ user_id: user.id });
         const selectedApps = formData.selectedApps || ['learn', 'growth', 'sentinel'];
         const defaultWidgets = getDefaultWidgetsForApps(selectedApps);
 
         if (existingConfigs.length > 0) {
-          await base44.entities.UserAppConfig.update(existingConfigs[0].id, {
+          await db.entities.UserAppConfig.update(existingConfigs[0].id, {
             enabled_apps: selectedApps,
             app_order: selectedApps,
             dashboard_widgets: defaultWidgets
           });
         } else {
-          await base44.entities.UserAppConfig.create({
+          await db.entities.UserAppConfig.create({
             user_id: user.id,
             enabled_apps: selectedApps,
             app_order: selectedApps,

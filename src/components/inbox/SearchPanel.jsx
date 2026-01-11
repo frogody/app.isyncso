@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, Search, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/supabaseClient';
 
 export default function SearchPanel({ 
   channelId,
@@ -30,7 +30,7 @@ export default function SearchPanel({
     setLoading(true);
     setSearched(true);
     try {
-      const allMessages = await base44.entities.Message.filter(
+      const allMessages = await db.entities.Message.filter(
         { channel_id: channelId },
         '-created_date',
         200

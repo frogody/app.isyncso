@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { base44 } from "@/api/base44Client";
+import { db } from "@/api/supabaseClient";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function SubmitTicket({ onBack }) {
@@ -30,12 +30,12 @@ export default function SubmitTicket({ onBack }) {
       let attachments = [];
       if (file) {
         // In a real app, upload file here
-        // const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        // const { file_url } = await db.integrations.Core.UploadFile({ file });
         // attachments.push(file_url);
       }
       
-      const user = await base44.auth.me();
-      return base44.entities.SupportTicket.create({
+      const user = await db.auth.me();
+      return db.entities.SupportTicket.create({
         ...data,
         attachments,
         user_id: user.id

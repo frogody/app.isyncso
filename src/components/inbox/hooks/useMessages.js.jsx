@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { base44 } from '@/api/base44Client';
+import { db } from '@/api/supabaseClient';
 import { toast } from 'sonner';
 import {
   detectAgentMentions,
@@ -25,7 +25,7 @@ export function useMessages(channel, user, teamMembers = []) {
 
     setLoading(true);
     try {
-      const msgs = await base44.entities.Message.filter(
+      const msgs = await db.entities.Message.filter(
         { channel_id: channel.id },
         'created_date',
         MESSAGES_PER_PAGE
@@ -51,7 +51,7 @@ export function useMessages(channel, user, teamMembers = []) {
 
     isPollingRef.current = true;
     try {
-      const msgs = await base44.entities.Message.filter(
+      const msgs = await db.entities.Message.filter(
         { channel_id: channel.id },
         '-created_date',
         20
@@ -121,7 +121,7 @@ export function useMessages(channel, user, teamMembers = []) {
     if (!channel || !user) return null;
 
     try {
-      const newMessage = await base44.entities.Message.create({
+      const newMessage = await db.entities.Message.create({
         channel_id: channel.id,
         sender_id: user.id,
         sender_name: user.full_name || user.email,
@@ -135,7 +135,7 @@ export function useMessages(channel, user, teamMembers = []) {
       });
 
       // Update channel's last message time
-      await base44.entities.Channel.update(channel.id, {
+      await db.entities.Channel.update(channel.id, {
         last_message_at: new Date().toISOString()
       });
 
@@ -201,7 +201,7 @@ export function useMessages(channel, user, teamMembers = []) {
       setMessages(prev => prev.filter(m => m.id !== typingMessage.id));
 
       // Create agent response
-      const agentMessage = await base44.entities.Message.create({
+      const agentMessage = await db.entities.Message.create({
         channel_id: channel.id,
         sender_id: user.id,
         sender_name: `${user.full_name}'s ${agent.displayName}`,
@@ -223,7 +223,7 @@ export function useMessages(channel, user, teamMembers = []) {
       setMessages(prev => prev.filter(m => m.id !== typingMessage.id));
 
       // Add error message
-      const errorMessage = await base44.entities.Message.create({
+      const errorMessage = await db.entities.Message.create({
         channel_id: channel.id,
         sender_id: user.id,
         sender_name: `${user.full_name}'s ${agent.displayName}`,
@@ -259,7 +259,7 @@ export function useMessages(channel, user, teamMembers = []) {
     ));
 
     try {
-      await base44.entities.Message.update(messageId, { reactions });
+      await db.entities.Message.update(messageId, { reactions });
     } catch (error) {
       console.error('Failed to add reaction:', error);
       // Revert on error
@@ -272,7 +272,7 @@ export function useMessages(channel, user, teamMembers = []) {
   // Edit message
   const editMessage = useCallback(async (messageId, newContent) => {
     try {
-      await base44.entities.Message.update(messageId, {
+      await db.entities.Message.update(messageId, {
         content: newContent,
         is_edited: true
       });
@@ -290,7 +290,7 @@ export function useMessages(channel, user, teamMembers = []) {
   // Delete message
   const deleteMessage = useCallback(async (messageId) => {
     try {
-      await base44.entities.Message.delete(messageId);
+      await db.entities.Message.delete(messageId);
       setMessages(prev => prev.filter(m => m.id !== messageId));
       toast.success('Message deleted');
     } catch (error) {
@@ -306,7 +306,7 @@ export function useMessages(channel, user, teamMembers = []) {
     if (!message) return;
 
     try {
-      await base44.entities.Message.update(messageId, {
+      await db.entities.Message.update(messageId, {
         is_pinned: !message.is_pinned
       });
       setMessages(prev => prev.map(m =>
