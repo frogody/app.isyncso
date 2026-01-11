@@ -563,22 +563,13 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
         </button>
       )}
 
-      {/* Top Profile Section with Circular Bulge */}
+      {/* Top Profile Section */}
       <div className="relative flex flex-col items-center justify-center pt-4 pb-3 transition-all duration-300 z-30">
-        {/* Circular Background Bulge - extends beyond sidebar */}
-        <div
-          className="absolute top-3 left-1/2 -translate-x-1/2 w-[60px] h-[60px] rounded-full border border-white/10 z-30"
-          style={{
-            background: 'radial-gradient(circle at center, rgba(20,20,30,0.8) 0%, rgba(10,10,15,0.95) 100%)',
-            boxShadow: '0 0 15px rgba(0,0,0,0.6), inset 0 0 8px rgba(255,255,255,0.02)'
-          }}
-        ></div>
-
         {/* SYNC Avatar - matches SyncAgent page visualization */}
         <Link to={createPageUrl("SyncAgent")} className="relative z-40 group cursor-pointer flex flex-col items-center" aria-label="Go to SYNC">
-          <SyncAvatarMini size={48} state={avatarState} className="transition-all duration-300" />
+          <SyncAvatarMini size={52} state={avatarState} className="transition-all duration-300" />
         </Link>
-        </div>
+      </div>
 
       {/* Navigation - Mobile optimized with larger touch targets */}
       <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-3 space-y-1 scrollbar-hide scroll-smooth-ios">
