@@ -820,9 +820,9 @@ export default function SyncAgent() {
   ];
 
   return (
-    <div ref={pageRef} className="min-h-screen bg-black text-white">
+    <div ref={pageRef} className="h-screen flex flex-col bg-black text-white overflow-hidden">
       {/* Top bar */}
-      <div className="sticky top-0 z-20 border-b border-white/10 bg-black/40 backdrop-blur">
+      <div className="shrink-0 z-20 border-b border-white/10 bg-black/40 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
           <div className="flex items-center gap-2">
             <div className="grid h-9 w-9 place-items-center rounded-2xl border border-purple-500/30 bg-purple-500/10">
@@ -847,12 +847,12 @@ export default function SyncAgent() {
         </div>
       </div>
 
-      {/* Layout */}
-      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 px-4 py-6 lg:grid-cols-[420px_1fr]">
+      {/* Layout - fills remaining height */}
+      <div className="flex-1 min-h-0 mx-auto w-full max-w-6xl grid grid-cols-1 gap-6 px-4 py-6 lg:grid-cols-[420px_1fr]">
         {/* Left: Avatar */}
         <div
           data-animate
-          className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-[0_30px_80px_rgba(0,0,0,0.55)]"
+          className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-[0_30px_80px_rgba(0,0,0,0.55)] overflow-y-auto"
           style={{ opacity: 0 }}
         >
           <div className="flex items-start justify-between gap-3">
@@ -902,7 +902,7 @@ export default function SyncAgent() {
         {/* Right: Chat */}
         <div
           data-animate
-          className="flex min-h-[70vh] flex-col rounded-3xl border border-white/10 bg-white/5 shadow-[0_30px_80px_rgba(0,0,0,0.55)]"
+          className="flex flex-col min-h-0 rounded-3xl border border-white/10 bg-white/5 shadow-[0_30px_80px_rgba(0,0,0,0.55)]"
           style={{ opacity: 0 }}
         >
           <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
@@ -913,7 +913,7 @@ export default function SyncAgent() {
             <div className="text-xs text-white/55">{messages.length} messages</div>
           </div>
 
-          <div ref={scrollerRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+          <div ref={scrollerRef} className="flex-1 min-h-0 space-y-3 overflow-y-auto px-4 py-4">
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center px-4">
                 <div className="w-16 h-16 rounded-2xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center mb-4">
