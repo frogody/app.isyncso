@@ -494,8 +494,7 @@ function AgentChannel({ messages, isActive }) {
   return (
     <div
       ref={channelRef}
-      className="rounded-2xl border border-white/10 bg-black/40 overflow-hidden flex flex-col"
-      style={{ height: '280px' }}
+      className="rounded-2xl border border-white/10 bg-black/40 overflow-hidden flex flex-col h-full"
     >
       {/* Header */}
       <div className="shrink-0 flex items-center justify-between px-3 py-2 border-b border-white/10 bg-black/20">
@@ -1480,13 +1479,13 @@ export default function SyncAgent() {
         {/* Left: Avatar */}
         <div
           data-animate
-          className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_30px_80px_rgba(0,0,0,0.55)] overflow-y-auto"
+          className="flex flex-col rounded-3xl border border-white/10 bg-white/5 p-5 shadow-[0_30px_80px_rgba(0,0,0,0.55)] overflow-hidden"
           style={{ opacity: 0 }}
         >
-          <div className="flex items-start justify-between gap-3">
+          <div className="shrink-0 flex items-start justify-between gap-3">
             <div>
               <div className="text-sm font-semibold">SYNC</div>
-              <div className="text-xs text-zinc-500">Ring stable · Inner viz reacts</div>
+              <div className="text-xs text-zinc-500">AI Orchestrator</div>
             </div>
             <span
               className={cn(
@@ -1506,12 +1505,12 @@ export default function SyncAgent() {
             </span>
           </div>
 
-          <div className="mt-4 grid place-items-center">
-            <AgentAvatar size={400} agentName="SYNC" mood={mood} level={level} seed={seed} activeAgent={activeAgent} />
+          <div className="shrink-0 mt-2 grid place-items-center">
+            <AgentAvatar size={320} agentName="SYNC" mood={mood} level={level} seed={seed} activeAgent={activeAgent} />
           </div>
 
           {/* Agent Channel - Live communication feed */}
-          <div className="mt-5">
+          <div className="mt-4 flex-1 min-h-0">
             <AgentChannel messages={agentMessages} isActive={isSending} />
           </div>
         </div>
