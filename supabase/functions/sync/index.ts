@@ -4,6 +4,11 @@
  * Supports both standard and streaming responses
  *
  * Phase 3 & 4: 51 Actions (All Modules)
+ * Phase 5: Advanced Multi-Agent Workflow System
+ *   - Parallel workflows for multi-perspective responses
+ *   - Sequential workflows for step-by-step processing
+ *   - Conditional routing to specialized agents
+ *   - Iterative refinement with quality evaluation
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -16,6 +21,16 @@ import {
   MemoryContext,
   SyncSession,
 } from './memory/index.ts';
+
+// Import workflow system
+import {
+  executeWorkflow,
+  classifyIntent,
+  SPECIALIZED_AGENTS,
+  WorkflowContext,
+  WorkflowResult,
+  IntentClassification,
+} from './workflows/index.ts';
 
 // Import modular action executors
 import { executeFinanceAction } from './tools/finance.ts';
@@ -692,6 +707,8 @@ interface SyncRequest {
   message: string;
   sessionId?: string;
   stream?: boolean;
+  // Workflow mode: 'auto' (default), 'fast', 'workflow', or specific workflow type
+  mode?: 'auto' | 'fast' | 'workflow' | 'parallel' | 'sequential' | 'iterative' | 'hybrid';
   context?: {
     userId?: string;
     companyId?: string;
@@ -718,6 +735,14 @@ interface SyncResponse {
     type?: string;
     result?: any;
     link?: string;
+  };
+  // Workflow metadata (when workflow mode is used)
+  workflow?: {
+    type: string;
+    agentsUsed: string[];
+    executionTimeMs: number;
+    iterations?: number;
+    parallelResponses?: number;
   };
 }
 
@@ -852,6 +877,95 @@ async function handleStreamingRequest(
 }
 
 // ============================================================================
+// Workflow Execution Helper
+// ============================================================================
+
+/**
+ * Determines if the request should use the advanced workflow system.
+ * Returns true for complex queries that benefit from multi-agent processing.
+ */
+function shouldUseWorkflow(
+  message: string,
+  mode: string | undefined,
+  routingResult: RoutingResult
+): boolean {
+  // Explicit mode overrides
+  if (mode === 'fast') return false;
+  if (mode === 'workflow' || mode === 'parallel' || mode === 'sequential' || mode === 'iterative' || mode === 'hybrid') return true;
+
+  // Auto mode: use heuristics
+  if (mode === 'auto' || !mode) {
+    // Skip workflows for simple action requests (high confidence keyword match)
+    if (routingResult.confidence > 0.7 && routingResult.matchedPatterns.length > 0) {
+      return false;
+    }
+
+    // Use workflows for complex/analytical queries
+    const complexPatterns = [
+      /\b(analyze|analysis|compare|evaluate|assess|recommend|suggest|plan|strategy|research)\b/i,
+      /\b(comprehensive|detailed|thorough|in-depth|complete)\b/i,
+      /\b(why|how|explain|understand)\b.*\b(work|function|happen|best)\b/i,
+      /\b(multiple|several|various|different)\b.*\b(option|approach|way|perspective)\b/i,
+      /\b(pros?\s+(and|&)\s+cons?|trade-?offs?|advantages?\s+(and|&)\s+disadvantages?)\b/i,
+      /\b(complex|complicated|difficult|challenging)\b/i,
+    ];
+
+    for (const pattern of complexPatterns) {
+      if (pattern.test(message)) {
+        return true;
+      }
+    }
+
+    // Use workflows for longer messages (likely more complex)
+    if (message.length > 200) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Executes the advanced workflow system and returns a formatted response.
+ */
+async function executeAdvancedWorkflow(
+  message: string,
+  session: SyncSession,
+  mode: string | undefined,
+  memoryContext: MemoryContext | null
+): Promise<{ response: string; workflowResult: WorkflowResult }> {
+  // Build workflow context from session and memory
+  const workflowContext: WorkflowContext = {
+    sessionId: session.session_id,
+    userId: session.user_id || undefined,
+    companyId: session.company_id || undefined,
+    conversationHistory: session.messages.slice(-10).map(m => ({
+      role: m.role as 'system' | 'user' | 'assistant',
+      content: m.content,
+    })),
+    entities: session.active_entities || {},
+    memories: memoryContext?.relevantMemories?.map(m => m.content) || [],
+    actionTemplates: memoryContext?.actionTemplates || [],
+  };
+
+  // Map mode to workflow type
+  let forceWorkflowType: 'sequential' | 'parallel' | 'conditional' | 'iterative' | 'hybrid' | undefined;
+  if (mode === 'parallel') forceWorkflowType = 'parallel';
+  else if (mode === 'sequential') forceWorkflowType = 'sequential';
+  else if (mode === 'iterative') forceWorkflowType = 'iterative';
+  else if (mode === 'hybrid') forceWorkflowType = 'hybrid';
+  // 'workflow' and 'auto' let the system decide
+
+  // Execute the workflow
+  const workflowResult = await executeWorkflow(message, workflowContext, forceWorkflowType);
+
+  return {
+    response: workflowResult.response,
+    workflowResult,
+  };
+}
+
+// ============================================================================
 // Main Handler
 // ============================================================================
 
@@ -872,7 +986,7 @@ serve(async (req) => {
     }
 
     const body: SyncRequest = await req.json();
-    const { message, sessionId, stream = false, context } = body;
+    const { message, sessionId, stream = false, mode = 'auto', context } = body;
 
     if (!message?.trim()) {
       return new Response(
@@ -946,7 +1060,89 @@ serve(async (req) => {
       return handleStreamingRequest(apiMessages, session, routingResult, companyId, userId);
     }
 
-    // Non-streaming request
+    // =========================================================================
+    // WORKFLOW PATH: Use advanced multi-agent system for complex queries
+    // =========================================================================
+    const useWorkflow = shouldUseWorkflow(message, mode, routingResult);
+
+    if (useWorkflow) {
+      console.log(`[SYNC] Using workflow mode for: "${message.substring(0, 50)}..."`);
+
+      try {
+        const { response: workflowResponse, workflowResult } = await executeAdvancedWorkflow(
+          message,
+          session,
+          mode,
+          memoryContext
+        );
+
+        // Check for actions in workflow response and execute them
+        let finalResponse = workflowResponse;
+        let actionExecuted: ActionResult | null = null;
+        const actionData = parseActionFromResponse(workflowResponse);
+
+        if (actionData) {
+          actionExecuted = await executeAction(actionData, companyId, userId);
+          finalResponse = workflowResponse.replace(/\[ACTION\][\s\S]*?\[\/ACTION\]/g, '').trim();
+          if (actionExecuted) {
+            finalResponse = finalResponse + '\n\n' + actionExecuted.message;
+          }
+        }
+
+        // Store assistant message
+        const workflowAssistantMsg: ChatMessage = {
+          role: 'assistant',
+          content: finalResponse,
+          timestamp: new Date().toISOString(),
+          agentId: workflowResult.agentsUsed[0] || 'orchestrator',
+          actionExecuted: actionExecuted ? {
+            type: actionData?.action || 'unknown',
+            success: actionExecuted.success,
+            result: actionExecuted.result,
+          } : undefined,
+        };
+        await memorySystem.session.addMessage(session, workflowAssistantMsg);
+        await memorySystem.session.updateSession(session);
+
+        // Build and return response
+        const workflowSyncResponse: SyncResponse = {
+          response: finalResponse,
+          sessionId: session.session_id,
+          delegatedTo: workflowResult.agentsUsed[0],
+          routing: {
+            confidence: routingResult.confidence,
+            matchedKeywords: routingResult.matchedKeywords,
+            matchedPatterns: routingResult.matchedPatterns,
+          },
+          actionExecuted: actionExecuted ? {
+            success: actionExecuted.success,
+            type: actionData?.action,
+            result: actionExecuted.result,
+            link: actionExecuted.link,
+          } : undefined,
+          workflow: {
+            type: workflowResult.type,
+            agentsUsed: workflowResult.agentsUsed,
+            executionTimeMs: workflowResult.executionTimeMs,
+            iterations: workflowResult.metadata.iterations,
+            parallelResponses: workflowResult.metadata.parallelResponses,
+          },
+        };
+
+        return new Response(
+          JSON.stringify(workflowSyncResponse),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+
+      } catch (workflowError) {
+        console.error('[SYNC] Workflow execution failed, falling back to standard path:', workflowError);
+        // Fall through to standard path
+      }
+    }
+
+    // =========================================================================
+    // STANDARD PATH: Direct LLM call for simple action-oriented requests
+    // =========================================================================
     const response = await fetch('https://api.together.xyz/v1/chat/completions', {
       method: 'POST',
       headers: {
