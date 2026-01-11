@@ -14,6 +14,43 @@ export interface ActionResult {
   error?: string;
   message: string;
   link?: string;
+  // Recovery information (populated on failure)
+  recovery?: {
+    shouldRetry: boolean;
+    suggestions: Array<{
+      action: string;
+      description: string;
+      data?: any;
+      confidence: number;
+    }>;
+    userMessage: string;
+  };
+}
+
+// ============================================================================
+// Action Chaining Types
+// ============================================================================
+
+export interface ChainedAction {
+  action: string;
+  data: any;
+  dependsOn?: string[];  // IDs of actions this depends on
+  id?: string;           // Unique ID for dependency tracking
+}
+
+export interface ActionChainResult {
+  success: boolean;
+  completed: Array<{
+    action: string;
+    result: ActionResult;
+  }>;
+  failed?: {
+    action: string;
+    result: ActionResult;
+    index: number;
+  };
+  partialResults?: any[];
+  message: string;
 }
 
 export interface ActionContext {

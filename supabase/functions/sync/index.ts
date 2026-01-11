@@ -43,7 +43,32 @@ import { executeLearnAction } from './tools/learn.ts';
 import { executeSentinelAction } from './tools/sentinel.ts';
 import { executeCreateAction } from './tools/create.ts';
 import { executeResearchAction } from './tools/research.ts';
-import { ActionContext, ActionResult } from './tools/types.ts';
+import { ActionContext, ActionResult, ChainedAction, ActionChainResult } from './tools/types.ts';
+
+// Import new improvement modules
+import { handleActionFailure, executeWithRecovery, RecoveryResult } from './tools/recovery.ts';
+import {
+  parseActionChain,
+  parseMultipleActions,
+  executeActionChain,
+  detectChainIntent,
+  CHAIN_TEMPLATES,
+  ActionChain,
+} from './tools/chaining.ts';
+import {
+  classifyIntent as classifyIntentLLM,
+  quickClassify,
+  IntentResult,
+  getActionsForIntent,
+  getAgentForIntent,
+} from './tools/intent.ts';
+import {
+  generatePostActionInsights,
+  extractAndLearnPreferences,
+  generateContextualSuggestions,
+  formatInsightsForResponse,
+  ProactiveInsight,
+} from './tools/proactive.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -163,6 +188,66 @@ function parseActionFromResponse(response: string): { action: string; data: any 
   return null;
 }
 
+/**
+ * Core action executor - routes to appropriate module
+ */
+async function executeActionCore(
+  actionName: string,
+  data: any,
+  ctx: ActionContext
+): Promise<ActionResult> {
+  // Route to appropriate module
+  if (FINANCE_ACTIONS.includes(actionName)) {
+    return executeFinanceAction(ctx, actionName, data);
+  }
+
+  if (PRODUCT_ACTIONS.includes(actionName)) {
+    return executeProductsAction(ctx, actionName, data);
+  }
+
+  if (GROWTH_ACTIONS.includes(actionName)) {
+    return executeGrowthAction(ctx, actionName, data);
+  }
+
+  if (TASK_ACTIONS.includes(actionName)) {
+    return executeTasksAction(ctx, actionName, data);
+  }
+
+  if (INBOX_ACTIONS.includes(actionName)) {
+    return executeInboxAction(ctx, actionName, data);
+  }
+
+  if (TEAM_ACTIONS.includes(actionName)) {
+    return executeTeamAction(ctx, actionName, data);
+  }
+
+  if (LEARN_ACTIONS.includes(actionName)) {
+    return executeLearnAction(ctx, actionName, data);
+  }
+
+  if (SENTINEL_ACTIONS.includes(actionName)) {
+    return executeSentinelAction(ctx, actionName, data);
+  }
+
+  if (CREATE_ACTIONS.includes(actionName)) {
+    return executeCreateAction(ctx, actionName, data);
+  }
+
+  if (RESEARCH_ACTIONS.includes(actionName)) {
+    return executeResearchAction(ctx, actionName, data);
+  }
+
+  // Unknown action
+  return {
+    success: false,
+    message: `Unknown action: ${actionName}`,
+    error: 'Action not found',
+  };
+}
+
+/**
+ * Execute action with automatic error recovery
+ */
 async function executeAction(
   action: { action: string; data: any },
   companyId: string,
@@ -175,54 +260,81 @@ async function executeAction(
     userId,
   };
 
-  // Route to appropriate module
-  if (FINANCE_ACTIONS.includes(action.action)) {
-    return executeFinanceAction(ctx, action.action, action.data);
-  }
+  // Execute with recovery wrapper
+  const result = await executeWithRecovery(
+    async (actionName, data, context) => executeActionCore(actionName, data, context),
+    action.action,
+    action.data,
+    ctx,
+    3  // max attempts
+  );
 
-  if (PRODUCT_ACTIONS.includes(action.action)) {
-    return executeProductsAction(ctx, action.action, action.data);
-  }
-
-  if (GROWTH_ACTIONS.includes(action.action)) {
-    return executeGrowthAction(ctx, action.action, action.data);
-  }
-
-  if (TASK_ACTIONS.includes(action.action)) {
-    return executeTasksAction(ctx, action.action, action.data);
-  }
-
-  if (INBOX_ACTIONS.includes(action.action)) {
-    return executeInboxAction(ctx, action.action, action.data);
-  }
-
-  if (TEAM_ACTIONS.includes(action.action)) {
-    return executeTeamAction(ctx, action.action, action.data);
-  }
-
-  if (LEARN_ACTIONS.includes(action.action)) {
-    return executeLearnAction(ctx, action.action, action.data);
-  }
-
-  if (SENTINEL_ACTIONS.includes(action.action)) {
-    return executeSentinelAction(ctx, action.action, action.data);
-  }
-
-  if (CREATE_ACTIONS.includes(action.action)) {
-    return executeCreateAction(ctx, action.action, action.data);
-  }
-
-  if (RESEARCH_ACTIONS.includes(action.action)) {
-    return executeResearchAction(ctx, action.action, action.data);
-  }
-
-  // Unknown action
-  return {
-    success: false,
-    message: `Unknown action: ${action.action}`,
-    error: 'Action not found',
-  };
+  return result;
 }
+
+/**
+ * Execute a chain of actions (for multi-step operations)
+ */
+async function executeActions(
+  chain: ActionChain,
+  companyId: string,
+  userId?: string
+): Promise<ActionChainResult> {
+  const ctx: ActionContext = {
+    supabase,
+    companyId,
+    userId,
+  };
+
+  return executeActionChain(chain, ctx, executeAction);
+}
+
+/**
+ * Check for and parse action chains from response
+ */
+function parseActionsFromResponse(response: string): {
+  type: 'single' | 'chain' | 'multiple' | 'none';
+  single?: { action: string; data: any };
+  chain?: ActionChain;
+  multiple?: ChainedAction[];
+} {
+  // Check for action chain first
+  const chain = parseActionChain(response);
+  if (chain) {
+    return { type: 'chain', chain };
+  }
+
+  // Check for multiple actions
+  const multiple = parseMultipleActions(response);
+  if (multiple.length > 1) {
+    return { type: 'multiple', multiple };
+  }
+
+  // Check for single action
+  const single = parseActionFromResponse(response);
+  if (single) {
+    return { type: 'single', single };
+  }
+
+  return { type: 'none' };
+}
+
+// Legacy support - kept for backward compatibility
+async function executeActionLegacy(
+  action: { action: string; data: any },
+  companyId: string,
+  userId?: string
+): Promise<ActionResult> {
+  // Create action context
+  const ctx: ActionContext = {
+    supabase,
+    companyId,
+    userId,
+  };
+
+  return executeActionCore(action.action, action.data, ctx);
+}
+
 
 // ============================================================================
 // Agent Routing Configuration
@@ -770,6 +882,38 @@ You: "Found it! Philips OneBlade 360 Face. What kind of images do you need - cle
 - With product_name: Uses actual product images → accurate representation
 - Without product_name: Generic AI generation → may look completely different
 
+## Action Chaining (Multi-Step Operations)
+
+For complex requests that require multiple actions, you can chain them together:
+
+### Sequential Chain (one after another)
+[ACTION_CHAIN][
+  {"id": "step1", "action": "search_products", "data": {"query": "OneBlade"}},
+  {"id": "step2", "action": "create_invoice", "data": {"client_name": "John", "items": [{"name": "OneBlade", "quantity": 2}]}, "dependsOn": ["step1"]}
+][/ACTION_CHAIN]
+
+### Create and Send Invoice
+[ACTION_CHAIN]{
+  "id": "invoice_flow",
+  "strategy": "sequential",
+  "actions": [
+    {"id": "create", "action": "create_invoice", "data": {"client_name": "Jane", "items": [...]}},
+    {"id": "send", "action": "update_invoice", "data": {"id": "{{create.id}}", "status": "sent"}, "dependsOn": ["create"]}
+  ]
+}[/ACTION_CHAIN]
+
+### Multiple Independent Actions (use multiple [ACTION] blocks)
+When the user wants multiple unrelated things done:
+[ACTION]{"action": "list_invoices", "data": {"status": "sent"}}[/ACTION]
+[ACTION]{"action": "get_low_stock", "data": {}}[/ACTION]
+
+These execute in sequence and you get results from both.
+
+**When to chain actions:**
+- "Create an invoice and send it" → chain create_invoice + update_invoice(sent)
+- "Add this product and set stock to 50" → chain create_product + update_inventory
+- "Create a task and assign it to John" → chain create_task + assign_task
+
 ### Research/Web Search (2 actions)
 - **web_search**: Search the internet for information
 - **lookup_product_info**: Look up product details, specs, pricing from the web
@@ -1194,7 +1338,26 @@ interface SyncResponse {
     type?: string;
     result?: any;
     link?: string;
+    recovery?: {
+      suggestions: Array<{
+        action: string;
+        description: string;
+      }>;
+    };
   };
+  // Action chain results (when multiple actions executed)
+  actionChain?: {
+    success: boolean;
+    completedCount: number;
+    totalCount: number;
+    completed: string[];
+    failed?: string;
+  };
+  // Proactive insights generated after action
+  insights?: Array<{
+    type: 'info' | 'warning' | 'suggestion' | 'celebration';
+    message: string;
+  }>;
   // Workflow metadata (when workflow mode is used)
   workflow?: {
     type: string;
@@ -1693,14 +1856,65 @@ serve(async (req) => {
       }
     }
 
-    // Check for and execute action blocks
+    // Check for and execute action blocks (supports single, multiple, and chain formats)
     let actionExecuted: ActionResult | null = null;
-    const actionData = parseActionFromResponse(assistantMessage);
-    if (actionData) {
+    let chainResult: ActionChainResult | null = null;
+    let proactiveInsights: ProactiveInsight[] = [];
+    const parsedActions = parseActionsFromResponse(assistantMessage);
+
+    if (parsedActions.type === 'chain' && parsedActions.chain) {
+      // Execute action chain
+      chainResult = await executeActions(parsedActions.chain, companyId, userId);
+      assistantMessage = assistantMessage.replace(/\[ACTION_CHAIN\][\s\S]*?\[\/ACTION_CHAIN\]/g, '').trim();
+      assistantMessage = assistantMessage + '\n\n' + chainResult.message;
+
+      // Generate insights for each completed action
+      const ctx: ActionContext = { supabase, companyId, userId };
+      for (const completed of chainResult.completed) {
+        const insights = await generatePostActionInsights(
+          completed.action,
+          completed.result.result,
+          completed.result,
+          ctx,
+          session
+        );
+        proactiveInsights.push(...insights);
+      }
+
+    } else if (parsedActions.type === 'multiple' && parsedActions.multiple) {
+      // Execute multiple actions as a sequential chain
+      const chain: ActionChain = {
+        id: `auto_chain_${Date.now()}`,
+        actions: parsedActions.multiple,
+        strategy: 'sequential',
+        stopOnError: true,
+      };
+      chainResult = await executeActions(chain, companyId, userId);
+      assistantMessage = assistantMessage.replace(/\[ACTION\][\s\S]*?\[\/ACTION\]/g, '').trim();
+      assistantMessage = assistantMessage + '\n\n' + chainResult.message;
+
+    } else if (parsedActions.type === 'single' && parsedActions.single) {
+      // Execute single action with recovery
+      const actionData = parsedActions.single;
       actionExecuted = await executeAction(actionData, companyId, userId);
       assistantMessage = assistantMessage.replace(/\[ACTION\][\s\S]*?\[\/ACTION\]/g, '').trim();
+
       if (actionExecuted) {
         assistantMessage = assistantMessage + '\n\n' + actionExecuted.message;
+
+        // Generate proactive insights
+        const ctx: ActionContext = { supabase, companyId, userId };
+        proactiveInsights = await generatePostActionInsights(
+          actionData.action,
+          actionData.data,
+          actionExecuted,
+          ctx,
+          session
+        );
+
+        // Learn user preferences from action (non-blocking)
+        extractAndLearnPreferences(actionData.action, actionData.data, session, ctx)
+          .catch(err => console.warn('Failed to learn preferences:', err));
 
         // Store successful action as template (non-blocking)
         if (actionExecuted.success && memorySystem.actions.shouldStoreAsTemplate(actionData.action, true)) {
@@ -1722,16 +1936,29 @@ serve(async (req) => {
       }
     }
 
+    // Add proactive insights to response
+    if (proactiveInsights.length > 0) {
+      assistantMessage += formatInsightsForResponse(proactiveInsights);
+    }
+
+    // Generate contextual suggestions based on time/session
+    const contextualSuggestions = generateContextualSuggestions(session, new Date());
+    if (contextualSuggestions.length > 0 && !actionExecuted && !chainResult) {
+      // Only add contextual suggestions if no action was just executed
+      assistantMessage += formatInsightsForResponse(contextualSuggestions.slice(0, 1));
+    }
+
     // Store assistant message in persistent session
+    const executedActionType = parsedActions.single?.action || chainResult?.completed[0]?.action;
     const assistantMsgFinal: ChatMessage = {
       role: 'assistant',
       content: assistantMessage,
       timestamp: new Date().toISOString(),
       agentId: delegatedTo || 'sync',
-      actionExecuted: actionExecuted ? {
-        type: actionData?.action || 'unknown',
-        success: actionExecuted.success,
-        result: actionExecuted.result,
+      actionExecuted: (actionExecuted || chainResult) ? {
+        type: executedActionType || 'unknown',
+        success: actionExecuted?.success || chainResult?.success || false,
+        result: actionExecuted?.result || chainResult?.partialResults,
       } : undefined,
     };
     await memorySystem.session.addMessage(session, assistantMsgFinal);
@@ -1763,7 +1990,9 @@ serve(async (req) => {
               matchedKeywords: routingResult.matchedKeywords,
             },
             messageLength: message.length,
-            actionExecuted: actionExecuted ? actionData?.action : null,
+            actionExecuted: executedActionType || null,
+            chainExecuted: chainResult ? chainResult.completed.map(c => c.action) : null,
+            insightsGenerated: proactiveInsights.length,
             memoryContext: memoryContextStr ? 'injected' : 'none',
           },
         });
@@ -1772,6 +2001,8 @@ serve(async (req) => {
       }
     }
 
+    // Build response with new fields
+    const actionType = parsedActions.single?.action || (chainResult?.completed[0]?.action);
     const syncResponse: SyncResponse = {
       response: assistantMessage,
       sessionId: session.session_id,
@@ -1788,10 +2019,29 @@ serve(async (req) => {
       } : undefined,
       actionExecuted: actionExecuted ? {
         success: actionExecuted.success,
-        type: actionData?.action,
+        type: actionType,
         result: actionExecuted.result,
         link: actionExecuted.link,
+        recovery: actionExecuted.recovery ? {
+          suggestions: actionExecuted.recovery.suggestions.map(s => ({
+            action: s.action,
+            description: s.description,
+          })),
+        } : undefined,
       } : undefined,
+      // Include chain results if multiple actions were executed
+      actionChain: chainResult ? {
+        success: chainResult.success,
+        completedCount: chainResult.completed.length,
+        totalCount: parsedActions.chain?.actions.length || parsedActions.multiple?.length || 0,
+        completed: chainResult.completed.map(c => c.action),
+        failed: chainResult.failed?.action,
+      } : undefined,
+      // Include proactive insights
+      insights: proactiveInsights.length > 0 ? proactiveInsights.map(i => ({
+        type: i.type,
+        message: i.message,
+      })) : undefined,
     };
 
     return new Response(
