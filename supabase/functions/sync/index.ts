@@ -1060,7 +1060,7 @@ Always end with either:
 - An offer of what to do next
 - A completion message with follow-up options
 
-## ADVANCED INTELLIGENCE (DeepSeek-V3 Capabilities)
+## ADVANCED INTELLIGENCE (Kimi K2 Capabilities)
 
 ### Smart Shortcuts
 Recognize and act on these patterns without asking unnecessary questions:
@@ -1192,7 +1192,7 @@ async function handleStreamingRequest(
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'deepseek-ai/DeepSeek-V3',
+            model: 'moonshotai/Kimi-K2-Instruct',
             messages: apiMessages,
             temperature: 0.7,
             max_tokens: 2048,
@@ -1573,7 +1573,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'deepseek-ai/DeepSeek-V3',
+        model: 'moonshotai/Kimi-K2-Instruct',
         messages: apiMessages,
         temperature: 0.7,
         max_tokens: 2048,
@@ -1716,7 +1716,7 @@ serve(async (req) => {
         await supabase.from('ai_usage_log').insert({
           company_id: context.companyId,
           user_id: context.userId || null,
-          model: 'deepseek-ai/DeepSeek-V3',
+          model: 'moonshotai/Kimi-K2-Instruct',
           cost_usd: 0,
           content_type: 'chat',
           metadata: {

@@ -197,7 +197,7 @@ Provide a unified, coherent response that combines the best insights from all ex
 Do not mention the individual agents or that multiple sources were consulted.`;
 
   const aggregatedResponse = await callLLM({
-    model: 'deepseek-ai/DeepSeek-V3',
+    model: 'moonshotai/Kimi-K2-Instruct',
     systemPrompt: SPECIALIZED_AGENTS.aggregator.systemPrompt,
     userPrompt: aggregatorPrompt,
     temperature: 0.3,

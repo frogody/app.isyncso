@@ -18,7 +18,7 @@ const MODELS = {
   // Large context
   CONTEXT: 'Qwen/Qwen2.5-72B-Instruct-Turbo',
   // Aggregator/synthesis
-  AGGREGATOR: 'deepseek-ai/DeepSeek-V3',
+  AGGREGATOR: 'moonshotai/Kimi-K2-Instruct',
 };
 
 export const SPECIALIZED_AGENTS: Record<string, Agent> = {
