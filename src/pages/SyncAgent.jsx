@@ -862,7 +862,7 @@ export default function SyncAgent() {
     <div ref={pageRef} className="h-screen flex flex-col bg-black text-white overflow-hidden">
       {/* Top bar */}
       <div className="shrink-0 z-20 border-b border-white/10 bg-black/40 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
+        <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-6 py-3">
           <div className="flex items-center gap-2">
             <div className="grid h-9 w-9 place-items-center rounded-2xl border border-purple-500/30 bg-purple-500/10">
               <Brain className="h-4 w-4 text-purple-400" />
@@ -895,7 +895,7 @@ export default function SyncAgent() {
       </div>
 
       {/* Layout - fills remaining height */}
-      <div className="flex-1 min-h-0 mx-auto w-full max-w-6xl grid grid-cols-1 gap-6 px-4 py-6 lg:grid-cols-[420px_1fr]">
+      <div className="flex-1 min-h-0 mx-auto w-full max-w-[1600px] grid grid-cols-1 gap-6 px-6 py-6 lg:grid-cols-[480px_1fr]">
         {/* Left: Avatar */}
         <div
           data-animate
@@ -924,7 +924,7 @@ export default function SyncAgent() {
           </div>
 
           <div className="mt-4 grid place-items-center">
-            <AgentAvatar size={360} agentName="SYNC" mood={mood} level={level} seed={seed} activeAgent={activeAgent} />
+            <AgentAvatar size={400} agentName="SYNC" mood={mood} level={level} seed={seed} activeAgent={activeAgent} />
           </div>
 
           <div className="mt-5 grid gap-3">
