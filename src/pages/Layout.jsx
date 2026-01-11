@@ -70,6 +70,7 @@ import {
   Handshake,
   UserPlus,
   Crosshair,
+  Plug,
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -321,14 +322,14 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
   }
 
   // SYNC routes - core feature, uses cyan like other main features
-  if (path.includes('sync') || path.includes('aiassistant') || path.includes('actions') || path.includes('activity') || path.includes('agents') || path.includes('agentdetail')) {
+  if (path.includes('sync') || path.includes('aiassistant') || path.includes('actions') || path.includes('activity') || path.includes('agents') || path.includes('agentdetail') || path.includes('integration')) {
     return {
       title: 'SYNC',
       color: 'cyan',
       items: [
         { label: 'SYNC Agent', path: createPageUrl('SyncAgent'), icon: Brain },
         { label: 'Agents', path: createPageUrl('Agents'), icon: Bot },
-        { label: 'Actions', path: createPageUrl('Actions'), icon: Zap },
+        { label: 'Integrations', path: createPageUrl('Integrations'), icon: Plug },
         { label: 'Activity', path: createPageUrl('Activity'), icon: Activity },
       ]
     };

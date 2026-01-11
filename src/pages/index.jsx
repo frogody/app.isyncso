@@ -201,6 +201,8 @@ import InventoryImport from "./InventoryImport";
 
 import ContactsImport from "./ContactsImport";
 
+import Integrations from "./Integrations";
+
 import { BrowserRouter as Router, Route, Routes, useLocation, Navigate } from 'react-router-dom';
 
 const PAGES = {
@@ -409,6 +411,8 @@ const PAGES = {
 
     ContactsImport: ContactsImport,
 
+    Integrations: Integrations,
+
 }
 
 function _getCurrentPage(url) {
@@ -446,7 +450,7 @@ function PagesContent() {
 
                 <Route path="/Login" element={<Login />} />
 
-                <Route path="/Actions" element={<Actions />} />
+                <Route path="/Actions" element={<Navigate to="/Integrations" replace />} />
                 
                 <Route path="/Activity" element={<Activity />} />
                 
@@ -482,8 +486,8 @@ function PagesContent() {
                 
                 <Route path="/ComponentShowcase" element={<ComponentShowcase />} />
 
-                <Route path="/ComposioIntegrations" element={<ComposioIntegrations />} />
-                <Route path="/settings/integrations" element={<ComposioIntegrations />} />
+                <Route path="/ComposioIntegrations" element={<Navigate to="/Integrations" replace />} />
+                <Route path="/settings/integrations" element={<Navigate to="/Integrations" replace />} />
 
                 <Route path="/Contacts" element={<Contacts />} />
                 
@@ -589,7 +593,7 @@ function PagesContent() {
                 
                 <Route path="/WorkflowEditor" element={<WorkflowEditor />} />
                 
-                <Route path="/MCPIntegrations" element={<MCPIntegrations />} />
+                <Route path="/MCPIntegrations" element={<Navigate to="/Integrations" replace />} />
                 
                 <Route path="/OAuthCallback" element={<OAuthCallback />} />
 
@@ -640,6 +644,8 @@ function PagesContent() {
                 <Route path="/InventoryImport" element={<InventoryImport />} />
 
                 <Route path="/ContactsImport" element={<ContactsImport />} />
+
+                <Route path="/Integrations" element={<Integrations />} />
 
                 {/* 404 catch-all route */}
                 <Route path="*" element={
