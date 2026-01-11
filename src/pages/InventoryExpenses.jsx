@@ -684,6 +684,10 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
         pdfTextPreview: pdfText ? pdfText.substring(0, 100) : null,
       });
 
+      // Verify pdfText is actually in the request
+      console.log("CRITICAL CHECK - pdfText in requestBody?", "pdfText" in requestBody, typeof requestBody.pdfText);
+      console.log("CRITICAL CHECK - pdfText value:", requestBody.pdfText ? `Present (${requestBody.pdfText.length} chars)` : "MISSING!");
+
       // Use direct fetch instead of supabase.functions.invoke to ensure body is sent correctly
       const startTime = Date.now();
       let processResult, processError;

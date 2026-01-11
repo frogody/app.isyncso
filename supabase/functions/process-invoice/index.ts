@@ -358,15 +358,26 @@ async function processExpenseAsync(
   pdfText?: string,
 ) {
   try {
-    console.log(`[ASYNC] Starting extraction for expense ${expenseId}`, { hasPdfText: !!pdfText });
+    console.log(`[ASYNC] Starting extraction for expense ${expenseId}`, {
+      hasPdfText: !!pdfText,
+      pdfTextType: typeof pdfText,
+      pdfTextLength: pdfText?.length || 0
+    });
 
     // Extract data from PDF text (preferred) or image (fallback)
     let extraction: ExtractionResult;
     if (pdfText && pdfText.trim().length > 0) {
-      console.log('[ASYNC] Using text extraction (PDF text provided)');
+      console.log(`✅ [ASYNC] Using TEXT extraction with Groq (PDF text: ${pdfText.length} chars)`);
+      console.log(`[ASYNC] PDF text preview: ${pdfText.substring(0, 150)}...`);
       extraction = await extractFromText(groqApiKey, pdfText);
     } else {
-      console.log('[ASYNC] Using image extraction (fallback)');
+      console.error(`❌ [ASYNC] FALLBACK to image extraction (pdfText missing or empty!)`);
+      console.error(`[ASYNC] pdfText details:`, {
+        exists: !!pdfText,
+        type: typeof pdfText,
+        length: pdfText?.length,
+        value: pdfText ? `"${pdfText.substring(0, 50)}..."` : 'null/undefined'
+      });
       // Note: This will fail without a valid Google API key
       extraction = await extractFromImage(groqApiKey, imageUrl);
     }
@@ -671,8 +682,16 @@ Deno.serve(async (req) => {
     }
 
     // If we have PDF text, process immediately (faster and more reliable)
+    console.log('CRITICAL: Checking pdfText before processing:', {
+      hasPdfText: !!pdfText,
+      pdfTextType: typeof pdfText,
+      pdfTextLength: pdfText?.length || 0,
+      trimmedLength: pdfText?.trim?.()?.length || 0
+    });
+
     if (pdfText && pdfText.trim().length > 0) {
-      console.log(`Processing expense ${expense.id} immediately with PDF text (length: ${pdfText.length})`);
+      console.log(`✅ Processing expense ${expense.id} immediately with PDF text (length: ${pdfText.length})`);
+      console.log(`PDF text preview (first 200 chars): ${pdfText.substring(0, 200)}`);
       await processExpenseAsync(supabase, groqApiKey, expense.id, imageUrl, companyId, pdfText);
 
       return new Response(
