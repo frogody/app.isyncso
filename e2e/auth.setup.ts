@@ -8,8 +8,8 @@ const __dirname = path.dirname(__filename);
 const authFile = path.join(__dirname, '../playwright/.auth/user.json');
 
 // Test credentials from environment variables
-const TEST_EMAIL = process.env.TEST_EMAIL || 'test@isyncso.com';
-const TEST_PASSWORD = process.env.TEST_PASSWORD || 'testpassword123';
+const TEST_EMAIL = process.env.TEST_EMAIL || 'frogody@icloud.com';
+const TEST_PASSWORD = process.env.TEST_PASSWORD || 'Passwordfortesting18#1';
 
 setup('authenticate', async ({ page }) => {
   console.log('Setting up authentication...');
