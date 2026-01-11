@@ -6,7 +6,7 @@
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Send, Sparkles, User, Bot, RotateCcw, Brain, AlertCircle, RefreshCw, Plus, Download, ExternalLink, Image as ImageIcon } from 'lucide-react';
+import { Send, Sparkles, User, Bot, RotateCcw, Brain, AlertCircle, RefreshCw, Plus, Download, ExternalLink, Image as ImageIcon, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/api/supabaseClient';
@@ -282,6 +282,85 @@ function ImageCard({ url }) {
         </div>
       )}
     </>
+  );
+}
+
+// ============================================================================
+// DOCUMENT CARD COMPONENT
+// ============================================================================
+
+function DocumentCard({ url, title }) {
+  const cardRef = useRef(null);
+
+  // Animate card entrance
+  useEffect(() => {
+    if (prefersReducedMotion() || !cardRef.current) return;
+
+    anime({
+      targets: cardRef.current,
+      scale: [0.95, 1],
+      opacity: [0, 1],
+      duration: 300,
+      easing: 'easeOutQuad',
+    });
+  }, []);
+
+  const handleOpen = () => {
+    window.open(url, '_blank');
+  };
+
+  const handleDownload = async (e) => {
+    e.stopPropagation();
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `${title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.md`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error('Failed to download document:', err);
+      window.open(url, '_blank');
+    }
+  };
+
+  return (
+    <div
+      ref={cardRef}
+      className="mt-3 group rounded-xl border border-purple-500/30 bg-gradient-to-br from-purple-950/30 to-black/30 p-4 cursor-pointer hover:border-purple-400/50 transition-all"
+      onClick={handleOpen}
+      style={{ opacity: 0 }}
+    >
+      <div className="flex items-start gap-3">
+        <div className="shrink-0 w-10 h-10 rounded-lg bg-purple-500/20 border border-purple-500/30 flex items-center justify-center">
+          <FileText className="w-5 h-5 text-purple-400" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-medium text-white truncate">{title}</div>
+          <div className="text-xs text-zinc-500 mt-0.5">Markdown Document</div>
+        </div>
+        <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={handleDownload}
+            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+            title="Download"
+          >
+            <Download className="w-4 h-4" />
+          </button>
+          <button
+            onClick={handleOpen}
+            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+            title="Open in new tab"
+          >
+            <ExternalLink className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -864,7 +943,7 @@ function AgentAvatar({ size = 360, agentName = 'SYNC', mood = 'listening', level
 // CHAT BUBBLE COMPONENT
 // ============================================================================
 
-function Bubble({ role, text, ts, index }) {
+function Bubble({ role, text, ts, index, document }) {
   const bubbleRef = useRef(null);
   const isUser = role === 'user';
 
@@ -909,17 +988,21 @@ function Bubble({ role, text, ts, index }) {
         {isUser ? (
           <div className="whitespace-pre-wrap">{text}</div>
         ) : (
-          <div className="prose prose-invert prose-sm max-w-none prose-p:my-2 prose-headings:my-3 prose-ul:my-2 prose-li:my-1 prose-code:text-purple-400 prose-code:bg-purple-950/30 prose-code:px-1 prose-code:rounded">
-            {contentParts.map((part, i) => (
-              part.type === 'image' ? (
-                <ImageCard key={`img-${i}`} url={part.url} />
-              ) : (
-                <ReactMarkdown key={`text-${i}`}>
-                  {part.content}
-                </ReactMarkdown>
-              )
-            ))}
-          </div>
+          <>
+            <div className="prose prose-invert prose-sm max-w-none prose-p:my-2 prose-headings:my-3 prose-ul:my-2 prose-li:my-1 prose-code:text-purple-400 prose-code:bg-purple-950/30 prose-code:px-1 prose-code:rounded">
+              {contentParts.map((part, i) => (
+                part.type === 'image' ? (
+                  <ImageCard key={`img-${i}`} url={part.url} />
+                ) : (
+                  <ReactMarkdown key={`text-${i}`}>
+                    {part.content}
+                  </ReactMarkdown>
+                )
+              ))}
+            </div>
+            {/* Render document card if present */}
+            {document && <DocumentCard url={document.url} title={document.title} />}
+          </>
         )}
       </div>
     </div>
@@ -1066,24 +1149,18 @@ export default function SyncAgent() {
         sessionId: data.sessionId,
         delegatedTo: data.delegatedTo,
         routing: data.routing,
-        actionExecuted: data.actionExecuted
+        actionExecuted: data.actionExecuted,
+        document: data.document
       });
 
       if (data.sessionId) {
         console.log('Saving sessionId to localStorage:', data.sessionId);
         setSessionId(data.sessionId);
-        // Also verify it was saved
-        setTimeout(() => {
-          console.log('localStorage after save:', localStorage.getItem('sync_agent_session_id'));
-        }, 100);
-      } else {
-        console.warn('No sessionId returned from API!');
       }
 
       // Set active agent if SYNC delegated to one
       if (data.delegatedTo) {
         const agentId = data.delegatedTo.toLowerCase();
-        console.log('Setting activeAgent to:', agentId);
         setActiveAgent(agentId);
       }
 
@@ -1091,7 +1168,13 @@ export default function SyncAgent() {
       setMood('speaking');
       await new Promise((r) => setTimeout(r, 300));
 
-      setMessages((m) => [...m, { role: 'assistant', text: data.response, ts: Date.now() }]);
+      // Add message with optional document attachment
+      setMessages((m) => [...m, {
+        role: 'assistant',
+        text: data.response,
+        ts: Date.now(),
+        document: data.document || null, // { url, title }
+      }]);
 
       // Back to listening and clear active agent after a delay
       await new Promise((r) => setTimeout(r, 1500));
@@ -1264,7 +1347,7 @@ export default function SyncAgent() {
             ) : (
               <>
                 {messages.map((m, idx) => (
-                  <Bubble key={idx} role={m.role} text={m.text} ts={m.ts} index={idx} />
+                  <Bubble key={idx} role={m.role} text={m.text} ts={m.ts} index={idx} document={m.document} />
                 ))}
 
                 {isSending && (
