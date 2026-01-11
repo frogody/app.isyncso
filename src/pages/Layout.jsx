@@ -91,7 +91,7 @@ import SyncOrbitIcon from "@/components/icons/SyncOrbitIcon";
 import CoursesOrbitIcon from "@/components/icons/CoursesOrbitIcon";
 
 import GrowthOrbitIcon from "@/components/icons/GrowthOrbitIcon";
-import AnimatedAvatar from "@/components/icons/AnimatedAvatar";
+import SyncAvatarMini from "@/components/icons/SyncAvatarMini";
 
 // Direct imports to avoid lazy loading issues
 import OnboardingGuard from "@/components/layout/OnboardingGuard";
@@ -574,9 +574,9 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
           }}
         ></div>
 
-        {/* SYNC via Animated Avatar */}
-        <Link to={createPageUrl("Sync")} className="relative z-40 group cursor-pointer flex flex-col items-center" aria-label="Go to SYNC">
-          <AnimatedAvatar size={48} state={avatarState} className="transition-all duration-300" />
+        {/* SYNC Avatar - matches SyncAgent page visualization */}
+        <Link to={createPageUrl("SyncAgent")} className="relative z-40 group cursor-pointer flex flex-col items-center" aria-label="Go to SYNC">
+          <SyncAvatarMini size={48} state={avatarState} className="transition-all duration-300" />
         </Link>
         </div>
 
