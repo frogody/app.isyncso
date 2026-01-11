@@ -193,6 +193,8 @@ import InventoryShipping from "./InventoryShipping";
 import InventoryExpenses from "./InventoryExpenses";
 import StockPurchases from "./StockPurchases";
 
+import SyncAgent from "./SyncAgent";
+
 import InventoryImport from "./InventoryImport";
 
 import ContactsImport from "./ContactsImport";
@@ -396,6 +398,8 @@ const PAGES = {
     InventoryExpenses: InventoryExpenses,
 
     StockPurchases: StockPurchases,
+
+    SyncAgent: SyncAgent,
 
     InventoryImport: InventoryImport,
 
@@ -621,6 +625,8 @@ function PagesContent() {
                 <Route path="/InventoryShipping" element={<InventoryShipping />} />
 
                 <Route path="/StockPurchases" element={<StockPurchases />} />
+
+                <Route path="/SyncAgent" element={<SyncAgent />} />
 
                 <Route path="/InventoryExpenses" element={<Navigate to="/StockPurchases" replace />} />
 

@@ -326,7 +326,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       title: 'SYNC',
       color: 'cyan',
       items: [
-        { label: 'Sync', path: createPageUrl('Sync'), icon: Brain },
+        { label: 'SYNC Agent', path: createPageUrl('SyncAgent'), icon: Brain },
         { label: 'Agents', path: createPageUrl('Agents'), icon: Bot },
         { label: 'Actions', path: createPageUrl('Actions'), icon: Zap },
         { label: 'Activity', path: createPageUrl('Activity'), icon: Activity },

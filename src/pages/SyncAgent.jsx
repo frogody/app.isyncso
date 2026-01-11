@@ -1,0 +1,983 @@
+/**
+ * SYNC Agent Page
+ * Full-page chat interface with interactive animated avatar
+ * Uses anime.js for all animations
+ */
+
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import ReactMarkdown from 'react-markdown';
+import { Send, Sparkles, User, Bot, RotateCcw, Brain, AlertCircle, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { supabase } from '@/api/supabaseClient';
+import { useUser } from '@/components/context/UserContext';
+import anime from '@/lib/anime-wrapper';
+import { prefersReducedMotion } from '@/lib/animations';
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+function clamp(n, a, b) {
+  return Math.max(a, Math.min(b, n));
+}
+
+function formatTime(ts) {
+  try {
+    return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return '';
+  }
+}
+
+// ============================================================================
+// OUTER RING COMPONENT (SVG-based, stable shape)
+// ============================================================================
+
+function OuterRing({ size = 360, mood = 'listening', level = 0.2 }) {
+  const ringRef = useRef(null);
+  const segmentsRef = useRef(null);
+  const dotsRef = useRef(null);
+
+  const r = size / 2;
+  const pad = 10;
+  const ringR = r - pad;
+
+  // Segment layout (percent of circumference)
+  const segments = useMemo(() => [
+    { from: 0.02, to: 0.22, color: '#22c55e' },
+    { from: 0.24, to: 0.34, color: '#a855f7' },
+    { from: 0.36, to: 0.46, color: '#f59e0b' },
+    { from: 0.50, to: 0.74, color: '#10b981' },
+    { from: 0.76, to: 0.90, color: '#8b5cf6' },
+    { from: 0.92, to: 0.98, color: '#22c55e' },
+  ], []);
+
+  const glow = mood === 'speaking' ? 1.0 : mood === 'thinking' ? 0.7 : 0.45;
+  const pulse = clamp(0.35 + level * 0.9, 0.35, 1.2);
+
+  // Animate segments based on mood
+  useEffect(() => {
+    if (prefersReducedMotion() || !segmentsRef.current) return;
+
+    const paths = segmentsRef.current.querySelectorAll('path');
+
+    anime.remove(paths);
+    anime({
+      targets: paths,
+      strokeWidth: mood === 'speaking' ? [10, 12, 10] : [10, 11, 10],
+      opacity: [0.75 + glow * 0.25, 0.85 + glow * 0.15, 0.75 + glow * 0.25],
+      duration: mood === 'speaking' ? 600 : 1200,
+      loop: true,
+      easing: 'easeInOutSine',
+      delay: anime.stagger(100),
+    });
+
+    return () => anime.remove(paths);
+  }, [mood, glow]);
+
+  // Animate mood dots
+  useEffect(() => {
+    if (prefersReducedMotion() || !dotsRef.current) return;
+
+    const dots = dotsRef.current.querySelectorAll('circle');
+
+    anime.remove(dots);
+    anime({
+      targets: dots,
+      r: (el, i) => [2.6 + (i / 18) * 2.4, 3.2 + (i / 18) * 3, 2.6 + (i / 18) * 2.4],
+      opacity: (el, i) => [0.15 + (i / 18) * 0.75, 0.3 + (i / 18) * 0.7, 0.15 + (i / 18) * 0.75],
+      duration: mood === 'speaking' ? 400 : 800,
+      loop: true,
+      easing: 'easeInOutQuad',
+      delay: anime.stagger(30, { direction: 'reverse' }),
+    });
+
+    return () => anime.remove(dots);
+  }, [mood]);
+
+  // Helpers for SVG arc paths
+  const polar = (cx, cy, radius, a) => {
+    const ang = (a - 0.25) * Math.PI * 2;
+    return { x: cx + radius * Math.cos(ang), y: cy + radius * Math.sin(ang) };
+  };
+
+  const arcPath = (cx, cy, radius, a0, a1) => {
+    const p0 = polar(cx, cy, radius, a0);
+    const p1 = polar(cx, cy, radius, a1);
+    const large = a1 - a0 > 0.5 ? 1 : 0;
+    return `M ${p0.x} ${p0.y} A ${radius} ${radius} 0 ${large} 1 ${p1.x} ${p1.y}`;
+  };
+
+  return (
+    <div
+      ref={ringRef}
+      className="relative"
+      style={{ width: size, height: size }}
+      aria-label="Agent avatar ring"
+    >
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="block">
+        <defs>
+          <radialGradient id="glass" cx="30%" cy="25%" r="70%">
+            <stop offset="0%" stopColor="rgba(255,255,255,0.22)" />
+            <stop offset="35%" stopColor="rgba(255,255,255,0.08)" />
+            <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+          </radialGradient>
+
+          <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation={6} result="b" />
+            <feColorMatrix
+              in="b"
+              type="matrix"
+              values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.9 0"
+              result="c"
+            />
+            <feMerge>
+              <feMergeNode in="c" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+
+          <filter id="tinyGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation={2.5} />
+          </filter>
+
+          <linearGradient id="ringBase" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="rgba(255,255,255,0.06)" />
+            <stop offset="100%" stopColor="rgba(255,255,255,0.02)" />
+          </linearGradient>
+        </defs>
+
+        {/* Base ring */}
+        <circle
+          cx={r}
+          cy={r}
+          r={ringR}
+          fill="none"
+          stroke="url(#ringBase)"
+          strokeWidth={18}
+          opacity={0.9}
+        />
+
+        {/* Ticks */}
+        <g opacity={0.55}>
+          {Array.from({ length: 120 }).map((_, i) => {
+            const a = i / 120;
+            const p0 = polar(r, r, ringR - 16, a);
+            const p1 = polar(r, r, ringR - (i % 5 === 0 ? 6 : 10), a);
+            return (
+              <line
+                key={i}
+                x1={p0.x}
+                y1={p0.y}
+                x2={p1.x}
+                y2={p1.y}
+                stroke="rgba(255,255,255,0.12)"
+                strokeWidth={i % 5 === 0 ? 2 : 1}
+              />
+            );
+          })}
+        </g>
+
+        {/* Colored segments */}
+        <g ref={segmentsRef} filter="url(#softGlow)">
+          {segments.map((s, idx) => (
+            <path
+              key={idx}
+              d={arcPath(r, r, ringR, s.from, s.to)}
+              fill="none"
+              stroke={s.color}
+              strokeWidth={10}
+              strokeLinecap="round"
+              style={{ opacity: 0.75 + glow * 0.25 }}
+            />
+          ))}
+        </g>
+
+        {/* Subtle inner rim */}
+        <circle
+          cx={r}
+          cy={r}
+          r={ringR - 26}
+          fill="none"
+          stroke="rgba(255,255,255,0.06)"
+          strokeWidth={2}
+        />
+
+        {/* Highlight glass sweep */}
+        <path
+          d={arcPath(r, r, ringR - 36, 0.02, 0.18)}
+          fill="none"
+          stroke="rgba(255,255,255,0.14)"
+          strokeWidth={20}
+          strokeLinecap="round"
+          opacity={0.7}
+        />
+
+        {/* Mood dot trail */}
+        <g ref={dotsRef} filter="url(#tinyGlow)">
+          {Array.from({ length: 18 }).map((_, i) => {
+            const t = i / 18;
+            const a = 0.62 + t * 0.16;
+            const p = polar(r, r, ringR - 54, a);
+            const op = 0.15 + t * 0.75;
+            return (
+              <circle
+                key={i}
+                cx={p.x}
+                cy={p.y}
+                r={2.6 + t * 2.4}
+                fill={mood === 'speaking' ? '#c084fc' : '#a855f7'}
+                opacity={op}
+              />
+            );
+          })}
+        </g>
+
+        {/* Center lens */}
+        <circle cx={r} cy={r} r={ringR - 46} fill="rgba(0,0,0,0.35)" />
+        <circle cx={r} cy={r} r={ringR - 46} fill="url(#glass)" opacity={0.9} />
+
+        {/* Accent ring inside */}
+        <circle
+          cx={r}
+          cy={r}
+          r={ringR - 58}
+          fill="none"
+          stroke="#a855f7"
+          strokeWidth={2}
+          opacity={0.25 + pulse * 0.15}
+        />
+      </svg>
+
+      {/* Outer glow halo */}
+      <div
+        className="pointer-events-none absolute inset-0 rounded-full transition-shadow duration-500"
+        style={{
+          boxShadow: `0 0 ${24 + pulse * 18}px rgba(168,85,247,${0.10 + glow * 0.12}), 0 0 ${52 + pulse * 26}px rgba(139,92,246,${0.06 + glow * 0.08})`,
+        }}
+      />
+    </div>
+  );
+}
+
+// ============================================================================
+// INNER VISUALIZATION COMPONENT (Canvas-based particles + waves)
+// ============================================================================
+
+function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 1 }) {
+  const canvasRef = useRef(null);
+  const animationRef = useRef(null);
+  const stateRef = useRef({
+    w: size,
+    h: size,
+    particles: [],
+    seed,
+    pointer: { x: size / 2, y: size / 2, down: false },
+    time: 0,
+  });
+
+  // Initialize particles
+  useEffect(() => {
+    const st = stateRef.current;
+    st.w = size;
+    st.h = size;
+    st.seed = seed;
+
+    const N = 90;
+    const rand = (a) => {
+      const x = Math.sin((st.seed + a) * 9999) * 10000;
+      return x - Math.floor(x);
+    };
+
+    st.particles = Array.from({ length: N }).map((_, i) => {
+      const r = (size * 0.33) * Math.sqrt(rand(i + 1));
+      const ang = rand(i + 7) * Math.PI * 2;
+      return {
+        x: size / 2 + r * Math.cos(ang),
+        y: size / 2 + r * Math.sin(ang),
+        vx: (rand(i + 11) - 0.5) * 0.35,
+        vy: (rand(i + 17) - 0.5) * 0.35,
+        s: 1.2 + rand(i + 23) * 3.2,
+        p: rand(i + 31),
+      };
+    });
+  }, [size, seed]);
+
+  // Animation loop using anime.js timeline approach
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const st = stateRef.current;
+    let running = true;
+
+    const render = () => {
+      if (!running) return;
+
+      st.time += 0.016; // ~60fps increment
+      const time = st.time;
+      const w = st.w;
+      const h = st.h;
+      const cx = w / 2;
+      const cy = h / 2;
+
+      // Handle DPR
+      const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+      if (canvas.width !== w * dpr || canvas.height !== h * dpr) {
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        canvas.style.width = `${w}px`;
+        canvas.style.height = `${h}px`;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+
+      // Background
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = 'rgba(0,0,0,0.25)';
+      ctx.beginPath();
+      ctx.arc(cx, cy, w * 0.34, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Clip to circle
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, w * 0.34, 0, Math.PI * 2);
+      ctx.clip();
+
+      // Mood palette (purple theme for SYNC)
+      const palettes = {
+        listening: { a: 'rgba(168,85,247,0.45)', b: 'rgba(139,92,246,0.30)', dot: 'rgba(255,255,255,0.18)' },
+        thinking: { a: 'rgba(245,158,11,0.40)', b: 'rgba(217,119,6,0.25)', dot: 'rgba(255,255,255,0.16)' },
+        speaking: { a: 'rgba(192,132,252,0.55)', b: 'rgba(168,85,247,0.35)', dot: 'rgba(255,255,255,0.22)' },
+      };
+      const P = palettes[mood] || palettes.listening;
+
+      // Gradient wash
+      const g = ctx.createRadialGradient(cx - w * 0.12, cy - h * 0.12, w * 0.08, cx, cy, w * 0.42);
+      g.addColorStop(0, P.a);
+      g.addColorStop(0.6, P.b);
+      g.addColorStop(1, 'rgba(0,0,0,0.0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+
+      // Waves
+      const amp = 8 + level * 28;
+      const bands = 12;
+      ctx.globalCompositeOperation = 'lighter';
+
+      for (let i = 0; i < bands; i++) {
+        const y0 = (h * 0.28) + (i / (bands - 1)) * (h * 0.44);
+        const ph = time * (0.9 + i * 0.06);
+        ctx.beginPath();
+        for (let x = 0; x <= w; x += 6) {
+          const nx = x / w;
+          const wobble = Math.sin(nx * Math.PI * 2 + ph) * amp * (0.35 + i / bands);
+          const curve = Math.sin((nx * 1.7 + ph * 0.25) * Math.PI * 2) * amp * 0.12;
+          const y = y0 + wobble + curve;
+          if (x === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = `rgba(255,255,255,${0.02 + level * 0.06})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      // Particle physics
+      const px = st.pointer.x;
+      const py = st.pointer.y;
+      const attract = st.pointer.down ? 1.0 : 0.35;
+      const speedBoost = mood === 'speaking' ? 1.3 : mood === 'thinking' ? 0.95 : 0.85;
+
+      // Draw links
+      ctx.globalCompositeOperation = 'screen';
+      for (let i = 0; i < st.particles.length; i++) {
+        const a = st.particles[i];
+        const dxp = px - a.x;
+        const dyp = py - a.y;
+        const d2 = dxp * dxp + dyp * dyp;
+        const pull = (attract * 0.00018) / (1 + d2 * 0.0009);
+        a.vx += dxp * pull;
+        a.vy += dyp * pull;
+
+        // Orbit around center
+        const dx = a.x - cx;
+        const dy = a.y - cy;
+        const ang = Math.atan2(dy, dx) + 0.0025 * speedBoost;
+        const r = Math.sqrt(dx * dx + dy * dy);
+        a.vx += (cx + r * Math.cos(ang) - a.x) * 0.0009;
+        a.vy += (cy + r * Math.sin(ang) - a.y) * 0.0009;
+
+        a.x += a.vx * (1.0 + level * 0.9) * speedBoost;
+        a.y += a.vy * (1.0 + level * 0.9) * speedBoost;
+
+        // Keep inside lens
+        const ddx = a.x - cx;
+        const ddy = a.y - cy;
+        const rr = Math.sqrt(ddx * ddx + ddy * ddy);
+        const maxR = w * 0.34;
+        if (rr > maxR) {
+          const k = maxR / rr;
+          a.x = cx + ddx * k;
+          a.y = cy + ddy * k;
+          a.vx *= -0.35;
+          a.vy *= -0.35;
+        }
+
+        // Draw links
+        for (let j = i + 1; j < st.particles.length; j += 6) {
+          const b = st.particles[j];
+          const lx = b.x - a.x;
+          const ly = b.y - a.y;
+          const dist = Math.sqrt(lx * lx + ly * ly);
+          if (dist < 36) {
+            const o = (1 - dist / 36) * (0.10 + level * 0.25);
+            ctx.strokeStyle = `rgba(255,255,255,${o})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
+            ctx.stroke();
+          }
+        }
+      }
+
+      // Draw dots
+      ctx.globalCompositeOperation = 'lighter';
+      for (const p of st.particles) {
+        ctx.fillStyle = P.dot;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.s * (0.55 + level * 0.25), 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Scan line
+      const scanY = cy + Math.sin(time * (mood === 'speaking' ? 2.8 : 1.8)) * (h * 0.14);
+      ctx.globalCompositeOperation = 'screen';
+      ctx.fillStyle = mood === 'speaking' ? 'rgba(192,132,252,0.18)' : 'rgba(255,255,255,0.08)';
+      ctx.fillRect(0, scanY - 2, w, 4);
+
+      ctx.restore();
+
+      // Lens vignette
+      ctx.globalCompositeOperation = 'source-over';
+      const vg = ctx.createRadialGradient(cx, cy, w * 0.10, cx, cy, w * 0.36);
+      vg.addColorStop(0, 'rgba(0,0,0,0)');
+      vg.addColorStop(1, 'rgba(0,0,0,0.55)');
+      ctx.fillStyle = vg;
+      ctx.beginPath();
+      ctx.arc(cx, cy, w * 0.34, 0, Math.PI * 2);
+      ctx.fill();
+
+      animationRef.current = requestAnimationFrame(render);
+    };
+
+    animationRef.current = requestAnimationFrame(render);
+
+    return () => {
+      running = false;
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [mood, level]);
+
+  return (
+    <div className="absolute inset-0 grid place-items-center">
+      <canvas
+        ref={canvasRef}
+        className="rounded-full cursor-pointer"
+        style={{ width: size, height: size }}
+        onPointerDown={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          stateRef.current.pointer = {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top,
+            down: true,
+          };
+        }}
+        onPointerMove={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          stateRef.current.pointer = {
+            ...stateRef.current.pointer,
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top,
+          };
+        }}
+        onPointerUp={() => {
+          stateRef.current.pointer = { ...stateRef.current.pointer, down: false };
+        }}
+        onPointerLeave={() => {
+          stateRef.current.pointer = { ...stateRef.current.pointer, down: false };
+        }}
+      />
+    </div>
+  );
+}
+
+// ============================================================================
+// AGENT AVATAR COMPONENT (Combines ring + inner viz)
+// ============================================================================
+
+function AgentAvatar({ size = 360, agentName = 'SYNC', mood = 'listening', level = 0.25, seed = 1 }) {
+  const labelRef = useRef(null);
+
+  // Animate label on mood change
+  useEffect(() => {
+    if (prefersReducedMotion() || !labelRef.current) return;
+
+    anime({
+      targets: labelRef.current,
+      scale: [0.95, 1],
+      opacity: [0.7, 1],
+      duration: 200,
+      easing: 'easeOutQuad',
+    });
+  }, [mood]);
+
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <OuterRing size={size} mood={mood} level={level} />
+      <InnerViz size={size} mood={mood} level={level} seed={seed} />
+
+      {/* Label */}
+      <div className="absolute inset-x-0 bottom-[-10px] flex justify-center">
+        <div
+          ref={labelRef}
+          className="rounded-2xl border border-white/10 bg-black/50 px-3 py-1.5 text-xs text-white/80 shadow-[0_10px_35px_rgba(0,0,0,0.55)] backdrop-blur"
+        >
+          <span className="inline-flex items-center gap-2">
+            <span
+              className={cn(
+                'inline-block h-2 w-2 rounded-full shadow-[0_0_14px_rgba(168,85,247,0.8)]',
+                mood === 'speaking' ? 'bg-purple-400' : mood === 'thinking' ? 'bg-amber-400' : 'bg-emerald-400'
+              )}
+            />
+            <span className="font-medium text-white/90">{agentName}</span>
+            <span className="text-white/50">•</span>
+            <span className="text-white/70 capitalize">{mood}</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// CHAT BUBBLE COMPONENT
+// ============================================================================
+
+function Bubble({ role, text, ts, index }) {
+  const bubbleRef = useRef(null);
+  const isUser = role === 'user';
+
+  // Animate bubble entrance
+  useEffect(() => {
+    if (prefersReducedMotion() || !bubbleRef.current) return;
+
+    anime({
+      targets: bubbleRef.current,
+      translateY: [20, 0],
+      opacity: [0, 1],
+      duration: 300,
+      delay: 50,
+      easing: 'easeOutQuad',
+    });
+  }, []);
+
+  return (
+    <div ref={bubbleRef} className={cn('flex', isUser ? 'justify-end' : 'justify-start')} style={{ opacity: 0 }}>
+      <div
+        className={cn(
+          'max-w-[78%] rounded-2xl border px-4 py-3 text-sm leading-relaxed shadow-sm',
+          isUser
+            ? 'border-purple-500/20 bg-purple-600/20 text-white'
+            : 'border-white/10 bg-black/40 text-white/90'
+        )}
+      >
+        <div className="mb-1 flex items-center gap-2 text-[11px] text-white/55">
+          <span className="inline-flex items-center gap-1.5">
+            {isUser ? <User className="h-3.5 w-3.5" /> : <Bot className="h-3.5 w-3.5" />}
+            <span className="capitalize">{isUser ? 'You' : 'SYNC'}</span>
+          </span>
+          <span>•</span>
+          <span>{formatTime(ts)}</span>
+        </div>
+        {isUser ? (
+          <div className="whitespace-pre-wrap">{text}</div>
+        ) : (
+          <ReactMarkdown
+            className="prose prose-invert prose-sm max-w-none prose-p:my-2 prose-headings:my-3 prose-ul:my-2 prose-li:my-1 prose-code:text-purple-400 prose-code:bg-purple-950/30 prose-code:px-1 prose-code:rounded"
+          >
+            {text}
+          </ReactMarkdown>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// MAIN SYNC AGENT PAGE
+// ============================================================================
+
+export default function SyncAgent() {
+  const { user } = useUser();
+  const [mood, setMood] = useState('listening');
+  const [level, setLevel] = useState(0.18);
+  const [seed, setSeed] = useState(4);
+
+  const [messages, setMessages] = useState(() => [
+    { role: 'assistant', text: "Hey — I'm SYNC, your AI orchestrator. I can help with invoices, prospects, compliance, learning, and more.", ts: Date.now() - 1000 * 60 * 2 },
+    { role: 'assistant', text: 'Tip: click and drag inside the avatar to interact with the visualization.', ts: Date.now() - 1000 * 60 * 1 },
+  ]);
+
+  const [input, setInput] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [error, setError] = useState(null);
+  const [sessionId, setSessionId] = useState(null);
+  const scrollerRef = useRef(null);
+  const pageRef = useRef(null);
+
+  // Scroll to bottom on new messages
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+  }, [messages.length]);
+
+  // Page entrance animation
+  useEffect(() => {
+    if (prefersReducedMotion() || !pageRef.current) return;
+
+    const cards = pageRef.current.querySelectorAll('[data-animate]');
+    anime({
+      targets: cards,
+      translateY: [20, 0],
+      opacity: [0, 1],
+      duration: 400,
+      delay: anime.stagger(80),
+      easing: 'easeOutQuad',
+    });
+  }, []);
+
+  // Drive avatar level from mood
+  useEffect(() => {
+    let raf = 0;
+    let t0 = performance.now();
+
+    const loop = (t) => {
+      const dt = (t - t0) / 1000;
+      t0 = t;
+      const target = mood === 'speaking' ? 0.55 : mood === 'thinking' ? 0.35 : 0.18;
+      setLevel((v) => v + (target - v) * clamp(dt * 3.2, 0, 1));
+      raf = requestAnimationFrame(loop);
+    };
+
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [mood]);
+
+  // Send message to SYNC API
+  const send = useCallback(async () => {
+    const text = input.trim();
+    if (!text || isSending) return;
+
+    setError(null);
+    setIsSending(true);
+    setMood('thinking');
+    const now = Date.now();
+
+    setMessages((m) => [...m, { role: 'user', text, ts: now }]);
+    setInput('');
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://sfxpmzicgpaxfntqleig.supabase.co';
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmeHBtemljZ3BheGZudHFsZWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDY0NjIsImV4cCI6MjA4MjE4MjQ2Mn0.337ohi8A4zu_6Hl1LpcPaWP8UkI5E4Om7ZgeU9_A8t4';
+      const authToken = session?.access_token || supabaseAnonKey;
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/sync`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+          'apikey': supabaseAnonKey,
+        },
+        body: JSON.stringify({
+          message: text,
+          sessionId,
+          context: {
+            userId: session?.user?.id,
+            companyId: user?.company_id,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Request failed' }));
+        throw new Error(errorData.error || `Request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.sessionId) {
+        setSessionId(data.sessionId);
+      }
+
+      // Transition to speaking
+      setMood('speaking');
+      await new Promise((r) => setTimeout(r, 300));
+
+      setMessages((m) => [...m, { role: 'assistant', text: data.response, ts: Date.now() }]);
+
+      // Back to listening
+      await new Promise((r) => setTimeout(r, 500));
+      setMood('listening');
+    } catch (err) {
+      console.error('SYNC error:', err);
+      setError(err.message || 'Failed to send message');
+      setMood('listening');
+    } finally {
+      setIsSending(false);
+    }
+  }, [input, isSending, sessionId, user?.company_id]);
+
+  // Retry handler
+  const handleRetry = () => {
+    const lastUserMessage = [...messages].reverse().find((m) => m.role === 'user');
+    if (lastUserMessage) {
+      setInput(lastUserMessage.text);
+      setMessages((prev) => prev.filter((m) => m !== lastUserMessage));
+      setError(null);
+    }
+  };
+
+  // Quick suggestions
+  const suggestions = [
+    { label: 'Create invoice', action: 'Help me create an invoice for a client' },
+    { label: 'Find prospects', action: 'Find prospects in the SaaS industry' },
+    { label: 'Compliance check', action: 'Check my AI system compliance status' },
+    { label: 'Learning path', action: 'Recommend a learning path for AI development' },
+  ];
+
+  return (
+    <div ref={pageRef} className="min-h-screen bg-black text-white">
+      {/* Top bar */}
+      <div className="sticky top-0 z-20 border-b border-white/10 bg-black/40 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <div className="grid h-9 w-9 place-items-center rounded-2xl border border-purple-500/30 bg-purple-500/10">
+              <Brain className="h-4 w-4 text-purple-400" />
+            </div>
+            <div>
+              <div className="text-sm font-semibold tracking-tight">SYNC Agent</div>
+              <div className="text-xs text-white/55">AI Orchestrator with interactive avatar</div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/80 hover:bg-white/10 transition-colors"
+              onClick={() => setSeed((s) => s + 1)}
+              title="Refresh inner visual"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Refresh
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Layout */}
+      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 px-4 py-6 lg:grid-cols-[420px_1fr]">
+        {/* Left: Avatar */}
+        <div
+          data-animate
+          className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-[0_30px_80px_rgba(0,0,0,0.55)]"
+          style={{ opacity: 0 }}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="text-sm font-semibold">SYNC</div>
+              <div className="text-xs text-white/55">Outer ring stays stable, inner visualization reacts.</div>
+            </div>
+            <div className="text-xs text-white/60">
+              <span
+                className={cn(
+                  'rounded-xl border px-2 py-1 transition-colors',
+                  mood === 'speaking'
+                    ? 'border-purple-400/30 bg-purple-500/10'
+                    : mood === 'thinking'
+                    ? 'border-amber-400/30 bg-amber-500/10'
+                    : 'border-emerald-400/30 bg-emerald-500/10'
+                )}
+              >
+                {mood}
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-4 grid place-items-center">
+            <AgentAvatar size={360} agentName="SYNC" mood={mood} level={level} seed={seed} />
+          </div>
+
+          <div className="mt-5 grid gap-3">
+            <div className="rounded-2xl border border-white/10 bg-black/30 p-3 text-xs text-white/70">
+              <div className="mb-2 text-[11px] text-white/50">Interactivity</div>
+              <ul className="list-disc space-y-1 pl-4">
+                <li>Pointer inside avatar pulls particles.</li>
+                <li>Speaking/thinking changes motion + glow.</li>
+                <li>Refresh generates a new inner pattern.</li>
+              </ul>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-black/30 p-3 text-xs text-white/70">
+              <div className="mb-2 text-[11px] text-white/50">Capabilities</div>
+              <div className="text-white/65">
+                SYNC routes your requests to specialized agents: <span className="text-purple-400">Finance</span>, <span className="text-cyan-400">Learn</span>, <span className="text-emerald-400">Sentinel</span>, <span className="text-indigo-400">Growth</span>, and more.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Chat */}
+        <div
+          data-animate
+          className="flex min-h-[70vh] flex-col rounded-3xl border border-white/10 bg-white/5 shadow-[0_30px_80px_rgba(0,0,0,0.55)]"
+          style={{ opacity: 0 }}
+        >
+          <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+            <div>
+              <div className="text-sm font-semibold">Conversation</div>
+              <div className="text-xs text-white/55">Chat with SYNC to accomplish tasks</div>
+            </div>
+            <div className="text-xs text-white/55">{messages.length} messages</div>
+          </div>
+
+          <div ref={scrollerRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+            {messages.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center px-4">
+                <div className="w-16 h-16 rounded-2xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center mb-4">
+                  <Sparkles className="w-8 h-8 text-purple-400" />
+                </div>
+                <h4 className="text-lg font-medium text-white mb-2">How can I help you?</h4>
+                <p className="text-sm text-zinc-500 mb-6 max-w-sm">
+                  I can help with invoices, prospects, compliance, learning, and more.
+                </p>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {suggestions.map((suggestion, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setInput(suggestion.action);
+                        setTimeout(() => send(), 100);
+                      }}
+                      className="px-3 py-1.5 text-xs rounded-full bg-zinc-800 border border-white/10 text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors"
+                    >
+                      {suggestion.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <>
+                {messages.map((m, idx) => (
+                  <Bubble key={idx} role={m.role} text={m.text} ts={m.ts} index={idx} />
+                ))}
+
+                {isSending && (
+                  <div className="flex justify-start">
+                    <div className="rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white/80">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-purple-400" />
+                        <span className="text-white/70">SYNC is {mood === 'thinking' ? 'thinking' : 'typing'}…</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {error && (
+                  <div className="flex items-start gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+                    <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm text-red-400 font-medium">Something went wrong</p>
+                      <p className="text-xs text-red-400/70 mt-1">{error}</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={handleRetry}
+                      className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                    >
+                      <RefreshCw className="w-4 h-4 mr-1" />
+                      Retry
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          <div className="border-t border-white/10 p-4">
+            <div className="flex items-end gap-3">
+              <div className="flex-1 rounded-2xl border border-white/10 bg-black/30 px-3 py-2">
+                <textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      send();
+                    }
+                  }}
+                  placeholder="Message SYNC…"
+                  rows={2}
+                  disabled={isSending}
+                  className="w-full resize-none bg-transparent text-sm text-white/90 outline-none placeholder:text-white/35 disabled:opacity-50"
+                />
+                <div className="mt-1 flex items-center justify-between text-[11px] text-white/45">
+                  <span>Enter to send • Shift+Enter for newline</span>
+                  <span className="tabular-nums">{input.length}</span>
+                </div>
+              </div>
+
+              <button
+                onClick={send}
+                disabled={isSending || !input.trim()}
+                className={cn(
+                  'inline-flex h-[54px] w-[54px] items-center justify-center rounded-2xl border transition-all',
+                  isSending || !input.trim()
+                    ? 'cursor-not-allowed border-white/10 bg-white/5 text-white/30'
+                    : 'border-purple-500/30 bg-purple-500/20 text-purple-400 hover:bg-purple-500/30'
+                )}
+                title="Send"
+              >
+                <Send className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="mt-3 flex items-center gap-2 text-xs text-white/55">
+              <span className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-black/30 px-3 py-2">
+                <span className="h-2 w-2 rounded-full bg-purple-400" />
+                Inner visual reacts to pointer + agent state
+              </span>
+              <span className="hidden sm:inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-black/30 px-3 py-2">
+                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                Outer ring stays consistent
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Background effects */}
+      <div className="pointer-events-none fixed inset-0 -z-10 opacity-60">
+        <div className="absolute left-[-20%] top-[-30%] h-[520px] w-[520px] rounded-full bg-purple-900/20 blur-3xl" />
+        <div className="absolute right-[-25%] top-[10%] h-[620px] w-[620px] rounded-full bg-violet-900/15 blur-3xl" />
+        <div className="absolute bottom-[-35%] left-[10%] h-[640px] w-[640px] rounded-full bg-purple-950/20 blur-3xl" />
+      </div>
+    </div>
+  );
+}
