@@ -10,7 +10,7 @@ const COMPOSIO_API_KEY = Deno.env.get("COMPOSIO_API_KEY");
 const COMPOSIO_V1_URL = "https://backend.composio.dev/api/v1";
 
 // Common toolkit slugs and their popular actions
-export const COMPOSIO_INTEGRATIONS = {
+export const COMPOSIO_INTEGRATIONS: Record<string, { name: string; actions: string[] }> = {
   gmail: {
     name: 'Gmail',
     actions: ['GMAIL_SEND_EMAIL', 'GMAIL_FETCH_EMAILS', 'GMAIL_CREATE_DRAFT', 'GMAIL_SEARCH_EMAILS'],
@@ -30,6 +30,14 @@ export const COMPOSIO_INTEGRATIONS = {
   googlecalendar: {
     name: 'Google Calendar',
     actions: ['GOOGLECALENDAR_CREATE_EVENT', 'GOOGLECALENDAR_LIST_EVENTS', 'GOOGLECALENDAR_UPDATE_EVENT'],
+  },
+  googledrive: {
+    name: 'Google Drive',
+    actions: ['GOOGLEDRIVE_LIST_FILES', 'GOOGLEDRIVE_UPLOAD_FILE', 'GOOGLEDRIVE_SEARCH_FILES'],
+  },
+  linkedin: {
+    name: 'LinkedIn',
+    actions: ['LINKEDIN_CREATE_POST', 'LINKEDIN_GET_PROFILE', 'LINKEDIN_SEND_MESSAGE'],
   },
   trello: {
     name: 'Trello',
