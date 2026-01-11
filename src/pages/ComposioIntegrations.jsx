@@ -17,8 +17,9 @@ export default function ComposioIntegrations() {
         <div className="container mx-auto px-4 py-6 max-w-7xl">
           <PageHeader
             title="Third-Party Integrations"
-            description="Connect your favorite tools to SYNC for seamless automation"
-            icon={<Plug className="w-6 h-6" />}
+            subtitle="Connect your favorite tools to SYNC for seamless automation"
+            icon={Plug}
+            color="purple"
           />
 
           <div className="mt-6">
