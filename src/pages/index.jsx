@@ -44,6 +44,8 @@ import ComplianceRoadmap from "./ComplianceRoadmap";
 
 import ComponentShowcase from "./ComponentShowcase";
 
+import ComposioIntegrations from "./ComposioIntegrations";
+
 import Contacts from "./Contacts";
 
 import CourseDetail from "./CourseDetail";
@@ -248,7 +250,9 @@ const PAGES = {
     ComplianceRoadmap: ComplianceRoadmap,
     
     ComponentShowcase: ComponentShowcase,
-    
+
+    ComposioIntegrations: ComposioIntegrations,
+
     Contacts: Contacts,
     
     CourseDetail: CourseDetail,
@@ -477,7 +481,10 @@ function PagesContent() {
                 <Route path="/ComplianceRoadmap" element={<ComplianceRoadmap />} />
                 
                 <Route path="/ComponentShowcase" element={<ComponentShowcase />} />
-                
+
+                <Route path="/ComposioIntegrations" element={<ComposioIntegrations />} />
+                <Route path="/settings/integrations" element={<ComposioIntegrations />} />
+
                 <Route path="/Contacts" element={<Contacts />} />
                 
                 <Route path="/CourseDetail" element={<CourseDetail />} />
