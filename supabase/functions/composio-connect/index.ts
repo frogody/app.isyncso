@@ -214,14 +214,9 @@ async function getConnectionStatus(connectedAccountId: string) {
   const result = await composioFetch<{
     id: string;
     status: string;
-    appName?: string;
-    app_name?: string;
-    toolkit_slug?: string;
-    userUuid?: string;
+    toolkit?: { slug?: string };
     user_id?: string;
-    createdAt?: string;
     created_at?: string;
-    updatedAt?: string;
     updated_at?: string;
   }>(`/connected_accounts/${connectedAccountId}`, {}, true); // useV3 = true
 
@@ -234,10 +229,10 @@ async function getConnectionStatus(connectedAccountId: string) {
     data: {
       id: result.data.id,
       status: result.data.status,
-      toolkitSlug: result.data.appName || result.data.app_name || result.data.toolkit_slug,
-      userId: result.data.userUuid || result.data.user_id,
-      createdAt: result.data.createdAt || result.data.created_at,
-      updatedAt: result.data.updatedAt || result.data.updated_at,
+      toolkitSlug: result.data.toolkit?.slug,
+      userId: result.data.user_id,
+      createdAt: result.data.created_at,
+      updatedAt: result.data.updated_at,
     },
   };
 }
