@@ -115,6 +115,12 @@ export const COMPOSIO_ACTIONS = [
 
   // List integrations
   'composio_list_integrations',
+
+  // MCP Server Management
+  'mcp_create_server',
+  'mcp_list_servers',
+  'mcp_delete_server',
+  'mcp_get_url',
 ];
 
 /**
@@ -1314,6 +1320,261 @@ export async function executeComposioAction(
       }
 
       return executeComposioTool(connId, tool_name, toolArgs || {}, ctx.userId);
+    }
+
+    // ========================================
+    // MCP Server Management Actions
+    // ========================================
+    case 'mcp_create_server': {
+      const { name, toolkits } = data as {
+        name: string;
+        toolkits?: string[];
+      };
+
+      if (!name) {
+        return {
+          success: false,
+          message: "Please provide a name for the MCP server.",
+        };
+      }
+
+      // Get connected integrations if no toolkits specified
+      let selectedToolkits = toolkits;
+      if (!selectedToolkits || selectedToolkits.length === 0) {
+        // Get user's connected integrations
+        const { data: integrations, error: intError } = await ctx.supabase
+          .from('user_integrations')
+          .select('toolkit_slug')
+          .eq('user_id', ctx.userId)
+          .eq('status', 'ACTIVE');
+
+        if (intError || !integrations || integrations.length === 0) {
+          return {
+            success: false,
+            message: "No connected integrations found. Please connect apps in the Integrations page first.",
+            link: '/Integrations',
+          };
+        }
+
+        selectedToolkits = integrations.map(i => i.toolkit_slug);
+      }
+
+      // Create MCP server via Composio
+      const createResult = await composioFetch<{id: string; name: string; created_at: string}>(
+        '/mcp/servers/custom',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            name,
+            toolkits: selectedToolkits,
+          }),
+        }
+      );
+
+      if (!createResult.success || !createResult.data) {
+        return {
+          success: false,
+          message: `Failed to create MCP server: ${createResult.error || 'Unknown error'}`,
+        };
+      }
+
+      // Store in database
+      const { error: dbError } = await ctx.supabase
+        .from('user_mcp_servers')
+        .insert({
+          user_id: ctx.userId,
+          composio_server_id: createResult.data.id,
+          name: createResult.data.name,
+          toolkits: selectedToolkits,
+          status: 'ACTIVE',
+        });
+
+      if (dbError) {
+        console.error('[MCP] Failed to store server:', dbError);
+      }
+
+      return {
+        success: true,
+        result: {
+          serverId: createResult.data.id,
+          name: createResult.data.name,
+          toolkits: selectedToolkits,
+        },
+        message: `🖥️ **MCP Server Created!**\n\n` +
+          `**Name:** ${createResult.data.name}\n` +
+          `**Toolkits:** ${selectedToolkits.join(', ')}\n\n` +
+          `Your MCP server is ready! You can use it with Claude Desktop, Cursor, or other MCP-compatible AI tools.\n\n` +
+          `Say "Get MCP URL for ${createResult.data.name}" to get the connection URL.`,
+        link: '/Integrations?tab=mcp',
+      };
+    }
+
+    case 'mcp_list_servers': {
+      const { data: servers, error } = await ctx.supabase
+        .from('user_mcp_servers')
+        .select('*')
+        .eq('user_id', ctx.userId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        return {
+          success: false,
+          message: `Failed to list MCP servers: ${error.message}`,
+        };
+      }
+
+      if (!servers || servers.length === 0) {
+        return {
+          success: true,
+          result: [],
+          message: `📡 **No MCP Servers Yet**\n\n` +
+            `You haven't created any MCP servers yet. MCP servers allow you to connect external AI tools like Claude Desktop or Cursor to your integrations.\n\n` +
+            `Say "Create an MCP server" to get started!`,
+        };
+      }
+
+      const serverList = servers.map((s, i) =>
+        `${i + 1}. **${s.name}** (${s.toolkits?.length || 0} toolkits)\n` +
+        `   Status: ${s.status}\n` +
+        `   Created: ${new Date(s.created_at).toLocaleDateString()}`
+      ).join('\n\n');
+
+      return {
+        success: true,
+        result: servers,
+        message: `🖥️ **Your MCP Servers** (${servers.length})\n\n${serverList}\n\n` +
+          `Say "Get MCP URL for [server name]" to get the connection URL.`,
+        link: '/Integrations?tab=mcp',
+      };
+    }
+
+    case 'mcp_delete_server': {
+      const { server_name, server_id } = data as {
+        server_name?: string;
+        server_id?: string;
+      };
+
+      if (!server_name && !server_id) {
+        return {
+          success: false,
+          message: "Please specify which MCP server to delete (by name or ID).",
+        };
+      }
+
+      // Find the server
+      const { data: server, error: findError } = await ctx.supabase
+        .from('user_mcp_servers')
+        .select('*')
+        .eq('user_id', ctx.userId)
+        .or(server_id ? `composio_server_id.eq.${server_id}` : `name.ilike.%${server_name}%`)
+        .maybeSingle();
+
+      if (findError || !server) {
+        return {
+          success: false,
+          message: `Could not find MCP server "${server_name || server_id}". Say "List my MCP servers" to see available servers.`,
+        };
+      }
+
+      // Delete from Composio
+      const deleteResult = await composioFetch(
+        `/mcp/servers/${server.composio_server_id}`,
+        { method: 'DELETE' }
+      );
+
+      if (!deleteResult.success) {
+        console.warn('[MCP] Composio delete failed:', deleteResult.error);
+        // Continue to delete from local DB anyway
+      }
+
+      // Delete from database
+      const { error: dbError } = await ctx.supabase
+        .from('user_mcp_servers')
+        .delete()
+        .eq('id', server.id);
+
+      if (dbError) {
+        return {
+          success: false,
+          message: `Failed to delete MCP server: ${dbError.message}`,
+        };
+      }
+
+      return {
+        success: true,
+        result: { deleted: server.name },
+        message: `🗑️ MCP server "${server.name}" has been deleted.`,
+      };
+    }
+
+    case 'mcp_get_url': {
+      const { server_name, server_id } = data as {
+        server_name?: string;
+        server_id?: string;
+      };
+
+      if (!server_name && !server_id) {
+        return {
+          success: false,
+          message: "Please specify which MCP server (by name or ID).",
+        };
+      }
+
+      // Find the server
+      const { data: server, error: findError } = await ctx.supabase
+        .from('user_mcp_servers')
+        .select('*')
+        .eq('user_id', ctx.userId)
+        .or(server_id ? `composio_server_id.eq.${server_id}` : `name.ilike.%${server_name}%`)
+        .maybeSingle();
+
+      if (findError || !server) {
+        return {
+          success: false,
+          message: `Could not find MCP server "${server_name || server_id}". Say "List my MCP servers" to see available servers.`,
+        };
+      }
+
+      // Get URL from Composio
+      const urlResult = await composioFetch<{mcp_url?: string; url?: string}>(
+        '/mcp/servers/generate',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            mcp_server_id: server.composio_server_id,
+          }),
+        }
+      );
+
+      if (!urlResult.success || !urlResult.data) {
+        return {
+          success: false,
+          message: `Failed to get MCP URL: ${urlResult.error || 'Unknown error'}`,
+        };
+      }
+
+      const mcpUrl = urlResult.data.mcp_url || urlResult.data.url;
+
+      // Update stored URL
+      if (mcpUrl) {
+        await ctx.supabase
+          .from('user_mcp_servers')
+          .update({ mcp_url: mcpUrl })
+          .eq('id', server.id);
+      }
+
+      return {
+        success: true,
+        result: { url: mcpUrl, serverName: server.name },
+        message: `🔗 **MCP Server URL for "${server.name}"**\n\n` +
+          `\`\`\`\n${mcpUrl}\n\`\`\`\n\n` +
+          `**How to use:**\n` +
+          `1. Copy the URL above\n` +
+          `2. Add it to your AI tool's MCP configuration\n\n` +
+          `**Example for Claude Desktop:**\n` +
+          `\`\`\`json\n{\n  "mcpServers": {\n    "${server.name}": {\n      "type": "http",\n      "url": "${mcpUrl}"\n    }\n  }\n}\n\`\`\`\n\n` +
+          `Your connected tools (${server.toolkits?.join(', ')}) will be accessible through this MCP endpoint.`,
+      };
     }
 
     default:

@@ -53,7 +53,13 @@ type ComposioAction =
   | "listTools"
   | "listTriggers"
   | "subscribeTrigger"
-  | "unsubscribeTrigger";
+  | "unsubscribeTrigger"
+  // MCP Server Management Actions
+  | "createMcpServer"
+  | "getMcpServerUrl"
+  | "listMcpServers"
+  | "deleteMcpServer"
+  | "updateMcpServer";
 
 interface ComposioRequest {
   action: ComposioAction;
@@ -68,6 +74,14 @@ interface ComposioRequest {
   webhookUrl?: string;
   triggerConfig?: Record<string, unknown>;
   status?: string;
+  // MCP Server fields
+  mcpServerName?: string;
+  mcpServerId?: string;
+  toolkits?: string[];
+  authConfigIds?: string[];
+  customTools?: string[];
+  connectedAccountIds?: string[];
+  managedAuth?: boolean;
 }
 
 // ============================================
@@ -506,6 +520,256 @@ async function unsubscribeTrigger(
   return { success: true, data: { unsubscribed: true } };
 }
 
+// ============================================
+// MCP Server Management Functions
+// ============================================
+
+/**
+ * Create a new MCP server with multiple toolkits
+ * Uses v3 API: POST /api/v3/mcp/servers/custom
+ */
+async function createMcpServer(
+  name: string,
+  toolkits: string[],
+  options?: {
+    authConfigIds?: string[];
+    customTools?: string[];
+  }
+) {
+  const requestBody: Record<string, unknown> = {
+    name,
+    toolkits,
+  };
+
+  if (options?.authConfigIds?.length) {
+    requestBody.auth_config_ids = options.authConfigIds;
+  }
+  if (options?.customTools?.length) {
+    requestBody.custom_tools = options.customTools;
+  }
+
+  const result = await composioFetch<{
+    id: string;
+    name: string;
+    toolkits: string[];
+    created_at: string;
+    status?: string;
+  }>("/mcp/servers/custom", {
+    method: "POST",
+    body: JSON.stringify(requestBody),
+  }, true); // useV3 = true
+
+  if (!result.success || !result.data) {
+    return result;
+  }
+
+  return {
+    success: true,
+    data: {
+      id: result.data.id,
+      name: result.data.name,
+      toolkits: result.data.toolkits,
+      createdAt: result.data.created_at,
+      status: result.data.status || 'ACTIVE',
+    },
+  };
+}
+
+/**
+ * Generate MCP URL for a server
+ * Uses v3 API: POST /api/v3/mcp/servers/generate
+ */
+async function getMcpServerUrl(
+  mcpServerId: string,
+  options?: {
+    managedAuth?: boolean;
+    userIds?: string[];
+    connectedAccountIds?: string[];
+  }
+) {
+  const requestBody: Record<string, unknown> = {
+    mcp_server_id: mcpServerId,
+    managed_auth_by_composio: options?.managedAuth ?? false,
+  };
+
+  if (options?.userIds?.length) {
+    requestBody.user_ids = options.userIds;
+  }
+  if (options?.connectedAccountIds?.length) {
+    requestBody.connected_account_ids = options.connectedAccountIds;
+  }
+
+  const result = await composioFetch<{
+    mcp_url?: string;
+    url?: string;
+    server_id?: string;
+  }>("/mcp/servers/generate", {
+    method: "POST",
+    body: JSON.stringify(requestBody),
+  }, true); // useV3 = true
+
+  if (!result.success || !result.data) {
+    return result;
+  }
+
+  const mcpUrl = result.data.mcp_url || result.data.url;
+
+  return {
+    success: true,
+    data: {
+      mcpUrl,
+      serverId: result.data.server_id || mcpServerId,
+      // Convert SSE to MCP format if needed (SSE is deprecated)
+      mcpUrlMcp: mcpUrl?.replace('/sse', '/mcp').replace('?transport=sse', ''),
+    },
+  };
+}
+
+/**
+ * List all MCP servers for the project
+ * Uses v3 API: GET /api/v3/mcp/servers
+ */
+async function listMcpServers() {
+  const result = await composioFetch<{
+    items?: Array<{
+      id: string;
+      name: string;
+      toolkits?: string[];
+      created_at?: string;
+      status?: string;
+    }>;
+  }>("/mcp/servers", {}, true); // useV3 = true
+
+  if (!result.success) {
+    return result;
+  }
+
+  const servers = result.data?.items || [];
+
+  return {
+    success: true,
+    data: servers.map(server => ({
+      id: server.id,
+      name: server.name,
+      toolkits: server.toolkits || [],
+      createdAt: server.created_at,
+      status: server.status || 'ACTIVE',
+    })),
+  };
+}
+
+/**
+ * Delete an MCP server
+ * Uses v3 API: DELETE /api/v3/mcp/servers/{server_id}
+ */
+async function deleteMcpServer(
+  mcpServerId: string,
+  supabase: ReturnType<typeof createClient>
+) {
+  const result = await composioFetch(`/mcp/servers/${mcpServerId}`, {
+    method: "DELETE",
+  }, true); // useV3 = true
+
+  if (!result.success) {
+    return result;
+  }
+
+  // Remove from local database
+  const { error } = await supabase
+    .from("user_mcp_servers")
+    .delete()
+    .eq("composio_server_id", mcpServerId);
+
+  if (error) {
+    console.error("Failed to remove local MCP server record:", error);
+  }
+
+  return { success: true, data: { deleted: true } };
+}
+
+/**
+ * Update an MCP server
+ * Uses v3 API: PATCH /api/v3/mcp/servers/{server_id}
+ */
+async function updateMcpServer(
+  mcpServerId: string,
+  updates: {
+    name?: string;
+    toolkits?: string[];
+    authConfigIds?: string[];
+    customTools?: string[];
+  }
+) {
+  const requestBody: Record<string, unknown> = {};
+
+  if (updates.name) requestBody.name = updates.name;
+  if (updates.toolkits) requestBody.toolkits = updates.toolkits;
+  if (updates.authConfigIds) requestBody.auth_config_ids = updates.authConfigIds;
+  if (updates.customTools) requestBody.custom_tools = updates.customTools;
+
+  const result = await composioFetch<{
+    id: string;
+    name: string;
+    toolkits: string[];
+    status?: string;
+  }>(`/mcp/servers/${mcpServerId}`, {
+    method: "PATCH",
+    body: JSON.stringify(requestBody),
+  }, true); // useV3 = true
+
+  if (!result.success || !result.data) {
+    return result;
+  }
+
+  return {
+    success: true,
+    data: {
+      id: result.data.id,
+      name: result.data.name,
+      toolkits: result.data.toolkits,
+      status: result.data.status || 'ACTIVE',
+    },
+  };
+}
+
+/**
+ * Store MCP server in local database
+ */
+async function storeMcpServer(
+  userId: string,
+  mcpServerId: string,
+  name: string,
+  toolkits: string[],
+  mcpUrl: string,
+  supabase: ReturnType<typeof createClient>
+) {
+  const { data, error } = await supabase
+    .from("user_mcp_servers")
+    .upsert(
+      {
+        user_id: userId,
+        composio_server_id: mcpServerId,
+        name,
+        toolkits,
+        mcp_url: mcpUrl,
+        status: "ACTIVE",
+        created_at: new Date().toISOString(),
+      },
+      {
+        onConflict: "user_id,composio_server_id",
+      }
+    )
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Failed to store MCP server:", error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, data };
+}
+
 /**
  * Store connection in database after successful OAuth
  */
@@ -791,6 +1055,155 @@ serve(async (req) => {
           );
         }
         result = await unsubscribeTrigger(body.connectedAccountId, supabase);
+        break;
+      }
+
+      // ========================================
+      // MCP Server Management Actions
+      // ========================================
+
+      case "createMcpServer": {
+        if (!body.mcpServerName || !body.toolkits?.length) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: "Missing mcpServerName or toolkits array",
+            }),
+            {
+              status: 400,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
+        }
+
+        // Create the MCP server
+        const createResult = await createMcpServer(
+          body.mcpServerName,
+          body.toolkits,
+          {
+            authConfigIds: body.authConfigIds,
+            customTools: body.customTools,
+          }
+        );
+
+        if (!createResult.success || !createResult.data) {
+          result = createResult;
+          break;
+        }
+
+        // Generate MCP URL for the server
+        const urlResult = await getMcpServerUrl(
+          createResult.data.id,
+          {
+            managedAuth: body.managedAuth ?? true,
+            userIds: body.userId ? [body.userId] : undefined,
+            connectedAccountIds: body.connectedAccountIds,
+          }
+        );
+
+        if (!urlResult.success || !urlResult.data) {
+          result = {
+            success: true,
+            data: {
+              ...createResult.data,
+              mcpUrl: null,
+              warning: "Server created but URL generation failed",
+            },
+          };
+          break;
+        }
+
+        // Store in local database if userId provided
+        if (body.userId) {
+          await storeMcpServer(
+            body.userId,
+            createResult.data.id,
+            createResult.data.name,
+            createResult.data.toolkits,
+            urlResult.data.mcpUrl || "",
+            supabase
+          );
+        }
+
+        result = {
+          success: true,
+          data: {
+            ...createResult.data,
+            mcpUrl: urlResult.data.mcpUrl,
+            mcpUrlMcp: urlResult.data.mcpUrlMcp,
+          },
+        };
+        break;
+      }
+
+      case "getMcpServerUrl": {
+        if (!body.mcpServerId) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: "Missing mcpServerId",
+            }),
+            {
+              status: 400,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
+        }
+
+        result = await getMcpServerUrl(
+          body.mcpServerId,
+          {
+            managedAuth: body.managedAuth,
+            userIds: body.userId ? [body.userId] : undefined,
+            connectedAccountIds: body.connectedAccountIds,
+          }
+        );
+        break;
+      }
+
+      case "listMcpServers": {
+        result = await listMcpServers();
+        break;
+      }
+
+      case "deleteMcpServer": {
+        if (!body.mcpServerId) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: "Missing mcpServerId",
+            }),
+            {
+              status: 400,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
+        }
+
+        result = await deleteMcpServer(body.mcpServerId, supabase);
+        break;
+      }
+
+      case "updateMcpServer": {
+        if (!body.mcpServerId) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: "Missing mcpServerId",
+            }),
+            {
+              status: 400,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
+        }
+
+        result = await updateMcpServer(body.mcpServerId, {
+          name: body.mcpServerName,
+          toolkits: body.toolkits,
+          authConfigIds: body.authConfigIds,
+          customTools: body.customTools,
+        });
         break;
       }
 

@@ -58,6 +58,10 @@ import {
   Sparkles,
   TrendingUp,
   Activity,
+  Server,
+  Copy,
+  Trash2,
+  Network,
 } from 'lucide-react';
 
 // Lazy load action components
@@ -156,6 +160,17 @@ export default function Integrations() {
   const [selectedIntegration, setSelectedIntegration] = useState(null);
   const [disconnecting, setDisconnecting] = useState(null);
   const [executingAction, setExecutingAction] = useState(null);
+
+  // MCP Server state
+  const [mcpServers, setMcpServers] = useState([]);
+  const [loadingMcp, setLoadingMcp] = useState(true);
+  const [creatingMcpServer, setCreatingMcpServer] = useState(false);
+  const [selectedMcpToolkits, setSelectedMcpToolkits] = useState([]);
+  const [newMcpServerName, setNewMcpServerName] = useState('');
+  const [createMcpDialogOpen, setCreateMcpDialogOpen] = useState(false);
+  const [mcpUrlDialogOpen, setMcpUrlDialogOpen] = useState(false);
+  const [selectedMcpServer, setSelectedMcpServer] = useState(null);
+  const [mcpServerUrl, setMcpServerUrl] = useState('');
 
   // Load Composio connections
   const loadComposioConnections = useCallback(async () => {
@@ -273,12 +288,83 @@ export default function Integrations() {
     }
   }, [user]);
 
+  // Load MCP servers
+  const loadMcpServers = useCallback(async () => {
+    if (!user?.id) return;
+    setLoadingMcp(true);
+    try {
+      const data = await composio.listMcpServers(user.id);
+      setMcpServers(data || []);
+    } catch (error) {
+      console.warn('Error loading MCP servers:', error.message);
+    } finally {
+      setLoadingMcp(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  // Create MCP server
+  const handleCreateMcpServer = async () => {
+    if (!newMcpServerName.trim() || selectedMcpToolkits.length === 0) {
+      toast.error('Please provide a server name and select at least one toolkit');
+      return;
+    }
+
+    setCreatingMcpServer(true);
+    try {
+      await composio.createMcpServer(user.id, newMcpServerName.trim(), selectedMcpToolkits);
+      toast.success('MCP server created successfully!');
+      setCreateMcpDialogOpen(false);
+      setNewMcpServerName('');
+      setSelectedMcpToolkits([]);
+      await loadMcpServers();
+    } catch (error) {
+      toast.error(`Failed to create MCP server: ${error.message}`);
+    } finally {
+      setCreatingMcpServer(false);
+    }
+  };
+
+  // Get MCP server URL
+  const handleGetMcpUrl = async (server) => {
+    setSelectedMcpServer(server);
+    setMcpServerUrl('Loading...');
+    setMcpUrlDialogOpen(true);
+
+    try {
+      const result = await composio.getMcpServerUrl(server.composio_server_id);
+      setMcpServerUrl(result.mcpUrl || result.url || 'URL not available');
+    } catch (error) {
+      setMcpServerUrl(`Error: ${error.message}`);
+    }
+  };
+
+  // Delete MCP server
+  const handleDeleteMcpServer = async (serverId) => {
+    if (!confirm('Are you sure you want to delete this MCP server?')) return;
+
+    try {
+      await composio.deleteMcpServer(serverId);
+      toast.success('MCP server deleted');
+      await loadMcpServers();
+    } catch (error) {
+      toast.error(`Failed to delete: ${error.message}`);
+    }
+  };
+
+  // Copy to clipboard
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    toast.success('Copied to clipboard!');
+  };
+
   // Load all data on mount
   useEffect(() => {
     if (user?.id) {
       loadComposioConnections();
       loadMergeIntegrations();
       loadActionLogs();
+      loadMcpServers();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
@@ -576,7 +662,7 @@ export default function Integrations() {
 
               <div className="flex items-center gap-3">
                 <Button
-                  onClick={() => { loadComposioConnections(); loadMergeIntegrations(); loadActionLogs(); }}
+                  onClick={() => { loadComposioConnections(); loadMergeIntegrations(); loadActionLogs(); loadMcpServers(); }}
                   className="border border-zinc-700/60 bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
                 >
                   <RefreshCw className="w-4 h-4 mr-2" />
@@ -659,6 +745,10 @@ export default function Integrations() {
               </TabsTrigger>
               <TabsTrigger value="history" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-purple-300/90 text-zinc-500 px-4">
                 <History className="w-4 h-4 mr-2" />History
+              </TabsTrigger>
+              <TabsTrigger value="mcp" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-purple-300/90 text-zinc-500 px-4">
+                <Server className="w-4 h-4 mr-2" />MCP Servers
+                {mcpServers.length > 0 && <Badge className="ml-2 bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-[10px] px-1.5">{mcpServers.length}</Badge>}
               </TabsTrigger>
             </TabsList>
 
@@ -1135,6 +1225,167 @@ export default function Integrations() {
                 </div>
               </Suspense>
             </TabsContent>
+
+            {/* MCP Servers Tab */}
+            <TabsContent value="mcp" className="mt-6 space-y-6">
+              {/* MCP Hero Section */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-cyan-950/40 via-zinc-900/60 to-blue-950/30 border border-cyan-800/30 p-6"
+              >
+                <div className="absolute inset-0 pointer-events-none">
+                  <div className="absolute top-0 right-0 w-72 h-72 bg-cyan-500/5 rounded-full blur-3xl" />
+                  <div className="absolute bottom-0 left-0 w-56 h-56 bg-blue-500/5 rounded-full blur-3xl" />
+                </div>
+
+                <div className="relative z-10">
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 rounded-2xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
+                        <Network className="w-7 h-7 text-cyan-400" />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold text-white">MCP Servers</h2>
+                        <p className="text-cyan-400/80 text-sm">
+                          Create managed MCP endpoints to connect SYNC with external AI tools
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => setCreateMcpDialogOpen(true)}
+                      className="bg-cyan-600 hover:bg-cyan-500 text-white"
+                      disabled={composioConnectedCount === 0}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create Server
+                    </Button>
+                  </div>
+
+                  {/* Info Alert */}
+                  <Alert className="bg-cyan-950/30 border-cyan-700/40 mb-4">
+                    <AlertCircle className="w-4 h-4 text-cyan-400" />
+                    <AlertDescription className="text-zinc-300">
+                      MCP (Model Context Protocol) allows AI assistants like Claude, Cursor, or other tools to connect to your integrated services via a single URL.
+                      <a href="https://www.anthropic.com/news/model-context-protocol" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline ml-1">
+                        Learn more <ExternalLink className="w-3 h-3 inline" />
+                      </a>
+                    </AlertDescription>
+                  </Alert>
+
+                  {composioConnectedCount === 0 && (
+                    <Alert className="bg-amber-950/30 border-amber-700/40">
+                      <AlertCircle className="w-4 h-4 text-amber-400" />
+                      <AlertDescription className="text-zinc-300">
+                        Connect at least one third-party app to create an MCP server.
+                        <Button
+                          variant="link"
+                          onClick={() => setActiveTab('apps')}
+                          className="text-amber-400 hover:text-amber-300 p-0 h-auto ml-1"
+                        >
+                          Go to Third-Party Apps →
+                        </Button>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+              </motion.div>
+
+              {/* MCP Servers List */}
+              {loadingMcp ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-cyan-500" />
+                </div>
+              ) : mcpServers.length === 0 ? (
+                <GlassCard hover={false} className="p-12">
+                  <div className="text-center">
+                    <div className="w-16 h-16 rounded-2xl bg-zinc-800/50 flex items-center justify-center mx-auto mb-4">
+                      <Server className="w-8 h-8 text-zinc-600" />
+                    </div>
+                    <h4 className="text-lg font-semibold text-white mb-2">No MCP Servers Yet</h4>
+                    <p className="text-zinc-500 text-sm mb-6 max-w-md mx-auto">
+                      Create an MCP server to expose your connected integrations to AI tools like Claude Desktop or Cursor.
+                    </p>
+                    <Button
+                      onClick={() => setCreateMcpDialogOpen(true)}
+                      className="bg-cyan-600 hover:bg-cyan-500 text-white"
+                      disabled={composioConnectedCount === 0}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />Create Your First Server
+                    </Button>
+                  </div>
+                </GlassCard>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {mcpServers.map((server) => (
+                    <motion.div
+                      key={server.id}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="p-5 rounded-2xl bg-zinc-900/60 border border-zinc-800/60 hover:border-cyan-500/30 transition-all"
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
+                            <Server className="w-5 h-5 text-cyan-400" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-white">{server.name}</h4>
+                            <p className="text-xs text-zinc-500">
+                              {server.toolkits?.length || 0} toolkit{(server.toolkits?.length || 0) !== 1 ? 's' : ''}
+                            </p>
+                          </div>
+                        </div>
+                        <Badge className={`text-xs ${server.status === 'ACTIVE' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'}`}>
+                          {server.status || 'ACTIVE'}
+                        </Badge>
+                      </div>
+
+                      {/* Toolkits */}
+                      {server.toolkits && server.toolkits.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-4">
+                          {server.toolkits.slice(0, 4).map((toolkit) => (
+                            <span key={toolkit} className="px-2 py-0.5 rounded-full text-[10px] bg-zinc-700/50 text-zinc-400">
+                              {toolkit}
+                            </span>
+                          ))}
+                          {server.toolkits.length > 4 && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] bg-zinc-700/50 text-zinc-400">
+                              +{server.toolkits.length - 4} more
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => handleGetMcpUrl(server)}
+                          className="flex-1 bg-cyan-600/80 hover:bg-cyan-600 text-white text-xs"
+                        >
+                          <Copy className="w-3 h-3 mr-1" />
+                          Get URL
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDeleteMcpServer(server.composio_server_id)}
+                          className="border-red-500/30 text-red-400 hover:bg-red-500/10 text-xs"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+
+                      {/* Created Date */}
+                      <p className="text-[10px] text-zinc-600 mt-3">
+                        Created {new Date(server.created_at).toLocaleDateString()}
+                      </p>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
           </Tabs>
         </div>
 
@@ -1210,6 +1461,209 @@ export default function Integrations() {
             userId={user?.id}
           />
         </Suspense>
+
+        {/* Create MCP Server Dialog */}
+        <Dialog open={createMcpDialogOpen} onOpenChange={setCreateMcpDialogOpen}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Server className="w-5 h-5 text-cyan-400" />
+                Create MCP Server
+              </DialogTitle>
+              <DialogDescription>
+                Create a managed MCP server to expose your connected integrations to AI tools.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              {/* Server Name */}
+              <div>
+                <label className="text-sm font-medium text-zinc-300 mb-2 block">Server Name</label>
+                <Input
+                  placeholder="My MCP Server"
+                  value={newMcpServerName}
+                  onChange={(e) => setNewMcpServerName(e.target.value)}
+                  className="bg-zinc-900/50 border-zinc-700"
+                />
+              </div>
+
+              {/* Toolkit Selection */}
+              <div>
+                <label className="text-sm font-medium text-zinc-300 mb-2 block">
+                  Select Toolkits ({selectedMcpToolkits.length} selected)
+                </label>
+                <div className="max-h-64 overflow-y-auto space-y-2 p-3 rounded-lg bg-zinc-900/50 border border-zinc-700">
+                  {Object.entries(composioConnections)
+                    .filter(([_, conn]) => conn.status === 'ACTIVE')
+                    .map(([slug, conn]) => {
+                      const integration = INTEGRATION_CATALOG.find(i => i.slug === slug);
+                      const isSelected = selectedMcpToolkits.includes(slug);
+                      return (
+                        <label
+                          key={slug}
+                          className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all ${
+                            isSelected
+                              ? 'bg-cyan-500/20 border border-cyan-500/40'
+                              : 'bg-zinc-800/50 border border-transparent hover:bg-zinc-800'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => {
+                              setSelectedMcpToolkits(prev =>
+                                isSelected
+                                  ? prev.filter(t => t !== slug)
+                                  : [...prev, slug]
+                              );
+                            }}
+                            className="rounded border-zinc-600"
+                          />
+                          <div
+                            className="w-8 h-8 rounded-lg flex items-center justify-center"
+                            style={{ backgroundColor: (integration?.color || '#666') + '25' }}
+                          >
+                            <span className="text-xs font-bold" style={{ color: integration?.color || '#999' }}>
+                              {(integration?.name || slug).substring(0, 2).toUpperCase()}
+                            </span>
+                          </div>
+                          <span className="text-sm text-zinc-300">{integration?.name || slug}</span>
+                        </label>
+                      );
+                    })}
+
+                  {Object.keys(composioConnections).length === 0 && (
+                    <p className="text-sm text-zinc-500 text-center py-4">
+                      No connected integrations. Connect apps first.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setCreateMcpDialogOpen(false);
+                  setNewMcpServerName('');
+                  setSelectedMcpToolkits([]);
+                }}
+                className="border-zinc-700 text-zinc-400"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreateMcpServer}
+                disabled={creatingMcpServer || !newMcpServerName.trim() || selectedMcpToolkits.length === 0}
+                className="bg-cyan-600 hover:bg-cyan-500 text-white"
+              >
+                {creatingMcpServer ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Server
+                  </>
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* MCP URL Dialog */}
+        <Dialog open={mcpUrlDialogOpen} onOpenChange={setMcpUrlDialogOpen}>
+          <DialogContent className="sm:max-w-xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Network className="w-5 h-5 text-cyan-400" />
+                MCP Server URL
+              </DialogTitle>
+              <DialogDescription>
+                {selectedMcpServer?.name ? `Connection details for "${selectedMcpServer.name}"` : 'MCP server connection details'}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              {/* URL Display */}
+              <div className="p-4 rounded-xl bg-zinc-900/80 border border-zinc-700">
+                <label className="text-xs font-medium text-zinc-500 mb-2 block">MCP Endpoint URL</label>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 text-sm text-cyan-400 bg-zinc-800/50 p-3 rounded-lg overflow-x-auto whitespace-nowrap">
+                    {mcpServerUrl}
+                  </code>
+                  <Button
+                    size="sm"
+                    onClick={() => copyToClipboard(mcpServerUrl)}
+                    disabled={mcpServerUrl.startsWith('Loading') || mcpServerUrl.startsWith('Error')}
+                    className="bg-cyan-600 hover:bg-cyan-500 text-white"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Usage Instructions */}
+              <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800">
+                <h4 className="text-sm font-medium text-zinc-300 mb-3">How to Use</h4>
+                <div className="space-y-3 text-sm text-zinc-400">
+                  <div className="flex items-start gap-2">
+                    <span className="text-cyan-400">1.</span>
+                    <span>Copy the URL above</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-cyan-400">2.</span>
+                    <span>Add it to your AI tool's MCP configuration</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-cyan-400">3.</span>
+                    <span>The AI will have access to your connected integrations</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Example Config */}
+              <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800">
+                <label className="text-xs font-medium text-zinc-500 mb-2 block">Example: Claude Desktop Config</label>
+                <pre className="text-xs text-zinc-400 bg-zinc-800/50 p-3 rounded-lg overflow-x-auto">
+{`{
+  "mcpServers": {
+    "${selectedMcpServer?.name || 'my-server'}": {
+      "type": "http",
+      "url": "${mcpServerUrl}"
+    }
+  }
+}`}
+                </pre>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => copyToClipboard(`{
+  "mcpServers": {
+    "${selectedMcpServer?.name || 'my-server'}": {
+      "type": "http",
+      "url": "${mcpServerUrl}"
+    }
+  }
+}`)}
+                  className="mt-2 text-xs text-zinc-500 hover:text-zinc-300"
+                >
+                  <Copy className="w-3 h-3 mr-1" />
+                  Copy Config
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <Button onClick={() => setMcpUrlDialogOpen(false)} className="border-zinc-700 text-zinc-400" variant="outline">
+                Close
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </PermissionGuard>
   );

@@ -358,6 +358,114 @@ export function useComposio() {
     }
   }, []);
 
+  // ===== MCP SERVER OPERATIONS =====
+
+  /**
+   * Create a new MCP server
+   */
+  const createMcpServer = useCallback(async (userId, name, toolkits, options = {}) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const result = await callComposioFunction('createMcpServer', {
+        userId,
+        mcpServerName: name,
+        toolkits,
+        ...options,
+      });
+      return result;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  /**
+   * Get MCP server URL for connecting
+   */
+  const getMcpServerUrl = useCallback(async (mcpServerId, options = {}) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const result = await callComposioFunction('getMcpServerUrl', {
+        mcpServerId,
+        ...options,
+      });
+      return result;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  /**
+   * List all MCP servers for the user
+   */
+  const listMcpServers = useCallback(async (userId) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Get from local database
+      const { data, error: dbError } = await supabase
+        .from('user_mcp_servers')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (dbError) throw dbError;
+      return data || [];
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  /**
+   * Delete an MCP server
+   */
+  const deleteMcpServer = useCallback(async (mcpServerId) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      await callComposioFunction('deleteMcpServer', { mcpServerId });
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  /**
+   * Update an MCP server
+   */
+  const updateMcpServer = useCallback(async (mcpServerId, updates) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      return await callComposioFunction('updateMcpServer', {
+        mcpServerId,
+        ...updates,
+      });
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   /**
    * Check if user has an active connection for a toolkit
    */
@@ -421,6 +529,13 @@ export function useComposio() {
     listTriggers,
     subscribeTrigger,
     unsubscribeTrigger,
+
+    // MCP Server operations
+    createMcpServer,
+    getMcpServerUrl,
+    listMcpServers,
+    deleteMcpServer,
+    updateMcpServer,
   };
 }
 

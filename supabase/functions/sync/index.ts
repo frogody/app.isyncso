@@ -1336,6 +1336,26 @@ These actions let you function as a Personal Assistant for email management:
 - **composio_create_linear_issue**: Create Linear issue (title, description)
 - **composio_execute_tool**: Generic tool execution (toolkit, tool_name, arguments)
 
+#### MCP Server Management (Model Context Protocol) 🖥️
+
+MCP allows users to connect AI tools like Claude Desktop, Cursor, or Windsurf to their integrations.
+
+- **mcp_create_server**: Create new MCP server (name, toolkits? - defaults to connected integrations)
+- **mcp_list_servers**: List user's MCP servers
+- **mcp_delete_server**: Delete MCP server (server_id)
+- **mcp_get_url**: Get MCP server URL for AI tool config (server_id)
+
+**MCP Use Cases:**
+- User wants to connect Claude Desktop to their Gmail/Slack/HubSpot
+- User wants Cursor/Windsurf to access their integrations
+- User asks about MCP or Model Context Protocol
+
+**MCP Examples:**
+[ACTION]{"action": "mcp_create_server", "data": {"name": "My Work Tools"}}[/ACTION]
+[ACTION]{"action": "mcp_list_servers", "data": {}}[/ACTION]
+[ACTION]{"action": "mcp_get_url", "data": {"server_id": "abc-123"}}[/ACTION]
+[ACTION]{"action": "mcp_delete_server", "data": {"server_id": "abc-123"}}[/ACTION]
+
 **MANDATORY FORMAT for integration queries:**
 User: "What integrations do I have?"
 You: Let me check!

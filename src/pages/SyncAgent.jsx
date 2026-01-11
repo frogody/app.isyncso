@@ -371,15 +371,185 @@ function DocumentCard({ url, title }) {
 // Agent segments configuration - each segment represents an agent SYNC can delegate to
 // Matches the agents in the SYNC edge function + orchestrator
 const AGENT_SEGMENTS = [
-  { id: 'orchestrator', name: 'Orchestrator', color: '#ec4899', from: 0.00, to: 0.10 },  // pink - multi-agent workflows
-  { id: 'learn', name: 'Learn', color: '#06b6d4', from: 0.12, to: 0.22 },       // cyan
-  { id: 'growth', name: 'Growth', color: '#6366f1', from: 0.24, to: 0.34 },     // indigo
-  { id: 'products', name: 'Products', color: '#10b981', from: 0.36, to: 0.46 }, // emerald
-  { id: 'sentinel', name: 'Sentinel', color: '#86EFAC', from: 0.48, to: 0.58 }, // sage
-  { id: 'finance', name: 'Finance', color: '#f59e0b', from: 0.60, to: 0.70 },   // amber
-  { id: 'create', name: 'Create', color: '#f43f5e', from: 0.72, to: 0.82 },     // rose
-  { id: 'tasks', name: 'Tasks', color: '#f97316', from: 0.84, to: 0.94 },       // orange
+  { id: 'orchestrator', name: 'Orchestrator', color: '#ec4899', from: 0.00, to: 0.10, icon: '🎯' },  // pink - multi-agent workflows
+  { id: 'learn', name: 'Learn', color: '#06b6d4', from: 0.12, to: 0.22, icon: '📚' },       // cyan
+  { id: 'growth', name: 'Growth', color: '#6366f1', from: 0.24, to: 0.34, icon: '📈' },     // indigo
+  { id: 'products', name: 'Products', color: '#10b981', from: 0.36, to: 0.46, icon: '📦' }, // emerald
+  { id: 'sentinel', name: 'Sentinel', color: '#86EFAC', from: 0.48, to: 0.58, icon: '🛡️' }, // sage
+  { id: 'finance', name: 'Finance', color: '#f59e0b', from: 0.60, to: 0.70, icon: '💰' },   // amber
+  { id: 'create', name: 'Create', color: '#f43f5e', from: 0.72, to: 0.82, icon: '🎨' },     // rose
+  { id: 'tasks', name: 'Tasks', color: '#f97316', from: 0.84, to: 0.94, icon: '✅' },       // orange
+  { id: 'sync', name: 'SYNC', color: '#a855f7', from: 0, to: 0, icon: '🧠' },               // purple - main orchestrator
+  { id: 'research', name: 'Research', color: '#3b82f6', from: 0, to: 0, icon: '🔍' },       // blue
+  { id: 'inbox', name: 'Inbox', color: '#14b8a6', from: 0, to: 0, icon: '📬' },             // teal
+  { id: 'team', name: 'Team', color: '#8b5cf6', from: 0, to: 0, icon: '👥' },               // violet
+  { id: 'composio', name: 'Integrations', color: '#22c55e', from: 0, to: 0, icon: '🔗' },   // green
 ];
+
+// ============================================================================
+// AGENT CHANNEL MESSAGE COMPONENT
+// ============================================================================
+
+function AgentChannelMessage({ message, isLatest }) {
+  const messageRef = useRef(null);
+  const agent = AGENT_SEGMENTS.find(a => a.id === message.agentId) || AGENT_SEGMENTS.find(a => a.id === 'sync');
+
+  // Animate message entrance
+  useEffect(() => {
+    if (prefersReducedMotion() || !messageRef.current) return;
+
+    anime({
+      targets: messageRef.current,
+      translateX: [-10, 0],
+      opacity: [0, 1],
+      duration: 250,
+      easing: 'easeOutQuad',
+    });
+  }, []);
+
+  return (
+    <div
+      ref={messageRef}
+      className={cn(
+        "flex items-start gap-2.5 py-2 px-3 rounded-lg transition-colors",
+        isLatest && "bg-white/5"
+      )}
+      style={{ opacity: 0 }}
+    >
+      {/* Agent Avatar */}
+      <div
+        className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs border"
+        style={{
+          backgroundColor: `${agent?.color}20`,
+          borderColor: `${agent?.color}40`,
+        }}
+      >
+        {agent?.icon || '🤖'}
+      </div>
+
+      {/* Message Content */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-baseline gap-2">
+          <span
+            className="text-xs font-medium"
+            style={{ color: agent?.color }}
+          >
+            {agent?.name || 'Agent'}
+          </span>
+          <span className="text-[10px] text-zinc-600">
+            {formatTime(message.ts)}
+          </span>
+        </div>
+        <p className="text-xs text-zinc-400 mt-0.5 leading-relaxed">
+          {message.text}
+        </p>
+      </div>
+
+      {/* Status indicator for latest */}
+      {isLatest && message.status === 'thinking' && (
+        <div className="shrink-0">
+          <span className="inline-flex h-1.5 w-1.5 animate-pulse rounded-full bg-amber-400" />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// AGENT CHANNEL COMPONENT (Slack-like feed)
+// ============================================================================
+
+function AgentChannel({ messages, isActive }) {
+  const scrollerRef = useRef(null);
+  const channelRef = useRef(null);
+
+  // Auto-scroll to bottom on new messages
+  useEffect(() => {
+    if (scrollerRef.current) {
+      scrollerRef.current.scrollTop = scrollerRef.current.scrollHeight;
+    }
+  }, [messages.length]);
+
+  // Pulse animation when active
+  useEffect(() => {
+    if (prefersReducedMotion() || !channelRef.current) return;
+
+    if (isActive) {
+      anime({
+        targets: channelRef.current,
+        borderColor: ['rgba(168, 85, 247, 0.1)', 'rgba(168, 85, 247, 0.3)', 'rgba(168, 85, 247, 0.1)'],
+        duration: 1500,
+        loop: true,
+        easing: 'easeInOutSine',
+      });
+    } else {
+      anime.remove(channelRef.current);
+    }
+
+    return () => {
+      if (channelRef.current) anime.remove(channelRef.current);
+    };
+  }, [isActive]);
+
+  return (
+    <div
+      ref={channelRef}
+      className="rounded-2xl border border-white/10 bg-black/40 overflow-hidden flex flex-col"
+      style={{ height: '280px' }}
+    >
+      {/* Header */}
+      <div className="shrink-0 flex items-center justify-between px-3 py-2 border-b border-white/10 bg-black/20">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+          <span className="text-xs font-medium text-white/90">Agent Channel</span>
+        </div>
+        <span className="text-[10px] text-zinc-600">
+          {messages.length} messages
+        </span>
+      </div>
+
+      {/* Messages */}
+      <div
+        ref={scrollerRef}
+        className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent"
+      >
+        {messages.length === 0 ? (
+          <div className="h-full flex flex-col items-center justify-center text-center px-4">
+            <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mb-2">
+              <Brain className="w-5 h-5 text-purple-400/50" />
+            </div>
+            <p className="text-xs text-zinc-600">
+              Agent communications will appear here
+            </p>
+            <p className="text-[10px] text-zinc-700 mt-1">
+              Watch SYNC coordinate with specialized agents
+            </p>
+          </div>
+        ) : (
+          <div className="py-1">
+            {messages.map((msg, idx) => (
+              <AgentChannelMessage
+                key={msg.id || idx}
+                message={msg}
+                isLatest={idx === messages.length - 1}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Active indicator */}
+      {isActive && (
+        <div className="shrink-0 px-3 py-1.5 border-t border-white/5 bg-purple-500/5">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex h-1.5 w-1.5 animate-pulse rounded-full bg-purple-400" />
+            <span className="text-[10px] text-purple-400">Processing...</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function OuterRing({ size = 360, mood = 'listening', level = 0.2, activeAgent = null }) {
   const ringRef = useRef(null);
@@ -1026,6 +1196,20 @@ export default function SyncAgent() {
   const [seed, setSeed] = useState(4);
   const [activeAgent, setActiveAgent] = useState(null);
 
+  // Agent channel messages (inter-agent communication feed)
+  const [agentMessages, setAgentMessages] = useState([]);
+
+  // Helper to add agent channel message
+  const addAgentMessage = useCallback((agentId, text, status = 'complete') => {
+    setAgentMessages(prev => [...prev, {
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      agentId,
+      text,
+      ts: Date.now(),
+      status,
+    }]);
+  }, []);
+
   // Persist sessionId and messages in localStorage
   const [sessionId, setSessionId] = useLocalStorage('sync_agent_session_id', null);
   const [cachedMessages, setCachedMessages] = useLocalStorage('sync_agent_messages', []);
@@ -1056,6 +1240,7 @@ export default function SyncAgent() {
     setMessages(DEFAULT_MESSAGES);
     setSessionId(null);
     setCachedMessages([]);
+    setAgentMessages([]); // Clear agent channel
     setError(null);
     setActiveAgent(null);
     setMood('listening');
@@ -1114,11 +1299,18 @@ export default function SyncAgent() {
     setMessages((m) => [...m, { role: 'user', text, ts: now }]);
     setInput('');
 
+    // Add initial agent channel message - SYNC receiving
+    addAgentMessage('sync', `Received: "${text.slice(0, 50)}${text.length > 50 ? '...' : ''}"`, 'thinking');
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://sfxpmzicgpaxfntqleig.supabase.co';
       const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmeHBtemljZ3BheGZudHFsZWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY2MDY0NjIsImV4cCI6MjA4MjE4MjQ2Mn0.337ohi8A4zu_6Hl1LpcPaWP8UkI5E4Om7ZgeU9_A8t4';
       const authToken = session?.access_token || supabaseAnonKey;
+
+      // Add analyzing message
+      await new Promise((r) => setTimeout(r, 400));
+      addAgentMessage('sync', 'Analyzing intent and context...', 'thinking');
 
       const response = await fetch(`${supabaseUrl}/functions/v1/sync`, {
         method: 'POST',
@@ -1158,10 +1350,43 @@ export default function SyncAgent() {
         setSessionId(data.sessionId);
       }
 
-      // Set active agent if SYNC delegated to one
+      // Set active agent if SYNC delegated to one and add agent channel messages
       if (data.delegatedTo) {
         const agentId = data.delegatedTo.toLowerCase();
         setActiveAgent(agentId);
+
+        // Get agent info for nice messages
+        const agentInfo = AGENT_SEGMENTS.find(a => a.id === agentId);
+        const agentName = agentInfo?.name || data.delegatedTo;
+
+        // SYNC routing message
+        addAgentMessage('sync', `Routing to ${agentName} agent...`);
+        await new Promise((r) => setTimeout(r, 300));
+
+        // Agent acknowledgment
+        addAgentMessage(agentId, `Taking over. Processing request...`, 'thinking');
+        await new Promise((r) => setTimeout(r, 500));
+
+        // If an action was executed, show it
+        if (data.actionExecuted?.type) {
+          addAgentMessage(agentId, `Executed: ${data.actionExecuted.type.replace(/_/g, ' ')}`);
+          await new Promise((r) => setTimeout(r, 200));
+        }
+
+        // Agent completion
+        addAgentMessage(agentId, 'Task complete. Returning to SYNC.');
+        await new Promise((r) => setTimeout(r, 200));
+
+        // SYNC synthesis
+        addAgentMessage('sync', 'Synthesizing response...');
+      } else if (data.actionExecuted?.type) {
+        // Direct action without delegation
+        addAgentMessage('sync', `Executing: ${data.actionExecuted.type.replace(/_/g, ' ')}`);
+        await new Promise((r) => setTimeout(r, 300));
+        addAgentMessage('sync', data.actionExecuted.success ? 'Action complete.' : 'Action failed.');
+      } else {
+        // Simple response
+        addAgentMessage('sync', 'Generating response...');
       }
 
       // Transition to speaking
@@ -1176,19 +1401,23 @@ export default function SyncAgent() {
         document: data.document || null, // { url, title }
       }]);
 
+      // Final agent channel message
+      addAgentMessage('sync', 'Response delivered.');
+
       // Back to listening and clear active agent after a delay
       await new Promise((r) => setTimeout(r, 1500));
       setActiveAgent(null);
       setMood('listening');
     } catch (err) {
       console.error('SYNC error:', err);
+      addAgentMessage('sync', `Error: ${err.message || 'Something went wrong'}`);
       setError(err.message || 'Failed to send message');
       setActiveAgent(null);
       setMood('listening');
     } finally {
       setIsSending(false);
     }
-  }, [input, isSending, sessionId, user?.company_id]);
+  }, [input, isSending, sessionId, user?.company_id, addAgentMessage]);
 
   // Retry handler
   const handleRetry = () => {
@@ -1281,27 +1510,9 @@ export default function SyncAgent() {
             <AgentAvatar size={400} agentName="SYNC" mood={mood} level={level} seed={seed} activeAgent={activeAgent} />
           </div>
 
-          <div className="mt-5 grid gap-3">
-            <div className="rounded-2xl border border-white/10 bg-black/30 p-4 text-sm text-zinc-300">
-              <div className="mb-2.5 text-xs font-medium text-white/90 uppercase tracking-wide">Interactivity</div>
-              <ul className="list-disc space-y-1.5 pl-4 text-zinc-400">
-                <li>Drag inside avatar to pull particles</li>
-                <li>Mood changes motion and glow</li>
-                <li>Refresh regenerates pattern</li>
-              </ul>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-black/30 p-4 text-sm text-zinc-300">
-              <div className="mb-2.5 text-xs font-medium text-white/90 uppercase tracking-wide">Capabilities</div>
-              <div className="text-zinc-400 space-y-2.5">
-                <p>
-                  Routes to specialized agents: Finance, Learn, Products, Growth, and more
-                </p>
-                <p className="pt-2 border-t border-white/10">
-                  <span className="text-white/80">Multi-agent workflows</span> — Client onboarding, weekly reviews, product launches
-                </p>
-              </div>
-            </div>
+          {/* Agent Channel - Live communication feed */}
+          <div className="mt-5">
+            <AgentChannel messages={agentMessages} isActive={isSending} />
           </div>
         </div>
 
