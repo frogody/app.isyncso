@@ -132,12 +132,14 @@ async function composioFetch<T = unknown>(
 
 /**
  * List available auth configs for a toolkit
- * v1 API uses /integrations endpoint
+ * Uses v3 API for auth_configs (returns nano IDs needed for v3 connection creation)
  */
 async function listAuthConfigs(toolkitSlug: string) {
-  // v1 API uses /integrations with appName parameter
-  const result = await composioFetch(
-    `/integrations?appName=${toolkitSlug}`
+  // v3 API uses /auth_configs with app_name parameter
+  const result = await composioFetch<{ items?: unknown[] }>(
+    `/auth_configs?app_name=${toolkitSlug}`,
+    {},
+    true // useV3 = true
   );
 
   if (!result.success) {
@@ -145,33 +147,37 @@ async function listAuthConfigs(toolkitSlug: string) {
   }
 
   // Extract items from response
-  const items = (result.data as { items?: unknown[] })?.items || result.data;
+  const items = result.data?.items || result.data;
   return { success: true, data: items };
 }
 
 /**
  * Initiate OAuth connection flow
  * Uses v3 API for creating connections (v1 returns "Please migrate to v3")
+ * Note: v3 uses snake_case endpoints (connected_accounts not connectedAccounts)
  */
 async function initiateConnection(
   userId: string,
   authConfigId: string,
   callbackUrl?: string
 ) {
-  // v3 API: Create connection via /connectedAccounts
+  // v3 API: Create connection via /connected_accounts with nested format
   const linkResult = await composioFetch<{
-    redirectUrl?: string;
-    url?: string;
-    connectionStatus?: string;
-    connectedAccountId?: string;
-    connected_account_id?: string;
     id?: string;
-  }>("/connectedAccounts", {
+    redirect_url?: string;
+    redirect_uri?: string;
+    status?: string;
+    connectionData?: {
+      authScheme?: string;
+    };
+  }>("/connected_accounts", {
     method: "POST",
     body: JSON.stringify({
-      authConfigId: authConfigId,
-      userUuid: userId,
-      redirectUrl: callbackUrl || `${SUPABASE_URL}/functions/v1/composio-connect/callback`,
+      auth_config: { id: authConfigId },
+      connection: {
+        user_id: userId,
+        redirect_url: callbackUrl || `${SUPABASE_URL}/functions/v1/composio-connect/callback`,
+      },
     }),
   }, true); // useV3 = true
 
@@ -182,22 +188,23 @@ async function initiateConnection(
   return {
     success: true,
     data: {
-      redirectUrl: linkResult.data.redirectUrl || linkResult.data.url,
-      connectedAccountId: linkResult.data.connectedAccountId || linkResult.data.connected_account_id || linkResult.data.id,
-      connectionStatus: linkResult.data.connectionStatus,
+      redirectUrl: linkResult.data.redirect_url || linkResult.data.redirect_uri,
+      connectedAccountId: linkResult.data.id,
+      connectionStatus: linkResult.data.status,
     },
   };
 }
 
 /**
  * Get connection status
- * Uses v3 API for connected accounts
+ * Uses v3 API for connected accounts (snake_case endpoint)
  */
 async function getConnectionStatus(connectedAccountId: string) {
   const result = await composioFetch<{
     id: string;
     status: string;
     appName?: string;
+    app_name?: string;
     toolkit_slug?: string;
     userUuid?: string;
     user_id?: string;
@@ -205,7 +212,7 @@ async function getConnectionStatus(connectedAccountId: string) {
     created_at?: string;
     updatedAt?: string;
     updated_at?: string;
-  }>(`/connectedAccounts/${connectedAccountId}`, {}, true); // useV3 = true
+  }>(`/connected_accounts/${connectedAccountId}`, {}, true); // useV3 = true
 
   if (!result.success || !result.data) {
     return result;
@@ -216,7 +223,7 @@ async function getConnectionStatus(connectedAccountId: string) {
     data: {
       id: result.data.id,
       status: result.data.status,
-      toolkitSlug: result.data.appName || result.data.toolkit_slug,
+      toolkitSlug: result.data.appName || result.data.app_name || result.data.toolkit_slug,
       userId: result.data.userUuid || result.data.user_id,
       createdAt: result.data.createdAt || result.data.created_at,
       updatedAt: result.data.updatedAt || result.data.updated_at,
@@ -226,17 +233,17 @@ async function getConnectionStatus(connectedAccountId: string) {
 
 /**
  * List all user's connections
- * Uses v3 API for connected accounts
+ * Uses v3 API for connected accounts (snake_case endpoint)
  */
 async function listConnections(
   userId: string,
   options?: { toolkitSlug?: string; status?: string }
 ) {
-  // v3 API uses userUuid parameter
-  let endpoint = `/connectedAccounts?userUuid=${userId}`;
+  // v3 API uses snake_case endpoint and user_id parameter
+  let endpoint = `/connected_accounts?user_id=${userId}`;
 
   if (options?.toolkitSlug) {
-    endpoint += `&appName=${options.toolkitSlug}`;
+    endpoint += `&app_name=${options.toolkitSlug}`;
   }
   if (options?.status) {
     endpoint += `&status=${options.status}`;
@@ -254,14 +261,14 @@ async function listConnections(
 
 /**
  * Disconnect an account
- * Uses v3 API for connected accounts
+ * Uses v3 API for connected accounts (snake_case endpoint)
  */
 async function disconnectAccount(
   connectedAccountId: string,
   supabase: ReturnType<typeof createClient>
 ) {
-  // Delete from Composio - v3 API
-  const result = await composioFetch(`/connectedAccounts/${connectedAccountId}`, {
+  // Delete from Composio - v3 API with snake_case endpoint
+  const result = await composioFetch(`/connected_accounts/${connectedAccountId}`, {
     method: "DELETE",
   }, true); // useV3 = true
 
@@ -285,11 +292,11 @@ async function disconnectAccount(
 
 /**
  * Refresh a connection's token
- * Uses v3 API for connected accounts
+ * Uses v3 API for connected accounts (snake_case endpoint)
  */
 async function refreshConnection(connectedAccountId: string) {
   // v3 API: Get status to trigger any internal refresh
-  const result = await composioFetch(`/connectedAccounts/${connectedAccountId}`, {
+  const result = await composioFetch(`/connected_accounts/${connectedAccountId}`, {
     method: "GET",
   }, true); // useV3 = true
 
