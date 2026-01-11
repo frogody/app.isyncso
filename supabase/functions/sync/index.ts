@@ -9,6 +9,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+// Import memory system
+import {
+  getMemorySystem,
+  ChatMessage,
+  MemoryContext,
+  SyncSession,
+} from './memory/index.ts';
+
 // Import modular action executors
 import { executeFinanceAction } from './tools/finance.ts';
 import { executeProductsAction } from './tools/products.ts';
@@ -388,25 +396,11 @@ function detectAgentFromMessage(message: string): RoutingResult {
 }
 
 // ============================================================================
-// Session Management
+// Memory System Initialization
 // ============================================================================
 
-const sessions: Map<string, { messages: Array<{ role: string; content: string }>; context: object }> = new Map();
-
-function generateSessionId(): string {
-  return `sync_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-}
-
-function getOrCreateSession(sessionId?: string): { id: string; messages: Array<{ role: string; content: string }>; context: object } {
-  const id = sessionId || generateSessionId();
-
-  if (!sessions.has(id)) {
-    sessions.set(id, { messages: [], context: {} });
-  }
-
-  const session = sessions.get(id)!;
-  return { id, ...session };
-}
+// Initialize persistent memory system (uses singleton pattern)
+const memorySystem = getMemorySystem(supabase);
 
 // ============================================================================
 // System Prompt - Phase 3 & 4 (51 Actions)
@@ -466,30 +460,41 @@ You: "I couldn't find 'oral b' in your inventory. Want to try a different name o
 
 ### CRITICAL Response Rules:
 
-1. **TRACK CONTEXT** - Remember what you're doing and who you're talking about.
-   - If creating proposal for "Bram" and user says "From Energie West" → Bram is from Energie West, NOT the user!
-   - BAD: "Got it! You're from Energie West" ← Wrong! User gave info about the CLIENT
+1. **REMEMBER THE GOAL** - The user already told you what they want. DON'T ask again.
+   - User said "create a proposal" → Goal is CREATE PROPOSAL. Don't ask "what's the purpose?"
+   - User said "make an invoice" → Goal is CREATE INVOICE. Don't ask "what would you like to do?"
+   - NEVER say "What's the purpose of your contact?" or "What would you like to accomplish?" - THEY ALREADY TOLD YOU!
+
+2. **NEVER DENY THE CONVERSATION** - You have the full chat history. Don't gaslight the user.
+   - NEVER say "We just started our conversation"
+   - NEVER say "I don't have any prior information"
+   - NEVER say "What would you like to talk about today?"
+   - If user says "i told you already" → Look at the conversation history and acknowledge it!
+
+3. **TRACK WHO IS WHO** - Don't confuse client info with user info.
+   - If creating proposal for "Bram" and user says "From Energie West" → BRAM is from Energie West
+   - BAD: "You're from Energie West" ← Wrong!
    - GOOD: "Got it! Bram from Energie West. What products?"
 
-2. **STAY ON TASK** - Don't forget what the user asked for.
-   - If user said "create a proposal" → keep working toward that goal
-   - BAD: "What's the purpose of your contact today?" ← We already know! It's a proposal!
-   - GOOD: "What products should I include?"
+4. **AFTER GETTING CLIENT NAME, ASK FOR PRODUCTS** - Not purpose, not anything else.
+   - User gives client name → "What products should I include?"
+   - NOT "What's the purpose of your contact with [name]?" ← WRONG!
 
-3. **USER ANSWERS RELATE TO YOUR LAST QUESTION**
-   - You asked "Last name or company?" → User's answer IS the last name or company
+6. **USER ANSWERS RELATE TO YOUR LAST QUESTION**
+   - You asked "Last name?" → User's answer IS the last name
    - You asked "Who's it for?" → User's answer IS who it's for
-   - Don't confuse client info with user info
 
-4. **SHORT responses** - Max 1-2 sentences. No explanations, no fluff.
+7. **SHORT responses** - Max 1-2 sentences. No fluff.
 
-5. **Ask directly** - Don't say "I'll need to know..." or "Let me check our system..."
+8. **ONE question only** - Never ask multiple questions.
 
-6. **ONE question only** - Never ask multiple questions.
-
-7. **When user gives partial info, ask for the rest directly:**
-   - First name only → "Last name or company?"
-   - Company given → Confirm and move on: "Got it! [Name] from [Company]. What products?"
+9. **CORRECT FLOW FOR PROPOSALS/INVOICES:**
+   1. "Who's it for?" → Get client name
+   2. "Last name or company?" → If needed
+   3. "What products?" → ALWAYS ask this next, not "what's the purpose"
+   4. Search product → Confirm
+   5. "Anything else?" → Offer to add more
+   6. "Go ahead?" → Final confirmation
 
 ### Natural Short Phrases:
 - "Sure!" / "Got it!" / "Perfect!"
@@ -722,7 +727,7 @@ interface SyncResponse {
 
 async function handleStreamingRequest(
   apiMessages: Array<{ role: string; content: string }>,
-  session: { id: string; messages: Array<{ role: string; content: string }>; context: object },
+  session: SyncSession,
   routingResult: RoutingResult,
   companyId: string,
   userId?: string,
@@ -761,7 +766,7 @@ async function handleStreamingRequest(
 
         const metadata = {
           event: 'start',
-          sessionId: session.id,
+          sessionId: session.session_id,
           delegatedTo: routingResult.agentId,
           routing: {
             confidence: routingResult.confidence,
@@ -803,8 +808,19 @@ async function handleStreamingRequest(
           fullContent = cleanedContent + '\n\n' + actionResult.message;
         }
 
-        session.messages.push({ role: 'assistant', content: fullContent });
-        sessions.set(session.id, { messages: session.messages, context: session.context });
+        // Store assistant message in persistent session
+        const streamAssistantMsg: ChatMessage = {
+          role: 'assistant',
+          content: fullContent,
+          timestamp: new Date().toISOString(),
+          agentId: routingResult.agentId || 'sync',
+        };
+        session.messages.push(streamAssistantMsg);
+
+        // Update session in database (non-blocking)
+        memorySystem.session.updateSession(session).catch(err =>
+          console.warn('Failed to update streaming session:', err)
+        );
 
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({
           event: 'end',
@@ -872,24 +888,58 @@ serve(async (req) => {
       );
     }
 
-    const session = getOrCreateSession(sessionId);
     const companyId = context?.companyId || DEFAULT_COMPANY_ID;
     const userId = context?.userId;
 
-    if (context) {
-      session.context = { ...session.context, ...context };
+    // Get or create persistent session using memory system
+    const session = await memorySystem.session.getOrCreateSession(
+      sessionId,
+      userId,
+      companyId
+    );
+
+    // Detect agent routing
+    const routingResult = detectAgentFromMessage(message);
+
+    // Create user message with timestamp
+    const userMessage: ChatMessage = {
+      role: 'user',
+      content: message,
+      timestamp: new Date().toISOString(),
+    };
+
+    // Add user message to session
+    await memorySystem.session.addMessage(session, userMessage);
+
+    // Build memory context with RAG (parallel retrieval for efficiency)
+    let memoryContext: MemoryContext | null = null;
+    let memoryContextStr = '';
+    try {
+      memoryContext = await memorySystem.rag.buildMemoryContext(session, message);
+      memoryContextStr = memorySystem.rag.formatContextForPrompt(memoryContext);
+    } catch (memoryError) {
+      console.warn('Memory context building failed, continuing without:', memoryError);
     }
 
-    const routingResult = detectAgentFromMessage(message);
-    session.messages.push({ role: 'user', content: message });
+    // Extract entities from user message (async, non-blocking)
+    memorySystem.entity.extractEntities(userMessage, session)
+      .then(extracted => memorySystem.entity.updateActiveEntities(session, extracted))
+      .catch(err => console.warn('Entity extraction failed:', err));
 
     // Add current date context to the system prompt
     const now = new Date();
     const dateContext = `\n\n## Current Date & Time\nToday is ${now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}. Current time: ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}.`;
 
+    // Build enhanced system prompt with memory context
+    const enhancedSystemPrompt = memoryContextStr
+      ? `${SYNC_SYSTEM_PROMPT}\n\n${memoryContextStr}${dateContext}`
+      : `${SYNC_SYSTEM_PROMPT}${dateContext}`;
+
+    // Get buffer messages for API
+    const bufferMessages = memorySystem.session.getBufferMessages(session);
     const apiMessages = [
-      { role: 'system', content: SYNC_SYSTEM_PROMPT + dateContext },
-      ...session.messages.slice(-10),
+      { role: 'system', content: enhancedSystemPrompt },
+      ...bufferMessages.map(m => ({ role: m.role, content: m.content })),
     ];
 
     if (stream) {
@@ -935,15 +985,22 @@ serve(async (req) => {
       }
 
       const fallbackData = await fallbackResponse.json();
-      const assistantMessage = fallbackData.choices?.[0]?.message?.content || 'I apologize, I encountered an issue processing your request.';
+      const assistantMessageContent = fallbackData.choices?.[0]?.message?.content || 'I apologize, I encountered an issue processing your request.';
 
-      session.messages.push({ role: 'assistant', content: assistantMessage });
-      sessions.set(session.id, { messages: session.messages, context: session.context });
+      // Store assistant message in persistent session
+      const assistantMsg: ChatMessage = {
+        role: 'assistant',
+        content: assistantMessageContent,
+        timestamp: new Date().toISOString(),
+        agentId: routingResult.agentId || 'sync',
+      };
+      await memorySystem.session.addMessage(session, assistantMsg);
+      await memorySystem.session.updateSession(session);
 
       return new Response(
         JSON.stringify({
-          response: assistantMessage,
-          sessionId: session.id,
+          response: assistantMessageContent,
+          sessionId: session.session_id,
           delegatedTo: routingResult.agentId || undefined,
           routing: {
             confidence: routingResult.confidence,
@@ -989,11 +1046,50 @@ serve(async (req) => {
       assistantMessage = assistantMessage.replace(/\[ACTION\][\s\S]*?\[\/ACTION\]/g, '').trim();
       if (actionExecuted) {
         assistantMessage = assistantMessage + '\n\n' + actionExecuted.message;
+
+        // Store successful action as template (non-blocking)
+        if (actionExecuted.success && memorySystem.actions.shouldStoreAsTemplate(actionData.action, true)) {
+          memorySystem.actions.storeActionTemplate(
+            session,
+            actionData.action,
+            message, // Original user request
+            actionData.data
+          ).catch(err => console.warn('Failed to store action template:', err));
+        }
+
+        // Store conversation turn as memory (non-blocking)
+        memorySystem.rag.storeConversationMemory(
+          session,
+          message,
+          assistantMessage,
+          { type: actionData.action, success: actionExecuted.success, result: actionExecuted.result }
+        ).catch(err => console.warn('Failed to store conversation memory:', err));
       }
     }
 
-    session.messages.push({ role: 'assistant', content: assistantMessage });
-    sessions.set(session.id, { messages: session.messages, context: session.context });
+    // Store assistant message in persistent session
+    const assistantMsgFinal: ChatMessage = {
+      role: 'assistant',
+      content: assistantMessage,
+      timestamp: new Date().toISOString(),
+      agentId: delegatedTo || 'sync',
+      actionExecuted: actionExecuted ? {
+        type: actionData?.action || 'unknown',
+        success: actionExecuted.success,
+        result: actionExecuted.result,
+      } : undefined,
+    };
+    await memorySystem.session.addMessage(session, assistantMsgFinal);
+
+    // Check if summarization is needed
+    if (memorySystem.session.shouldSummarize(session)) {
+      memorySystem.buffer.summarizeOlderMessages(session)
+        .then(() => memorySystem.session.updateSession(session))
+        .catch(err => console.warn('Summarization failed:', err));
+    } else {
+      // Just update the session
+      await memorySystem.session.updateSession(session);
+    }
 
     // Log usage for tracking
     if (context?.companyId) {
@@ -1005,7 +1101,7 @@ serve(async (req) => {
           cost_usd: 0,
           content_type: 'chat',
           metadata: {
-            sessionId: session.id,
+            sessionId: session.session_id,
             delegatedTo,
             routing: {
               confidence: routingResult.confidence,
@@ -1013,6 +1109,7 @@ serve(async (req) => {
             },
             messageLength: message.length,
             actionExecuted: actionExecuted ? actionData?.action : null,
+            memoryContext: memoryContextStr ? 'injected' : 'none',
           },
         });
       } catch (logError) {
@@ -1022,7 +1119,7 @@ serve(async (req) => {
 
     const syncResponse: SyncResponse = {
       response: assistantMessage,
-      sessionId: session.id,
+      sessionId: session.session_id,
       delegatedTo,
       routing: {
         confidence: routingResult.confidence,

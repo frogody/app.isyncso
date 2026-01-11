@@ -24,10 +24,12 @@ import {
   X,
   Maximize2,
   Minimize2,
+  Plus,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/api/supabaseClient';
+import { useLocalStorage } from '@/components/hooks/useLocalStorage';
 
 // Agent icon mapping
 const AGENT_ICONS = {
@@ -209,15 +211,42 @@ export default function SyncChat({
   expanded = false,
   onToggleExpand,
 }) {
+  // Persist sessionId and messages in localStorage
+  const [sessionId, setSessionId] = useLocalStorage('sync_session_id', null);
+  const [cachedMessages, setCachedMessages] = useLocalStorage('sync_messages', []);
+
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [sessionId, setSessionId] = useState(null);
   const [currentAgent, setCurrentAgent] = useState('sync');
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  // Restore messages from cache on mount
+  useEffect(() => {
+    if (cachedMessages.length > 0 && messages.length === 0) {
+      setMessages(cachedMessages);
+    }
+  }, []);
+
+  // Sync messages to cache (limit to last 50)
+  useEffect(() => {
+    if (messages.length > 0) {
+      setCachedMessages(messages.slice(-50));
+    }
+  }, [messages]);
+
+  // Handle new chat - clear session and messages
+  const handleNewChat = useCallback(() => {
+    setMessages([]);
+    setSessionId(null);
+    setCachedMessages([]);
+    setError(null);
+    setCurrentAgent('sync');
+    inputRef.current?.focus();
+  }, [setSessionId, setCachedMessages]);
 
   // Scroll to bottom when messages change
   const scrollToBottom = useCallback(() => {
@@ -372,6 +401,16 @@ export default function SyncChat({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={handleNewChat}
+            className="text-zinc-400 hover:text-white gap-1.5"
+            title="Start new conversation"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="text-xs">New</span>
+          </Button>
           {onToggleExpand && (
             <Button
               size="icon"

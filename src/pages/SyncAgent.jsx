@@ -6,13 +6,14 @@
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Send, Sparkles, User, Bot, RotateCcw, Brain, AlertCircle, RefreshCw } from 'lucide-react';
+import { Send, Sparkles, User, Bot, RotateCcw, Brain, AlertCircle, RefreshCw, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/api/supabaseClient';
 import { useUser } from '@/components/context/UserContext';
 import anime from '@/lib/anime-wrapper';
 import { prefersReducedMotion } from '@/lib/animations';
+import { useLocalStorage } from '@/components/hooks/useLocalStorage';
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -647,11 +648,11 @@ function Bubble({ role, text, ts, index }) {
         {isUser ? (
           <div className="whitespace-pre-wrap">{text}</div>
         ) : (
-          <ReactMarkdown
-            className="prose prose-invert prose-sm max-w-none prose-p:my-2 prose-headings:my-3 prose-ul:my-2 prose-li:my-1 prose-code:text-purple-400 prose-code:bg-purple-950/30 prose-code:px-1 prose-code:rounded"
-          >
-            {text}
-          </ReactMarkdown>
+          <div className="prose prose-invert prose-sm max-w-none prose-p:my-2 prose-headings:my-3 prose-ul:my-2 prose-li:my-1 prose-code:text-purple-400 prose-code:bg-purple-950/30 prose-code:px-1 prose-code:rounded">
+            <ReactMarkdown>
+              {text}
+            </ReactMarkdown>
+          </div>
         )}
       </div>
     </div>
@@ -662,6 +663,12 @@ function Bubble({ role, text, ts, index }) {
 // MAIN SYNC AGENT PAGE
 // ============================================================================
 
+// Default welcome messages
+const DEFAULT_MESSAGES = [
+  { role: 'assistant', text: "Hey — I'm SYNC, your AI orchestrator. I can help with invoices, prospects, compliance, learning, and more.", ts: Date.now() - 1000 * 60 * 2 },
+  { role: 'assistant', text: 'Tip: click and drag inside the avatar to interact with the visualization.', ts: Date.now() - 1000 * 60 * 1 },
+];
+
 export default function SyncAgent() {
   const { user } = useUser();
   const [mood, setMood] = useState('listening');
@@ -669,17 +676,41 @@ export default function SyncAgent() {
   const [seed, setSeed] = useState(4);
   const [activeAgent, setActiveAgent] = useState(null);
 
-  const [messages, setMessages] = useState(() => [
-    { role: 'assistant', text: "Hey — I'm SYNC, your AI orchestrator. I can help with invoices, prospects, compliance, learning, and more.", ts: Date.now() - 1000 * 60 * 2 },
-    { role: 'assistant', text: 'Tip: click and drag inside the avatar to interact with the visualization.', ts: Date.now() - 1000 * 60 * 1 },
-  ]);
+  // Persist sessionId and messages in localStorage
+  const [sessionId, setSessionId] = useLocalStorage('sync_agent_session_id', null);
+  const [cachedMessages, setCachedMessages] = useLocalStorage('sync_agent_messages', []);
+
+  // Initialize messages from cache or defaults
+  const [messages, setMessages] = useState(() => {
+    if (cachedMessages && cachedMessages.length > 0) {
+      return cachedMessages;
+    }
+    return DEFAULT_MESSAGES;
+  });
 
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState(null);
-  const [sessionId, setSessionId] = useState(null);
   const scrollerRef = useRef(null);
   const pageRef = useRef(null);
+
+  // Sync messages to cache (limit to last 50)
+  useEffect(() => {
+    if (messages.length > 0 && messages !== DEFAULT_MESSAGES) {
+      setCachedMessages(messages.slice(-50));
+    }
+  }, [messages]);
+
+  // Handle new chat - clear session and messages
+  const handleNewChat = useCallback(() => {
+    setMessages(DEFAULT_MESSAGES);
+    setSessionId(null);
+    setCachedMessages([]);
+    setError(null);
+    setActiveAgent(null);
+    setMood('listening');
+    setInput('');
+  }, [setSessionId, setCachedMessages]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -765,13 +796,21 @@ export default function SyncAgent() {
 
       // Debug logging - check what's being returned
       console.log('SYNC response:', {
+        sessionId: data.sessionId,
         delegatedTo: data.delegatedTo,
         routing: data.routing,
         actionExecuted: data.actionExecuted
       });
 
       if (data.sessionId) {
+        console.log('Saving sessionId to localStorage:', data.sessionId);
         setSessionId(data.sessionId);
+        // Also verify it was saved
+        setTimeout(() => {
+          console.log('localStorage after save:', localStorage.getItem('sync_agent_session_id'));
+        }, 100);
+      } else {
+        console.warn('No sessionId returned from API!');
       }
 
       // Set active agent if SYNC delegated to one
@@ -835,6 +874,14 @@ export default function SyncAgent() {
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              className="inline-flex items-center gap-2 rounded-2xl border border-purple-500/30 bg-purple-500/10 px-3 py-2 text-xs text-purple-400 hover:bg-purple-500/20 transition-colors"
+              onClick={handleNewChat}
+              title="Start new conversation"
+            >
+              <Plus className="h-4 w-4" />
+              New Chat
+            </button>
             <button
               className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/80 hover:bg-white/10 transition-colors"
               onClick={() => setSeed((s) => s + 1)}

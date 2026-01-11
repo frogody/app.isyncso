@@ -91,9 +91,11 @@ export default function KnowledgeBase({ onBack }) {
         <Card className="glass-card border-0 p-8 md:p-12">
            <div className="prose prose-invert max-w-none">
              <h1 className="text-3xl font-bold text-white mb-6">{selectedArticle.title}</h1>
-             <ReactMarkdown className="text-gray-300">
-               {selectedArticle.content}
-             </ReactMarkdown>
+             <div className="text-gray-300">
+               <ReactMarkdown>
+                 {selectedArticle.content}
+               </ReactMarkdown>
+             </div>
            </div>
         </Card>
       )}
