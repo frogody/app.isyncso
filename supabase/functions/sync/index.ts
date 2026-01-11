@@ -298,19 +298,24 @@ interface DocumentResponse {
 }
 
 // Thresholds for document conversion
-const LONG_RESPONSE_THRESHOLD = 800; // characters
+const LONG_RESPONSE_THRESHOLD = 500; // characters - more aggressive
 const DOCUMENT_MARKERS = [
   /#{2,}\s+.+/g,           // Multiple markdown headers (##, ###)
   /^\d+\.\s+.+/gm,         // Numbered lists (1. 2. 3.)
-  /^[-*]\s+.+(\n[-*]\s+.+){4,}/gm, // 5+ bullet points
+  /^[-*]\s+.+(\n[-*]\s+.+){2,}/gm, // 3+ bullet points
   /Setup Steps:|Step \d:|Instructions:|How to:|Guide:/i, // Instruction markers
+  /Forecast|Projection|Analysis|Summary|Report|Overview/i, // Report keywords
+  /Month \d|Week \d|Q[1-4]|Revenue|Expense|Budget/i, // Financial keywords
+  /\*\*[^*]+\*\*:/g,       // Bold labels (e.g., **Expected Collections**:)
+  /€|EUR|\$|USD|£|GBP/g,   // Currency symbols (financial content)
 ];
 
 /**
  * Detect if a response is document-like and should be saved separately
+ * ALWAYS err on the side of converting to document for better chat UX
  */
 function isDocumentLikeResponse(response: string): boolean {
-  // Check length threshold
+  // Check length threshold - any response over 500 chars is a candidate
   if (response.length < LONG_RESPONSE_THRESHOLD) {
     return false;
   }
@@ -321,8 +326,12 @@ function isDocumentLikeResponse(response: string): boolean {
     return count + (matches ? matches.length : 0);
   }, 0);
 
-  // If has 2+ document markers OR is very long (1500+ chars), treat as document
-  return markerCount >= 2 || response.length > 1500;
+  // Count newlines - lots of line breaks = structured content
+  const newlineCount = (response.match(/\n/g) || []).length;
+
+  // If has ANY document markers (1+) OR is long (800+ chars) OR has many lines (10+)
+  // Be aggressive about converting to documents
+  return markerCount >= 1 || response.length > 800 || newlineCount > 10;
 }
 
 /**
@@ -350,18 +359,27 @@ function generateDocumentTitle(response: string, userMessage: string): string {
  * Generate a short conversational summary of the document
  */
 function generateShortSummary(response: string, title: string): string {
-  // Check what type of content it is
+  // Check what type of content it is - be specific and helpful
+  if (/forecast|projection/i.test(response)) {
+    return `I've created your financial forecast. Open the document for detailed projections and scenarios.`;
+  }
+  if (/revenue|expense|budget|€|EUR|\$|USD/i.test(response)) {
+    return `Here's your financial analysis. I've put together all the numbers and insights.`;
+  }
   if (response.includes('Integration Required') || response.includes('Connect')) {
     return `I've prepared setup instructions for you. Check the document for detailed steps.`;
   }
   if (response.includes('Step') || response.includes('Instructions')) {
     return `I've created a step-by-step guide for you.`;
   }
-  if (response.includes('Report') || response.includes('Summary')) {
-    return `Here's your report — I've put together all the details.`;
+  if (/report|summary|overview/i.test(response)) {
+    return `Here's your report — all the details are in the document.`;
+  }
+  if (/analysis|assessment|review/i.test(response)) {
+    return `I've completed the analysis. Open the document for the full breakdown.`;
   }
 
-  return `I've prepared a detailed response for you.`;
+  return `I've prepared a detailed document for you. Click to view the full content.`;
 }
 
 /**
@@ -2845,22 +2863,20 @@ Output the create_${docType} [ACTION] block NOW. Do NOT ask any more questions!`
     const actionType = parsedActions.single?.action || (chainResult?.completed[0]?.action);
 
     // Process long responses as documents for better UX
+    // ALWAYS check - even action results can be document-worthy (like forecasts, reports)
     let finalResponse = assistantMessage;
     let documentInfo: DocumentResponse | null = null;
 
-    // Only convert to document if no action was executed (actions have their own UI)
-    if (!actionExecuted && !chainResult) {
-      documentInfo = await processLongResponse(
-        assistantMessage,
-        message, // original user message
-        context?.companyId || DEFAULT_COMPANY_ID,
-        context?.userId
-      );
+    documentInfo = await processLongResponse(
+      assistantMessage,
+      message, // original user message
+      context?.companyId || DEFAULT_COMPANY_ID,
+      context?.userId
+    );
 
-      if (documentInfo) {
-        finalResponse = documentInfo.shortMessage;
-        console.log('[SYNC] Long response converted to document:', documentInfo.documentTitle);
-      }
+    if (documentInfo) {
+      finalResponse = documentInfo.shortMessage;
+      console.log('[SYNC] Long response converted to document:', documentInfo.documentTitle);
     }
 
     const syncResponse: SyncResponse = {
