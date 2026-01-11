@@ -1358,34 +1358,83 @@ export default function SyncAgent() {
         const agentInfo = AGENT_SEGMENTS.find(a => a.id === agentId);
         const agentName = agentInfo?.name || data.delegatedTo;
 
-        // SYNC routing message
-        addAgentMessage('sync', `Routing to ${agentName} agent...`);
-        await new Promise((r) => setTimeout(r, 300));
+        // More conversational agent exchanges
+        const actionType = data.actionExecuted?.type || '';
+        const actionReadable = actionType.replace(/_/g, ' ');
 
-        // Agent acknowledgment
-        addAgentMessage(agentId, `Taking over. Processing request...`, 'thinking');
-        await new Promise((r) => setTimeout(r, 500));
+        // SYNC asks for help
+        addAgentMessage('sync', `@${agentName}, I need your help with this request.`);
+        await new Promise((r) => setTimeout(r, 400));
 
-        // If an action was executed, show it
+        // Agent responds
+        addAgentMessage(agentId, `Hey SYNC! I'm on it. Let me check...`, 'thinking');
+        await new Promise((r) => setTimeout(r, 600));
+
+        // If an action was executed, show the work being done
         if (data.actionExecuted?.type) {
-          addAgentMessage(agentId, `Executed: ${data.actionExecuted.type.replace(/_/g, ' ')}`);
-          await new Promise((r) => setTimeout(r, 200));
+          // Show what action is being performed
+          const actionMessages = {
+            list_invoices: 'Querying invoice database...',
+            create_invoice: 'Creating new invoice entry...',
+            search_products: 'Searching product catalog...',
+            create_prospect: 'Adding to CRM pipeline...',
+            search_prospects: 'Searching contacts database...',
+            list_prospects: 'Fetching prospect list...',
+            create_task: 'Adding task to your list...',
+            list_tasks: 'Pulling up your tasks...',
+            get_financial_summary: 'Crunching the numbers...',
+            create_expense: 'Logging expense entry...',
+            get_pipeline_stats: 'Analyzing pipeline data...',
+            generate_image: 'Generating image with AI...',
+            web_search: 'Searching the web...',
+          };
+          const workMessage = actionMessages[actionType] || `Running ${actionReadable}...`;
+          addAgentMessage(agentId, workMessage, 'thinking');
+          await new Promise((r) => setTimeout(r, 500));
+
+          // Show result summary
+          if (data.actionExecuted.success) {
+            const resultCount = Array.isArray(data.actionExecuted.result)
+              ? data.actionExecuted.result.length
+              : null;
+            const successMsg = resultCount !== null
+              ? `Done! Found ${resultCount} ${resultCount === 1 ? 'result' : 'results'}.`
+              : `Done! ${actionReadable} completed successfully.`;
+            addAgentMessage(agentId, successMsg);
+          } else {
+            addAgentMessage(agentId, `Hmm, ran into an issue. Let me report back.`);
+          }
+          await new Promise((r) => setTimeout(r, 300));
         }
 
-        // Agent completion
-        addAgentMessage(agentId, 'Task complete. Returning to SYNC.');
-        await new Promise((r) => setTimeout(r, 200));
+        // Agent hands back to SYNC
+        addAgentMessage(agentId, `@SYNC Here's what I found. Over to you!`);
+        await new Promise((r) => setTimeout(r, 300));
 
-        // SYNC synthesis
-        addAgentMessage('sync', 'Synthesizing response...');
+        // SYNC acknowledges
+        addAgentMessage('sync', `Thanks ${agentName}! Formatting the response now...`);
       } else if (data.actionExecuted?.type) {
         // Direct action without delegation
-        addAgentMessage('sync', `Executing: ${data.actionExecuted.type.replace(/_/g, ' ')}`);
-        await new Promise((r) => setTimeout(r, 300));
-        addAgentMessage('sync', data.actionExecuted.success ? 'Action complete.' : 'Action failed.');
+        const actionReadable = data.actionExecuted.type.replace(/_/g, ' ');
+        addAgentMessage('sync', `I'll handle this myself. Running ${actionReadable}...`, 'thinking');
+        await new Promise((r) => setTimeout(r, 400));
+
+        if (data.actionExecuted.success) {
+          const resultCount = Array.isArray(data.actionExecuted.result)
+            ? data.actionExecuted.result.length
+            : null;
+          const msg = resultCount !== null
+            ? `Got it! Found ${resultCount} ${resultCount === 1 ? 'item' : 'items'}.`
+            : `Done! Action completed.`;
+          addAgentMessage('sync', msg);
+        } else {
+          addAgentMessage('sync', `That didn't work as expected. Let me explain...`);
+        }
       } else {
-        // Simple response
-        addAgentMessage('sync', 'Generating response...');
+        // Simple response - just a conversation
+        addAgentMessage('sync', 'Let me think about that...');
+        await new Promise((r) => setTimeout(r, 300));
+        addAgentMessage('sync', 'Got it! Here\'s my response...');
       }
 
       // Transition to speaking
@@ -1401,7 +1450,7 @@ export default function SyncAgent() {
       }]);
 
       // Final agent channel message
-      addAgentMessage('sync', 'Response delivered.');
+      addAgentMessage('sync', 'All done! Let me know if you need anything else.');
 
       // Back to listening and clear active agent after a delay
       await new Promise((r) => setTimeout(r, 1500));
