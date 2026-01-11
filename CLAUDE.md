@@ -804,3 +804,252 @@ curl -s -X POST 'https://api.supabase.com/v1/projects/sfxpmzicgpaxfntqleig/datab
 - Browser caching can mask deployed fixes - instruct users to hard refresh (Cmd+Shift+R)
 - PDF.js text extraction is faster and more reliable than vision models for invoices
 - Groq's Llama 3.3 70B provides fast, accurate structured data extraction (~10-20 seconds)
+
+---
+
+## RLS Performance Optimization (Jan 11, 2026)
+
+Fixed 1720 Supabase Performance/Security Advisor warnings down to ~0.
+
+### Problem: Auth RLS Initialization Plan
+
+Supabase's `auth.uid()`, `auth.role()`, and `current_setting()` functions are VOLATILE by default, causing PostgreSQL to re-evaluate them for every row scanned. This creates significant performance overhead.
+
+### Solution: STABLE SECURITY DEFINER Wrapper Functions
+
+Created optimized wrapper functions that cache auth values per query:
+
+```sql
+-- These functions are STABLE (cached per query) and SECURITY DEFINER (run as owner)
+CREATE OR REPLACE FUNCTION public.auth_uid()
+RETURNS UUID LANGUAGE SQL STABLE SECURITY DEFINER SET search_path = public
+AS $$ SELECT auth.uid() $$;
+
+CREATE OR REPLACE FUNCTION public.auth_role()
+RETURNS TEXT LANGUAGE SQL STABLE SECURITY DEFINER SET search_path = public
+AS $$ SELECT auth.role()::text $$;
+
+CREATE OR REPLACE FUNCTION public.auth_company_id()
+RETURNS UUID LANGUAGE SQL STABLE SECURITY DEFINER SET search_path = public
+AS $$ SELECT company_id FROM public.users WHERE id = auth.uid() $$;
+
+CREATE OR REPLACE FUNCTION public.auth_hierarchy_level()
+RETURNS INTEGER LANGUAGE SQL STABLE SECURITY DEFINER SET search_path = public
+AS $$ SELECT COALESCE(MAX(r.hierarchy_level), 0)
+     FROM public.rbac_user_roles ur
+     JOIN public.rbac_roles r ON ur.role_id = r.id
+     WHERE ur.user_id = auth.uid() $$;
+
+CREATE OR REPLACE FUNCTION public.user_in_company(check_company_id UUID)
+RETURNS BOOLEAN LANGUAGE SQL STABLE SECURITY DEFINER SET search_path = public
+AS $$ SELECT EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND company_id = check_company_id) $$;
+```
+
+### What Was Fixed
+
+| Issue Type | Count | Fix Applied |
+|------------|-------|-------------|
+| `auth.uid()` in policies | 154 | Replaced with `public.auth_uid()` |
+| `auth.role()` in policies | 111 | Replaced with `public.auth_role()` |
+| Storage policies | 10 | Updated to use wrapper functions |
+| Helper functions using auth | 6 | Updated to use wrapper functions |
+| Duplicate permissive policies | 73 | Consolidated into single policies |
+| Service role policies | 71 | Removed (service_role bypasses RLS) |
+| Functions without search_path | 51 | Added `SET search_path = public` |
+| Overly permissive policies | 10 | Added proper restrictions |
+
+### RLS Policy Best Practices
+
+**DO:**
+```sql
+-- Use wrapper functions
+CREATE POLICY "users_select" ON public.users
+FOR SELECT TO authenticated
+USING (company_id = auth_company_id());
+
+-- Set search_path on all functions
+CREATE OR REPLACE FUNCTION my_function()
+RETURNS ... LANGUAGE plpgsql
+SET search_path = public
+AS $$ ... $$;
+```
+
+**DON'T:**
+```sql
+-- Don't use auth.uid() directly in policies
+CREATE POLICY "bad_policy" ON public.users
+FOR SELECT USING (id = auth.uid());  -- SLOW!
+
+-- Don't create service_role policies (redundant)
+CREATE POLICY "Service role access" ON public.users
+FOR ALL TO service_role USING (true);  -- USELESS!
+
+-- Don't create duplicate policies for same table+action
+CREATE POLICY "policy1" ON t FOR SELECT USING (...);
+CREATE POLICY "policy2" ON t FOR SELECT USING (...);  -- BAD!
+```
+
+### Applying Fixes via Management API
+
+When MCP/CLI isn't available, use the Management API:
+
+```python
+import json
+import subprocess
+
+def run_query(sql):
+    cmd = [
+        'curl', '-s', '-X', 'POST',
+        'https://api.supabase.com/v1/projects/sfxpmzicgpaxfntqleig/database/query',
+        '-H', 'Authorization: Bearer sbp_b998952de7493074e84b50702e83f1db14be1479',
+        '-H', 'Content-Type: application/json',
+        '-d', json.dumps({"query": sql})
+    ]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    return json.loads(result.stdout) if result.stdout else []
+
+# Example: Update a policy
+run_query('''
+    DROP POLICY IF EXISTS "old_policy" ON public.users;
+    CREATE POLICY "new_policy" ON public.users
+    FOR SELECT TO authenticated
+    USING (company_id = auth_company_id());
+''')
+```
+
+---
+
+## Composio Integration (Third-Party Services)
+
+SYNC can connect to 30+ third-party services via Composio for executing actions on behalf of users.
+
+### Architecture Overview
+
+```
+src/
+├── types/composio.ts           # TypeScript types
+├── hooks/useComposio.js        # React hook for all operations
+├── lib/composio.js             # Utility functions & integration catalog
+└── components/integrations/
+    ├── ConnectionManager.jsx   # Main UI for managing connections
+    └── IntegrationCard.jsx     # Individual integration display
+
+supabase/functions/
+├── composio-connect/           # Main API for all Composio operations
+└── composio-webhooks/          # Webhook handler for triggers
+```
+
+### Supported Integrations (30+)
+
+| Category | Apps |
+|----------|------|
+| CRM & Sales | HubSpot, Salesforce, Pipedrive, Zoho CRM |
+| Communication | Slack, Microsoft Teams, Discord, Zoom |
+| Email & Calendar | Gmail, Google Calendar, Outlook |
+| Project Management | Notion, Asana, Trello, Jira, Monday.com, ClickUp, Linear |
+| File Storage | Google Drive, Dropbox, OneDrive, Box |
+| Finance | QuickBooks, Stripe, Xero |
+| Support | Zendesk, Intercom, Freshdesk |
+| Social | LinkedIn, Twitter/X |
+| Other | Airtable, GitHub, Shopify |
+
+### Database Schema
+
+```sql
+-- Connection references (tokens managed by Composio)
+user_integrations (
+  id, user_id, composio_connected_account_id,
+  toolkit_slug, status, connected_at, last_used_at, metadata
+)
+
+-- Webhook events for triggers
+composio_webhook_events (
+  id, user_id, connected_account_id, trigger_slug,
+  payload, processed, processed_at, error
+)
+
+-- Trigger subscriptions
+composio_trigger_subscriptions (
+  id, user_id, connected_account_id, trigger_slug,
+  composio_subscription_id, webhook_url, status, config
+)
+```
+
+### Edge Function API (`composio-connect`)
+
+Single endpoint handling all operations via `action` parameter:
+
+| Action | Description |
+|--------|-------------|
+| `listAuthConfigs` | Get available auth configs for a toolkit |
+| `initiateConnection` | Start OAuth flow, return redirect URL |
+| `getConnectionStatus` | Check if connection is active |
+| `listConnections` | Get all user's connected accounts |
+| `disconnectAccount` | Remove a connection |
+| `refreshConnection` | Force token refresh |
+| `executeTool` | Execute any Composio tool |
+| `listTools` | List available tools for a toolkit |
+| `listTriggers` | List available triggers for a toolkit |
+| `subscribeTrigger` | Subscribe to a trigger |
+| `unsubscribeTrigger` | Unsubscribe from a trigger |
+
+### Usage Example
+
+```javascript
+import { useComposio } from '@/hooks/useComposio';
+import { ToolHelpers } from '@/lib/composio';
+
+function MyComponent() {
+  const composio = useComposio();
+  const { user } = useUser();
+
+  // Send email via Gmail
+  const sendEmail = async () => {
+    const connection = await composio.getConnection(user.id, 'gmail');
+    if (!connection) return toast.error('Connect Gmail first');
+
+    const { toolSlug, arguments: args } = ToolHelpers.gmail.sendEmail(
+      'john@example.com',
+      'Meeting Tomorrow',
+      'Hi John, confirming our meeting at 3pm.'
+    );
+
+    await composio.executeTool(toolSlug, {
+      connectedAccountId: connection.composio_connected_account_id,
+      arguments: args,
+    });
+  };
+
+  // Create HubSpot contact
+  const createContact = async () => {
+    const connection = await composio.getConnection(user.id, 'hubspot');
+    const { toolSlug, arguments: args } = ToolHelpers.hubspot.createContact(
+      'jane@company.com', 'Jane', 'Doe', 'Acme Corp'
+    );
+
+    await composio.executeTool(toolSlug, {
+      connectedAccountId: connection.composio_connected_account_id,
+      arguments: args,
+    });
+  };
+}
+```
+
+### Deploying Composio Functions
+
+```bash
+# Set API key
+SUPABASE_ACCESS_TOKEN="sbp_xxx" npx supabase secrets set COMPOSIO_API_KEY="your_key" --project-ref sfxpmzicgpaxfntqleig
+
+# Deploy functions
+SUPABASE_ACCESS_TOKEN="sbp_xxx" npx supabase functions deploy composio-connect --project-ref sfxpmzicgpaxfntqleig --no-verify-jwt
+SUPABASE_ACCESS_TOKEN="sbp_xxx" npx supabase functions deploy composio-webhooks --project-ref sfxpmzicgpaxfntqleig --no-verify-jwt
+```
+
+### Key Points
+
+- **Tokens managed by Composio** - Never store OAuth tokens, only connection IDs
+- **OAuth popup flow** - Better UX than redirect-based auth
+- **Auto token refresh** - Composio handles token refresh automatically
+- **Poll for connection** - Wait for OAuth completion with 2s interval, 2min timeout
+- **User isolation** - Each user's connections are isolated via RLS

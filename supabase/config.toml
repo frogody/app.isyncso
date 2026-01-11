@@ -24,3 +24,9 @@ verify_jwt = false
 
 [functions.map-contact-columns]
 verify_jwt = false
+
+[functions.composio-connect]
+verify_jwt = false
+
+[functions.composio-webhooks]
+verify_jwt = false

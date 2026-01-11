@@ -105,9 +105,49 @@ Warning is logged if Supabase credentials are missing:
 Supabase credentials not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
 ```
 
+## Composio Integration
+
+Composio provides a unified API for connecting to 30+ third-party services (Gmail, Slack, HubSpot, etc.).
+
+### Edge Function Secrets
+
+The following secrets must be set for the Composio edge functions:
+
+```bash
+# Set Composio API key
+supabase secrets set COMPOSIO_API_KEY=your_composio_api_key --project-ref sfxpmzicgpaxfntqleig
+
+# Optional: Webhook signature verification
+supabase secrets set COMPOSIO_WEBHOOK_SECRET=your_webhook_secret --project-ref sfxpmzicgpaxfntqleig
+```
+
+### Deploy Edge Functions
+
+After setting secrets, deploy the Composio edge functions:
+
+```bash
+SUPABASE_ACCESS_TOKEN="sbp_xxx" npx supabase functions deploy composio-connect --project-ref sfxpmzicgpaxfntqleig --no-verify-jwt
+SUPABASE_ACCESS_TOKEN="sbp_xxx" npx supabase functions deploy composio-webhooks --project-ref sfxpmzicgpaxfntqleig --no-verify-jwt
+```
+
+### Supported Integrations
+
+| Category | Apps |
+|----------|------|
+| CRM & Sales | HubSpot, Salesforce, Pipedrive, Zoho CRM |
+| Communication | Slack, Microsoft Teams, Discord, Zoom |
+| Email & Calendar | Gmail, Google Calendar, Outlook |
+| Project Management | Notion, Asana, Trello, Jira, Monday.com, ClickUp, Linear |
+| File Storage | Google Drive, Dropbox, OneDrive, Box |
+| Finance | QuickBooks, Stripe, Xero |
+| Support | Zendesk, Intercom, Freshdesk |
+| Social | LinkedIn, Twitter/X |
+| Other | Airtable, GitHub, Shopify |
+
 ## Security Notes
 
 - Never commit `.env` or `.env.local` files
 - Use Vercel/hosting provider's environment variable management
 - `VITE_` prefix exposes variables to the client (public)
 - Keep service role keys server-side only (Edge Functions)
+- Composio API key should only be stored as an edge function secret, never exposed to client
