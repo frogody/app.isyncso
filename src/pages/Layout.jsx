@@ -723,6 +723,12 @@ export default function Layout({ children, currentPageName }) {
   const [enabledApps, setEnabledApps] = useState(FEATURES.DEFAULT_ENABLED_APPS);
   const [appsManagerOpen, setAppsManagerOpen] = useState(false);
   const [productsSettings, setProductsSettings] = useState({ digitalEnabled: true, physicalEnabled: true });
+
+  // Check if current route is SYNC - render fullscreen without sidebars
+  const isSyncFullscreen = useMemo(() => {
+    const path = location.pathname.toLowerCase();
+    return path.includes('/syncagent') || path === '/sync';
+  }, [location.pathname]);
   
 
   // Load user app config
@@ -870,6 +876,28 @@ export default function Layout({ children, currentPageName }) {
     [location.pathname, secondaryNavStats, productsSettings]
   );
   
+  // SYNC fullscreen mode - no sidebars, just the page
+  if (isSyncFullscreen) {
+    return (
+      <ErrorBoundary>
+        <OnboardingGuard>
+          <UserProvider>
+            <AnimationProvider>
+              <PermissionProvider>
+                <AchievementProvider>
+                  <Toaster />
+                  <main className="min-h-screen bg-[#050508]">
+                    {children}
+                  </main>
+                </AchievementProvider>
+              </PermissionProvider>
+            </AnimationProvider>
+          </UserProvider>
+        </OnboardingGuard>
+      </ErrorBoundary>
+    );
+  }
+
   return (
     <ErrorBoundary>
       <OnboardingGuard>
