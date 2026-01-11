@@ -34,7 +34,17 @@ function formatTime(ts) {
 // OUTER RING COMPONENT (SVG-based, stable shape)
 // ============================================================================
 
-function OuterRing({ size = 360, mood = 'listening', level = 0.2 }) {
+// Agent segments configuration - each segment represents an agent SYNC can delegate to
+const AGENT_SEGMENTS = [
+  { id: 'learn', name: 'Learn', color: '#06b6d4', from: 0.00, to: 0.15 },      // cyan
+  { id: 'growth', name: 'Growth', color: '#6366f1', from: 0.17, to: 0.32 },    // indigo
+  { id: 'sentinel', name: 'Sentinel', color: '#86EFAC', from: 0.34, to: 0.49 }, // sage
+  { id: 'finance', name: 'Finance', color: '#f59e0b', from: 0.51, to: 0.66 },   // amber
+  { id: 'create', name: 'Create', color: '#f43f5e', from: 0.68, to: 0.83 },     // rose
+  { id: 'raise', name: 'Raise', color: '#f97316', from: 0.85, to: 0.98 },       // orange
+];
+
+function OuterRing({ size = 360, mood = 'listening', level = 0.2, activeAgent = null }) {
   const ringRef = useRef(null);
   const segmentsRef = useRef(null);
   const dotsRef = useRef(null);
@@ -43,38 +53,59 @@ function OuterRing({ size = 360, mood = 'listening', level = 0.2 }) {
   const pad = 10;
   const ringR = r - pad;
 
-  // Segment layout (percent of circumference)
-  const segments = useMemo(() => [
-    { from: 0.02, to: 0.22, color: '#22c55e' },
-    { from: 0.24, to: 0.34, color: '#a855f7' },
-    { from: 0.36, to: 0.46, color: '#f59e0b' },
-    { from: 0.50, to: 0.74, color: '#10b981' },
-    { from: 0.76, to: 0.90, color: '#8b5cf6' },
-    { from: 0.92, to: 0.98, color: '#22c55e' },
-  ], []);
-
   const glow = mood === 'speaking' ? 1.0 : mood === 'thinking' ? 0.7 : 0.45;
   const pulse = clamp(0.35 + level * 0.9, 0.35, 1.2);
 
-  // Animate segments based on mood
+  // Animate segments based on mood and activeAgent
   useEffect(() => {
     if (prefersReducedMotion() || !segmentsRef.current) return;
 
     const paths = segmentsRef.current.querySelectorAll('path');
 
     anime.remove(paths);
-    anime({
-      targets: paths,
-      strokeWidth: mood === 'speaking' ? [10, 12, 10] : [10, 11, 10],
-      opacity: [0.75 + glow * 0.25, 0.85 + glow * 0.15, 0.75 + glow * 0.25],
-      duration: mood === 'speaking' ? 600 : 1200,
-      loop: true,
-      easing: 'easeInOutSine',
-      delay: anime.stagger(100),
-    });
+
+    // If an agent is active, animate that segment more intensely
+    if (activeAgent) {
+      const activePath = segmentsRef.current.querySelector(`path[data-agent="${activeAgent}"]`);
+      const inactivePaths = Array.from(paths).filter(p => p.dataset.agent !== activeAgent);
+
+      // Dim inactive segments
+      if (inactivePaths.length > 0) {
+        anime({
+          targets: inactivePaths,
+          strokeWidth: 8,
+          opacity: 0.35,
+          duration: 300,
+          easing: 'easeOutQuad',
+        });
+      }
+
+      // Pulse the active segment with intense glow
+      if (activePath) {
+        anime({
+          targets: activePath,
+          strokeWidth: [12, 16, 12],
+          opacity: [0.9, 1, 0.9],
+          duration: 500,
+          loop: true,
+          easing: 'easeInOutSine',
+        });
+      }
+    } else {
+      // Default animation for all segments
+      anime({
+        targets: paths,
+        strokeWidth: mood === 'speaking' ? [10, 12, 10] : [10, 11, 10],
+        opacity: [0.75 + glow * 0.25, 0.85 + glow * 0.15, 0.75 + glow * 0.25],
+        duration: mood === 'speaking' ? 600 : 1200,
+        loop: true,
+        easing: 'easeInOutSine',
+        delay: anime.stagger(100),
+      });
+    }
 
     return () => anime.remove(paths);
-  }, [mood, glow]);
+  }, [mood, glow, activeAgent]);
 
   // Animate mood dots
   useEffect(() => {
@@ -179,17 +210,18 @@ function OuterRing({ size = 360, mood = 'listening', level = 0.2 }) {
           })}
         </g>
 
-        {/* Colored segments */}
+        {/* Colored segments - each represents an agent */}
         <g ref={segmentsRef} filter="url(#softGlow)">
-          {segments.map((s, idx) => (
+          {AGENT_SEGMENTS.map((segment) => (
             <path
-              key={idx}
-              d={arcPath(r, r, ringR, s.from, s.to)}
+              key={segment.id}
+              data-agent={segment.id}
+              d={arcPath(r, r, ringR, segment.from, segment.to)}
               fill="none"
-              stroke={s.color}
+              stroke={segment.color}
               strokeWidth={10}
               strokeLinecap="round"
-              style={{ opacity: 0.75 + glow * 0.25 }}
+              style={{ opacity: activeAgent === segment.id ? 1 : 0.75 + glow * 0.25 }}
             />
           ))}
         </g>
@@ -520,8 +552,11 @@ function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 1 }) {
 // AGENT AVATAR COMPONENT (Combines ring + inner viz)
 // ============================================================================
 
-function AgentAvatar({ size = 360, agentName = 'SYNC', mood = 'listening', level = 0.25, seed = 1 }) {
+function AgentAvatar({ size = 360, agentName = 'SYNC', mood = 'listening', level = 0.25, seed = 1, activeAgent = null }) {
   const labelRef = useRef(null);
+
+  // Get active agent name for display
+  const activeAgentInfo = activeAgent ? AGENT_SEGMENTS.find(a => a.id === activeAgent) : null;
 
   // Animate label on mood change
   useEffect(() => {
@@ -534,11 +569,11 @@ function AgentAvatar({ size = 360, agentName = 'SYNC', mood = 'listening', level
       duration: 200,
       easing: 'easeOutQuad',
     });
-  }, [mood]);
+  }, [mood, activeAgent]);
 
   return (
     <div className="relative" style={{ width: size, height: size }}>
-      <OuterRing size={size} mood={mood} level={level} />
+      <OuterRing size={size} mood={mood} level={level} activeAgent={activeAgent} />
       <InnerViz size={size} mood={mood} level={level} seed={seed} />
 
       {/* Label */}
@@ -549,12 +584,15 @@ function AgentAvatar({ size = 360, agentName = 'SYNC', mood = 'listening', level
         >
           <span className="inline-flex items-center gap-2">
             <span
-              className={cn(
-                'inline-block h-2 w-2 rounded-full shadow-[0_0_14px_rgba(168,85,247,0.8)]',
-                mood === 'speaking' ? 'bg-purple-400' : mood === 'thinking' ? 'bg-amber-400' : 'bg-emerald-400'
-              )}
+              className="inline-block h-2 w-2 rounded-full"
+              style={{
+                backgroundColor: activeAgentInfo?.color || (mood === 'speaking' ? '#a855f7' : mood === 'thinking' ? '#f59e0b' : '#22c55e'),
+                boxShadow: `0 0 14px ${activeAgentInfo?.color || 'rgba(168,85,247,0.8)'}`,
+              }}
             />
-            <span className="font-medium text-white/90">{agentName}</span>
+            <span className="font-medium text-white/90">
+              {activeAgentInfo ? `${agentName} → ${activeAgentInfo.name}` : agentName}
+            </span>
             <span className="text-white/50">•</span>
             <span className="text-white/70 capitalize">{mood}</span>
           </span>
@@ -627,6 +665,7 @@ export default function SyncAgent() {
   const [mood, setMood] = useState('listening');
   const [level, setLevel] = useState(0.18);
   const [seed, setSeed] = useState(4);
+  const [activeAgent, setActiveAgent] = useState(null);
 
   const [messages, setMessages] = useState(() => [
     { role: 'assistant', text: "Hey — I'm SYNC, your AI orchestrator. I can help with invoices, prospects, compliance, learning, and more.", ts: Date.now() - 1000 * 60 * 2 },
@@ -726,18 +765,25 @@ export default function SyncAgent() {
         setSessionId(data.sessionId);
       }
 
+      // Set active agent if SYNC delegated to one
+      if (data.delegatedTo) {
+        setActiveAgent(data.delegatedTo.toLowerCase());
+      }
+
       // Transition to speaking
       setMood('speaking');
       await new Promise((r) => setTimeout(r, 300));
 
       setMessages((m) => [...m, { role: 'assistant', text: data.response, ts: Date.now() }]);
 
-      // Back to listening
-      await new Promise((r) => setTimeout(r, 500));
+      // Back to listening and clear active agent after a delay
+      await new Promise((r) => setTimeout(r, 1500));
+      setActiveAgent(null);
       setMood('listening');
     } catch (err) {
       console.error('SYNC error:', err);
       setError(err.message || 'Failed to send message');
+      setActiveAgent(null);
       setMood('listening');
     } finally {
       setIsSending(false);
@@ -820,7 +866,7 @@ export default function SyncAgent() {
           </div>
 
           <div className="mt-4 grid place-items-center">
-            <AgentAvatar size={360} agentName="SYNC" mood={mood} level={level} seed={seed} />
+            <AgentAvatar size={360} agentName="SYNC" mood={mood} level={level} seed={seed} activeAgent={activeAgent} />
           </div>
 
           <div className="mt-5 grid gap-3">
