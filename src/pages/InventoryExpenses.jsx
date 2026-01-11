@@ -684,16 +684,41 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
         pdfTextPreview: pdfText ? pdfText.substring(0, 100) : null,
       });
 
+      // Use direct fetch instead of supabase.functions.invoke to ensure body is sent correctly
       const startTime = Date.now();
-      const { data: processResult, error: processError } = await supabase.functions.invoke(
-        "process-invoice",
-        {
-          body: requestBody,
-        }
-      );
-      const duration = Date.now() - startTime;
+      let processResult, processError;
 
-      console.log(`Edge function response (took ${duration}ms):`, { processResult, processError });
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-invoice`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify(requestBody),
+          }
+        );
+
+        const duration = Date.now() - startTime;
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          processError = { message: `HTTP ${response.status}: ${errorText}` };
+          processResult = null;
+        } else {
+          processResult = await response.json();
+          processError = null;
+        }
+
+        console.log(`Edge function response (took ${duration}ms):`, { processResult, processError });
+      } catch (fetchError) {
+        const duration = Date.now() - startTime;
+        processError = fetchError;
+        processResult = null;
+        console.error(`Edge function error (took ${duration}ms):`, fetchError);
+      }
 
       setUploadProgress(100);
 
