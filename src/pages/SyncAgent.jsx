@@ -6,7 +6,7 @@
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Send, Sparkles, User, Bot, RotateCcw, Brain, AlertCircle, RefreshCw, Plus } from 'lucide-react';
+import { Send, Sparkles, User, Bot, RotateCcw, Brain, AlertCircle, RefreshCw, Plus, Download, ExternalLink, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/api/supabaseClient';
@@ -29,6 +29,260 @@ function formatTime(ts) {
   } catch {
     return '';
   }
+}
+
+// ============================================================================
+// IMAGE URL DETECTION AND EXTRACTION
+// ============================================================================
+
+// Patterns for detecting image URLs in text
+const IMAGE_URL_PATTERNS = [
+  // Supabase storage URLs
+  /https?:\/\/[a-z0-9]+\.supabase\.co\/storage\/v1\/object\/(?:public|sign)\/[^\s"'<>]+\.(?:png|jpg|jpeg|gif|webp|svg)/gi,
+  // Generic image URLs
+  /https?:\/\/[^\s"'<>]+\.(?:png|jpg|jpeg|gif|webp|svg)(?:\?[^\s"'<>]*)?/gi,
+  // Together.ai / Replicate / other AI image URLs
+  /https?:\/\/[^\s"'<>]*(?:together|replicate|openai|stability|flux)[^\s"'<>]*\.(?:png|jpg|jpeg|gif|webp)/gi,
+];
+
+/**
+ * Extract image URLs from text
+ * Returns array of { url, startIndex, endIndex }
+ */
+function extractImageUrls(text) {
+  const matches = [];
+  const seen = new Set();
+
+  for (const pattern of IMAGE_URL_PATTERNS) {
+    pattern.lastIndex = 0; // Reset regex state
+    let match;
+    while ((match = pattern.exec(text)) !== null) {
+      const url = match[0];
+      if (!seen.has(url)) {
+        seen.add(url);
+        matches.push({
+          url,
+          startIndex: match.index,
+          endIndex: match.index + url.length,
+        });
+      }
+    }
+  }
+
+  return matches.sort((a, b) => a.startIndex - b.startIndex);
+}
+
+/**
+ * Split text into parts: regular text and image URLs
+ */
+function parseTextWithImages(text) {
+  const images = extractImageUrls(text);
+  if (images.length === 0) {
+    return [{ type: 'text', content: text }];
+  }
+
+  const parts = [];
+  let lastIndex = 0;
+
+  for (const img of images) {
+    // Add text before this image
+    if (img.startIndex > lastIndex) {
+      const textBefore = text.slice(lastIndex, img.startIndex).trim();
+      if (textBefore) {
+        parts.push({ type: 'text', content: textBefore });
+      }
+    }
+    // Add the image
+    parts.push({ type: 'image', url: img.url });
+    lastIndex = img.endIndex;
+  }
+
+  // Add remaining text after last image
+  if (lastIndex < text.length) {
+    const textAfter = text.slice(lastIndex).trim();
+    if (textAfter) {
+      parts.push({ type: 'text', content: textAfter });
+    }
+  }
+
+  return parts;
+}
+
+// ============================================================================
+// IMAGE CARD COMPONENT
+// ============================================================================
+
+function ImageCard({ url }) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const cardRef = useRef(null);
+
+  // Animate card entrance
+  useEffect(() => {
+    if (prefersReducedMotion() || !cardRef.current) return;
+
+    anime({
+      targets: cardRef.current,
+      scale: [0.95, 1],
+      opacity: [0, 1],
+      duration: 300,
+      easing: 'easeOutQuad',
+    });
+  }, []);
+
+  const handleDownload = async (e) => {
+    e.stopPropagation();
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      // Extract filename from URL or generate one
+      const filename = url.split('/').pop()?.split('?')[0] || `sync-image-${Date.now()}.png`;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error('Failed to download image:', err);
+      // Fallback: open in new tab
+      window.open(url, '_blank');
+    }
+  };
+
+  const handleOpenInNewTab = (e) => {
+    e.stopPropagation();
+    window.open(url, '_blank');
+  };
+
+  if (hasError) {
+    return (
+      <div
+        ref={cardRef}
+        className="mt-3 rounded-xl border border-red-500/20 bg-red-950/20 p-4"
+        style={{ opacity: 0 }}
+      >
+        <div className="flex items-center gap-2 text-red-400">
+          <AlertCircle className="h-4 w-4" />
+          <span className="text-sm">Failed to load image</span>
+        </div>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-2 flex items-center gap-1 text-xs text-red-300/70 hover:text-red-300 transition-colors"
+        >
+          <ExternalLink className="h-3 w-3" />
+          Open link
+        </a>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div
+        ref={cardRef}
+        className="mt-3 group relative rounded-xl border border-purple-500/30 bg-gradient-to-br from-purple-950/40 to-black/40 overflow-hidden cursor-pointer hover:border-purple-400/50 transition-all"
+        onClick={() => setIsExpanded(true)}
+        style={{ opacity: 0 }}
+      >
+        {/* Loading skeleton */}
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+            <div className="flex items-center gap-2 text-purple-400">
+              <ImageIcon className="h-5 w-5 animate-pulse" />
+              <span className="text-sm">Loading image...</span>
+            </div>
+          </div>
+        )}
+
+        {/* Image */}
+        <img
+          src={url}
+          alt="Generated image"
+          className={cn(
+            "w-full max-h-[400px] object-contain transition-opacity",
+            isLoading ? "opacity-0" : "opacity-100"
+          )}
+          onLoad={() => setIsLoading(false)}
+          onError={() => {
+            setIsLoading(false);
+            setHasError(true);
+          }}
+        />
+
+        {/* Hover overlay with actions */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-4">
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 bg-white/10 hover:bg-white/20 text-white border border-white/20"
+              onClick={handleDownload}
+            >
+              <Download className="h-4 w-4 mr-1.5" />
+              Download
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 bg-white/10 hover:bg-white/20 text-white border border-white/20"
+              onClick={handleOpenInNewTab}
+            >
+              <ExternalLink className="h-4 w-4 mr-1.5" />
+              Open
+            </Button>
+          </div>
+        </div>
+
+        {/* Click hint */}
+        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <span className="text-[10px] text-white/50 bg-black/40 px-2 py-1 rounded-full">Click to expand</span>
+        </div>
+      </div>
+
+      {/* Fullscreen modal */}
+      {isExpanded && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm cursor-zoom-out"
+          onClick={() => setIsExpanded(false)}
+        >
+          <div className="relative max-w-[90vw] max-h-[90vh]">
+            <img
+              src={url}
+              alt="Generated image"
+              className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+            />
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+              <Button
+                size="sm"
+                className="bg-purple-600 hover:bg-purple-500 text-white"
+                onClick={handleDownload}
+              >
+                <Download className="h-4 w-4 mr-1.5" />
+                Download
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-white/20 text-white hover:bg-white/10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsExpanded(false);
+                }}
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
 }
 
 // ============================================================================
@@ -613,6 +867,12 @@ function Bubble({ role, text, ts, index }) {
   const bubbleRef = useRef(null);
   const isUser = role === 'user';
 
+  // Parse text for images (only for assistant messages)
+  const contentParts = useMemo(() => {
+    if (isUser) return null;
+    return parseTextWithImages(text);
+  }, [text, isUser]);
+
   // Animate bubble entrance
   useEffect(() => {
     if (prefersReducedMotion() || !bubbleRef.current) return;
@@ -649,9 +909,15 @@ function Bubble({ role, text, ts, index }) {
           <div className="whitespace-pre-wrap">{text}</div>
         ) : (
           <div className="prose prose-invert prose-sm max-w-none prose-p:my-2 prose-headings:my-3 prose-ul:my-2 prose-li:my-1 prose-code:text-purple-400 prose-code:bg-purple-950/30 prose-code:px-1 prose-code:rounded">
-            <ReactMarkdown>
-              {text}
-            </ReactMarkdown>
+            {contentParts.map((part, i) => (
+              part.type === 'image' ? (
+                <ImageCard key={`img-${i}`} url={part.url} />
+              ) : (
+                <ReactMarkdown key={`text-${i}`}>
+                  {part.content}
+                </ReactMarkdown>
+              )
+            ))}
           </div>
         )}
       </div>
