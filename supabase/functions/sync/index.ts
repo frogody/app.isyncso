@@ -43,6 +43,7 @@ import { executeLearnAction } from './tools/learn.ts';
 import { executeSentinelAction } from './tools/sentinel.ts';
 import { executeCreateAction } from './tools/create.ts';
 import { executeResearchAction } from './tools/research.ts';
+import { executeComposioAction, COMPOSIO_ACTIONS } from './tools/composio.ts';
 import { ActionContext, ActionResult, ChainedAction, ActionChainResult } from './tools/types.ts';
 
 // Import new improvement modules
@@ -244,6 +245,10 @@ async function executeActionCore(
 
   if (RESEARCH_ACTIONS.includes(actionName)) {
     return executeResearchAction(ctx, actionName, data);
+  }
+
+  if (COMPOSIO_ACTIONS.includes(actionName)) {
+    return executeComposioAction(ctx, actionName, data);
   }
 
   // Unknown action
@@ -839,6 +844,27 @@ You: "Found it! Philips OneBlade 360 Face. What kind of images do you need - cle
 - **generate_image**: Generate an AI image (product, marketing, creative)
 - **list_generated_content**: List generated AI content
 
+### INTEGRATIONS (Third-Party Apps via Composio)
+The user may have connected third-party apps like Gmail, Slack, HubSpot, Notion, etc. Use these actions to interact with them:
+
+- **composio_list_integrations**: List user's connected apps (check this first to see what's available!)
+- **composio_send_email**: Send email via Gmail (to, subject, body)
+- **composio_fetch_emails**: Fetch recent emails from Gmail
+- **composio_search_emails**: Search emails in Gmail (query)
+- **composio_send_slack_message**: Send Slack message (channel, message)
+- **composio_list_slack_channels**: List Slack channels
+- **composio_create_hubspot_contact**: Create HubSpot contact (email, first_name, last_name)
+- **composio_create_hubspot_deal**: Create HubSpot deal (name, amount, stage)
+- **composio_create_calendar_event**: Create Google Calendar event (title, start_time, end_time)
+- **composio_list_calendar_events**: List upcoming calendar events
+- **composio_create_notion_page**: Create Notion page (title, content)
+- **composio_create_trello_card**: Create Trello card (name, list_id)
+- **composio_create_asana_task**: Create Asana task (name, notes)
+- **composio_create_linear_issue**: Create Linear issue (title, description)
+- **composio_execute_tool**: Generic tool execution (toolkit, tool_name, arguments)
+
+**TIP**: Always check what integrations the user has connected first with composio_list_integrations!
+
 ## Action Examples
 
 ### Finance
@@ -890,6 +916,16 @@ You: "Found it! Philips OneBlade 360 Face. What kind of images do you need - cle
 **CRITICAL: For product images, ALWAYS include "product_name" to use the real product as reference!**
 - With product_name: Uses actual product images → accurate representation
 - Without product_name: Generic AI generation → may look completely different
+
+### Integrations (Third-Party Apps)
+[ACTION]{"action": "composio_list_integrations", "data": {}}[/ACTION]
+[ACTION]{"action": "composio_send_email", "data": {"to": "john@example.com", "subject": "Meeting Tomorrow", "body": "Hi John, Just confirming our meeting..."}}[/ACTION]
+[ACTION]{"action": "composio_fetch_emails", "data": {"query": "from:client@company.com", "max_results": 5}}[/ACTION]
+[ACTION]{"action": "composio_send_slack_message", "data": {"channel": "#sales", "message": "New deal closed! 🎉"}}[/ACTION]
+[ACTION]{"action": "composio_create_hubspot_contact", "data": {"email": "jane@acme.com", "first_name": "Jane", "last_name": "Smith", "company": "Acme Inc"}}[/ACTION]
+[ACTION]{"action": "composio_create_calendar_event", "data": {"title": "Team Meeting", "start_time": "2026-01-15T10:00:00Z", "end_time": "2026-01-15T11:00:00Z"}}[/ACTION]
+
+**TIP**: When user asks to "send an email" or "post to Slack", first check if they have that integration connected!
 
 ## Action Chaining (Multi-Step Operations)
 

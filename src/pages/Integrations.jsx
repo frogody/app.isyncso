@@ -663,78 +663,146 @@ export default function Integrations() {
             </TabsList>
 
             {/* Overview Tab */}
-            <TabsContent value="overview" className="mt-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Connected Services */}
-                <GlassCard hover={false} className="p-6">
-                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-emerald-400" />
-                    Connected Services
-                  </h3>
-                  <div className="space-y-3">
-                    {/* Google Workspace */}
-                    <div className={`p-4 rounded-xl border transition-all ${googleConnected ? 'bg-emerald-500/5 border-emerald-500/30' : 'bg-zinc-800/30 border-zinc-700/50'}`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center">
-                            <Globe className="w-5 h-5 text-white" />
-                          </div>
-                          <div>
-                            <h4 className="font-medium text-white">Google Workspace</h4>
-                            <p className="text-xs text-zinc-500">{googleConnected ? googleUserInfo?.email : 'Gmail, Calendar, Drive'}</p>
-                          </div>
-                        </div>
-                        {googleConnected ? (
-                          <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">Connected</Badge>
-                        ) : (
-                          <Button size="sm" onClick={handleGoogleConnect} className="bg-blue-600 hover:bg-blue-500 text-white">
-                            Connect
-                          </Button>
-                        )}
+            <TabsContent value="overview" className="mt-6 space-y-6">
+              {/* Connected Apps Hero */}
+              {totalConnected > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-950/40 via-zinc-900/60 to-purple-950/30 border border-emerald-800/30 p-6"
+                >
+                  <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute top-0 right-0 w-72 h-72 bg-emerald-500/5 rounded-full blur-3xl" />
+                    <div className="absolute bottom-0 left-0 w-56 h-56 bg-purple-500/5 rounded-full blur-3xl" />
+                  </div>
+
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
+                        <CheckCircle className="w-6 h-6 text-emerald-400" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold text-white">Your Connected Apps</h3>
+                        <p className="text-emerald-400/80 text-sm">{totalConnected} integration{totalConnected !== 1 ? 's' : ''} ready to use with SYNC</p>
                       </div>
                     </div>
 
-                    {/* Composio Connected */}
-                    {Object.entries(composioConnections).filter(([_, c]) => c.status === 'ACTIVE').slice(0, 3).map(([slug, conn]) => {
-                      const integration = INTEGRATION_CATALOG.find(i => i.slug === slug);
-                      if (!integration) return null;
-                      return (
-                        <div key={slug} className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/30">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: integration.color + '20' }}>
-                                <span className="text-sm font-bold" style={{ color: integration.color }}>{integration.name.substring(0, 2).toUpperCase()}</span>
-                              </div>
-                              <div>
-                                <h4 className="font-medium text-white">{integration.name}</h4>
-                                <p className="text-xs text-zinc-500">{integration.category}</p>
-                              </div>
-                            </div>
-                            <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">Connected</Badge>
+                    {/* Connected Apps Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                      {/* Google Workspace */}
+                      {googleConnected && (
+                        <div className="group relative p-4 rounded-xl bg-zinc-900/60 border border-zinc-700/50 hover:border-emerald-500/40 transition-all cursor-pointer">
+                          <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                            <Globe className="w-6 h-6 text-white" />
+                          </div>
+                          <h4 className="font-semibold text-white text-sm">Google</h4>
+                          <p className="text-[11px] text-zinc-500 truncate">{googleUserInfo?.email?.split('@')[0]}</p>
+                          <div className="mt-2 flex gap-1">
+                            <span className="px-1.5 py-0.5 rounded text-[9px] bg-red-500/20 text-red-400">Gmail</span>
+                            <span className="px-1.5 py-0.5 rounded text-[9px] bg-blue-500/20 text-blue-400">Cal</span>
                           </div>
                         </div>
-                      );
-                    })}
+                      )}
 
-                    {composioConnectedCount > 3 && (
-                      <button onClick={() => setActiveTab('apps')} className="w-full p-3 rounded-xl border border-dashed border-zinc-700 text-zinc-500 hover:text-white hover:border-zinc-600 transition-colors">
-                        +{composioConnectedCount - 3} more connected
+                      {/* Composio Connected Apps */}
+                      {Object.entries(composioConnections).filter(([_, c]) => c.status === 'ACTIVE').map(([slug, conn]) => {
+                        const integration = INTEGRATION_CATALOG.find(i => i.slug === slug);
+                        if (!integration) return null;
+                        return (
+                          <div
+                            key={slug}
+                            className="group relative p-4 rounded-xl bg-zinc-900/60 border border-zinc-700/50 hover:border-emerald-500/40 transition-all cursor-pointer"
+                          >
+                            <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            <div
+                              className="w-12 h-12 rounded-xl flex items-center justify-center mb-3 group-hover:scale-105 transition-transform"
+                              style={{ backgroundColor: integration.color + '25' }}
+                            >
+                              <span className="text-lg font-bold" style={{ color: integration.color }}>
+                                {integration.name.substring(0, 2).toUpperCase()}
+                              </span>
+                            </div>
+                            <h4 className="font-semibold text-white text-sm truncate">{integration.name}</h4>
+                            <p className="text-[11px] text-zinc-500 truncate">{integration.category}</p>
+                            {integration.popularTools && (
+                              <div className="mt-2">
+                                <span className="px-1.5 py-0.5 rounded text-[9px] bg-zinc-700/50 text-zinc-400">
+                                  {integration.popularTools.length} actions
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+
+                      {/* Add More Button */}
+                      <button
+                        onClick={() => setActiveTab('apps')}
+                        className="p-4 rounded-xl border-2 border-dashed border-zinc-700/50 hover:border-purple-500/40 hover:bg-purple-500/5 transition-all flex flex-col items-center justify-center min-h-[140px]"
+                      >
+                        <Plus className="w-8 h-8 text-zinc-600 mb-2" />
+                        <span className="text-sm text-zinc-500">Add App</span>
                       </button>
-                    )}
-
-                    {totalConnected === 0 && (
-                      <div className="text-center py-6">
-                        <Plug className="w-10 h-10 mx-auto text-zinc-600 mb-2" />
-                        <p className="text-zinc-500 text-sm">No integrations connected yet</p>
-                        <Button size="sm" onClick={() => setActiveTab('apps')} className="mt-3">
-                          Connect an App
-                        </Button>
-                      </div>
-                    )}
+                    </div>
                   </div>
+                </motion.div>
+              )}
+
+              {/* Empty State */}
+              {totalConnected === 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-center py-16 rounded-2xl bg-zinc-900/40 border border-zinc-800/60"
+                >
+                  <div className="w-20 h-20 rounded-2xl bg-zinc-800/60 flex items-center justify-center mx-auto mb-6">
+                    <Plug className="w-10 h-10 text-zinc-600" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-white mb-2">No Apps Connected Yet</h3>
+                  <p className="text-zinc-500 mb-6 max-w-md mx-auto">
+                    Connect your favorite tools like Gmail, Slack, HubSpot, and more to unlock powerful automation with SYNC.
+                  </p>
+                  <Button onClick={() => setActiveTab('apps')} className="bg-purple-600 hover:bg-purple-500">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Connect Your First App
+                  </Button>
+                </motion.div>
+              )}
+
+              {/* Two Column Layout */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* What You Can Do */}
+                <GlassCard hover={false} className="p-6">
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-purple-400" />
+                    What You Can Do with SYNC
+                  </h3>
+                  <div className="space-y-3">
+                    {[
+                      { icon: Mail, label: 'Send emails via Gmail', color: 'text-red-400', connected: composioConnections['gmail'] || googleConnected },
+                      { icon: Calendar, label: 'Schedule calendar events', color: 'text-blue-400', connected: composioConnections['googlecalendar'] || googleConnected },
+                      { icon: Activity, label: 'Post to Slack channels', color: 'text-purple-400', connected: !!composioConnections['slack'] },
+                      { icon: TrendingUp, label: 'Create HubSpot contacts', color: 'text-orange-400', connected: !!composioConnections['hubspot'] },
+                      { icon: FileText, label: 'Add notes to Notion', color: 'text-zinc-400', connected: !!composioConnections['notion'] },
+                    ].map((item, i) => (
+                      <div key={i} className={`flex items-center gap-3 p-3 rounded-lg ${item.connected ? 'bg-zinc-800/40' : 'bg-zinc-900/30 opacity-50'}`}>
+                        <item.icon className={`w-5 h-5 ${item.color}`} />
+                        <span className="text-sm text-zinc-300">{item.label}</span>
+                        {item.connected ? (
+                          <Badge className="ml-auto bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px]">Ready</Badge>
+                        ) : (
+                          <Badge className="ml-auto bg-zinc-700/50 text-zinc-500 border-zinc-600/30 text-[10px]">Connect</Badge>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-zinc-500 mt-4">
+                    💡 Say "Send an email to John" or "Create a Slack message" to SYNC
+                  </p>
                 </GlassCard>
 
-                {/* Recent Actions */}
+                {/* Recent Activity */}
                 <GlassCard hover={false} className="p-6">
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                     <Activity className="w-5 h-5 text-orange-400" />

@@ -1,0 +1,668 @@
+/**
+ * Composio Tool for SYNC Agent
+ * Executes actions on third-party services via Composio integrations
+ */
+
+import { ActionContext, ActionResult } from './types.ts';
+
+// Composio API configuration
+const COMPOSIO_API_KEY = Deno.env.get("COMPOSIO_API_KEY");
+const COMPOSIO_V1_URL = "https://backend.composio.dev/api/v1";
+
+// Common toolkit slugs and their popular actions
+export const COMPOSIO_INTEGRATIONS = {
+  gmail: {
+    name: 'Gmail',
+    actions: ['GMAIL_SEND_EMAIL', 'GMAIL_FETCH_EMAILS', 'GMAIL_CREATE_DRAFT', 'GMAIL_SEARCH_EMAILS'],
+  },
+  slack: {
+    name: 'Slack',
+    actions: ['SLACK_SEND_MESSAGE', 'SLACK_CREATE_CHANNEL', 'SLACK_LIST_CHANNELS', 'SLACK_LIST_USERS'],
+  },
+  hubspot: {
+    name: 'HubSpot',
+    actions: ['HUBSPOT_CREATE_CONTACT', 'HUBSPOT_CREATE_DEAL', 'HUBSPOT_LIST_CONTACTS', 'HUBSPOT_SEND_EMAIL'],
+  },
+  notion: {
+    name: 'Notion',
+    actions: ['NOTION_CREATE_PAGE', 'NOTION_UPDATE_PAGE', 'NOTION_SEARCH', 'NOTION_CREATE_DATABASE'],
+  },
+  googlecalendar: {
+    name: 'Google Calendar',
+    actions: ['GOOGLECALENDAR_CREATE_EVENT', 'GOOGLECALENDAR_LIST_EVENTS', 'GOOGLECALENDAR_UPDATE_EVENT'],
+  },
+  trello: {
+    name: 'Trello',
+    actions: ['TRELLO_CREATE_CARD', 'TRELLO_LIST_CARDS', 'TRELLO_UPDATE_CARD', 'TRELLO_CREATE_LIST'],
+  },
+  asana: {
+    name: 'Asana',
+    actions: ['ASANA_CREATE_TASK', 'ASANA_LIST_TASKS', 'ASANA_UPDATE_TASK', 'ASANA_CREATE_PROJECT'],
+  },
+  linear: {
+    name: 'Linear',
+    actions: ['LINEAR_CREATE_ISSUE', 'LINEAR_LIST_ISSUES', 'LINEAR_UPDATE_ISSUE'],
+  },
+  github: {
+    name: 'GitHub',
+    actions: ['GITHUB_CREATE_ISSUE', 'GITHUB_LIST_ISSUES', 'GITHUB_CREATE_PR', 'GITHUB_LIST_REPOS'],
+  },
+  jira: {
+    name: 'Jira',
+    actions: ['JIRA_CREATE_ISSUE', 'JIRA_LIST_ISSUES', 'JIRA_UPDATE_ISSUE', 'JIRA_SEARCH'],
+  },
+};
+
+// SYNC action names that map to Composio
+export const COMPOSIO_ACTIONS = [
+  // Gmail actions
+  'composio_send_email',
+  'composio_fetch_emails',
+  'composio_search_emails',
+
+  // Slack actions
+  'composio_send_slack_message',
+  'composio_list_slack_channels',
+
+  // HubSpot actions
+  'composio_create_hubspot_contact',
+  'composio_create_hubspot_deal',
+
+  // Calendar actions
+  'composio_create_calendar_event',
+  'composio_list_calendar_events',
+
+  // Task management
+  'composio_create_notion_page',
+  'composio_create_trello_card',
+  'composio_create_asana_task',
+  'composio_create_linear_issue',
+
+  // Generic Composio action
+  'composio_execute_tool',
+
+  // List integrations
+  'composio_list_integrations',
+];
+
+/**
+ * Helper to make Composio API calls
+ */
+async function composioFetch<T = unknown>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<{ success: boolean; data?: T; error?: string }> {
+  if (!COMPOSIO_API_KEY) {
+    return { success: false, error: "COMPOSIO_API_KEY not configured" };
+  }
+
+  const url = endpoint.startsWith("http") ? endpoint : `${COMPOSIO_V1_URL}${endpoint}`;
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        "x-api-key": COMPOSIO_API_KEY,
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+    });
+
+    const text = await response.text();
+    let data: T | undefined;
+
+    try {
+      data = text ? JSON.parse(text) : undefined;
+    } catch {
+      // Not JSON
+    }
+
+    if (!response.ok) {
+      const errorMsg = (data as Record<string, unknown>)?.message ||
+        (data as Record<string, unknown>)?.error ||
+        `HTTP ${response.status}`;
+      return { success: false, error: String(errorMsg) };
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Network error",
+    };
+  }
+}
+
+/**
+ * Get user's connected Composio integrations
+ */
+async function getUserIntegrations(ctx: ActionContext): Promise<Array<{
+  toolkit_slug: string;
+  composio_connected_account_id: string;
+  status: string;
+}>> {
+  if (!ctx.userId) return [];
+
+  const { data, error } = await ctx.supabase
+    .from('user_integrations')
+    .select('toolkit_slug, composio_connected_account_id, status')
+    .eq('user_id', ctx.userId)
+    .eq('status', 'ACTIVE');
+
+  if (error) {
+    console.error('Failed to fetch user integrations:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
+/**
+ * Find connection for a specific toolkit
+ */
+async function getConnectionForToolkit(
+  ctx: ActionContext,
+  toolkitSlug: string
+): Promise<string | null> {
+  const integrations = await getUserIntegrations(ctx);
+  const integration = integrations.find(i => i.toolkit_slug === toolkitSlug);
+  return integration?.composio_connected_account_id || null;
+}
+
+/**
+ * Execute a Composio tool action
+ */
+async function executeComposioTool(
+  connectedAccountId: string,
+  toolSlug: string,
+  args: Record<string, unknown>
+): Promise<ActionResult> {
+  const result = await composioFetch<{
+    successful?: boolean;
+    execution_details?: { executed: boolean };
+    response_data?: unknown;
+    data?: unknown;
+    error?: string;
+  }>(`/actions/${toolSlug}/execute`, {
+    method: "POST",
+    body: JSON.stringify({
+      connectedAccountId,
+      input: args,
+    }),
+  });
+
+  if (!result.success) {
+    return {
+      success: false,
+      error: result.error,
+      message: `Failed to execute ${toolSlug}: ${result.error}`,
+    };
+  }
+
+  return {
+    success: true,
+    result: result.data?.response_data || result.data?.data || result.data,
+    message: `Successfully executed ${toolSlug}`,
+  };
+}
+
+/**
+ * Main Composio action executor
+ */
+export async function executeComposioAction(
+  ctx: ActionContext,
+  actionName: string,
+  data: Record<string, unknown>
+): Promise<ActionResult> {
+  switch (actionName) {
+    // ========================================
+    // List user's connected integrations
+    // ========================================
+    case 'composio_list_integrations': {
+      const integrations = await getUserIntegrations(ctx);
+
+      if (integrations.length === 0) {
+        return {
+          success: true,
+          result: [],
+          message: "You don't have any third-party integrations connected yet. Would you like me to help you connect one? You can connect apps like Gmail, Slack, HubSpot, Notion, and more.",
+          link: '/Integrations',
+        };
+      }
+
+      const formatted = integrations.map(i => ({
+        name: COMPOSIO_INTEGRATIONS[i.toolkit_slug as keyof typeof COMPOSIO_INTEGRATIONS]?.name || i.toolkit_slug,
+        slug: i.toolkit_slug,
+        status: i.status,
+        availableActions: COMPOSIO_INTEGRATIONS[i.toolkit_slug as keyof typeof COMPOSIO_INTEGRATIONS]?.actions || [],
+      }));
+
+      return {
+        success: true,
+        result: formatted,
+        message: `You have ${integrations.length} integration(s) connected: ${formatted.map(i => i.name).join(', ')}. I can help you use these to send emails, create tasks, post messages, and more!`,
+      };
+    }
+
+    // ========================================
+    // Gmail Actions
+    // ========================================
+    case 'composio_send_email': {
+      const connId = await getConnectionForToolkit(ctx, 'gmail');
+      if (!connId) {
+        return {
+          success: false,
+          message: "Gmail is not connected. Please connect Gmail first in the Integrations page.",
+          link: '/Integrations',
+        };
+      }
+
+      const { to, subject, body, cc, bcc } = data as {
+        to: string;
+        subject: string;
+        body: string;
+        cc?: string;
+        bcc?: string;
+      };
+
+      if (!to || !subject || !body) {
+        return {
+          success: false,
+          message: "Please provide: to (recipient email), subject, and body for the email.",
+        };
+      }
+
+      return executeComposioTool(connId, 'GMAIL_SEND_EMAIL', {
+        recipient_email: to,
+        subject,
+        body,
+        cc,
+        bcc,
+      });
+    }
+
+    case 'composio_fetch_emails': {
+      const connId = await getConnectionForToolkit(ctx, 'gmail');
+      if (!connId) {
+        return {
+          success: false,
+          message: "Gmail is not connected. Please connect Gmail first.",
+          link: '/Integrations',
+        };
+      }
+
+      const { query, max_results } = data as { query?: string; max_results?: number };
+
+      return executeComposioTool(connId, 'GMAIL_FETCH_EMAILS', {
+        query: query || 'in:inbox',
+        max_results: max_results || 10,
+      });
+    }
+
+    case 'composio_search_emails': {
+      const connId = await getConnectionForToolkit(ctx, 'gmail');
+      if (!connId) {
+        return {
+          success: false,
+          message: "Gmail is not connected. Please connect Gmail first.",
+          link: '/Integrations',
+        };
+      }
+
+      const { query, max_results } = data as { query: string; max_results?: number };
+
+      if (!query) {
+        return {
+          success: false,
+          message: "Please provide a search query for emails.",
+        };
+      }
+
+      return executeComposioTool(connId, 'GMAIL_SEARCH_EMAILS', {
+        query,
+        max_results: max_results || 20,
+      });
+    }
+
+    // ========================================
+    // Slack Actions
+    // ========================================
+    case 'composio_send_slack_message': {
+      const connId = await getConnectionForToolkit(ctx, 'slack');
+      if (!connId) {
+        return {
+          success: false,
+          message: "Slack is not connected. Please connect Slack first.",
+          link: '/Integrations',
+        };
+      }
+
+      const { channel, message } = data as { channel: string; message: string };
+
+      if (!channel || !message) {
+        return {
+          success: false,
+          message: "Please provide: channel (name or ID) and message to send.",
+        };
+      }
+
+      return executeComposioTool(connId, 'SLACK_SEND_MESSAGE', {
+        channel,
+        text: message,
+      });
+    }
+
+    case 'composio_list_slack_channels': {
+      const connId = await getConnectionForToolkit(ctx, 'slack');
+      if (!connId) {
+        return {
+          success: false,
+          message: "Slack is not connected. Please connect Slack first.",
+          link: '/Integrations',
+        };
+      }
+
+      return executeComposioTool(connId, 'SLACK_LIST_CHANNELS', {});
+    }
+
+    // ========================================
+    // HubSpot Actions
+    // ========================================
+    case 'composio_create_hubspot_contact': {
+      const connId = await getConnectionForToolkit(ctx, 'hubspot');
+      if (!connId) {
+        return {
+          success: false,
+          message: "HubSpot is not connected. Please connect HubSpot first.",
+          link: '/Integrations',
+        };
+      }
+
+      const { email, first_name, last_name, company, phone } = data as {
+        email: string;
+        first_name?: string;
+        last_name?: string;
+        company?: string;
+        phone?: string;
+      };
+
+      if (!email) {
+        return {
+          success: false,
+          message: "Please provide at least an email address for the contact.",
+        };
+      }
+
+      return executeComposioTool(connId, 'HUBSPOT_CREATE_CONTACT', {
+        email,
+        firstname: first_name,
+        lastname: last_name,
+        company,
+        phone,
+      });
+    }
+
+    case 'composio_create_hubspot_deal': {
+      const connId = await getConnectionForToolkit(ctx, 'hubspot');
+      if (!connId) {
+        return {
+          success: false,
+          message: "HubSpot is not connected. Please connect HubSpot first.",
+          link: '/Integrations',
+        };
+      }
+
+      const { name, amount, stage, close_date } = data as {
+        name: string;
+        amount?: number;
+        stage?: string;
+        close_date?: string;
+      };
+
+      if (!name) {
+        return {
+          success: false,
+          message: "Please provide a name for the deal.",
+        };
+      }
+
+      return executeComposioTool(connId, 'HUBSPOT_CREATE_DEAL', {
+        dealname: name,
+        amount,
+        dealstage: stage || 'appointmentscheduled',
+        closedate: close_date,
+      });
+    }
+
+    // ========================================
+    // Calendar Actions
+    // ========================================
+    case 'composio_create_calendar_event': {
+      const connId = await getConnectionForToolkit(ctx, 'googlecalendar');
+      if (!connId) {
+        return {
+          success: false,
+          message: "Google Calendar is not connected. Please connect it first.",
+          link: '/Integrations',
+        };
+      }
+
+      const { title, start_time, end_time, description, attendees } = data as {
+        title: string;
+        start_time: string;
+        end_time: string;
+        description?: string;
+        attendees?: string[];
+      };
+
+      if (!title || !start_time || !end_time) {
+        return {
+          success: false,
+          message: "Please provide: title, start_time, and end_time for the event.",
+        };
+      }
+
+      return executeComposioTool(connId, 'GOOGLECALENDAR_CREATE_EVENT', {
+        summary: title,
+        start: { dateTime: start_time },
+        end: { dateTime: end_time },
+        description,
+        attendees: attendees?.map(email => ({ email })),
+      });
+    }
+
+    case 'composio_list_calendar_events': {
+      const connId = await getConnectionForToolkit(ctx, 'googlecalendar');
+      if (!connId) {
+        return {
+          success: false,
+          message: "Google Calendar is not connected. Please connect it first.",
+          link: '/Integrations',
+        };
+      }
+
+      const { time_min, time_max, max_results } = data as {
+        time_min?: string;
+        time_max?: string;
+        max_results?: number;
+      };
+
+      return executeComposioTool(connId, 'GOOGLECALENDAR_LIST_EVENTS', {
+        timeMin: time_min || new Date().toISOString(),
+        timeMax: time_max,
+        maxResults: max_results || 10,
+      });
+    }
+
+    // ========================================
+    // Notion Actions
+    // ========================================
+    case 'composio_create_notion_page': {
+      const connId = await getConnectionForToolkit(ctx, 'notion');
+      if (!connId) {
+        return {
+          success: false,
+          message: "Notion is not connected. Please connect Notion first.",
+          link: '/Integrations',
+        };
+      }
+
+      const { title, content, parent_id } = data as {
+        title: string;
+        content?: string;
+        parent_id?: string;
+      };
+
+      if (!title) {
+        return {
+          success: false,
+          message: "Please provide a title for the Notion page.",
+        };
+      }
+
+      return executeComposioTool(connId, 'NOTION_CREATE_PAGE', {
+        title,
+        content,
+        parent_id,
+      });
+    }
+
+    // ========================================
+    // Trello Actions
+    // ========================================
+    case 'composio_create_trello_card': {
+      const connId = await getConnectionForToolkit(ctx, 'trello');
+      if (!connId) {
+        return {
+          success: false,
+          message: "Trello is not connected. Please connect Trello first.",
+          link: '/Integrations',
+        };
+      }
+
+      const { name, description, list_id } = data as {
+        name: string;
+        description?: string;
+        list_id: string;
+      };
+
+      if (!name || !list_id) {
+        return {
+          success: false,
+          message: "Please provide: name and list_id for the Trello card.",
+        };
+      }
+
+      return executeComposioTool(connId, 'TRELLO_CREATE_CARD', {
+        name,
+        desc: description,
+        idList: list_id,
+      });
+    }
+
+    // ========================================
+    // Asana Actions
+    // ========================================
+    case 'composio_create_asana_task': {
+      const connId = await getConnectionForToolkit(ctx, 'asana');
+      if (!connId) {
+        return {
+          success: false,
+          message: "Asana is not connected. Please connect Asana first.",
+          link: '/Integrations',
+        };
+      }
+
+      const { name, notes, project_id, due_date } = data as {
+        name: string;
+        notes?: string;
+        project_id?: string;
+        due_date?: string;
+      };
+
+      if (!name) {
+        return {
+          success: false,
+          message: "Please provide a name for the Asana task.",
+        };
+      }
+
+      return executeComposioTool(connId, 'ASANA_CREATE_TASK', {
+        name,
+        notes,
+        projects: project_id ? [project_id] : undefined,
+        due_on: due_date,
+      });
+    }
+
+    // ========================================
+    // Linear Actions
+    // ========================================
+    case 'composio_create_linear_issue': {
+      const connId = await getConnectionForToolkit(ctx, 'linear');
+      if (!connId) {
+        return {
+          success: false,
+          message: "Linear is not connected. Please connect Linear first.",
+          link: '/Integrations',
+        };
+      }
+
+      const { title, description, team_id, priority } = data as {
+        title: string;
+        description?: string;
+        team_id?: string;
+        priority?: number;
+      };
+
+      if (!title) {
+        return {
+          success: false,
+          message: "Please provide a title for the Linear issue.",
+        };
+      }
+
+      return executeComposioTool(connId, 'LINEAR_CREATE_ISSUE', {
+        title,
+        description,
+        teamId: team_id,
+        priority,
+      });
+    }
+
+    // ========================================
+    // Generic Tool Execution
+    // ========================================
+    case 'composio_execute_tool': {
+      const { toolkit, tool_name, arguments: toolArgs } = data as {
+        toolkit: string;
+        tool_name: string;
+        arguments: Record<string, unknown>;
+      };
+
+      if (!toolkit || !tool_name) {
+        return {
+          success: false,
+          message: "Please provide: toolkit (e.g., 'gmail') and tool_name (e.g., 'GMAIL_SEND_EMAIL').",
+        };
+      }
+
+      const connId = await getConnectionForToolkit(ctx, toolkit);
+      if (!connId) {
+        return {
+          success: false,
+          message: `${toolkit} is not connected. Please connect it first in the Integrations page.`,
+          link: '/Integrations',
+        };
+      }
+
+      return executeComposioTool(connId, tool_name, toolArgs || {});
+    }
+
+    default:
+      return {
+        success: false,
+        message: `Unknown Composio action: ${actionName}`,
+      };
+  }
+}
