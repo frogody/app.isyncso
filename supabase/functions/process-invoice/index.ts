@@ -435,10 +435,26 @@ async function processExpenseAsync(
       }
     }
 
+    // Build description from supplier and invoice number
+    const invoiceDescription = [
+      extraction.data.supplier_name || 'Invoice',
+      extraction.data.invoice_number ? `#${extraction.data.invoice_number}` : '',
+    ].filter(Boolean).join(' ');
+
     // Update expense with extracted data
+    // Note: We populate BOTH the invoice-specific fields AND the Finance-compatible fields
+    // so the expense appears correctly in both InventoryExpenses and FinanceExpenses pages
     await supabase
       .from("expenses")
       .update({
+        // Finance-compatible fields (for FinanceExpenses page display)
+        description: invoiceDescription,
+        vendor: extraction.data.supplier_name || null,
+        amount: extraction.data.total || 0,
+        date: extraction.data.invoice_date || null,
+        category: 'other', // Default category for uploaded invoices
+
+        // Invoice-specific fields (for detailed invoice tracking)
         supplier_id: supplierId,
         external_reference: extraction.data.invoice_number,
         invoice_date: extraction.data.invoice_date,
@@ -448,6 +464,8 @@ async function processExpenseAsync(
         tax_percent: extraction.data.tax_percent,
         total: extraction.data.total,
         currency: extraction.data.currency || "EUR",
+
+        // AI processing metadata
         ai_extracted_data: extraction.data,
         ai_confidence: extraction.confidence,
         needs_review: needsReview,
