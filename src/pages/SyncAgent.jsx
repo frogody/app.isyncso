@@ -838,21 +838,21 @@ function AgentAvatar({ size = 360, agentName = 'SYNC', mood = 'listening', level
       <div className="absolute inset-x-0 bottom-[-10px] flex justify-center">
         <div
           ref={labelRef}
-          className="rounded-2xl border border-white/10 bg-black/50 px-3 py-1.5 text-xs text-white/80 shadow-[0_10px_35px_rgba(0,0,0,0.55)] backdrop-blur"
+          className="rounded-xl border border-white/10 bg-black/60 px-3 py-1.5 text-xs shadow-lg backdrop-blur"
         >
           <span className="inline-flex items-center gap-2">
             <span
               className="inline-block h-2 w-2 rounded-full"
               style={{
                 backgroundColor: activeAgentInfo?.color || (mood === 'speaking' ? '#a855f7' : mood === 'thinking' ? '#f59e0b' : '#22c55e'),
-                boxShadow: `0 0 14px ${activeAgentInfo?.color || 'rgba(168,85,247,0.8)'}`,
+                boxShadow: `0 0 10px ${activeAgentInfo?.color || 'rgba(168,85,247,0.6)'}`,
               }}
             />
-            <span className="font-medium text-white/90">
+            <span className="font-medium text-white">
               {activeAgentInfo ? `${agentName} → ${activeAgentInfo.name}` : agentName}
             </span>
-            <span className="text-white/50">•</span>
-            <span className="text-white/70 capitalize">{mood}</span>
+            <span className="text-zinc-500">·</span>
+            <span className="text-zinc-400 capitalize">{mood}</span>
           </span>
         </div>
       </div>
@@ -898,12 +898,12 @@ function Bubble({ role, text, ts, index }) {
             : 'border-white/10 bg-black/40 text-white/90'
         )}
       >
-        <div className="mb-1 flex items-center gap-2 text-[11px] text-white/55">
+        <div className="mb-1.5 flex items-center gap-2 text-[11px] text-zinc-500">
           <span className="inline-flex items-center gap-1.5">
             {isUser ? <User className="h-3.5 w-3.5" /> : <Bot className="h-3.5 w-3.5" />}
             <span className="capitalize">{isUser ? 'You' : 'SYNC'}</span>
           </span>
-          <span>•</span>
+          <span>·</span>
           <span>{formatTime(ts)}</span>
         </div>
         {isUser ? (
@@ -1138,7 +1138,7 @@ export default function SyncAgent() {
             </div>
             <div>
               <div className="text-sm font-semibold tracking-tight">SYNC Agent</div>
-              <div className="text-xs text-white/55">AI Orchestrator with interactive avatar</div>
+              <div className="text-xs text-zinc-400">AI Orchestrator</div>
             </div>
           </div>
 
@@ -1168,28 +1168,30 @@ export default function SyncAgent() {
         {/* Left: Avatar */}
         <div
           data-animate
-          className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-[0_30px_80px_rgba(0,0,0,0.55)] overflow-y-auto"
+          className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_30px_80px_rgba(0,0,0,0.55)] overflow-y-auto"
           style={{ opacity: 0 }}
         >
           <div className="flex items-start justify-between gap-3">
             <div>
               <div className="text-sm font-semibold">SYNC</div>
-              <div className="text-xs text-white/55">Outer ring stays stable, inner visualization reacts.</div>
+              <div className="text-xs text-zinc-500">Ring stable · Inner viz reacts</div>
             </div>
-            <div className="text-xs text-white/60">
-              <span
-                className={cn(
-                  'rounded-xl border px-2 py-1 transition-colors',
-                  mood === 'speaking'
-                    ? 'border-purple-400/30 bg-purple-500/10'
-                    : mood === 'thinking'
-                    ? 'border-amber-400/30 bg-amber-500/10'
-                    : 'border-emerald-400/30 bg-emerald-500/10'
-                )}
-              >
-                {mood}
-              </span>
-            </div>
+            <span
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs capitalize transition-colors',
+                mood === 'speaking'
+                  ? 'border-purple-400/30 bg-purple-500/10 text-purple-300'
+                  : mood === 'thinking'
+                  ? 'border-amber-400/30 bg-amber-500/10 text-amber-300'
+                  : 'border-emerald-400/30 bg-emerald-500/10 text-emerald-300'
+              )}
+            >
+              <span className={cn(
+                'h-1.5 w-1.5 rounded-full',
+                mood === 'speaking' ? 'bg-purple-400' : mood === 'thinking' ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'
+              )} />
+              {mood}
+            </span>
           </div>
 
           <div className="mt-4 grid place-items-center">
@@ -1197,24 +1199,24 @@ export default function SyncAgent() {
           </div>
 
           <div className="mt-5 grid gap-3">
-            <div className="rounded-2xl border border-white/10 bg-black/30 p-3 text-xs text-white/70">
-              <div className="mb-2 text-[11px] text-white/50">Interactivity</div>
-              <ul className="list-disc space-y-1 pl-4">
-                <li>Pointer inside avatar pulls particles.</li>
-                <li>Speaking/thinking changes motion + glow.</li>
-                <li>Refresh generates a new inner pattern.</li>
+            <div className="rounded-2xl border border-white/10 bg-black/30 p-4 text-sm text-zinc-300">
+              <div className="mb-2.5 text-xs font-medium text-white/90 uppercase tracking-wide">Interactivity</div>
+              <ul className="list-disc space-y-1.5 pl-4 text-zinc-400">
+                <li>Drag inside avatar to pull particles</li>
+                <li>Mood changes motion and glow</li>
+                <li>Refresh regenerates pattern</li>
               </ul>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-black/30 p-3 text-xs text-white/70">
-              <div className="mb-2 text-[11px] text-white/50">Capabilities</div>
-              <div className="text-white/65 space-y-2">
-                <div>
-                  SYNC routes your requests to specialized agents: <span className="text-purple-400">Finance</span>, <span className="text-cyan-400">Learn</span>, <span className="text-emerald-400">Products</span>, <span className="text-indigo-400">Growth</span>, and more.
-                </div>
-                <div className="pt-1 border-t border-white/10">
-                  <span className="text-pink-400">Orchestration Workflows</span>: Complex multi-agent tasks like client onboarding, weekly reviews, product launches, and monthly close.
-                </div>
+            <div className="rounded-2xl border border-white/10 bg-black/30 p-4 text-sm text-zinc-300">
+              <div className="mb-2.5 text-xs font-medium text-white/90 uppercase tracking-wide">Capabilities</div>
+              <div className="text-zinc-400 space-y-2.5">
+                <p>
+                  Routes to specialized agents: Finance, Learn, Products, Growth, and more
+                </p>
+                <p className="pt-2 border-t border-white/10">
+                  <span className="text-white/80">Multi-agent workflows</span> — Client onboarding, weekly reviews, product launches
+                </p>
               </div>
             </div>
           </div>
@@ -1226,15 +1228,15 @@ export default function SyncAgent() {
           className="flex flex-col min-h-0 rounded-3xl border border-white/10 bg-white/5 shadow-[0_30px_80px_rgba(0,0,0,0.55)]"
           style={{ opacity: 0 }}
         >
-          <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+          <div className="flex items-center justify-between border-b border-white/10 px-5 py-3.5">
             <div>
               <div className="text-sm font-semibold">Conversation</div>
-              <div className="text-xs text-white/55">Chat with SYNC to accomplish tasks</div>
+              <div className="text-xs text-zinc-500">Chat with SYNC</div>
             </div>
-            <div className="text-xs text-white/55">{messages.length} messages</div>
+            <div className="text-xs text-zinc-500 tabular-nums">{messages.length} messages</div>
           </div>
 
-          <div ref={scrollerRef} className="flex-1 min-h-0 space-y-3 overflow-y-auto px-4 py-4">
+          <div ref={scrollerRef} className="flex-1 min-h-0 space-y-4 overflow-y-auto px-5 py-5">
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center px-4">
                 <div className="w-16 h-16 rounded-2xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center mb-4">
@@ -1252,14 +1254,8 @@ export default function SyncAgent() {
                         setInput(suggestion.action);
                         setTimeout(() => send(), 100);
                       }}
-                      className={cn(
-                        "px-3 py-1.5 text-xs rounded-full border transition-colors",
-                        suggestion.isOrchestration
-                          ? "bg-pink-950/40 border-pink-500/30 text-pink-300 hover:bg-pink-900/50 hover:border-pink-400/40"
-                          : "bg-zinc-800 border-white/10 text-zinc-300 hover:bg-zinc-700 hover:text-white"
-                      )}
+                      className="px-3.5 py-2 text-xs rounded-xl border border-white/10 bg-white/5 text-zinc-300 hover:bg-white/10 hover:text-white transition-colors"
                     >
-                      {suggestion.isOrchestration && <span className="mr-1">🎭</span>}
                       {suggestion.label}
                     </button>
                   ))}
@@ -1273,10 +1269,10 @@ export default function SyncAgent() {
 
                 {isSending && (
                   <div className="flex justify-start">
-                    <div className="rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white/80">
+                    <div className="rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm">
                       <div className="flex items-center gap-2">
                         <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-purple-400" />
-                        <span className="text-white/70">SYNC is {mood === 'thinking' ? 'thinking' : 'typing'}…</span>
+                        <span className="text-zinc-400">SYNC is {mood === 'thinking' ? 'thinking' : 'typing'}…</span>
                       </div>
                     </div>
                   </div>
@@ -1304,9 +1300,9 @@ export default function SyncAgent() {
             )}
           </div>
 
-          <div className="border-t border-white/10 p-4">
+          <div className="border-t border-white/10 px-5 py-4">
             <div className="flex items-end gap-3">
-              <div className="flex-1 rounded-2xl border border-white/10 bg-black/30 px-3 py-2">
+              <div className="flex-1 rounded-2xl border border-white/10 bg-black/30 px-4 py-3">
                 <textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
@@ -1319,10 +1315,10 @@ export default function SyncAgent() {
                   placeholder="Message SYNC…"
                   rows={2}
                   disabled={isSending}
-                  className="w-full resize-none bg-transparent text-sm text-white/90 outline-none placeholder:text-white/35 disabled:opacity-50"
+                  className="w-full resize-none bg-transparent text-sm text-white/90 outline-none placeholder:text-zinc-500 disabled:opacity-50"
                 />
-                <div className="mt-1 flex items-center justify-between text-[11px] text-white/45">
-                  <span>Enter to send • Shift+Enter for newline</span>
+                <div className="mt-1.5 flex items-center justify-between text-[11px] text-zinc-500">
+                  <span>Enter to send · Shift+Enter for newline</span>
                   <span className="tabular-nums">{input.length}</span>
                 </div>
               </div>
@@ -1340,17 +1336,6 @@ export default function SyncAgent() {
               >
                 <Send className="h-5 w-5" />
               </button>
-            </div>
-
-            <div className="mt-3 flex items-center gap-2 text-xs text-white/55">
-              <span className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-black/30 px-3 py-2">
-                <span className="h-2 w-2 rounded-full bg-purple-400" />
-                Inner visual reacts to pointer + agent state
-              </span>
-              <span className="hidden sm:inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-black/30 px-3 py-2">
-                <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                Outer ring stays consistent
-              </span>
             </div>
           </div>
         </div>
