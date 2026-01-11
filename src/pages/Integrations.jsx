@@ -173,7 +173,8 @@ export default function Integrations() {
     } finally {
       setLoadingComposio(false);
     }
-  }, [user?.id, composio]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   // Load Google connection on mount
   useEffect(() => {
@@ -274,12 +275,13 @@ export default function Integrations() {
 
   // Load all data on mount
   useEffect(() => {
-    if (user) {
+    if (user?.id) {
       loadComposioConnections();
       loadMergeIntegrations();
       loadActionLogs();
     }
-  }, [user, loadComposioConnections, loadMergeIntegrations, loadActionLogs]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   // Connect Google
   const handleGoogleConnect = () => {
@@ -374,7 +376,8 @@ export default function Integrations() {
       }));
       toast.error(`Failed to connect: ${err.message}`);
     }
-  }, [user?.id, composio, loadComposioConnections]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   // Composio disconnect handler
   const handleComposioDisconnect = useCallback(async (connection) => {
@@ -391,7 +394,8 @@ export default function Integrations() {
       console.error('Disconnect error:', err);
       toast.error(`Failed to disconnect: ${err.message}`);
     }
-  }, [composio]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Composio refresh handler
   const handleComposioRefresh = useCallback(async (connection) => {
@@ -404,7 +408,8 @@ export default function Integrations() {
       console.error('Refresh error:', err);
       toast.error(`Failed to refresh: ${err.message}`);
     }
-  }, [composio, loadComposioConnections]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Actions handlers
   const handleMergeDisconnect = async (integrationId) => {
