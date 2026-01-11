@@ -53,21 +53,41 @@ export async function generateImage(
 
     // Build product context if product name provided
     let productContext = null;
+    let productImages: string[] = [];
     if (data.product_name) {
       const { data: products } = await ctx.supabase
         .from('products')
-        .select('id, name, description, type')
+        .select('id, name, description, type, featured_image, gallery')
         .ilike('name', `%${data.product_name}%`)
         .limit(1);
 
       if (products && products.length > 0) {
         productContext = products[0];
+
+        // Extract product images for reference
+        if (productContext.featured_image?.url) {
+          productImages.push(productContext.featured_image.url);
+        }
+        if (productContext.gallery && Array.isArray(productContext.gallery)) {
+          for (const img of productContext.gallery) {
+            if (img?.url && !productImages.includes(img.url)) {
+              productImages.push(img.url);
+            }
+          }
+        }
       }
     }
 
     // Call the generate-image edge function
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+
+    // Determine use case - if we have product images, use product_variation for accurate representation
+    let useCase = data.use_case || 'marketing_creative';
+    if (productImages.length > 0 && !data.use_case) {
+      // Use product_variation to preserve exact product appearance
+      useCase = 'product_variation';
+    }
 
     const response = await fetch(`${supabaseUrl}/functions/v1/generate-image`, {
       method: 'POST',
@@ -78,12 +98,14 @@ export async function generateImage(
       body: JSON.stringify({
         prompt: data.prompt,
         style: data.style || 'photorealistic',
-        use_case: data.use_case || 'marketing_creative',
+        use_case: useCase,
         model_key: data.model,
         width: data.width || 1024,
         height: data.height || 1024,
         brand_context: brandContext,
         product_context: productContext,
+        product_images: productImages, // Pass product images as reference
+        is_physical_product: productContext?.type === 'physical',
         company_id: ctx.companyId,
         user_id: ctx.userId,
       }),
