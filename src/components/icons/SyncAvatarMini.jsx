@@ -28,8 +28,8 @@ export default function SyncAvatarMini({ size = 48, state = 'idle', className = 
   });
 
   const r = size / 2;
-  const ringR = r - 3;
-  const innerR = r - 10;
+  const ringR = r - 2; // Colored segments at the very edge
+  const innerR = r - 8; // Inner visualization area
 
   // Helper for polar coordinates
   const polar = (cx, cy, radius, a) => {
@@ -54,8 +54,8 @@ export default function SyncAvatarMini({ size = 48, state = 'idle', className = 
     anime.remove(paths);
     anime({
       targets: paths,
-      strokeWidth: state === 'active' ? [3, 4, 3] : [3, 3.5, 3],
-      opacity: state === 'active' ? [0.85, 1, 0.85] : [0.7, 0.85, 0.7],
+      strokeWidth: state === 'active' ? [4, 5, 4] : [4, 4.5, 4],
+      opacity: state === 'active' ? [0.9, 1, 0.9] : [0.8, 0.95, 0.8],
       duration: state === 'active' ? 600 : 1500,
       loop: true,
       easing: 'easeInOutSine',
@@ -247,17 +247,7 @@ export default function SyncAvatarMini({ size = 48, state = 'idle', className = 
           </filter>
         </defs>
 
-        {/* Base ring */}
-        <circle
-          cx={r}
-          cy={r}
-          r={ringR}
-          fill="none"
-          stroke="rgba(255,255,255,0.06)"
-          strokeWidth={5}
-        />
-
-        {/* Colored segments */}
+        {/* Colored segments - these ARE the outer ring, nothing beyond them */}
         <g ref={segmentsRef} filter="url(#miniGlow)">
           {AGENT_SEGMENTS.map((segment) => (
             <path
@@ -266,9 +256,9 @@ export default function SyncAvatarMini({ size = 48, state = 'idle', className = 
               d={arcPath(r, r, ringR, segment.from, segment.to)}
               fill="none"
               stroke={segment.color}
-              strokeWidth={3}
+              strokeWidth={4}
               strokeLinecap="round"
-              opacity={0.8}
+              opacity={0.9}
             />
           ))}
         </g>
