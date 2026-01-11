@@ -186,14 +186,14 @@ function ImageCard({ url }) {
     <>
       <div
         ref={cardRef}
-        className="mt-3 group relative rounded-xl border border-purple-500/30 bg-gradient-to-br from-purple-950/40 to-black/40 overflow-hidden cursor-pointer hover:border-purple-400/50 transition-all"
+        className="mt-3 group relative rounded-xl border border-blue-500/30 bg-gradient-to-br from-blue-950/40 to-black/40 overflow-hidden cursor-pointer hover:border-blue-400/50 transition-all"
         onClick={() => setIsExpanded(true)}
         style={{ opacity: 0 }}
       >
         {/* Loading skeleton */}
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-            <div className="flex items-center gap-2 text-purple-400">
+            <div className="flex items-center gap-2 text-blue-400">
               <ImageIcon className="h-5 w-5 animate-pulse" />
               <span className="text-sm">Loading image...</span>
             </div>
@@ -260,7 +260,7 @@ function ImageCard({ url }) {
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
               <Button
                 size="sm"
-                className="bg-purple-600 hover:bg-purple-500 text-white"
+                className="bg-blue-600 hover:bg-blue-500 text-white"
                 onClick={handleDownload}
               >
                 <Download className="h-4 w-4 mr-1.5" />
@@ -331,13 +331,13 @@ function DocumentCard({ url, title }) {
   return (
     <div
       ref={cardRef}
-      className="mt-3 group rounded-xl border border-purple-500/30 bg-gradient-to-br from-purple-950/30 to-black/30 p-4 cursor-pointer hover:border-purple-400/50 transition-all"
+      className="mt-3 group rounded-xl border border-blue-500/30 bg-gradient-to-br from-blue-950/30 to-black/30 p-4 cursor-pointer hover:border-blue-400/50 transition-all"
       onClick={handleOpen}
       style={{ opacity: 0 }}
     >
       <div className="flex items-start gap-3">
-        <div className="shrink-0 w-10 h-10 rounded-lg bg-purple-500/20 border border-purple-500/30 flex items-center justify-center">
-          <FileText className="w-5 h-5 text-purple-400" />
+        <div className="shrink-0 w-10 h-10 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center">
+          <FileText className="w-5 h-5 text-blue-400" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-sm font-medium text-white truncate">{title}</div>
@@ -499,7 +499,7 @@ function AgentChannel({ messages, isActive }) {
       {/* Header */}
       <div className="shrink-0 flex items-center justify-between px-3 py-2 border-b border-white/10 bg-black/20">
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+          <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
           <span className="text-xs font-medium text-white/90">Agent Channel</span>
         </div>
         <span className="text-[10px] text-zinc-600">
@@ -514,8 +514,8 @@ function AgentChannel({ messages, isActive }) {
       >
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center px-4">
-            <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center mb-2">
-              <Brain className="w-5 h-5 text-purple-400/50" />
+            <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-2">
+              <Brain className="w-5 h-5 text-blue-400/50" />
             </div>
             <p className="text-xs text-zinc-600">
               Agent communications will appear here
@@ -539,10 +539,10 @@ function AgentChannel({ messages, isActive }) {
 
       {/* Active indicator */}
       {isActive && (
-        <div className="shrink-0 px-3 py-1.5 border-t border-white/5 bg-purple-500/5">
+        <div className="shrink-0 px-3 py-1.5 border-t border-white/5 bg-blue-500/5">
           <div className="flex items-center gap-2">
-            <span className="inline-flex h-1.5 w-1.5 animate-pulse rounded-full bg-purple-400" />
-            <span className="text-[10px] text-purple-400">Processing...</span>
+            <span className="inline-flex h-1.5 w-1.5 animate-pulse rounded-full bg-blue-400" />
+            <span className="text-[10px] text-blue-400">Processing...</span>
           </div>
         </div>
       )}
@@ -1142,7 +1142,7 @@ function Bubble({ role, text, ts, index, document }) {
         className={cn(
           'max-w-[78%] rounded-2xl border px-4 py-3 text-sm leading-relaxed shadow-sm',
           isUser
-            ? 'border-purple-500/20 bg-purple-600/20 text-white'
+            ? 'border-blue-500/20 bg-blue-600/20 text-white'
             : 'border-white/10 bg-black/40 text-white/90'
         )}
       >
@@ -1158,7 +1158,7 @@ function Bubble({ role, text, ts, index, document }) {
           <div className="whitespace-pre-wrap">{text}</div>
         ) : (
           <>
-            <div className="prose prose-invert prose-sm max-w-none prose-p:my-2 prose-headings:my-3 prose-ul:my-2 prose-li:my-1 prose-code:text-purple-400 prose-code:bg-purple-950/30 prose-code:px-1 prose-code:rounded">
+            <div className="prose prose-invert prose-sm max-w-none prose-p:my-2 prose-headings:my-3 prose-ul:my-2 prose-li:my-1 prose-code:text-blue-400 prose-code:bg-blue-950/30 prose-code:px-1 prose-code:rounded">
               {contentParts.map((part, i) => (
                 part.type === 'image' ? (
                   <ImageCard key={`img-${i}`} url={part.url} />
@@ -1493,8 +1493,8 @@ export default function SyncAgent() {
       <div className="shrink-0 z-20 border-b border-white/10 bg-black/40 backdrop-blur">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-6 py-3">
           <div className="flex items-center gap-2">
-            <div className="grid h-9 w-9 place-items-center rounded-2xl border border-purple-500/30 bg-purple-500/10">
-              <Brain className="h-4 w-4 text-purple-400" />
+            <div className="grid h-9 w-9 place-items-center rounded-2xl border border-blue-500/30 bg-blue-500/10">
+              <Brain className="h-4 w-4 text-blue-400" />
             </div>
             <div>
               <div className="text-sm font-semibold tracking-tight">SYNC Agent</div>
@@ -1504,7 +1504,7 @@ export default function SyncAgent() {
 
           <div className="flex items-center gap-2">
             <button
-              className="inline-flex items-center gap-2 rounded-2xl border border-purple-500/30 bg-purple-500/10 px-3 py-2 text-xs text-purple-400 hover:bg-purple-500/20 transition-colors"
+              className="inline-flex items-center gap-2 rounded-2xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-xs text-blue-400 hover:bg-blue-500/20 transition-colors"
               onClick={handleNewChat}
               title="Start new conversation"
             >
@@ -1540,7 +1540,7 @@ export default function SyncAgent() {
               className={cn(
                 'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs capitalize transition-colors',
                 mood === 'speaking'
-                  ? 'border-purple-400/30 bg-purple-500/10 text-purple-300'
+                  ? 'border-blue-400/30 bg-blue-500/10 text-blue-300'
                   : mood === 'thinking'
                   ? 'border-amber-400/30 bg-amber-500/10 text-amber-300'
                   : 'border-emerald-400/30 bg-emerald-500/10 text-emerald-300'
@@ -1548,7 +1548,7 @@ export default function SyncAgent() {
             >
               <span className={cn(
                 'h-1.5 w-1.5 rounded-full',
-                mood === 'speaking' ? 'bg-purple-400' : mood === 'thinking' ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'
+                mood === 'speaking' ? 'bg-blue-400' : mood === 'thinking' ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'
               )} />
               {mood}
             </span>
@@ -1581,8 +1581,8 @@ export default function SyncAgent() {
           <div ref={scrollerRef} className="flex-1 min-h-0 space-y-4 overflow-y-auto px-5 py-5">
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center px-4">
-                <div className="w-16 h-16 rounded-2xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center mb-4">
-                  <Sparkles className="w-8 h-8 text-purple-400" />
+                <div className="w-16 h-16 rounded-2xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center mb-4">
+                  <Sparkles className="w-8 h-8 text-blue-400" />
                 </div>
                 <h4 className="text-lg font-medium text-white mb-2">How can I help you?</h4>
                 <p className="text-sm text-zinc-500 mb-6 max-w-sm">
@@ -1613,7 +1613,7 @@ export default function SyncAgent() {
                   <div className="flex justify-start">
                     <div className="rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm">
                       <div className="flex items-center gap-2">
-                        <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-purple-400" />
+                        <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-blue-400" />
                         <span className="text-zinc-400">SYNC is {mood === 'thinking' ? 'thinking' : 'typing'}…</span>
                       </div>
                     </div>
@@ -1672,7 +1672,7 @@ export default function SyncAgent() {
                   'inline-flex h-[54px] w-[54px] items-center justify-center rounded-2xl border transition-all',
                   isSending || !input.trim()
                     ? 'cursor-not-allowed border-white/10 bg-white/5 text-white/30'
-                    : 'border-purple-500/30 bg-purple-500/20 text-purple-400 hover:bg-purple-500/30'
+                    : 'border-blue-500/30 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30'
                 )}
                 title="Send"
               >
@@ -1685,9 +1685,9 @@ export default function SyncAgent() {
 
       {/* Background effects */}
       <div className="pointer-events-none fixed inset-0 -z-10 opacity-60">
-        <div className="absolute left-[-20%] top-[-30%] h-[520px] w-[520px] rounded-full bg-purple-900/20 blur-3xl" />
-        <div className="absolute right-[-25%] top-[10%] h-[620px] w-[620px] rounded-full bg-violet-900/15 blur-3xl" />
-        <div className="absolute bottom-[-35%] left-[10%] h-[640px] w-[640px] rounded-full bg-purple-950/20 blur-3xl" />
+        <div className="absolute left-[-20%] top-[-30%] h-[520px] w-[520px] rounded-full bg-blue-900/20 blur-3xl" />
+        <div className="absolute right-[-25%] top-[10%] h-[620px] w-[620px] rounded-full bg-sky-900/15 blur-3xl" />
+        <div className="absolute bottom-[-35%] left-[10%] h-[640px] w-[640px] rounded-full bg-blue-950/20 blur-3xl" />
       </div>
     </div>
   );
