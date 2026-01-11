@@ -3127,6 +3127,12 @@ export default function Projects() {
       return;
     }
 
+    // Validate user is authenticated
+    if (!user?.id) {
+      toast.error("You must be logged in to create projects");
+      return;
+    }
+
     try {
       const projectData = {
         action_type: "project",
@@ -3159,7 +3165,8 @@ export default function Projects() {
         },
         client_updates: formData.client_updates || [],
         page_content: formData.page_content || [],
-        user_id: user?.id,
+        user_id: user.id,
+        organization_id: user.organization_id, // Required for RLS SELECT policy
       };
 
       if (editingProject) {
@@ -3190,6 +3197,12 @@ export default function Projects() {
       return;
     }
 
+    // Validate user is authenticated
+    if (!user?.id) {
+      toast.error("You must be logged in to create tasks");
+      return;
+    }
+
     try {
       await db.entities.ActionLog.create({
         action_type: "task",
@@ -3200,7 +3213,8 @@ export default function Projects() {
         priority: taskFormData.priority,
         due_date: taskFormData.due_date || null,
         project_id: selectedProject?.id,
-        user_id: user?.id,
+        user_id: user.id,
+        organization_id: user.organization_id, // Required for RLS SELECT policy
       });
 
       toast.success("Task created");

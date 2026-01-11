@@ -3,18 +3,19 @@ import { motion } from "framer-motion";
 import anime from '@/lib/anime-wrapper';
 const animate = anime;
 import { prefersReducedMotion } from '@/lib/animations';
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
   Package, Cloud, Box, Plus, ArrowRight, TrendingUp,
   Search, Filter, Grid3X3, List, Tag, DollarSign,
   Eye, Edit2, MoreHorizontal, Archive, Layers, Sparkles,
-  Settings, Check
+  Settings, Check, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { GlassCard, StatCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,10 +23,25 @@ import { useUser } from "@/components/context/UserContext";
 import { Product, ProductCategory } from "@/api/entities";
 import { db } from "@/api/supabaseClient";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 
 const STATUS_COLORS = {
@@ -133,7 +149,8 @@ function QuickStatCard({ icon: Icon, label, value, sublabel, color = 'purple' })
 const PRODUCTS_SETTINGS_KEY = 'isyncso_products_settings';
 
 export default function Products() {
-  const { user } = useUser();
+  const { user, companyId } = useUser();
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -143,6 +160,15 @@ export default function Products() {
   const [digitalEnabled, setDigitalEnabled] = useState(true);
   const [physicalEnabled, setPhysicalEnabled] = useState(true);
   const [settingsSaving, setSettingsSaving] = useState(false);
+
+  // Create product modal
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [creatingProduct, setCreatingProduct] = useState(false);
+  const [newProductData, setNewProductData] = useState({
+    name: '',
+    type: 'digital',
+    status: 'draft'
+  });
 
   // Refs for anime.js animations
   const headerRef = useRef(null);
@@ -243,6 +269,45 @@ export default function Products() {
     }
     setPhysicalEnabled(checked);
     saveSettings(digitalEnabled, checked);
+  };
+
+  // Create a new product
+  const handleCreateProduct = async () => {
+    if (!newProductData.name.trim()) {
+      toast.error('Please enter a product name');
+      return;
+    }
+
+    setCreatingProduct(true);
+    try {
+      // Generate a slug from the name
+      const slug = newProductData.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '')
+        + '-' + Date.now().toString(36);
+
+      const productData = {
+        name: newProductData.name.trim(),
+        slug,
+        type: newProductData.type,
+        status: newProductData.status,
+        company_id: companyId || user?.company_id,
+      };
+
+      const created = await Product.create(productData);
+      toast.success('Product created! Redirecting to edit...');
+      setShowCreateModal(false);
+      setNewProductData({ name: '', type: 'digital', status: 'draft' });
+
+      // Navigate to the product detail page
+      navigate(createPageUrl('ProductDetail') + `?type=${created.type}&slug=${created.slug}`);
+    } catch (error) {
+      console.error('Failed to create product:', error);
+      toast.error('Failed to create product: ' + (error.message || 'Unknown error'));
+    } finally {
+      setCreatingProduct(false);
+    }
   };
 
   useEffect(() => {
@@ -471,6 +536,7 @@ export default function Products() {
               <Button
                 variant="outline"
                 className="border-white/10 bg-zinc-900/60 text-zinc-300 hover:text-white hover:border-cyan-500/50 hover:bg-cyan-500/10"
+                onClick={() => setShowCreateModal(true)}
               >
                 <Plus className="w-4 h-4 mr-2" /> Add Product
               </Button>
@@ -675,6 +741,101 @@ export default function Products() {
           </GlassCard>
         )}
       </div>
+
+      {/* Create Product Modal */}
+      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold">Create New Product</DialogTitle>
+            <DialogDescription className="text-zinc-400">
+              Enter basic details to create a product. You can add more details after.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="product-name" className="text-zinc-300">Product Name</Label>
+              <Input
+                id="product-name"
+                placeholder="Enter product name..."
+                value={newProductData.name}
+                onChange={(e) => setNewProductData(prev => ({ ...prev, name: e.target.value }))}
+                className="bg-zinc-800/50 border-zinc-700 text-white placeholder:text-zinc-500"
+                autoFocus
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-zinc-300">Product Type</Label>
+              <Select
+                value={newProductData.type}
+                onValueChange={(value) => setNewProductData(prev => ({ ...prev, type: value }))}
+              >
+                <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-800 border-zinc-700">
+                  <SelectItem value="digital" className="text-white hover:bg-zinc-700">
+                    <div className="flex items-center gap-2">
+                      <Cloud className="w-4 h-4 text-cyan-400" />
+                      Digital Product
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="physical" className="text-white hover:bg-zinc-700">
+                    <div className="flex items-center gap-2">
+                      <Box className="w-4 h-4 text-cyan-400" />
+                      Physical Product
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-zinc-300">Initial Status</Label>
+              <Select
+                value={newProductData.status}
+                onValueChange={(value) => setNewProductData(prev => ({ ...prev, status: value }))}
+              >
+                <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-800 border-zinc-700">
+                  <SelectItem value="draft" className="text-white hover:bg-zinc-700">Draft</SelectItem>
+                  <SelectItem value="published" className="text-white hover:bg-zinc-700">Published</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowCreateModal(false)}
+              className="border-zinc-700 text-zinc-300 hover:text-white"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreateProduct}
+              disabled={creatingProduct || !newProductData.name.trim()}
+              className="bg-cyan-500 hover:bg-cyan-600 text-white"
+            >
+              {creatingProduct ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Product
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

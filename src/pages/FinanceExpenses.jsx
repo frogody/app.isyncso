@@ -21,6 +21,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
 } from '@/components/ui/dialog';
 import { usePermissions } from '@/components/context/PermissionContext';
+import { useUser } from '@/components/context/UserContext';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { toast } from 'sonner';
 
@@ -53,6 +54,7 @@ export default function FinanceExpenses() {
   const [editMode, setEditMode] = useState(false);
 
   const { hasPermission, isLoading: permLoading } = usePermissions();
+  const { user } = useUser();
 
   // Form state
   const [formData, setFormData] = useState({
@@ -204,11 +206,17 @@ export default function FinanceExpenses() {
 
   const handleSaveExpense = async (e) => {
     e.preventDefault();
+
+    // Validate user is authenticated
+    if (!user?.id) {
+      toast.error('You must be logged in to add expenses');
+      return;
+    }
+
     setSaving(true);
     try {
-      const user = await db.auth.me();
       const expenseData = {
-        user_id: user?.id,
+        user_id: user.id, // Use user from context (guaranteed to exist)
         description: formData.description,
         amount: parseFloat(formData.amount) || 0,
         category: formData.category,
@@ -234,7 +242,7 @@ export default function FinanceExpenses() {
       loadExpenses();
     } catch (error) {
       console.error('Error saving expense:', error);
-      toast.error('Failed to save expense');
+      toast.error('Failed to save expense: ' + (error.message || 'Unknown error'));
     } finally {
       setSaving(false);
     }

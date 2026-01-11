@@ -908,6 +908,7 @@ export default function CRMContacts() {
       // Use correct column names for the prospects table
       const prospectData = {
         owner_id: user.id,
+        organization_id: user.organization_id, // Required by RLS policy
         first_name: firstName,
         last_name: lastName,
         email: formData.email,
