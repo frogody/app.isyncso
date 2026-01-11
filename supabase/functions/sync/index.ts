@@ -100,6 +100,42 @@ import {
   SynthesizedResult,
 } from './tools/synthesis.ts';
 
+// Import Plan-Execute system (Co-Worker upgrade)
+import {
+  createTaskPlan,
+  TaskPlan,
+  TaskStep,
+  extractEntities,
+  shouldPlan,
+  generatePlanFromLLM,
+  savePlan,
+  loadPlan,
+  ACTION_CATALOG,
+} from './tools/planner.ts';
+import {
+  executePlan,
+  ExecutionContext,
+  ExecutionResult,
+  ProgressUpdate,
+} from './tools/executor.ts';
+import {
+  getTaskAck,
+  getPlanIntro,
+  getTaskCompleteMessage,
+  getClarificationMessage,
+  getProblemMessage,
+  getHandoffMessage,
+  formatTaskResponse,
+  getAgentDisplayName,
+  getStepIcon,
+} from './tools/conversation.ts';
+import {
+  learnFromSuccess,
+  findSimilarPatterns,
+  getBestPattern,
+  applyPattern,
+} from './memory/learning.ts';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -267,6 +303,69 @@ const COMMON_TYPOS: Record<string, string> = {
   'prsopect': 'prospect',
   'porspect': 'prospect',
 };
+
+/**
+ * Summarize a step result for human-friendly display
+ */
+function summarizeStepResult(step: TaskStep): string | null {
+  if (!step.result) return null;
+
+  const result = step.result;
+
+  // Handle different action types
+  switch (step.action) {
+    case 'search_prospects':
+    case 'search_products':
+      if (result.items?.length > 0) {
+        return `Found ${result.items.length} ${step.action.includes('prospect') ? 'contact(s)' : 'product(s)'}`;
+      }
+      break;
+
+    case 'create_proposal':
+      if (result.proposal_number) {
+        return `Proposal ${result.proposal_number} created${result.total ? ` (€${result.total})` : ''}`;
+      }
+      break;
+
+    case 'create_invoice':
+      if (result.invoice_number) {
+        return `Invoice ${result.invoice_number} created${result.total ? ` (€${result.total})` : ''}`;
+      }
+      break;
+
+    case 'send_email':
+      if (result.success) {
+        return `Email sent to ${result.to || 'recipient'}`;
+      }
+      break;
+
+    case 'create_task':
+      if (result.title) {
+        return `Task created: "${result.title}"`;
+      }
+      break;
+
+    case 'schedule_event':
+      if (result.title) {
+        return `Event scheduled: "${result.title}"`;
+      }
+      break;
+
+    case 'check_inbox':
+      if (result.count !== undefined) {
+        return `${result.unread_count || 0} unread of ${result.count} emails`;
+      }
+      break;
+
+    default:
+      // Generic summary from result
+      if (result.name) return `${step.action}: ${result.name}`;
+      if (result.title) return `${step.action}: ${result.title}`;
+      if (result.id) return `${step.action} completed (ID: ${result.id})`;
+  }
+
+  return null;
+}
 
 /**
  * Correct common typos in user message to improve intent matching
@@ -1208,12 +1307,23 @@ You: "Found it! Philips OneBlade 360 Face. What kind of images do you need - cle
 
 **CRITICAL**: When user asks about integrations, you MUST include [ACTION] block in your response!
 
-Available integration actions:
+#### EMAIL PA (Personal Assistant) Capabilities - Gmail 📧
+These actions let you function as a Personal Assistant for email management:
+
+- **check_inbox**: Check inbox for unread emails (limit?, unread_only?, from?, subject_contains?)
+- **summarize_inbox**: Get inbox summary with stats (period?: 'today' | 'week' | 'all')
+- **send_email**: Send a new email (to, subject, body, cc?, bcc?)
+- **reply_to_email**: Reply to an email (message_id or thread_id, body)
+- **draft_email**: Create email draft (to, subject, body)
+- **forward_email**: Forward an email (message_id, to, additional_message?)
+- **get_email_details**: Get full email content (message_id)
+- **mark_email_read**: Mark as read/unread (message_id, mark_as?: 'read' | 'unread')
+- **archive_email**: Archive an email (message_id)
+- **search_emails**: Search emails (query, max_results?)
+
+#### Other Integration Actions
 
 - **composio_list_integrations**: List user's connected apps ← USE THIS FIRST!
-- **composio_send_email**: Send email via Gmail (to, subject, body)
-- **composio_fetch_emails**: Fetch recent emails from Gmail
-- **composio_search_emails**: Search emails in Gmail (query)
 - **composio_send_slack_message**: Send Slack message (channel, message)
 - **composio_list_slack_channels**: List Slack channels
 - **composio_create_hubspot_contact**: Create HubSpot contact (email, first_name, last_name)
@@ -1295,7 +1405,37 @@ User: "Send an email to John about the meeting"
 You: I'll send that email for you!
 [ACTION]{"action": "composio_send_email", "data": {"to": "john@example.com", "subject": "Meeting", "body": "Hi John..."}}[/ACTION]
 
-More examples:
+### Email PA (Personal Assistant) Examples
+
+User: "Check my inbox" or "Do I have any new emails?"
+You: Let me check your inbox!
+[ACTION]{"action": "check_inbox", "data": {}}[/ACTION]
+
+User: "Show me my inbox summary"
+You: I'll summarize your inbox!
+[ACTION]{"action": "summarize_inbox", "data": {"period": "today"}}[/ACTION]
+
+User: "Send an email to john@example.com about the project update"
+You: I'll send that email for you!
+[ACTION]{"action": "send_email", "data": {"to": "john@example.com", "subject": "Project Update", "body": "Hi John,\n\nHere's the project update..."}}[/ACTION]
+
+User: "Draft a reply to that email"
+You: I'll draft a reply for you to review!
+[ACTION]{"action": "draft_email", "data": {"to": "sender@example.com", "subject": "Re: Topic", "body": "Thank you for your message..."}}[/ACTION]
+
+User: "Reply to the email from Sarah"
+You: I'll send that reply!
+[ACTION]{"action": "reply_to_email", "data": {"to": "sarah@company.com", "body": "Thanks Sarah, I'll look into this..."}}[/ACTION]
+
+User: "Search for emails from Microsoft"
+You: Let me search for those emails!
+[ACTION]{"action": "search_emails", "data": {"query": "from:microsoft", "max_results": 10}}[/ACTION]
+
+User: "Archive that email"
+You: I'll archive that for you!
+[ACTION]{"action": "archive_email", "data": {"message_id": "abc123"}}[/ACTION]
+
+### Other Integration Examples
 [ACTION]{"action": "composio_list_integrations", "data": {}}[/ACTION]
 [ACTION]{"action": "composio_fetch_emails", "data": {"query": "from:client@company.com", "max_results": 5}}[/ACTION]
 [ACTION]{"action": "composio_send_slack_message", "data": {"channel": "#sales", "message": "New deal closed!"}}[/ACTION]
@@ -2303,6 +2443,222 @@ serve(async (req) => {
 
     if (stream) {
       return handleStreamingRequest(apiMessages, session, routingResult, companyId, userId);
+    }
+
+    // =========================================================================
+    // PLAN-EXECUTE PATH: Autonomous multi-step task execution (Co-Worker mode)
+    // This path handles complex tasks by:
+    // 1. Decomposing them into discrete steps
+    // 2. Executing each step with progress updates
+    // 3. Learning from successful patterns
+    // =========================================================================
+    const shouldUsePlanExecute = shouldPlan(message);
+
+    console.log(`[SYNC] shouldUsePlanExecute=${shouldUsePlanExecute}, mode=${mode}`);
+
+    // Track Plan-Execute state for response
+    let planExecuteResult: any = null;
+
+    if (shouldUsePlanExecute && mode !== 'simple') {
+      console.log(`[SYNC] Entering Plan-Execute path for: "${message.substring(0, 50)}..."`);
+
+      try {
+        // Check for similar learned patterns first
+        console.log('[SYNC] Checking for learned patterns...');
+        const bestPattern = await getBestPattern(supabase, message);
+        console.log(`[SYNC] Best pattern found: ${bestPattern ? 'yes' : 'no'}`);
+        let plan: TaskPlan | null = null;
+
+        if (bestPattern && bestPattern.similarity >= 0.85) {
+          console.log(`[SYNC] Found learned pattern with ${(bestPattern.similarity * 100).toFixed(0)}% similarity`);
+          // Extract entities from current message
+          const entities = extractEntities(message);
+          // Try to apply the learned pattern
+          const appliedSteps = applyPattern(bestPattern.pattern, entities);
+          if (appliedSteps) {
+            plan = createTaskPlan(message, appliedSteps, entities);
+          }
+        }
+
+        // If no learned pattern, generate plan using LLM
+        if (!plan) {
+          console.log('[SYNC] No pattern found, generating plan via LLM...');
+          const entities = extractEntities(message);
+          console.log(`[SYNC] Extracted entities:`, JSON.stringify(entities).substring(0, 200));
+          plan = await generatePlanFromLLM(
+            message,
+            entities,
+            session,
+            memoryContext,
+            TOGETHER_API_KEY!
+          );
+          console.log(`[SYNC] Plan generated: ${plan ? `${plan.steps.length} steps` : 'null'}`);
+        }
+
+        // Check if plan needs clarification
+        if (plan && plan.needsClarification) {
+          const clarificationMsg = getClarificationMessage(plan.clarificationQuestion || 'Could you provide more details?');
+
+          const clarificationChatMsg: ChatMessage = {
+            role: 'assistant',
+            content: clarificationMsg,
+            timestamp: new Date().toISOString(),
+            agentId: 'planner',
+          };
+          await memorySystem.session.addMessage(session, clarificationChatMsg);
+          await memorySystem.session.updateSession(session);
+
+          // Save plan for continuation
+          await savePlan(supabase, plan);
+
+          return new Response(
+            JSON.stringify({
+              response: clarificationMsg,
+              sessionId: session.session_id,
+              delegatedTo: 'planner',
+              planExecute: {
+                planId: plan.id,
+                status: 'awaiting_clarification',
+                question: plan.clarificationQuestion,
+              },
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // We have a valid plan - execute it
+        if (plan && plan.steps.length > 0) {
+          // Build acknowledgment with plan preview
+          const ackMessage = getTaskAck();
+          const planIntro = getPlanIntro();
+
+          let planPreview = `${ackMessage}\n\n${planIntro}\n`;
+          plan.steps.forEach((step, i) => {
+            const icon = getStepIcon(step.action);
+            planPreview += `${i + 1}. ${icon} ${step.description}\n`;
+          });
+
+          // Create action context for executor
+          const actionCtx: ActionContext = { supabase, companyId, userId };
+
+          // Collect progress updates
+          const progressUpdates: ProgressUpdate[] = [];
+
+          // Create execution context with proper interface
+          const execContext: ExecutionContext = {
+            ctx: actionCtx,
+            executeAction: async (actionName: string, data: any, ctx: ActionContext) => {
+              return executeActionCore(actionName, data, ctx);
+            },
+            onProgress: (update: ProgressUpdate) => {
+              progressUpdates.push(update);
+              console.log(`[SYNC] Plan progress: ${update.type} - ${update.message || ''}`);
+            },
+            shouldContinue: () => true, // For now, always continue
+          };
+
+          // Execute the plan
+          const execResult = await executePlan(plan, execContext);
+
+          // Build human-friendly response
+          let responseMessage = planPreview + '\n---\n\n';
+
+          // Add step results
+          for (const step of plan.steps) {
+            const icon = getStepIcon(step.action);
+            if (step.status === 'completed') {
+              responseMessage += `${icon} ${step.completionMessage || step.description} ✓\n`;
+            } else if (step.status === 'failed') {
+              responseMessage += `${icon} ${step.failureMessage || `Failed: ${step.description}`} ✗\n`;
+            } else if (step.status === 'skipped') {
+              responseMessage += `${icon} ${step.description} (skipped)\n`;
+            }
+          }
+
+          // Add completion summary
+          if (execResult.success) {
+            responseMessage += '\n---\n\n' + getTaskCompleteMessage(true);
+
+            // Build summary bullets
+            const summaryBullets: string[] = [];
+            for (const step of plan.steps.filter(s => s.status === 'completed')) {
+              if (step.result) {
+                // Extract key info from result
+                const resultSummary = summarizeStepResult(step);
+                if (resultSummary) {
+                  summaryBullets.push(resultSummary);
+                }
+              }
+            }
+
+            if (summaryBullets.length > 0) {
+              responseMessage += '\n';
+              summaryBullets.forEach(bullet => {
+                responseMessage += `• ${bullet}\n`;
+              });
+            }
+
+            // Learn from this successful execution
+            await learnFromSuccess(supabase, message, plan, 'positive', userId);
+
+          } else {
+            // Handle failure
+            const failedStep = plan.steps.find(s => s.status === 'failed');
+            if (failedStep) {
+              responseMessage += '\n\n' + getProblemMessage(
+                failedStep.failureMessage || `Couldn't complete: ${failedStep.description}`,
+                execResult.recoveryOptions?.[0]
+              );
+            }
+          }
+
+          // Store assistant message
+          const planAssistantMsg: ChatMessage = {
+            role: 'assistant',
+            content: responseMessage,
+            timestamp: new Date().toISOString(),
+            agentId: 'orchestrator',
+            actionExecuted: {
+              type: `plan_execute:${plan.steps.length}_steps`,
+              success: execResult.success,
+              result: {
+                completedSteps: plan.completedSteps,
+                totalSteps: plan.totalSteps,
+                results: execResult.stepResults,
+              },
+            },
+          };
+          await memorySystem.session.addMessage(session, planAssistantMsg);
+          await memorySystem.session.updateSession(session);
+
+          // Save final plan state
+          await savePlan(supabase, plan);
+
+          return new Response(
+            JSON.stringify({
+              response: responseMessage,
+              sessionId: session.session_id,
+              delegatedTo: 'orchestrator',
+              planExecute: {
+                planId: plan.id,
+                status: plan.status,
+                success: execResult.success,
+                completedSteps: plan.completedSteps,
+                totalSteps: plan.totalSteps,
+                stepResults: execResult.stepResults,
+              },
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // Plan generation failed - fall through to other paths
+        console.log('[SYNC] Plan generation returned no steps, falling back to other paths');
+
+      } catch (planError: any) {
+        console.error('[SYNC] Plan-Execute failed, falling back:', planError?.message || planError);
+        // Fall through to workflow/react paths
+      }
     }
 
     // =========================================================================

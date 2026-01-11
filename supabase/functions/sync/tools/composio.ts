@@ -64,10 +64,33 @@ export const COMPOSIO_INTEGRATIONS: Record<string, { name: string; actions: stri
 
 // SYNC action names that map to Composio
 export const COMPOSIO_ACTIONS = [
-  // Gmail actions
+  // Gmail actions - Basic
   'composio_send_email',
   'composio_fetch_emails',
   'composio_search_emails',
+
+  // Gmail actions - PA Capabilities (NEW!)
+  'composio_check_inbox',        // Check inbox for unread emails
+  'composio_reply_to_email',     // Reply to a specific email
+  'composio_forward_email',      // Forward an email
+  'composio_get_email_details',  // Get full email content
+  'composio_mark_email_read',    // Mark email as read/unread
+  'composio_archive_email',      // Archive an email
+  'composio_draft_email',        // Create email draft
+  'composio_summarize_inbox',    // Summarize inbox (AI-powered)
+
+  // Plan-Execute mapped actions (for planner compatibility)
+  'check_inbox',
+  'reply_to_email',
+  'send_email',
+  'fetch_emails',
+  'search_emails',
+  'forward_email',
+  'draft_email',
+  'get_email_details',
+  'mark_email_read',
+  'archive_email',
+  'summarize_inbox',
 
   // Slack actions
   'composio_send_slack_message',
@@ -479,7 +502,8 @@ export async function executeComposioAction(
       return result;
     }
 
-    case 'composio_search_emails': {
+    case 'composio_search_emails':
+    case 'search_emails': {
       const connId = await getConnectionForToolkit(ctx, 'gmail');
       if (!connId) {
         return {
@@ -502,6 +526,459 @@ export async function executeComposioAction(
         query,
         max_results: max_results || 20,
       }, ctx.userId);
+    }
+
+    // ========================================
+    // Gmail PA Actions (Personal Assistant)
+    // ========================================
+
+    case 'composio_check_inbox':
+    case 'check_inbox': {
+      const connId = await getConnectionForToolkit(ctx, 'gmail');
+      if (!connId) {
+        return {
+          success: false,
+          message: "📧 Gmail is not connected. Connect it in the Integrations page to use email features.",
+          link: '/Integrations',
+        };
+      }
+
+      const { limit, unread_only, from, subject_contains } = data as {
+        limit?: number;
+        unread_only?: boolean;
+        from?: string;
+        subject_contains?: string;
+      };
+
+      // Build Gmail search query
+      let query = 'in:inbox';
+      if (unread_only !== false) query += ' is:unread'; // Default to unread only
+      if (from) query += ` from:${from}`;
+      if (subject_contains) query += ` subject:${subject_contains}`;
+
+      const result = await executeComposioTool(connId, 'GMAIL_FETCH_EMAILS', {
+        query,
+        max_results: limit || 10,
+      }, ctx.userId);
+
+      // Format the inbox summary nicely
+      if (result.success && result.result) {
+        const rawData = result.result as Record<string, unknown>;
+        const emails = Array.isArray(result.result) ? result.result :
+          rawData?.messages ||
+          rawData?.data ||
+          (rawData?.response_data as Record<string, unknown>)?.messages ||
+          [];
+
+        if (Array.isArray(emails) && emails.length > 0) {
+          const unreadCount = emails.filter((e: any) =>
+            e.labelIds?.includes('UNREAD') || e.is_unread || e.unread
+          ).length;
+
+          const formattedEmails = emails.slice(0, 5).map((email: Record<string, unknown>, i: number) => {
+            const headers = (email.payload as Record<string, unknown>)?.headers as Array<{name: string; value: string}> || [];
+            const getHeader = (name: string) => headers.find(h => h.name?.toLowerCase() === name.toLowerCase())?.value;
+
+            let from = email.from || email.sender || getHeader('From') || 'Unknown';
+            let subject = email.subject || getHeader('Subject') || '(No subject)';
+            let snippet = (email.snippet || email.preview || '') as string;
+            const isUnread = email.labelIds?.includes('UNREAD') || email.is_unread || email.unread;
+
+            // Clean up
+            if (typeof from === 'string' && from.includes('<')) {
+              const match = from.match(/^([^<]+)/);
+              if (match) from = match[1].trim();
+            }
+            snippet = (snippet as string).replace(/\s+/g, ' ').trim();
+            if (snippet.length > 60) snippet = snippet.substring(0, 60) + '...';
+
+            const unreadMarker = isUnread ? '🔵 ' : '';
+            return `${unreadMarker}**${i + 1}. ${subject}**\n   From: ${from}${snippet ? `\n   "${snippet}"` : ''}`;
+          }).join('\n\n');
+
+          return {
+            success: true,
+            result: {
+              emails,
+              count: emails.length,
+              unread_count: unreadCount,
+            },
+            message: `📬 **Inbox Summary**\n\n${unreadCount > 0 ? `You have **${unreadCount} unread** email(s)` : 'No unread emails'}${emails.length > unreadCount ? ` and ${emails.length - unreadCount} read` : ''}.\n\n${formattedEmails}${emails.length > 5 ? `\n\n_...and ${emails.length - 5} more_` : ''}\n\nWant me to reply to any of these, or get more details about a specific email?`,
+          };
+        }
+
+        return {
+          success: true,
+          result: { emails: [], count: 0, unread_count: 0 },
+          message: "📭 Your inbox is clear! No unread emails.",
+        };
+      }
+
+      return result;
+    }
+
+    case 'composio_reply_to_email':
+    case 'reply_to_email': {
+      const connId = await getConnectionForToolkit(ctx, 'gmail');
+      if (!connId) {
+        return {
+          success: false,
+          message: "Gmail is not connected. Please connect Gmail first.",
+          link: '/Integrations',
+        };
+      }
+
+      const { message_id, thread_id, body, to } = data as {
+        message_id?: string;
+        thread_id?: string;
+        body: string;
+        to?: string;
+      };
+
+      if (!body) {
+        return {
+          success: false,
+          message: "Please provide the reply message body.",
+        };
+      }
+
+      if (!message_id && !thread_id && !to) {
+        return {
+          success: false,
+          message: "Please provide either a message_id, thread_id, or recipient email to reply to.",
+        };
+      }
+
+      // Use Gmail reply functionality
+      const result = await executeComposioTool(connId, 'GMAIL_REPLY_TO_EMAIL', {
+        message_id,
+        thread_id,
+        body,
+        to,
+      }, ctx.userId);
+
+      if (result.success) {
+        return {
+          success: true,
+          result: result.result,
+          message: `✉️ Reply sent successfully!`,
+        };
+      }
+
+      return result;
+    }
+
+    case 'composio_forward_email':
+    case 'forward_email': {
+      const connId = await getConnectionForToolkit(ctx, 'gmail');
+      if (!connId) {
+        return {
+          success: false,
+          message: "Gmail is not connected. Please connect Gmail first.",
+          link: '/Integrations',
+        };
+      }
+
+      const { message_id, to, additional_message } = data as {
+        message_id: string;
+        to: string;
+        additional_message?: string;
+      };
+
+      if (!message_id || !to) {
+        return {
+          success: false,
+          message: "Please provide the message_id to forward and recipient email.",
+        };
+      }
+
+      const result = await executeComposioTool(connId, 'GMAIL_FORWARD_EMAIL', {
+        message_id,
+        to,
+        body: additional_message || '',
+      }, ctx.userId);
+
+      if (result.success) {
+        return {
+          success: true,
+          result: result.result,
+          message: `📤 Email forwarded to ${to}!`,
+        };
+      }
+
+      return result;
+    }
+
+    case 'composio_get_email_details':
+    case 'get_email_details': {
+      const connId = await getConnectionForToolkit(ctx, 'gmail');
+      if (!connId) {
+        return {
+          success: false,
+          message: "Gmail is not connected. Please connect Gmail first.",
+          link: '/Integrations',
+        };
+      }
+
+      const { message_id } = data as { message_id: string };
+
+      if (!message_id) {
+        return {
+          success: false,
+          message: "Please provide the message_id to get details for.",
+        };
+      }
+
+      const result = await executeComposioTool(connId, 'GMAIL_GET_MESSAGE', {
+        message_id,
+        format: 'full',
+      }, ctx.userId);
+
+      if (result.success && result.result) {
+        const email = result.result as Record<string, unknown>;
+        const headers = (email.payload as Record<string, unknown>)?.headers as Array<{name: string; value: string}> || [];
+        const getHeader = (name: string) => headers.find(h => h.name?.toLowerCase() === name.toLowerCase())?.value;
+
+        const from = getHeader('From') || 'Unknown sender';
+        const to = getHeader('To') || '';
+        const subject = getHeader('Subject') || '(No subject)';
+        const date = getHeader('Date') || '';
+        const body = (email.snippet || email.body || '') as string;
+
+        return {
+          success: true,
+          result: {
+            id: email.id,
+            thread_id: email.threadId,
+            from,
+            to,
+            subject,
+            date,
+            body,
+            labels: email.labelIds,
+          },
+          message: `📧 **${subject}**\n\nFrom: ${from}\nTo: ${to}\nDate: ${date}\n\n${body}`,
+        };
+      }
+
+      return result;
+    }
+
+    case 'composio_mark_email_read':
+    case 'mark_email_read': {
+      const connId = await getConnectionForToolkit(ctx, 'gmail');
+      if (!connId) {
+        return {
+          success: false,
+          message: "Gmail is not connected. Please connect Gmail first.",
+          link: '/Integrations',
+        };
+      }
+
+      const { message_id, mark_as } = data as {
+        message_id: string;
+        mark_as?: 'read' | 'unread';
+      };
+
+      if (!message_id) {
+        return {
+          success: false,
+          message: "Please provide the message_id to mark.",
+        };
+      }
+
+      const markRead = mark_as !== 'unread';
+      const result = await executeComposioTool(connId, 'GMAIL_MODIFY_LABELS', {
+        message_id,
+        add_labels: markRead ? [] : ['UNREAD'],
+        remove_labels: markRead ? ['UNREAD'] : [],
+      }, ctx.userId);
+
+      if (result.success) {
+        return {
+          success: true,
+          result: result.result,
+          message: `✓ Email marked as ${markRead ? 'read' : 'unread'}`,
+        };
+      }
+
+      return result;
+    }
+
+    case 'composio_archive_email':
+    case 'archive_email': {
+      const connId = await getConnectionForToolkit(ctx, 'gmail');
+      if (!connId) {
+        return {
+          success: false,
+          message: "Gmail is not connected. Please connect Gmail first.",
+          link: '/Integrations',
+        };
+      }
+
+      const { message_id } = data as { message_id: string };
+
+      if (!message_id) {
+        return {
+          success: false,
+          message: "Please provide the message_id to archive.",
+        };
+      }
+
+      const result = await executeComposioTool(connId, 'GMAIL_MODIFY_LABELS', {
+        message_id,
+        remove_labels: ['INBOX'],
+      }, ctx.userId);
+
+      if (result.success) {
+        return {
+          success: true,
+          result: result.result,
+          message: `📥 Email archived`,
+        };
+      }
+
+      return result;
+    }
+
+    case 'composio_draft_email':
+    case 'draft_email': {
+      const connId = await getConnectionForToolkit(ctx, 'gmail');
+      if (!connId) {
+        return {
+          success: false,
+          message: "Gmail is not connected. Please connect Gmail first.",
+          link: '/Integrations',
+        };
+      }
+
+      const { to, subject, body } = data as {
+        to: string;
+        subject: string;
+        body: string;
+      };
+
+      if (!to || !subject || !body) {
+        return {
+          success: false,
+          message: "Please provide: to, subject, and body for the draft.",
+        };
+      }
+
+      const result = await executeComposioTool(connId, 'GMAIL_CREATE_DRAFT', {
+        recipient_email: to,
+        subject,
+        body,
+      }, ctx.userId);
+
+      if (result.success) {
+        return {
+          success: true,
+          result: result.result,
+          message: `📝 Draft created! Subject: "${subject}" to ${to}`,
+        };
+      }
+
+      return result;
+    }
+
+    case 'composio_summarize_inbox':
+    case 'summarize_inbox': {
+      const connId = await getConnectionForToolkit(ctx, 'gmail');
+      if (!connId) {
+        return {
+          success: false,
+          message: "Gmail is not connected. Please connect Gmail first.",
+          link: '/Integrations',
+        };
+      }
+
+      const { period } = data as { period?: 'today' | 'week' | 'all' };
+
+      // Build query based on period
+      let query = 'in:inbox';
+      if (period === 'today') {
+        const today = new Date().toISOString().split('T')[0];
+        query += ` after:${today}`;
+      } else if (period === 'week') {
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        query += ` after:${weekAgo.toISOString().split('T')[0]}`;
+      }
+
+      const result = await executeComposioTool(connId, 'GMAIL_FETCH_EMAILS', {
+        query,
+        max_results: 50,
+      }, ctx.userId);
+
+      if (result.success && result.result) {
+        const rawData = result.result as Record<string, unknown>;
+        const emails = Array.isArray(result.result) ? result.result :
+          rawData?.messages || rawData?.data || [];
+
+        if (Array.isArray(emails) && emails.length > 0) {
+          // Categorize emails
+          const unread = emails.filter((e: any) => e.labelIds?.includes('UNREAD') || e.is_unread);
+          const important = emails.filter((e: any) => e.labelIds?.includes('IMPORTANT'));
+
+          // Group by sender
+          const bySender: Record<string, number> = {};
+          for (const email of emails) {
+            const headers = (email.payload as Record<string, unknown>)?.headers as Array<{name: string; value: string}> || [];
+            const from = headers.find(h => h.name?.toLowerCase() === 'from')?.value || email.from || 'Unknown';
+            const senderName = typeof from === 'string' && from.includes('<')
+              ? from.match(/^([^<]+)/)?.[1]?.trim() || from
+              : from;
+            bySender[senderName] = (bySender[senderName] || 0) + 1;
+          }
+
+          // Top senders
+          const topSenders = Object.entries(bySender)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([name, count]) => `  • ${name}: ${count} email(s)`)
+            .join('\n');
+
+          const periodLabel = period === 'today' ? 'Today' : period === 'week' ? 'This week' : 'Total';
+
+          return {
+            success: true,
+            result: {
+              total: emails.length,
+              unread: unread.length,
+              important: important.length,
+              top_senders: bySender,
+            },
+            message: `📊 **Inbox Summary** (${periodLabel})\n\n` +
+              `📬 **${emails.length}** total emails\n` +
+              `🔵 **${unread.length}** unread\n` +
+              `⭐ **${important.length}** marked important\n\n` +
+              `**Top Senders:**\n${topSenders}\n\n` +
+              `Would you like me to:\n` +
+              `• Show unread emails?\n` +
+              `• Search for specific emails?\n` +
+              `• Reply to or draft something?`,
+          };
+        }
+
+        return {
+          success: true,
+          result: { total: 0, unread: 0, important: 0 },
+          message: `📭 No emails found for the selected period.`,
+        };
+      }
+
+      return result;
+    }
+
+    case 'send_email': {
+      // Map to existing composio_send_email
+      return executeComposioAction(ctx, 'composio_send_email', data);
+    }
+
+    case 'fetch_emails': {
+      // Map to existing composio_fetch_emails
+      return executeComposioAction(ctx, 'composio_fetch_emails', data);
     }
 
     // ========================================
