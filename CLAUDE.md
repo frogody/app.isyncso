@@ -358,32 +358,290 @@ SUPABASE_ACCESS_TOKEN="sbp_b998952de7493074e84b50702e83f1db14be1479" npx supabas
 
 ---
 
-## SYNC Agent
+## SYNC Agent - Comprehensive Architecture
 
-The SYNC agent is the AI orchestrator that can execute actions across the platform via natural language.
+SYNC is the AI orchestrator for iSyncSO. It processes natural language commands and executes 51 actions across 10 modules.
 
-### Current Capabilities (3 actions)
-- `create_invoice` - Create invoices with auto-price lookup
-- `create_proposal` - Create proposals
-- `search_products` - Search product inventory
+### Architecture Overview
 
-### Planned Expansion (51 actions)
-See plan file: `/Users/daviddebruin/.claude/plans/crispy-zooming-unicorn.md`
+```
+supabase/functions/sync/
+├── index.ts              # Main orchestrator (~1800 lines)
+│   ├── SYNC_SYSTEM_PROMPT   # Personality, rules, examples (~700 lines)
+│   ├── Agent routing        # Keyword/pattern matching
+│   ├── Action parsing       # [ACTION]...[/ACTION] extraction
+│   └── Request handlers     # Streaming + standard responses
+│
+├── tools/                # Action executors (51 actions total)
+│   ├── finance.ts        # 8 actions: invoices, proposals, expenses
+│   ├── products.ts       # 6 actions: inventory, catalog
+│   ├── growth.ts         # 9 actions: CRM, pipeline, campaigns
+│   ├── tasks.ts          # 8 actions: task management
+│   ├── inbox.ts          # 5 actions: messaging
+│   ├── team.ts           # 6 actions: team management
+│   ├── learn.ts          # 4 actions: courses, learning
+│   ├── sentinel.ts       # 3 actions: AI compliance
+│   ├── create.ts         # 2 actions: image generation
+│   ├── research.ts       # 2 actions: web search
+│   └── types.ts          # ActionContext, ActionResult types
+│
+├── workflows/            # Multi-agent system
+│   ├── agents.ts         # Specialized agent prompts (FINANCE, GROWTH, etc.)
+│   ├── engine.ts         # Workflow execution (parallel, sequential, iterative)
+│   ├── types.ts          # WorkflowContext, WorkflowResult
+│   └── index.ts          # Exports
+│
+├── memory/               # Persistent memory system
+│   ├── session.ts        # DB-backed sessions (sync_sessions table)
+│   ├── buffer.ts         # Message summarization
+│   ├── entities.ts       # Entity extraction (clients, products)
+│   ├── rag.ts            # Vector retrieval (sync_memory_chunks)
+│   ├── actions.ts        # Action templates (sync_action_templates)
+│   ├── embeddings.ts     # Together.ai embeddings (BAAI/bge-large-en-v1.5)
+│   └── types.ts          # Memory types
+│
+└── utils/helpers.ts      # Formatting utilities
+```
 
-Categories:
-- Finance (8 actions): invoices, expenses, subscriptions, proposals
-- Products (6 actions): CRUD, inventory, bundles
-- Growth/CRM (10 actions): prospects, campaigns, pipeline
-- Tasks & Projects (8 actions): task/project management
-- Communication (5 actions): messages, channels
-- Team Management (6 actions): users, roles, teams
-- Learn (6 actions): courses, skills, certificates
-- Sentinel (5 actions): AI compliance
+### LLM Configuration
 
-### SYNC System Prompt Features
-- Dynamic date/time injection (knows current date)
-- Company context from authenticated user
-- Product price auto-lookup for invoices/proposals
+```typescript
+// Primary model (index.ts, agents.ts, engine.ts)
+model: 'moonshotai/Kimi-K2-Instruct'  // Together.ai - best open-source agentic model
+
+// Embeddings (memory/embeddings.ts)
+model: 'BAAI/bge-large-en-v1.5'  // 1024 dimensions
+
+// Image generation (generate-image/index.ts)
+models: {
+  'flux-kontext-pro': 'black-forest-labs/FLUX.1-Kontext-pro',  // Product images with reference
+  'flux-pro': 'black-forest-labs/FLUX.1.1-pro',                 // Marketing/creative
+  'flux-schnell': 'black-forest-labs/FLUX.1-schnell',           // Quick drafts
+}
+```
+
+### All 51 Actions by Module
+
+**FINANCE (8 actions)**
+- `create_proposal` - Create proposal with items
+- `create_invoice` - Create invoice with items
+- `list_invoices` - List invoices (status, client filters)
+- `update_invoice` - Update invoice status
+- `create_expense` - Log expense
+- `list_expenses` - List expenses
+- `get_financial_summary` - Revenue/expense summary
+- `convert_proposal_to_invoice` - Convert accepted proposal
+
+**PRODUCTS (6 actions)**
+- `search_products` - Search by name
+- `create_product` - Add new product
+- `update_product` - Update details/pricing
+- `update_inventory` - Update stock quantity
+- `list_products` - List all products
+- `get_low_stock` - Products below threshold
+
+**GROWTH/CRM (9 actions)**
+- `create_prospect` - Add prospect/lead
+- `update_prospect` - Update details
+- `search_prospects` - Search by name/email/company
+- `list_prospects` - List with filters
+- `move_pipeline_stage` - Move through pipeline
+- `get_pipeline_stats` - Pipeline overview
+- `create_campaign` - Create outreach campaign
+- `list_campaigns` - List campaigns
+- `update_campaign` - Update campaign
+
+**TASKS (8 actions)**
+- `create_task` - Create task
+- `update_task` - Update details
+- `assign_task` - Assign to user
+- `list_tasks` - List with filters
+- `complete_task` - Mark complete
+- `delete_task` - Delete task
+- `get_my_tasks` - User's tasks
+- `get_overdue_tasks` - Overdue tasks
+
+**INBOX (5 actions)**
+- `list_conversations` - List chats
+- `create_conversation` - Start conversation
+- `send_message` - Send message
+- `search_messages` - Search history
+- `get_unread_count` - Unread count
+
+**TEAM (6 actions)**
+- `create_team` - Create team
+- `list_teams` - List teams
+- `add_team_member` - Add member
+- `remove_team_member` - Remove member
+- `list_team_members` - List members
+- `invite_user` - Send invitation
+
+**LEARN (4 actions)**
+- `list_courses` - List courses
+- `get_learning_progress` - User progress
+- `enroll_course` - Enroll in course
+- `recommend_courses` - AI recommendations
+
+**SENTINEL (3 actions)**
+- `register_ai_system` - Register for compliance
+- `list_ai_systems` - List systems
+- `get_compliance_status` - EU AI Act status
+
+**CREATE (2 actions)**
+- `generate_image` - AI image generation
+- `list_generated_content` - List generated content
+
+**RESEARCH (2 actions)**
+- `web_search` - Search the internet
+- `lookup_product_info` - Product specs/pricing
+
+### Memory System
+
+SYNC has persistent memory across sessions:
+
+```sql
+-- Session persistence (replaces in-memory Map)
+sync_sessions (
+  session_id, user_id, company_id,
+  messages JSONB,           -- Recent message buffer
+  conversation_summary,     -- Compressed history
+  active_entities JSONB,    -- Tracked clients/products
+  context JSONB
+)
+
+-- RAG vectors for semantic retrieval
+sync_memory_chunks (
+  chunk_type,  -- 'conversation', 'summary', 'entity', 'action_success'
+  content,
+  embedding vector(1024),
+  importance_score
+)
+
+-- Successful action patterns
+sync_action_templates (
+  action_type,
+  intent_description,
+  example_request,
+  action_data JSONB,
+  embedding vector(1024)
+)
+```
+
+### System Prompt Key Sections
+
+The system prompt in `index.ts` (lines ~449-1127) defines SYNC's behavior:
+
+| Section | Lines | Purpose |
+|---------|-------|---------|
+| Personality | ~451-458 | Friendly, conversational tone |
+| Conversation Flow | ~459-545 | One question at a time, verify info |
+| Product Verification | ~546-620 | MUST search before confirming products |
+| Continue After Search | ~621-649 | Always ask follow-up after results |
+| Available Actions | ~650-750 | Action list with examples |
+| Image Generation | ~805-961 | Detailed prompt crafting guide |
+| Advanced Intelligence | ~1070-1127 | Smart shortcuts, proactive insights |
+
+### Adding a New Action
+
+```typescript
+// 1. Add action name to category in index.ts
+const NEW_MODULE_ACTIONS = ['my_new_action'];
+
+// 2. Create executor in tools/newmodule.ts
+export async function myNewAction(
+  ctx: ActionContext,
+  data: { param1: string; param2?: number }
+): Promise<ActionResult> {
+  const { supabase, companyId, userId } = ctx;
+
+  // Execute action...
+  const { data: result, error } = await supabase
+    .from('table')
+    .insert({ ... });
+
+  if (error) return errorResult(`Failed: ${error.message}`);
+  return successResult('Action completed!', result, '/redirect-page');
+}
+
+// 3. Add routing in index.ts executeAction()
+if (NEW_MODULE_ACTIONS.includes(action.action)) {
+  return executeNewModuleAction(ctx, action.action, action.data);
+}
+
+// 4. Add example to system prompt
+[ACTION]{"action": "my_new_action", "data": {"param1": "value"}}[/ACTION]
+```
+
+### Image Generation Flow
+
+```typescript
+// 1. User requests image for product
+// 2. SYNC searches products → gets featured_image + gallery URLs
+// 3. Calls generate-image edge function with:
+{
+  prompt: "Professional product photo...",
+  product_name: "Philips OneBlade",      // CRITICAL for reference
+  product_images: ["url1", "url2"],      // Actual product images
+  use_case: "product_scene",             // Routes to flux-kontext-pro
+  style: "photorealistic"
+}
+// 4. FLUX Kontext Pro preserves product appearance from reference
+// 5. Result uploaded to generated-content bucket
+```
+
+### Deploying SYNC Changes
+
+```bash
+# Deploy after any changes to sync function
+SUPABASE_ACCESS_TOKEN="sbp_b998952de7493074e84b50702e83f1db14be1479" \
+npx supabase functions deploy sync --project-ref sfxpmzicgpaxfntqleig --no-verify-jwt
+
+# System prompt changes take effect immediately after deploy
+# No build step needed - just redeploy
+```
+
+### Frontend Integration
+
+```javascript
+// src/pages/SyncAgent.jsx - Full page with avatar
+// src/components/sync/SyncChat.jsx - Embedded chat
+
+const response = await fetch(`${SUPABASE_URL}/functions/v1/sync`, {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${ANON_KEY}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    message: userMessage,
+    sessionId: sessionId,           // Persists conversation
+    stream: true,                   // SSE streaming
+    context: { userId, companyId }
+  })
+});
+```
+
+### Troubleshooting SYNC
+
+| Issue | Cause | Fix |
+|-------|-------|-----|
+| 401 error | JWT verification | Add `verify_jwt = false` to config.toml, redeploy |
+| Stops after search | Missing follow-up prompt | Check "Continue After Search" section |
+| Wrong product image | Missing product_name | Include `product_name` in generate_image |
+| Action not found | Not in routing | Add to action list + executeAction switch |
+| Memory not persisting | Session not saved | Check memorySystem.session.updateSession |
+| Kimi K2 errors | Model issues | Falls back to Llama-3.3-70B-Instruct-Turbo-Free |
+
+### Key Files Quick Reference
+
+| File | Purpose | When to Edit |
+|------|---------|--------------|
+| `index.ts` | Main orchestrator, system prompt | Behavior changes, new modules |
+| `tools/*.ts` | Action implementations | New actions, fix action bugs |
+| `workflows/agents.ts` | Specialized agent prompts | Multi-agent behavior |
+| `memory/session.ts` | Session persistence | Memory issues |
+| `generate-image/index.ts` | Image generation | Model routing, quality |
+| `create.ts` | Image action | Product image reference |
 
 ---
 
