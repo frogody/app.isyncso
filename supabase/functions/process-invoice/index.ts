@@ -90,7 +90,7 @@ async function extractFromText(groqApiKey: string, pdfText: string, retryCount =
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'llama-3.1-8b-instant',
         messages: [
           {
             role: 'user',
@@ -352,6 +352,7 @@ async function extractFromImage(googleApiKey: string, imageUrl: string, retryCou
 async function processExpenseAsync(
   supabase: any,
   groqApiKey: string,
+  googleApiKey: string | undefined,
   expenseId: string,
   imageUrl: string,
   companyId: string,
@@ -378,8 +379,12 @@ async function processExpenseAsync(
         length: pdfText?.length,
         value: pdfText ? `"${pdfText.substring(0, 50)}..."` : 'null/undefined'
       });
-      // Note: This will fail without a valid Google API key
-      extraction = await extractFromImage(groqApiKey, imageUrl);
+      // Fallback to image extraction using Google Gemini
+      if (!googleApiKey) {
+        extraction = { success: false, confidence: 0, errors: ["No Google API key configured for image extraction fallback"] };
+      } else {
+        extraction = await extractFromImage(googleApiKey, imageUrl);
+      }
     }
     console.log(`[ASYNC] Extraction complete:`, { success: extraction.success, confidence: extraction.confidence });
 
@@ -606,16 +611,19 @@ Deno.serve(async (req) => {
       throw new Error("GROQ_API_KEY not configured");
     }
 
+    // Get Google API key for image extraction fallback (optional)
+    const googleApiKey = Deno.env.get("GOOGLE_API_KEY");
+
     const body = await req.json();
     const { storagePath, bucket, companyId, userId, sourceEmailId, imageUrl: directImageUrl, pdfText, _mode, _expenseId, _imageUrl, _pdfText } = body;
 
     console.log('Request body keys:', Object.keys(body));
     console.log('PDF text present:', !!pdfText, 'Length:', pdfText?.length || 0);
 
-    // ASYNC MODE: Process existing expense (called by ourselves)
+    // ASYNC MODE: Process existing expense (called by database trigger)
     if (_mode === 'process' && _expenseId && _imageUrl) {
       console.log(`[ASYNC MODE] Processing expense ${_expenseId}`, { hasPdfText: !!_pdfText });
-      await processExpenseAsync(supabase, groqApiKey, _expenseId, _imageUrl, companyId, _pdfText);
+      await processExpenseAsync(supabase, groqApiKey, googleApiKey, _expenseId, _imageUrl, companyId, _pdfText);
       return new Response(
         JSON.stringify({ success: true, processed: true, expenseId: _expenseId }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -655,7 +663,15 @@ Deno.serve(async (req) => {
       imageUrl = publicUrlData.publicUrl;
     }
 
-    // Create expense record immediately with "processing" status
+    // Determine initial status based on whether we have PDF text
+    // IMPORTANT: If pdfText exists, use 'text_extraction' status to PREVENT the database trigger
+    // from firing. The trigger only fires on status='processing' and would overwrite our results.
+    const hasPdfText = pdfText && pdfText.trim().length > 0;
+    const initialStatus = hasPdfText ? "text_extraction" : "processing";
+
+    console.log(`Creating expense with status='${initialStatus}' (hasPdfText: ${hasPdfText})`);
+
+    // Create expense record
     const { data: expense, error: expenseError } = await supabase
       .from("expenses")
       .insert({
@@ -665,8 +681,8 @@ Deno.serve(async (req) => {
         source_type: sourceEmailId ? "email" : "manual",
         source_email_id: sourceEmailId || null,
         original_file_url: imageUrl,
-        status: "processing",
-        review_status: "processing",
+        status: initialStatus,
+        review_status: initialStatus,
         ai_confidence: 0,
         needs_review: true,
       })
@@ -682,17 +698,11 @@ Deno.serve(async (req) => {
     }
 
     // If we have PDF text, process immediately (faster and more reliable)
-    console.log('CRITICAL: Checking pdfText before processing:', {
-      hasPdfText: !!pdfText,
-      pdfTextType: typeof pdfText,
-      pdfTextLength: pdfText?.length || 0,
-      trimmedLength: pdfText?.trim?.()?.length || 0
-    });
-
-    if (pdfText && pdfText.trim().length > 0) {
+    // The hasPdfText variable was already calculated above to determine initial status
+    if (hasPdfText) {
       console.log(`✅ Processing expense ${expense.id} immediately with PDF text (length: ${pdfText.length})`);
       console.log(`PDF text preview (first 200 chars): ${pdfText.substring(0, 200)}`);
-      await processExpenseAsync(supabase, groqApiKey, expense.id, imageUrl, companyId, pdfText);
+      await processExpenseAsync(supabase, groqApiKey, googleApiKey, expense.id, imageUrl, companyId, pdfText);
 
       return new Response(
         JSON.stringify({
