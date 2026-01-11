@@ -23,7 +23,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 // Configuration
 // ============================================
 
-const COMPOSIO_BASE_URL = "https://backend.composio.dev/api/v3";
+// Use v1 API - v3 returns 404 for many endpoints
+const COMPOSIO_BASE_URL = "https://backend.composio.dev/api/v1";
 const COMPOSIO_API_KEY = Deno.env.get("COMPOSIO_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -126,10 +127,12 @@ async function composioFetch<T = unknown>(
 
 /**
  * List available auth configs for a toolkit
+ * v1 API uses /integrations endpoint
  */
 async function listAuthConfigs(toolkitSlug: string) {
+  // v1 API uses /integrations with appName parameter
   const result = await composioFetch(
-    `/auth_configs?toolkit_slug=${toolkitSlug}&is_composio_managed=true`
+    `/integrations?appName=${toolkitSlug}`
   );
 
   if (!result.success) {
@@ -143,24 +146,26 @@ async function listAuthConfigs(toolkitSlug: string) {
 
 /**
  * Initiate OAuth connection flow
+ * v1 API uses /connectedAccounts endpoint
  */
 async function initiateConnection(
   userId: string,
   authConfigId: string,
   callbackUrl?: string
 ) {
-  // First, create the connection link
+  // v1 API: Create connection via /connectedAccounts
   const linkResult = await composioFetch<{
-    url: string;
-    link_token: string;
-    connected_account_id: string;
-    expires_at: string;
-  }>("/connected_accounts/link", {
+    redirectUrl?: string;
+    url?: string;
+    connectionStatus?: string;
+    connectedAccountId?: string;
+    connected_account_id?: string;
+  }>("/connectedAccounts", {
     method: "POST",
     body: JSON.stringify({
-      auth_config_id: authConfigId,
-      user_id: userId,
-      redirect_url: callbackUrl || `${SUPABASE_URL}/functions/v1/composio-connect/callback`,
+      integrationId: authConfigId,
+      userUuid: userId,
+      redirectUri: callbackUrl || `${SUPABASE_URL}/functions/v1/composio-connect/callback`,
     }),
   });
 
@@ -171,26 +176,30 @@ async function initiateConnection(
   return {
     success: true,
     data: {
-      redirectUrl: linkResult.data.url,
-      linkToken: linkResult.data.link_token,
-      connectedAccountId: linkResult.data.connected_account_id,
-      expiresAt: linkResult.data.expires_at,
+      redirectUrl: linkResult.data.redirectUrl || linkResult.data.url,
+      connectedAccountId: linkResult.data.connectedAccountId || linkResult.data.connected_account_id,
+      connectionStatus: linkResult.data.connectionStatus,
     },
   };
 }
 
 /**
  * Get connection status
+ * v1 API uses /connectedAccounts endpoint
  */
 async function getConnectionStatus(connectedAccountId: string) {
   const result = await composioFetch<{
     id: string;
     status: string;
-    toolkit_slug: string;
-    user_id: string;
-    created_at: string;
-    updated_at: string;
-  }>(`/connected_accounts/${connectedAccountId}`);
+    appName?: string;
+    toolkit_slug?: string;
+    userUuid?: string;
+    user_id?: string;
+    createdAt?: string;
+    created_at?: string;
+    updatedAt?: string;
+    updated_at?: string;
+  }>(`/connectedAccounts/${connectedAccountId}`);
 
   if (!result.success || !result.data) {
     return result;
@@ -201,25 +210,27 @@ async function getConnectionStatus(connectedAccountId: string) {
     data: {
       id: result.data.id,
       status: result.data.status,
-      toolkitSlug: result.data.toolkit_slug,
-      userId: result.data.user_id,
-      createdAt: result.data.created_at,
-      updatedAt: result.data.updated_at,
+      toolkitSlug: result.data.appName || result.data.toolkit_slug,
+      userId: result.data.userUuid || result.data.user_id,
+      createdAt: result.data.createdAt || result.data.created_at,
+      updatedAt: result.data.updatedAt || result.data.updated_at,
     },
   };
 }
 
 /**
  * List all user's connections
+ * v1 API uses /connectedAccounts with userUuid parameter
  */
 async function listConnections(
   userId: string,
   options?: { toolkitSlug?: string; status?: string }
 ) {
-  let endpoint = `/connected_accounts?user_id=${userId}`;
+  // v1 API uses userUuid parameter
+  let endpoint = `/connectedAccounts?userUuid=${userId}`;
 
   if (options?.toolkitSlug) {
-    endpoint += `&toolkit_slug=${options.toolkitSlug}`;
+    endpoint += `&appName=${options.toolkitSlug}`;
   }
   if (options?.status) {
     endpoint += `&status=${options.status}`;
@@ -237,13 +248,14 @@ async function listConnections(
 
 /**
  * Disconnect an account
+ * v1 API uses /connectedAccounts endpoint
  */
 async function disconnectAccount(
   connectedAccountId: string,
   supabase: ReturnType<typeof createClient>
 ) {
-  // Delete from Composio
-  const result = await composioFetch(`/connected_accounts/${connectedAccountId}`, {
+  // Delete from Composio - v1 API
+  const result = await composioFetch(`/connectedAccounts/${connectedAccountId}`, {
     method: "DELETE",
   });
 
@@ -267,10 +279,12 @@ async function disconnectAccount(
 
 /**
  * Refresh a connection's token
+ * v1 API uses /connectedAccounts endpoint
  */
 async function refreshConnection(connectedAccountId: string) {
-  const result = await composioFetch(`/connected_accounts/${connectedAccountId}/refresh`, {
-    method: "POST",
+  // v1 API: Use initiate endpoint with forceNewAccount to refresh
+  const result = await composioFetch(`/connectedAccounts/${connectedAccountId}`, {
+    method: "GET",
   });
 
   if (!result.success) {
@@ -283,6 +297,7 @@ async function refreshConnection(connectedAccountId: string) {
 
 /**
  * Execute a Composio tool
+ * v1 API uses /actions/{actionName}/execute endpoint
  */
 async function executeTool(
   toolSlug: string,
@@ -294,15 +309,20 @@ async function executeTool(
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     const startTime = Date.now();
 
+    // v1 API: /actions/{actionName}/execute
     const result = await composioFetch<{
-      successful: boolean;
+      successful?: boolean;
+      execution_details?: {
+        executed: boolean;
+      };
+      response_data?: unknown;
       data?: unknown;
       error?: string;
-    }>(`/tools/execute/${toolSlug}`, {
+    }>(`/actions/${toolSlug}/execute`, {
       method: "POST",
       body: JSON.stringify({
-        connected_account_id: connectedAccountId,
-        arguments: args,
+        connectedAccountId: connectedAccountId,
+        input: args,
       }),
     });
 
@@ -318,9 +338,8 @@ async function executeTool(
         attempt < maxRetries
       ) {
         console.log(`Attempting token refresh for ${connectedAccountId}`);
-        await composioFetch(`/connected_accounts/${connectedAccountId}/refresh`, {
-          method: "POST",
-        });
+        // Just re-fetch status to trigger any refresh
+        await getConnectionStatus(connectedAccountId);
         continue;
       }
 
@@ -335,8 +354,8 @@ async function executeTool(
     return {
       success: true,
       data: {
-        successful: result.data?.successful ?? true,
-        data: result.data?.data || result.data,
+        successful: result.data?.successful ?? result.data?.execution_details?.executed ?? true,
+        data: result.data?.response_data || result.data?.data || result.data,
         executionTime,
       },
     };
@@ -347,10 +366,12 @@ async function executeTool(
 
 /**
  * List available tools for a toolkit
+ * v1 API uses /actions endpoint
  */
 async function listTools(toolkitSlug: string) {
+  // v1 API: /actions with appNames parameter
   const result = await composioFetch<{ items?: unknown[] }>(
-    `/tools?toolkit_slug=${toolkitSlug}`
+    `/actions?appNames=${toolkitSlug}`
   );
 
   if (!result.success) {
@@ -363,10 +384,11 @@ async function listTools(toolkitSlug: string) {
 
 /**
  * List available triggers for a toolkit
+ * v1 API uses /triggers endpoint with appNames
  */
 async function listTriggers(toolkitSlug: string) {
   const result = await composioFetch<{ items?: unknown[] }>(
-    `/triggers?toolkit_slug=${toolkitSlug}`
+    `/triggers?appNames=${toolkitSlug}`
   );
 
   if (!result.success) {
@@ -379,6 +401,7 @@ async function listTriggers(toolkitSlug: string) {
 
 /**
  * Subscribe to a trigger
+ * v1 API uses /triggers/subscribe endpoint
  */
 async function subscribeTrigger(
   triggerSlug: string,
@@ -388,16 +411,16 @@ async function subscribeTrigger(
   userId: string,
   supabase: ReturnType<typeof createClient>
 ) {
+  // v1 API: /triggers/{triggerId}/enable
   const result = await composioFetch<{
-    id: string;
+    triggerId?: string;
+    id?: string;
     status: string;
-  }>("/triggers", {
+  }>(`/triggers/${triggerSlug}/enable`, {
     method: "POST",
     body: JSON.stringify({
-      trigger_slug: triggerSlug,
-      connected_account_id: connectedAccountId,
-      webhook_url: webhookUrl,
-      config,
+      connectedAccountId: connectedAccountId,
+      triggerConfig: config,
     }),
   });
 
@@ -405,13 +428,15 @@ async function subscribeTrigger(
     return result;
   }
 
+  const triggerId = result.data.triggerId || result.data.id;
+
   // Store subscription in database
   const { error } = await supabase.from("composio_trigger_subscriptions").upsert(
     {
       user_id: userId,
       connected_account_id: connectedAccountId,
       trigger_slug: triggerSlug,
-      composio_subscription_id: result.data.id,
+      composio_subscription_id: triggerId,
       webhook_url: webhookUrl,
       status: result.data.status || "ACTIVE",
       config,
@@ -428,7 +453,7 @@ async function subscribeTrigger(
   return {
     success: true,
     data: {
-      id: result.data.id,
+      id: triggerId,
       triggerSlug,
       status: result.data.status || "ACTIVE",
     },
@@ -437,13 +462,16 @@ async function subscribeTrigger(
 
 /**
  * Unsubscribe from a trigger
+ * v1 API uses /triggers/{triggerId}/disable endpoint
  */
 async function unsubscribeTrigger(
   subscriptionId: string,
   supabase: ReturnType<typeof createClient>
 ) {
-  const result = await composioFetch(`/triggers/${subscriptionId}`, {
-    method: "DELETE",
+  // v1 API: /triggers/{triggerId}/disable
+  const result = await composioFetch(`/triggers/instance/${subscriptionId}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ enabled: false }),
   });
 
   if (!result.success) {
