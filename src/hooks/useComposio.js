@@ -125,14 +125,18 @@ export function useComposio() {
 
   /**
    * Poll for connection status until active or timeout
+   * @param {string} connectedAccountId - The Composio connected account ID
+   * @param {string} userId - The user ID (required for storing connection in database)
+   * @param {number} timeoutMs - Timeout in milliseconds
    */
-  const waitForConnection = useCallback(async (connectedAccountId, timeoutMs = DEFAULT_POLL_TIMEOUT) => {
+  const waitForConnection = useCallback(async (connectedAccountId, userId, timeoutMs = DEFAULT_POLL_TIMEOUT) => {
     const startTime = Date.now();
 
     while (Date.now() - startTime < timeoutMs) {
       try {
         const status = await callComposioFunction('getConnectionStatus', {
           connectedAccountId,
+          userId, // Pass userId so edge function can store connection when ACTIVE
         });
 
         if (status.status === 'ACTIVE') {

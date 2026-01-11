@@ -346,6 +346,7 @@ export default function Integrations() {
 
       const result = await composio.waitForConnection(
         connectionInfo.connectedAccountId,
+        user.id, // Pass userId so connection is stored in database
         120000
       );
 
