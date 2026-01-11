@@ -338,6 +338,7 @@ verify_jwt = false
 | `generate-image` | No | AI image generation (Together.ai FLUX) |
 | `generate-video` | No | AI video generation |
 | `enhance-prompt` | No | Prompt enhancement for image gen |
+| `process-invoice` | No | AI invoice processing (Groq LLM text extraction) |
 
 ### Deploying Edge Functions
 
@@ -404,7 +405,144 @@ Categories:
 - Added RLS policies for authenticated upload/update/delete
 - Public read access for displaying logos
 
+### Invoice Processing with AI (Jan 2026)
+
+**Implementation:** AI-powered invoice extraction using PDF text parsing + Groq LLM
+
+#### Architecture
+
+1. **Client-side (InventoryExpenses.jsx)**:
+   - PDF text extraction using `pdf.js` (Mozilla's PDF parser)
+   - Extracts full text content from all pages
+   - Converts PDF to PNG image for fallback
+   - Uploads both to Supabase storage
+   - Sends pdfText (string) to edge function
+
+2. **Server-side (process-invoice edge function)**:
+   - Primary: Text-based extraction with Groq LLM (`llama-3.3-70b-versatile`)
+   - Fallback: Image-based extraction with Google Gemini (if pdfText missing)
+   - Async background processing (returns immediately, processes in background)
+   - Updates database with extracted data or error
+
+#### Implementation Details
+
+**Client-side PDF extraction:**
+```javascript
+import * as pdfjsLib from 'pdfjs-dist';
+
+async function extractPdfText(pdfFile) {
+  const arrayBuffer = await pdfFile.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let fullText = '';
+  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+    const page = await pdf.getPage(pageNum);
+    const textContent = await page.getTextContent();
+    const pageText = textContent.items.map(item => item.str).join(' ');
+    fullText += pageText + '\n';
+  }
+  return fullText.trim();
+}
+```
+
+**Edge function call:**
+```javascript
+// Use direct fetch instead of supabase.functions.invoke for proper JSON serialization
+const response = await fetch(
+  `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-invoice`,
+  {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+    },
+    body: JSON.stringify({
+      storagePath: '...',
+      bucket: 'attachments',
+      companyId: '...',
+      userId: '...',
+      pdfText: extractedText, // Send text directly
+    }),
+  }
+);
+```
+
+#### Challenges & Solutions
+
+**Challenge 1: Vision Model API Failures**
+- ❌ Claude API: 404 errors for all model versions (claude-3-5-sonnet-20241022, claude-3-opus-20240229)
+  - API key doesn't have model access
+- ❌ Together.ai: "Model requires dedicated endpoint" error
+  - Serverless endpoints don't support vision models
+- ❌ Google Gemini: "API key not valid"
+  - Invalid API key
+
+**Solution:** Pivot from vision models to text-based extraction
+- Extract PDF text directly using pdf.js
+- Use Groq's Llama 3.3 70B for structured data extraction
+- Faster (10-20 sec), more reliable, no image conversion needed
+
+**Challenge 2: Edge Function Secrets**
+- Updated `GROQ_API_KEY` secret but function still used old/invalid key
+- Edge functions don't automatically reload secrets
+
+**Solution:** Must redeploy edge function after updating secrets
+```bash
+# Update secret
+SUPABASE_ACCESS_TOKEN="..." npx supabase secrets set GROQ_API_KEY="gsk_..." --project-ref sfxpmzicgpaxfntqleig
+
+# CRITICAL: Redeploy function to pick up new secret
+SUPABASE_ACCESS_TOKEN="..." npx supabase functions deploy process-invoice --project-ref sfxpmzicgpaxfntqleig --no-verify-jwt
+```
+
+**Challenge 3: pdfText Not Reaching Server**
+- Client logs showed pdfText present (2999 chars)
+- Server logs showed pdfText: undefined
+- Used `supabase.functions.invoke()` which doesn't properly serialize complex bodies
+
+**Solution:** Switch to direct `fetch()` with `JSON.stringify()`
+- Ensures proper JSON serialization
+- pdfText transmitted correctly as string
+
+#### Edge Function Configuration
+
+**Must add to `supabase/config.toml`:**
+```toml
+[functions.process-invoice]
+verify_jwt = false
+```
+
+**Available Secrets:**
+- `GROQ_API_KEY` - Groq LLM API (llama-3.3-70b-versatile)
+- `GOOGLE_API_KEY` - Google Gemini fallback (not currently valid)
+- `ANTHROPIC_API_KEY` - Claude API (not currently working for this project)
+
+#### Current Status (Jan 11, 2026)
+
+✅ PDF text extraction working (client-side)
+✅ pdfText successfully sent to edge function
+✅ Groq API key updated and deployed
+🔄 Testing in production (https://app.isyncso.com/inventoryexpenses)
+
+**Expected Behavior:**
+1. Upload PDF invoice → extracts ~3000 chars of text
+2. Calls edge function → processes for 10-20 seconds
+3. Returns extracted data: supplier, line items, totals
+4. Creates expense record with `status: 'pending'` or `'approved'`
+
+**Debugging:**
+```bash
+# Check recent expenses in database
+curl -s -X POST 'https://api.supabase.com/v1/projects/sfxpmzicgpaxfntqleig/database/query' \
+  -H 'Authorization: Bearer sbp_...' \
+  -H 'Content-Type: application/json' \
+  -d @query.json
+```
+
 ### Key Learnings
 - Supabase Edge Functions require `verify_jwt = false` in config.toml for public access
+- **Edge Functions DO NOT auto-reload secrets** - must redeploy after `secrets set`
+- Use direct `fetch()` instead of `supabase.functions.invoke()` for complex request bodies
 - Use Management API (`api.supabase.com/v1/projects/.../database/query`) when CLI fails
 - Browser caching can mask deployed fixes - instruct users to hard refresh (Cmd+Shift+R)
+- PDF.js text extraction is faster and more reliable than vision models for invoices
+- Groq's Llama 3.3 70B provides fast, accurate structured data extraction (~10-20 seconds)
