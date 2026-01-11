@@ -135,9 +135,16 @@ async function composioFetch<T = unknown>(
  * Uses v3 API for auth_configs (returns nano IDs needed for v3 connection creation)
  */
 async function listAuthConfigs(toolkitSlug: string) {
-  // v3 API uses /auth_configs with app_name parameter
-  const result = await composioFetch<{ items?: unknown[] }>(
-    `/auth_configs?app_name=${toolkitSlug}`,
+  // v3 API uses /auth_configs - filter by toolkit.slug
+  const result = await composioFetch<{
+    items?: Array<{
+      id: string;
+      toolkit?: { slug?: string };
+      is_composio_managed?: boolean;
+      [key: string]: unknown;
+    }>
+  }>(
+    `/auth_configs`,
     {},
     true // useV3 = true
   );
@@ -146,9 +153,13 @@ async function listAuthConfigs(toolkitSlug: string) {
     return result;
   }
 
-  // Extract items from response
-  const items = result.data?.items || result.data;
-  return { success: true, data: items };
+  // Filter by toolkit slug (v3 API doesn't support app_name filter)
+  const allItems = result.data?.items || [];
+  const filteredItems = allItems.filter(
+    (item) => item.toolkit?.slug?.toLowerCase() === toolkitSlug.toLowerCase()
+  );
+
+  return { success: true, data: filteredItems };
 }
 
 /**
