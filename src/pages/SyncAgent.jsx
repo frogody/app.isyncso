@@ -35,13 +35,15 @@ function formatTime(ts) {
 // ============================================================================
 
 // Agent segments configuration - each segment represents an agent SYNC can delegate to
+// Matches the 7 agents in the SYNC edge function
 const AGENT_SEGMENTS = [
-  { id: 'learn', name: 'Learn', color: '#06b6d4', from: 0.00, to: 0.15 },      // cyan
-  { id: 'growth', name: 'Growth', color: '#6366f1', from: 0.17, to: 0.32 },    // indigo
-  { id: 'sentinel', name: 'Sentinel', color: '#86EFAC', from: 0.34, to: 0.49 }, // sage
-  { id: 'finance', name: 'Finance', color: '#f59e0b', from: 0.51, to: 0.66 },   // amber
-  { id: 'create', name: 'Create', color: '#f43f5e', from: 0.68, to: 0.83 },     // rose
-  { id: 'raise', name: 'Raise', color: '#f97316', from: 0.85, to: 0.98 },       // orange
+  { id: 'learn', name: 'Learn', color: '#06b6d4', from: 0.00, to: 0.12 },       // cyan
+  { id: 'growth', name: 'Growth', color: '#6366f1', from: 0.14, to: 0.26 },     // indigo
+  { id: 'products', name: 'Products', color: '#10b981', from: 0.28, to: 0.40 }, // emerald
+  { id: 'sentinel', name: 'Sentinel', color: '#86EFAC', from: 0.42, to: 0.54 }, // sage
+  { id: 'finance', name: 'Finance', color: '#f59e0b', from: 0.56, to: 0.68 },   // amber
+  { id: 'create', name: 'Create', color: '#f43f5e', from: 0.70, to: 0.82 },     // rose
+  { id: 'raise', name: 'Raise', color: '#f97316', from: 0.84, to: 0.96 },       // orange
 ];
 
 function OuterRing({ size = 360, mood = 'listening', level = 0.2, activeAgent = null }) {
@@ -761,13 +763,22 @@ export default function SyncAgent() {
 
       const data = await response.json();
 
+      // Debug logging - check what's being returned
+      console.log('SYNC response:', {
+        delegatedTo: data.delegatedTo,
+        routing: data.routing,
+        actionExecuted: data.actionExecuted
+      });
+
       if (data.sessionId) {
         setSessionId(data.sessionId);
       }
 
       // Set active agent if SYNC delegated to one
       if (data.delegatedTo) {
-        setActiveAgent(data.delegatedTo.toLowerCase());
+        const agentId = data.delegatedTo.toLowerCase();
+        console.log('Setting activeAgent to:', agentId);
+        setActiveAgent(agentId);
       }
 
       // Transition to speaking
