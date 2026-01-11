@@ -82,11 +82,12 @@ export async function generateImage(
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 
-    // Determine use case - if we have product images, use product_variation for accurate representation
+    // Determine use case - smart model selection based on context
     let useCase = data.use_case || 'marketing_creative';
     if (productImages.length > 0 && !data.use_case) {
-      // Use product_variation to preserve exact product appearance
-      useCase = 'product_variation';
+      // Use product_scene (flux-kontext-pro) for high quality product images with reference
+      // This preserves product appearance AND delivers professional quality
+      useCase = 'product_scene';
     }
 
     const response = await fetch(`${supabaseUrl}/functions/v1/generate-image`, {

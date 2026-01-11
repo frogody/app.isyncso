@@ -45,11 +45,13 @@ const MODELS: Record<string, { id: string; requiresImage: boolean; costPerMp: nu
 };
 
 const USE_CASE_MODELS: Record<string, string> = {
-  'product_variation': 'flux-kontext',
+  'product_variation': 'flux-kontext-pro',  // Changed: use pro for better quality
   'product_scene': 'flux-kontext-pro',
-  'marketing_creative': 'flux-dev',
+  'marketing_creative': 'flux-pro',          // Changed: use pro for marketing
   'quick_draft': 'flux-schnell',
-  'premium_quality': 'flux-pro'
+  'premium_quality': 'flux-pro',
+  'product_quick': 'flux-kontext',           // New: budget option with reference
+  'draft': 'flux-dev'                        // New: budget option without reference
 };
 
 // Helper: Direct Supabase REST API call
