@@ -616,11 +616,60 @@ function RecentReceivingList({ items }) {
   );
 }
 
+// Success confirmation card after receiving
+function ReceiveSuccessCard({ productName, quantity, isPartial, remainingQty, onClose }) {
+  // Auto-close after 3 seconds
+  useEffect(() => {
+    const timer = setTimeout(onClose, 3000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      className="p-6 rounded-xl bg-zinc-900/70 border border-green-500/30"
+    >
+      <div className="text-center">
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", duration: 0.5 }}
+          className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center"
+        >
+          <CheckCircle2 className="w-8 h-8 text-green-400" />
+        </motion.div>
+        <h3 className="text-xl font-semibold text-white mb-2">
+          Ontvangst bevestigd!
+        </h3>
+        <p className="text-zinc-400 mb-2">
+          <span className="text-white font-medium">{quantity}x</span> {productName}
+        </p>
+        {isPartial && (
+          <p className="text-yellow-400 text-sm">
+            Nog {remainingQty} stuks verwacht
+          </p>
+        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onClose}
+          className="mt-4 text-zinc-400"
+        >
+          Volgende scan
+        </Button>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function InventoryReceiving() {
   const { user } = useUser();
   const [scanResult, setScanResult] = useState(null);
   const [notFoundEan, setNotFoundEan] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [receiveSuccess, setReceiveSuccess] = useState(null); // { productName, quantity, isPartial, remainingQty }
   const [recentReceiving, setRecentReceiving] = useState([]);
   const [expectedDeliveries, setExpectedDeliveries] = useState([]);
   const [stats, setStats] = useState({
@@ -735,6 +784,7 @@ export default function InventoryReceiving() {
     if (!companyId) return;
 
     setIsLoading(true);
+    const productName = scanResult?.product?.name || 'Product';
 
     try {
       const result = await receiveStock(companyId, data.productId, data.quantity, {
@@ -745,15 +795,6 @@ export default function InventoryReceiving() {
         receivedBy: user?.id,
       });
 
-      if (result.isPartial) {
-        toast.warning(
-          `Gedeeltelijke levering: nog ${result.remainingQuantity} stuks verwacht`,
-          { duration: 5000 }
-        );
-      } else {
-        toast.success(`${data.quantity} stuks ontvangen`);
-      }
-
       // Refresh data
       const [deliveries, history] = await Promise.all([
         listExpectedDeliveries(companyId, 'pending'),
@@ -762,7 +803,15 @@ export default function InventoryReceiving() {
 
       setExpectedDeliveries(deliveries);
       setRecentReceiving(history);
+
+      // Show success card instead of just clearing
       setScanResult(null);
+      setReceiveSuccess({
+        productName,
+        quantity: data.quantity,
+        isPartial: result.isPartial,
+        remainingQty: result.remainingQuantity,
+      });
 
       // Update stats
       setStats((prev) => ({
@@ -835,7 +884,16 @@ export default function InventoryReceiving() {
                 </div>
               ) : (
                 <AnimatePresence mode="wait">
-                  {scanResult ? (
+                  {receiveSuccess ? (
+                    <ReceiveSuccessCard
+                      key="success"
+                      productName={receiveSuccess.productName}
+                      quantity={receiveSuccess.quantity}
+                      isPartial={receiveSuccess.isPartial}
+                      remainingQty={receiveSuccess.remainingQty}
+                      onClose={() => setReceiveSuccess(null)}
+                    />
+                  ) : scanResult ? (
                     <ScannedProductCard
                       key="result"
                       scanResult={scanResult}
@@ -852,7 +910,7 @@ export default function InventoryReceiving() {
                     <BarcodeScanner
                       key="scanner"
                       onScan={handleScan}
-                      isActive={!scanResult && !notFoundEan}
+                      isActive={!scanResult && !notFoundEan && !receiveSuccess}
                     />
                   )}
                 </AnimatePresence>
