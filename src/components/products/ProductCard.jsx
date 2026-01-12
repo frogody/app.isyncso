@@ -162,31 +162,31 @@ export function ProductGridCard({
                     <MoreHorizontal className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-zinc-900 border-white/10">
+                <DropdownMenuContent align="end" className="bg-zinc-900 border-white/10" onClick={(e) => e.stopPropagation()}>
                   <DropdownMenuItem className="text-zinc-300 hover:text-white">
                     <Eye className="w-4 h-4 mr-2" /> View
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-zinc-300 hover:text-white"
-                    onClick={(e) => { e.preventDefault(); onEdit?.(product); }}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit?.(product); }}
                   >
                     <Edit2 className="w-4 h-4 mr-2" /> Edit
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-zinc-300 hover:text-white"
-                    onClick={(e) => { e.preventDefault(); onDuplicate?.(product); }}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDuplicate?.(product); }}
                   >
                     <Copy className="w-4 h-4 mr-2" /> Duplicate
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-amber-400 hover:text-amber-300"
-                    onClick={(e) => { e.preventDefault(); onArchive?.(product); }}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); onArchive?.(product); }}
                   >
                     <Archive className="w-4 h-4 mr-2" /> Archive
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-red-400 hover:text-red-300"
-                    onClick={(e) => { e.preventDefault(); onDelete?.(product); }}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete?.(product); }}
                   >
                     <Trash2 className="w-4 h-4 mr-2" /> Delete
                   </DropdownMenuItem>
@@ -343,31 +343,31 @@ export function ProductListRow({
                   <MoreHorizontal className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-zinc-900 border-white/10">
+              <DropdownMenuContent align="end" className="bg-zinc-900 border-white/10" onClick={(e) => e.stopPropagation()}>
                 <DropdownMenuItem className="text-zinc-300 hover:text-white">
                   <Eye className="w-4 h-4 mr-2" /> View
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-zinc-300 hover:text-white"
-                  onClick={(e) => { e.preventDefault(); onEdit?.(product); }}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit?.(product); }}
                 >
                   <Edit2 className="w-4 h-4 mr-2" /> Edit
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-zinc-300 hover:text-white"
-                  onClick={(e) => { e.preventDefault(); onDuplicate?.(product); }}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDuplicate?.(product); }}
                 >
                   <Copy className="w-4 h-4 mr-2" /> Duplicate
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-amber-400 hover:text-amber-300"
-                  onClick={(e) => { e.preventDefault(); onArchive?.(product); }}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); onArchive?.(product); }}
                 >
                   <Archive className="w-4 h-4 mr-2" /> Archive
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-red-400 hover:text-red-300"
-                  onClick={(e) => { e.preventDefault(); onDelete?.(product); }}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete?.(product); }}
                 >
                   <Trash2 className="w-4 h-4 mr-2" /> Delete
                 </DropdownMenuItem>

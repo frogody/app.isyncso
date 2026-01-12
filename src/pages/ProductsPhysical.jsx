@@ -18,6 +18,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@/components/context/UserContext";
 import { Product, PhysicalProduct, ProductCategory, Supplier } from "@/api/entities";
+import { supabase } from '@/api/supabaseClient';
 import { ProductModal, ProductGridCard, ProductListRow } from "@/components/products";
 import { toast } from "sonner";
 import {
@@ -128,17 +129,31 @@ export default function ProductsPhysical() {
       return;
     }
     try {
-      // Delete physical product details first if they exist
+      // Delete related records first to avoid FK constraint violations
+      // 1. Delete from inventory table
+      await supabase.from('inventory').delete().eq('product_id', product.id);
+
+      // 2. Delete from product_suppliers table
+      await supabase.from('product_suppliers').delete().eq('product_id', product.id);
+
+      // 3. Delete from expected_deliveries table
+      await supabase.from('expected_deliveries').delete().eq('product_id', product.id);
+
+      // 4. Clear product_id from stock_purchase_line_items (set to null instead of delete)
+      await supabase.from('stock_purchase_line_items').update({ product_id: null }).eq('product_id', product.id);
+
+      // 5. Delete physical product details if they exist
       if (physicalProducts[product.id]) {
         await PhysicalProduct.delete(product.id);
       }
-      // Delete the main product
+
+      // 6. Delete the main product
       await Product.delete(product.id);
       toast.success('Product deleted');
       setProducts(prev => prev.filter(p => p.id !== product.id));
     } catch (e) {
       console.error('Failed to delete product:', e);
-      toast.error('Failed to delete product');
+      toast.error('Failed to delete product: ' + (e.message || 'Unknown error'));
     }
   };
 
