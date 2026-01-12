@@ -9,7 +9,8 @@ import {
   Receipt, Search, Filter, Clock, Check, X, AlertTriangle,
   Eye, FileText, Upload, Sparkles, ChevronRight, Edit2,
   CheckCircle2, XCircle, RefreshCw, DollarSign, Calendar,
-  Building, Percent, ExternalLink, Image, FileUp, Loader2
+  Building, Percent, ExternalLink, Image, FileUp, Loader2,
+  Send, Package
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -171,36 +172,64 @@ function ConfidenceIndicator({ confidence }) {
   );
 }
 
-// Review modal
-function ReviewModal({ expense, isOpen, onClose, onApprove, onReject }) {
+// Review modal - "Send to Finance?" workflow
+function ReviewModal({ expense, isOpen, onClose, onApprove, onReject, onCheckDuplicate }) {
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [duplicateWarning, setDuplicateWarning] = useState(null);
+  const [showDuplicateConfirm, setShowDuplicateConfirm] = useState(false);
 
-  const handleApprove = async () => {
+  // Check for duplicates when modal opens
+  useEffect(() => {
+    if (isOpen && expense && onCheckDuplicate) {
+      checkForDuplicates();
+    }
+    return () => {
+      setDuplicateWarning(null);
+      setShowDuplicateConfirm(false);
+    };
+  }, [isOpen, expense?.id]);
+
+  const checkForDuplicates = async () => {
+    if (!expense) return;
+    try {
+      const duplicate = await onCheckDuplicate(expense);
+      if (duplicate) {
+        setDuplicateWarning(duplicate);
+      }
+    } catch (error) {
+      console.error('Error checking duplicates:', error);
+    }
+  };
+
+  const handleSendToFinance = async (forceCreate = false) => {
+    // If duplicate found and not force creating, show confirmation
+    if (duplicateWarning && !forceCreate && !showDuplicateConfirm) {
+      setShowDuplicateConfirm(true);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      await onApprove(expense.id, notes);
+      await onApprove(expense.id, notes, { sendToFinance: true, forceCreate });
       onClose();
-      toast.success("Invoice approved");
+      toast.success("Factuur verzonden naar financiën");
     } catch (error) {
-      toast.error("Fout bij goedkeuren: " + error.message);
+      toast.error("Fout bij verzenden: " + error.message);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleReject = async () => {
-    if (!notes.trim()) {
-      toast.error("Geef een reden op voor afwijzing");
-      return;
-    }
+  const handleKeepInInventory = async () => {
     setIsSubmitting(true);
     try {
-      await onReject(expense.id, notes);
+      // Approve for inventory but don't send to finance
+      await onApprove(expense.id, notes, { sendToFinance: false });
       onClose();
-      toast.success("Invoice rejected");
+      toast.success("Factuur goedgekeurd voor voorraad (niet naar financiën)");
     } catch (error) {
-      toast.error("Fout bij afwijzen: " + error.message);
+      toast.error("Fout bij goedkeuren: " + error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -363,28 +392,78 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject }) {
           </div>
         </div>
 
-        <DialogFooter className="gap-2">
-          <Button
-            variant="destructive"
-            onClick={handleReject}
-            disabled={isSubmitting}
-          >
-            <XCircle className="w-4 h-4 mr-2" />
-            Reject
-          </Button>
-          <Button
-            onClick={handleApprove}
-            disabled={isSubmitting}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            {isSubmitting ? (
-              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <CheckCircle2 className="w-4 h-4 mr-2" />
-            )}
-            Approve
-          </Button>
-        </DialogFooter>
+        {/* Duplicate warning */}
+        {duplicateWarning && (
+          <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 mb-4">
+            <div className="flex items-center gap-2 text-amber-400">
+              <AlertTriangle className="w-5 h-5" />
+              <span className="font-medium">Mogelijk duplicaat gevonden!</span>
+            </div>
+            <p className="text-sm text-amber-300/80 mt-1">
+              Er bestaat al een factuur met hetzelfde nummer ({duplicateWarning.invoice_number})
+              van {duplicateWarning.supplier_name} op {new Date(duplicateWarning.invoice_date).toLocaleDateString('nl-NL')}.
+            </p>
+          </div>
+        )}
+
+        {/* Duplicate confirmation dialog */}
+        {showDuplicateConfirm ? (
+          <DialogFooter className="flex-col gap-3">
+            <p className="text-sm text-zinc-400 text-center">
+              Weet je zeker dat je dit als nieuwe factuur wilt toevoegen?
+            </p>
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setShowDuplicateConfirm(false)}
+                disabled={isSubmitting}
+              >
+                Annuleren
+              </Button>
+              <Button
+                onClick={() => handleSendToFinance(true)}
+                disabled={isSubmitting}
+                className="bg-amber-600 hover:bg-amber-700"
+              >
+                {isSubmitting ? (
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <AlertTriangle className="w-4 h-4 mr-2" />
+                )}
+                Toch toevoegen
+              </Button>
+            </div>
+          </DialogFooter>
+        ) : (
+          <DialogFooter className="flex-col gap-3">
+            <div className="text-center">
+              <p className="text-sm text-zinc-400 mb-2">Versturen naar financiën?</p>
+            </div>
+            <div className="flex gap-2 justify-center">
+              <Button
+                variant="outline"
+                onClick={handleKeepInInventory}
+                disabled={isSubmitting}
+                className="border-zinc-700"
+              >
+                <Package className="w-4 h-4 mr-2" />
+                Nee, alleen voorraad
+              </Button>
+              <Button
+                onClick={() => handleSendToFinance()}
+                disabled={isSubmitting}
+                className="bg-cyan-600 hover:bg-cyan-700"
+              >
+                {isSubmitting ? (
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4 mr-2" />
+                )}
+                Ja, naar financiën
+              </Button>
+            </div>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );
@@ -1091,8 +1170,74 @@ export default function StockPurchases() {
     }
   };
 
-  const handleApprove = async (purchaseId, notes) => {
+  // Check for duplicate invoices in finance/expenses
+  const checkForDuplicate = async (expense) => {
+    if (!expense?.external_reference) return null;
+
+    // Check if invoice with same number already exists in expenses table
+    const { data: existing } = await supabase
+      .from('expenses')
+      .select('id, external_reference, supplier_id, invoice_date, suppliers(name)')
+      .eq('company_id', companyId)
+      .eq('external_reference', expense.external_reference)
+      .limit(1)
+      .maybeSingle();
+
+    if (existing) {
+      return {
+        id: existing.id,
+        invoice_number: existing.external_reference,
+        supplier_name: existing.suppliers?.name || 'Onbekend',
+        invoice_date: existing.invoice_date,
+      };
+    }
+    return null;
+  };
+
+  const handleApprove = async (purchaseId, notes, options = {}) => {
+    const { sendToFinance = true, forceCreate = false } = options;
+
+    // Approve the stock purchase (this creates expected deliveries and updates inventory)
     await approveStockPurchase(purchaseId, user?.id, notes);
+
+    // If sending to finance, create expense record
+    if (sendToFinance) {
+      const purchase = expenses.find(e => e.id === purchaseId);
+      if (purchase) {
+        // Create expense record in finance system
+        const { error: expenseError } = await supabase
+          .from('expenses')
+          .insert({
+            company_id: companyId,
+            document_type: 'invoice',
+            source_type: 'stock_purchase',
+            source_stock_purchase_id: purchaseId,
+            supplier_id: purchase.supplier_id,
+            external_reference: purchase.external_reference,
+            invoice_date: purchase.invoice_date,
+            subtotal: purchase.subtotal,
+            tax_percent: purchase.tax_percent,
+            tax_amount: purchase.tax_amount,
+            total: purchase.total,
+            currency: purchase.currency || 'EUR',
+            payment_status: 'pending',
+            payment_due_date: purchase.payment_due_date,
+            original_file_url: purchase.original_file_url,
+            ai_extracted_data: purchase.ai_extracted_data,
+            ai_confidence: purchase.ai_confidence,
+            status: 'approved',
+            review_status: 'approved',
+            needs_review: false,
+            metadata: { from_stock_purchase: true, force_created: forceCreate },
+          });
+
+        if (expenseError) {
+          console.error('Error creating expense:', expenseError);
+          toast.error('Goedgekeurd maar kon niet naar financiën sturen');
+        }
+      }
+    }
+
     // Refresh
     const [purchaseData, queueData] = await Promise.all([
       listStockPurchases(companyId),
@@ -1240,6 +1385,7 @@ export default function StockPurchases() {
           }}
           onApprove={handleApprove}
           onReject={handleReject}
+          onCheckDuplicate={checkForDuplicate}
         />
 
         {/* Upload invoice modal */}
