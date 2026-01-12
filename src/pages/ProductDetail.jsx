@@ -767,9 +767,13 @@ function BundlesSection({ product, details, currency }) {
 
 function InventorySection({ product, details, onDetailsUpdate, currency }) {
   const { user } = useUser();
-  const inventory = details?.inventory || {};
+  const physicalInventory = details?.inventory || {};  // From physical_products.inventory JSONB
   const shipping = details?.shipping || {};
   const variants = details?.variants || [];
+
+  // Inventory table data (for incoming/reserved/on_hand from the inventory table)
+  const [inventoryRecord, setInventoryRecord] = useState(null);
+  const [loadingInventory, setLoadingInventory] = useState(false);
 
   // Supplier management state
   const [productSuppliers, setProductSuppliers] = useState([]);
@@ -788,11 +792,33 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
     invoice_number: '',
   });
 
+  // Load inventory record from inventory table
+  const loadInventoryRecord = async () => {
+    if (!product?.id || !user?.company_id) return;
+    setLoadingInventory(true);
+    try {
+      const { data, error } = await supabase
+        .from('inventory')
+        .select('*')
+        .eq('company_id', user.company_id)
+        .eq('product_id', product.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      setInventoryRecord(data);
+    } catch (err) {
+      console.error('Failed to load inventory record:', err);
+    } finally {
+      setLoadingInventory(false);
+    }
+  };
+
   // Load suppliers when product changes
   useEffect(() => {
     if (product?.id) {
       loadProductSuppliers();
       loadPurchaseHistory();
+      loadInventoryRecord();
     }
   }, [product?.id]);
 
@@ -928,7 +954,7 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
   };
 
   const handleInventoryUpdate = (field, value) => {
-    onDetailsUpdate({ inventory: { ...inventory, [field]: value } });
+    onDetailsUpdate({ inventory: { ...physicalInventory, [field]: value } });
   };
 
   const handleShippingUpdate = (field, value) => {
@@ -939,7 +965,19 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
     onDetailsUpdate({ variants: newVariants });
   };
 
-  const stock = getStockStatus(inventory);
+  // Merge inventory data: use inventory table values when available, fallback to physical_products JSONB
+  const mergedInventory = {
+    quantity: inventoryRecord?.quantity_on_hand ?? physicalInventory.quantity ?? 0,
+    low_stock_threshold: physicalInventory.low_stock_threshold ?? 10,
+    reserved: inventoryRecord?.quantity_reserved ?? physicalInventory.reserved ?? 0,
+    incoming: inventoryRecord?.quantity_incoming ?? physicalInventory.incoming ?? 0,
+    reorder_point: physicalInventory.reorder_point,
+    reorder_quantity: physicalInventory.reorder_quantity,
+    track_inventory: physicalInventory.track_inventory,
+    allow_backorder: physicalInventory.allow_backorder,
+  };
+
+  const stock = getStockStatus(mergedInventory);
 
   // Filter out suppliers already linked to product
   const unlinkedSuppliers = availableSuppliers.filter(
@@ -953,25 +991,25 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
         <StatCard
           icon={Package}
           label="Current Stock"
-          value={formatNumber(inventory.quantity || 0)}
+          value={formatNumber(mergedInventory.quantity)}
           color={stock.status === 'out' ? 'red' : stock.status === 'low' ? 'amber' : 'green'}
         />
         <StatCard
           icon={AlertTriangle}
           label="Low Stock Alert"
-          value={formatNumber(inventory.low_stock_threshold || 10)}
+          value={formatNumber(mergedInventory.low_stock_threshold)}
           color="amber"
         />
         <StatCard
           icon={Boxes}
           label="Reserved"
-          value={formatNumber(inventory.reserved || 0)}
+          value={formatNumber(mergedInventory.reserved)}
           color="blue"
         />
         <StatCard
           icon={Truck}
           label="Incoming"
-          value={formatNumber(inventory.incoming || 0)}
+          value={formatNumber(mergedInventory.incoming)}
           color="purple"
         />
       </div>
@@ -986,28 +1024,28 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
 
           <div className="space-y-4">
             <InlineEditNumber
-              value={inventory.quantity}
+              value={physicalInventory.quantity}
               onSave={(val) => handleInventoryUpdate('quantity', val)}
               label="Quantity in Stock"
               placeholder="0"
               min={0}
             />
             <InlineEditNumber
-              value={inventory.low_stock_threshold}
+              value={physicalInventory.low_stock_threshold}
               onSave={(val) => handleInventoryUpdate('low_stock_threshold', val)}
               label="Low Stock Threshold"
               placeholder="10"
               min={0}
             />
             <InlineEditNumber
-              value={inventory.reorder_point}
+              value={physicalInventory.reorder_point}
               onSave={(val) => handleInventoryUpdate('reorder_point', val)}
               label="Reorder Point"
               placeholder="20"
               min={0}
             />
             <InlineEditNumber
-              value={inventory.reorder_quantity}
+              value={physicalInventory.reorder_quantity}
               onSave={(val) => handleInventoryUpdate('reorder_quantity', val)}
               label="Reorder Quantity"
               placeholder="50"
@@ -1017,14 +1055,14 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
             <div className="pt-4 border-t border-white/5">
               <label className="flex items-center gap-3 cursor-pointer">
                 <Switch
-                  checked={inventory.track_inventory !== false}
+                  checked={physicalInventory.track_inventory !== false}
                   onCheckedChange={(val) => handleInventoryUpdate('track_inventory', val)}
                 />
                 <span className="text-sm text-zinc-300">Track inventory</span>
               </label>
               <label className="flex items-center gap-3 cursor-pointer mt-3">
                 <Switch
-                  checked={inventory.allow_backorder || false}
+                  checked={physicalInventory.allow_backorder || false}
                   onCheckedChange={(val) => handleInventoryUpdate('allow_backorder', val)}
                 />
                 <span className="text-sm text-zinc-300">Allow backorders</span>
