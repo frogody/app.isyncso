@@ -180,24 +180,78 @@ export interface ScanResult {
 }
 
 export async function scanBarcode(companyId: string, ean: string): Promise<ScanResult> {
-  // 1. Find product by EAN
-  const { data: product, error: productError } = await supabase
-    .from('products')
-    .select('id, name, sku, ean')
-    .eq('company_id', companyId)
-    .eq('ean', ean)
-    .single();
+  // Normalize barcode - remove any non-digit characters
+  const cleanEan = ean.replace(/\D/g, '');
 
-  if (productError && productError.code !== 'PGRST116') throw productError;
+  // Build list of possible EAN variants to try
+  // This handles the UPC-A (12 digit) vs EAN-13 (13 digit) discrepancy
+  const eanVariants = [cleanEan];
+
+  // If 12 digits (UPC-A), also try with leading zero (EAN-13)
+  if (cleanEan.length === 12) {
+    eanVariants.push('0' + cleanEan);
+  }
+  // If 13 digits starting with 0, also try without leading zero (UPC-A)
+  if (cleanEan.length === 13 && cleanEan.startsWith('0')) {
+    eanVariants.push(cleanEan.substring(1));
+  }
+
+  // 1. Find product by EAN in products table (try all variants)
+  let product: { id: string; name: string; sku?: string; ean: string } | null = null;
+
+  for (const variant of eanVariants) {
+    const { data, error } = await supabase
+      .from('products')
+      .select('id, name, sku, ean')
+      .eq('company_id', companyId)
+      .eq('ean', variant)
+      .limit(1)
+      .maybeSingle();
+
+    if (error && error.code !== 'PGRST116') throw error;
+    if (data) {
+      product = data;
+      break;
+    }
+  }
+
+  // 2. If not found in products.ean, try physical_products.barcode
+  if (!product) {
+    for (const variant of eanVariants) {
+      const { data, error } = await supabase
+        .from('physical_products')
+        .select('product_id, barcode, products!inner(id, name, sku, ean, company_id)')
+        .eq('barcode', variant)
+        .eq('products.company_id', companyId)
+        .limit(1)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      if (data && data.products) {
+        const p = data.products as unknown as { id: string; name: string; sku?: string; ean: string };
+        product = {
+          id: p.id,
+          name: p.name,
+          sku: p.sku,
+          ean: data.barcode || p.ean,
+        };
+        break;
+      }
+    }
+  }
 
   if (!product) {
     return { found: false };
   }
 
-  // 2. Find expected delivery
-  const expectedDelivery = await matchDeliveryByEAN(companyId, ean);
+  // 3. Find expected delivery (try all EAN variants)
+  let expectedDelivery: ExpectedDelivery | null = null;
+  for (const variant of eanVariants) {
+    expectedDelivery = await matchDeliveryByEAN(companyId, variant);
+    if (expectedDelivery) break;
+  }
 
-  // 3. Get current stock
+  // 4. Get current stock
   const currentStock = await getInventoryByProduct(companyId, product.id);
 
   return {

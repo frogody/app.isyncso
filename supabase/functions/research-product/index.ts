@@ -55,10 +55,13 @@ function getSupplierDomain(supplierName: string): string {
   return supplierName.toLowerCase().replace(/\s+/g, '') + '.com';
 }
 
-// Use web search to find product information
-async function searchWeb(query: string, tavilyApiKey: string): Promise<any[]> {
+// Use web search to find product information with retry logic
+async function searchWeb(query: string, tavilyApiKey: string, retryCount = 0): Promise<any[]> {
+  const MAX_RETRIES = 2;
+  const RETRY_DELAY = 1500; // ms
+
   try {
-    console.log(`Tavily search: "${query}"`);
+    console.log(`Tavily search (attempt ${retryCount + 1}): "${query.substring(0, 80)}..."`);
     const response = await fetch('https://api.tavily.com/search', {
       method: 'POST',
       headers: {
@@ -75,7 +78,15 @@ async function searchWeb(query: string, tavilyApiKey: string): Promise<any[]> {
     });
 
     if (!response.ok) {
-      console.error('Tavily search failed:', await response.text());
+      const errorText = await response.text();
+      console.error(`Tavily search failed (${response.status}):`, errorText);
+
+      // Retry on server errors
+      if ((response.status >= 500 || response.status === 429) && retryCount < MAX_RETRIES) {
+        console.log(`Retrying Tavily search in ${RETRY_DELAY}ms...`);
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (retryCount + 1)));
+        return searchWeb(query, tavilyApiKey, retryCount + 1);
+      }
       return [];
     }
 
@@ -84,6 +95,13 @@ async function searchWeb(query: string, tavilyApiKey: string): Promise<any[]> {
     return data.results || [];
   } catch (error) {
     console.error('Web search error:', error);
+
+    // Retry on network errors
+    if (retryCount < MAX_RETRIES) {
+      console.log(`Retrying Tavily search after error in ${RETRY_DELAY}ms...`);
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (retryCount + 1)));
+      return searchWeb(query, tavilyApiKey, retryCount + 1);
+    }
     return [];
   }
 }
@@ -187,50 +205,68 @@ Respond with ONLY this JSON (no markdown, no explanation):
   "reasoning": "Brief explanation of how you identified the EAN"
 }`;
 
-  try {
-    const response = await together.chat.completions.create({
-      model: "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
-      messages: [{ role: "user", content: eanPrompt }],
-      max_tokens: 512,
-      temperature: 0.1,
-    });
+  // Retry loop for AI extraction
+  const MAX_AI_RETRIES = 2;
+  let lastError: any = null;
 
-    const content = response.choices[0]?.message?.content;
-    if (!content) {
-      console.log('No AI response for EAN lookup');
-      return { ean: null, confidence: 0, sourceUrl: null };
+  for (let attempt = 0; attempt <= MAX_AI_RETRIES; attempt++) {
+    try {
+      if (attempt > 0) {
+        console.log(`Retrying EAN AI extraction (attempt ${attempt + 1}/${MAX_AI_RETRIES + 1})...`);
+        await new Promise(resolve => setTimeout(resolve, 1500 * attempt));
+      }
+
+      const response = await together.chat.completions.create({
+        model: "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
+        messages: [{ role: "user", content: eanPrompt }],
+        max_tokens: 512,
+        temperature: 0.1,
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) {
+        console.log('No AI response for EAN lookup');
+        lastError = new Error('No AI response');
+        continue; // Retry
+      }
+
+      // Parse response
+      const cleanedContent = content
+        .replace(/<think>[\s\S]*?<\/think>/gi, '')
+        .replace(/```json\s*/gi, '')
+        .replace(/```\s*/g, '')
+        .trim();
+
+      const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        console.log('No JSON in EAN lookup response');
+        lastError = new Error('No JSON in response');
+        continue; // Retry
+      }
+
+      const parsed = JSON.parse(jsonMatch[0]);
+      const validatedEan = validateEan(parsed.ean);
+
+      console.log(`EAN lookup result: ${validatedEan || 'not found'}, confidence: ${parsed.confidence}`);
+      if (parsed.reasoning) {
+        console.log(`Reasoning: ${parsed.reasoning}`);
+      }
+
+      return {
+        ean: validatedEan,
+        confidence: validatedEan ? (parsed.confidence || 0.7) : 0,
+        sourceUrl: parsed.source_url || null,
+      };
+    } catch (error) {
+      console.error(`EAN lookup AI error (attempt ${attempt + 1}):`, error);
+      lastError = error;
+      // Continue to retry
     }
-
-    // Parse response
-    const cleanedContent = content
-      .replace(/<think>[\s\S]*?<\/think>/gi, '')
-      .replace(/```json\s*/gi, '')
-      .replace(/```\s*/g, '')
-      .trim();
-
-    const jsonMatch = cleanedContent.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.log('No JSON in EAN lookup response');
-      return { ean: null, confidence: 0, sourceUrl: null };
-    }
-
-    const parsed = JSON.parse(jsonMatch[0]);
-    const validatedEan = validateEan(parsed.ean);
-
-    console.log(`EAN lookup result: ${validatedEan || 'not found'}, confidence: ${parsed.confidence}`);
-    if (parsed.reasoning) {
-      console.log(`Reasoning: ${parsed.reasoning}`);
-    }
-
-    return {
-      ean: validatedEan,
-      confidence: validatedEan ? (parsed.confidence || 0.7) : 0,
-      sourceUrl: parsed.source_url || null,
-    };
-  } catch (error) {
-    console.error('EAN lookup AI error:', error);
-    return { ean: null, confidence: 0, sourceUrl: null };
   }
+
+  // All retries exhausted
+  console.error('EAN lookup failed after all retries:', lastError);
+  return { ean: null, confidence: 0, sourceUrl: null };
 }
 
 // =============================================================================
