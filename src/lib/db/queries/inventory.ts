@@ -143,6 +143,32 @@ export async function createExpectedDelivery(delivery: ExpectedDeliveryInsert): 
   return data;
 }
 
+export async function updateExpectedDelivery(
+  id: string,
+  updates: { quantity_received?: number; status?: 'pending' | 'partial' | 'completed' | 'cancelled' }
+): Promise<ExpectedDelivery> {
+  const { data, error } = await supabase
+    .from('expected_deliveries')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function getExpectedDeliveryById(id: string): Promise<ExpectedDelivery | null> {
+  const { data, error } = await supabase
+    .from('expected_deliveries')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  return data;
+}
+
 export async function matchDeliveryByEAN(companyId: string, ean: string): Promise<ExpectedDelivery | null> {
   // Find expected delivery by EAN barcode
   const { data, error } = await supabase

@@ -208,7 +208,7 @@ export async function receiveStock(
   isPartial: boolean;
   remainingQuantity?: number;
 }> {
-  // Create receiving log entry (triggers inventory update)
+  // Create receiving log entry
   const receivingLog = await db.receiveStock({
     company_id: companyId,
     product_id: productId,
@@ -225,25 +225,45 @@ export async function receiveStock(
     metadata: {},
   });
 
-  // Check if this was a partial delivery
+  // Update inventory: increase quantity_on_hand, decrease quantity_incoming
+  const currentInventory = await db.getInventoryByProduct(companyId, productId);
+  if (currentInventory) {
+    const newQuantityOnHand = (currentInventory.quantity_on_hand || 0) + quantity;
+    const newQuantityIncoming = Math.max(0, (currentInventory.quantity_incoming || 0) - quantity);
+
+    await db.updateInventory(currentInventory.id, {
+      quantity_on_hand: newQuantityOnHand,
+      quantity_incoming: newQuantityIncoming,
+      warehouse_location: options?.warehouseLocation || currentInventory.warehouse_location,
+      last_received_at: new Date().toISOString(),
+    });
+  }
+
+  // Update expected delivery if provided
   let isPartial = false;
   let remainingQuantity: number | undefined;
 
   if (options?.expectedDeliveryId) {
-    const deliveries = await db.listExpectedDeliveries(companyId);
-    const delivery = deliveries.find((d) => d.id === options.expectedDeliveryId);
+    const delivery = await db.getExpectedDeliveryById(options.expectedDeliveryId);
 
     if (delivery) {
-      const totalReceived = delivery.quantity_received + quantity;
+      const totalReceived = (delivery.quantity_received || 0) + quantity;
       isPartial = totalReceived < delivery.quantity_expected;
       remainingQuantity = delivery.quantity_expected - totalReceived;
+
+      // Update expected delivery status
+      const newStatus = totalReceived >= delivery.quantity_expected ? 'completed' : 'partial';
+      await db.updateExpectedDelivery(delivery.id, {
+        quantity_received: totalReceived,
+        status: newStatus,
+      });
 
       // Create notification for partial delivery
       if (isPartial) {
         await db.createPartialDeliveryNotification(
           companyId,
           delivery.id,
-          'Product', // In production, get actual product name
+          'Product',
           delivery.quantity_expected,
           totalReceived
         );
