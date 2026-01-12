@@ -129,25 +129,46 @@ export default function ProductsPhysical() {
       return;
     }
     try {
-      // Delete related records first to avoid FK constraint violations
-      // 1. Delete from inventory table
+      // Delete/clear related records first to avoid FK constraint violations
+      // Order matters - delete child records before parent
+
+      // 1. Delete from receiving_log (has FK to products)
+      await supabase.from('receiving_log').delete().eq('product_id', product.id);
+
+      // 2. Delete from inventory table
       await supabase.from('inventory').delete().eq('product_id', product.id);
 
-      // 2. Delete from product_suppliers table
+      // 3. Delete from product_suppliers table
       await supabase.from('product_suppliers').delete().eq('product_id', product.id);
 
-      // 3. Delete from expected_deliveries table
+      // 4. Delete from expected_deliveries table
       await supabase.from('expected_deliveries').delete().eq('product_id', product.id);
 
-      // 4. Clear product_id from stock_purchase_line_items (set to null instead of delete)
+      // 5. Clear product_id from expense_line_items (keep expense history)
+      await supabase.from('expense_line_items').update({ product_id: null }).eq('product_id', product.id);
+
+      // 6. Clear product_id from sales_order_items (keep order history)
+      await supabase.from('sales_order_items').update({ product_id: null }).eq('product_id', product.id);
+
+      // 7. Clear product_id from stock_purchase_line_items
       await supabase.from('stock_purchase_line_items').update({ product_id: null }).eq('product_id', product.id);
 
-      // 5. Delete physical product details if they exist
+      // 8. Delete from stock_inventory_entries
+      await supabase.from('stock_inventory_entries').delete().eq('product_id', product.id);
+
+      // 9. Delete notifications related to product
+      await supabase.from('notifications').delete().eq('product_id', product.id);
+
+      // 10. Clear references in product_research_queue
+      await supabase.from('product_research_queue').update({ matched_product_id: null }).eq('matched_product_id', product.id);
+      await supabase.from('product_research_queue').update({ created_product_id: null }).eq('created_product_id', product.id);
+
+      // 11. Delete physical product details if they exist
       if (physicalProducts[product.id]) {
         await PhysicalProduct.delete(product.id);
       }
 
-      // 6. Delete the main product
+      // 12. Delete the main product
       await Product.delete(product.id);
       toast.success('Product deleted');
       setProducts(prev => prev.filter(p => p.id !== product.id));

@@ -452,10 +452,45 @@ function OverviewSection({
 function PricingSection({ details, onDetailsUpdate, currency }) {
   const pricing = details?.pricing || {};
   const tiers = pricing.volume_tiers || [];
+  const [taxIncluded, setTaxIncluded] = useState(pricing.tax_included || false);
+  const TAX_RATE = 0.21; // 21% BTW
+
+  // Sync local state with pricing
+  useEffect(() => {
+    setTaxIncluded(pricing.tax_included || false);
+  }, [pricing.tax_included]);
 
   const handleTiersChange = (newTiers) => {
     onDetailsUpdate({ pricing: { ...pricing, volume_tiers: newTiers } });
   };
+
+  // Handle cost price - if tax included, calculate ex-tax price
+  const handleCostPriceChange = (val) => {
+    if (taxIncluded && val > 0) {
+      // Price includes tax, calculate ex-tax
+      const exTaxPrice = Math.round((val / (1 + TAX_RATE)) * 100) / 100;
+      onDetailsUpdate({
+        pricing: {
+          ...pricing,
+          cost_price: exTaxPrice,
+          cost_price_incl_tax: val,
+        }
+      });
+    } else {
+      onDetailsUpdate({ pricing: { ...pricing, cost_price: val } });
+    }
+  };
+
+  // Handle tax toggle
+  const handleTaxToggle = (val) => {
+    setTaxIncluded(val);
+    onDetailsUpdate({ pricing: { ...pricing, tax_included: val } });
+  };
+
+  // Display cost price (show incl tax if available)
+  const displayCostPrice = taxIncluded && pricing.cost_price_incl_tax
+    ? pricing.cost_price_incl_tax
+    : pricing.cost_price;
 
   return (
     <div className="space-y-6">
@@ -468,18 +503,38 @@ function PricingSection({ details, onDetailsUpdate, currency }) {
           </div>
 
           <div className="space-y-4">
+            {/* Tax Settings - moved to top for clarity */}
+            <div className="p-3 rounded-lg bg-zinc-900/50 border border-white/5">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <Switch
+                  checked={taxIncluded}
+                  onCheckedChange={handleTaxToggle}
+                  className="data-[state=checked]:bg-cyan-500"
+                />
+                <div>
+                  <span className="text-sm text-white">Invoice prices include BTW</span>
+                  <p className="text-xs text-zinc-500">
+                    {taxIncluded
+                      ? `System stores ex-tax (÷1.21). Cost €${(pricing.cost_price || 0).toFixed(2)} ex BTW`
+                      : 'Prices are entered without tax'
+                    }
+                  </p>
+                </div>
+              </label>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <InlineEditNumber
                 value={pricing.base_price}
                 onSave={(val) => onDetailsUpdate({ pricing: { ...pricing, base_price: val } })}
-                label="Base Price"
+                label="Base Price (ex BTW)"
                 placeholder="0.00"
                 prefix={currency === 'EUR' ? '€' : '$'}
               />
               <InlineEditNumber
-                value={pricing.cost_price}
-                onSave={(val) => onDetailsUpdate({ pricing: { ...pricing, cost_price: val } })}
-                label="Cost Price"
+                value={displayCostPrice}
+                onSave={handleCostPriceChange}
+                label={taxIncluded ? "Cost Price (incl BTW)" : "Cost Price (ex BTW)"}
                 placeholder="0.00"
                 prefix={currency === 'EUR' ? '€' : '$'}
               />
@@ -500,17 +555,6 @@ function PricingSection({ details, onDetailsUpdate, currency }) {
                 placeholder="0.00"
                 prefix={currency === 'EUR' ? '€' : '$'}
               />
-            </div>
-
-            {/* Tax Settings */}
-            <div className="pt-4 border-t border-white/5">
-              <label className="flex items-center gap-3 cursor-pointer">
-                <Switch
-                  checked={pricing.tax_included || false}
-                  onCheckedChange={(val) => onDetailsUpdate({ pricing: { ...pricing, tax_included: val } })}
-                />
-                <span className="text-sm text-zinc-300">Price includes tax</span>
-              </label>
             </div>
           </div>
         </GlassCard>
