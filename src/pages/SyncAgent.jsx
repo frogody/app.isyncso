@@ -587,6 +587,7 @@ function OuterRing({ size = 360, mood = 'listening', level = 0.2, activeAgent = 
   const ringRef = useRef(null);
   const segmentsRef = useRef(null);
   const dotsRef = useRef(null);
+  const svgRef = useRef(null);
   const [hoveredAgent, setHoveredAgent] = useState(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
 
@@ -596,6 +597,33 @@ function OuterRing({ size = 360, mood = 'listening', level = 0.2, activeAgent = 
 
   const glow = mood === 'speaking' ? 1.0 : mood === 'thinking' ? 0.7 : 0.45;
   const pulse = clamp(0.35 + level * 0.9, 0.35, 1.2);
+
+  // Subtle rotation when agent is active
+  useEffect(() => {
+    if (prefersReducedMotion() || !svgRef.current) return;
+
+    if (activeAgent) {
+      anime({
+        targets: svgRef.current,
+        rotate: [0, 360],
+        duration: 20000,
+        loop: true,
+        easing: 'linear',
+      });
+    } else {
+      anime.remove(svgRef.current);
+      anime({
+        targets: svgRef.current,
+        rotate: 0,
+        duration: 500,
+        easing: 'easeOutQuad',
+      });
+    }
+
+    return () => {
+      if (svgRef.current) anime.remove(svgRef.current);
+    };
+  }, [activeAgent]);
 
   // Animate segments based on mood and activeAgent
   useEffect(() => {
@@ -688,7 +716,7 @@ function OuterRing({ size = 360, mood = 'listening', level = 0.2, activeAgent = 
       style={{ width: size, height: size }}
       aria-label="Agent avatar ring"
     >
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="block">
+      <svg ref={svgRef} width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="block" style={{ transformOrigin: 'center center' }}>
         <defs>
           <radialGradient id="glass" cx="30%" cy="25%" r="70%">
             <stop offset="0%" stopColor="rgba(255,255,255,0.22)" />
@@ -877,7 +905,7 @@ function OuterRing({ size = 360, mood = 'listening', level = 0.2, activeAgent = 
 // INNER VISUALIZATION COMPONENT (Canvas-based particles + waves)
 // ============================================================================
 
-function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 1, actionEffect = null, activeAgentColor = null, showSuccess = false }) {
+function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 1, actionEffect = null, activeAgentColor = null, showSuccess = false, activeAgentAngle = null }) {
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
   const stateRef = useRef({
@@ -892,6 +920,14 @@ function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 1, acti
     spiralAngle: 0,
     successParticles: [],
     activeAgentColor: null,
+    // New micro-interaction states
+    ripples: [], // Click ripple effects
+    breathPhase: 0, // Breathing glow phase
+    prevAgentColor: null, // For smooth color transitions
+    colorTransition: 0, // 0-1 for color lerp
+    // Turning/orientation effect
+    currentFacingAngle: 0, // Current angle the "face" is pointing
+    targetFacingAngle: 0, // Target angle to turn towards
   });
   
   // Update action effect in state
@@ -917,10 +953,27 @@ function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 1, acti
     }
   }, [actionEffect, size]);
 
-  // Update active agent color
+  // Update active agent color with smooth transition
   useEffect(() => {
-    stateRef.current.activeAgentColor = activeAgentColor;
+    const st = stateRef.current;
+    if (activeAgentColor !== st.activeAgentColor) {
+      st.prevAgentColor = st.activeAgentColor;
+      st.activeAgentColor = activeAgentColor;
+      st.colorTransition = 0; // Start transition
+    }
   }, [activeAgentColor]);
+
+  // Update facing angle when active agent changes (turning towards coworker)
+  useEffect(() => {
+    const st = stateRef.current;
+    if (activeAgentAngle !== null) {
+      // Convert 0-1 position to radians (adjusting so 0 is at top)
+      st.targetFacingAngle = (activeAgentAngle - 0.25) * Math.PI * 2;
+    } else {
+      // Return to neutral (facing up/forward)
+      st.targetFacingAngle = -Math.PI / 2;
+    }
+  }, [activeAgentAngle]);
 
   // Trigger success celebration particles
   useEffect(() => {
@@ -1324,6 +1377,137 @@ function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 1, acti
       }
       // ========== END SUCCESS PARTICLES ==========
 
+      // ========== CLICK RIPPLE EFFECTS ==========
+      if (st.ripples && st.ripples.length > 0) {
+        ctx.globalCompositeOperation = 'lighter';
+        for (let i = st.ripples.length - 1; i >= 0; i--) {
+          const rp = st.ripples[i];
+          rp.radius += rp.speed;
+          rp.life -= 0.025;
+          
+          if (rp.life <= 0 || rp.radius > rp.maxRadius) {
+            st.ripples.splice(i, 1);
+          } else {
+            // Draw expanding ring
+            const rippleOpacity = rp.life * 0.4;
+            ctx.strokeStyle = `rgba(168, 85, 247, ${rippleOpacity})`;
+            ctx.lineWidth = 2 * rp.life;
+            ctx.beginPath();
+            ctx.arc(rp.x, rp.y, rp.radius, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Inner glow
+            const innerGlow = ctx.createRadialGradient(rp.x, rp.y, 0, rp.x, rp.y, rp.radius * 0.5);
+            innerGlow.addColorStop(0, `rgba(192, 132, 252, ${rippleOpacity * 0.3})`);
+            innerGlow.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = innerGlow;
+            ctx.beginPath();
+            ctx.arc(rp.x, rp.y, rp.radius * 0.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      }
+      // ========== END RIPPLE EFFECTS ==========
+
+      // ========== BREATHING GLOW (IDLE STATE) ==========
+      if (mood === 'listening' && !st.actionEffect) {
+        st.breathPhase = (st.breathPhase || 0) + 0.02;
+        const breathIntensity = 0.08 + Math.sin(st.breathPhase) * 0.05;
+        
+        ctx.globalCompositeOperation = 'lighter';
+        const breathGlow = ctx.createRadialGradient(cx, cy, w * 0.15, cx, cy, w * 0.32);
+        breathGlow.addColorStop(0, `rgba(168, 85, 247, ${breathIntensity})`);
+        breathGlow.addColorStop(0.5, `rgba(139, 92, 246, ${breathIntensity * 0.5})`);
+        breathGlow.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = breathGlow;
+        ctx.beginPath();
+        ctx.arc(cx, cy, w * 0.32, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // ========== END BREATHING GLOW ==========
+
+      // ========== COLOR TRANSITION (SMOOTH AGENT SWITCH) ==========
+      if (st.colorTransition < 1 && st.prevAgentColor && st.activeAgentColor) {
+        st.colorTransition = Math.min(1, st.colorTransition + 0.03);
+      }
+      // ========== END COLOR TRANSITION ==========
+
+      // ========== TURNING/FACING INDICATOR (SYNC turns towards active agent) ==========
+      // Smoothly interpolate current facing angle towards target
+      const angleDiff = st.targetFacingAngle - st.currentFacingAngle;
+      // Handle wrapping around PI
+      let shortestAngle = ((angleDiff + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+      st.currentFacingAngle += shortestAngle * 0.08; // Smooth easing
+      
+      // Only show facing indicator when there's an active agent
+      if (st.activeAgentColor) {
+        ctx.globalCompositeOperation = 'lighter';
+        
+        const facingAngle = st.currentFacingAngle;
+        const beamLength = w * 0.28;
+        const beamWidth = w * 0.12;
+        
+        // Draw a directional beam/wedge pointing towards the active agent
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(facingAngle);
+        
+        // Main beam gradient
+        const beamGrad = ctx.createLinearGradient(0, 0, beamLength, 0);
+        const agentRgb = st.activeAgentColor;
+        const hexToRgb = (hex) => {
+          const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+          return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : { r: 168, g: 85, b: 247 };
+        };
+        const rgb = hexToRgb(agentRgb);
+        
+        beamGrad.addColorStop(0, `rgba(${rgb.r},${rgb.g},${rgb.b},0.35)`);
+        beamGrad.addColorStop(0.5, `rgba(${rgb.r},${rgb.g},${rgb.b},0.2)`);
+        beamGrad.addColorStop(1, `rgba(${rgb.r},${rgb.g},${rgb.b},0)`);
+        
+        // Draw wedge shape
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(beamLength, -beamWidth / 2);
+        ctx.lineTo(beamLength, beamWidth / 2);
+        ctx.closePath();
+        ctx.fillStyle = beamGrad;
+        ctx.fill();
+        
+        // Pulsing core line
+        const pulseIntensity = 0.4 + Math.sin(time * 4) * 0.2;
+        ctx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},${pulseIntensity})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(w * 0.05, 0);
+        ctx.lineTo(beamLength * 0.9, 0);
+        ctx.stroke();
+        
+        // Arrow tip
+        const arrowSize = 8;
+        ctx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},${pulseIntensity})`;
+        ctx.beginPath();
+        ctx.moveTo(beamLength * 0.85, 0);
+        ctx.lineTo(beamLength * 0.85 - arrowSize, -arrowSize / 2);
+        ctx.lineTo(beamLength * 0.85 - arrowSize, arrowSize / 2);
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.restore();
+        
+        // Small glowing dot at center (SYNC's "eye")
+        const eyePulse = 0.6 + Math.sin(time * 3) * 0.2;
+        const eyeGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, w * 0.04);
+        eyeGrad.addColorStop(0, `rgba(255,255,255,${eyePulse})`);
+        eyeGrad.addColorStop(0.5, `rgba(${rgb.r},${rgb.g},${rgb.b},${eyePulse * 0.6})`);
+        eyeGrad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = eyeGrad;
+        ctx.beginPath();
+        ctx.arc(cx, cy, w * 0.04, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // ========== END TURNING/FACING INDICATOR ==========
+
       ctx.restore();
 
       // Lens vignette
@@ -1357,11 +1541,19 @@ function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 1, acti
         style={{ width: size, height: size }}
         onPointerDown={(e) => {
           const rect = e.currentTarget.getBoundingClientRect();
-          stateRef.current.pointer = {
-            x: e.clientX - rect.left,
-            y: e.clientY - rect.top,
-            down: true,
-          };
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          stateRef.current.pointer = { x, y, down: true };
+          
+          // Create ripple effect on click
+          stateRef.current.ripples.push({
+            x,
+            y,
+            radius: 0,
+            maxRadius: size * 0.35,
+            life: 1.0,
+            speed: 3 + Math.random() * 2,
+          });
         }}
         onPointerMove={(e) => {
           const rect = e.currentTarget.getBoundingClientRect();
@@ -1390,9 +1582,13 @@ function AgentAvatar({ size = 360, agentName = 'SYNC', mood = 'listening', level
   const labelRef = useRef(null);
   const containerRef = useRef(null);
 
-  // Get active agent name for display
+  // Get active agent info for display and positioning
   const activeAgentInfo = activeAgent ? AGENT_SEGMENTS.find(a => a.id === activeAgent) : null;
   const activeAgentColor = activeAgentInfo?.color || null;
+  // Calculate the angle to point towards (center of the agent's segment on the ring)
+  const activeAgentAngle = activeAgentInfo && activeAgentInfo.from !== activeAgentInfo.to
+    ? (activeAgentInfo.from + activeAgentInfo.to) / 2  // Middle of the segment
+    : null;
 
   // Animate label on mood change
   useEffect(() => {
@@ -1423,7 +1619,7 @@ function AgentAvatar({ size = 360, agentName = 'SYNC', mood = 'listening', level
   return (
     <div ref={containerRef} className="relative" style={{ width: size, height: size }}>
       <OuterRing size={size} mood={mood} level={level} activeAgent={activeAgent} />
-      <InnerViz size={size} mood={mood} level={level} seed={seed} actionEffect={actionEffect} activeAgentColor={activeAgentColor} showSuccess={showSuccess} />
+      <InnerViz size={size} mood={mood} level={level} seed={seed} actionEffect={actionEffect} activeAgentColor={activeAgentColor} showSuccess={showSuccess} activeAgentAngle={activeAgentAngle} />
 
       {/* Label */}
       <div className="absolute inset-x-0 bottom-[-10px] flex justify-center">
