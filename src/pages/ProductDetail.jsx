@@ -464,20 +464,20 @@ function PricingSection({ details, onDetailsUpdate, currency }) {
     onDetailsUpdate({ pricing: { ...pricing, volume_tiers: newTiers } });
   };
 
-  // Handle cost price - if tax included, calculate ex-tax price
+  // Handle cost price - user always edits the incl-BTW value (displayCostPrice)
+  // We need to convert back to ex-BTW for storage
   const handleCostPriceChange = (val) => {
-    if (taxIncluded && val > 0) {
-      // Price includes tax, calculate ex-tax
+    if (val > 0) {
+      // User entered incl-BTW price, calculate ex-BTW for storage
       const exTaxPrice = Math.round((val / (1 + TAX_RATE)) * 100) / 100;
       onDetailsUpdate({
         pricing: {
           ...pricing,
           cost_price: exTaxPrice,
-          cost_price_incl_tax: val,
         }
       });
     } else {
-      onDetailsUpdate({ pricing: { ...pricing, cost_price: val } });
+      onDetailsUpdate({ pricing: { ...pricing, cost_price: 0 } });
     }
   };
 
