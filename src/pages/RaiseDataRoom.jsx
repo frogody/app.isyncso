@@ -3,13 +3,14 @@ import { db } from '@/api/supabaseClient';
 import { motion } from 'framer-motion';
 import {
   FolderKey, Plus, Search, Upload, Download, Eye, Lock, Unlock,
-  File, Folder, MoreHorizontal, Users, Clock, Shield, Link2
+  File, Folder, MoreHorizontal, Users, Clock, Shield, Link2,
+  ExternalLink, FileText, Settings, Briefcase
 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { GlassCard } from '@/components/ui/GlassCard';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +22,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -75,78 +75,62 @@ export default function RaiseDataRoom() {
     !searchTerm || room.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500" />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-black">
-      <div className="p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+    <div className="min-h-screen bg-black relative">
+      {/* Animated Background */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-20 left-1/4 w-96 h-96 bg-amber-900/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-amber-950/10 rounded-full blur-3xl" />
+      </div>
+
+      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
         <PageHeader
           title="Data Room"
           subtitle="Secure document sharing for due diligence"
-          icon={FolderKey}
-          color="orange"
+          icon={Briefcase}
+          color="amber"
           actions={
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-orange-600 hover:bg-orange-700">
-                  <Plus className="w-4 h-4 mr-2" />
-                  New Data Room
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-zinc-900 border-zinc-800">
-                <DialogHeader>
-                  <DialogTitle className="text-white">Create Data Room</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div>
-                    <Label className="text-zinc-400">Name</Label>
-                    <Input
-                      value={newRoom.name}
-                      onChange={(e) => setNewRoom({...newRoom, name: e.target.value})}
-                      className="bg-zinc-800 border-zinc-700"
-                      placeholder="Series A Data Room"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-zinc-400">Description</Label>
-                    <Textarea
-                      value={newRoom.description}
-                      onChange={(e) => setNewRoom({...newRoom, description: e.target.value})}
-                      className="bg-zinc-800 border-zinc-700"
-                      placeholder="Due diligence documents for Series A round..."
-                      rows={3}
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-zinc-400">Access Level</Label>
-                    <Select value={newRoom.access_level} onValueChange={(v) => setNewRoom({...newRoom, access_level: v})}>
-                      <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="invited_only">Invited Only</SelectItem>
-                        <SelectItem value="link_access">Anyone with Link</SelectItem>
-                        <SelectItem value="password_protected">Password Protected</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/50">
-                    <div>
-                      <p className="text-sm text-zinc-300">Require NDA</p>
-                      <p className="text-xs text-zinc-500">Viewers must sign NDA before access</p>
-                    </div>
-                    <Switch
-                      checked={newRoom.requires_nda}
-                      onCheckedChange={(v) => setNewRoom({...newRoom, requires_nda: v})}
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end gap-3">
-                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
-                  <Button onClick={handleAddRoom} className="bg-orange-600 hover:bg-orange-700">Create</Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+            <Button
+              onClick={() => setIsAddDialogOpen(true)}
+              className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              New Data Room
+            </Button>
           }
         />
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { label: 'Total Rooms', value: dataRooms.length, icon: Folder },
+            { label: 'Active', value: dataRooms.filter(r => r.is_active).length, icon: Unlock },
+            { label: 'NDA Required', value: dataRooms.filter(r => r.requires_nda).length, icon: Shield },
+            { label: 'Total Viewers', value: dataRooms.reduce((sum, r) => sum + (r.viewer_count || 0), 0), icon: Users }
+          ].map((stat, idx) => (
+            <Card key={idx} className="bg-zinc-900/50 border-zinc-800">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                    <stat.icon className="w-4 h-4 text-amber-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-white">{stat.value}</p>
+                    <p className="text-xs text-zinc-500">{stat.label}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
 
         {/* Search */}
         <div className="relative max-w-md">
@@ -159,89 +143,157 @@ export default function RaiseDataRoom() {
           />
         </div>
 
-        {/* Data Rooms Grid */}
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1,2,3].map(i => (
-              <div key={i} className="h-48 bg-zinc-900/50 rounded-xl animate-pulse" />
-            ))}
-          </div>
-        ) : filteredRooms.length === 0 ? (
-          <GlassCard className="p-12 text-center">
-            <FolderKey className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-zinc-300 mb-2">No data rooms yet</h3>
-            <p className="text-zinc-500 mb-4">Create a secure space for due diligence documents</p>
-            <Button onClick={() => setIsAddDialogOpen(true)} className="bg-orange-600 hover:bg-orange-700">
-              <Plus className="w-4 h-4 mr-2" />
-              Create Data Room
-            </Button>
-          </GlassCard>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredRooms.map((room) => (
-              <motion.div
-                key={room.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                <GlassCard className="p-5 hover:border-orange-500/30 transition-colors">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="w-12 h-12 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
-                      <Folder className="w-6 h-6 text-orange-400" />
+        {/* Data Rooms */}
+        <Card className="bg-zinc-900/50 border-zinc-800">
+          <CardHeader>
+            <CardTitle className="text-white">Data Rooms</CardTitle>
+            <CardDescription>Secure document sharing with investors</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {filteredRooms.length === 0 ? (
+              <div className="text-center py-12">
+                <Briefcase className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-white mb-2">No data rooms yet</h3>
+                <p className="text-zinc-500 mb-4">Create a secure space for due diligence documents</p>
+                <Button
+                  onClick={() => setIsAddDialogOpen(true)}
+                  className="bg-amber-500 hover:bg-amber-600"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Data Room
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredRooms.map((room) => (
+                  <motion.div
+                    key={room.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition-colors"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="p-2 bg-amber-500/10 rounded-lg border border-amber-500/20">
+                        <Briefcase className="w-5 h-5 text-amber-400" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-white">{room.name || 'Data Room'}</p>
+                          {room.requires_nda && (
+                            <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/30 text-xs">
+                              NDA Required
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-zinc-500">{room.description || 'Due diligence documents'}</p>
+                        <div className="flex items-center gap-3 mt-1 text-xs text-zinc-600">
+                          <span className="flex items-center gap-1">
+                            <Users className="w-3 h-3" />
+                            {room.viewer_count || 0} viewers
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <FileText className="w-3 h-3" />
+                            {room.documents_count || 0} documents
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <Badge className={room.is_active ? 'bg-green-500/20 text-green-400 border-green-500/30 border' : 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30 border'}>
-                      {room.is_active ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </div>
-
-                  <h3 className="font-semibold text-white mb-1">{room.name || 'Untitled Room'}</h3>
-                  {room.description && (
-                    <p className="text-sm text-zinc-400 mb-3 line-clamp-2">{room.description}</p>
-                  )}
-
-                  <div className="flex items-center gap-3 text-sm text-zinc-500 mb-3">
-                    {room.requires_nda && (
-                      <span className="flex items-center gap-1">
-                        <Shield className="w-3 h-3" /> NDA Required
-                      </span>
-                    )}
-                    <span className="flex items-center gap-1">
-                      <Users className="w-3 h-3" /> {room.viewer_count || 0} viewers
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-3 border-t border-zinc-800">
-                    <span className="text-xs text-zinc-500">
-                      <Clock className="w-3 h-3 inline mr-1" />
-                      {room.updated_at ? new Date(room.updated_at).toLocaleDateString() : 'Just now'}
-                    </span>
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white">
-                        <Link2 className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white">
-                        <Upload className="w-4 h-4" />
-                      </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="text-zinc-400">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>Open</DropdownMenuItem>
-                          <DropdownMenuItem>Manage Access</DropdownMenuItem>
-                          <DropdownMenuItem>Settings</DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-400">Delete</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                    <div className="flex items-center gap-4">
+                      <Badge variant="outline" className={room.is_active
+                        ? 'bg-green-500/10 text-green-400 border-green-500/30'
+                        : 'bg-zinc-500/10 text-zinc-400 border-zinc-500/30'
+                      }>
+                        {room.is_active ? 'Active' : 'Inactive'}
+                      </Badge>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-white">
+                          <Link2 className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-white">
+                          <Upload className="w-4 h-4" />
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
+                            <DropdownMenuItem className="text-zinc-300">Open</DropdownMenuItem>
+                            <DropdownMenuItem className="text-zinc-300">Manage Access</DropdownMenuItem>
+                            <DropdownMenuItem className="text-zinc-300">Settings</DropdownMenuItem>
+                            <DropdownMenuItem className="text-red-400">Delete</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
-                  </div>
-                </GlassCard>
-              </motion.div>
-            ))}
-          </div>
-        )}
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Add Dialog */}
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogContent className="bg-zinc-900 border-zinc-800">
+            <DialogHeader>
+              <DialogTitle className="text-white">Create Data Room</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <Label className="text-zinc-400">Name</Label>
+                <Input
+                  value={newRoom.name}
+                  onChange={(e) => setNewRoom({...newRoom, name: e.target.value})}
+                  className="bg-zinc-800 border-zinc-700"
+                  placeholder="Series A Data Room"
+                />
+              </div>
+              <div>
+                <Label className="text-zinc-400">Description</Label>
+                <Textarea
+                  value={newRoom.description}
+                  onChange={(e) => setNewRoom({...newRoom, description: e.target.value})}
+                  className="bg-zinc-800 border-zinc-700"
+                  placeholder="Due diligence documents for Series A round..."
+                  rows={3}
+                />
+              </div>
+              <div>
+                <Label className="text-zinc-400">Access Level</Label>
+                <Select value={newRoom.access_level} onValueChange={(v) => setNewRoom({...newRoom, access_level: v})}>
+                  <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="invited_only">Invited Only</SelectItem>
+                    <SelectItem value="link_access">Anyone with Link</SelectItem>
+                    <SelectItem value="password_protected">Password Protected</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/50 border border-zinc-700">
+                <div>
+                  <p className="text-sm text-zinc-300">Require NDA</p>
+                  <p className="text-xs text-zinc-500">Viewers must sign NDA before access</p>
+                </div>
+                <Switch
+                  checked={newRoom.requires_nda}
+                  onCheckedChange={(v) => setNewRoom({...newRoom, requires_nda: v})}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} className="border-zinc-700">
+                Cancel
+              </Button>
+              <Button onClick={handleAddRoom} className="bg-amber-500 hover:bg-amber-600">
+                Create
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

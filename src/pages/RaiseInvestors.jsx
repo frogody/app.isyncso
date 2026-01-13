@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { db } from '@/api/supabaseClient';
 import { motion } from 'framer-motion';
 import {
   Building2, Plus, Search, Filter, Mail, Phone, Globe,
   DollarSign, CheckCircle2, Clock, AlertCircle, MessageSquare,
-  Linkedin, ArrowUpRight, MoreHorizontal, UserPlus
+  Linkedin, ArrowUpRight, MoreHorizontal, UserPlus, Users,
+  Target, TrendingUp, Calendar, ExternalLink, Edit2, Trash2
 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { GlassCard } from '@/components/ui/GlassCard';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,7 +23,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -70,16 +70,9 @@ export default function RaiseInvestors() {
       toast.success('Investor added successfully');
       setIsAddDialogOpen(false);
       setNewInvestor({
-        name: '',
-        firm: '',
-        email: '',
-        phone: '',
-        linkedin_url: '',
-        website: '',
-        investment_focus: '',
-        typical_check_size: '',
-        status: 'prospecting',
-        notes: ''
+        name: '', firm: '', email: '', phone: '', linkedin_url: '',
+        website: '', investment_focus: '', typical_check_size: '',
+        status: 'prospecting', notes: ''
       });
       loadInvestors();
     } catch (error) {
@@ -93,139 +86,88 @@ export default function RaiseInvestors() {
       prospecting: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
       contacted: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
       interested: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-      in_discussions: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-      due_diligence: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+      in_discussions: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+      due_diligence: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
       committed: 'bg-green-500/20 text-green-400 border-green-500/30',
       passed: 'bg-red-500/20 text-red-400 border-red-500/30'
     };
     return styles[status] || styles.prospecting;
   };
 
-  const filteredInvestors = investors.filter(inv => {
-    const matchesSearch = !searchTerm ||
-      inv.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inv.firm?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || inv.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const filteredInvestors = useMemo(() => {
+    return investors.filter(inv => {
+      const matchesSearch = !searchTerm ||
+        inv.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        inv.firm?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === 'all' || inv.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [investors, searchTerm, statusFilter]);
+
+  // Calculate stats
+  const stats = useMemo(() => ({
+    total: investors.length,
+    interested: investors.filter(i => ['interested', 'in_discussions'].includes(i.status)).length,
+    committed: investors.filter(i => i.status === 'committed').length,
+    inDD: investors.filter(i => i.status === 'due_diligence').length
+  }), [investors]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500" />
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-black">
-      <div className="p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+    <div className="min-h-screen bg-black relative">
+      {/* Animated Background */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-20 left-1/4 w-96 h-96 bg-amber-900/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-amber-950/10 rounded-full blur-3xl" />
+      </div>
+
+      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
         <PageHeader
           title="Investor Pipeline"
           subtitle="Track and manage investor relationships"
           icon={Building2}
-          color="orange"
+          color="amber"
           actions={
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-orange-600 hover:bg-orange-700">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Investor
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-zinc-900 border-zinc-800 max-w-lg">
-                <DialogHeader>
-                  <DialogTitle className="text-white">Add New Investor</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-zinc-400">Contact Name</Label>
-                      <Input
-                        value={newInvestor.name}
-                        onChange={(e) => setNewInvestor({...newInvestor, name: e.target.value})}
-                        className="bg-zinc-800 border-zinc-700"
-                        placeholder="John Smith"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-zinc-400">Firm</Label>
-                      <Input
-                        value={newInvestor.firm}
-                        onChange={(e) => setNewInvestor({...newInvestor, firm: e.target.value})}
-                        className="bg-zinc-800 border-zinc-700"
-                        placeholder="Acme Ventures"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-zinc-400">Email</Label>
-                      <Input
-                        type="email"
-                        value={newInvestor.email}
-                        onChange={(e) => setNewInvestor({...newInvestor, email: e.target.value})}
-                        className="bg-zinc-800 border-zinc-700"
-                        placeholder="john@acme.vc"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-zinc-400">Phone</Label>
-                      <Input
-                        value={newInvestor.phone}
-                        onChange={(e) => setNewInvestor({...newInvestor, phone: e.target.value})}
-                        className="bg-zinc-800 border-zinc-700"
-                        placeholder="+1 (555) 000-0000"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-zinc-400">Investment Focus</Label>
-                    <Input
-                      value={newInvestor.investment_focus}
-                      onChange={(e) => setNewInvestor({...newInvestor, investment_focus: e.target.value})}
-                      className="bg-zinc-800 border-zinc-700"
-                      placeholder="B2B SaaS, AI/ML"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-zinc-400">Typical Check Size</Label>
-                      <Input
-                        value={newInvestor.typical_check_size}
-                        onChange={(e) => setNewInvestor({...newInvestor, typical_check_size: e.target.value})}
-                        className="bg-zinc-800 border-zinc-700"
-                        placeholder="$500K - $2M"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-zinc-400">Status</Label>
-                      <Select value={newInvestor.status} onValueChange={(v) => setNewInvestor({...newInvestor, status: v})}>
-                        <SelectTrigger className="bg-zinc-800 border-zinc-700">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="prospecting">Prospecting</SelectItem>
-                          <SelectItem value="contacted">Contacted</SelectItem>
-                          <SelectItem value="interested">Interested</SelectItem>
-                          <SelectItem value="in_discussions">In Discussions</SelectItem>
-                          <SelectItem value="due_diligence">Due Diligence</SelectItem>
-                          <SelectItem value="committed">Committed</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-zinc-400">Notes</Label>
-                    <Textarea
-                      value={newInvestor.notes}
-                      onChange={(e) => setNewInvestor({...newInvestor, notes: e.target.value})}
-                      className="bg-zinc-800 border-zinc-700"
-                      placeholder="Add notes about this investor..."
-                      rows={3}
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end gap-3">
-                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
-                  <Button onClick={handleAddInvestor} className="bg-orange-600 hover:bg-orange-700">Add Investor</Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+            <Button
+              onClick={() => setIsAddDialogOpen(true)}
+              className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Investor
+            </Button>
           }
         />
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { label: 'Total Investors', value: stats.total, icon: Users },
+            { label: 'Interested', value: stats.interested, icon: Target },
+            { label: 'In Due Diligence', value: stats.inDD, icon: Clock },
+            { label: 'Committed', value: stats.committed, icon: CheckCircle2 }
+          ].map((stat, idx) => (
+            <Card key={idx} className="bg-zinc-900/50 border-zinc-800">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                    <stat.icon className="w-4 h-4 text-amber-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-white">{stat.value}</p>
+                    <p className="text-xs text-zinc-500">{stat.label}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
 
         {/* Filters */}
         <div className="flex flex-wrap gap-4">
@@ -255,87 +197,198 @@ export default function RaiseInvestors() {
           </Select>
         </div>
 
-        {/* Investor Grid */}
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1,2,3,4,5,6].map(i => (
-              <div key={i} className="h-48 bg-zinc-900/50 rounded-xl animate-pulse" />
-            ))}
-          </div>
-        ) : filteredInvestors.length === 0 ? (
-          <GlassCard className="p-12 text-center">
-            <Building2 className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-zinc-300 mb-2">No investors yet</h3>
-            <p className="text-zinc-500 mb-4">Start building your investor pipeline</p>
-            <Button onClick={() => setIsAddDialogOpen(true)} className="bg-orange-600 hover:bg-orange-700">
-              <Plus className="w-4 h-4 mr-2" />
-              Add First Investor
-            </Button>
-          </GlassCard>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredInvestors.map((investor) => (
-              <motion.div
-                key={investor.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                <GlassCard className="p-5 hover:border-orange-500/30 transition-colors">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h3 className="font-semibold text-white">{investor.name || 'Unknown'}</h3>
-                      <p className="text-sm text-zinc-400">{investor.firm}</p>
+        {/* Investors List */}
+        <Card className="bg-zinc-900/50 border-zinc-800">
+          <CardHeader>
+            <CardTitle className="text-white">Investors</CardTitle>
+            <CardDescription>{filteredInvestors.length} investors in pipeline</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {filteredInvestors.length === 0 ? (
+              <div className="text-center py-12">
+                <Building2 className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-white mb-2">No investors yet</h3>
+                <p className="text-zinc-500 mb-4">Start building your investor pipeline</p>
+                <Button
+                  onClick={() => setIsAddDialogOpen(true)}
+                  className="bg-amber-500 hover:bg-amber-600"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add First Investor
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredInvestors.map((investor) => (
+                  <motion.div
+                    key={investor.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition-colors"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="p-2 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
+                        <Building2 className="w-5 h-5 text-indigo-400" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-white">{investor.name || 'Unknown'}</p>
+                        <p className="text-sm text-zinc-500">{investor.firm || 'Investment Firm'}</p>
+                        {investor.investment_focus && (
+                          <p className="text-xs text-zinc-600 mt-1">{investor.investment_focus}</p>
+                        )}
+                      </div>
                     </div>
-                    <Badge className={`${getStatusBadge(investor.status)} border`}>
-                      {investor.status?.replace('_', ' ')}
-                    </Badge>
-                  </div>
-
-                  {investor.investment_focus && (
-                    <p className="text-sm text-zinc-500 mb-3">{investor.investment_focus}</p>
-                  )}
-
-                  {investor.typical_check_size && (
-                    <div className="flex items-center gap-2 text-sm text-orange-400 mb-3">
-                      <DollarSign className="w-4 h-4" />
-                      <span>{investor.typical_check_size}</span>
+                    <div className="flex items-center gap-4">
+                      {investor.typical_check_size && (
+                        <span className="text-sm text-amber-400 flex items-center gap-1">
+                          <DollarSign className="w-3 h-3" />
+                          {investor.typical_check_size}
+                        </span>
+                      )}
+                      <Badge variant="outline" className={`${getStatusBadge(investor.status)} border`}>
+                        {investor.status?.replace('_', ' ')}
+                      </Badge>
+                      <div className="flex gap-1">
+                        {investor.email && (
+                          <Button size="icon" variant="ghost" className="h-8 w-8 text-zinc-400 hover:text-white" asChild>
+                            <a href={`mailto:${investor.email}`}>
+                              <Mail className="w-4 h-4" />
+                            </a>
+                          </Button>
+                        )}
+                        {investor.linkedin_url && (
+                          <Button size="icon" variant="ghost" className="h-8 w-8 text-zinc-400 hover:text-white" asChild>
+                            <a href={investor.linkedin_url} target="_blank" rel="noopener noreferrer">
+                              <Linkedin className="w-4 h-4" />
+                            </a>
+                          </Button>
+                        )}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
+                            <DropdownMenuItem className="text-zinc-300">Edit</DropdownMenuItem>
+                            <DropdownMenuItem className="text-zinc-300">Log Activity</DropdownMenuItem>
+                            <DropdownMenuItem className="text-red-400">Delete</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
-                  )}
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-                  <div className="flex items-center gap-2 pt-3 border-t border-zinc-800">
-                    {investor.email && (
-                      <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white" asChild>
-                        <a href={`mailto:${investor.email}`}>
-                          <Mail className="w-4 h-4" />
-                        </a>
-                      </Button>
-                    )}
-                    {investor.linkedin_url && (
-                      <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white" asChild>
-                        <a href={investor.linkedin_url} target="_blank" rel="noopener noreferrer">
-                          <Linkedin className="w-4 h-4" />
-                        </a>
-                      </Button>
-                    )}
-                    <div className="flex-1" />
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="text-zinc-400">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>Edit</DropdownMenuItem>
-                        <DropdownMenuItem>Log Activity</DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-400">Delete</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </GlassCard>
-              </motion.div>
-            ))}
-          </div>
-        )}
+        {/* Add Investor Dialog */}
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogContent className="bg-zinc-900 border-zinc-800 max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="text-white">Add New Investor</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-zinc-400">Contact Name</Label>
+                  <Input
+                    value={newInvestor.name}
+                    onChange={(e) => setNewInvestor({...newInvestor, name: e.target.value})}
+                    className="bg-zinc-800 border-zinc-700"
+                    placeholder="John Smith"
+                  />
+                </div>
+                <div>
+                  <Label className="text-zinc-400">Firm</Label>
+                  <Input
+                    value={newInvestor.firm}
+                    onChange={(e) => setNewInvestor({...newInvestor, firm: e.target.value})}
+                    className="bg-zinc-800 border-zinc-700"
+                    placeholder="Acme Ventures"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-zinc-400">Email</Label>
+                  <Input
+                    type="email"
+                    value={newInvestor.email}
+                    onChange={(e) => setNewInvestor({...newInvestor, email: e.target.value})}
+                    className="bg-zinc-800 border-zinc-700"
+                    placeholder="john@acme.vc"
+                  />
+                </div>
+                <div>
+                  <Label className="text-zinc-400">Phone</Label>
+                  <Input
+                    value={newInvestor.phone}
+                    onChange={(e) => setNewInvestor({...newInvestor, phone: e.target.value})}
+                    className="bg-zinc-800 border-zinc-700"
+                    placeholder="+1 (555) 000-0000"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label className="text-zinc-400">Investment Focus</Label>
+                <Input
+                  value={newInvestor.investment_focus}
+                  onChange={(e) => setNewInvestor({...newInvestor, investment_focus: e.target.value})}
+                  className="bg-zinc-800 border-zinc-700"
+                  placeholder="B2B SaaS, AI/ML"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-zinc-400">Typical Check Size</Label>
+                  <Input
+                    value={newInvestor.typical_check_size}
+                    onChange={(e) => setNewInvestor({...newInvestor, typical_check_size: e.target.value})}
+                    className="bg-zinc-800 border-zinc-700"
+                    placeholder="$500K - $2M"
+                  />
+                </div>
+                <div>
+                  <Label className="text-zinc-400">Status</Label>
+                  <Select value={newInvestor.status} onValueChange={(v) => setNewInvestor({...newInvestor, status: v})}>
+                    <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="prospecting">Prospecting</SelectItem>
+                      <SelectItem value="contacted">Contacted</SelectItem>
+                      <SelectItem value="interested">Interested</SelectItem>
+                      <SelectItem value="in_discussions">In Discussions</SelectItem>
+                      <SelectItem value="due_diligence">Due Diligence</SelectItem>
+                      <SelectItem value="committed">Committed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <Label className="text-zinc-400">Notes</Label>
+                <Textarea
+                  value={newInvestor.notes}
+                  onChange={(e) => setNewInvestor({...newInvestor, notes: e.target.value})}
+                  className="bg-zinc-800 border-zinc-700"
+                  placeholder="Add notes about this investor..."
+                  rows={3}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} className="border-zinc-700">
+                Cancel
+              </Button>
+              <Button onClick={handleAddInvestor} className="bg-amber-500 hover:bg-amber-600">
+                Add Investor
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
