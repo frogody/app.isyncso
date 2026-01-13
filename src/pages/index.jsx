@@ -166,6 +166,14 @@ import FinanceSubscriptions from "./FinanceSubscriptions";
 
 import Raise from "./Raise";
 
+import RaiseInvestors from "./RaiseInvestors";
+
+import RaisePitchDecks from "./RaisePitchDecks";
+
+import RaiseDataRoom from "./RaiseDataRoom";
+
+import RaiseCampaigns from "./RaiseCampaigns";
+
 import TeamManagement from "./TeamManagement";
 
 import Agents from "./Agents";
@@ -374,6 +382,14 @@ const PAGES = {
     FinanceSubscriptions: FinanceSubscriptions,
 
     Raise: Raise,
+
+    RaiseInvestors: RaiseInvestors,
+
+    RaisePitchDecks: RaisePitchDecks,
+
+    RaiseDataRoom: RaiseDataRoom,
+
+    RaiseCampaigns: RaiseCampaigns,
 
     TeamManagement: TeamManagement,
 
@@ -608,6 +624,14 @@ function PagesContent() {
                 <Route path="/FinanceSubscriptions" element={<FinanceSubscriptions />} />
 
                 <Route path="/Raise" element={<Raise />} />
+
+                <Route path="/RaiseInvestors" element={<RaiseInvestors />} />
+
+                <Route path="/RaisePitchDecks" element={<RaisePitchDecks />} />
+
+                <Route path="/RaiseDataRoom" element={<RaiseDataRoom />} />
+
+                <Route path="/RaiseCampaigns" element={<RaiseCampaigns />} />
 
                 <Route path="/TeamManagement" element={<TeamManagement />} />
 

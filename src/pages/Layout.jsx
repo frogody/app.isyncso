@@ -71,6 +71,9 @@ import {
   UserPlus,
   Crosshair,
   Plug,
+  Presentation,
+  FolderKey,
+  Building2,
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -301,7 +304,11 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       color: 'orange',
       agent: 'raise',
       items: [
-        { label: 'Dashboard', path: createPageUrl('Raise'), icon: TrendingUp },
+        { label: 'Overview', path: createPageUrl('Raise'), icon: TrendingUp },
+        { label: 'Investors', path: createPageUrl('RaiseInvestors'), icon: Building2 },
+        { label: 'Pitch Decks', path: createPageUrl('RaisePitchDecks'), icon: Presentation },
+        { label: 'Data Room', path: createPageUrl('RaiseDataRoom'), icon: FolderKey },
+        { label: 'Campaigns', path: createPageUrl('RaiseCampaigns'), icon: Rocket },
       ]
     };
   }

@@ -307,7 +307,7 @@ export default function AppsManagerModal({ isOpen, onClose, onConfigUpdate }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-zinc-900 border-zinc-800 max-w-4xl w-[95vw] max-h-[90vh] p-0 gap-0 overflow-hidden">
+      <DialogContent className="bg-zinc-900 border-zinc-800 max-w-4xl w-[95vw] max-h-[90vh] p-0 gap-0 overflow-hidden" hideClose>
         <DialogTitle className="sr-only">Workspace Settings</DialogTitle>
         {/* Header */}
         <div className="p-6 pb-4 border-b border-zinc-800 flex items-center justify-between">
