@@ -32,7 +32,9 @@ export default function FinanceOverview() {
   const statsGridRef = useRef(null);
   const cardsGridRef = useRef(null);
 
-  // Animate stat cards on load
+  // TEMPORARILY DISABLED: Animate stat cards on load
+  // Investigating crash issue - disabled to isolate the bug
+  /*
   useEffect(() => {
     if (loading || !statsGridRef.current || prefersReducedMotion()) return;
 
@@ -92,8 +94,10 @@ export default function FinanceOverview() {
       });
     };
   }, [loading]);
+  */
 
-  // Animate content cards
+  // TEMPORARILY DISABLED: Animate content cards
+  /*
   useEffect(() => {
     if (loading || !cardsGridRef.current || prefersReducedMotion()) return;
 
@@ -124,6 +128,7 @@ export default function FinanceOverview() {
       }
     };
   }, [loading]);
+  */
 
   useEffect(() => {
     let isMounted = true;
