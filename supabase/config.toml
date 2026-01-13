@@ -30,3 +30,6 @@ verify_jwt = false
 
 [functions.composio-webhooks]
 verify_jwt = false
+
+[functions.personalizeCourse]
+verify_jwt = false
