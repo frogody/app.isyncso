@@ -118,6 +118,10 @@ const tableNameMap = {
   'RaisePitchDeck': 'raise_pitch_decks',
   'RaiseDataRoom': 'raise_data_rooms',
 
+  // === Projects ===
+  'Project': 'projects',
+  'ClientFolder': 'client_folders',
+
   // === Products ===
   'Product': 'products',
   'DigitalProduct': 'digital_products',
@@ -411,6 +415,10 @@ export const entities = {
   RaiseInvestor: createEntityWrapper('RaiseInvestor'),
   RaisePitchDeck: createEntityWrapper('RaisePitchDeck'),
   RaiseDataRoom: createEntityWrapper('RaiseDataRoom'),
+
+  // === Projects ===
+  Project: createEntityWrapper('Project'),
+  ClientFolder: createEntityWrapper('ClientFolder'),
 
   // === Products ===
   Product: createEntityWrapper('Product'),

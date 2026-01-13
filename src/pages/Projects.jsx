@@ -3001,23 +3001,24 @@ export default function Projects() {
 
   const loadData = async () => {
     try {
-      const [projectActions, taskActions] = await Promise.all([
-        db.entities.ActionLog.filter({ action_type: "project" }).catch(() => []),
+      const [projectsData, foldersData, taskActions] = await Promise.all([
+        db.entities.Project.list().catch(() => []),
+        db.entities.ClientFolder.list().catch(() => []),
         db.entities.ActionLog.filter({ action_type: "task" }).catch(() => []),
       ]);
 
-      const projectList = projectActions.map(p => ({
+      const projectList = projectsData.map(p => ({
         id: p.id,
-        name: p.title || p.action_description || "Untitled Project",
-        description: p.description || p.notes,
+        name: p.title || "Untitled Project",
+        description: p.description,
         status: mapStatus(p.status),
         priority: p.priority || "medium",
-        category: p.category || "development",
+        category: p.project_type || "development",
         start_date: p.start_date,
-        due_date: p.due_date,
+        due_date: p.deadline,
         budget: p.budget,
         spent: p.spent || 0,
-        client_name: p.client_name,
+        client_name: p.client_contact_name || p.client_company,
         team_members: p.team_members || [],
         tags: p.tags || [],
         milestones: p.milestones || [],
@@ -3035,9 +3036,14 @@ export default function Projects() {
         },
         client_updates: p.client_updates || [],
         page_content: p.page_content || [],
-        created_date: p.created_date,
+        created_date: p.created_at,
         progress: 0,
       }));
+
+      // Store folders for potential use
+      if (foldersData.length > 0) {
+        console.log('[Projects] Loaded folders:', foldersData.length);
+      }
 
       const taskList = taskActions.map(t => ({
         id: t.id,
@@ -3112,7 +3118,7 @@ export default function Projects() {
     setProjects(prev => prev.map(p => String(p.id) === projectId ? { ...p, status: newStatus } : p));
 
     try {
-      await db.entities.ActionLog.update(projectId, { status: mapStatusToDB(newStatus) });
+      await db.entities.Project.update(projectId, { status: mapStatusToDB(newStatus) });
       toast.success(`Project moved to ${PROJECT_STATUSES.find(s => s.id === newStatus)?.label}`);
     } catch (error) {
       console.error("Failed to update:", error);
@@ -3135,19 +3141,16 @@ export default function Projects() {
 
     try {
       const projectData = {
-        action_type: "project",
         title: formData.name,
-        action_description: formData.name,
         description: formData.description,
-        notes: formData.description,
         status: mapStatusToDB(formData.status),
         priority: formData.priority,
-        category: formData.category,
+        project_type: formData.category,
         start_date: formData.start_date || null,
-        due_date: formData.due_date || null,
+        deadline: formData.due_date || null,
         budget: formData.budget ? parseFloat(formData.budget) : null,
         spent: formData.spent ? parseFloat(formData.spent) : 0,
-        client_name: formData.client_name,
+        client_contact_name: formData.client_name,
         team_members: formData.team_members,
         tags: formData.tags,
         milestones: formData.milestones,
@@ -3166,7 +3169,7 @@ export default function Projects() {
         client_updates: formData.client_updates || [],
         page_content: formData.page_content || [],
         user_id: user.id,
-        organization_id: user.organization_id, // Required for RLS SELECT policy
+        company_id: user.company_id,
       };
 
       if (editingProject) {
@@ -3174,10 +3177,10 @@ export default function Projects() {
         if (editingProject.share_settings && !formData.share_settings) {
           projectData.share_settings = editingProject.share_settings;
         }
-        await db.entities.ActionLog.update(editingProject.id, projectData);
+        await db.entities.Project.update(editingProject.id, projectData);
         toast.success("Project updated");
       } else {
-        await db.entities.ActionLog.create(projectData);
+        await db.entities.Project.create(projectData);
         toast.success("Project created");
       }
 
@@ -3292,19 +3295,16 @@ export default function Projects() {
         const mergedProject = { ...currentProject, ...updates };
 
         const fullProjectData = {
-          action_type: "project",
           title: mergedProject.name,
-          action_description: mergedProject.name,
           description: mergedProject.description,
-          notes: mergedProject.description,
           status: mapStatusToDB(mergedProject.status),
           priority: mergedProject.priority,
-          category: mergedProject.category,
+          project_type: mergedProject.category,
           start_date: mergedProject.start_date || null,
-          due_date: mergedProject.due_date || null,
+          deadline: mergedProject.due_date || null,
           budget: mergedProject.budget ? parseFloat(mergedProject.budget) : null,
           spent: mergedProject.spent ? parseFloat(mergedProject.spent) : 0,
-          client_name: mergedProject.client_name,
+          client_contact_name: mergedProject.client_name,
           team_members: mergedProject.team_members || [],
           tags: mergedProject.tags || [],
           milestones: mergedProject.milestones || [],
@@ -3323,11 +3323,11 @@ export default function Projects() {
           client_updates: mergedProject.client_updates || [],
           page_content: mergedProject.page_content || [],
         };
-        await db.entities.ActionLog.update(projectId, fullProjectData);
+        await db.entities.Project.update(projectId, fullProjectData);
       } else {
         // Fallback: try partial update if we can't find the project
         console.warn("Could not find project for full update, attempting partial update:", projectId);
-        await db.entities.ActionLog.update(projectId, updates);
+        await db.entities.Project.update(projectId, updates);
       }
     } catch (error) {
       console.error("Failed to update project data:", error, updates);
