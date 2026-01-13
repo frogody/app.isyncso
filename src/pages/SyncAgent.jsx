@@ -1975,9 +1975,13 @@ export default function SyncAgent() {
                 {isSending && (
                   <div className="flex justify-start">
                     <div className="rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm">
-                      <div className="flex items-center gap-2">
-                        <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-blue-400" />
-                        <span className="text-zinc-400">SYNC is {mood === 'thinking' ? 'thinking' : 'typing'}…</span>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1">
+                          <span className="inline-flex h-2 w-2 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '0ms', animationDuration: '600ms' }} />
+                          <span className="inline-flex h-2 w-2 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '150ms', animationDuration: '600ms' }} />
+                          <span className="inline-flex h-2 w-2 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: '300ms', animationDuration: '600ms' }} />
+                        </div>
+                        <span className="text-zinc-400">SYNC is {mood === 'thinking' ? 'thinking' : 'responding'}…</span>
                       </div>
                     </div>
                   </div>
@@ -2035,11 +2039,12 @@ export default function SyncAgent() {
                   'inline-flex h-[54px] w-[54px] items-center justify-center rounded-2xl border transition-all',
                   isSending || !input.trim()
                     ? 'cursor-not-allowed border-white/10 bg-white/5 text-white/30'
-                    : 'border-blue-500/30 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30'
+                    : 'border-blue-500/30 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 hover:scale-105 active:scale-95',
+                  input.trim() && !isSending && 'shadow-[0_0_20px_rgba(59,130,246,0.3)]'
                 )}
-                title="Send"
+                title="Send (Enter)"
               >
-                <Send className="h-5 w-5" />
+                <Send className={cn("h-5 w-5 transition-transform", input.trim() && !isSending && "animate-pulse")} />
               </button>
             </div>
           </div>
