@@ -539,6 +539,35 @@ export default function Settings() {
     notify_compliance: true
   };
 
+  // IMPORTANT: All useEffect hooks MUST be called before any early returns
+  // to comply with React's Rules of Hooks (consistent hook call order)
+  
+  // Animate header on mount
+  useEffect(() => {
+    if (!headerRef.current || prefersReducedMotion()) return;
+
+    animate({
+      targets: headerRef.current,
+      translateY: [-20, 0],
+      opacity: [0, 1],
+      duration: 500,
+      easing: 'easeOutQuart',
+    });
+  }, []);
+
+  // Animate content area when tab changes
+  useEffect(() => {
+    if (!contentRef.current || prefersReducedMotion()) return;
+
+    animate({
+      targets: contentRef.current,
+      translateY: [15, 0],
+      opacity: [0, 1],
+      duration: 400,
+      easing: 'easeOutQuad',
+    });
+  }, [activeTab]);
+
   if (userLoading || !user) {
     return (
       <div className="min-h-screen bg-black p-6">
@@ -576,32 +605,6 @@ export default function Settings() {
 
   const currentTabConfig = tabConfig.find(t => t.id === activeTab);
   const currentColor = colorClasses[currentTabConfig?.color || 'cyan'];
-
-  // Animate header on mount
-  useEffect(() => {
-    if (!headerRef.current || prefersReducedMotion()) return;
-
-    animate({
-      targets: headerRef.current,
-      translateY: [-20, 0],
-      opacity: [0, 1],
-      duration: 500,
-      easing: 'easeOutQuart',
-    });
-  }, []);
-
-  // Animate content area when tab changes
-  useEffect(() => {
-    if (!contentRef.current || prefersReducedMotion()) return;
-
-    animate({
-      targets: contentRef.current,
-      translateY: [15, 0],
-      opacity: [0, 1],
-      duration: 400,
-      easing: 'easeOutQuad',
-    });
-  }, [activeTab]);
 
   return (
     <div className="min-h-screen bg-black relative">
