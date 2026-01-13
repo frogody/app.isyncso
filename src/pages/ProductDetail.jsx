@@ -487,10 +487,21 @@ function PricingSection({ details, onDetailsUpdate, currency }) {
     onDetailsUpdate({ pricing: { ...pricing, tax_included: val } });
   };
 
-  // Display cost price (show incl tax if available)
-  const displayCostPrice = taxIncluded && pricing.cost_price_incl_tax
-    ? pricing.cost_price_incl_tax
-    : pricing.cost_price;
+  // Calculate display prices based on tax_included setting
+  // When tax_included = true: stored cost_price is the INCL-tax price from invoice
+  // We calculate ex-tax for base price display
+  const costPrice = pricing.cost_price || 0;
+
+  // Base price (ex BTW) - if tax included, divide by 1.21 to get ex-tax
+  const displayBasePrice = taxIncluded && costPrice > 0
+    ? Math.round((costPrice / (1 + TAX_RATE)) * 100) / 100
+    : (pricing.base_price || costPrice);
+
+  // Cost price display - if tax included, show the original incl-tax price
+  // If not included, calculate incl-tax for display
+  const displayCostPrice = taxIncluded
+    ? costPrice
+    : (costPrice > 0 ? Math.round(costPrice * (1 + TAX_RATE) * 100) / 100 : 0);
 
   return (
     <div className="space-y-6">
@@ -515,7 +526,7 @@ function PricingSection({ details, onDetailsUpdate, currency }) {
                   <span className="text-sm text-white">Invoice prices include BTW</span>
                   <p className="text-xs text-zinc-500">
                     {taxIncluded
-                      ? `System stores ex-tax (÷1.21). Cost €${(pricing.cost_price || 0).toFixed(2)} ex BTW`
+                      ? `€${costPrice.toFixed(2)} incl BTW → €${displayBasePrice.toFixed(2)} ex BTW`
                       : 'Prices are entered without tax'
                     }
                   </p>
@@ -525,11 +536,12 @@ function PricingSection({ details, onDetailsUpdate, currency }) {
 
             <div className="grid grid-cols-2 gap-4">
               <InlineEditNumber
-                value={pricing.base_price}
+                value={displayBasePrice}
                 onSave={(val) => onDetailsUpdate({ pricing: { ...pricing, base_price: val } })}
                 label="Base Price (ex BTW)"
                 placeholder="0.00"
                 prefix={currency === 'EUR' ? '€' : '$'}
+                disabled={taxIncluded}
               />
               <InlineEditNumber
                 value={displayCostPrice}
