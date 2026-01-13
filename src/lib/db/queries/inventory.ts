@@ -111,7 +111,7 @@ export async function getReceivingHistory(companyId: string, limit = 50): Promis
 // EXPECTED DELIVERIES
 // =============================================================================
 
-export async function listExpectedDeliveries(companyId: string, status?: string): Promise<ExpectedDelivery[]> {
+export async function listExpectedDeliveries(companyId: string, status?: string | string[]): Promise<ExpectedDelivery[]> {
   let query = supabase
     .from('expected_deliveries')
     .select(`
@@ -123,7 +123,15 @@ export async function listExpectedDeliveries(companyId: string, status?: string)
     .eq('company_id', companyId);
 
   if (status) {
-    query = query.eq('status', status);
+    if (Array.isArray(status)) {
+      // Multiple statuses - use .in()
+      query = query.in('status', status);
+    } else if (status === 'pending') {
+      // When asking for 'pending', also include 'partial' (items still awaiting full delivery)
+      query = query.in('status', ['pending', 'partial']);
+    } else {
+      query = query.eq('status', status);
+    }
   }
 
   const { data, error } = await query.order('expected_date');

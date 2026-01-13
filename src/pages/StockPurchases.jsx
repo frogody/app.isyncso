@@ -1209,12 +1209,16 @@ export default function StockPurchases() {
           .from('expenses')
           .insert({
             company_id: companyId,
+            user_id: user?.id,
             document_type: 'invoice',
             source_type: 'stock_purchase',
             source_stock_purchase_id: purchaseId,
             supplier_id: purchase.supplier_id,
             external_reference: purchase.external_reference,
             invoice_date: purchase.invoice_date,
+            date: purchase.invoice_date,
+            description: `Factuur ${purchase.external_reference || purchase.invoice_number || ''}`.trim(),
+            amount: purchase.total,
             subtotal: purchase.subtotal,
             tax_percent: purchase.tax_percent,
             tax_amount: purchase.tax_amount,
@@ -1228,7 +1232,6 @@ export default function StockPurchases() {
             status: 'approved',
             review_status: 'approved',
             needs_review: false,
-            metadata: { from_stock_purchase: true, force_created: forceCreate },
           });
 
         if (expenseError) {
