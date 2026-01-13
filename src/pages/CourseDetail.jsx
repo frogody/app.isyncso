@@ -119,14 +119,22 @@ export default function CourseDetail() {
 
         const response = await db.functions.invoke('personalizeCourse', {
           templateCourseId: course.id.toString()
-        }, { signal: controller.signal });
+        });
 
         clearTimeout(timeoutId);
         clearInterval(progressInterval);
 
-        const result = response.data || response;
+        console.log('[CourseDetail] personalizeCourse response:', response);
 
-        if (result.success) {
+        // Check for error in the response
+        if (response.error) {
+          const errorMsg = response.error?.message || response.error?.context?.body?.error || 'Function error';
+          throw new Error(errorMsg);
+        }
+
+        const result = response.data;
+
+        if (result?.success) {
           setPersonalizeProgress(100);
           toast({
             title: "Course Personalized!",
@@ -136,7 +144,7 @@ export default function CourseDetail() {
             navigate(createPageUrl(`CourseDetail?id=${result.course_id}`));
           }, 500);
         } else {
-          throw new Error(result.error || 'Personalization failed');
+          throw new Error(result?.error || 'Personalization failed');
         }
       } catch (fetchError) {
         clearInterval(progressInterval);

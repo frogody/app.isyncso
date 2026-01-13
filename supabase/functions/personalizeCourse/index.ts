@@ -13,12 +13,25 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    console.log('[personalizeCourse] Starting - URL exists:', !!supabaseUrl, 'Key exists:', !!supabaseServiceKey);
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('[personalizeCourse] Missing environment variables');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Server configuration error' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get authorization header for user context
     const authHeader = req.headers.get('Authorization');
+    console.log('[personalizeCourse] Auth header present:', !!authHeader);
+
     if (!authHeader) {
       return new Response(
         JSON.stringify({ success: false, error: 'No authorization header' }),
@@ -30,15 +43,29 @@ serve(async (req) => {
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
+    console.log('[personalizeCourse] Auth result - user:', user?.id, 'error:', authError?.message);
+
     if (authError || !user) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Invalid authentication' }),
+        JSON.stringify({ success: false, error: `Invalid authentication: ${authError?.message || 'No user found'}` }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     // Parse request body
-    const { templateCourseId } = await req.json();
+    let body;
+    try {
+      body = await req.json();
+    } catch (parseError) {
+      console.error('[personalizeCourse] Failed to parse body:', parseError);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid request body' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { templateCourseId } = body;
+    console.log('[personalizeCourse] Received templateCourseId:', templateCourseId);
 
     if (!templateCourseId) {
       return new Response(
