@@ -836,7 +836,7 @@ function OuterRing({ size = 360, mood = 'listening', level = 0.2, activeAgent = 
 // INNER VISUALIZATION COMPONENT (Canvas-based particles + waves)
 // ============================================================================
 
-function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 1, actionEffect = null }) {
+function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 1, actionEffect = null, activeAgentColor = null, showSuccess = false }) {
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
   const stateRef = useRef({
@@ -849,6 +849,8 @@ function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 1, acti
     actionEffect: null,
     burstParticles: [],
     spiralAngle: 0,
+    successParticles: [],
+    activeAgentColor: null,
   });
   
   // Update action effect in state
@@ -873,6 +875,36 @@ function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 1, acti
       });
     }
   }, [actionEffect, size]);
+
+  // Update active agent color
+  useEffect(() => {
+    stateRef.current.activeAgentColor = activeAgentColor;
+  }, [activeAgentColor]);
+
+  // Trigger success celebration particles
+  useEffect(() => {
+    if (showSuccess) {
+      const st = stateRef.current;
+      const cx = size / 2;
+      const cy = size / 2;
+      // Create confetti-like success particles
+      st.successParticles = Array.from({ length: 40 }).map((_, i) => {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 2 + Math.random() * 4;
+        return {
+          x: cx,
+          y: cy,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 2, // Slight upward bias
+          life: 1.0,
+          size: 2 + Math.random() * 4,
+          color: ['#10b981', '#22c55e', '#4ade80', '#86efac'][Math.floor(Math.random() * 4)], // Green success colors
+          rotation: Math.random() * Math.PI * 2,
+          rotationSpeed: (Math.random() - 0.5) * 0.3,
+        };
+      });
+    }
+  }, [showSuccess, size]);
 
   // Initialize particles
   useEffect(() => {
@@ -943,10 +975,21 @@ function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 1, acti
       ctx.arc(cx, cy, w * 0.34, 0, Math.PI * 2);
       ctx.clip();
 
-      // Mood palette (purple theme for SYNC)
+      // Mood palette (purple theme for SYNC, or agent-specific when delegating)
+      const agentColor = st.activeAgentColor;
+      const hexToRgba = (hex, alpha) => {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        if (!result) return `rgba(168,85,247,${alpha})`;
+        return `rgba(${parseInt(result[1], 16)},${parseInt(result[2], 16)},${parseInt(result[3], 16)},${alpha})`;
+      };
+      
       const palettes = {
         listening: { a: 'rgba(168,85,247,0.45)', b: 'rgba(139,92,246,0.30)', dot: 'rgba(255,255,255,0.18)' },
-        thinking: { a: 'rgba(245,158,11,0.40)', b: 'rgba(217,119,6,0.25)', dot: 'rgba(255,255,255,0.16)' },
+        thinking: agentColor ? {
+          a: hexToRgba(agentColor, 0.45),
+          b: hexToRgba(agentColor, 0.25),
+          dot: 'rgba(255,255,255,0.18)'
+        } : { a: 'rgba(245,158,11,0.40)', b: 'rgba(217,119,6,0.25)', dot: 'rgba(255,255,255,0.16)' },
         speaking: { a: 'rgba(192,132,252,0.55)', b: 'rgba(168,85,247,0.35)', dot: 'rgba(255,255,255,0.22)' },
       };
       const P = palettes[mood] || palettes.listening;
@@ -1212,6 +1255,34 @@ function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 1, acti
       }
       // ========== END ACTION EFFECTS ==========
 
+      // ========== SUCCESS CELEBRATION PARTICLES ==========
+      if (st.successParticles && st.successParticles.length > 0) {
+        ctx.globalCompositeOperation = 'lighter';
+        for (let i = st.successParticles.length - 1; i >= 0; i--) {
+          const sp = st.successParticles[i];
+          // Physics
+          sp.x += sp.vx;
+          sp.y += sp.vy;
+          sp.vy += 0.08; // Gravity
+          sp.vx *= 0.99; // Air resistance
+          sp.rotation += sp.rotationSpeed;
+          sp.life -= 0.015;
+          
+          if (sp.life <= 0) {
+            st.successParticles.splice(i, 1);
+          } else {
+            // Draw confetti piece
+            ctx.save();
+            ctx.translate(sp.x, sp.y);
+            ctx.rotate(sp.rotation);
+            ctx.fillStyle = sp.color.replace(')', `,${sp.life * 0.9})`).replace('rgb', 'rgba');
+            ctx.fillRect(-sp.size / 2, -sp.size / 4, sp.size, sp.size / 2);
+            ctx.restore();
+          }
+        }
+      }
+      // ========== END SUCCESS PARTICLES ==========
+
       ctx.restore();
 
       // Lens vignette
@@ -1274,12 +1345,13 @@ function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 1, acti
 // AGENT AVATAR COMPONENT (Combines ring + inner viz)
 // ============================================================================
 
-function AgentAvatar({ size = 360, agentName = 'SYNC', mood = 'listening', level = 0.25, seed = 1, activeAgent = null, actionEffect = null }) {
+function AgentAvatar({ size = 360, agentName = 'SYNC', mood = 'listening', level = 0.25, seed = 1, activeAgent = null, actionEffect = null, showSuccess = false }) {
   const labelRef = useRef(null);
   const containerRef = useRef(null);
 
   // Get active agent name for display
   const activeAgentInfo = activeAgent ? AGENT_SEGMENTS.find(a => a.id === activeAgent) : null;
+  const activeAgentColor = activeAgentInfo?.color || null;
 
   // Animate label on mood change
   useEffect(() => {
@@ -1310,7 +1382,7 @@ function AgentAvatar({ size = 360, agentName = 'SYNC', mood = 'listening', level
   return (
     <div ref={containerRef} className="relative" style={{ width: size, height: size }}>
       <OuterRing size={size} mood={mood} level={level} activeAgent={activeAgent} />
-      <InnerViz size={size} mood={mood} level={level} seed={seed} actionEffect={actionEffect} />
+      <InnerViz size={size} mood={mood} level={level} seed={seed} actionEffect={actionEffect} activeAgentColor={activeAgentColor} showSuccess={showSuccess} />
 
       {/* Label */}
       <div className="absolute inset-x-0 bottom-[-10px] flex justify-center">
@@ -1428,6 +1500,7 @@ export default function SyncAgent() {
   const [seed, setSeed] = useState(4);
   const [activeAgent, setActiveAgent] = useState(null);
   const [currentActionEffect, setCurrentActionEffect] = useState(null);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   // Agent channel messages (inter-agent communication feed)
   const [agentMessages, setAgentMessages] = useState([]);
@@ -1639,6 +1712,9 @@ export default function SyncAgent() {
               ? `Done! Found ${resultCount} ${resultCount === 1 ? 'result' : 'results'}.`
               : `Done! ${actionReadable} completed successfully.`;
             addAgentMessage(agentId, successMsg);
+            // Trigger success celebration
+            setShowSuccess(true);
+            setTimeout(() => setShowSuccess(false), 100); // Brief trigger
           } else {
             addAgentMessage(agentId, `Hmm, ran into an issue. Let me report back.`);
           }
@@ -1668,6 +1744,9 @@ export default function SyncAgent() {
             ? `Got it! Found ${resultCount} ${resultCount === 1 ? 'item' : 'items'}.`
             : `Done! Action completed.`;
           addAgentMessage('sync', msg);
+          // Trigger success celebration
+          setShowSuccess(true);
+          setTimeout(() => setShowSuccess(false), 100);
         } else {
           addAgentMessage('sync', `That didn't work as expected. Let me explain...`);
         }
@@ -1798,7 +1877,7 @@ export default function SyncAgent() {
           </div>
 
           <div className="shrink-0 mt-2 grid place-items-center">
-            <AgentAvatar size={320} agentName="SYNC" mood={mood} level={level} seed={seed} activeAgent={activeAgent} actionEffect={currentActionEffect} />
+            <AgentAvatar size={320} agentName="SYNC" mood={mood} level={level} seed={seed} activeAgent={activeAgent} actionEffect={currentActionEffect} showSuccess={showSuccess} />
           </div>
 
           {/* Agent Channel - Live communication feed */}
