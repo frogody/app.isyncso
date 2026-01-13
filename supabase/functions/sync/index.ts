@@ -2942,6 +2942,34 @@ serve(async (req) => {
       console.warn('[SYNC] Context enrichment failed, continuing without:', enrichError);
     }
 
+        // === INTELLIGENCE ORCHESTRATION ===
+        // Orchestrate deep intelligence before LLM call for "mouth-dropping" results
+        let intelligenceResult: IntelligenceResult | null = null;
+        try {
+                intelligenceResult = await orchestrateIntelligence(
+                          supabase,
+                          session,
+                          message,
+                          enrichedApiMessages.map(m => typeof m.content === 'string' ? m.content : ''),
+                          []
+                        );
+                if (intelligenceResult) {
+                          const intelligenceContext = generateEnhancedSystemContext(intelligenceResult);
+                          // Find system message and enhance it
+                          const sysIdx = enrichedApiMessages.findIndex(m => m.role === 'system');
+                          if (sysIdx >= 0) {
+                                      enrichedApiMessages[sysIdx] = {
+                                                    ...enrichedApiMessages[sysIdx],
+                                                    content: enrichedApiMessages[sysIdx].content + '\n\n' + intelligenceContext,
+                                      };
+                          }
+                          console.log(`[SYNC] Intelligence orchestration added ${intelligenceResult.deepInsights.length} insights`);
+                }
+        } catch (intelligenceError) {
+                console.warn('[SYNC] Intelligence orchestration failed, continuing without:', intelligenceError);
+        }
+    
+
     const response = await fetch('https://api.together.xyz/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -3099,6 +3127,33 @@ serve(async (req) => {
         }
 
         assistantMessage = assistantMessage + '\n\n' + synthesizedMessage;
+
+            // === INTELLIGENCE RESPONSE ENHANCEMENT ===
+            // Enhance response with deep insights and follow-up suggestions
+            if (intelligenceResult && actionExecuted) {
+                    try {
+                              const enhancement = await enhanceResponse(
+                                          supabase,
+                                          session,
+                                          actionData.action,
+                                          actionExecuted,
+                                          intelligenceResult
+                                        );
+                              if (enhancement.postResponse) {
+                                          assistantMessage += enhancement.postResponse;
+                              }
+                              if (enhancement.suggestedFollowUps && enhancement.suggestedFollowUps.length > 0) {
+                                          assistantMessage += '\n\n**You might also want to:**\n';
+                                          enhancement.suggestedFollowUps.slice(0, 3).forEach(q => {
+                                                        assistantMessage += `• ${q}\n`;
+                                          });
+                              }
+                              console.log('[SYNC] Response enhanced with intelligence insights');
+                    } catch (enhanceError) {
+                              console.warn('[SYNC] Response enhancement failed:', enhanceError);
+                    }
+            }
+        
 
         // Generate proactive insights
         const ctx: ActionContext = { supabase, companyId, userId };
