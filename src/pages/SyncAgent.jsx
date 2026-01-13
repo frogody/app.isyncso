@@ -1320,12 +1320,15 @@ function AgentAvatar({ size = 360, agentName = 'SYNC', mood = 'listening', level
         >
           <span className="inline-flex items-center gap-2">
             <span
-              className="inline-block h-2 w-2 rounded-full"
+              className="inline-block h-2 w-2 rounded-full animate-pulse"
               style={{
-                backgroundColor: activeAgentInfo?.color || (mood === 'speaking' ? '#a855f7' : mood === 'thinking' ? '#f59e0b' : '#22c55e'),
-                boxShadow: `0 0 10px ${activeAgentInfo?.color || 'rgba(168,85,247,0.6)'}`,
+                backgroundColor: actionEffect?.color || activeAgentInfo?.color || (mood === 'speaking' ? '#a855f7' : mood === 'thinking' ? '#f59e0b' : '#22c55e'),
+                boxShadow: `0 0 10px ${actionEffect?.color || activeAgentInfo?.color || 'rgba(168,85,247,0.6)'}`,
               }}
             />
+            {actionEffect?.icon && (
+              <span className="text-sm">{actionEffect.icon}</span>
+            )}
             <span className="font-medium text-white">
               {activeAgentInfo ? `${agentName} → ${activeAgentInfo.name}` : agentName}
             </span>
