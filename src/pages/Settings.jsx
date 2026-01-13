@@ -559,6 +559,7 @@ export default function Settings() {
     { id: 'notifications', label: 'Notifications', icon: Bell, color: 'purple' },
     { id: 'appearance', label: 'Appearance', icon: Palette, color: 'pink' },
     { id: 'company', label: 'Company', icon: Building2, color: 'orange' },
+    { id: 'teams', label: 'Teams & Rights', icon: Shield, color: 'cyan', isLink: true, href: createPageUrl('TeamManagement') },
     { id: 'integrations', label: 'Integrations', icon: Plug, color: 'cyan', isLink: true, href: createPageUrl('MCPIntegrations') },
     { id: 'privacy', label: 'Privacy', icon: Lock, color: 'red' },
     ...(user?.role === 'admin' ? [{ id: 'admin', label: 'Admin', icon: Brain, color: 'purple' }] : [])
@@ -1280,22 +1281,6 @@ export default function Settings() {
                       </div>
                     </GlassCard>
                   </div>
-
-                  {/* Team & Rights Management Link */}
-                  <GlassCard className="p-6 bg-gradient-to-r from-cyan-900/20 to-purple-900/20 border-cyan-500/30">
-                    <a href={createPageUrl("TeamManagement")} className="flex items-center justify-between group">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
-                          <Shield className="w-6 h-6 text-cyan-400" />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-white">Teams & Rights Management</h3>
-                          <p className="text-sm text-zinc-400">Manage users, roles, and permissions</p>
-                        </div>
-                      </div>
-                      <ChevronRight className="w-6 h-6 text-cyan-400/60 group-hover:translate-x-1 transition-transform" />
-                    </a>
-                  </GlassCard>
 
                   {/* Team Members */}
                   <GlassCard className="p-6">
