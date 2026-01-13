@@ -73,6 +73,14 @@ import {
   formatEnrichmentForPrompt,
   ContextEnrichment,
 } from './tools/proactive.ts';
+// Import intelligence orchestration modules
+import {
+    orchestrateIntelligence,
+    enhanceResponse,
+    generateEnhancedSystemContext,
+    IntelligenceResult
+} from './tools/intelligence-orchestrator.ts';
+
 import {
   detectOrchestrationWorkflow,
   extractWorkflowContext,
