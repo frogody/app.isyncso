@@ -546,7 +546,7 @@ function PricingSection({ details, onDetailsUpdate, currency }) {
               <InlineEditNumber
                 value={displayCostPrice}
                 onSave={handleCostPriceChange}
-                label={taxIncluded ? "Cost Price (incl BTW)" : "Cost Price (ex BTW)"}
+                label="Cost Price (incl BTW)"
                 placeholder="0.00"
                 prefix={currency === 'EUR' ? '€' : '$'}
               />
