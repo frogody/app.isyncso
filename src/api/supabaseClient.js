@@ -704,7 +704,23 @@ export const functions = {
         body: params
       });
 
-      if (error) throw error;
+      if (error) {
+        // Try to extract the actual error message from the function response
+        let errorMessage = error.message;
+        if (error.context) {
+          try {
+            // The context may contain the response body with our custom error
+            const body = await error.context.json?.() || error.context.body;
+            if (body?.error) {
+              errorMessage = body.error;
+            }
+          } catch (e) {
+            // Ignore JSON parse errors
+          }
+        }
+        console.error(`[supabaseClient] functions.invoke(${functionName}) error:`, errorMessage);
+        return { data: null, error: { ...error, message: errorMessage } };
+      }
       return { data, error: null };
     } catch (error) {
       console.error(`[supabaseClient] functions.invoke(${functionName}) error:`, error);
