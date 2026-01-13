@@ -20,7 +20,10 @@ export function useAgentControl({ agentType, onActionComplete }) {
   const colorMap = {
     learn: "cyan",
     sentinel: "sage",
-    growth: "indigo"
+    growth: "indigo",
+    finance: "amber",
+    raise: "orange",
+    create: "rose"
   };
 
   const color = colorMap[agentType] || "cyan";

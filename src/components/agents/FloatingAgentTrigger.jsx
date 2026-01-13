@@ -70,6 +70,61 @@ const AGENT_CONFIGS = {
       { label: "Recommend a course", prompt: "What course should I take next based on my progress?", icon: BookOpen },
       { label: "Explain a concept", prompt: "Help me understand machine learning basics", icon: Target },
     ]
+  },
+  finance: {
+    name: "finance_assistant",
+    title: "Finance AI",
+    icon: FileText,
+    color: "amber",
+    colorClasses: {
+      bg: "bg-amber-500",
+      bgLight: "bg-amber-500/20",
+      border: "border-amber-500/30",
+      text: "text-amber-400",
+      glow: "shadow-[0_0_20px_rgba(245,158,11,0.4)]"
+    },
+    placeholder: "Ask about invoices, proposals, expenses, or financial reports...",
+    quickActions: [
+      { label: "Create invoice", prompt: "Help me create a new invoice", icon: FileText },
+      { label: "View financial summary", prompt: "Show me a summary of my finances", icon: TrendingUp },
+      { label: "Track expenses", prompt: "Help me track my business expenses", icon: AlertTriangle },
+    ]
+  },
+  raise: {
+    name: "raise_assistant",
+    title: "Raise AI",
+    icon: TrendingUp,
+    color: "orange",
+    colorClasses: {
+      bg: "bg-orange-500",
+      bgLight: "bg-orange-500/20",
+      border: "border-orange-500/30",
+      text: "text-orange-400",
+      glow: "shadow-[0_0_20px_rgba(249,115,22,0.4)]"
+    },
+    placeholder: "Ask about fundraising, investor relations, or pitch preparation...",
+    quickActions: [
+      { label: "Prepare pitch deck", prompt: "Help me prepare for an investor pitch", icon: Target },
+      { label: "Fundraising strategy", prompt: "What's the best fundraising strategy for my stage?", icon: TrendingUp },
+    ]
+  },
+  create: {
+    name: "create_assistant",
+    title: "Create AI",
+    icon: FileText,
+    color: "rose",
+    colorClasses: {
+      bg: "bg-rose-500",
+      bgLight: "bg-rose-500/20",
+      border: "border-rose-500/30",
+      text: "text-rose-400",
+      glow: "shadow-[0_0_20px_rgba(244,63,94,0.4)]"
+    },
+    placeholder: "Ask about content creation, branding, or creative assets...",
+    quickActions: [
+      { label: "Generate branding", prompt: "Help me create branding assets", icon: Target },
+      { label: "Content ideas", prompt: "Give me content ideas for my business", icon: FileText },
+    ]
   }
 };
 
