@@ -587,6 +587,8 @@ function OuterRing({ size = 360, mood = 'listening', level = 0.2, activeAgent = 
   const ringRef = useRef(null);
   const segmentsRef = useRef(null);
   const dotsRef = useRef(null);
+  const [hoveredAgent, setHoveredAgent] = useState(null);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
 
   const r = size / 2;
   const pad = 10;
@@ -751,18 +753,31 @@ function OuterRing({ size = 360, mood = 'listening', level = 0.2, activeAgent = 
 
         {/* Colored segments - each represents an agent */}
         <g ref={segmentsRef} filter="url(#softGlow)">
-          {AGENT_SEGMENTS.map((segment) => (
-            <path
-              key={segment.id}
-              data-agent={segment.id}
-              d={arcPath(r, r, ringR, segment.from, segment.to)}
-              fill="none"
-              stroke={segment.color}
-              strokeWidth={10}
-              strokeLinecap="round"
-              style={{ opacity: activeAgent === segment.id ? 1 : 0.75 + glow * 0.25 }}
-            />
-          ))}
+          {AGENT_SEGMENTS.filter(s => s.from !== s.to).map((segment) => {
+            const midAngle = (segment.from + segment.to) / 2;
+            const midPoint = polar(r, r, ringR, midAngle);
+            return (
+              <path
+                key={segment.id}
+                data-agent={segment.id}
+                d={arcPath(r, r, ringR, segment.from, segment.to)}
+                fill="none"
+                stroke={segment.color}
+                strokeWidth={hoveredAgent === segment.id ? 14 : 10}
+                strokeLinecap="round"
+                style={{ 
+                  opacity: activeAgent === segment.id ? 1 : hoveredAgent === segment.id ? 0.95 : 0.75 + glow * 0.25,
+                  cursor: 'pointer',
+                  transition: 'stroke-width 0.15s ease'
+                }}
+                onMouseEnter={(e) => {
+                  setHoveredAgent(segment.id);
+                  setTooltipPos({ x: midPoint.x, y: midPoint.y - 30 });
+                }}
+                onMouseLeave={() => setHoveredAgent(null)}
+              />
+            );
+          })}
         </g>
 
         {/* Subtle inner rim */}
@@ -828,6 +843,32 @@ function OuterRing({ size = 360, mood = 'listening', level = 0.2, activeAgent = 
           boxShadow: `0 0 ${24 + pulse * 18}px rgba(168,85,247,${0.10 + glow * 0.12}), 0 0 ${52 + pulse * 26}px rgba(139,92,246,${0.06 + glow * 0.08})`,
         }}
       />
+
+      {/* Tooltip for hovered agent */}
+      {hoveredAgent && (
+        <div
+          className="pointer-events-none absolute z-50 px-2.5 py-1.5 rounded-lg bg-black/90 border border-white/20 shadow-xl backdrop-blur-sm transition-all duration-150"
+          style={{
+            left: tooltipPos.x,
+            top: tooltipPos.y,
+            transform: 'translate(-50%, -100%)',
+          }}
+        >
+          {(() => {
+            const agent = AGENT_SEGMENTS.find(a => a.id === hoveredAgent);
+            return agent ? (
+              <div className="flex items-center gap-2">
+                <span className="text-base">{agent.icon}</span>
+                <span className="text-xs font-medium text-white">{agent.name}</span>
+                <span 
+                  className="w-2 h-2 rounded-full" 
+                  style={{ backgroundColor: agent.color }}
+                />
+              </div>
+            ) : null;
+          })()}
+        </div>
+      )}
     </div>
   );
 }
