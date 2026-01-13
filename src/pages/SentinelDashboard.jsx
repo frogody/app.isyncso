@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, lazy, Suspense } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { db } from "@/api/supabaseClient";
 import { Link } from "react-router-dom";
@@ -16,13 +16,10 @@ import { ComplianceGauge } from "@/components/ui/ComplianceGauge";
 import WorkflowStepper from "@/components/sentinel/WorkflowStepper";
 import QuickActions from "@/components/sentinel/QuickActions";
 
-const WelcomeModal = lazy(() => import("@/components/shared/WelcomeModal"));
-
 export default function SentinelDashboard() {
   const [user, setUser] = useState(null);
   const [aiSystems, setAISystems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showWelcome, setShowWelcome] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -32,12 +29,6 @@ export default function SentinelDashboard() {
         const userData = await db.auth.me();
         if (!isMounted) return;
         setUser(userData);
-
-        const hasVisited = localStorage.getItem('sentinel_visited');
-        if (!hasVisited) {
-          setShowWelcome(true);
-          localStorage.setItem('sentinel_visited', 'true');
-        }
 
         // RLS handles data access - just list all systems
         const systems = await db.entities.AISystem.list({ limit: 100 }).catch(() => []);
@@ -99,19 +90,7 @@ export default function SentinelDashboard() {
   }
 
   return (
-    <>
-      {showWelcome && (
-        <Suspense fallback={null}>
-          <WelcomeModal
-            feature="sentinel"
-            isOpen={showWelcome}
-            onClose={() => setShowWelcome(false)}
-            onGetStarted={() => window.location.href = createPageUrl("AISystemInventory")}
-          />
-        </Suspense>
-      )}
-
-      <div className="min-h-screen bg-black relative">
+    <div className="min-h-screen bg-black relative">
         {/* Animated Background */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div className="absolute top-20 right-1/4 w-96 h-96 bg-[#86EFAC]/5 rounded-full blur-3xl animate-pulse" />
@@ -266,6 +245,5 @@ export default function SentinelDashboard() {
           )}
         </div>
       </div>
-    </>
   );
 }
