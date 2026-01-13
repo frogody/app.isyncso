@@ -370,20 +370,21 @@ function DocumentCard({ url, title }) {
 
 // Agent segments configuration - each segment represents an agent SYNC can delegate to
 // Matches the agents in the SYNC edge function + orchestrator
+// Segments now fill the entire ring with no gaps (10 visible segments)
 const AGENT_SEGMENTS = [
   { id: 'orchestrator', name: 'Orchestrator', color: '#ec4899', from: 0.00, to: 0.10, icon: '🎯' },  // pink - multi-agent workflows
-  { id: 'learn', name: 'Learn', color: '#06b6d4', from: 0.12, to: 0.22, icon: '📚' },       // cyan
-  { id: 'growth', name: 'Growth', color: '#6366f1', from: 0.24, to: 0.34, icon: '📈' },     // indigo
-  { id: 'products', name: 'Products', color: '#10b981', from: 0.36, to: 0.46, icon: '📦' }, // emerald
-  { id: 'sentinel', name: 'Sentinel', color: '#86EFAC', from: 0.48, to: 0.58, icon: '🛡️' }, // sage
-  { id: 'finance', name: 'Finance', color: '#f59e0b', from: 0.60, to: 0.70, icon: '💰' },   // amber
-  { id: 'create', name: 'Create', color: '#f43f5e', from: 0.72, to: 0.82, icon: '🎨' },     // rose
-  { id: 'tasks', name: 'Tasks', color: '#f97316', from: 0.84, to: 0.94, icon: '✅' },       // orange
-  { id: 'sync', name: 'SYNC', color: '#a855f7', from: 0, to: 0, icon: '🧠' },               // purple - main orchestrator
-  { id: 'research', name: 'Research', color: '#3b82f6', from: 0, to: 0, icon: '🔍' },       // blue
-  { id: 'inbox', name: 'Inbox', color: '#14b8a6', from: 0, to: 0, icon: '📬' },             // teal
-  { id: 'team', name: 'Team', color: '#8b5cf6', from: 0, to: 0, icon: '👥' },               // violet
-  { id: 'composio', name: 'Integrations', color: '#22c55e', from: 0, to: 0, icon: '🔗' },   // green
+  { id: 'learn', name: 'Learn', color: '#06b6d4', from: 0.10, to: 0.20, icon: '📚' },       // cyan
+  { id: 'growth', name: 'Growth', color: '#6366f1', from: 0.20, to: 0.30, icon: '📈' },     // indigo
+  { id: 'products', name: 'Products', color: '#10b981', from: 0.30, to: 0.40, icon: '📦' }, // emerald
+  { id: 'sentinel', name: 'Sentinel', color: '#86EFAC', from: 0.40, to: 0.50, icon: '🛡️' }, // sage
+  { id: 'finance', name: 'Finance', color: '#f59e0b', from: 0.50, to: 0.60, icon: '💰' },   // amber
+  { id: 'create', name: 'Create', color: '#f43f5e', from: 0.60, to: 0.70, icon: '🎨' },     // rose
+  { id: 'tasks', name: 'Tasks', color: '#f97316', from: 0.70, to: 0.80, icon: '✅' },       // orange
+  { id: 'research', name: 'Research', color: '#3b82f6', from: 0.80, to: 0.90, icon: '🔍' }, // blue
+  { id: 'inbox', name: 'Inbox', color: '#14b8a6', from: 0.90, to: 1.00, icon: '📬' },       // teal - completes the ring
+  { id: 'sync', name: 'SYNC', color: '#a855f7', from: 0, to: 0, icon: '🧠' },               // purple - main orchestrator (no segment)
+  { id: 'team', name: 'Team', color: '#8b5cf6', from: 0, to: 0, icon: '👥' },               // violet (no segment)
+  { id: 'composio', name: 'Integrations', color: '#22c55e', from: 0, to: 0, icon: '🔗' },   // green (no segment)
 ];
 
 // ============================================================================
@@ -583,47 +584,55 @@ function AgentChannel({ messages, isActive }) {
   );
 }
 
-function OuterRing({ size = 360, mood = 'listening', level = 0.2, activeAgent = null }) {
+function OuterRing({ size = 360, mood = 'listening', level = 0.2, activeAgent = null, activeAgentAngle = null }) {
   const ringRef = useRef(null);
   const segmentsRef = useRef(null);
   const dotsRef = useRef(null);
   const svgRef = useRef(null);
+  const bezelRef = useRef(null);
   const [hoveredAgent, setHoveredAgent] = useState(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const [currentBezelAngle, setCurrentBezelAngle] = useState(0);
 
   const r = size / 2;
   const pad = 10;
   const ringR = r - pad;
+  const bezelR = ringR - 28; // Inner bezel radius
 
   const glow = mood === 'speaking' ? 1.0 : mood === 'thinking' ? 0.7 : 0.45;
   const pulse = clamp(0.35 + level * 0.9, 0.35, 1.2);
 
-  // Subtle rotation when agent is active
+  // Smooth bezel rotation towards active agent
   useEffect(() => {
-    if (prefersReducedMotion() || !svgRef.current) return;
-
-    if (activeAgent) {
-      anime({
-        targets: svgRef.current,
-        rotate: [0, 360],
-        duration: 20000,
-        loop: true,
-        easing: 'linear',
-      });
+    if (activeAgentAngle !== null) {
+      // Convert 0-1 position to degrees (0 = top)
+      const targetDegrees = activeAgentAngle * 360 - 90;
+      
+      // Animate the bezel rotation
+      if (!prefersReducedMotion() && bezelRef.current) {
+        anime.remove(bezelRef.current);
+        anime({
+          targets: bezelRef.current,
+          rotate: targetDegrees,
+          duration: 800,
+          easing: 'easeOutQuad',
+        });
+      }
+      setCurrentBezelAngle(targetDegrees);
     } else {
-      anime.remove(svgRef.current);
-      anime({
-        targets: svgRef.current,
-        rotate: 0,
-        duration: 500,
-        easing: 'easeOutQuad',
-      });
+      // Return to neutral position (top)
+      if (!prefersReducedMotion() && bezelRef.current) {
+        anime.remove(bezelRef.current);
+        anime({
+          targets: bezelRef.current,
+          rotate: 0,
+          duration: 600,
+          easing: 'easeOutQuad',
+        });
+      }
+      setCurrentBezelAngle(0);
     }
-
-    return () => {
-      if (svgRef.current) anime.remove(svgRef.current);
-    };
-  }, [activeAgent]);
+  }, [activeAgentAngle]);
 
   // Animate segments based on mood and activeAgent
   useEffect(() => {
@@ -808,59 +817,81 @@ function OuterRing({ size = 360, mood = 'listening', level = 0.2, activeAgent = 
           })}
         </g>
 
+        {/* Inner bezel track (static gray ring) */}
+        <circle
+          cx={r}
+          cy={r}
+          r={bezelR}
+          fill="none"
+          stroke="rgba(255,255,255,0.08)"
+          strokeWidth={12}
+        />
+
+        {/* Rotating inner bezel indicator */}
+        <g 
+          ref={bezelRef} 
+          style={{ transformOrigin: `${r}px ${r}px` }}
+        >
+          {/* Main indicator segment - points towards active agent */}
+          <path
+            d={arcPath(r, r, bezelR, -0.08, 0.08)}
+            fill="none"
+            stroke={activeAgent ? (AGENT_SEGMENTS.find(a => a.id === activeAgent)?.color || '#a855f7') : 'rgba(255,255,255,0.25)'}
+            strokeWidth={activeAgent ? 14 : 10}
+            strokeLinecap="round"
+            style={{
+              filter: activeAgent ? 'url(#softGlow)' : 'none',
+              transition: 'stroke 0.3s ease, stroke-width 0.3s ease',
+            }}
+          />
+          {/* Arrow tip indicator */}
+          {activeAgent && (
+            <>
+              <circle
+                cx={r}
+                cy={r - bezelR}
+                r={6}
+                fill={AGENT_SEGMENTS.find(a => a.id === activeAgent)?.color || '#a855f7'}
+                style={{ filter: 'url(#softGlow)' }}
+              />
+              {/* Direction line from center towards target */}
+              <line
+                x1={r}
+                y1={r}
+                x2={r}
+                y2={r - bezelR + 20}
+                stroke={AGENT_SEGMENTS.find(a => a.id === activeAgent)?.color || '#a855f7'}
+                strokeWidth={2}
+                opacity={0.5}
+              />
+            </>
+          )}
+        </g>
+
         {/* Subtle inner rim */}
         <circle
           cx={r}
           cy={r}
-          r={ringR - 26}
+          r={ringR - 42}
           fill="none"
-          stroke="rgba(255,255,255,0.06)"
-          strokeWidth={2}
+          stroke="rgba(255,255,255,0.04)"
+          strokeWidth={1}
         />
-
-        {/* Highlight glass sweep */}
-        <path
-          d={arcPath(r, r, ringR - 36, 0.02, 0.18)}
-          fill="none"
-          stroke="rgba(255,255,255,0.14)"
-          strokeWidth={20}
-          strokeLinecap="round"
-          opacity={0.7}
-        />
-
-        {/* Mood dot trail */}
-        <g ref={dotsRef} filter="url(#tinyGlow)">
-          {Array.from({ length: 18 }).map((_, i) => {
-            const t = i / 18;
-            const a = 0.62 + t * 0.16;
-            const p = polar(r, r, ringR - 54, a);
-            const op = 0.15 + t * 0.75;
-            return (
-              <circle
-                key={i}
-                cx={p.x}
-                cy={p.y}
-                r={2.6 + t * 2.4}
-                fill={mood === 'speaking' ? '#c084fc' : '#a855f7'}
-                opacity={op}
-              />
-            );
-          })}
-        </g>
 
         {/* Center lens */}
-        <circle cx={r} cy={r} r={ringR - 46} fill="rgba(0,0,0,0.35)" />
+        <circle cx={r} cy={r} r={ringR - 46} fill="rgba(0,0,0,0.4)" />
         <circle cx={r} cy={r} r={ringR - 46} fill="url(#glass)" opacity={0.9} />
 
-        {/* Accent ring inside */}
+        {/* Inner accent ring */}
         <circle
           cx={r}
           cy={r}
           r={ringR - 58}
           fill="none"
-          stroke="#a855f7"
+          stroke={activeAgent ? (AGENT_SEGMENTS.find(a => a.id === activeAgent)?.color || '#a855f7') : '#a855f7'}
           strokeWidth={2}
           opacity={0.25 + pulse * 0.15}
+          style={{ transition: 'stroke 0.5s ease' }}
         />
       </svg>
 
@@ -1432,81 +1463,24 @@ function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 1, acti
       }
       // ========== END COLOR TRANSITION ==========
 
-      // ========== TURNING/FACING INDICATOR (SYNC turns towards active agent) ==========
-      // Smoothly interpolate current facing angle towards target
-      const angleDiff = st.targetFacingAngle - st.currentFacingAngle;
-      // Handle wrapping around PI
-      let shortestAngle = ((angleDiff + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
-      st.currentFacingAngle += shortestAngle * 0.08; // Smooth easing
-      
-      // Only show facing indicator when there's an active agent
+      // Central "eye" glow when agent is active
       if (st.activeAgentColor) {
         ctx.globalCompositeOperation = 'lighter';
-        
-        const facingAngle = st.currentFacingAngle;
-        const beamLength = w * 0.28;
-        const beamWidth = w * 0.12;
-        
-        // Draw a directional beam/wedge pointing towards the active agent
-        ctx.save();
-        ctx.translate(cx, cy);
-        ctx.rotate(facingAngle);
-        
-        // Main beam gradient
-        const beamGrad = ctx.createLinearGradient(0, 0, beamLength, 0);
-        const agentRgb = st.activeAgentColor;
         const hexToRgb = (hex) => {
           const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
           return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : { r: 168, g: 85, b: 247 };
         };
-        const rgb = hexToRgb(agentRgb);
-        
-        beamGrad.addColorStop(0, `rgba(${rgb.r},${rgb.g},${rgb.b},0.35)`);
-        beamGrad.addColorStop(0.5, `rgba(${rgb.r},${rgb.g},${rgb.b},0.2)`);
-        beamGrad.addColorStop(1, `rgba(${rgb.r},${rgb.g},${rgb.b},0)`);
-        
-        // Draw wedge shape
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(beamLength, -beamWidth / 2);
-        ctx.lineTo(beamLength, beamWidth / 2);
-        ctx.closePath();
-        ctx.fillStyle = beamGrad;
-        ctx.fill();
-        
-        // Pulsing core line
-        const pulseIntensity = 0.4 + Math.sin(time * 4) * 0.2;
-        ctx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},${pulseIntensity})`;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(w * 0.05, 0);
-        ctx.lineTo(beamLength * 0.9, 0);
-        ctx.stroke();
-        
-        // Arrow tip
-        const arrowSize = 8;
-        ctx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},${pulseIntensity})`;
-        ctx.beginPath();
-        ctx.moveTo(beamLength * 0.85, 0);
-        ctx.lineTo(beamLength * 0.85 - arrowSize, -arrowSize / 2);
-        ctx.lineTo(beamLength * 0.85 - arrowSize, arrowSize / 2);
-        ctx.closePath();
-        ctx.fill();
-        
-        ctx.restore();
-        
-        // Small glowing dot at center (SYNC's "eye")
-        const eyePulse = 0.6 + Math.sin(time * 3) * 0.2;
-        const eyeGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, w * 0.04);
+        const rgb = hexToRgb(st.activeAgentColor);
+        const eyePulse = 0.5 + Math.sin(time * 3) * 0.2;
+        const eyeGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, w * 0.06);
         eyeGrad.addColorStop(0, `rgba(255,255,255,${eyePulse})`);
-        eyeGrad.addColorStop(0.5, `rgba(${rgb.r},${rgb.g},${rgb.b},${eyePulse * 0.6})`);
+        eyeGrad.addColorStop(0.4, `rgba(${rgb.r},${rgb.g},${rgb.b},${eyePulse * 0.5})`);
         eyeGrad.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = eyeGrad;
         ctx.beginPath();
-        ctx.arc(cx, cy, w * 0.04, 0, Math.PI * 2);
+        ctx.arc(cx, cy, w * 0.06, 0, Math.PI * 2);
         ctx.fill();
       }
-      // ========== END TURNING/FACING INDICATOR ==========
 
       ctx.restore();
 
@@ -1618,7 +1592,7 @@ function AgentAvatar({ size = 360, agentName = 'SYNC', mood = 'listening', level
 
   return (
     <div ref={containerRef} className="relative" style={{ width: size, height: size }}>
-      <OuterRing size={size} mood={mood} level={level} activeAgent={activeAgent} />
+      <OuterRing size={size} mood={mood} level={level} activeAgent={activeAgent} activeAgentAngle={activeAgentAngle} />
       <InnerViz size={size} mood={mood} level={level} seed={seed} actionEffect={actionEffect} activeAgentColor={activeAgentColor} showSuccess={showSuccess} activeAgentAngle={activeAgentAngle} />
 
       {/* Label */}
