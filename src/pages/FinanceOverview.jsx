@@ -2,10 +2,11 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { db } from '@/api/supabaseClient';
 import { motion } from 'framer-motion';
-import anime from '@/lib/anime-wrapper';
-const animate = anime;
-const stagger = anime.stagger;
-import { prefersReducedMotion } from '@/lib/animations';
+// TEMPORARILY DISABLED for debugging
+// import anime from '@/lib/anime-wrapper';
+// const animate = anime;
+// const stagger = anime.stagger;
+// import { prefersReducedMotion } from '@/lib/animations';
 import {
   DollarSign, TrendingUp, TrendingDown, CreditCard, Receipt,
   PieChart, BarChart3, ArrowUpRight, ArrowDownRight, Plus,
@@ -16,7 +17,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { usePermissions } from '@/components/context/PermissionContext';
+// TEMPORARILY use a simple permission check to isolate the bug
+// import { usePermissions } from '@/components/context/PermissionContext';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { createPageUrl } from '@/utils';
 
@@ -26,7 +28,10 @@ export default function FinanceOverview() {
   const [invoices, setInvoices] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
 
-  const { hasPermission, isLoading: permLoading } = usePermissions();
+  // TEMPORARILY DISABLED usePermissions to isolate the bug
+  // const { hasPermission, isLoading: permLoading } = usePermissions();
+  const permLoading = false;
+  const hasPermission = () => true;
 
   // Refs for anime.js animations
   const statsGridRef = useRef(null);
