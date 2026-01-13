@@ -404,7 +404,14 @@ export default function Agents() {
   const activeCount = agents.filter(a => a.status === 'active').length;
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-black relative">
+      {/* Animated Background */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-20 left-1/4 w-96 h-96 bg-cyan-900/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-indigo-900/10 rounded-full blur-3xl" />
+      </div>
+
+      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
       <PageHeader
         title="Specialized Agents"
         subtitle="Browse and manage AI agents that power your workspace"
@@ -556,6 +563,7 @@ export default function Agents() {
           <h4 className="font-medium text-white mb-1">Always Learning</h4>
           <p className="text-sm text-zinc-400">Agents improve over time based on your usage patterns</p>
         </motion.div>
+      </div>
       </div>
     </div>
   );
