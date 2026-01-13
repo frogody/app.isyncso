@@ -387,6 +387,39 @@ const AGENT_SEGMENTS = [
 ];
 
 // ============================================================================
+// ACTION EFFECTS CONFIGURATION - Enhanced visual feedback for different actions
+// ============================================================================
+
+const ACTION_EFFECTS = {
+  // Database/Query actions - Cool blue pulse
+  list_invoices: { color: '#3b82f6', intensity: 0.7, pattern: 'scan', icon: '📋' },
+  list_tasks: { color: '#3b82f6', intensity: 0.7, pattern: 'scan', icon: '📋' },
+  list_prospects: { color: '#3b82f6', intensity: 0.7, pattern: 'scan', icon: '📋' },
+  search_products: { color: '#06b6d4', intensity: 0.8, pattern: 'scan', icon: '🔍' },
+  search_prospects: { color: '#06b6d4', intensity: 0.8, pattern: 'scan', icon: '🔍' },
+  get_financial_summary: { color: '#f59e0b', intensity: 0.85, pattern: 'pulse', icon: '📊' },
+  get_pipeline_stats: { color: '#6366f1', intensity: 0.85, pattern: 'pulse', icon: '📈' },
+  
+  // Creation actions - Energetic burst
+  create_invoice: { color: '#10b981', intensity: 0.9, pattern: 'burst', icon: '✨' },
+  create_task: { color: '#10b981', intensity: 0.9, pattern: 'burst', icon: '✨' },
+  create_prospect: { color: '#10b981', intensity: 0.9, pattern: 'burst', icon: '✨' },
+  create_expense: { color: '#f59e0b', intensity: 0.85, pattern: 'burst', icon: '💸' },
+  
+  // AI/Generation actions - Creative spiral
+  generate_image: { color: '#ec4899', intensity: 1.0, pattern: 'spiral', icon: '🎨' },
+  web_search: { color: '#8b5cf6', intensity: 0.85, pattern: 'wave', icon: '🌐' },
+  
+  // Default fallback
+  default: { color: '#a855f7', intensity: 0.6, pattern: 'pulse', icon: '⚡' },
+};
+
+// Get effect for an action type
+function getActionEffect(actionType) {
+  return ACTION_EFFECTS[actionType] || ACTION_EFFECTS.default;
+}
+
+// ============================================================================
 // AGENT CHANNEL MESSAGE COMPONENT
 // ============================================================================
 
@@ -803,7 +836,7 @@ function OuterRing({ size = 360, mood = 'listening', level = 0.2, activeAgent = 
 // INNER VISUALIZATION COMPONENT (Canvas-based particles + waves)
 // ============================================================================
 
-function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 1 }) {
+function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 1, actionEffect = null }) {
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
   const stateRef = useRef({
@@ -813,7 +846,33 @@ function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 1 }) {
     seed,
     pointer: { x: size / 2, y: size / 2, down: false },
     time: 0,
+    actionEffect: null,
+    burstParticles: [],
+    spiralAngle: 0,
   });
+  
+  // Update action effect in state
+  useEffect(() => {
+    stateRef.current.actionEffect = actionEffect;
+    
+    // Trigger burst particles when action starts
+    if (actionEffect && actionEffect.pattern === 'burst') {
+      const st = stateRef.current;
+      const cx = size / 2;
+      const cy = size / 2;
+      st.burstParticles = Array.from({ length: 24 }).map((_, i) => {
+        const angle = (i / 24) * Math.PI * 2;
+        return {
+          x: cx,
+          y: cy,
+          vx: Math.cos(angle) * (3 + Math.random() * 2),
+          vy: Math.sin(angle) * (3 + Math.random() * 2),
+          life: 1.0,
+          size: 2 + Math.random() * 3,
+        };
+      });
+    }
+  }, [actionEffect, size]);
 
   // Initialize particles
   useEffect(() => {
@@ -996,6 +1055,163 @@ function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 1 }) {
       ctx.fillStyle = mood === 'speaking' ? 'rgba(192,132,252,0.18)' : 'rgba(255,255,255,0.08)';
       ctx.fillRect(0, scanY - 2, w, 4);
 
+      // ========== ACTION-SPECIFIC VISUAL EFFECTS ==========
+      const effect = st.actionEffect;
+      if (effect) {
+        ctx.globalCompositeOperation = 'lighter';
+        
+        // Parse the effect color to RGB
+        const hexToRgb = (hex) => {
+          const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+          return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+          } : { r: 168, g: 85, b: 247 };
+        };
+        const rgb = hexToRgb(effect.color);
+        const intensity = effect.intensity || 0.6;
+        
+        if (effect.pattern === 'scan') {
+          // Scanning pattern - horizontal lines moving down
+          const scanCount = 5;
+          for (let i = 0; i < scanCount; i++) {
+            const scanOffset = ((time * 1.5 + i * 0.2) % 1) * h;
+            const scanOpacity = 0.15 * intensity * Math.sin((scanOffset / h) * Math.PI);
+            ctx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},${scanOpacity})`;
+            ctx.fillRect(cx - w * 0.3, scanOffset - 1, w * 0.6, 3);
+          }
+          
+          // Corner brackets for "scanning" feel
+          const bracketSize = 20;
+          const bracketPulse = 0.5 + Math.sin(time * 4) * 0.3;
+          ctx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},${0.4 * intensity * bracketPulse})`;
+          ctx.lineWidth = 2;
+          // Top-left
+          ctx.beginPath();
+          ctx.moveTo(cx - w * 0.25, cy - h * 0.2 + bracketSize);
+          ctx.lineTo(cx - w * 0.25, cy - h * 0.2);
+          ctx.lineTo(cx - w * 0.25 + bracketSize, cy - h * 0.2);
+          ctx.stroke();
+          // Top-right
+          ctx.beginPath();
+          ctx.moveTo(cx + w * 0.25, cy - h * 0.2 + bracketSize);
+          ctx.lineTo(cx + w * 0.25, cy - h * 0.2);
+          ctx.lineTo(cx + w * 0.25 - bracketSize, cy - h * 0.2);
+          ctx.stroke();
+          // Bottom-left
+          ctx.beginPath();
+          ctx.moveTo(cx - w * 0.25, cy + h * 0.2 - bracketSize);
+          ctx.lineTo(cx - w * 0.25, cy + h * 0.2);
+          ctx.lineTo(cx - w * 0.25 + bracketSize, cy + h * 0.2);
+          ctx.stroke();
+          // Bottom-right
+          ctx.beginPath();
+          ctx.moveTo(cx + w * 0.25, cy + h * 0.2 - bracketSize);
+          ctx.lineTo(cx + w * 0.25, cy + h * 0.2);
+          ctx.lineTo(cx + w * 0.25 - bracketSize, cy + h * 0.2);
+          ctx.stroke();
+        }
+        
+        if (effect.pattern === 'pulse') {
+          // Pulsing rings expanding outward
+          const ringCount = 3;
+          for (let i = 0; i < ringCount; i++) {
+            const ringPhase = ((time * 0.8 + i * 0.33) % 1);
+            const ringRadius = w * 0.1 + ringPhase * w * 0.25;
+            const ringOpacity = (1 - ringPhase) * 0.25 * intensity;
+            ctx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},${ringOpacity})`;
+            ctx.lineWidth = 2 - ringPhase;
+            ctx.beginPath();
+            ctx.arc(cx, cy, ringRadius, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+        }
+        
+        if (effect.pattern === 'burst') {
+          // Burst particles flying outward
+          for (let i = st.burstParticles.length - 1; i >= 0; i--) {
+            const bp = st.burstParticles[i];
+            bp.x += bp.vx;
+            bp.y += bp.vy;
+            bp.vx *= 0.96;
+            bp.vy *= 0.96;
+            bp.life -= 0.02;
+            
+            if (bp.life <= 0) {
+              st.burstParticles.splice(i, 1);
+            } else {
+              ctx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},${bp.life * 0.8 * intensity})`;
+              ctx.beginPath();
+              ctx.arc(bp.x, bp.y, bp.size * bp.life, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+          
+          // Central glow during burst
+          if (st.burstParticles.length > 0) {
+            const glowGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, w * 0.2);
+            glowGrad.addColorStop(0, `rgba(${rgb.r},${rgb.g},${rgb.b},${0.4 * intensity})`);
+            glowGrad.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = glowGrad;
+            ctx.beginPath();
+            ctx.arc(cx, cy, w * 0.2, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+        
+        if (effect.pattern === 'spiral') {
+          // Creative spiral for image generation
+          st.spiralAngle = (st.spiralAngle || 0) + 0.08;
+          const spiralArms = 4;
+          const spiralTurns = 2;
+          
+          for (let arm = 0; arm < spiralArms; arm++) {
+            const armOffset = (arm / spiralArms) * Math.PI * 2;
+            ctx.beginPath();
+            for (let t = 0; t < 1; t += 0.02) {
+              const angle = st.spiralAngle + armOffset + t * Math.PI * 2 * spiralTurns;
+              const radius = t * w * 0.28;
+              const x = cx + Math.cos(angle) * radius;
+              const y = cy + Math.sin(angle) * radius;
+              if (t === 0) ctx.moveTo(x, y);
+              else ctx.lineTo(x, y);
+            }
+            const spiralOpacity = 0.25 * intensity * (0.5 + Math.sin(time * 3) * 0.3);
+            ctx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},${spiralOpacity})`;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+          }
+          
+          // Center sparkle
+          const sparkleSize = 4 + Math.sin(time * 8) * 2;
+          ctx.fillStyle = `rgba(255,255,255,${0.6 * intensity})`;
+          ctx.beginPath();
+          ctx.arc(cx, cy, sparkleSize, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        
+        if (effect.pattern === 'wave') {
+          // Web search wave pattern
+          const waveCount = 4;
+          for (let i = 0; i < waveCount; i++) {
+            const wavePhase = time * 2 + i * 0.5;
+            ctx.beginPath();
+            for (let x = cx - w * 0.3; x <= cx + w * 0.3; x += 4) {
+              const dx = (x - cx) / (w * 0.3);
+              const waveY = cy + Math.sin(dx * Math.PI * 2 + wavePhase) * 15 * (1 - Math.abs(dx));
+              if (x === cx - w * 0.3) ctx.moveTo(x, waveY);
+              else ctx.lineTo(x, waveY);
+            }
+            const waveOpacity = 0.2 * intensity * (1 - i * 0.2);
+            ctx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},${waveOpacity})`;
+            ctx.lineWidth = 2 - i * 0.3;
+            ctx.stroke();
+          }
+        }
+      }
+      // ========== END ACTION EFFECTS ==========
+
       ctx.restore();
 
       // Lens vignette
@@ -1019,7 +1235,7 @@ function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 1 }) {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [mood, level]);
+  }, [mood, level, actionEffect]);
 
   return (
     <div className="absolute inset-0 grid place-items-center">
@@ -1058,8 +1274,9 @@ function InnerViz({ size = 360, mood = 'listening', level = 0.25, seed = 1 }) {
 // AGENT AVATAR COMPONENT (Combines ring + inner viz)
 // ============================================================================
 
-function AgentAvatar({ size = 360, agentName = 'SYNC', mood = 'listening', level = 0.25, seed = 1, activeAgent = null }) {
+function AgentAvatar({ size = 360, agentName = 'SYNC', mood = 'listening', level = 0.25, seed = 1, activeAgent = null, actionEffect = null }) {
   const labelRef = useRef(null);
+  const containerRef = useRef(null);
 
   // Get active agent name for display
   const activeAgentInfo = activeAgent ? AGENT_SEGMENTS.find(a => a.id === activeAgent) : null;
@@ -1077,10 +1294,23 @@ function AgentAvatar({ size = 360, agentName = 'SYNC', mood = 'listening', level
     });
   }, [mood, activeAgent]);
 
+  // Enhanced container animation when action starts
+  useEffect(() => {
+    if (prefersReducedMotion() || !containerRef.current || !actionEffect) return;
+
+    // Quick scale pulse when action starts
+    anime({
+      targets: containerRef.current,
+      scale: [1, 1.02, 1],
+      duration: 300,
+      easing: 'easeOutQuad',
+    });
+  }, [actionEffect]);
+
   return (
-    <div className="relative" style={{ width: size, height: size }}>
+    <div ref={containerRef} className="relative" style={{ width: size, height: size }}>
       <OuterRing size={size} mood={mood} level={level} activeAgent={activeAgent} />
-      <InnerViz size={size} mood={mood} level={level} seed={seed} />
+      <InnerViz size={size} mood={mood} level={level} seed={seed} actionEffect={actionEffect} />
 
       {/* Label */}
       <div className="absolute inset-x-0 bottom-[-10px] flex justify-center">
@@ -1194,6 +1424,7 @@ export default function SyncAgent() {
   const [level, setLevel] = useState(0.18);
   const [seed, setSeed] = useState(4);
   const [activeAgent, setActiveAgent] = useState(null);
+  const [currentActionEffect, setCurrentActionEffect] = useState(null);
 
   // Agent channel messages (inter-agent communication feed)
   const [agentMessages, setAgentMessages] = useState([]);
@@ -1372,6 +1603,10 @@ export default function SyncAgent() {
 
         // If an action was executed, show the work being done
         if (data.actionExecuted?.type) {
+          // Trigger action-specific visual effect on avatar
+          const effect = getActionEffect(data.actionExecuted.type);
+          setCurrentActionEffect(effect);
+          
           // Show what action is being performed
           const actionMessages = {
             list_invoices: 'Querying invoice database...',
@@ -1414,7 +1649,10 @@ export default function SyncAgent() {
         // SYNC acknowledges
         addAgentMessage('sync', `Thanks ${agentName}! Formatting the response now...`);
       } else if (data.actionExecuted?.type) {
-        // Direct action without delegation
+        // Direct action without delegation - also trigger visual effect
+        const effect = getActionEffect(data.actionExecuted.type);
+        setCurrentActionEffect(effect);
+        
         const actionReadable = data.actionExecuted.type.replace(/_/g, ' ');
         addAgentMessage('sync', `I'll handle this myself. Running ${actionReadable}...`, 'thinking');
         await new Promise((r) => setTimeout(r, 400));
@@ -1455,12 +1693,14 @@ export default function SyncAgent() {
       // Back to listening and clear active agent after a delay
       await new Promise((r) => setTimeout(r, 1500));
       setActiveAgent(null);
+      setCurrentActionEffect(null); // Clear action visual effect
       setMood('listening');
     } catch (err) {
       console.error('SYNC error:', err);
       addAgentMessage('sync', `Error: ${err.message || 'Something went wrong'}`);
       setError(err.message || 'Failed to send message');
       setActiveAgent(null);
+      setCurrentActionEffect(null); // Clear on error too
       setMood('listening');
     } finally {
       setIsSending(false);
@@ -1555,7 +1795,7 @@ export default function SyncAgent() {
           </div>
 
           <div className="shrink-0 mt-2 grid place-items-center">
-            <AgentAvatar size={320} agentName="SYNC" mood={mood} level={level} seed={seed} activeAgent={activeAgent} />
+            <AgentAvatar size={320} agentName="SYNC" mood={mood} level={level} seed={seed} activeAgent={activeAgent} actionEffect={currentActionEffect} />
           </div>
 
           {/* Agent Channel - Live communication feed */}
