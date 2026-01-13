@@ -39,6 +39,9 @@ export default function FinanceOverview() {
     const cards = statsGridRef.current.querySelectorAll('.stat-card');
     if (cards.length === 0) return;
 
+    // Store animation instances for cleanup
+    const animations = [];
+
     // Set initial state
     Array.from(cards).forEach(card => {
       card.style.opacity = '0';
@@ -46,7 +49,7 @@ export default function FinanceOverview() {
     });
 
     // Staggered entrance animation
-    animate({
+    const cardAnimation = animate({
       targets: cards,
       translateY: [20, 0],
       opacity: [0, 1],
@@ -54,6 +57,7 @@ export default function FinanceOverview() {
       duration: 500,
       easing: 'easeOutQuart',
     });
+    animations.push(cardAnimation);
 
     // Count up animation for stat values
     const statValues = statsGridRef.current.querySelectorAll('.stat-number');
@@ -63,7 +67,7 @@ export default function FinanceOverview() {
       const suffix = el.dataset.suffix || '';
 
       const obj = { value: 0 };
-      animate({
+      const countAnimation = animate({
         targets: obj,
         value: endValue,
         round: 1,
@@ -71,10 +75,22 @@ export default function FinanceOverview() {
         delay: 200,
         easing: 'easeOutExpo',
         update: () => {
-          el.textContent = prefix + obj.value.toLocaleString() + suffix;
+          if (el && el.isConnected) {
+            el.textContent = prefix + obj.value.toLocaleString() + suffix;
+          }
         },
       });
+      animations.push(countAnimation);
     });
+
+    // Cleanup: pause and remove all animations on unmount
+    return () => {
+      animations.forEach(anim => {
+        if (anim && anim.pause) {
+          anim.pause();
+        }
+      });
+    };
   }, [loading]);
 
   // Animate content cards
@@ -91,7 +107,7 @@ export default function FinanceOverview() {
     });
 
     // Staggered entrance animation
-    animate({
+    const contentAnimation = animate({
       targets: cards,
       translateY: [30, 0],
       scale: [0.97, 1],
@@ -100,6 +116,13 @@ export default function FinanceOverview() {
       duration: 600,
       easing: 'easeOutQuart',
     });
+
+    // Cleanup: pause animation on unmount
+    return () => {
+      if (contentAnimation && contentAnimation.pause) {
+        contentAnimation.pause();
+      }
+    };
   }, [loading]);
 
   useEffect(() => {
