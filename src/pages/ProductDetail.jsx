@@ -6,7 +6,7 @@ import { prefersReducedMotion } from '@/lib/animations';
 import { Link, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
-  ArrowLeft, ExternalLink, Play, FileText, DollarSign, Check, Star,
+  ArrowLeft, ExternalLink, Play, FileText, Euro, Check, Star,
   MessageCircle, Users, Zap, Download, Clock, Shield, Award, ChevronRight,
   Package, Truck, Building2, Barcode, Globe, Tag, CheckCircle, XCircle,
   AlertTriangle, Image as ImageIcon, Video, HelpCircle, Share2, Copy,
@@ -86,7 +86,7 @@ const STATUS_COLORS = {
 
 const NAV_ITEMS = [
   { id: 'overview', label: 'Overview', icon: LayoutGrid },
-  { id: 'pricing', label: 'Pricing', icon: DollarSign },
+  { id: 'pricing', label: 'Pricing', icon: Euro },
   { id: 'inventory', label: 'Inventory', icon: Package, physicalOnly: true },
   { id: 'specs', label: 'Specifications', icon: Settings, physicalOnly: true },
   { id: 'bundles', label: 'Bundles', icon: Layers, digitalOnly: true },
@@ -509,7 +509,7 @@ function PricingSection({ details, onDetailsUpdate, currency }) {
         {/* Pricing Details */}
         <GlassCard className="p-6">
           <div className="flex items-center gap-2 mb-6">
-            <DollarSign className="w-5 h-5 text-cyan-400" />
+            <Euro className="w-5 h-5 text-cyan-400" />
             <span className="font-medium text-white">Pricing Details</span>
           </div>
 
@@ -1327,7 +1327,7 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
             onClick={() => setShowAddPurchase(true)}
             className="border-green-500/30 text-green-400 hover:bg-green-500/10"
           >
-            <DollarSign className="w-4 h-4 mr-2" />
+            <Euro className="w-4 h-4 mr-2" />
             Add Purchase
           </Button>
         </div>
