@@ -368,32 +368,28 @@ const TalentDashboard = () => {
         ) : (
           <>
             <StatCard
-              title="Total Candidates"
+              label="Total Candidates"
               value={stats.totalCandidates}
-              icon={<Users className="w-6 h-6" />}
-              iconBgColor="bg-violet-500/10"
-              iconColor="text-violet-400"
+              icon={Users}
+              color="purple"
             />
             <StatCard
-              title="Active Campaigns"
+              label="Active Campaigns"
               value={stats.activeCampaigns}
-              icon={<Megaphone className="w-6 h-6" />}
-              iconBgColor="bg-violet-500/10"
-              iconColor="text-violet-400"
+              icon={Megaphone}
+              color="purple"
             />
             <StatCard
-              title="High Flight Risk"
+              label="High Flight Risk"
               value={stats.highFlightRisk}
-              icon={<AlertTriangle className="w-6 h-6" />}
-              iconBgColor="bg-red-500/10"
-              iconColor="text-red-400"
+              icon={AlertTriangle}
+              color="red"
             />
             <StatCard
-              title="Pending Outreach"
+              label="Pending Outreach"
               value={stats.pendingOutreach}
-              icon={<Clock className="w-6 h-6" />}
-              iconBgColor="bg-yellow-500/10"
-              iconColor="text-yellow-400"
+              icon={Clock}
+              color="yellow"
             />
           </>
         )}
