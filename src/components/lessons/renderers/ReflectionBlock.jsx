@@ -125,6 +125,8 @@ export default function ReflectionBlock({ content, lessonId }) {
       {/* Content */}
       <div className="p-4">
         <Textarea
+          id={`reflection-${lessonId || 'default'}`}
+          name="reflection-input"
           value={userInput}
           onChange={(e) => setUserInput(e.target.value)}
           placeholder="Take a moment to reflect... Type your thoughts here."

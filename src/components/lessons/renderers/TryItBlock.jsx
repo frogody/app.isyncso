@@ -230,6 +230,8 @@ Provide brief, encouraging feedback (2-3 sentences). Highlight what they did wel
         {!isCompleted ? (
           <>
             <Textarea
+              id={`tryit-${lessonId || 'default'}-${blockIndex || 0}`}
+              name="exercise-response"
               value={userResponse}
               onChange={(e) => setUserResponse(e.target.value)}
               placeholder="Write your code or response here..."
