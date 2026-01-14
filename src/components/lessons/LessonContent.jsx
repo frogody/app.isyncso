@@ -95,78 +95,214 @@ function KeyTakeaway({ children }) {
   );
 }
 
-export default function LessonContent({ lesson, onComplete }) {
-  const contentRef = useRef(null);
+// Progress bar as separate component to prevent re-renders of content
+function ProgressBar({ containerRef }) {
   const [progress, setProgress] = useState(0);
   const scrollRAF = useRef(null);
-
-  // Scroll tracking - debounced to prevent flashing
   const lastProgress = useRef(0);
-  const handleScroll = useCallback(() => {
-    if (scrollRAF.current) return;
 
-    scrollRAF.current = requestAnimationFrame(() => {
-      if (contentRef.current) {
-        const { scrollTop, scrollHeight, clientHeight } = contentRef.current;
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      if (scrollRAF.current) return;
+
+      scrollRAF.current = requestAnimationFrame(() => {
+        const { scrollTop, scrollHeight, clientHeight } = container;
         const maxScroll = scrollHeight - clientHeight;
         if (maxScroll > 0) {
-          // Calculate progress and clamp between 0-100
           let scrollProgress = Math.min(Math.max((scrollTop / maxScroll) * 100, 0), 100);
-          // Round to nearest 5% to reduce re-renders
           scrollProgress = Math.round(scrollProgress / 5) * 5;
-          // Only update if changed significantly (prevents flashing at boundaries)
           if (Math.abs(scrollProgress - lastProgress.current) >= 5) {
             lastProgress.current = scrollProgress;
             setProgress(scrollProgress);
           }
         }
-      }
-      scrollRAF.current = null;
-    });
-  }, []);
+        scrollRAF.current = null;
+      });
+    };
 
-  useEffect(() => {
-    const container = contentRef.current;
-    if (container) {
-      container.addEventListener('scroll', handleScroll, { passive: true });
-      return () => {
-        container.removeEventListener('scroll', handleScroll);
-        if (scrollRAF.current) cancelAnimationFrame(scrollRAF.current);
-      };
-    }
-  }, [handleScroll]);
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+      if (scrollRAF.current) cancelAnimationFrame(scrollRAF.current);
+    };
+  }, [containerRef]);
+
+  return (
+    <div className="h-1 bg-zinc-900 flex-shrink-0">
+      <div
+        className="h-full bg-gradient-to-r from-cyan-500 to-purple-500 transition-[width] duration-150"
+        style={{ width: `${progress}%` }}
+      />
+    </div>
+  );
+}
+
+// Memoized markdown content to prevent re-renders on scroll
+const MarkdownContent = memo(function MarkdownContent({ contentString, lessonId }) {
+  // Memoize the components object so it doesn't change on re-render
+  const components = useMemo(() => ({
+    h1: ({ children }) => (
+      <h1 className="text-2xl lg:text-3xl font-bold text-white mt-8 mb-4 first:mt-0">{children}</h1>
+    ),
+    h2: ({ children }) => (
+      <h2 className="text-xl lg:text-2xl font-bold text-white mt-8 mb-4 pb-2 border-b border-zinc-800">{children}</h2>
+    ),
+    h3: ({ children }) => (
+      <h3 className="text-lg font-semibold text-cyan-400 mt-6 mb-3">{children}</h3>
+    ),
+    h4: ({ children }) => (
+      <h4 className="text-base font-semibold text-zinc-200 mt-4 mb-2">{children}</h4>
+    ),
+    p: ({ children }) => (
+      <p className="text-zinc-300 leading-relaxed mb-4 text-base">{children}</p>
+    ),
+    ul: ({ children }) => (
+      <ul className="space-y-2 mb-4 ml-0">{children}</ul>
+    ),
+    ol: ({ children }) => (
+      <ol className="space-y-2 mb-4 ml-0 list-decimal list-inside">{children}</ol>
+    ),
+    li: ({ children }) => (
+      <li className="flex items-start gap-3 text-zinc-300">
+        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 mt-2.5 flex-shrink-0" />
+        <span className="flex-1">{children}</span>
+      </li>
+    ),
+    strong: ({ children }) => (
+      <strong className="text-white font-semibold">{children}</strong>
+    ),
+    em: ({ children }) => (
+      <em className="text-cyan-400 not-italic font-medium">{children}</em>
+    ),
+    table: ({ children }) => (
+      <div className="my-6 overflow-x-auto rounded-xl border border-zinc-800">
+        <table className="w-full text-sm">{children}</table>
+      </div>
+    ),
+    thead: ({ children }) => (
+      <thead className="bg-zinc-900/80 border-b border-zinc-800">{children}</thead>
+    ),
+    tbody: ({ children }) => (
+      <tbody className="divide-y divide-zinc-800/50">{children}</tbody>
+    ),
+    tr: ({ children }) => (
+      <tr className="hover:bg-zinc-800/30 transition-colors">{children}</tr>
+    ),
+    th: ({ children }) => (
+      <th className="px-4 py-3 text-left text-xs font-semibold text-cyan-400 uppercase tracking-wider">{children}</th>
+    ),
+    td: ({ children }) => (
+      <td className="px-4 py-3 text-zinc-300">{children}</td>
+    ),
+    code: ({ inline, className, children }) => {
+      const language = className?.replace('language-', '') || '';
+
+      if (inline) {
+        return (
+          <code className="px-1.5 py-0.5 rounded bg-zinc-800 text-cyan-400 text-sm font-mono border border-zinc-700">
+            {children}
+          </code>
+        );
+      }
+
+      if (['callout', 'tip', 'info', 'warning'].includes(language)) {
+        return <CalloutBox type={language}>{String(children)}</CalloutBox>;
+      }
+
+      if (language === 'key' || language === 'takeaway') {
+        return <KeyTakeaway>{String(children)}</KeyTakeaway>;
+      }
+
+      if (language === 'reflection') {
+        return (
+          <Suspense fallback={<div className="animate-pulse h-32 bg-zinc-800 rounded-xl my-6" />}>
+            <ReflectionBlock content={String(children)} lessonId={lessonId} />
+          </Suspense>
+        );
+      }
+
+      if (language === 'tryit' || language === 'exercise') {
+        return (
+          <Suspense fallback={<div className="animate-pulse h-32 bg-zinc-800 rounded-xl my-6" />}>
+            <TryItBlock content={String(children)} lessonId={lessonId} />
+          </Suspense>
+        );
+      }
+
+      if (language === 'mermaid') {
+        return <StableMermaidBlock content={String(children)} />;
+      }
+
+      return <CodeBlock language={language}>{children}</CodeBlock>;
+    },
+    pre: ({ children }) => <>{children}</>,
+    blockquote: ({ children }) => (
+      <blockquote className="my-6 pl-4 border-l-4 border-cyan-500 bg-cyan-500/5 py-3 pr-4 rounded-r-lg text-zinc-300 italic">
+        {children}
+      </blockquote>
+    ),
+    a: ({ href, children }) => (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-cyan-400 hover:text-cyan-300 underline underline-offset-2"
+      >
+        {children}
+      </a>
+    ),
+    hr: () => (
+      <div className="my-8 flex items-center gap-4">
+        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-zinc-700 to-transparent" />
+        <Sparkles className="w-4 h-4 text-zinc-600" />
+        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-zinc-700 to-transparent" />
+      </div>
+    ),
+    img: ({ src, alt }) => (
+      <figure className="my-6">
+        <img
+          src={src}
+          alt={alt || ''}
+          className="rounded-xl max-w-full h-auto border border-zinc-800"
+          loading="lazy"
+        />
+        {alt && <figcaption className="text-center text-sm text-zinc-500 mt-2">{alt}</figcaption>}
+      </figure>
+    ),
+  }), [lessonId]);
+
+  return (
+    <article className="prose prose-invert prose-lg max-w-none">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        children={contentString}
+        components={components}
+      />
+    </article>
+  );
+});
+
+export default function LessonContent({ lesson, onComplete }) {
+  const contentRef = useRef(null);
 
   // Reset scroll when lesson changes
   useEffect(() => {
     if (contentRef.current) {
       contentRef.current.scrollTop = 0;
-      setProgress(0);
     }
   }, [lesson?.id]);
 
   // Extract content - handle both string and JSON formats
-  const getContentString = () => {
+  const contentString = useMemo(() => {
     if (!lesson?.content) return null;
-
-    // If content is a string, use it directly
-    if (typeof lesson.content === 'string') {
-      return lesson.content;
-    }
-
-    // If content is an object with body property (JSON format)
-    if (typeof lesson.content === 'object' && lesson.content.body) {
-      return lesson.content.body;
-    }
-
-    // If content is an object, try to stringify for display
-    if (typeof lesson.content === 'object') {
-      return JSON.stringify(lesson.content);
-    }
-
+    if (typeof lesson.content === 'string') return lesson.content;
+    if (typeof lesson.content === 'object' && lesson.content.body) return lesson.content.body;
+    if (typeof lesson.content === 'object') return JSON.stringify(lesson.content);
     return null;
-  };
-
-  const contentString = getContentString();
+  }, [lesson?.content]);
 
   if (!contentString) {
     return (
@@ -182,17 +318,11 @@ export default function LessonContent({ lesson, onComplete }) {
 
   return (
     <div className="relative h-full flex flex-col">
-      {/* Progress Bar */}
-      <div className="h-1 bg-zinc-900 flex-shrink-0">
-        <motion.div 
-          className="h-full bg-gradient-to-r from-cyan-500 to-purple-500"
-          style={{ width: `${progress}%` }}
-          transition={{ duration: 0.1 }}
-        />
-      </div>
+      {/* Progress Bar - separate component to avoid re-rendering content */}
+      <ProgressBar containerRef={contentRef} />
 
       {/* Scrollable Content */}
-      <div 
+      <div
         ref={contentRef}
         className="flex-1 overflow-y-auto scrollbar-hide"
       >
@@ -212,159 +342,8 @@ export default function LessonContent({ lesson, onComplete }) {
             )}
           </div>
 
-          {/* Markdown Content */}
-          <article className="prose prose-invert prose-lg max-w-none">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              children={contentString}
-              components={{
-                h1: ({ children }) => (
-                  <h1 className="text-2xl lg:text-3xl font-bold text-white mt-8 mb-4 first:mt-0">{children}</h1>
-                ),
-                h2: ({ children }) => (
-                  <h2 className="text-xl lg:text-2xl font-bold text-white mt-8 mb-4 pb-2 border-b border-zinc-800">{children}</h2>
-                ),
-                h3: ({ children }) => (
-                  <h3 className="text-lg font-semibold text-cyan-400 mt-6 mb-3">{children}</h3>
-                ),
-                h4: ({ children }) => (
-                  <h4 className="text-base font-semibold text-zinc-200 mt-4 mb-2">{children}</h4>
-                ),
-                
-                p: ({ children }) => (
-                  <p className="text-zinc-300 leading-relaxed mb-4 text-base">{children}</p>
-                ),
-                
-                ul: ({ children }) => (
-                  <ul className="space-y-2 mb-4 ml-0">{children}</ul>
-                ),
-                
-                ol: ({ children }) => (
-                  <ol className="space-y-2 mb-4 ml-0 list-decimal list-inside">{children}</ol>
-                ),
-                
-                li: ({ children }) => (
-                  <li className="flex items-start gap-3 text-zinc-300">
-                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 mt-2.5 flex-shrink-0" />
-                    <span className="flex-1">{children}</span>
-                  </li>
-                ),
-                
-                strong: ({ children }) => (
-                  <strong className="text-white font-semibold">{children}</strong>
-                ),
-                
-                em: ({ children }) => (
-                  <em className="text-cyan-400 not-italic font-medium">{children}</em>
-                ),
-                
-                // Tables
-                table: ({ children }) => (
-                  <div className="my-6 overflow-x-auto rounded-xl border border-zinc-800">
-                    <table className="w-full text-sm">{children}</table>
-                  </div>
-                ),
-                thead: ({ children }) => (
-                  <thead className="bg-zinc-900/80 border-b border-zinc-800">{children}</thead>
-                ),
-                tbody: ({ children }) => (
-                  <tbody className="divide-y divide-zinc-800/50">{children}</tbody>
-                ),
-                tr: ({ children }) => (
-                  <tr className="hover:bg-zinc-800/30 transition-colors">{children}</tr>
-                ),
-                th: ({ children }) => (
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-cyan-400 uppercase tracking-wider">{children}</th>
-                ),
-                td: ({ children }) => (
-                  <td className="px-4 py-3 text-zinc-300">{children}</td>
-                ),
-                
-                // Code
-                code: ({ inline, className, children }) => {
-                  const language = className?.replace('language-', '') || '';
-                  
-                  if (inline) {
-                    return (
-                      <code className="px-1.5 py-0.5 rounded bg-zinc-800 text-cyan-400 text-sm font-mono border border-zinc-700">
-                        {children}
-                      </code>
-                    );
-                  }
-                  
-                  // Special blocks
-                  if (['callout', 'tip', 'info', 'warning'].includes(language)) {
-                    return <CalloutBox type={language}>{String(children)}</CalloutBox>;
-                  }
-                  
-                  if (language === 'key' || language === 'takeaway') {
-                    return <KeyTakeaway>{String(children)}</KeyTakeaway>;
-                  }
-
-                  if (language === 'reflection') {
-                    return (
-                      <Suspense fallback={<div className="animate-pulse h-32 bg-zinc-800 rounded-xl my-6" />}>
-                        <ReflectionBlock content={String(children)} lessonId={lesson?.id} />
-                      </Suspense>
-                    );
-                  }
-
-                  if (language === 'tryit' || language === 'exercise') {
-                    return (
-                      <Suspense fallback={<div className="animate-pulse h-32 bg-zinc-800 rounded-xl my-6" />}>
-                        <TryItBlock content={String(children)} lessonId={lesson?.id} />
-                      </Suspense>
-                    );
-                  }
-
-                  if (language === 'mermaid') {
-                    return <StableMermaidBlock content={String(children)} />;
-                  }
-                  
-                  return <CodeBlock language={language}>{children}</CodeBlock>;
-                },
-                
-                pre: ({ children }) => <>{children}</>,
-                
-                blockquote: ({ children }) => (
-                  <blockquote className="my-6 pl-4 border-l-4 border-cyan-500 bg-cyan-500/5 py-3 pr-4 rounded-r-lg text-zinc-300 italic">
-                    {children}
-                  </blockquote>
-                ),
-                
-                a: ({ href, children }) => (
-                  <a
-                    href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-cyan-400 hover:text-cyan-300 underline underline-offset-2"
-                  >
-                    {children}
-                  </a>
-                ),
-                
-                hr: () => (
-                  <div className="my-8 flex items-center gap-4">
-                    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-zinc-700 to-transparent" />
-                    <Sparkles className="w-4 h-4 text-zinc-600" />
-                    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-zinc-700 to-transparent" />
-                  </div>
-                ),
-                
-                img: ({ src, alt }) => (
-                  <figure className="my-6">
-                    <img 
-                      src={src} 
-                      alt={alt || ''} 
-                      className="rounded-xl max-w-full h-auto border border-zinc-800"
-                      loading="lazy"
-                    />
-                    {alt && <figcaption className="text-center text-sm text-zinc-500 mt-2">{alt}</figcaption>}
-                  </figure>
-                ),
-              }}
-            />
-          </article>
+          {/* Markdown Content - memoized to prevent re-renders */}
+          <MarkdownContent contentString={contentString} lessonId={lesson?.id} />
 
           {/* Completion CTA */}
           <div className="mt-12 mb-8 p-5 rounded-xl bg-zinc-900/50 border border-zinc-800">
@@ -378,7 +357,7 @@ export default function LessonContent({ lesson, onComplete }) {
                   <p className="text-xs text-zinc-500">Mark this lesson as complete</p>
                 </div>
               </div>
-              <Button 
+              <Button
                 onClick={onComplete}
                 className="bg-cyan-600 hover:bg-cyan-500 text-white text-sm px-5"
               >
