@@ -144,6 +144,11 @@ const tableNameMap = {
   // === CREATE (Content Creation) ===
   'BrandAssets': 'brand_assets',
   'GeneratedContent': 'generated_content',
+
+  // === Talent (Recruitment) ===
+  'Candidate': 'candidates',
+  'OutreachTask': 'outreach_tasks',
+  'Campaign': 'campaigns',
 };
 
 /**

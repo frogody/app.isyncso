@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { db } from "@/api/supabaseClient";
+import { supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -337,7 +337,7 @@ export default function TalentCandidates() {
 
     setLoading(true);
     try {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("candidates")
         .select("*")
         .eq("organization_id", user.organization_id)

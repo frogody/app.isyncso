@@ -262,18 +262,34 @@ const TalentDashboard = () => {
       setError(null);
 
       try {
-        // Fetch candidates with contact_type = 'candidate'
-        const candidatesData = await db.entities.Contact?.list?.({
-          filters: { contact_type: 'candidate' },
-          order: [{ column: 'intelligence_score', direction: 'desc' }],
-          limit: 50
-        }).catch(() => []) || [];
+        // Fetch candidates from candidates table
+        let candidatesData = [];
+        let tasksData = [];
+
+        if (db.entities.Candidate) {
+          try {
+            candidatesData = await db.entities.Candidate.list({
+              order: [{ column: 'intelligence_score', direction: 'desc' }],
+              limit: 50
+            });
+          } catch (e) {
+            console.warn("Failed to fetch candidates:", e);
+            candidatesData = [];
+          }
+        }
 
         // Fetch outreach tasks
-        const tasksData = await db.entities.OutreachTask?.list?.({
-          order: [{ column: 'created_at', direction: 'desc' }],
-          limit: 20
-        }).catch(() => []) || [];
+        if (db.entities.OutreachTask) {
+          try {
+            tasksData = await db.entities.OutreachTask.list({
+              order: [{ column: 'created_at', direction: 'desc' }],
+              limit: 20
+            });
+          } catch (e) {
+            console.warn("Failed to fetch outreach tasks:", e);
+            tasksData = [];
+          }
+        }
 
         setCandidates(candidatesData);
         setOutreachTasks(tasksData);

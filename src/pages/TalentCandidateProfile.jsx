@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { db } from "@/api/supabaseClient";
+import { supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
 import { GlassCard, StatCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -213,7 +213,7 @@ export default function TalentCandidateProfile() {
     if (!user?.organization_id || !candidateId) return;
 
     try {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("candidates")
         .select("*")
         .eq("id", candidateId)
@@ -233,7 +233,7 @@ export default function TalentCandidateProfile() {
     if (!user?.organization_id || !candidateId) return;
 
     try {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("outreach_tasks")
         .select("*")
         .eq("candidate_id", candidateId)

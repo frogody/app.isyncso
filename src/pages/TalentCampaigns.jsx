@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { db } from "@/api/supabaseClient";
+import { supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
 import { GlassCard, StatCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -467,7 +467,7 @@ export default function TalentCampaigns() {
     if (!confirm("Are you sure you want to delete this campaign?")) return;
 
     try {
-      const { error } = await db.from("campaigns").delete().eq("id", campaign.id);
+      const { error } = await supabase.from("campaigns").delete().eq("id", campaign.id);
 
       if (error) throw error;
       setCampaigns((prev) => prev.filter((c) => c.id !== campaign.id));

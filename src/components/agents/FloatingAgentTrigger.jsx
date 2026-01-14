@@ -125,6 +125,26 @@ const AGENT_CONFIGS = {
       { label: "Generate branding", prompt: "Help me create branding assets", icon: Target },
       { label: "Content ideas", prompt: "Give me content ideas for my business", icon: FileText },
     ]
+  },
+  talent: {
+    name: "talent_assistant",
+    title: "Talent AI",
+    icon: Target,
+    color: "violet",
+    colorClasses: {
+      bg: "bg-violet-500",
+      bgLight: "bg-violet-500/20",
+      border: "border-violet-500/30",
+      text: "text-violet-400",
+      glow: "shadow-[0_0_20px_rgba(139,92,246,0.4)]"
+    },
+    placeholder: "Ask about candidates, flight risk, outreach campaigns...",
+    quickActions: [
+      { label: "Analyze candidate", prompt: "Help me analyze a candidate's flight risk", icon: Target },
+      { label: "Create campaign", prompt: "Help me create a recruitment outreach campaign", icon: Mail },
+      { label: "Find high-risk candidates", prompt: "Show me candidates with high flight risk scores", icon: AlertTriangle },
+      { label: "Draft outreach", prompt: "Help me draft a personalized outreach message", icon: Mail },
+    ]
   }
 };
 
