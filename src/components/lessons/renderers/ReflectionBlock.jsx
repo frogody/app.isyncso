@@ -15,35 +15,47 @@ export default function ReflectionBlock({ content, lessonId }) {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [existingInteraction, setExistingInteraction] = useState(null);
+  const hasLoaded = React.useRef(false);
 
-  const interactionKey = `reflection-${content?.slice(0, 20) || 'default'}`;
+  // Stable interaction key - only compute once
+  const interactionKey = React.useMemo(
+    () => `reflection-${content?.slice(0, 20) || 'default'}`,
+    [content]
+  );
 
-  // Load existing reflection on mount
+  // Load existing reflection on mount - only once
   useEffect(() => {
+    if (hasLoaded.current || !lessonId) {
+      setIsLoading(false);
+      return;
+    }
+
     let mounted = true;
-    
+    hasLoaded.current = true;
+
     const loadExisting = async () => {
-      if (!lessonId) {
-        setIsLoading(false);
-        return;
-      }
-      
       try {
         const user = await db.auth.me();
+        if (!user) {
+          if (mounted) setIsLoading(false);
+          return;
+        }
+
         const interactions = await db.entities.LessonInteraction.filter({
           user_id: user.id,
           lesson_id: lessonId,
           interaction_key: interactionKey
         });
-        
-        if (mounted && interactions.length > 0) {
+
+        if (mounted && interactions && interactions.length > 0) {
           const existing = interactions[0];
           setExistingInteraction(existing);
           setUserInput(existing.user_input || "");
           setIsSubmitted(true);
         }
       } catch (error) {
-        console.error("Failed to load reflection:", error);
+        // Silently fail - don't spam console
+        if (mounted) console.warn("Could not load reflection:", error.message);
       } finally {
         if (mounted) setIsLoading(false);
       }

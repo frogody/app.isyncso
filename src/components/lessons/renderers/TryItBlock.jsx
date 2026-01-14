@@ -17,9 +17,10 @@ export default function TryItBlock({ content, lessonId, blockIndex }) {
   const [isCompleted, setIsCompleted] = useState(false);
   const [showHints, setShowHints] = useState(false);
   const [copied, setCopied] = useState(false);
+  const hasLoaded = React.useRef(false);
 
-  // Parse content
-  const exercise = (() => {
+  // Parse content - memoized
+  const exercise = React.useMemo(() => {
     try {
       const parsed = JSON.parse(content);
       return {
@@ -32,35 +33,45 @@ export default function TryItBlock({ content, lessonId, blockIndex }) {
     } catch {
       return { title: "Try It Yourself", prompt: content, hints: [], example: null, starterCode: null };
     }
-  })();
+  }, [content]);
 
-  const interactionKey = `tryit-${blockIndex}`;
+  const interactionKey = `tryit-${blockIndex || 0}`;
 
-  // Load previous response
+  // Load previous response - only once
   useEffect(() => {
+    if (hasLoaded.current || !lessonId) return;
+    hasLoaded.current = true;
+
     const loadPrevious = async () => {
       try {
         const user = await db.auth.me();
+        if (!user) return;
+
         const interactions = await db.entities.LessonInteraction.filter({
           user_id: user.id,
           lesson_id: lessonId,
           interaction_key: interactionKey
         });
 
-        if (interactions.length > 0) {
-          const data = JSON.parse(interactions[0].user_input);
-          setUserResponse(data.response);
-          if (data.feedback) {
-            setFeedback(data.feedback);
-            setIsCompleted(true);
+        if (interactions && interactions.length > 0 && interactions[0].user_input) {
+          try {
+            const data = JSON.parse(interactions[0].user_input);
+            setUserResponse(data.response || "");
+            if (data.feedback) {
+              setFeedback(data.feedback);
+              setIsCompleted(true);
+            }
+          } catch (parseError) {
+            // Invalid JSON in user_input, ignore
           }
         }
       } catch (error) {
-        console.error("Failed to load previous response:", error);
+        // Silently fail - don't spam console
+        console.warn("Could not load previous response:", error.message);
       }
     };
 
-    if (lessonId) loadPrevious();
+    loadPrevious();
   }, [lessonId, interactionKey]);
 
   const handleSubmit = async () => {
