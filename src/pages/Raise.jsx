@@ -7,6 +7,7 @@ import {
   PieChart, BarChart3, Briefcase, HandshakeIcon, MessageSquare,
   CheckCircle2, Clock, AlertCircle, ExternalLink, Mail, Phone
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -109,6 +110,62 @@ export default function Raise() {
     return statusColors[status] || statusColors.interested;
   };
 
+  const handleExport = () => {
+    try {
+      const exportData = {
+        generatedAt: new Date().toISOString(),
+        activeCampaign: activeCampaign ? {
+          name: activeCampaign.name,
+          targetAmount: activeCampaign.target_amount,
+          raisedAmount: activeCampaign.raised_amount,
+          roundType: activeCampaign.round_type,
+          status: activeCampaign.status
+        } : null,
+        summary: {
+          targetAmount,
+          raisedAmount,
+          progressPercent,
+          totalInvestors,
+          interestedInvestors,
+          committedInvestors
+        },
+        investors: investors.map(i => ({
+          id: i.id,
+          name: i.name,
+          firm: i.firm,
+          status: i.status,
+          checkSize: i.check_size,
+          email: i.email
+        })),
+        pitchDecks: pitchDecks.map(d => ({
+          id: d.id,
+          name: d.name,
+          version: d.version
+        })),
+        dataRooms: dataRooms.map(r => ({
+          id: r.id,
+          name: r.name,
+          documentsCount: r.documents_count
+        }))
+      };
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `fundraising-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success('Fundraising data exported successfully');
+    } catch (error) {
+      console.error('Export failed:', error);
+      toast.error('Failed to export data');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -134,7 +191,7 @@ export default function Raise() {
           color="amber"
           actions={
             <div className="flex gap-3">
-              <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
+              <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800" onClick={handleExport}>
                 <Download className="w-4 h-4 mr-2" />
                 Export
               </Button>

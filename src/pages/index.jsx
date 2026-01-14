@@ -494,7 +494,7 @@ function PagesContent() {
 
                 <Route path="/Login" element={<Login />} />
 
-                <Route path="/Actions" element={<Navigate to="/Integrations" replace />} />
+                <Route path="/Actions" element={<Actions />} />
                 
                 <Route path="/Activity" element={<Activity />} />
                 

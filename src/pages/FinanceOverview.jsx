@@ -19,6 +19,7 @@ import { Progress } from '@/components/ui/progress';
 import { usePermissions } from '@/components/context/PermissionContext';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { createPageUrl } from '@/utils';
+import { toast } from 'sonner';
 
 export default function FinanceOverview() {
   const [loading, setLoading] = useState(true);
@@ -219,6 +220,53 @@ export default function FinanceOverview() {
     return colors[category] || colors.other;
   };
 
+  const handleExportReport = () => {
+    try {
+      const reportData = {
+        generatedAt: new Date().toISOString(),
+        summary: {
+          totalRevenue: metrics.totalRevenue,
+          totalExpenses: metrics.totalExpenses,
+          netIncome: metrics.netIncome,
+          profitMargin: metrics.profitMargin,
+          pendingInvoices: metrics.pendingInvoices,
+          monthlyRecurring: metrics.monthlyRecurring
+        },
+        expensesByCategory: expensesByCategory,
+        invoices: invoices.map(i => ({
+          id: i.id,
+          client_name: i.client_name,
+          invoice_number: i.invoice_number,
+          total: i.total,
+          status: i.status,
+          created_at: i.created_at
+        })),
+        expenses: expenses.map(e => ({
+          id: e.id,
+          description: e.description,
+          amount: e.amount,
+          category: e.category,
+          date: e.date || e.created_at
+        }))
+      };
+
+      const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `finance-report-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success('Finance report exported successfully');
+    } catch (error) {
+      console.error('Export failed:', error);
+      toast.error('Failed to export report');
+    }
+  };
+
   if (loading || permLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -254,7 +302,7 @@ export default function FinanceOverview() {
           color="amber"
           actions={
             <div className="flex gap-3">
-              <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
+              <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800" onClick={handleExportReport}>
                 <Download className="w-4 h-4 mr-2" />
                 Export Report
               </Button>

@@ -18,6 +18,7 @@ import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell
 } from "recharts";
 import ClayCampaignBuilder from "@/components/growth/ClayCampaignBuilder";
+import { toast } from "sonner";
 
 export default function Growth() {
   const { user } = useUser();
@@ -77,6 +78,8 @@ export default function Growth() {
     e.preventDefault();
     if (searchQuery.trim()) {
       window.location.href = createPageUrl(`GrowthResearch?query=${encodeURIComponent(searchQuery)}`);
+    } else {
+      toast.error('Please enter a search query to find prospects');
     }
   };
 
