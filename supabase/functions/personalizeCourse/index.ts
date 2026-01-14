@@ -6,6 +6,110 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Generate personalized lesson content using AI
+async function generateLessonContent(
+  lessonTitle: string,
+  lessonDescription: string,
+  moduleTitle: string,
+  courseTitle: string,
+  userProfile: { full_name: string; job_title?: string; industry?: string; experience_level?: string },
+  groqApiKey: string
+): Promise<string> {
+  const userName = userProfile.full_name || 'Professional';
+  const jobTitle = userProfile.job_title || 'Business Professional';
+  const industry = userProfile.industry || 'Business';
+  const experienceLevel = userProfile.experience_level || 'intermediate';
+
+  const prompt = `You are an expert course content creator. Generate comprehensive, engaging lesson content for the following:
+
+**Course:** ${courseTitle}
+**Module:** ${moduleTitle}
+**Lesson:** ${lessonTitle}
+**Description:** ${lessonDescription}
+
+**Student Profile:**
+- Name: ${userName}
+- Role: ${jobTitle}
+- Industry: ${industry}
+- Experience Level: ${experienceLevel}
+
+Generate rich markdown content that includes:
+
+1. **Introduction** (2-3 paragraphs) - Hook the reader and explain why this matters for their role as a ${jobTitle} in ${industry}
+
+2. **Key Concepts** - Explain 3-5 core concepts with examples relevant to ${industry}
+
+3. **Practical Application** - Show how a ${jobTitle} would use this in their daily work
+
+4. **Step-by-Step Guide** - Provide actionable steps with code examples or templates where relevant
+
+5. **Visual Diagram** - Include a mermaid diagram showing the concept flow:
+\`\`\`mermaid
+flowchart TD
+    A[Start] --> B[Step 1]
+    B --> C[Step 2]
+    C --> D[Result]
+\`\`\`
+
+6. **Industry-Specific Examples** - Provide 2-3 examples specific to ${industry}
+
+7. **Pro Tips** - Include tips formatted as:
+\`\`\`tip
+Your tip here for ${jobTitle}s
+\`\`\`
+
+8. **Try It Yourself** - An exercise formatted as:
+\`\`\`exercise
+Hands-on exercise description
+\`\`\`
+
+9. **Key Takeaways** - Summarize in a callout:
+\`\`\`key
+The most important thing to remember...
+\`\`\`
+
+Make the content comprehensive (800-1200 words), professional, and highly relevant to someone working as a ${jobTitle} in ${industry}. Use second person ("you") to address the reader directly.`;
+
+  try {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${groqApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert educational content creator who creates engaging, personalized learning experiences. Always include mermaid diagrams, practical examples, and interactive elements.'
+          },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 4000,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[generateLessonContent] API error:', errorText);
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0]?.message?.content || lessonDescription;
+  } catch (error) {
+    console.error('[generateLessonContent] Error:', error);
+    // Return a fallback content if AI fails
+    return `# ${lessonTitle}
+
+${lessonDescription}
+
+*This content is being generated. Please check back soon.*`;
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -15,8 +119,9 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const groqApiKey = Deno.env.get('GROQ_API_KEY');
 
-    console.log('[personalizeCourse] Starting - URL exists:', !!supabaseUrl, 'Key exists:', !!supabaseServiceKey);
+    console.log('[personalizeCourse] Starting - URL exists:', !!supabaseUrl, 'Key exists:', !!supabaseServiceKey, 'GROQ exists:', !!groqApiKey);
 
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error('[personalizeCourse] Missing environment variables');
@@ -26,12 +131,18 @@ serve(async (req) => {
       );
     }
 
+    if (!groqApiKey) {
+      console.error('[personalizeCourse] Missing GROQ_API_KEY');
+      return new Response(
+        JSON.stringify({ success: false, error: 'AI service not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get authorization header for user context
     const authHeader = req.headers.get('Authorization');
-    console.log('[personalizeCourse] Auth header present:', !!authHeader);
-
     if (!authHeader) {
       return new Response(
         JSON.stringify({ success: false, error: 'No authorization header' }),
@@ -42,8 +153,6 @@ serve(async (req) => {
     // Get user from auth token
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-
-    console.log('[personalizeCourse] Auth result - user:', user?.id, 'error:', authError?.message);
 
     if (authError || !user) {
       return new Response(
@@ -57,7 +166,6 @@ serve(async (req) => {
     try {
       body = await req.json();
     } catch (parseError) {
-      console.error('[personalizeCourse] Failed to parse body:', parseError);
       return new Response(
         JSON.stringify({ success: false, error: 'Invalid request body' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -65,8 +173,6 @@ serve(async (req) => {
     }
 
     const { templateCourseId } = body;
-    console.log('[personalizeCourse] Received templateCourseId:', templateCourseId);
-
     if (!templateCourseId) {
       return new Response(
         JSON.stringify({ success: false, error: 'templateCourseId is required' }),
@@ -76,10 +182,10 @@ serve(async (req) => {
 
     console.log(`[personalizeCourse] User ${user.id} personalizing course ${templateCourseId}`);
 
-    // Get user profile for credits and company_id
+    // Get user profile for personalization
     const { data: userProfile, error: profileError } = await supabase
       .from('users')
-      .select('credits, company_id, full_name')
+      .select('credits, company_id, full_name, job_title, industry, experience_level')
       .eq('id', user.id)
       .single();
 
@@ -100,7 +206,7 @@ serve(async (req) => {
       );
     }
 
-    // Verify organization_id exists in organizations table (FK constraint)
+    // Verify organization_id exists
     let validOrganizationId = null;
     if (userProfile?.company_id) {
       const { data: org } = await supabase
@@ -110,8 +216,6 @@ serve(async (req) => {
         .single();
       if (org) {
         validOrganizationId = org.id;
-      } else {
-        console.log('[personalizeCourse] User company_id not found in organizations table, using null');
       }
     }
 
@@ -123,7 +227,6 @@ serve(async (req) => {
       .single();
 
     if (courseError || !templateCourse) {
-      console.error('[personalizeCourse] Course not found:', courseError);
       return new Response(
         JSON.stringify({ success: false, error: 'Template course not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -143,10 +246,11 @@ serve(async (req) => {
       .eq('course_id', templateCourseId)
       .order('order_index');
 
-    // Create personalized course copy
+    // Create personalized course
+    const userName = userProfile?.full_name?.split(' ')[0] || 'Your';
     const personalizedCourse = {
-      title: `${templateCourse.title} (Personalized)`,
-      description: templateCourse.description,
+      title: `${templateCourse.title} - ${userName}'s Edition`,
+      description: `Personalized for ${userProfile?.full_name || 'you'} based on your role as ${userProfile?.job_title || 'a professional'} in ${userProfile?.industry || 'your industry'}.`,
       category: templateCourse.category,
       difficulty: templateCourse.difficulty,
       duration_minutes: templateCourse.duration_minutes,
@@ -159,12 +263,15 @@ serve(async (req) => {
         personalized_from: templateCourseId,
         personalized_for: user.id,
         personalized_at: new Date().toISOString(),
+        user_profile: {
+          job_title: userProfile?.job_title,
+          industry: userProfile?.industry,
+          experience_level: userProfile?.experience_level,
+        },
       },
       created_by: user.id,
       organization_id: validOrganizationId,
     };
-
-    console.log('[personalizeCourse] Creating course with data:', JSON.stringify(personalizedCourse));
 
     const { data: newCourse, error: createError } = await supabase
       .from('courses')
@@ -173,75 +280,88 @@ serve(async (req) => {
       .single();
 
     if (createError) {
-      console.error('[personalizeCourse] Failed to create course:', JSON.stringify(createError));
+      console.error('[personalizeCourse] Failed to create course:', createError);
       return new Response(
-        JSON.stringify({ success: false, error: `Failed to create personalized course: ${createError.message || createError.code || JSON.stringify(createError)}` }),
+        JSON.stringify({ success: false, error: 'Failed to create personalized course' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`[personalizeCourse] Created personalized course ${newCourse.id}`);
+    console.log(`[personalizeCourse] Created course ${newCourse.id}, now generating AI content...`);
 
-    // Copy modules if they exist
+    // Create module mapping
+    const moduleIdMap = new Map();
+    const moduleNameMap = new Map();
+
     if (templateModules && templateModules.length > 0) {
-      const moduleIdMap = new Map();
-
       for (const module of templateModules) {
-        const newModule = {
-          course_id: newCourse.id,
-          title: module.title,
-          description: module.description,
-          order_index: module.order_index,
-          settings: module.settings,
-        };
-
-        const { data: createdModule, error: moduleError } = await supabase
+        const { data: createdModule } = await supabase
           .from('modules')
-          .insert(newModule)
+          .insert({
+            course_id: newCourse.id,
+            title: module.title,
+            description: module.description,
+            order_index: module.order_index,
+          })
           .select()
           .single();
 
-        if (!moduleError && createdModule) {
+        if (createdModule) {
           moduleIdMap.set(module.id, createdModule.id);
-        }
-      }
-
-      // Copy lessons if they exist
-      if (templateLessons && templateLessons.length > 0) {
-        for (const lesson of templateLessons) {
-          const newLesson = {
-            course_id: newCourse.id,
-            module_id: lesson.module_id ? moduleIdMap.get(lesson.module_id) : null,
-            title: lesson.title,
-            description: lesson.description,
-            content: lesson.content,
-            order_index: lesson.order_index,
-            duration_minutes: lesson.duration_minutes,
-            content_type: lesson.content_type,
-            video_url: lesson.video_url,
-          };
-
-          const { error: lessonError } = await supabase.from('lessons').insert(newLesson);
-          if (lessonError) {
-            console.error('[personalizeCourse] Failed to copy lesson:', lessonError);
-          }
+          moduleNameMap.set(module.id, module.title);
         }
       }
     }
 
-    // Deduct credits from user
+    // Generate personalized lesson content using AI
+    if (templateLessons && templateLessons.length > 0) {
+      console.log(`[personalizeCourse] Generating content for ${templateLessons.length} lessons...`);
+
+      for (const lesson of templateLessons) {
+        const moduleTitle = moduleNameMap.get(lesson.module_id) || 'General';
+
+        // Generate AI content
+        console.log(`[personalizeCourse] Generating content for: ${lesson.title}`);
+        const aiContent = await generateLessonContent(
+          lesson.title,
+          lesson.description || lesson.title,
+          moduleTitle,
+          templateCourse.title,
+          {
+            full_name: userProfile?.full_name || 'Professional',
+            job_title: userProfile?.job_title,
+            industry: userProfile?.industry,
+            experience_level: userProfile?.experience_level,
+          },
+          groqApiKey
+        );
+
+        const newLesson = {
+          course_id: newCourse.id,
+          module_id: lesson.module_id ? moduleIdMap.get(lesson.module_id) : null,
+          title: lesson.title,
+          description: lesson.description,
+          content: aiContent, // Store as plain markdown string
+          order_index: lesson.order_index,
+          duration_minutes: lesson.duration_minutes || 15,
+          content_type: 'markdown',
+        };
+
+        const { error: lessonError } = await supabase.from('lessons').insert(newLesson);
+        if (lessonError) {
+          console.error('[personalizeCourse] Failed to create lesson:', lessonError);
+        }
+      }
+    }
+
+    // Deduct credits
     const newCredits = credits - 200;
-    const { error: creditError } = await supabase
+    await supabase
       .from('users')
       .update({ credits: newCredits })
       .eq('id', user.id);
 
-    if (creditError) {
-      console.error('[personalizeCourse] Failed to deduct credits:', creditError);
-      // Don't fail the request, course is already created
-    }
-
-    // Create user progress record for the new course
+    // Create user progress record
     await supabase.from('user_progress').insert({
       user_id: user.id,
       course_id: newCourse.id,
@@ -249,14 +369,14 @@ serve(async (req) => {
       completion_percentage: 0,
     });
 
-    console.log(`[personalizeCourse] Success! Course ${newCourse.id} created, ${newCredits} credits remaining`);
+    console.log(`[personalizeCourse] Success! Course ${newCourse.id} created with AI-generated content`);
 
     return new Response(
       JSON.stringify({
         success: true,
         course_id: newCourse.id,
         credits_remaining: newCredits,
-        message: 'Course personalized successfully',
+        message: 'Course personalized with AI-generated content',
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
