@@ -129,7 +129,31 @@ export default function LessonContent({ lesson, onComplete }) {
     }
   }, [lesson?.id]);
 
-  if (!lesson?.content) {
+  // Extract content - handle both string and JSON formats
+  const getContentString = () => {
+    if (!lesson?.content) return null;
+
+    // If content is a string, use it directly
+    if (typeof lesson.content === 'string') {
+      return lesson.content;
+    }
+
+    // If content is an object with body property (JSON format)
+    if (typeof lesson.content === 'object' && lesson.content.body) {
+      return lesson.content.body;
+    }
+
+    // If content is an object, try to stringify for display
+    if (typeof lesson.content === 'object') {
+      return JSON.stringify(lesson.content);
+    }
+
+    return null;
+  };
+
+  const contentString = getContentString();
+
+  if (!contentString) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center p-8">
         <div className="w-20 h-20 rounded-2xl bg-zinc-800/50 flex items-center justify-center mb-6">
@@ -177,6 +201,7 @@ export default function LessonContent({ lesson, onComplete }) {
           <article className="prose prose-invert prose-lg max-w-none">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
+              children={contentString}
               components={{
                 h1: ({ children }) => (
                   <h1 className="text-2xl lg:text-3xl font-bold text-white mt-8 mb-4 first:mt-0">{children}</h1>
@@ -327,9 +352,7 @@ export default function LessonContent({ lesson, onComplete }) {
                   </figure>
                 ),
               }}
-            >
-              {lesson.content}
-            </ReactMarkdown>
+            />
           </article>
 
           {/* Completion CTA */}
