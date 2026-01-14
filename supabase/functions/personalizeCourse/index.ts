@@ -217,11 +217,14 @@ serve(async (req) => {
             content: lesson.content,
             order_index: lesson.order_index,
             duration_minutes: lesson.duration_minutes,
-            lesson_type: lesson.lesson_type,
-            settings: lesson.settings,
+            content_type: lesson.content_type,
+            video_url: lesson.video_url,
           };
 
-          await supabase.from('lessons').insert(newLesson);
+          const { error: lessonError } = await supabase.from('lessons').insert(newLesson);
+          if (lessonError) {
+            console.error('[personalizeCourse] Failed to copy lesson:', lessonError);
+          }
         }
       }
     }
