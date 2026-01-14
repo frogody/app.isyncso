@@ -100,6 +100,21 @@ serve(async (req) => {
       );
     }
 
+    // Verify organization_id exists in organizations table (FK constraint)
+    let validOrganizationId = null;
+    if (userProfile?.company_id) {
+      const { data: org } = await supabase
+        .from('organizations')
+        .select('id')
+        .eq('id', userProfile.company_id)
+        .single();
+      if (org) {
+        validOrganizationId = org.id;
+      } else {
+        console.log('[personalizeCourse] User company_id not found in organizations table, using null');
+      }
+    }
+
     // Get the template course
     const { data: templateCourse, error: courseError } = await supabase
       .from('courses')
@@ -140,14 +155,16 @@ serve(async (req) => {
       is_template: false,
       is_published: true,
       settings: {
-        ...templateCourse.settings,
+        ...(templateCourse.settings || {}),
         personalized_from: templateCourseId,
         personalized_for: user.id,
         personalized_at: new Date().toISOString(),
       },
       created_by: user.id,
-      organization_id: userProfile?.company_id,
+      organization_id: validOrganizationId,
     };
+
+    console.log('[personalizeCourse] Creating course with data:', JSON.stringify(personalizedCourse));
 
     const { data: newCourse, error: createError } = await supabase
       .from('courses')
@@ -156,9 +173,9 @@ serve(async (req) => {
       .single();
 
     if (createError) {
-      console.error('[personalizeCourse] Failed to create course:', createError);
+      console.error('[personalizeCourse] Failed to create course:', JSON.stringify(createError));
       return new Response(
-        JSON.stringify({ success: false, error: 'Failed to create personalized course' }),
+        JSON.stringify({ success: false, error: `Failed to create personalized course: ${createError.message || createError.code || JSON.stringify(createError)}` }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
