@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { db } from "@/api/supabaseClient";
+import { supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
 import { GlassCard, StatCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -258,41 +258,44 @@ const TalentDashboard = () => {
   // Fetch data on mount
   useEffect(() => {
     const fetchData = async () => {
+      if (!user?.organization_id) return;
+      
       setLoading(true);
       setError(null);
 
       try {
         // Fetch candidates from candidates table
-        let candidatesData = [];
-        let tasksData = [];
+        const { data: candidatesData, error: candidatesError } = await supabase
+          .from("candidates")
+          .select("*")
+          .eq("organization_id", user.organization_id)
+          .order("intelligence_score", { ascending: false, nullsFirst: false })
+          .limit(50);
 
-        if (db.entities.Candidate) {
-          try {
-            candidatesData = await db.entities.Candidate.list({
-              order: [{ column: 'intelligence_score', direction: 'desc' }],
-              limit: 50
-            });
-          } catch (e) {
-            console.warn("Failed to fetch candidates:", e);
-            candidatesData = [];
-          }
+        if (candidatesError) {
+          console.warn("Failed to fetch candidates:", candidatesError);
         }
 
-        // Fetch outreach tasks
-        if (db.entities.OutreachTask) {
-          try {
-            tasksData = await db.entities.OutreachTask.list({
-              order: [{ column: 'created_at', direction: 'desc' }],
-              limit: 20
-            });
-          } catch (e) {
-            console.warn("Failed to fetch outreach tasks:", e);
-            tasksData = [];
-          }
+        // Fetch outreach tasks with candidate names
+        const { data: tasksData, error: tasksError } = await supabase
+          .from("outreach_tasks")
+          .select("*, candidates(name)")
+          .eq("organization_id", user.organization_id)
+          .order("created_at", { ascending: false })
+          .limit(20);
+
+        if (tasksError) {
+          console.warn("Failed to fetch outreach tasks:", tasksError);
         }
 
-        setCandidates(candidatesData);
-        setOutreachTasks(tasksData);
+        // Map task data to include candidate_name
+        const tasksWithNames = (tasksData || []).map(task => ({
+          ...task,
+          candidate_name: task.candidates?.name || "Unknown"
+        }));
+
+        setCandidates(candidatesData || []);
+        setOutreachTasks(tasksWithNames);
       } catch (err) {
         console.error("Error fetching talent data:", err);
         setError(err.message);
@@ -302,7 +305,7 @@ const TalentDashboard = () => {
     };
 
     fetchData();
-  }, []);
+  }, [user]);
 
   // Computed stats
   const stats = useMemo(() => {

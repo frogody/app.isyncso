@@ -406,7 +406,7 @@ export default function TalentCampaigns() {
 
     setLoading(true);
     try {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("campaigns")
         .select("*")
         .eq("organization_id", user.organization_id)
@@ -425,7 +425,7 @@ export default function TalentCampaigns() {
     if (!user?.organization_id) return;
 
     try {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("campaigns")
         .insert([
           {
@@ -449,7 +449,7 @@ export default function TalentCampaigns() {
   const handleToggleCampaign = async (campaign) => {
     const newStatus = campaign.status === "active" ? "paused" : "active";
     try {
-      const { error } = await db
+      const { error } = await supabase
         .from("campaigns")
         .update({ status: newStatus })
         .eq("id", campaign.id);
