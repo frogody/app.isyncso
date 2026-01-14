@@ -109,18 +109,27 @@ const AVAILABLE_APPS = [
       { icon: Target, text: 'Campaign progress and milestone tracking' },
       { icon: BarChart3, text: 'Data room for due diligence documents' }
     ]
+  },
+  {
+    id: 'talent',
+    name: 'Talent',
+    description: 'AI-powered recruitment & candidate intelligence',
+    icon: Users,
+    color: 'violet',
+    defaultEnabled: true,
+    widgets: [],
+    purpose: 'Streamline recruitment with AI-driven candidate intelligence and automated outreach.',
+    capabilities: [
+      { icon: Brain, text: 'Flight risk intelligence scoring' },
+      { icon: Users, text: 'Candidate pipeline management' },
+      { icon: Target, text: 'Multi-stage outreach campaigns' },
+      { icon: Zap, text: 'Targeted recruitment workflows' }
+    ]
   }
 ];
 
 // Coming Soon apps
 const COMING_SOON_APPS = [
-  {
-    id: 'talent',
-    name: 'Talent',
-    description: 'AI-powered recruitment & candidate research',
-    icon: Users,
-    color: 'violet'
-  },
   {
     id: 'create',
     name: 'Create',

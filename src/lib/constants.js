@@ -73,6 +73,14 @@ export const THEME_COLORS = {
     solid: 'bg-rose-500',
     glow: 'shadow-[0_0_10px_rgba(244,63,94,0.5)]'
   },
+  talent: {
+    // Violet/Purple
+    text: 'text-violet-400',
+    bg: 'bg-violet-500/10',
+    border: 'border-violet-500/20',
+    solid: 'bg-violet-500',
+    glow: 'shadow-[0_0_10px_rgba(139,92,246,0.5)]'
+  },
   default: {
     // Cyan (matches primary brand)
     text: 'text-cyan-400',
@@ -95,8 +103,8 @@ export const UI = {
 // Feature Flags
 export const FEATURES = {
   // Core navigation + default-enabled engine apps (sync is now core, not an engine app)
-  DEFAULT_ENABLED_APPS: ['dashboard', 'crm', 'projects', 'tasks', 'inbox', 'learn', 'growth', 'sentinel', 'create'],
-  ALL_APPS: ['dashboard', 'crm', 'projects', 'tasks', 'inbox', 'growth', 'learn', 'sentinel', 'finance', 'raise', 'create'],
+  DEFAULT_ENABLED_APPS: ['dashboard', 'crm', 'projects', 'tasks', 'inbox', 'learn', 'growth', 'sentinel', 'create', 'talent'],
+  ALL_APPS: ['dashboard', 'crm', 'projects', 'tasks', 'inbox', 'growth', 'learn', 'sentinel', 'finance', 'raise', 'create', 'talent'],
   BETA_FEATURES: ['vision', 'voice', 'mcp'],
   ENTERPRISE_ONLY: ['sso', 'audit-log', 'custom-branding']
 };

@@ -188,6 +188,13 @@ const ENGINE_ITEMS_CONFIG = {
     id: 'create',
     permission: null, // Always visible - content creation feature
   },
+  talent: {
+    title: "Talent",
+    url: createPageUrl("TalentDashboard"),
+    icon: UserPlus,
+    id: 'talent',
+    permission: "talent.view",
+  },
 };
 
 
@@ -357,6 +364,20 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
     };
   }
 
+  // TALENT routes - recruitment and candidate intelligence
+  if (path.includes('talent')) {
+    return {
+      title: 'TALENT',
+      color: 'violet',
+      agent: 'talent',
+      items: [
+        { label: 'Dashboard', path: createPageUrl('TalentDashboard'), icon: LayoutDashboard },
+        { label: 'Candidates', path: createPageUrl('TalentCandidates'), icon: Users },
+        { label: 'Campaigns', path: createPageUrl('TalentCampaigns'), icon: Megaphone },
+      ]
+    };
+  }
+
   return null;
 }
 
@@ -410,6 +431,13 @@ const COLOR_CLASSES = {
     border: THEME_COLORS.create.border,
     borderSolid: THEME_COLORS.create.solid,
     glow: THEME_COLORS.create.glow
+  },
+  violet: {
+    text: 'text-violet-400',
+    bg: 'bg-violet-500/10',
+    border: 'border-violet-500/20',
+    borderSolid: 'bg-violet-500',
+    glow: 'shadow-[0_0_10px_rgba(139,92,246,0.5)]'
   }
 };
 
@@ -620,6 +648,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
             const isSync = item.id === "sync";
             const isFinance = item.id === "finance";
             const isRaise = item.id === "raise";
+            const isTalent = item.id === "talent";
 
             // Get the appropriate color classes for this engine
             const getEngineColors = () => {
@@ -629,6 +658,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
               if (isSync) return { text: 'text-purple-400', bg: 'bg-purple-950/30', solid: 'bg-purple-500', glow: 'shadow-[0_0_10px_rgba(168,85,247,0.5)]' };
               if (isFinance) return { text: 'text-amber-400', bg: 'bg-amber-950/30', solid: 'bg-amber-500', glow: 'shadow-[0_0_10px_rgba(245,158,11,0.5)]' };
               if (isRaise) return { text: 'text-orange-400', bg: 'bg-orange-950/30', solid: 'bg-orange-500', glow: 'shadow-[0_0_10px_rgba(249,115,22,0.5)]' };
+              if (isTalent) return { text: 'text-violet-400', bg: 'bg-violet-950/30', solid: 'bg-violet-500', glow: 'shadow-[0_0_10px_rgba(139,92,246,0.5)]' };
               return { text: 'text-cyan-400', bg: 'bg-cyan-950/30', solid: 'bg-cyan-500', glow: 'shadow-[0_0_10px_rgba(6,182,212,0.5)]' };
             };
             const colors = getEngineColors();

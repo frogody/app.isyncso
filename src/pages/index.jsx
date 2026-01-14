@@ -211,6 +211,14 @@ import ContactsImport from "./ContactsImport";
 
 import Integrations from "./Integrations";
 
+import TalentDashboard from "./TalentDashboard";
+
+import TalentCandidates from "./TalentCandidates";
+
+import TalentCandidateProfile from "./TalentCandidateProfile";
+
+import TalentCampaigns from "./TalentCampaigns";
+
 import { BrowserRouter as Router, Route, Routes, useLocation, Navigate } from 'react-router-dom';
 
 const PAGES = {
@@ -428,6 +436,14 @@ const PAGES = {
     ContactsImport: ContactsImport,
 
     Integrations: Integrations,
+
+    TalentDashboard: TalentDashboard,
+
+    TalentCandidates: TalentCandidates,
+
+    TalentCandidateProfile: TalentCandidateProfile,
+
+    TalentCampaigns: TalentCampaigns,
 
 }
 
@@ -670,6 +686,14 @@ function PagesContent() {
                 <Route path="/ContactsImport" element={<ContactsImport />} />
 
                 <Route path="/Integrations" element={<Integrations />} />
+
+                <Route path="/TalentDashboard" element={<TalentDashboard />} />
+
+                <Route path="/TalentCandidates" element={<TalentCandidates />} />
+
+                <Route path="/TalentCandidateProfile" element={<TalentCandidateProfile />} />
+
+                <Route path="/TalentCampaigns" element={<TalentCampaigns />} />
 
                 {/* 404 catch-all route */}
                 <Route path="*" element={

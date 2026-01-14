@@ -33,3 +33,6 @@ verify_jwt = false
 
 [functions.personalizeCourse]
 verify_jwt = false
+
+[functions.generateCandidateIntelligence]
+verify_jwt = false
