@@ -2,9 +2,22 @@ import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
+import { toast } from "sonner";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Users,
   Search,
@@ -29,9 +42,15 @@ import {
   Star,
   StarOff,
   RefreshCw,
+  Plus,
+  Edit,
+  Trash2,
+  Download,
+  Loader2,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { AddCandidateModal, EditCandidateModal } from "@/components/talent";
 
 // Animation variants
 const containerVariants = {
@@ -112,11 +131,15 @@ const IntelligenceLevelBadge = ({ level }) => {
     High: "bg-orange-500/20 text-orange-400 border-orange-500/30",
     Medium: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
     Low: "bg-green-500/20 text-green-400 border-green-500/30",
+    critical: "bg-red-500/20 text-red-400 border-red-500/30",
+    high: "bg-orange-500/20 text-orange-400 border-orange-500/30",
+    medium: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+    low: "bg-green-500/20 text-green-400 border-green-500/30",
   };
 
   return (
     <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${styles[level] || styles.Low}`}>
-      {level}
+      {level?.charAt(0).toUpperCase() + level?.slice(1)}
     </span>
   );
 };
@@ -125,7 +148,12 @@ const IntelligenceLevelBadge = ({ level }) => {
 const ApproachBadge = ({ approach }) => {
   const styles = {
     immediate: { bg: "bg-red-500/20", text: "text-red-400", label: "Immediate" },
+    direct: { bg: "bg-violet-500/20", text: "text-violet-400", label: "Direct" },
     targeted: { bg: "bg-violet-500/20", text: "text-violet-400", label: "Targeted" },
+    warm_intro: { bg: "bg-blue-500/20", text: "text-blue-400", label: "Warm Intro" },
+    referral: { bg: "bg-cyan-500/20", text: "text-cyan-400", label: "Referral" },
+    inbound: { bg: "bg-green-500/20", text: "text-green-400", label: "Inbound" },
+    event: { bg: "bg-amber-500/20", text: "text-amber-400", label: "Event" },
     nurture: { bg: "bg-blue-500/20", text: "text-blue-400", label: "Nurture" },
   };
 
@@ -220,17 +248,24 @@ const FilterDropdown = ({ label, value, options, onChange, icon: Icon }) => {
 };
 
 // Candidate Card (Grid View)
-const CandidateCard = ({ candidate, onClick }) => {
+const CandidateCard = ({ candidate, isSelected, onToggle, onClick, onEdit }) => {
   return (
     <motion.div
       variants={itemVariants}
       whileHover={{ scale: 1.02, y: -2 }}
-      onClick={onClick}
-      className="cursor-pointer"
+      className="cursor-pointer relative"
     >
-      <GlassCard className="p-4 hover:border-violet-500/30 transition-all duration-300">
+      <div className="absolute top-3 left-3 z-10">
+        <Checkbox
+          checked={isSelected}
+          onCheckedChange={() => onToggle(candidate.id)}
+          onClick={(e) => e.stopPropagation()}
+          className="border-zinc-600 bg-zinc-800/80"
+        />
+      </div>
+      <GlassCard className="p-4 hover:border-violet-500/30 transition-all duration-300" onClick={onClick}>
         <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 ml-6">
             <CandidateAvatar name={candidate.name} image={candidate.avatar_url} size="lg" />
             <div>
               <h3 className="font-semibold text-white">{candidate.name}</h3>
@@ -256,7 +291,15 @@ const CandidateCard = ({ candidate, onClick }) => {
             <IntelligenceLevelBadge level={candidate.intelligence_level || "Low"} />
             <ApproachBadge approach={candidate.recommended_approach || "nurture"} />
           </div>
-          <ArrowRight className="w-4 h-4 text-white/40" />
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(candidate);
+            }}
+            className="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-colors"
+          >
+            <Edit className="w-4 h-4" />
+          </button>
         </div>
       </GlassCard>
     </motion.div>
@@ -264,15 +307,21 @@ const CandidateCard = ({ candidate, onClick }) => {
 };
 
 // Candidate Row (Table View)
-const CandidateRow = ({ candidate, onClick }) => {
+const CandidateRow = ({ candidate, isSelected, onToggle, onClick, onEdit }) => {
   return (
     <motion.tr
       variants={itemVariants}
       whileHover={{ backgroundColor: "rgba(255,255,255,0.05)" }}
-      onClick={onClick}
       className="cursor-pointer border-b border-white/5 last:border-0"
     >
       <td className="py-4 px-4">
+        <Checkbox
+          checked={isSelected}
+          onCheckedChange={() => onToggle(candidate.id)}
+          className="border-zinc-600"
+        />
+      </td>
+      <td className="py-4 px-4" onClick={onClick}>
         <div className="flex items-center gap-3">
           <CandidateAvatar name={candidate.name} image={candidate.avatar_url} />
           <div>
@@ -281,29 +330,41 @@ const CandidateRow = ({ candidate, onClick }) => {
           </div>
         </div>
       </td>
-      <td className="py-4 px-4">
+      <td className="py-4 px-4" onClick={onClick}>
         <p className="text-white/80">{candidate.current_title || "—"}</p>
         <p className="text-sm text-white/60">{candidate.current_company || "—"}</p>
       </td>
-      <td className="py-4 px-4">
+      <td className="py-4 px-4" onClick={onClick}>
         <div className="flex items-center gap-3">
           <IntelligenceGauge score={candidate.intelligence_score || 0} size="sm" />
           <IntelligenceLevelBadge level={candidate.intelligence_level || "Low"} />
         </div>
       </td>
-      <td className="py-4 px-4">
+      <td className="py-4 px-4" onClick={onClick}>
         <ApproachBadge approach={candidate.recommended_approach || "nurture"} />
       </td>
-      <td className="py-4 px-4 text-white/60">
+      <td className="py-4 px-4 text-white/60" onClick={onClick}>
         {candidate.location || "—"}
       </td>
       <td className="py-4 px-4">
         <div className="flex items-center gap-2">
-          <button className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/60 hover:text-white">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onClick();
+            }}
+            className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/60 hover:text-white"
+          >
             <Eye className="w-4 h-4" />
           </button>
-          <button className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/60 hover:text-white">
-            <MessageSquare className="w-4 h-4" />
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(candidate);
+            }}
+            className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/60 hover:text-white"
+          >
+            <Edit className="w-4 h-4" />
           </button>
         </div>
       </td>
@@ -328,6 +389,15 @@ export default function TalentCandidates() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
 
+  // Selection state
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Modal state
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingCandidate, setEditingCandidate] = useState(null);
+
   useEffect(() => {
     fetchCandidates();
   }, [user]);
@@ -347,6 +417,7 @@ export default function TalentCandidates() {
       setCandidates(data || []);
     } catch (err) {
       console.error("Error fetching candidates:", err);
+      toast.error("Failed to load candidates");
     } finally {
       setLoading(false);
     }
@@ -369,7 +440,9 @@ export default function TalentCandidates() {
 
     // Intelligence level filter
     if (filters.intelligenceLevel) {
-      result = result.filter((c) => c.intelligence_level === filters.intelligenceLevel);
+      result = result.filter((c) => 
+        c.intelligence_level?.toLowerCase() === filters.intelligenceLevel.toLowerCase()
+      );
     }
 
     // Approach filter
@@ -379,7 +452,9 @@ export default function TalentCandidates() {
 
     // Urgency filter
     if (filters.urgency) {
-      result = result.filter((c) => c.intelligence_urgency === filters.urgency);
+      result = result.filter((c) => 
+        c.urgency?.toLowerCase() === filters.urgency.toLowerCase()
+      );
     }
 
     // Sorting
@@ -409,26 +484,134 @@ export default function TalentCandidates() {
     navigate(createPageUrl("TalentCandidateProfile") + `?id=${candidate.id}`);
   };
 
+  const toggleCandidate = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const selectAllVisible = () => {
+    setSelectedIds(new Set(paginatedCandidates.map((c) => c.id)));
+  };
+
+  const deselectAll = () => {
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+
+    setIsDeleting(true);
+    try {
+      // Delete related outreach tasks first
+      const { error: tasksError } = await supabase
+        .from("outreach_tasks")
+        .delete()
+        .in("candidate_id", Array.from(selectedIds));
+
+      if (tasksError) console.warn("Error deleting tasks:", tasksError);
+
+      // Delete candidates
+      const { error } = await supabase
+        .from("candidates")
+        .delete()
+        .in("id", Array.from(selectedIds));
+
+      if (error) throw error;
+
+      setCandidates((prev) => prev.filter((c) => !selectedIds.has(c.id)));
+      setSelectedIds(new Set());
+      setShowDeleteDialog(false);
+      toast.success(`${selectedIds.size} candidate(s) deleted`);
+    } catch (error) {
+      console.error("Error deleting candidates:", error);
+      toast.error("Failed to delete candidates");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleExportCSV = () => {
+    const headers = [
+      "Name", "Email", "Phone", "LinkedIn", "Location",
+      "Company", "Title", "Stage", "Status",
+      "Intelligence Score", "Intelligence Level", "Urgency", "Approach"
+    ];
+
+    const dataToExport = selectedIds.size > 0
+      ? candidates.filter((c) => selectedIds.has(c.id))
+      : filteredCandidates;
+
+    const rows = dataToExport.map((c) => [
+      c.name || "",
+      c.email || "",
+      c.phone || "",
+      c.linkedin_url || "",
+      c.location || "",
+      c.current_company || "",
+      c.current_title || "",
+      c.stage || "",
+      c.status || "",
+      c.intelligence_score || "",
+      c.intelligence_level || "",
+      c.urgency || "",
+      c.recommended_approach || "",
+    ]);
+
+    const csv = [headers, ...rows].map((row) => row.map((cell) => `"${cell}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `candidates_${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${dataToExport.length} candidate(s)`);
+  };
+
+  const handleAddSuccess = (newCandidate) => {
+    setCandidates((prev) => [newCandidate, ...prev]);
+  };
+
+  const handleEditSuccess = (updatedCandidate) => {
+    setCandidates((prev) =>
+      prev.map((c) => (c.id === updatedCandidate.id ? updatedCandidate : c))
+    );
+  };
+
+  const handleDeleteSuccess = (deletedId) => {
+    setCandidates((prev) => prev.filter((c) => c.id !== deletedId));
+  };
+
   const intelligenceLevelOptions = [
     { value: "", label: "All Levels" },
-    { value: "Critical", label: "Critical" },
-    { value: "High", label: "High" },
-    { value: "Medium", label: "Medium" },
-    { value: "Low", label: "Low" },
+    { value: "critical", label: "Critical" },
+    { value: "high", label: "High" },
+    { value: "medium", label: "Medium" },
+    { value: "low", label: "Low" },
   ];
 
   const approachOptions = [
     { value: "", label: "All Approaches" },
-    { value: "immediate", label: "Immediate" },
-    { value: "targeted", label: "Targeted" },
-    { value: "nurture", label: "Nurture" },
+    { value: "direct", label: "Direct" },
+    { value: "warm_intro", label: "Warm Intro" },
+    { value: "referral", label: "Referral" },
+    { value: "inbound", label: "Inbound" },
+    { value: "event", label: "Event" },
   ];
 
   const urgencyOptions = [
     { value: "", label: "All Urgency" },
-    { value: "High", label: "High" },
-    { value: "Medium", label: "Medium" },
-    { value: "Low", label: "Low" },
+    { value: "urgent", label: "Urgent" },
+    { value: "high", label: "High" },
+    { value: "medium", label: "Medium" },
+    { value: "low", label: "Low" },
   ];
 
   if (loading) {
@@ -449,12 +632,21 @@ export default function TalentCandidates() {
 
   return (
     <div className="p-6 space-y-6">
-      <PageHeader
-        title="Candidates"
-        description={`${filteredCandidates.length} candidates in your talent pool`}
-        icon={Users}
-        iconColor="violet"
-      />
+      <div className="flex items-center justify-between">
+        <PageHeader
+          title="Candidates"
+          description={`${filteredCandidates.length} candidates in your talent pool`}
+          icon={Users}
+          iconColor="violet"
+        />
+        <Button
+          onClick={() => setShowAddModal(true)}
+          className="bg-violet-500 hover:bg-violet-600"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Add Candidate
+        </Button>
+      </div>
 
       {/* Filters Bar */}
       <GlassCard className="p-4">
@@ -526,7 +718,63 @@ export default function TalentCandidates() {
             <RefreshCw className="w-4 h-4" />
           </button>
         </div>
+
+        {/* Bulk Actions */}
+        {selectedIds.size > 0 && (
+          <div className="flex items-center gap-3 mt-4 pt-4 border-t border-white/10">
+            <span className="text-sm text-white/60">
+              {selectedIds.size} selected
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={deselectAll}
+              className="border-zinc-700"
+            >
+              Deselect
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportCSV}
+              className="border-zinc-700"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Export
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDeleteDialog(true)}
+              className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete
+            </Button>
+          </div>
+        )}
       </GlassCard>
+
+      {/* Quick Actions */}
+      <div className="flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={selectAllVisible}
+          className="text-zinc-400 hover:text-white"
+        >
+          Select Page
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleExportCSV}
+          className="text-zinc-400 hover:text-white"
+        >
+          <Download className="w-4 h-4 mr-2" />
+          Export All
+        </Button>
+      </div>
 
       {/* Candidates Display */}
       {viewMode === "grid" ? (
@@ -540,7 +788,10 @@ export default function TalentCandidates() {
             <CandidateCard
               key={candidate.id}
               candidate={candidate}
+              isSelected={selectedIds.has(candidate.id)}
+              onToggle={toggleCandidate}
               onClick={() => handleCandidateClick(candidate)}
+              onEdit={setEditingCandidate}
             />
           ))}
         </motion.div>
@@ -550,6 +801,16 @@ export default function TalentCandidates() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-white/10">
+                  <th className="text-left py-3 px-4 text-sm font-medium text-white/60 w-10">
+                    <Checkbox
+                      checked={selectedIds.size === paginatedCandidates.length && paginatedCandidates.length > 0}
+                      onCheckedChange={(checked) => {
+                        if (checked) selectAllVisible();
+                        else deselectAll();
+                      }}
+                      className="border-zinc-600"
+                    />
+                  </th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-white/60">Candidate</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-white/60">Position</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-white/60">Intelligence</th>
@@ -563,7 +824,10 @@ export default function TalentCandidates() {
                   <CandidateRow
                     key={candidate.id}
                     candidate={candidate}
+                    isSelected={selectedIds.has(candidate.id)}
+                    onToggle={toggleCandidate}
                     onClick={() => handleCandidateClick(candidate)}
+                    onEdit={setEditingCandidate}
                   />
                 ))}
               </motion.tbody>
@@ -582,6 +846,10 @@ export default function TalentCandidates() {
               ? "Try adjusting your filters or search query"
               : "Start building your talent pool by adding candidates"}
           </p>
+          <Button onClick={() => setShowAddModal(true)} className="bg-violet-500 hover:bg-violet-600">
+            <Plus className="w-4 h-4 mr-2" />
+            Add First Candidate
+          </Button>
         </GlassCard>
       )}
 
@@ -601,19 +869,22 @@ export default function TalentCandidates() {
             >
               Previous
             </button>
-            {[...Array(totalPages)].map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentPage(i + 1)}
-                className={`w-8 h-8 rounded-lg transition-colors ${
-                  currentPage === i + 1
-                    ? "bg-violet-500/20 text-violet-400"
-                    : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
-                }`}
-              >
-                {i + 1}
-              </button>
-            ))}
+            {[...Array(Math.min(totalPages, 5))].map((_, i) => {
+              const page = i + 1;
+              return (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`w-8 h-8 rounded-lg transition-colors ${
+                    currentPage === page
+                      ? "bg-violet-500/20 text-violet-400"
+                      : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  {page}
+                </button>
+              );
+            })}
             <button
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
@@ -624,6 +895,57 @@ export default function TalentCandidates() {
           </div>
         </div>
       )}
+
+      {/* Add Candidate Modal */}
+      <AddCandidateModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSuccess={handleAddSuccess}
+      />
+
+      {/* Edit Candidate Modal */}
+      <EditCandidateModal
+        isOpen={!!editingCandidate}
+        onClose={() => setEditingCandidate(null)}
+        candidate={editingCandidate}
+        onSuccess={handleEditSuccess}
+        onDelete={handleDeleteSuccess}
+      />
+
+      {/* Bulk Delete Confirmation */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-red-400" />
+              Delete Candidates
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              Are you sure you want to delete {selectedIds.size} selected candidate(s)?
+              This will also delete all related outreach tasks. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={isDeleting}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

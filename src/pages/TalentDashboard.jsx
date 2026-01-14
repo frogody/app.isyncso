@@ -24,8 +24,9 @@ import {
   Phone,
   Calendar,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { OutreachQueue, AddCandidateModal } from "@/components/talent";
 
 // Animation variants
 const containerVariants = {
@@ -250,10 +251,12 @@ const EmptyState = ({ icon: Icon, title, description }) => (
 // Main TalentDashboard Component
 const TalentDashboard = () => {
   const { user } = useUser();
+  const navigate = useNavigate();
   const [candidates, setCandidates] = useState([]);
   const [outreachTasks, setOutreachTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showAddCandidate, setShowAddCandidate] = useState(false);
 
   // Fetch data on mount
   useEffect(() => {
@@ -523,35 +526,36 @@ const TalentDashboard = () => {
             <h2 className="text-lg font-semibold text-zinc-200">Quick Actions</h2>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Generate Intelligence Report */}
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            {/* Add Candidate */}
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
+              onClick={() => setShowAddCandidate(true)}
               className="flex items-center gap-4 p-4 bg-gradient-to-r from-violet-500/10 to-purple-500/10 hover:from-violet-500/20 hover:to-purple-500/20 rounded-xl border border-violet-500/20 hover:border-violet-500/40 transition-all duration-200 group"
             >
               <div className="p-3 rounded-lg bg-violet-500/20 group-hover:bg-violet-500/30 transition-colors">
-                <FileText className="w-6 h-6 text-violet-400" />
+                <Plus className="w-6 h-6 text-violet-400" />
               </div>
               <div className="text-left">
                 <h3 className="text-sm font-medium text-zinc-200 group-hover:text-violet-300 transition-colors">
-                  Generate Intelligence Report
+                  Add Candidate
                 </h3>
                 <p className="text-xs text-zinc-500">
-                  Create a detailed candidate analysis
+                  Add a new candidate manually
                 </p>
               </div>
             </motion.button>
 
             {/* Create Campaign */}
-            <Link to={createPageUrl("TalentCampaigns")}>
+            <Link to={`${createPageUrl("TalentCampaignDetail")}?new=true`}>
               <motion.div
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className="flex items-center gap-4 p-4 bg-zinc-800/50 hover:bg-zinc-800/70 rounded-xl border border-zinc-700/50 hover:border-violet-500/30 transition-all duration-200 group h-full"
               >
                 <div className="p-3 rounded-lg bg-zinc-700/50 group-hover:bg-violet-500/20 transition-colors">
-                  <Plus className="w-6 h-6 text-zinc-400 group-hover:text-violet-400 transition-colors" />
+                  <Megaphone className="w-6 h-6 text-zinc-400 group-hover:text-violet-400 transition-colors" />
                 </div>
                 <div className="text-left">
                   <h3 className="text-sm font-medium text-zinc-200 group-hover:text-violet-300 transition-colors">
@@ -563,6 +567,25 @@ const TalentDashboard = () => {
                 </div>
               </motion.div>
             </Link>
+
+            {/* Generate Report */}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="flex items-center gap-4 p-4 bg-zinc-800/50 hover:bg-zinc-800/70 rounded-xl border border-zinc-700/50 hover:border-violet-500/30 transition-all duration-200 group"
+            >
+              <div className="p-3 rounded-lg bg-zinc-700/50 group-hover:bg-violet-500/20 transition-colors">
+                <FileText className="w-6 h-6 text-zinc-400 group-hover:text-violet-400 transition-colors" />
+              </div>
+              <div className="text-left">
+                <h3 className="text-sm font-medium text-zinc-200 group-hover:text-violet-300 transition-colors">
+                  Intelligence Report
+                </h3>
+                <p className="text-xs text-zinc-500">
+                  Generate candidate analysis
+                </p>
+              </div>
+            </motion.button>
 
             {/* Import Candidates */}
             <Link to={createPageUrl("ContactsImport")}>
@@ -579,7 +602,7 @@ const TalentDashboard = () => {
                     Import Candidates
                   </h3>
                   <p className="text-xs text-zinc-500">
-                    Upload candidate data from CSV
+                    Upload from CSV file
                   </p>
                 </div>
               </motion.div>
@@ -587,6 +610,23 @@ const TalentDashboard = () => {
           </div>
         </GlassCard>
       </motion.div>
+
+      {/* Outreach Queue Section */}
+      <motion.div variants={itemVariants}>
+        <GlassCard className="p-6">
+          <OutreachQueue compact={true} />
+        </GlassCard>
+      </motion.div>
+
+      {/* Add Candidate Modal */}
+      <AddCandidateModal
+        isOpen={showAddCandidate}
+        onClose={() => setShowAddCandidate(false)}
+        onSuccess={(newCandidate) => {
+          setCandidates((prev) => [newCandidate, ...prev]);
+          setShowAddCandidate(false);
+        }}
+      />
     </motion.div>
   );
 };

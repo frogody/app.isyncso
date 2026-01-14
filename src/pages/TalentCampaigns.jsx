@@ -2,9 +2,24 @@ import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
+import { toast } from "sonner";
 import { GlassCard, StatCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Megaphone,
   Plus,
@@ -32,6 +47,7 @@ import {
   RefreshCw,
   X,
   ArrowRight,
+  Loader2,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -76,11 +92,15 @@ const StatusBadge = ({ status }) => {
 // Campaign Type Badge
 const TypeBadge = ({ type }) => {
   const styles = {
+    email: { bg: "bg-violet-500/20", text: "text-violet-400", label: "Email" },
+    linkedin: { bg: "bg-blue-500/20", text: "text-blue-400", label: "LinkedIn" },
+    cold_call: { bg: "bg-amber-500/20", text: "text-amber-400", label: "Cold Call" },
+    multi_channel: { bg: "bg-cyan-500/20", text: "text-cyan-400", label: "Multi-Channel" },
     recruitment: { bg: "bg-violet-500/20", text: "text-violet-400", label: "Recruitment" },
     growth: { bg: "bg-blue-500/20", text: "text-blue-400", label: "Growth" },
   };
 
-  const style = styles[type] || styles.growth;
+  const style = styles[type] || styles.email;
 
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${style.bg} ${style.text}`}>
@@ -126,7 +146,7 @@ const ProgressRing = ({ progress, size = 40, strokeWidth = 3 }) => {
 };
 
 // Campaign Card
-const CampaignCard = ({ campaign, onEdit, onToggle, onDelete }) => {
+const CampaignCard = ({ campaign, onEdit, onToggle, onDelete, onDuplicate, onClick }) => {
   const [showMenu, setShowMenu] = useState(false);
 
   const matchedCandidates = campaign.matched_candidates || [];
@@ -141,7 +161,7 @@ const CampaignCard = ({ campaign, onEdit, onToggle, onDelete }) => {
       <GlassCard className="p-6 hover:border-violet-500/30 transition-all duration-300">
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
+          <div className="flex-1 cursor-pointer" onClick={onClick}>
             <div className="flex items-center gap-2 mb-2">
               <StatusBadge status={campaign.status} />
               <TypeBadge type={campaign.campaign_type} />
@@ -171,13 +191,23 @@ const CampaignCard = ({ campaign, onEdit, onToggle, onDelete }) => {
                   >
                     <button
                       onClick={() => {
+                        onClick();
+                        setShowMenu(false);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-white/70 hover:bg-white/10 flex items-center gap-2"
+                    >
+                      <Eye className="w-4 h-4" />
+                      View Details
+                    </button>
+                    <button
+                      onClick={() => {
                         onEdit(campaign);
                         setShowMenu(false);
                       }}
                       className="w-full px-4 py-2 text-left text-sm text-white/70 hover:bg-white/10 flex items-center gap-2"
                     >
                       <Edit className="w-4 h-4" />
-                      Edit Campaign
+                      Edit Settings
                     </button>
                     <button
                       onClick={() => {
@@ -194,12 +224,13 @@ const CampaignCard = ({ campaign, onEdit, onToggle, onDelete }) => {
                       ) : (
                         <>
                           <Play className="w-4 h-4" />
-                          Resume Campaign
+                          Activate Campaign
                         </>
                       )}
                     </button>
                     <button
                       onClick={() => {
+                        onDuplicate(campaign);
                         setShowMenu(false);
                       }}
                       className="w-full px-4 py-2 text-left text-sm text-white/70 hover:bg-white/10 flex items-center gap-2"
@@ -261,7 +292,10 @@ const CampaignCard = ({ campaign, onEdit, onToggle, onDelete }) => {
             <Calendar className="w-4 h-4" />
             <span>Created {new Date(campaign.created_at).toLocaleDateString()}</span>
           </div>
-          <button className="flex items-center gap-1 text-sm text-violet-400 hover:text-violet-300 transition-colors">
+          <button 
+            onClick={onClick}
+            className="flex items-center gap-1 text-sm text-violet-400 hover:text-violet-300 transition-colors"
+          >
             View Details
             <ArrowRight className="w-4 h-4" />
           </button>
@@ -272,19 +306,24 @@ const CampaignCard = ({ campaign, onEdit, onToggle, onDelete }) => {
 };
 
 // Create Campaign Modal
-const CreateCampaignModal = ({ isOpen, onClose, onSubmit }) => {
+const CreateCampaignModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    campaign_type: "recruitment",
+    campaign_type: "email",
     status: "draft",
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit(formData);
-    setFormData({ name: "", description: "", campaign_type: "recruitment", status: "draft" });
   };
+
+  useEffect(() => {
+    if (!isOpen) {
+      setFormData({ name: "", description: "", campaign_type: "email", status: "draft" });
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -311,75 +350,78 @@ const CreateCampaignModal = ({ isOpen, onClose, onSubmit }) => {
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-white/70 mb-2">Campaign Name</label>
-            <input
+            <Label className="text-zinc-400 mb-2 block">Campaign Name</Label>
+            <Input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))}
               placeholder="e.g., Q1 Engineering Recruitment"
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-violet-500/50"
+              className="bg-zinc-800/50 border-zinc-700 text-white"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-white/70 mb-2">Description</label>
-            <textarea
+            <Label className="text-zinc-400 mb-2 block">Description</Label>
+            <Textarea
               value={formData.description}
               onChange={(e) => setFormData((f) => ({ ...f, description: e.target.value }))}
               placeholder="Brief description of the campaign goals..."
               rows={3}
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-violet-500/50 resize-none"
+              className="bg-zinc-800/50 border-zinc-700 text-white resize-none"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-white/70 mb-2">Campaign Type</label>
+            <Label className="text-zinc-400 mb-2 block">Campaign Type</Label>
             <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setFormData((f) => ({ ...f, campaign_type: "recruitment" }))}
-                className={`p-4 rounded-lg border transition-colors ${
-                  formData.campaign_type === "recruitment"
-                    ? "bg-violet-500/20 border-violet-500/50 text-violet-400"
-                    : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10"
-                }`}
-              >
-                <Target className="w-6 h-6 mx-auto mb-2" />
-                <p className="font-medium">Recruitment</p>
-                <p className="text-xs mt-1 opacity-70">New candidates</p>
-              </button>
-              <button
-                type="button"
-                onClick={() => setFormData((f) => ({ ...f, campaign_type: "growth" }))}
-                className={`p-4 rounded-lg border transition-colors ${
-                  formData.campaign_type === "growth"
-                    ? "bg-blue-500/20 border-blue-500/50 text-blue-400"
-                    : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10"
-                }`}
-              >
-                <TrendingUp className="w-6 h-6 mx-auto mb-2" />
-                <p className="font-medium">Growth</p>
-                <p className="text-xs mt-1 opacity-70">Existing relationships</p>
-              </button>
+              {[
+                { value: "email", label: "Email", icon: Mail },
+                { value: "linkedin", label: "LinkedIn", icon: Target },
+                { value: "cold_call", label: "Cold Call", icon: MessageSquare },
+                { value: "multi_channel", label: "Multi-Channel", icon: TrendingUp },
+              ].map((type) => (
+                <button
+                  key={type.value}
+                  type="button"
+                  onClick={() => setFormData((f) => ({ ...f, campaign_type: type.value }))}
+                  className={`p-4 rounded-lg border transition-colors ${
+                    formData.campaign_type === type.value
+                      ? "bg-violet-500/20 border-violet-500/50 text-violet-400"
+                      : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10"
+                  }`}
+                >
+                  <type.icon className="w-6 h-6 mx-auto mb-2" />
+                  <p className="font-medium text-sm">{type.label}</p>
+                </button>
+              ))}
             </div>
           </div>
 
           {/* Actions */}
           <div className="flex items-center gap-3 pt-4">
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={onClose}
-              className="flex-1 px-4 py-3 bg-white/5 text-white/70 rounded-lg hover:bg-white/10 transition-colors"
+              className="flex-1 border-zinc-700"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              className="flex-1 px-4 py-3 bg-violet-500 text-white rounded-lg hover:bg-violet-600 transition-colors font-medium"
+              disabled={isSubmitting || !formData.name.trim()}
+              className="flex-1 bg-violet-500 hover:bg-violet-600"
             >
-              Create Campaign
-            </button>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                "Create Campaign"
+              )}
+            </Button>
           </div>
         </form>
       </motion.div>
@@ -396,6 +438,9 @@ export default function TalentCampaigns() {
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deletingCampaign, setDeletingCampaign] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchCampaigns();
@@ -416,6 +461,7 @@ export default function TalentCampaigns() {
       setCampaigns(data || []);
     } catch (err) {
       console.error("Error fetching campaigns:", err);
+      toast.error("Failed to load campaigns");
     } finally {
       setLoading(false);
     }
@@ -424,6 +470,7 @@ export default function TalentCampaigns() {
   const handleCreateCampaign = async (formData) => {
     if (!user?.organization_id) return;
 
+    setIsSubmitting(true);
     try {
       const { data, error } = await supabase
         .from("campaigns")
@@ -432,17 +479,25 @@ export default function TalentCampaigns() {
             ...formData,
             organization_id: user.organization_id,
             matched_candidates: [],
-            message_style: {},
+            sequence_steps: [],
           },
         ])
         .select()
         .single();
 
       if (error) throw error;
+      
       setCampaigns((prev) => [data, ...prev]);
       setShowCreateModal(false);
+      toast.success("Campaign created successfully");
+      
+      // Navigate to the detail page
+      navigate(`${createPageUrl("TalentCampaignDetail")}?id=${data.id}`);
     } catch (err) {
       console.error("Error creating campaign:", err);
+      toast.error(err.message || "Failed to create campaign");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -458,22 +513,84 @@ export default function TalentCampaigns() {
       setCampaigns((prev) =>
         prev.map((c) => (c.id === campaign.id ? { ...c, status: newStatus } : c))
       );
+      toast.success(`Campaign ${newStatus === "active" ? "activated" : "paused"}`);
     } catch (err) {
       console.error("Error toggling campaign:", err);
+      toast.error("Failed to update campaign status");
     }
   };
 
-  const handleDeleteCampaign = async (campaign) => {
-    if (!confirm("Are you sure you want to delete this campaign?")) return;
+  const handleDuplicateCampaign = async (campaign) => {
+    if (!user?.organization_id) return;
 
     try {
-      const { error } = await supabase.from("campaigns").delete().eq("id", campaign.id);
+      const duplicateData = {
+        name: `${campaign.name} (Copy)`,
+        description: campaign.description,
+        campaign_type: campaign.campaign_type,
+        status: "draft",
+        organization_id: user.organization_id,
+        matched_candidates: [],
+        sequence_steps: campaign.sequence_steps || [],
+        daily_limit: campaign.daily_limit,
+        delay_min_minutes: campaign.delay_min_minutes,
+        delay_max_minutes: campaign.delay_max_minutes,
+      };
+
+      const { data, error } = await supabase
+        .from("campaigns")
+        .insert([duplicateData])
+        .select()
+        .single();
 
       if (error) throw error;
-      setCampaigns((prev) => prev.filter((c) => c.id !== campaign.id));
+      
+      setCampaigns((prev) => [data, ...prev]);
+      toast.success("Campaign duplicated");
+    } catch (err) {
+      console.error("Error duplicating campaign:", err);
+      toast.error("Failed to duplicate campaign");
+    }
+  };
+
+  const handleDeleteCampaign = async () => {
+    if (!deletingCampaign) return;
+
+    setIsDeleting(true);
+    try {
+      // Delete related outreach tasks first
+      const { error: tasksError } = await supabase
+        .from("outreach_tasks")
+        .delete()
+        .eq("campaign_id", deletingCampaign.id);
+
+      if (tasksError) console.warn("Error deleting tasks:", tasksError);
+
+      // Delete the campaign
+      const { error } = await supabase
+        .from("campaigns")
+        .delete()
+        .eq("id", deletingCampaign.id);
+
+      if (error) throw error;
+      
+      setCampaigns((prev) => prev.filter((c) => c.id !== deletingCampaign.id));
+      setDeletingCampaign(null);
+      toast.success("Campaign deleted");
     } catch (err) {
       console.error("Error deleting campaign:", err);
+      toast.error("Failed to delete campaign");
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const handleCampaignClick = (campaign) => {
+    navigate(`${createPageUrl("TalentCampaignDetail")}?id=${campaign.id}`);
+  };
+
+  const handleEditCampaign = (campaign) => {
+    navigate(`${createPageUrl("TalentCampaignDetail")}?id=${campaign.id}`);
   };
 
   const filteredCampaigns = useMemo(() => {
@@ -550,13 +667,13 @@ export default function TalentCampaigns() {
           icon={Megaphone}
           iconColor="violet"
         />
-        <button
+        <Button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-violet-500 text-white rounded-lg hover:bg-violet-600 transition-colors font-medium"
+          className="bg-violet-500 hover:bg-violet-600"
         >
-          <Plus className="w-5 h-5" />
+          <Plus className="w-4 h-4 mr-2" />
           New Campaign
-        </button>
+        </Button>
       </div>
 
       {/* Stats */}
@@ -621,8 +738,10 @@ export default function TalentCampaigns() {
             className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white/70 focus:outline-none focus:border-violet-500/50"
           >
             <option value="">All Types</option>
-            <option value="recruitment">Recruitment</option>
-            <option value="growth">Growth</option>
+            <option value="email">Email</option>
+            <option value="linkedin">LinkedIn</option>
+            <option value="cold_call">Cold Call</option>
+            <option value="multi_channel">Multi-Channel</option>
           </select>
 
           <button
@@ -646,9 +765,11 @@ export default function TalentCampaigns() {
             <CampaignCard
               key={campaign.id}
               campaign={campaign}
-              onEdit={() => {}}
+              onEdit={handleEditCampaign}
               onToggle={handleToggleCampaign}
-              onDelete={handleDeleteCampaign}
+              onDelete={setDeletingCampaign}
+              onDuplicate={handleDuplicateCampaign}
+              onClick={() => handleCampaignClick(campaign)}
             />
           ))}
         </motion.div>
@@ -661,13 +782,13 @@ export default function TalentCampaigns() {
               ? "Try adjusting your filters"
               : "Create your first campaign to start reaching out to candidates"}
           </p>
-          <button
+          <Button
             onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-violet-500/20 text-violet-400 rounded-lg hover:bg-violet-500/30 transition-colors"
+            className="bg-violet-500 hover:bg-violet-600"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4 mr-2" />
             Create Campaign
-          </button>
+          </Button>
         </GlassCard>
       )}
 
@@ -678,9 +799,45 @@ export default function TalentCampaigns() {
             isOpen={showCreateModal}
             onClose={() => setShowCreateModal(false)}
             onSubmit={handleCreateCampaign}
+            isSubmitting={isSubmitting}
           />
         )}
       </AnimatePresence>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deletingCampaign} onOpenChange={() => setDeletingCampaign(null)}>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-red-400" />
+              Delete Campaign
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              Are you sure you want to delete <strong className="text-white">{deletingCampaign?.name}</strong>?
+              This will also delete all related outreach tasks. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteCampaign}
+              disabled={isDeleting}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
