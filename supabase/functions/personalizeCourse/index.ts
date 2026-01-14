@@ -13,7 +13,7 @@ async function generateLessonContent(
   moduleTitle: string,
   courseTitle: string,
   userProfile: { full_name: string; job_title?: string; industry?: string; experience_level?: string },
-  groqApiKey: string
+  togetherApiKey: string
 ): Promise<string> {
   const userName = userProfile.full_name || 'Professional';
   const jobTitle = userProfile.job_title || 'Business Professional';
@@ -71,14 +71,14 @@ The most important thing to remember...
 Make the content comprehensive (800-1200 words), professional, and highly relevant to someone working as a ${jobTitle} in ${industry}. Use second person ("you") to address the reader directly.`;
 
   try {
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const response = await fetch('https://api.together.xyz/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${groqApiKey}`,
+        'Authorization': `Bearer ${togetherApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'meta-llama/Llama-3.3-70B-Instruct-Turbo',
         messages: [
           {
             role: 'system',
@@ -119,9 +119,9 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    const groqApiKey = Deno.env.get('GROQ_API_KEY');
+    const togetherApiKey = Deno.env.get('TOGETHER_API_KEY');
 
-    console.log('[personalizeCourse] Starting - URL exists:', !!supabaseUrl, 'Key exists:', !!supabaseServiceKey, 'GROQ exists:', !!groqApiKey);
+    console.log('[personalizeCourse] Starting - URL exists:', !!supabaseUrl, 'Key exists:', !!supabaseServiceKey, 'Together exists:', !!togetherApiKey);
 
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error('[personalizeCourse] Missing environment variables');
@@ -131,8 +131,8 @@ serve(async (req) => {
       );
     }
 
-    if (!groqApiKey) {
-      console.error('[personalizeCourse] Missing GROQ_API_KEY');
+    if (!togetherApiKey) {
+      console.error('[personalizeCourse] Missing TOGETHER_API_KEY');
       return new Response(
         JSON.stringify({ success: false, error: 'AI service not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -333,7 +333,7 @@ serve(async (req) => {
             industry: userProfile?.industry,
             experience_level: userProfile?.experience_level,
           },
-          groqApiKey
+          togetherApiKey
         );
 
         const newLesson = {

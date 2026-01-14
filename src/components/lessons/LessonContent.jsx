@@ -1,9 +1,9 @@
-import React, { useRef, useEffect, useCallback, useState, lazy, Suspense } from "react";
+import React, { useRef, useEffect, useCallback, useState, lazy, Suspense, useMemo, memo } from "react";
 import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { 
-  BookOpen, Clock, CheckCircle2, ChevronDown, ChevronUp, 
+import {
+  BookOpen, Clock, CheckCircle2, ChevronDown, ChevronUp,
   Code2, Lightbulb, Target, Sparkles, Copy, Check,
   Zap, Award, ArrowRight
 } from "lucide-react";
@@ -15,6 +15,13 @@ import { cn } from "@/lib/utils";
 const ReflectionBlock = lazy(() => import('./renderers/ReflectionBlock'));
 const TryItBlock = lazy(() => import('./renderers/TryItBlock'));
 const MermaidBlock = lazy(() => import('./renderers/MermaidBlock'));
+
+// Memoized Mermaid wrapper to prevent re-renders
+const StableMermaidBlock = memo(({ content }) => (
+  <Suspense fallback={<div className="animate-pulse h-48 bg-zinc-800 rounded-xl my-6" />}>
+    <MermaidBlock content={content} />
+  </Suspense>
+));
 
 // Code Block Component
 function CodeBlock({ children, language }) {
@@ -93,17 +100,25 @@ export default function LessonContent({ lesson, onComplete }) {
   const [progress, setProgress] = useState(0);
   const scrollRAF = useRef(null);
 
-  // Scroll tracking
+  // Scroll tracking - debounced to prevent flashing
+  const lastProgress = useRef(0);
   const handleScroll = useCallback(() => {
     if (scrollRAF.current) return;
-    
+
     scrollRAF.current = requestAnimationFrame(() => {
       if (contentRef.current) {
         const { scrollTop, scrollHeight, clientHeight } = contentRef.current;
         const maxScroll = scrollHeight - clientHeight;
         if (maxScroll > 0) {
-          const scrollProgress = Math.min((scrollTop / maxScroll) * 100, 100);
-          setProgress(Math.round(scrollProgress));
+          // Calculate progress and clamp between 0-100
+          let scrollProgress = Math.min(Math.max((scrollTop / maxScroll) * 100, 0), 100);
+          // Round to nearest 5% to reduce re-renders
+          scrollProgress = Math.round(scrollProgress / 5) * 5;
+          // Only update if changed significantly (prevents flashing at boundaries)
+          if (Math.abs(scrollProgress - lastProgress.current) >= 5) {
+            lastProgress.current = scrollProgress;
+            setProgress(scrollProgress);
+          }
         }
       }
       scrollRAF.current = null;
@@ -303,11 +318,7 @@ export default function LessonContent({ lesson, onComplete }) {
                   }
 
                   if (language === 'mermaid') {
-                    return (
-                      <Suspense fallback={<div className="animate-pulse h-48 bg-zinc-800 rounded-xl my-6" />}>
-                        <MermaidBlock content={String(children)} />
-                      </Suspense>
-                    );
+                    return <StableMermaidBlock content={String(children)} />;
                   }
                   
                   return <CodeBlock language={language}>{children}</CodeBlock>;
