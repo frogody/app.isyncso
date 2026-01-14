@@ -696,35 +696,58 @@ export const auth = {
  */
 export const functions = {
   /**
-   * Invoke an edge function
+   * Invoke an edge function with proper authentication
    */
   async invoke(functionName, params = {}) {
     try {
-      const { data, error } = await supabase.functions.invoke(functionName, {
-        body: params
-      });
+      // Get the current session to get the user's access token
+      const { data: { session } } = await supabase.auth.getSession();
 
-      if (error) {
-        // Try to extract the actual error message from the function response
-        let errorMessage = error.message;
-        if (error.context) {
-          try {
-            // The context may contain the response body with our custom error
-            const body = await error.context.json?.() || error.context.body;
-            if (body?.error) {
-              errorMessage = body.error;
-            }
-          } catch (e) {
-            // Ignore JSON parse errors
-          }
-        }
-        console.error(`[supabaseClient] functions.invoke(${functionName}) error:`, errorMessage);
-        return { data: null, error: { ...error, message: errorMessage } };
+      if (!session?.access_token) {
+        console.error(`[supabaseClient] functions.invoke(${functionName}): No authenticated session`);
+        return {
+          data: null,
+          error: { message: 'Not authenticated. Please log in again.' }
+        };
       }
-      return { data, error: null };
+
+      console.log(`[supabaseClient] functions.invoke(${functionName}): Using user token (sub: ${session.user?.id})`);
+
+      // Use fetch directly to ensure the user's token is included
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/${functionName}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': supabaseAnonKey,
+          },
+          body: JSON.stringify(params),
+        }
+      );
+
+      // Parse the response
+      let responseData;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        responseData = await response.json();
+      } else {
+        responseData = await response.text();
+      }
+
+      if (!response.ok) {
+        const errorMessage = typeof responseData === 'object'
+          ? responseData.error || responseData.message || `HTTP ${response.status}`
+          : responseData || `HTTP ${response.status}`;
+        console.error(`[supabaseClient] functions.invoke(${functionName}) error:`, errorMessage);
+        return { data: null, error: { message: errorMessage } };
+      }
+
+      return { data: responseData, error: null };
     } catch (error) {
       console.error(`[supabaseClient] functions.invoke(${functionName}) error:`, error);
-      return { data: null, error };
+      return { data: null, error: { message: error.message || 'Unknown error' } };
     }
   }
 };
