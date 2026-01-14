@@ -213,6 +213,8 @@ import Integrations from "./Integrations";
 
 import TalentDashboard from "./TalentDashboard";
 
+import TalentDeals from "./TalentDeals";
+
 import TalentCandidates from "./TalentCandidates";
 
 import TalentCandidateProfile from "./TalentCandidateProfile";
@@ -444,6 +446,8 @@ const PAGES = {
     Integrations: Integrations,
 
     TalentDashboard: TalentDashboard,
+
+    TalentDeals: TalentDeals,
 
     TalentCandidates: TalentCandidates,
 
@@ -700,6 +704,8 @@ function PagesContent() {
                 <Route path="/Integrations" element={<Integrations />} />
 
                 <Route path="/TalentDashboard" element={<TalentDashboard />} />
+
+                <Route path="/TalentDeals" element={<TalentDeals />} />
 
                 <Route path="/TalentCandidates" element={<TalentCandidates />} />
 

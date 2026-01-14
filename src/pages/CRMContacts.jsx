@@ -18,6 +18,7 @@ const CONTACT_TYPES = [
   { id: 'partner', label: 'Partners' },
   { id: 'candidate', label: 'Candidates' },
   { id: 'target', label: 'Targets' },
+  { id: 'client', label: 'Recruitment Clients' },
 ];
 import {
   Plus, Search, Filter, Mail, Phone, Building2, MapPin, MoreVertical, X,
@@ -102,6 +103,11 @@ const emptyContact = {
   notes: "",
   last_contacted: null,
   next_follow_up: null,
+  // Recruitment client fields
+  is_recruitment_client: false,
+  recruitment_fee_percentage: "",
+  recruitment_fee_flat: "",
+  recruitment_terms: "",
 };
 
 // Lead Score Component - using cyan theme
@@ -769,6 +775,14 @@ export default function CRMContacts() {
         partnership_type: p.partnership_type,
         candidate_status: p.candidate_status,
         target_priority: p.target_priority,
+        // Recruitment client fields
+        is_recruitment_client: p.is_recruitment_client || false,
+        recruitment_fee_percentage: p.recruitment_fee_percentage,
+        recruitment_fee_flat: p.recruitment_fee_flat,
+        recruitment_terms: p.recruitment_terms,
+        active_projects_count: p.active_projects_count || 0,
+        total_placements: p.total_placements || 0,
+        total_revenue_generated: p.total_revenue_generated || 0,
       }));
       setContacts(contactList);
 
@@ -937,6 +951,11 @@ export default function CRMContacts() {
         partnership_type: formData.partnership_type,
         candidate_status: formData.candidate_status,
         target_priority: formData.target_priority,
+        // Recruitment client fields
+        is_recruitment_client: formData.contact_type === 'client' ? true : (formData.is_recruitment_client || false),
+        recruitment_fee_percentage: formData.recruitment_fee_percentage ? parseFloat(formData.recruitment_fee_percentage) : null,
+        recruitment_fee_flat: formData.recruitment_fee_flat ? parseFloat(formData.recruitment_fee_flat) : null,
+        recruitment_terms: formData.recruitment_terms || null,
       };
 
       if (editingContact) {
@@ -1547,6 +1566,55 @@ export default function CRMContacts() {
                 />
               </div>
             </div>
+
+            {/* Recruitment Client Panel - shown when contact_type is 'client' */}
+            {formData.contact_type === 'client' && (
+              <div className="p-4 rounded-xl bg-violet-500/10 border border-violet-500/30 space-y-4">
+                <div className="flex items-center gap-2 text-sm font-medium text-violet-400">
+                  <Building2 className="w-4 h-4" />
+                  Recruitment Client Details
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs text-zinc-500 mb-1 block">Fee Percentage (%)</label>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.5"
+                      placeholder="20"
+                      value={formData.recruitment_fee_percentage}
+                      onChange={(e) => setFormData(prev => ({ ...prev, recruitment_fee_percentage: e.target.value }))}
+                      className="bg-zinc-800 border-zinc-700"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-zinc-500 mb-1 block">Flat Fee</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">€</span>
+                      <Input
+                        type="number"
+                        min="0"
+                        placeholder="5000"
+                        value={formData.recruitment_fee_flat}
+                        onChange={(e) => setFormData(prev => ({ ...prev, recruitment_fee_flat: e.target.value }))}
+                        className="bg-zinc-800 border-zinc-700 pl-7"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-zinc-500 mb-1 block">Payment Terms</label>
+                  <Textarea
+                    placeholder="e.g., 50% on placement, 50% after probation period..."
+                    value={formData.recruitment_terms}
+                    onChange={(e) => setFormData(prev => ({ ...prev, recruitment_terms: e.target.value }))}
+                    className="bg-zinc-800 border-zinc-700 min-h-[60px]"
+                    rows={2}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Enrich with AI Button */}
             <Button
