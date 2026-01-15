@@ -627,6 +627,7 @@ export default function TalentCampaigns() {
 
   // Stats
   const stats = useMemo(() => {
+    const total = campaigns.length;
     const active = campaigns.filter((c) => c.status === "active").length;
     const totalCandidates = campaigns.reduce(
       (sum, c) => sum + (c.matched_candidates?.length || 0),
@@ -643,7 +644,7 @@ export default function TalentCampaigns() {
       0
     );
 
-    return { active, totalCandidates, totalSent, totalReplied };
+    return { total, active, totalCandidates, totalSent, totalReplied };
   }, [campaigns]);
 
   if (loading) {
@@ -691,25 +692,25 @@ export default function TalentCampaigns() {
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Active Campaigns"
-          value={stats.active}
-          icon={Play}
+          label={`Total Campaigns (${stats.active} active)`}
+          value={stats.total}
+          icon={Megaphone}
           color="red"
         />
         <StatCard
-          title="Total Candidates"
+          label="Total Candidates"
           value={stats.totalCandidates}
           icon={Users}
           color="red"
         />
         <StatCard
-          title="Messages Sent"
+          label="Messages Sent"
           value={stats.totalSent}
           icon={Send}
           color="red"
         />
         <StatCard
-          title="Replies Received"
+          label="Replies Received"
           value={stats.totalReplied}
           icon={MessageSquare}
           color="red"
