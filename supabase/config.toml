@@ -48,3 +48,6 @@ verify_jwt = false
 
 [functions.sync-voice]
 verify_jwt = false
+
+[functions.generateCompanyIntelligence]
+verify_jwt = false
