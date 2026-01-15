@@ -464,7 +464,7 @@ export default function TalentCandidateProfile() {
                     ) : (
                       <Sparkles className="w-4 h-4 mr-2" />
                     )}
-                    Sync Intel
+                    SYNC INTEL
                   </Button>
                   <Button variant="outline" className="border-white/10 text-white/70 hover:bg-white/5 px-6">
                     <Send className="w-4 h-4 mr-2" />
