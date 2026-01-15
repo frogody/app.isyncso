@@ -147,16 +147,27 @@ const UrgencyBadge = ({ level }) => {
   );
 };
 
-// Satisfaction Badge
+// Satisfaction Badge - parses "Switching Likelihood: High/Medium/Low" from analysis text
 const SatisfactionBadge = ({ level }) => {
-  const lowerLevel = level?.toLowerCase() || "";
+  // Extract switching likelihood from analysis text
+  let switchingLikelihood = "Medium";
+  if (level) {
+    const match = level.match(/Switching Likelihood:\s*(High|Medium|Low)/i);
+    if (match) {
+      switchingLikelihood = match[1];
+    }
+  }
+
+  const lowerLevel = switchingLikelihood.toLowerCase();
   let config;
-  if (lowerLevel.includes("high") || lowerLevel.includes("satisfied")) {
-    config = { bg: "bg-green-500/20", text: "text-green-400", icon: Smile, label: "Satisfied" };
-  } else if (lowerLevel.includes("low") || lowerLevel.includes("dissatisfied")) {
-    config = { bg: "bg-red-500/20", text: "text-red-400", icon: Frown, label: "Dissatisfied" };
+  if (lowerLevel === "high") {
+    // High switching = dissatisfied/open to move
+    config = { bg: "bg-green-500/20", text: "text-green-400", icon: Smile, label: "Open to Move" };
+  } else if (lowerLevel === "low") {
+    // Low switching = satisfied/not looking
+    config = { bg: "bg-red-500/20", text: "text-red-400", icon: Frown, label: "Not Looking" };
   } else {
-    config = { bg: "bg-amber-500/20", text: "text-amber-400", icon: Meh, label: level || "Mixed" };
+    config = { bg: "bg-amber-500/20", text: "text-amber-400", icon: Meh, label: "Considering" };
   }
   const Icon = config.icon;
   return (
@@ -286,7 +297,7 @@ export default function TalentCandidateProfile() {
         .select("*")
         .eq("candidate_id", candidateId)
         .eq("organization_id", user.organization_id)
-        .order("created_at", { ascending: false });
+        .order("created_date", { ascending: false });
       if (error) throw error;
       setOutreachTasks(data || []);
     } catch (err) {
@@ -386,7 +397,7 @@ export default function TalentCandidateProfile() {
       type: "outreach",
       title: task.task_type?.replace(/_/g, " "),
       description: task.status,
-      date: new Date(task.created_at).toLocaleDateString(),
+      date: new Date(task.created_date).toLocaleDateString(),
     });
   });
 

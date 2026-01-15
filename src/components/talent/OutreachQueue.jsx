@@ -125,7 +125,7 @@ const TaskRow = ({ task, isSelected, onToggle, onEdit }) => {
             {formatDate(task.scheduled_at)}
           </span>
         ) : (
-          formatDate(task.created_at)
+          formatDate(task.created_date)
         )}
       </div>
 
@@ -165,7 +165,7 @@ export default function OutreachQueue({ campaignId, compact = false }) {
         .from("outreach_tasks")
         .select("*, candidates(first_name, last_name, email, company_name)")
         .eq("organization_id", user.organization_id)
-        .order("created_at", { ascending: false });
+        .order("created_date", { ascending: false });
 
       if (campaignId) {
         query = query.eq("campaign_id", campaignId);

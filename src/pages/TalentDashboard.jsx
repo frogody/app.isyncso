@@ -189,7 +189,7 @@ const OutreachItem = ({ task }) => {
         <p className="text-xs text-zinc-500 mt-1">
           {task.task_type?.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())} outreach
         </p>
-        <p className="text-xs text-zinc-600 mt-1">{formatDate(task.created_at)}</p>
+        <p className="text-xs text-zinc-600 mt-1">{formatDate(task.created_date)}</p>
       </div>
     </motion.div>
   );
@@ -284,7 +284,7 @@ const TalentDashboard = () => {
           .from("outreach_tasks")
           .select("*, candidates(first_name, last_name)")
           .eq("organization_id", user.organization_id)
-          .order("created_at", { ascending: false })
+          .order("created_date", { ascending: false })
           .limit(20);
 
         if (tasksError) {

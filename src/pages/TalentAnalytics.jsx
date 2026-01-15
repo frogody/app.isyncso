@@ -492,7 +492,7 @@ export default function TalentAnalytics() {
           .from("outreach_tasks")
           .select("*, candidates(first_name, last_name)")
           .eq("organization_id", user.organization_id)
-          .gte("created_at", startDate.toISOString()),
+          .gte("created_date", startDate.toISOString()),
         supabase
           .from("projects")
           .select("*")
