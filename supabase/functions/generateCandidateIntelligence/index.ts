@@ -156,6 +156,130 @@ function formatDepartments(departments?: Array<{ name: string; percentage: numbe
   return departments.slice(0, 6).map(d => `${d.name} (${d.percentage}%)`).join(', ');
 }
 
+// ROLE-SPECIFIC TECHNOLOGY MAPPING
+// Only these technologies are valid for each role category
+const ROLE_TECH_MAP: Record<string, { keywords: string[], validTech: string[] }> = {
+  finance: {
+    keywords: ['finance', 'accounting', 'accountant', 'controller', 'cfo', 'treasurer', 'bookkeeper', 'auditor', 'financial analyst', 'aa accountant', 'ra accountant'],
+    validTech: ['sap', 'oracle financials', 'netsuite', 'quickbooks', 'sage', 'xero', 'intacct', 'freshbooks', 'wave', 'zoho books', 'dynamics 365 finance', 'workday financials', 'exact online', 'exactonline', 'exact', 'twinfield', 'visma', 'unit4', 'afas', 'accountview', 'e-boekhouden']
+  },
+  sales: {
+    keywords: ['sales', 'account exec', 'account executive', 'business development', 'bdr', 'sdr', 'account manager', 'sales manager', 'sales rep'],
+    validTech: ['salesforce', 'hubspot crm', 'pipedrive', 'zoho crm', 'dynamics 365 sales', 'close', 'copper', 'freshsales', 'outreach', 'salesloft', 'gong']
+  },
+  hr: {
+    keywords: ['hr', 'human resources', 'people ops', 'people operations', 'talent', 'recruiter', 'recruiting', 'hrbp', 'hr manager', 'hr director'],
+    validTech: ['workday', 'bamboohr', 'adp', 'greenhouse', 'lever', 'icims', 'successfactors', 'ultipro', 'paylocity', 'gusto', 'rippling', 'deel', 'remote']
+  },
+  marketing: {
+    keywords: ['marketing', 'growth', 'demand gen', 'content', 'brand', 'digital marketing', 'marketing manager', 'cmo'],
+    validTech: ['hubspot marketing', 'marketo', 'mailchimp', 'pardot', 'klaviyo', 'constant contact', 'activecampaign', 'braze', 'iterable', 'customer.io', 'google analytics', 'mixpanel', 'amplitude']
+  },
+  engineering: {
+    keywords: ['engineer', 'developer', 'programmer', 'devops', 'sre', 'software', 'backend', 'frontend', 'fullstack', 'full-stack', 'data engineer', 'ml engineer', 'platform engineer', 'cto', 'tech lead', 'architect'],
+    validTech: ['*'] // Engineers can use any tech
+  },
+  data: {
+    keywords: ['data analyst', 'data scientist', 'business analyst', 'bi analyst', 'analytics', 'business intelligence'],
+    validTech: ['sql', 'python', 'r', 'tableau', 'power bi', 'looker', 'metabase', 'snowflake', 'databricks', 'dbt', 'excel', 'google sheets', 'alteryx']
+  },
+  design: {
+    keywords: ['designer', 'ux', 'ui', 'product designer', 'graphic designer', 'visual designer', 'creative director'],
+    validTech: ['figma', 'sketch', 'adobe xd', 'invision', 'zeplin', 'photoshop', 'illustrator', 'after effects', 'principle', 'framer']
+  },
+  pm: {
+    keywords: ['product manager', 'product owner', 'program manager', 'project manager', 'scrum master'],
+    validTech: ['jira', 'asana', 'monday.com', 'clickup', 'notion', 'linear', 'productboard', 'aha', 'confluence', 'trello']
+  },
+  support: {
+    keywords: ['support', 'customer success', 'customer service', 'help desk', 'technical support'],
+    validTech: ['zendesk', 'intercom', 'freshdesk', 'helpscout', 'salesforce service cloud', 'front', 'kustomer']
+  }
+};
+
+// Infrastructure tech that should NEVER be associated with non-technical roles
+const INFRASTRUCTURE_TECH = [
+  // Cloud platforms
+  'aws', 'amazon web services', 'azure', 'microsoft azure', 'gcp', 'google cloud', 'google cloud platform',
+  // Containers & orchestration
+  'docker', 'kubernetes', 'k8s', 'openshift', 'rancher', 'helm',
+  // Infrastructure as code
+  'terraform', 'ansible', 'puppet', 'chef', 'cloudformation', 'pulumi',
+  // CI/CD
+  'jenkins', 'circleci', 'github actions', 'gitlab ci', 'travis', 'teamcity', 'bamboo',
+  // Databases (non-analysts shouldn't be associated with these)
+  'postgresql', 'postgres', 'mysql', 'mariadb', 'mongodb', 'redis', 'elasticsearch',
+  'sql server', 'microsoft sql', 'mssql', 'oracle database', 'cassandra', 'dynamodb',
+  // Web servers
+  'nginx', 'apache', 'iis', 'tomcat',
+  // Operating systems
+  'linux', 'ubuntu', 'centos', 'debian', 'redhat', 'rhel',
+  // Programming languages & frameworks
+  'react', 'vue', 'angular', 'svelte', 'next.js', 'nuxt',
+  'node.js', 'express', 'fastify', 'nest.js',
+  'python', 'django', 'flask', 'fastapi',
+  'java', 'spring', 'spring boot', 'kotlin',
+  'go', 'golang', 'rust', 'c++', 'c#', '.net', 'ruby', 'rails',
+  'php', 'laravel', 'symfony',
+  // APIs & architecture
+  'graphql', 'rest api', 'grpc', 'microservices', 'serverless', 'lambda',
+  // Message queues
+  'kafka', 'rabbitmq', 'sqs', 'pubsub',
+  // Monitoring
+  'prometheus', 'grafana', 'datadog', 'new relic', 'splunk', 'elk'
+];
+
+// Validate if a technology is appropriate for a role
+function isValidTechForRole(jobTitle: string, tech: string): boolean {
+  const titleLower = jobTitle.toLowerCase();
+  const techLower = tech.toLowerCase();
+
+  // Find the role category
+  for (const [category, config] of Object.entries(ROLE_TECH_MAP)) {
+    const matchesRole = config.keywords.some(keyword => titleLower.includes(keyword));
+
+    if (matchesRole) {
+      // Engineers can use anything
+      if (config.validTech.includes('*')) return true;
+
+      // Check if tech is in the valid list for this role
+      return config.validTech.some(validTech => techLower.includes(validTech));
+    }
+  }
+
+  // If role not found in our map, be conservative - don't allow infrastructure tech
+  const isInfrastructure = INFRASTRUCTURE_TECH.some(infra => techLower.includes(infra));
+  return !isInfrastructure;
+}
+
+// Filter inferred skills to only include role-appropriate tech
+function filterInferredSkills(skills: string[], jobTitle: string): string[] {
+  if (!jobTitle) return [];
+  return skills.filter(skill => isValidTechForRole(jobTitle, skill));
+}
+
+// Filter company correlations to remove invalid ones
+function filterCompanyCorrelations(correlations: CompanyCorrelation[], jobTitle: string): CompanyCorrelation[] {
+  if (!jobTitle) return [];
+
+  return correlations.filter(correlation => {
+    const observationLower = correlation.observation.toLowerCase();
+
+    // Check if the correlation mentions infrastructure tech for non-technical roles
+    const mentionsInfraTech = INFRASTRUCTURE_TECH.some(tech => observationLower.includes(tech));
+    const isEngineeringRole = ROLE_TECH_MAP.engineering.keywords.some(k => jobTitle.toLowerCase().includes(k));
+    const isDataRole = ROLE_TECH_MAP.data.keywords.some(k => jobTitle.toLowerCase().includes(k));
+
+    // If it mentions infrastructure tech and person isn't in engineering/data, filter it out
+    if (mentionsInfraTech && !isEngineeringRole && !isDataRole) {
+      console.log(`Filtering invalid correlation: "${correlation.observation}" for role "${jobTitle}"`);
+      return false;
+    }
+
+    return true;
+  });
+}
+
 // Build the analysis prompt
 function buildPrompt(candidate: CandidateData, companyIntel?: CompanyIntelligence): string {
   const name = `${candidate.first_name || ''} ${candidate.last_name || ''}`.trim() || 'Unknown';
@@ -203,41 +327,64 @@ ${formatCompetitors(companyIntel.competitive_landscape?.competitors)}
 
   const correlationInstructions = companyIntel ? `
 
-COMPANY-CANDIDATE CORRELATION ANALYSIS:
-=======================================
-You have rich company intelligence data. Generate sophisticated correlations:
+COMPANY-CANDIDATE CORRELATION ANALYSIS - STRICT RULES:
+=======================================================
+Generate correlations ONLY when there is a DIRECT, LOGICAL connection between the candidate's role and the company data.
 
-1. **TECH STACK + ROLE MATCHING**:
-   - Match company technologies to candidate's job title
-   - Finance roles + SAP/Oracle/NetSuite/QuickBooks = ERP proficiency
-   - Sales roles + Salesforce/HubSpot = CRM expertise
-   - Engineering + specific frameworks = direct tech experience
-   - HR roles + Workday/BambooHR/ADP = HRIS experience
-   - Marketing + HubSpot/Marketo = automation expertise
-   - Generate "inferred_skills" based on these matches
+**CRITICAL: WHAT IS A VALID CORRELATION?**
+A valid correlation requires the candidate to ACTUALLY USE the technology in their daily work:
+
+VALID MATCHES (role directly uses the software):
+- Finance/Accounting + SAP/Oracle Financials/NetSuite/QuickBooks/Sage/Xero → ERP/accounting proficiency
+- Sales/Account Exec + Salesforce/HubSpot CRM/Pipedrive/Zoho CRM → CRM expertise
+- HR/Recruiter + Workday/BambooHR/ADP/Greenhouse/Lever → HRIS/ATS experience
+- Marketing + HubSpot Marketing/Marketo/Mailchimp/Pardot → Marketing automation
+- Software Engineer/Developer + Programming languages/frameworks → Technical proficiency
+- DevOps/SRE + AWS/Azure/GCP/Docker/Kubernetes → Cloud infrastructure experience
+- Data Analyst/Scientist + SQL/Python/Tableau/Power BI → Analytics tools
+
+**CRITICAL: WHAT IS AN INVALID CORRELATION?**
+DO NOT correlate infrastructure/general tech with non-technical roles:
+
+INVALID - NEVER DO THIS:
+- Accountant + Google Cloud → WRONG (accountants don't use cloud infrastructure)
+- Accountant + SQL Server → WRONG (accountants don't write SQL queries)
+- HR Manager + AWS → WRONG (HR doesn't manage cloud servers)
+- Sales Rep + Docker → WRONG (sales doesn't use containers)
+- Finance Manager + React/Node.js → WRONG (finance doesn't code)
+- Recruiter + PostgreSQL → WRONG (recruiters don't manage databases)
+- Marketing Manager + Kubernetes → WRONG (marketing doesn't deploy containers)
+
+**THE RULE**: If the person wouldn't DIRECTLY interact with the technology as part of their job function, DO NOT create a correlation.
+
+**WHEN TO RETURN EMPTY ARRAYS:**
+- If no role-specific technology matches exist, return: "inferred_skills": []
+- If no employee rating issues exist, return: "company_pain_points": []
+- If the company has no competitors listed, return: "lateral_opportunities": []
+- If no valid correlations can be made, return: "company_correlations": []
+
+It's BETTER to return empty arrays than to make up irrelevant correlations.
+
+**VALID CORRELATION CATEGORIES:**
+
+1. **ROLE-SPECIFIC TECH MATCHES** (only when role directly uses the tech):
+   - Generate "inferred_skills" ONLY from role-appropriate software
 
 2. **EMPLOYEE RATINGS + FLIGHT RISK**:
    - Low ratings (<3.5) + long tenure = potential golden handcuffs
    - Low career opportunities + no promotions = blocked growth
-   - Low work-life balance = potential burnout
-   - High attrition rate = colleagues leaving, reflection trigger
-   - Generate "company_pain_points" from low ratings
+   - Generate "company_pain_points" from ratings below 3.0
 
-3. **FUNDING + COMPENSATION STRATEGY**:
-   - Series A/B = startup equity considerations, vesting schedules
-   - Series C+ = competitive comp, need strong value prop
-   - Public company = RSU vesting cycles affect timing
-   - Recent funding = cash-rich, hard to outcompete on salary
+3. **FUNDING + COMPENSATION INSIGHTS**:
+   - Series A/B startup = equity considerations
+   - Public company = RSU vesting timing matters
 
-4. **WORKFORCE + ROLE VALUE**:
-   - Small department % + senior title = specialized critical role
-   - Large department % + IC = potentially replaceable
-   - High growth rate = scaling experience valuable
-   - Declining headcount = layoff risk, proactive timing
+4. **WORKFORCE SIGNALS**:
+   - High attrition (>20%) = colleagues leaving, creates reflection
+   - Declining headcount = job security concerns
 
-5. **COMPETITORS AS OPPORTUNITIES**:
-   - List competitors as "lateral_opportunities" for outreach
-   - Frame as "similar companies you might consider"
+5. **COMPETITORS AS LATERAL OPPORTUNITIES**:
+   - Only include if competitors are actually listed in the data
 ` : '';
 
   return `You are an elite recruiter intelligence analyst. Your job is to analyze candidate data and determine how likely this person is to respond positively to a job opportunity outreach.
@@ -438,6 +585,9 @@ async function callLLM(prompt: string): Promise<IntelligenceResult | null> {
     const result = JSON.parse(jsonStr);
     result.last_intelligence_update = new Date().toISOString();
 
+    // Note: Validation will be applied after this function returns
+    // using filterInferredSkills and filterCompanyCorrelations
+
     return result as IntelligenceResult;
   } catch (error) {
     console.error("LLM call error:", error);
@@ -460,65 +610,66 @@ function analyzeWithRules(candidate: CandidateData, companyIntel?: CompanyIntell
   const name = `${candidate.first_name || ''} ${candidate.last_name || ''}`.trim() || 'This candidate';
   const jobTitle = (candidate.job_title || '').toLowerCase();
 
-  // Company intelligence correlations
+  // Company intelligence correlations - STRICT MATCHING
   if (companyIntel) {
-    // Tech Stack + Role Matching
+    // Get all technologies from tech stack
     const techStack = companyIntel.technographics?.tech_stack || [];
     const allTechs = techStack.flatMap(cat => cat.technologies.map(t => t.toLowerCase()));
 
-    // Finance role correlations
-    if (jobTitle.includes('finance') || jobTitle.includes('accounting') || jobTitle.includes('controller') || jobTitle.includes('cfo')) {
-      const financeTech = ['sap', 'oracle', 'netsuite', 'quickbooks', 'sage', 'workday'];
-      const matchedFinanceTech = financeTech.filter(t => allTechs.some(at => at.includes(t)));
-      if (matchedFinanceTech.length > 0) {
-        inferredSkills.push(...matchedFinanceTech.map(t => `${t.charAt(0).toUpperCase() + t.slice(1)} ERP Administration`));
-        companyCorrelations.push({
-          observation: `Company uses ${matchedFinanceTech.join(', ')}, candidate is ${candidate.job_title}`,
-          inference: `Likely proficient in enterprise ERP/accounting systems with hands-on financial management experience`,
-          outreach_angle: `Highlight modern finance tech stack or opportunity to expand ERP expertise`
-        });
+    // Use our strict ROLE_TECH_MAP for matching
+    for (const [roleCategory, config] of Object.entries(ROLE_TECH_MAP)) {
+      // Check if candidate's role matches this category
+      const matchesRole = config.keywords.some(keyword => jobTitle.includes(keyword));
+
+      if (matchesRole && config.validTech[0] !== '*') {
+        // Find technologies that match this role's valid tech list
+        const matchedTech = config.validTech.filter(validTech =>
+          allTechs.some(companyTech => companyTech.includes(validTech))
+        );
+
+        if (matchedTech.length > 0) {
+          // Format nice skill names based on role category
+          const skillSuffix = {
+            finance: 'ERP/Financial Systems',
+            sales: 'CRM',
+            hr: 'HRIS/ATS',
+            marketing: 'Marketing Automation',
+            data: 'Analytics',
+            design: 'Design Tools',
+            pm: 'Project Management',
+            support: 'Customer Support'
+          }[roleCategory] || '';
+
+          inferredSkills.push(...matchedTech.map(t =>
+            `${t.charAt(0).toUpperCase() + t.slice(1)} ${skillSuffix}`.trim()
+          ));
+
+          companyCorrelations.push({
+            observation: `Company uses ${matchedTech.join(', ')}, and candidate is ${candidate.job_title}`,
+            inference: `Daily hands-on experience with ${matchedTech.join(' and ')} as core tools for their ${roleCategory} role`,
+            outreach_angle: `Highlight opportunities to work with ${matchedTech.length > 1 ? 'similar or more advanced' : 'modern'} ${skillSuffix.toLowerCase()} tools`
+          });
+        }
+        break; // Only match one role category
       }
     }
 
-    // Sales role correlations
-    if (jobTitle.includes('sales') || jobTitle.includes('account exec') || jobTitle.includes('business dev') || jobTitle.includes('ae')) {
-      const salesTech = ['salesforce', 'hubspot', 'pipedrive', 'zoho'];
-      const matchedSalesTech = salesTech.filter(t => allTechs.some(at => at.includes(t)));
-      if (matchedSalesTech.length > 0) {
-        inferredSkills.push(...matchedSalesTech.map(t => `${t.charAt(0).toUpperCase() + t.slice(1)} CRM Expert`));
-        companyCorrelations.push({
-          observation: `Company uses ${matchedSalesTech.join(', ')}, candidate is ${candidate.job_title}`,
-          inference: `CRM power user with pipeline management and sales process automation experience`,
-          outreach_angle: `Emphasize sales tools and tech-enabled selling approach`
-        });
-      }
-    }
-
-    // HR role correlations
-    if (jobTitle.includes('hr') || jobTitle.includes('people') || jobTitle.includes('talent') || jobTitle.includes('recruiting')) {
-      const hrTech = ['workday', 'bamboohr', 'adp', 'greenhouse', 'lever'];
-      const matchedHrTech = hrTech.filter(t => allTechs.some(at => at.includes(t)));
-      if (matchedHrTech.length > 0) {
-        inferredSkills.push(...matchedHrTech.map(t => `${t.charAt(0).toUpperCase() + t.slice(1)} HRIS Administration`));
-        companyCorrelations.push({
-          observation: `Company uses ${matchedHrTech.join(', ')}, candidate is ${candidate.job_title}`,
-          inference: `HRIS and ATS administration experience with workforce analytics capabilities`,
-          outreach_angle: `Highlight HR technology modernization opportunities`
-        });
-      }
-    }
-
-    // Engineering role correlations
-    if (jobTitle.includes('engineer') || jobTitle.includes('developer') || jobTitle.includes('devops') || jobTitle.includes('sre')) {
+    // Special handling for engineering roles (they can use any tech)
+    const isEngineeringRole = ROLE_TECH_MAP.engineering.keywords.some(k => jobTitle.includes(k));
+    if (isEngineeringRole) {
+      // Get relevant tech categories for engineers
       const engTech = techStack.filter(cat =>
-        ['development', 'programming', 'cloud', 'infrastructure', 'devops'].some(k => cat.category.toLowerCase().includes(k))
+        ['development', 'programming', 'cloud', 'infrastructure', 'devops', 'framework', 'language'].some(k =>
+          cat.category.toLowerCase().includes(k)
+        )
       ).flatMap(cat => cat.technologies);
+
       if (engTech.length > 0) {
         inferredSkills.push(...engTech.slice(0, 5).map(t => `${t} Experience`));
         companyCorrelations.push({
           observation: `Company tech stack includes ${engTech.slice(0, 4).join(', ')}`,
-          inference: `Direct hands-on experience with these technologies in production environment`,
-          outreach_angle: `Match tech stack or highlight opportunity to learn new technologies`
+          inference: `Direct hands-on production experience with these technologies`,
+          outreach_angle: `Match tech stack or highlight opportunity to expand technical expertise`
         });
       }
     }
@@ -890,6 +1041,30 @@ serve(async (req) => {
         if (!intelligence) {
           console.log(`LLM failed for candidate ${candidate.id}, using rule-based fallback`);
           intelligence = analyzeWithRules(candidate, company_intelligence as CompanyIntelligence | undefined);
+        }
+
+        // CRITICAL: Apply validation to filter out invalid correlations
+        // This prevents nonsense like "Accountant + Google Cloud = cloud expertise"
+        if (candidate.job_title) {
+          const originalSkillsCount = intelligence.inferred_skills?.length || 0;
+          const originalCorrelationsCount = intelligence.company_correlations?.length || 0;
+
+          intelligence.inferred_skills = filterInferredSkills(
+            intelligence.inferred_skills || [],
+            candidate.job_title
+          );
+          intelligence.company_correlations = filterCompanyCorrelations(
+            intelligence.company_correlations || [],
+            candidate.job_title
+          );
+
+          // Log if we filtered anything
+          const filteredSkills = originalSkillsCount - (intelligence.inferred_skills?.length || 0);
+          const filteredCorrelations = originalCorrelationsCount - (intelligence.company_correlations?.length || 0);
+
+          if (filteredSkills > 0 || filteredCorrelations > 0) {
+            console.log(`Filtered ${filteredSkills} invalid skills and ${filteredCorrelations} invalid correlations for ${candidate.job_title}`);
+          }
         }
 
         // Update the candidate record with all intelligence fields (including new company-correlation fields)
