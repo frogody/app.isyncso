@@ -92,15 +92,11 @@ const StatusBadge = ({ status }) => {
 // Campaign Type Badge
 const TypeBadge = ({ type }) => {
   const styles = {
-    email: { bg: "bg-red-500/20", text: "text-red-400", label: "Email" },
-    linkedin: { bg: "bg-red-500/20", text: "text-red-400", label: "LinkedIn" },
-    cold_call: { bg: "bg-red-500/20", text: "text-red-400", label: "Cold Call" },
-    multi_channel: { bg: "bg-red-500/20", text: "text-red-400", label: "Multi-Channel" },
     recruitment: { bg: "bg-red-500/20", text: "text-red-400", label: "Recruitment" },
-    growth: { bg: "bg-red-500/20", text: "text-red-400", label: "Growth" },
+    growth: { bg: "bg-amber-500/20", text: "text-amber-400", label: "Growth" },
   };
 
-  const style = styles[type] || styles.email;
+  const style = styles[type] || styles.recruitment;
 
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${style.bg} ${style.text}`}>
@@ -290,7 +286,7 @@ const CampaignCard = ({ campaign, onEdit, onToggle, onDelete, onDuplicate, onCli
         <div className="flex items-center justify-between pt-4 border-t border-white/10">
           <div className="flex items-center gap-2 text-sm text-white/40">
             <Calendar className="w-4 h-4" />
-            <span>Created {new Date(campaign.created_at).toLocaleDateString()}</span>
+            <span>Created {new Date(campaign.created_date).toLocaleDateString()}</span>
           </div>
           <button 
             onClick={onClick}
@@ -310,18 +306,19 @@ const CreateCampaignModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    campaign_type: "email",
+    campaign_type: "recruitment",
     status: "draft",
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    console.log("[CreateCampaign] Submitting form data:", formData);
     onSubmit(formData);
   };
 
   useEffect(() => {
     if (!isOpen) {
-      setFormData({ name: "", description: "", campaign_type: "email", status: "draft" });
+      setFormData({ name: "", description: "", campaign_type: "recruitment", status: "draft" });
     }
   }, [isOpen]);
 
@@ -376,10 +373,8 @@ const CreateCampaignModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
             <Label className="text-zinc-400 mb-2 block">Campaign Type</Label>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { value: "email", label: "Email", icon: Mail },
-                { value: "linkedin", label: "LinkedIn", icon: Target },
-                { value: "cold_call", label: "Cold Call", icon: MessageSquare },
-                { value: "multi_channel", label: "Multi-Channel", icon: TrendingUp },
+                { value: "recruitment", label: "Recruitment", icon: Users, description: "Talent sourcing & outreach" },
+                { value: "growth", label: "Growth", icon: TrendingUp, description: "Sales & marketing campaigns" },
               ].map((type) => (
                 <button
                   key={type.value}
@@ -393,6 +388,7 @@ const CreateCampaignModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
                 >
                   <type.icon className="w-6 h-6 mx-auto mb-2" />
                   <p className="font-medium text-sm">{type.label}</p>
+                  <p className="text-xs text-white/50 mt-1">{type.description}</p>
                 </button>
               ))}
             </div>
@@ -455,7 +451,7 @@ export default function TalentCampaigns() {
         .from("campaigns")
         .select("*")
         .eq("organization_id", user.organization_id)
-        .order("created_at", { ascending: false });
+        .order("created_date", { ascending: false });
 
       if (error) throw error;
       setCampaigns(data || []);
@@ -468,33 +464,50 @@ export default function TalentCampaigns() {
   };
 
   const handleCreateCampaign = async (formData) => {
-    if (!user?.organization_id) return;
+    console.log("[handleCreateCampaign] Starting with formData:", formData);
+    console.log("[handleCreateCampaign] User:", user);
+    console.log("[handleCreateCampaign] Organization ID:", user?.organization_id);
+
+    if (!user?.organization_id) {
+      console.error("[handleCreateCampaign] No organization_id found");
+      toast.error("Organization not found. Please refresh the page.");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
+      const campaignData = {
+        name: formData.name,
+        description: formData.description || null,
+        campaign_type: formData.campaign_type,
+        status: formData.status || "draft",
+        organization_id: user.organization_id,
+        created_by: user.id,
+      };
+
+      console.log("[handleCreateCampaign] Inserting campaign data:", campaignData);
+
       const { data, error } = await supabase
         .from("campaigns")
-        .insert([
-          {
-            ...formData,
-            organization_id: user.organization_id,
-            matched_candidates: [],
-            sequence_steps: [],
-          },
-        ])
+        .insert([campaignData])
         .select()
         .single();
 
-      if (error) throw error;
-      
+      console.log("[handleCreateCampaign] Supabase response - data:", data, "error:", error);
+
+      if (error) {
+        console.error("[handleCreateCampaign] Supabase error:", error);
+        throw error;
+      }
+
       setCampaigns((prev) => [data, ...prev]);
       setShowCreateModal(false);
-      toast.success("Campaign created successfully");
-      
+      toast.success("Campaign created successfully!");
+
       // Navigate to the detail page
       navigate(`${createPageUrl("TalentCampaignDetail")}?id=${data.id}`);
     } catch (err) {
-      console.error("Error creating campaign:", err);
+      console.error("[handleCreateCampaign] Error:", err);
       toast.error(err.message || "Failed to create campaign");
     } finally {
       setIsSubmitting(false);
@@ -530,11 +543,7 @@ export default function TalentCampaigns() {
         campaign_type: campaign.campaign_type,
         status: "draft",
         organization_id: user.organization_id,
-        matched_candidates: [],
-        sequence_steps: campaign.sequence_steps || [],
-        daily_limit: campaign.daily_limit,
-        delay_min_minutes: campaign.delay_min_minutes,
-        delay_max_minutes: campaign.delay_max_minutes,
+        created_by: user.id,
       };
 
       const { data, error } = await supabase
@@ -544,7 +553,7 @@ export default function TalentCampaigns() {
         .single();
 
       if (error) throw error;
-      
+
       setCampaigns((prev) => [data, ...prev]);
       toast.success("Campaign duplicated");
     } catch (err) {
@@ -741,10 +750,8 @@ export default function TalentCampaigns() {
             className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white/70 focus:outline-none focus:border-red-500/50"
           >
             <option value="">All Types</option>
-            <option value="email">Email</option>
-            <option value="linkedin">LinkedIn</option>
-            <option value="cold_call">Cold Call</option>
-            <option value="multi_channel">Multi-Channel</option>
+            <option value="recruitment">Recruitment</option>
+            <option value="growth">Growth</option>
           </select>
 
           <button
