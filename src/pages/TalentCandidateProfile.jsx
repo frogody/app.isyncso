@@ -62,9 +62,9 @@ const itemVariants = {
 const TimelineItem = ({ item, isLast }) => {
   const typeStyles = {
     outreach: { icon: Send, color: "text-red-400", bg: "bg-red-500/20" },
-    reply: { icon: MessageSquare, color: "text-green-400", bg: "bg-green-500/20" },
-    note: { icon: FileText, color: "text-blue-400", bg: "bg-blue-500/20" },
-    status: { icon: RefreshCw, color: "text-yellow-400", bg: "bg-yellow-500/20" },
+    reply: { icon: MessageSquare, color: "text-red-400", bg: "bg-red-500/20" },
+    note: { icon: FileText, color: "text-red-400", bg: "bg-red-500/20" },
+    status: { icon: RefreshCw, color: "text-red-400", bg: "bg-red-500/20" },
   };
 
   const style = typeStyles[item.type] || typeStyles.note;
@@ -93,10 +93,10 @@ const TimelineItem = ({ item, isLast }) => {
 const OutreachTaskCard = ({ task }) => {
   const statusStyles = {
     pending: { color: "text-yellow-400", bg: "bg-yellow-500/20", label: "Pending" },
-    approved_ready: { color: "text-blue-400", bg: "bg-blue-500/20", label: "Ready" },
+    approved_ready: { color: "text-red-400", bg: "bg-red-500/20", label: "Ready" },
     sent: { color: "text-red-400", bg: "bg-red-500/20", label: "Sent" },
-    completed: { color: "text-green-400", bg: "bg-green-500/20", label: "Completed" },
-    cancelled: { color: "text-red-400", bg: "bg-red-500/20", label: "Cancelled" },
+    completed: { color: "text-red-400", bg: "bg-red-500/20", label: "Completed" },
+    cancelled: { color: "text-zinc-400", bg: "bg-zinc-500/20", label: "Cancelled" },
   };
 
   const style = statusStyles[task.status] || statusStyles.pending;
@@ -417,11 +417,11 @@ export default function TalentCandidateProfile() {
                 <div className="flex items-start gap-4">
                   <div className={`p-3 rounded-xl ${
                     candidate.recommended_approach === "immediate" ? "bg-red-500/20" :
-                    candidate.recommended_approach === "targeted" ? "bg-red-500/20" : "bg-blue-500/20"
+                    candidate.recommended_approach === "targeted" ? "bg-red-500/20" : "bg-red-500/20"
                   }`}>
                     <Target className={`w-6 h-6 ${
                       candidate.recommended_approach === "immediate" ? "text-red-400" :
-                      candidate.recommended_approach === "targeted" ? "text-red-400" : "text-blue-400"
+                      candidate.recommended_approach === "targeted" ? "text-red-400" : "text-red-400"
                     }`} />
                   </div>
                   <div className="flex-1">

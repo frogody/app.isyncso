@@ -81,10 +81,10 @@ const itemVariants = {
 // Client Status Badge
 const StatusBadge = ({ status }) => {
   const styles = {
-    active: "bg-green-500/20 text-green-400 border-green-500/30",
-    prospect: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+    active: "bg-red-500/20 text-red-400 border-red-500/30",
+    prospect: "bg-red-500/20 text-red-400 border-red-500/30",
     inactive: "bg-zinc-500/20 text-zinc-400 border-zinc-500/30",
-    churned: "bg-red-500/20 text-red-400 border-red-500/30",
+    churned: "bg-zinc-500/20 text-zinc-400 border-zinc-500/30",
   };
 
   return (

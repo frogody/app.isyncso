@@ -39,12 +39,12 @@ const STAGES = [
   { id: 'briefing', label: 'Briefing', color: 'from-red-600 to-red-700', accent: 'text-red-400', bgAccent: 'bg-red-500', borderAccent: 'border-red-500/50', probability: 15 },
   { id: 'agreement', label: 'Agreement', color: 'from-red-500 to-red-600', accent: 'text-red-400', bgAccent: 'bg-red-500', borderAccent: 'border-red-500/50', probability: 25 },
   { id: 'search', label: 'Search', color: 'from-red-400 to-red-500', accent: 'text-red-400', bgAccent: 'bg-red-500', borderAccent: 'border-red-500/50', probability: 35 },
-  { id: 'presented', label: 'Presented', color: 'from-indigo-500 to-indigo-600', accent: 'text-indigo-400', bgAccent: 'bg-indigo-500', borderAccent: 'border-indigo-500/50', probability: 50 },
-  { id: 'interviews', label: 'Interviews', color: 'from-blue-500 to-blue-600', accent: 'text-blue-400', bgAccent: 'bg-blue-500', borderAccent: 'border-blue-500/50', probability: 65 },
-  { id: 'offer', label: 'Offer', color: 'from-cyan-500 to-cyan-600', accent: 'text-cyan-400', bgAccent: 'bg-cyan-500', borderAccent: 'border-cyan-500/50', probability: 80 },
-  { id: 'starting', label: 'Starting', color: 'from-emerald-500 to-emerald-600', accent: 'text-emerald-400', bgAccent: 'bg-emerald-500', borderAccent: 'border-emerald-500/50', probability: 90 },
-  { id: 'probation', label: 'Probation', color: 'from-amber-500 to-amber-600', accent: 'text-amber-400', bgAccent: 'bg-amber-500', borderAccent: 'border-amber-500/50', probability: 95 },
-  { id: 'confirmed', label: 'Confirmed', color: 'from-green-500 to-green-600', accent: 'text-green-400', bgAccent: 'bg-green-500', borderAccent: 'border-green-500/50', probability: 100 },
+  { id: 'presented', label: 'Presented', color: 'from-red-300 to-red-400', accent: 'text-red-400', bgAccent: 'bg-red-400', borderAccent: 'border-red-500/50', probability: 50 },
+  { id: 'interviews', label: 'Interviews', color: 'from-red-400 to-red-500', accent: 'text-red-400', bgAccent: 'bg-red-500', borderAccent: 'border-red-500/50', probability: 65 },
+  { id: 'offer', label: 'Offer', color: 'from-red-500 to-red-600', accent: 'text-red-400', bgAccent: 'bg-red-500', borderAccent: 'border-red-500/50', probability: 80 },
+  { id: 'starting', label: 'Starting', color: 'from-red-600 to-red-700', accent: 'text-red-400', bgAccent: 'bg-red-600', borderAccent: 'border-red-500/50', probability: 90 },
+  { id: 'probation', label: 'Probation', color: 'from-red-700 to-red-800', accent: 'text-red-400', bgAccent: 'bg-red-700', borderAccent: 'border-red-500/50', probability: 95 },
+  { id: 'confirmed', label: 'Confirmed', color: 'from-red-800 to-red-900', accent: 'text-red-400', bgAccent: 'bg-red-800', borderAccent: 'border-red-500/50', probability: 100 },
 ];
 
 const emptyForm = {

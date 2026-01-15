@@ -71,10 +71,10 @@ const CAMPAIGN_STATUSES = [
 // Status Badge Component
 const StatusBadge = ({ status }) => {
   const styles = {
-    active: "bg-green-500/20 text-green-400",
+    active: "bg-red-500/20 text-red-400",
     paused: "bg-yellow-500/20 text-yellow-400",
     draft: "bg-zinc-500/20 text-zinc-400",
-    completed: "bg-blue-500/20 text-blue-400",
+    completed: "bg-red-500/20 text-red-400",
     archived: "bg-zinc-500/20 text-zinc-500",
   };
 
@@ -89,9 +89,9 @@ const StatusBadge = ({ status }) => {
 const TypeBadge = ({ type }) => {
   const styles = {
     email: { bg: "bg-red-500/20", text: "text-red-400", icon: Mail },
-    linkedin: { bg: "bg-blue-500/20", text: "text-blue-400", icon: Linkedin },
-    cold_call: { bg: "bg-amber-500/20", text: "text-amber-400", icon: Phone },
-    multi_channel: { bg: "bg-cyan-500/20", text: "text-cyan-400", icon: Zap },
+    linkedin: { bg: "bg-red-500/20", text: "text-red-400", icon: Linkedin },
+    cold_call: { bg: "bg-red-500/20", text: "text-red-400", icon: Phone },
+    multi_channel: { bg: "bg-red-500/20", text: "text-red-400", icon: Zap },
   };
 
   const style = styles[type] || styles.email;
@@ -221,23 +221,23 @@ const OverviewTab = ({ campaign, formData, stats }) => {
 
           <GlassCard className="p-5">
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2.5 bg-green-500/20 rounded-lg">
-                <MessageSquare className="w-5 h-5 text-green-400" />
+              <div className="p-2.5 bg-red-500/20 rounded-lg">
+                <MessageSquare className="w-5 h-5 text-red-400" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-white">{stats.replied}</p>
                 <p className="text-xs text-zinc-500">Replies</p>
               </div>
             </div>
-            <p className="text-sm text-green-400">
+            <p className="text-sm text-red-400">
               {stats.replyRate}% reply rate
             </p>
           </GlassCard>
 
           <GlassCard className="p-5">
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2.5 bg-blue-500/20 rounded-lg">
-                <Send className="w-5 h-5 text-blue-400" />
+              <div className="p-2.5 bg-red-500/20 rounded-lg">
+                <Send className="w-5 h-5 text-red-400" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-white">{stats.sent}</p>
@@ -421,10 +421,10 @@ const AnalyticsTab = ({ campaign }) => {
         <div className="grid grid-cols-5 gap-4">
           {[
             { label: "Matched", count: metrics.statusCounts.matched || 0, color: "red" },
-            { label: "Pending", count: metrics.statusCounts.pending || 0, color: "yellow" },
-            { label: "Contacted", count: (metrics.statusCounts.contacted || 0) + (metrics.statusCounts.sent || 0), color: "blue" },
-            { label: "Replied", count: metrics.statusCounts.replied || 0, color: "green" },
-            { label: "Scheduled", count: metrics.statusCounts.scheduled || 0, color: "cyan" },
+            { label: "Pending", count: metrics.statusCounts.pending || 0, color: "red" },
+            { label: "Contacted", count: (metrics.statusCounts.contacted || 0) + (metrics.statusCounts.sent || 0), color: "red" },
+            { label: "Replied", count: metrics.statusCounts.replied || 0, color: "red" },
+            { label: "Scheduled", count: metrics.statusCounts.scheduled || 0, color: "red" },
           ].map((stage, idx) => (
             <div key={idx} className="text-center">
               <div className={`text-3xl font-bold text-${stage.color}-400 mb-1`}>
@@ -805,7 +805,7 @@ export default function TalentCampaignDetail() {
                 <Button
                   variant="outline"
                   onClick={() => handleStatusChange("active")}
-                  className="border-green-500/30 text-green-400 hover:bg-green-500/10"
+                  className="border-red-500/30 text-red-400 hover:bg-red-500/10"
                 >
                   <Play className="w-4 h-4 mr-2" />
                   Activate

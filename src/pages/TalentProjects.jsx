@@ -85,10 +85,10 @@ const itemVariants = {
 // Status Badge Component
 const StatusBadge = ({ status }) => {
   const styles = {
-    active: { bg: "bg-green-500/20", text: "text-green-400", label: "Active" },
-    filled: { bg: "bg-blue-500/20", text: "text-blue-400", label: "Filled" },
+    active: { bg: "bg-red-500/20", text: "text-red-400", label: "Active" },
+    filled: { bg: "bg-red-500/20", text: "text-red-400", label: "Filled" },
     on_hold: { bg: "bg-yellow-500/20", text: "text-yellow-400", label: "On Hold" },
-    cancelled: { bg: "bg-red-500/20", text: "text-red-400", label: "Cancelled" },
+    cancelled: { bg: "bg-zinc-500/20", text: "text-zinc-400", label: "Cancelled" },
     draft: { bg: "bg-zinc-500/20", text: "text-zinc-400", label: "Draft" },
   };
 
@@ -105,9 +105,9 @@ const StatusBadge = ({ status }) => {
 const PriorityBadge = ({ priority }) => {
   const styles = {
     urgent: { bg: "bg-red-500/20", text: "text-red-400", label: "Urgent" },
-    high: { bg: "bg-orange-500/20", text: "text-orange-400", label: "High" },
+    high: { bg: "bg-red-500/20", text: "text-red-400", label: "High" },
     medium: { bg: "bg-yellow-500/20", text: "text-yellow-400", label: "Medium" },
-    low: { bg: "bg-green-500/20", text: "text-green-400", label: "Low" },
+    low: { bg: "bg-zinc-500/20", text: "text-zinc-400", label: "Low" },
   };
 
   const style = styles[priority] || styles.medium;
@@ -1037,7 +1037,7 @@ export default function TalentProjects() {
               title="Total Roles"
               value={stats.totalRoles}
               icon={Target}
-              color="blue"
+              color="red"
             />
           </motion.div>
           <motion.div variants={itemVariants}>
@@ -1045,7 +1045,7 @@ export default function TalentProjects() {
               title="Active Roles"
               value={stats.activeRoles}
               icon={Users}
-              color="cyan"
+              color="red"
             />
           </motion.div>
           <motion.div variants={itemVariants}>
@@ -1053,7 +1053,7 @@ export default function TalentProjects() {
               title="Filled Roles"
               value={stats.filledRoles}
               icon={CheckCircle2}
-              color="green"
+              color="red"
             />
           </motion.div>
         </motion.div>

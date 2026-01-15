@@ -81,10 +81,10 @@ const ProgressBar = ({ value, max = 100, color = "red", label, showValue = true 
   const percentage = max > 0 ? Math.min((value / max) * 100, 100) : 0;
   const colors = {
     red: "bg-red-500",
-    blue: "bg-blue-500",
-    green: "bg-green-500",
-    yellow: "bg-yellow-500",
-    cyan: "bg-cyan-500",
+    blue: "bg-red-500",
+    green: "bg-red-500",
+    yellow: "bg-red-500",
+    cyan: "bg-red-500",
   };
 
   return (
@@ -137,18 +137,18 @@ const FunnelStage = ({ stage, count, total, color, icon: Icon }) => {
 const MetricCard = ({ title, value, subtitle, icon: Icon, color = "red", trend }) => {
   const colors = {
     red: "from-red-500/20 to-red-600/20 border-red-500/30",
-    blue: "from-blue-500/20 to-cyan-500/20 border-blue-500/30",
-    green: "from-green-500/20 to-emerald-500/20 border-green-500/30",
-    yellow: "from-yellow-500/20 to-amber-500/20 border-yellow-500/30",
-    cyan: "from-cyan-500/20 to-teal-500/20 border-cyan-500/30",
+    blue: "from-red-500/20 to-red-600/20 border-red-500/30",
+    green: "from-red-500/20 to-red-600/20 border-red-500/30",
+    yellow: "from-red-500/20 to-red-600/20 border-red-500/30",
+    cyan: "from-red-500/20 to-red-600/20 border-red-500/30",
   };
 
   const iconColors = {
     red: "text-red-400",
-    blue: "text-blue-400",
-    green: "text-green-400",
-    yellow: "text-yellow-400",
-    cyan: "text-cyan-400",
+    blue: "text-red-400",
+    green: "text-red-400",
+    yellow: "text-red-400",
+    cyan: "text-red-400",
   };
 
   return (
@@ -174,9 +174,9 @@ const MetricCard = ({ title, value, subtitle, icon: Icon, color = "red", trend }
 const OutreachTypeStats = ({ data }) => {
   const types = [
     { key: "email", label: "Email", icon: Mail, color: "red" },
-    { key: "linkedin", label: "LinkedIn", icon: Linkedin, color: "blue" },
-    { key: "linkedin_connection", label: "Connection", icon: Linkedin, color: "cyan" },
-    { key: "call", label: "Call", icon: Phone, color: "green" },
+    { key: "linkedin", label: "LinkedIn", icon: Linkedin, color: "red" },
+    { key: "linkedin_connection", label: "Connection", icon: Linkedin, color: "red" },
+    { key: "call", label: "Call", icon: Phone, color: "red" },
   ];
 
   const total = Object.values(data).reduce((a, b) => a + b, 0);
@@ -303,9 +303,9 @@ const CampaignPerformanceTable = ({ campaigns, outreachTasks }) => {
                     <span
                       className={`font-medium ${
                         campaign.responseRate >= 20
-                          ? "text-green-400"
+                          ? "text-red-400"
                           : campaign.responseRate >= 10
-                          ? "text-yellow-400"
+                          ? "text-red-300"
                           : "text-white/50"
                       }`}
                     >
@@ -385,7 +385,7 @@ const RecentActivity = ({ outreachTasks }) => {
   const getStatusIcon = (status) => {
     switch (status) {
       case "sent":
-        return <Send className="w-4 h-4 text-green-400" />;
+        return <Send className="w-4 h-4 text-red-400" />;
       case "replied":
         return <MessageSquare className="w-4 h-4 text-red-400" />;
       case "failed":
@@ -645,21 +645,21 @@ export default function TalentAnalytics() {
             value={metrics.activeCampaigns}
             subtitle={`${campaigns.length} total`}
             icon={Megaphone}
-            color="blue"
+            color="red"
           />
           <MetricCard
             title="Outreach Sent"
             value={metrics.sentOutreach}
             subtitle={`${metrics.totalOutreach} total tasks`}
             icon={Send}
-            color="cyan"
+            color="red"
           />
           <MetricCard
             title="Response Rate"
             value={`${metrics.responseRate}%`}
             subtitle={`${metrics.repliedOutreach} replies`}
             icon={MessageSquare}
-            color="green"
+            color="red"
           />
         </motion.div>
 
@@ -675,21 +675,21 @@ export default function TalentAnalytics() {
             value={metrics.activeProjects}
             subtitle={`${projects.length} total`}
             icon={Briefcase}
-            color="yellow"
+            color="red"
           />
           <MetricCard
             title="Open Roles"
             value={metrics.activeRoles}
             subtitle={`${roles.length} total roles`}
             icon={Target}
-            color="cyan"
+            color="red"
           />
           <MetricCard
             title="Roles Filled"
             value={metrics.filledRoles}
             subtitle={`${Math.round((metrics.filledRoles / Math.max(roles.length, 1)) * 100)}% success`}
             icon={CheckCircle2}
-            color="green"
+            color="red"
           />
         </motion.div>
 

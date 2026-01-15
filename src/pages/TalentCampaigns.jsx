@@ -73,10 +73,10 @@ const itemVariants = {
 // Campaign Status Badge
 const StatusBadge = ({ status }) => {
   const styles = {
-    active: { bg: "bg-green-500/20", text: "text-green-400", label: "Active" },
+    active: { bg: "bg-red-500/20", text: "text-red-400", label: "Active" },
     paused: { bg: "bg-yellow-500/20", text: "text-yellow-400", label: "Paused" },
     draft: { bg: "bg-white/10", text: "text-white/60", label: "Draft" },
-    completed: { bg: "bg-blue-500/20", text: "text-blue-400", label: "Completed" },
+    completed: { bg: "bg-red-500/20", text: "text-red-400", label: "Completed" },
     archived: { bg: "bg-white/5", text: "text-white/40", label: "Archived" },
   };
 
@@ -93,11 +93,11 @@ const StatusBadge = ({ status }) => {
 const TypeBadge = ({ type }) => {
   const styles = {
     email: { bg: "bg-red-500/20", text: "text-red-400", label: "Email" },
-    linkedin: { bg: "bg-blue-500/20", text: "text-blue-400", label: "LinkedIn" },
-    cold_call: { bg: "bg-amber-500/20", text: "text-amber-400", label: "Cold Call" },
-    multi_channel: { bg: "bg-cyan-500/20", text: "text-cyan-400", label: "Multi-Channel" },
+    linkedin: { bg: "bg-red-500/20", text: "text-red-400", label: "LinkedIn" },
+    cold_call: { bg: "bg-red-500/20", text: "text-red-400", label: "Cold Call" },
+    multi_channel: { bg: "bg-red-500/20", text: "text-red-400", label: "Multi-Channel" },
     recruitment: { bg: "bg-red-500/20", text: "text-red-400", label: "Recruitment" },
-    growth: { bg: "bg-blue-500/20", text: "text-blue-400", label: "Growth" },
+    growth: { bg: "bg-red-500/20", text: "text-red-400", label: "Growth" },
   };
 
   const style = styles[type] || styles.email;
@@ -266,7 +266,7 @@ const CampaignCard = ({ campaign, onEdit, onToggle, onDelete, onDuplicate, onCli
             <p className="text-xs text-white/60">Sent</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-bold text-green-400">{repliedCount}</p>
+            <p className="text-2xl font-bold text-red-400">{repliedCount}</p>
             <p className="text-xs text-white/60">Replied</p>
           </div>
           <div className="flex items-center justify-center">
@@ -697,13 +697,13 @@ export default function TalentCampaigns() {
           title="Messages Sent"
           value={stats.totalSent}
           icon={Send}
-          color="blue"
+          color="red"
         />
         <StatCard
           title="Replies Received"
           value={stats.totalReplied}
           icon={MessageSquare}
-          color="emerald"
+          color="red"
         />
       </div>
 

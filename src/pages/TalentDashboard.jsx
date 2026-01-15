@@ -80,9 +80,9 @@ const FlightRiskGauge = ({ score, maxScore = 100 }) => {
 const StatusBadge = ({ status }) => {
   const statusStyles = {
     pending: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
-    completed: "bg-green-500/10 text-green-400 border-green-500/20",
-    failed: "bg-red-500/10 text-red-400 border-red-500/20",
-    scheduled: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+    completed: "bg-red-500/10 text-red-400 border-red-500/20",
+    failed: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
+    scheduled: "bg-red-500/10 text-red-400 border-red-500/20",
     in_progress: "bg-red-500/10 text-red-400 border-red-500/20",
   };
 
@@ -110,9 +110,9 @@ const StatusBadge = ({ status }) => {
 const TaskTypeIcon = ({ type }) => {
   const icons = {
     email: <Mail className="w-4 h-4 text-red-400" />,
-    call: <Phone className="w-4 h-4 text-cyan-400" />,
-    meeting: <Calendar className="w-4 h-4 text-green-400" />,
-    linkedin: <Target className="w-4 h-4 text-blue-400" />,
+    call: <Phone className="w-4 h-4 text-red-400" />,
+    meeting: <Calendar className="w-4 h-4 text-red-400" />,
+    linkedin: <Target className="w-4 h-4 text-red-400" />,
   };
 
   return icons[type] || <Activity className="w-4 h-4 text-zinc-400" />;
