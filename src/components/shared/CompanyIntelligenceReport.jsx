@@ -518,7 +518,7 @@ export const CompanyIntelligenceReport = ({
       </div>
 
       {/* Row 3: Tech Stack (full width) */}
-      {technographics && (technographics.tech_stack?.length > 0 || technographics.raw) && (
+      {technographics && technographics.tech_stack?.length > 0 && (
         <SectionCard
           icon={Layers}
           title="Technology Stack"
@@ -529,72 +529,111 @@ export const CompanyIntelligenceReport = ({
             )
           }
         >
-          {technographics.tech_stack?.length > 0 ? (
-            <div className="space-y-4">
-              {technographics.tech_stack.slice(0, 6).map((cat, idx) => (
-                <div key={idx}>
-                  <p className="text-xs text-white/50 mb-2 capitalize">{cat.category}</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {cat.technologies.slice(0, 8).map((tech, tidx) => (
-                      <TechBadge key={tidx} name={tech} />
-                    ))}
-                    {cat.technologies.length > 8 && (
-                      <span className="px-2 py-1 text-[11px] text-white/40">
-                        +{cat.technologies.length - 8}
-                      </span>
-                    )}
-                  </div>
+          <div className="space-y-4">
+            {technographics.tech_stack.slice(0, 6).map((cat, idx) => (
+              <div key={idx}>
+                <p className="text-xs text-white/50 mb-2 capitalize">{cat.category}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {cat.technologies.slice(0, 10).map((tech, tidx) => (
+                    <TechBadge key={tidx} name={tech} />
+                  ))}
+                  {cat.technologies.length > 10 && (
+                    <span className="px-2 py-1 text-[11px] text-white/40">
+                      +{cat.technologies.length - 10}
+                    </span>
+                  )}
                 </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-white/40">Technology data available in raw format</p>
-          )}
+              </div>
+            ))}
+          </div>
         </SectionCard>
       )}
 
       {/* Row 4: Website Traffic + Competitors */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Website Traffic */}
-        {website_traffic && (website_traffic.monthly_visits || website_traffic.raw) && (
-          <SectionCard icon={Activity} title="Website Traffic" iconColor="orange">
-            <div className="grid grid-cols-2 gap-3">
-              {website_traffic.monthly_visits && (
-                <div className="p-3 bg-white/[0.03] rounded-lg text-center">
-                  <Eye className="w-4 h-4 text-orange-400 mx-auto mb-1" />
-                  <p className="text-lg font-bold text-white">
-                    {website_traffic.monthly_visits >= 1000000
-                      ? `${(website_traffic.monthly_visits / 1000000).toFixed(1)}M`
-                      : website_traffic.monthly_visits >= 1000
-                      ? `${(website_traffic.monthly_visits / 1000).toFixed(0)}K`
-                      : website_traffic.monthly_visits}
-                  </p>
-                  <p className="text-[10px] text-white/40">Monthly Visits</p>
-                </div>
-              )}
-              {website_traffic.bounce_rate && (
-                <div className="p-3 bg-white/[0.03] rounded-lg text-center">
-                  <Percent className="w-4 h-4 text-red-400 mx-auto mb-1" />
-                  <p className="text-lg font-bold text-white">{website_traffic.bounce_rate}%</p>
-                  <p className="text-[10px] text-white/40">Bounce Rate</p>
-                </div>
-              )}
-              {website_traffic.avg_visit_duration && (
-                <div className="p-3 bg-white/[0.03] rounded-lg text-center">
-                  <Clock className="w-4 h-4 text-blue-400 mx-auto mb-1" />
-                  <p className="text-lg font-bold text-white">{website_traffic.avg_visit_duration}</p>
-                  <p className="text-[10px] text-white/40">Avg Duration</p>
-                </div>
-              )}
-              {website_traffic.page_views && (
-                <div className="p-3 bg-white/[0.03] rounded-lg text-center">
-                  <BarChart3 className="w-4 h-4 text-green-400 mx-auto mb-1" />
-                  <p className="text-lg font-bold text-white">
-                    {website_traffic.page_views >= 1000
-                      ? `${(website_traffic.page_views / 1000).toFixed(0)}K`
-                      : website_traffic.page_views}
-                  </p>
-                  <p className="text-[10px] text-white/40">Page Views</p>
+        {website_traffic && (website_traffic.monthly_visits || website_traffic.unique_visitors) && (
+          <SectionCard
+            icon={Activity}
+            title="Website Traffic"
+            iconColor="orange"
+            badge={
+              website_traffic.rank && (
+                <span className="text-xs text-white/40">Rank #{website_traffic.rank.toLocaleString()}</span>
+              )
+            }
+          >
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                {website_traffic.monthly_visits && (
+                  <div className="p-3 bg-white/[0.03] rounded-lg text-center">
+                    <Eye className="w-4 h-4 text-orange-400 mx-auto mb-1" />
+                    <p className="text-lg font-bold text-white">
+                      {website_traffic.monthly_visits >= 1000000
+                        ? `${(website_traffic.monthly_visits / 1000000).toFixed(1)}M`
+                        : website_traffic.monthly_visits >= 1000
+                        ? `${(website_traffic.monthly_visits / 1000).toFixed(1)}K`
+                        : website_traffic.monthly_visits}
+                    </p>
+                    <p className="text-[10px] text-white/40">Monthly Visits</p>
+                  </div>
+                )}
+                {website_traffic.unique_visitors && (
+                  <div className="p-3 bg-white/[0.03] rounded-lg text-center">
+                    <Users className="w-4 h-4 text-blue-400 mx-auto mb-1" />
+                    <p className="text-lg font-bold text-white">
+                      {website_traffic.unique_visitors >= 1000000
+                        ? `${(website_traffic.unique_visitors / 1000000).toFixed(1)}M`
+                        : website_traffic.unique_visitors >= 1000
+                        ? `${(website_traffic.unique_visitors / 1000).toFixed(1)}K`
+                        : website_traffic.unique_visitors}
+                    </p>
+                    <p className="text-[10px] text-white/40">Unique Visitors</p>
+                  </div>
+                )}
+                {website_traffic.bounce_rate && (
+                  <div className="p-3 bg-white/[0.03] rounded-lg text-center">
+                    <Percent className="w-4 h-4 text-red-400 mx-auto mb-1" />
+                    <p className="text-lg font-bold text-white">{website_traffic.bounce_rate}%</p>
+                    <p className="text-[10px] text-white/40">Bounce Rate</p>
+                  </div>
+                )}
+                {website_traffic.avg_visit_duration && (
+                  <div className="p-3 bg-white/[0.03] rounded-lg text-center">
+                    <Clock className="w-4 h-4 text-green-400 mx-auto mb-1" />
+                    <p className="text-lg font-bold text-white">{website_traffic.avg_visit_duration}</p>
+                    <p className="text-[10px] text-white/40">Avg Duration</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Traffic Sources */}
+              {website_traffic.traffic_sources && (
+                <div className="pt-3 border-t border-white/[0.06]">
+                  <p className="text-xs text-white/40 mb-2">Traffic Sources</p>
+                  <div className="space-y-1.5">
+                    {Object.entries(website_traffic.traffic_sources)
+                      .sort(([,a], [,b]) => b - a)
+                      .slice(0, 5)
+                      .map(([source, count]) => {
+                        const total = Object.values(website_traffic.traffic_sources).reduce((a, b) => a + b, 0);
+                        const pct = Math.round((count / total) * 100);
+                        return (
+                          <div key={source} className="flex items-center justify-between">
+                            <span className="text-xs text-white/60 capitalize">{source}</span>
+                            <div className="flex items-center gap-2">
+                              <div className="w-16 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-orange-400 rounded-full"
+                                  style={{ width: `${pct}%` }}
+                                />
+                              </div>
+                              <span className="text-xs text-white/40 w-8 text-right">{pct}%</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
                 </div>
               )}
             </div>
@@ -602,63 +641,83 @@ export const CompanyIntelligenceReport = ({
         )}
 
         {/* Competitors */}
-        {competitive_landscape && (competitive_landscape.competitors?.length > 0 || competitive_landscape.raw) && (
+        {competitive_landscape?.competitors?.length > 0 && (
           <SectionCard icon={Target} title="Competitive Landscape" iconColor="red">
-            {competitive_landscape.competitors?.length > 0 ? (
-              <div className="space-y-2">
-                {competitive_landscape.competitors.slice(0, 5).map((comp, idx) => (
-                  <div key={idx} className="flex items-center justify-between py-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-full bg-white/[0.05] text-white/50 flex items-center justify-center text-xs">
-                        {idx + 1}
-                      </span>
-                      <span className="text-sm text-white">{comp.name}</span>
-                    </div>
-                    {comp.similarity_score && (
-                      <span className="text-xs text-white/40">
-                        {Math.round(comp.similarity_score * 100)}% similar
-                      </span>
-                    )}
+            <div className="space-y-2">
+              {competitive_landscape.competitors.slice(0, 5).map((comp, idx) => (
+                <div key={idx} className="flex items-center justify-between py-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-white/[0.05] text-white/50 flex items-center justify-center text-xs">
+                      {idx + 1}
+                    </span>
+                    <span className="text-sm text-white">{comp.name}</span>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-white/40">Competitor data available</p>
-            )}
+                  {comp.similarity_score && (
+                    <span className="text-xs text-white/40">
+                      {Math.round(comp.similarity_score * 100)}% similar
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
           </SectionCard>
         )}
       </div>
 
       {/* Row 5: Workforce Trends */}
-      {workforce && (workforce.growth_rate || workforce.departments || workforce.raw) && (
+      {workforce && (workforce.total_employees || workforce.departments?.length > 0) && (
         <SectionCard icon={Users} title="Workforce Trends" iconColor="indigo">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {workforce.total_employees && (
-              <div className="p-3 bg-white/[0.03] rounded-lg text-center">
-                <Users className="w-4 h-4 text-indigo-400 mx-auto mb-1" />
-                <p className="text-lg font-bold text-white">{workforce.total_employees.toLocaleString()}</p>
-                <p className="text-[10px] text-white/40">Total Employees</p>
-              </div>
-            )}
-            {workforce.growth_rate && (
-              <div className="p-3 bg-white/[0.03] rounded-lg text-center">
-                <TrendingUp className="w-4 h-4 text-green-400 mx-auto mb-1" />
-                <p className="text-lg font-bold text-green-400">+{workforce.growth_rate}%</p>
-                <p className="text-[10px] text-white/40">Growth Rate</p>
-              </div>
-            )}
-            {workforce.hiring_trend && (
-              <div className="p-3 bg-white/[0.03] rounded-lg text-center">
-                <Briefcase className="w-4 h-4 text-blue-400 mx-auto mb-1" />
-                <p className="text-sm font-bold text-white capitalize">{workforce.hiring_trend}</p>
-                <p className="text-[10px] text-white/40">Hiring Trend</p>
-              </div>
-            )}
-            {workforce.attrition_rate && (
-              <div className="p-3 bg-white/[0.03] rounded-lg text-center">
-                <TrendingDown className="w-4 h-4 text-red-400 mx-auto mb-1" />
-                <p className="text-lg font-bold text-red-400">{workforce.attrition_rate}%</p>
-                <p className="text-[10px] text-white/40">Attrition Rate</p>
+          <div className="space-y-4">
+            {/* Metrics row */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {workforce.total_employees && (
+                <div className="p-3 bg-white/[0.03] rounded-lg text-center">
+                  <Users className="w-4 h-4 text-indigo-400 mx-auto mb-1" />
+                  <p className="text-lg font-bold text-white">{workforce.total_employees.toLocaleString()}</p>
+                  <p className="text-[10px] text-white/40">Profiles Found</p>
+                </div>
+              )}
+              {workforce.growth_rate !== undefined && workforce.growth_rate !== null && (
+                <div className="p-3 bg-white/[0.03] rounded-lg text-center">
+                  {workforce.growth_rate >= 0 ? (
+                    <TrendingUp className="w-4 h-4 text-green-400 mx-auto mb-1" />
+                  ) : (
+                    <TrendingDown className="w-4 h-4 text-red-400 mx-auto mb-1" />
+                  )}
+                  <p className={`text-lg font-bold ${workforce.growth_rate >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {workforce.growth_rate >= 0 ? '+' : ''}{workforce.growth_rate}%
+                  </p>
+                  <p className="text-[10px] text-white/40">YoY Change</p>
+                </div>
+              )}
+              {workforce.hiring_trend && (
+                <div className="p-3 bg-white/[0.03] rounded-lg text-center">
+                  <Briefcase className="w-4 h-4 text-blue-400 mx-auto mb-1" />
+                  <p className="text-sm font-bold text-white capitalize">{workforce.hiring_trend}</p>
+                  <p className="text-[10px] text-white/40">Hiring Trend</p>
+                </div>
+              )}
+              {workforce.attrition_rate && (
+                <div className="p-3 bg-white/[0.03] rounded-lg text-center">
+                  <TrendingDown className="w-4 h-4 text-red-400 mx-auto mb-1" />
+                  <p className="text-lg font-bold text-red-400">{workforce.attrition_rate}%</p>
+                  <p className="text-[10px] text-white/40">Attrition Rate</p>
+                </div>
+              )}
+            </div>
+
+            {/* Department breakdown */}
+            {workforce.departments?.length > 0 && (
+              <div className="pt-3 border-t border-white/[0.06]">
+                <p className="text-xs text-white/40 mb-3">Department Distribution</p>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                  {workforce.departments.slice(0, 8).map((dept, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-2 bg-white/[0.02] rounded">
+                      <span className="text-xs text-white/60">{dept.name}</span>
+                      <span className="text-xs font-medium text-indigo-400">{dept.percentage}%</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>

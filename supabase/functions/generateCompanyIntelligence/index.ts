@@ -133,19 +133,39 @@ async function getWebsiteTraffic(businessId: string) {
   return fetchEnrichment("/businesses/website_traffic/bulk_enrich", businessId, "Website Traffic");
 }
 
-// Parse tech stack into categories
+// Parse tech stack into categories - handles Explorium nested format
 function parseTechStack(techData: any): any {
   if (!techData) return null;
 
-  // Check different possible field names
-  const techStack = techData.full_nested_tech_stack || techData.tech_stack || techData.technologies;
+  // Explorium returns data nested in .data property
+  const source = techData.data || techData;
 
-  if (!techStack) {
-    console.log("No tech stack found in:", JSON.stringify(techData).substring(0, 200));
-    return { raw: techData };
+  // Check for full_nested_tech_stack array (Explorium format: [{category, techs}])
+  const nestedStack = source.full_nested_tech_stack;
+  if (Array.isArray(nestedStack) && nestedStack.length > 0) {
+    const categories: any[] = [];
+    let totalTech = 0;
+
+    for (const cat of nestedStack) {
+      const techs = cat.techs || cat.technologies || [];
+      if (techs.length > 0) {
+        categories.push({
+          category: (cat.category || 'Other').replace(/_/g, ' '),
+          technologies: techs,
+        });
+        totalTech += techs.length;
+      }
+    }
+
+    return {
+      tech_stack: categories,
+      tech_count: totalTech,
+    };
   }
 
-  if (typeof techStack === 'object' && !Array.isArray(techStack)) {
+  // Fallback: check for flat category objects
+  const techStack = source.tech_stack || source.technologies;
+  if (techStack && typeof techStack === 'object' && !Array.isArray(techStack)) {
     const categories: any[] = [];
     let totalTech = 0;
 
@@ -165,65 +185,103 @@ function parseTechStack(techData: any): any {
     };
   }
 
-  return { raw: techData };
+  // If we have any data, return it as raw
+  if (source.full_tech_stack || Object.keys(source).length > 1) {
+    return { raw: source };
+  }
+
+  return null;
 }
 
-// Parse workforce trends
+// Parse workforce trends - handles Explorium nested format
 function parseWorkforce(data: any): any {
   if (!data) return null;
 
+  // Explorium returns data nested in .data property
+  const source = data.data || data;
+
+  // Extract department percentages
+  const departments: any[] = [];
+  const deptFields = [
+    { key: 'perc_finance_roles', name: 'Finance' },
+    { key: 'perc_engineering_roles', name: 'Engineering' },
+    { key: 'perc_sales_roles', name: 'Sales' },
+    { key: 'perc_marketing_roles', name: 'Marketing' },
+    { key: 'perc_hr_roles', name: 'HR' },
+    { key: 'perc_operations_roles', name: 'Operations' },
+    { key: 'perc_legal_roles', name: 'Legal' },
+    { key: 'perc_design_roles', name: 'Design' },
+    { key: 'perc_customer_service_roles', name: 'Customer Service' },
+    { key: 'perc_education_roles', name: 'Education' },
+  ];
+
+  for (const dept of deptFields) {
+    if (source[dept.key] && source[dept.key] > 0) {
+      departments.push({ name: dept.name, percentage: source[dept.key] });
+    }
+  }
+
+  // Sort by percentage descending
+  departments.sort((a, b) => b.percentage - a.percentage);
+
   return {
-    total_employees: data.total_employees || data.employee_count,
-    departments: data.departments || data.department_distribution,
-    growth_rate: data.growth_rate || data.employee_growth_rate,
-    hiring_trend: data.hiring_trend,
-    attrition_rate: data.attrition_rate,
-    raw: data,
+    total_employees: source.profiles_found_per_quarter || source.total_employees || source.employee_count,
+    departments: departments.length > 0 ? departments : null,
+    growth_rate: source.growth_rate || source.employee_growth_rate || source.change_in_roles_divisor,
+    hiring_trend: source.hiring_trend,
+    attrition_rate: source.attrition_rate,
   };
 }
 
-// Parse employee ratings
+// Parse employee ratings - handles Explorium nested format
 function parseRatings(data: any): any {
   if (!data) return null;
 
+  // Explorium returns data nested in .data property
+  const source = data.data || data;
+
   return {
-    overall_rating: data.overall_rating || data.rating,
-    culture_rating: data.culture_rating || data.culture_and_values,
-    work_life_balance: data.work_life_balance || data.work_life_balance_rating,
-    compensation_rating: data.compensation_rating || data.compensation_and_benefits,
-    career_opportunities: data.career_opportunities || data.career_opportunities_rating,
-    management_rating: data.management_rating || data.senior_management,
-    recommend_percent: data.recommend_to_friend || data.recommend_percent,
-    ceo_approval: data.ceo_approval || data.approve_of_ceo,
-    review_count: data.review_count || data.number_of_reviews,
-    raw: data,
+    overall_rating: source.overall_rating || source.rating,
+    culture_rating: source.culture_rating || source.culture_and_values,
+    work_life_balance: source.work_life_balance || source.work_life_balance_rating,
+    compensation_rating: source.compensation_rating || source.compensation_and_benefits,
+    career_opportunities: source.career_opportunities || source.career_opportunities_rating,
+    management_rating: source.management_rating || source.senior_management,
+    recommend_percent: source.recommend_to_friend || source.recommend_percent,
+    ceo_approval: source.ceo_approval || source.approve_of_ceo,
+    review_count: source.review_count || source.number_of_reviews,
   };
 }
 
-// Parse social media
+// Parse social media - handles Explorium nested format
 function parseSocialMedia(data: any): any {
   if (!data) return null;
 
+  // Explorium returns data nested in .data property
+  const source = data.data || data;
+
   return {
-    linkedin_followers: data.linkedin_followers || data.linkedin?.followers,
-    twitter_followers: data.twitter_followers || data.twitter?.followers,
-    facebook_followers: data.facebook_followers || data.facebook?.followers,
-    linkedin_url: data.linkedin_url || data.linkedin?.url,
-    twitter_url: data.twitter_url || data.twitter?.url,
-    facebook_url: data.facebook_url || data.facebook?.url,
-    posting_frequency: data.posting_frequency,
-    engagement_rate: data.engagement_rate,
-    raw: data,
+    linkedin_followers: source.linkedin_followers || source.linkedin?.followers,
+    twitter_followers: source.twitter_followers || source.twitter?.followers,
+    facebook_followers: source.facebook_followers || source.facebook?.followers,
+    linkedin_url: source.linkedin_url || source.linkedin?.url,
+    twitter_url: source.twitter_url || source.twitter?.url,
+    facebook_url: source.facebook_url || source.facebook?.url,
+    posting_frequency: source.posting_frequency,
+    engagement_rate: source.engagement_rate,
   };
 }
 
-// Parse competitors
+// Parse competitors - handles Explorium nested format
 function parseCompetitors(data: any): any {
   if (!data) return null;
 
-  const competitors = data.competitors || data.competitive_landscape || data;
+  // Explorium returns data nested in .data property
+  const source = data.data || data;
 
-  if (Array.isArray(competitors)) {
+  const competitors = source.competitors || source.competitive_landscape || (Array.isArray(source) ? source : null);
+
+  if (Array.isArray(competitors) && competitors.length > 0) {
     return {
       competitors: competitors.map((c: any) => ({
         name: c.name || c.company_name,
@@ -233,22 +291,45 @@ function parseCompetitors(data: any): any {
     };
   }
 
-  return { raw: data };
+  return null;
 }
 
-// Parse website traffic
+// Parse website traffic - handles Explorium nested format
 function parseTraffic(data: any): any {
   if (!data) return null;
 
+  // Explorium returns data nested in .data property
+  const source = data.data || data;
+
+  // Traffic sources breakdown
+  const trafficSources: any = {};
+  if (source.direct) trafficSources.direct = source.direct;
+  if (source.search) trafficSources.search = source.search;
+  if (source.search_organic) trafficSources.organic = source.search_organic;
+  if (source.paid) trafficSources.paid = source.paid;
+  if (source.referral) trafficSources.referral = source.referral;
+  if (source.mail) trafficSources.email = source.mail;
+  if (source.social_paid) trafficSources.social = source.social_paid;
+
+  // Format time on site to readable format
+  let avgDuration = null;
+  if (source.time_on_site) {
+    const seconds = Math.round(source.time_on_site);
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    avgDuration = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+  }
+
   return {
-    monthly_visits: data.monthly_visits || data.total_visits,
-    unique_visitors: data.unique_visitors,
-    page_views: data.page_views,
-    bounce_rate: data.bounce_rate,
-    avg_visit_duration: data.avg_visit_duration || data.average_visit_duration,
-    traffic_sources: data.traffic_sources,
-    top_countries: data.top_countries || data.geography,
-    raw: data,
+    monthly_visits: source.visits || source.monthly_visits || source.total_visits,
+    unique_visitors: source.users || source.unique_visitors,
+    page_views: source.page_views || (source.pages_per_visit && source.visits ? Math.round(source.pages_per_visit * source.visits) : null),
+    pages_per_visit: source.pages_per_visit,
+    bounce_rate: source.bounce_rate ? Math.round(source.bounce_rate * 100) : null,
+    avg_visit_duration: avgDuration || source.avg_visit_duration || source.average_visit_duration,
+    traffic_sources: Object.keys(trafficSources).length > 0 ? trafficSources : null,
+    rank: source.rank,
+    period: source.month_period,
   };
 }
 
