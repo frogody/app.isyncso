@@ -228,7 +228,7 @@ const ProjectCard = ({ project, roles, onEdit, onDelete, onViewRoles, onAddRole 
               <StatusBadge status={project.status} />
               <PriorityBadge priority={project.priority} />
             </div>
-            <h3 className="text-lg font-semibold text-white">{project.name}</h3>
+            <h3 className="text-lg font-semibold text-white">{project.title || project.name}</h3>
             <p className="text-sm text-white/60 line-clamp-2 mt-1">{project.description}</p>
           </div>
           
@@ -366,10 +366,10 @@ const ProjectModal = ({ isOpen, onClose, project, onSave, clients = [] }) => {
   useEffect(() => {
     if (project) {
       setFormData({
-        name: project.name || "",
+        name: project.title || project.name || "", // Database uses 'title', form uses 'name'
         description: project.description || "",
         client_id: project.client_id || "",
-        client_name: project.client_name || "",
+        client_name: project.client_company || project.client_name || "",
         status: project.status || "active",
         priority: project.priority || "medium",
         deadline: project.deadline ? project.deadline.split("T")[0] : "",
@@ -772,7 +772,7 @@ const RolesPanel = ({ project, roles, onClose, onEditRole, onDeleteRole, onAddRo
           <div className="p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-xl font-semibold text-white">{project.name}</h2>
+                <h2 className="text-xl font-semibold text-white">{project.title || project.name}</h2>
                 <p className="text-sm text-white/60">Roles & Positions</p>
               </div>
               <button
@@ -853,12 +853,12 @@ export default function TalentProjects() {
           .from("projects")
           .select("*")
           .eq("organization_id", user.organization_id)
-          .order("created_at", { ascending: false }),
+          .order("created_date", { ascending: false }),
         supabase
           .from("roles")
           .select("*")
           .eq("organization_id", user.organization_id)
-          .order("created_at", { ascending: false }),
+          .order("created_date", { ascending: false }),
         // Load clients (prospects with is_recruitment_client=true OR contact_type='client')
         supabase
           .from("prospects")
@@ -891,8 +891,8 @@ export default function TalentProjects() {
     return projects.filter((project) => {
       const matchesSearch =
         !searchQuery ||
-        project.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        project.client_name?.toLowerCase().includes(searchQuery.toLowerCase());
+        (project.title || project.name)?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        project.client_company?.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStatus = statusFilter === "all" || project.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
@@ -901,29 +901,49 @@ export default function TalentProjects() {
   // Project CRUD
   const handleSaveProject = async (formData, projectId) => {
     try {
+      // Map form field 'name' to database column 'title'
       const projectData = {
-        ...formData,
+        title: formData.name, // Database uses 'title' not 'name'
+        description: formData.description || null,
+        client_id: formData.client_id || null,
+        client_company: formData.client_name || null,
+        status: formData.status || 'active',
+        priority: formData.priority || 'medium',
+        deadline: formData.deadline || null,
+        budget: formData.budget ? parseFloat(formData.budget) : null,
+        fee_percentage: formData.fee_percentage ? parseFloat(formData.fee_percentage) : null,
+        notes: formData.notes || null,
         organization_id: user.organization_id,
       };
 
+      console.log('Saving project with data:', JSON.stringify(projectData, null, 2));
+
       if (projectId) {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from("projects")
           .update(projectData)
-          .eq("id", projectId);
+          .eq("id", projectId)
+          .select();
+
+        console.log('Update result:', JSON.stringify({ data, error }, null, 2));
         if (error) throw error;
         toast.success(`Project "${formData.name}" updated`);
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from("projects")
-          .insert([projectData]);
+          .insert([projectData])
+          .select();
+
+        console.log('Insert result:', JSON.stringify({ data, error }, null, 2));
         if (error) throw error;
         toast.success(`Project "${formData.name}" created`);
       }
       fetchData();
     } catch (error) {
-      console.error("Error saving project:", error);
-      toast.error(error.message || "Failed to save project");
+      console.error("Error saving project:", JSON.stringify(error, null, 2));
+      console.error("Error message:", error?.message);
+      console.error("Error code:", error?.code);
+      toast.error(error?.message || "Failed to save project");
       throw error;
     }
   };
