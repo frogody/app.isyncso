@@ -261,7 +261,7 @@ export default function TalentClients() {
         .select('*')
         .eq('organization_id', user.organization_id)
         .eq('contact_type', 'recruitment_client')
-        .order('created_at', { ascending: false });
+        .order('created_date', { ascending: false });
 
       console.log('Query result:', JSON.stringify({ data, error }, null, 2));
 
