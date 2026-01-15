@@ -53,9 +53,7 @@ const emptyForm = {
   email: '',
   phone: '',
   job_title: '',
-  address: '',
-  city: '',
-  country: '',
+  location: '',
   website: '',
   industry: '',
   company_size: '',
@@ -129,10 +127,10 @@ function ClientCard({ client, onEdit, onDelete, onView }) {
               <span>{client.phone}</span>
             </a>
           )}
-          {(client.city || client.country) && (
+          {client.location && (
             <div className="flex items-center gap-2 text-xs text-zinc-500">
               <MapPin className="w-3 h-3" />
-              <span>{[client.city, client.country].filter(Boolean).join(', ')}</span>
+              <span>{client.location}</span>
             </div>
           )}
         </div>
@@ -289,9 +287,7 @@ export default function TalentClients() {
         email: formData.email || null,
         phone: formData.phone || null,
         job_title: formData.job_title || null,
-        address: formData.address || null,
-        city: formData.city || null,
-        country: formData.country || null,
+        location: formData.location || null,
         website: formData.website || null,
         industry: formData.industry || null,
         company_size: formData.company_size || null,
@@ -301,6 +297,8 @@ export default function TalentClients() {
         notes: formData.notes || null,
         is_recruitment_client: true,
       };
+
+      console.log('Submitting client:', clientData);
 
       if (selectedClient) {
         const { error } = await supabase
@@ -354,9 +352,7 @@ export default function TalentClients() {
       email: client.email || '',
       phone: client.phone || '',
       job_title: client.job_title || '',
-      address: client.address || '',
-      city: client.city || '',
-      country: client.country || '',
+      location: client.location || '',
       website: client.website || '',
       industry: client.industry || '',
       company_size: client.company_size || '',
@@ -791,32 +787,15 @@ export default function TalentClients() {
                   <MapPin className="w-4 h-4" />
                   Location
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-2">
-                    <label className="text-zinc-400 text-sm mb-1.5 block">Address</label>
+                <div>
+                  <label className="text-zinc-400 text-sm mb-1.5 block">Location</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                     <Input
-                      value={formData.address}
-                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                      className="bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500"
-                      placeholder="123 Business Ave"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-zinc-400 text-sm mb-1.5 block">City</label>
-                    <Input
-                      value={formData.city}
-                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                      className="bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500"
-                      placeholder="Amsterdam"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-zinc-400 text-sm mb-1.5 block">Country</label>
-                    <Input
-                      value={formData.country}
-                      onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                      className="bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500"
-                      placeholder="Netherlands"
+                      value={formData.location}
+                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                      className="pl-10 bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500"
+                      placeholder="Amsterdam, Netherlands"
                     />
                   </div>
                 </div>
