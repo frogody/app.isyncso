@@ -263,15 +263,10 @@ export default function TalentClients() {
         .eq('contact_type', 'recruitment_client')
         .order('created_at', { ascending: false });
 
-      console.log('Query result:', { data, error });
+      console.log('Query result:', JSON.stringify({ data, error }, null, 2));
 
       if (error) {
-        console.error('Supabase error details:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
+        console.error('Supabase error details:', JSON.stringify(error, null, 2));
         throw error;
       }
       setClients(data || []);
@@ -312,7 +307,7 @@ export default function TalentClients() {
         is_recruitment_client: true,
       };
 
-      console.log('Submitting client:', clientData);
+      console.log('Submitting client:', JSON.stringify(clientData, null, 2));
 
       if (selectedClient) {
         const { data, error } = await supabase
@@ -321,15 +316,10 @@ export default function TalentClients() {
           .eq('id', selectedClient.id)
           .select();
 
-        console.log('Update result:', { data, error });
+        console.log('Update result:', JSON.stringify({ data, error }, null, 2));
 
         if (error) {
-          console.error('Update error details:', {
-            message: error.message,
-            details: error.details,
-            hint: error.hint,
-            code: error.code
-          });
+          console.error('Update error details:', JSON.stringify(error, null, 2));
           throw error;
         }
         toast.success('Client updated successfully');
@@ -339,15 +329,10 @@ export default function TalentClients() {
           .insert(clientData)
           .select();
 
-        console.log('Insert result:', { data, error });
+        console.log('Insert result:', JSON.stringify({ data, error }, null, 2));
 
         if (error) {
-          console.error('Insert error details:', {
-            message: error.message,
-            details: error.details,
-            hint: error.hint,
-            code: error.code
-          });
+          console.error('Insert error details:', JSON.stringify(error, null, 2));
           throw error;
         }
         toast.success('Client created successfully');
