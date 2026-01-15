@@ -733,6 +733,7 @@ export default function CRMContacts() {
   const [deals, setDeals] = useState([]);
   const [enriching, setEnriching] = useState(false);
   const tableBodyRef = useRef(null);
+  const reducedMotion = prefersReducedMotion();
 
   useEffect(() => {
     if (user?.id) loadContacts();
@@ -818,7 +819,7 @@ export default function CRMContacts() {
   // Calculate contact counts by type for sidebar
   const contactCounts = useMemo(() => {
     const counts = {};
-    contacts.forEach(c => {
+    (contacts || []).forEach(c => {
       const type = c.contact_type || 'prospect';
       counts[type] = (counts[type] || 0) + 1;
     });
@@ -828,7 +829,7 @@ export default function CRMContacts() {
   const filteredContacts = useMemo(() => {
     // If supplier view is selected, show suppliers instead
     if (selectedContactType === 'supplier') {
-      return suppliers.map(s => ({
+      return (suppliers || []).map(s => ({
         id: s.id,
         name: s.name,
         email: s.contact?.email,
@@ -847,7 +848,7 @@ export default function CRMContacts() {
       });
     }
 
-    return contacts.filter(c => {
+    return (contacts || []).filter(c => {
       const matchesSearch = !searchQuery ||
         c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         c.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -861,8 +862,9 @@ export default function CRMContacts() {
 
   const contactsByStage = useMemo(() => {
     const grouped = {};
+    const safeContacts = filteredContacts || [];
     PIPELINE_STAGES.forEach(stage => {
-      grouped[stage.id] = filteredContacts.filter(c => c.stage === stage.id);
+      grouped[stage.id] = safeContacts.filter(c => c.stage === stage.id);
     });
     return grouped;
   }, [filteredContacts]);
@@ -1324,7 +1326,7 @@ export default function CRMContacts() {
                   {filteredContacts.map(contact => {
                     const stageConfig = PIPELINE_STAGES.find(s => s.id === contact.stage) || PIPELINE_STAGES[0];
                     return (
-                      <tr key={contact.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors" style={{ opacity: 0 }}>
+                      <tr key={contact.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors" style={{ opacity: reducedMotion ? 1 : 0 }}>
                         <td className="p-3">
                           <Checkbox
                             checked={selectedContacts.includes(contact.id)}
