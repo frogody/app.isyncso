@@ -53,12 +53,73 @@ const AGENT_COLORS = {
   create: { bg: 'bg-rose-500/20', text: 'text-rose-400', border: 'border-rose-500/30' },
 };
 
+// Parse [ACTIONS] blocks from message content
+function parseActionsFromContent(content) {
+  const actionsRegex = /\[ACTIONS\]([\s\S]*?)\[\/ACTIONS\]/g;
+  const actions = [];
+  let cleanContent = content;
+
+  let match;
+  while ((match = actionsRegex.exec(content)) !== null) {
+    const actionsBlock = match[1];
+    // Parse each action line: - emoji Label|action_id
+    const actionLines = actionsBlock.split('\n').filter(line => line.trim().startsWith('-'));
+    actionLines.forEach(line => {
+      const actionMatch = line.match(/^-\s*(.+)\|(.+)$/);
+      if (actionMatch) {
+        actions.push({
+          label: actionMatch[1].trim(),
+          actionId: actionMatch[2].trim(),
+        });
+      }
+    });
+    // Remove the [ACTIONS] block from content
+    cleanContent = cleanContent.replace(match[0], '').trim();
+  }
+
+  return { cleanContent, actions };
+}
+
+// Action buttons component
+function ActionButtons({ actions, onAction, disabled }) {
+  if (!actions || actions.length === 0) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 5 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex flex-wrap gap-2 mt-3"
+    >
+      {actions.map((action, idx) => (
+        <button
+          key={idx}
+          onClick={() => onAction(action)}
+          disabled={disabled}
+          className={cn(
+            'px-3 py-1.5 text-xs rounded-lg border transition-all',
+            'bg-zinc-700/50 border-zinc-600 text-zinc-200',
+            'hover:bg-purple-600/20 hover:border-purple-500/50 hover:text-white',
+            disabled && 'opacity-50 cursor-not-allowed'
+          )}
+        >
+          {action.label}
+        </button>
+      ))}
+    </motion.div>
+  );
+}
+
 // Message component
-function ChatMessage({ message, isLast }) {
+function ChatMessage({ message, isLast, onAction, isLoading }) {
   const isUser = message.role === 'user';
   const agentId = message.agentId || 'sync';
   const AgentIcon = AGENT_ICONS[agentId] || Bot;
   const colors = AGENT_COLORS[agentId] || AGENT_COLORS.sync;
+
+  // Parse actions from assistant messages
+  const { cleanContent, actions } = isUser
+    ? { cleanContent: message.content, actions: [] }
+    : parseActionsFromContent(message.content);
 
   return (
     <motion.div
@@ -106,21 +167,38 @@ function ChatMessage({ message, isLast }) {
           {isUser ? (
             <p className="whitespace-pre-wrap">{message.content}</p>
           ) : (
-            <ReactMarkdown
-              className="prose prose-invert prose-sm max-w-none prose-p:my-2 prose-headings:my-3 prose-ul:my-2 prose-li:my-1 prose-code:text-purple-400 prose-code:bg-purple-950/30 prose-code:px-1 prose-code:rounded"
-              components={{
-                a: ({ node, ...props }) => (
-                  <a
-                    {...props}
-                    className="text-purple-400 hover:text-purple-300 underline underline-offset-2"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  />
-                ),
-              }}
-            >
-              {message.content}
-            </ReactMarkdown>
+            <>
+              <ReactMarkdown
+                className="prose prose-invert prose-sm max-w-none prose-p:my-2 prose-headings:my-3 prose-ul:my-2 prose-li:my-1 prose-code:text-purple-400 prose-code:bg-purple-950/30 prose-code:px-1 prose-code:rounded prose-table:my-2 prose-th:px-2 prose-th:py-1 prose-td:px-2 prose-td:py-1"
+                components={{
+                  a: ({ node, ...props }) => (
+                    <a
+                      {...props}
+                      className="text-purple-400 hover:text-purple-300 underline underline-offset-2"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    />
+                  ),
+                  table: ({ node, ...props }) => (
+                    <div className="overflow-x-auto">
+                      <table {...props} className="min-w-full border-collapse text-xs" />
+                    </div>
+                  ),
+                  th: ({ node, ...props }) => (
+                    <th {...props} className="border border-zinc-700 bg-zinc-800 px-2 py-1 text-left font-medium text-zinc-300" />
+                  ),
+                  td: ({ node, ...props }) => (
+                    <td {...props} className="border border-zinc-700 px-2 py-1" />
+                  ),
+                }}
+              >
+                {cleanContent}
+              </ReactMarkdown>
+              {/* Action buttons rendered below message */}
+              {isLast && actions.length > 0 && (
+                <ActionButtons actions={actions} onAction={onAction} disabled={isLoading} />
+              )}
+            </>
           )}
         </div>
 
@@ -365,6 +443,26 @@ export default function SyncChat({
     }
   };
 
+  // Handle action button clicks
+  const handleAction = useCallback((action) => {
+    // Map action IDs to user-friendly messages
+    const actionMessages = {
+      create_invoice: 'Create the invoice',
+      edit: 'Edit the details',
+      cancel: 'Cancel this action',
+      confirm: 'Yes, confirm',
+      view_details: 'Show me the details',
+      add_more: 'Add more items',
+      send_email: 'Send the email',
+      download: 'Download it',
+      retry: 'Try again',
+    };
+
+    // Use mapped message or construct from action ID
+    const message = actionMessages[action.actionId] || action.label.replace(/^[^\w]+/, '').trim();
+    handleSend(message);
+  }, []);
+
   // Handle Enter key
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -466,6 +564,8 @@ export default function SyncChat({
                   key={message.id}
                   message={message}
                   isLast={message === messages[messages.length - 1]}
+                  onAction={handleAction}
+                  isLoading={isLoading}
                 />
               ))}
             </AnimatePresence>
