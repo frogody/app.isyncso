@@ -691,32 +691,11 @@ export default function TalentCandidateProfile() {
 
           {/* Intelligence Tab */}
           {activeTab === "intelligence" && (
-            <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-8">
-              <IntelligenceReport candidate={candidate} />
-              {!candidate.intelligence_factors?.length && !candidate.intelligence_timing?.length && (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-red-500/10 flex items-center justify-center">
-                    <Sparkles className="w-8 h-8 text-red-400" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-white mb-2">No Intelligence Report Yet</h3>
-                  <p className="text-white/50 mb-6 max-w-md mx-auto">
-                    Generate an AI-powered intelligence report to get insights on recruitment timing, approach strategies, and more.
-                  </p>
-                  <Button
-                    onClick={generateIntelligenceReport}
-                    disabled={generatingIntelligence}
-                    className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 px-8"
-                  >
-                    {generatingIntelligence ? (
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    ) : (
-                      <Sparkles className="w-4 h-4 mr-2" />
-                    )}
-                    Generate Intelligence Report
-                  </Button>
-                </div>
-              )}
-            </div>
+            <IntelligenceReport
+              candidate={candidate}
+              onGenerate={generateIntelligenceReport}
+              isGenerating={generatingIntelligence}
+            />
           )}
 
           {/* Outreach Tab */}

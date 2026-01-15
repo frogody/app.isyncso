@@ -21,262 +21,189 @@ import {
   ArrowRight,
   Sparkles,
   FileText,
+  ChevronRight,
+  Timer,
+  Shield,
+  AlertCircle,
 } from "lucide-react";
-import { IntelligenceGauge, IntelligenceLevelBadge, UrgencyBadge, ApproachBadge } from "./IntelligenceGauge";
 
 // Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.08 },
+    transition: { staggerChildren: 0.05 },
   },
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 10 },
+  hidden: { opacity: 0, y: 8 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.3 },
+    transition: { duration: 0.2 },
   },
 };
 
 /**
- * SignalCard - Displays an intelligence factor/signal
+ * ScoreRing - Compact circular score indicator
  */
-const SignalCard = ({ factor }) => {
-  const impactStyles = {
-    positive: {
-      bg: "bg-green-500/10",
-      border: "border-green-500/20",
-      icon: TrendingUp,
-      iconColor: "text-green-400",
-      badge: "bg-green-500/20 text-green-400"
+const ScoreRing = ({ score, size = "md" }) => {
+  const sizes = {
+    sm: { width: 48, stroke: 4, text: "text-sm" },
+    md: { width: 64, stroke: 5, text: "text-lg" },
+    lg: { width: 80, stroke: 6, text: "text-xl" },
+  };
+
+  const { width, stroke, text } = sizes[size];
+  const radius = (width - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const progress = (score / 100) * circumference;
+
+  const getColor = (s) => {
+    if (s >= 70) return { ring: "#22c55e", glow: "rgba(34, 197, 94, 0.3)" };
+    if (s >= 40) return { ring: "#eab308", glow: "rgba(234, 179, 8, 0.3)" };
+    return { ring: "#ef4444", glow: "rgba(239, 68, 68, 0.3)" };
+  };
+
+  const colors = getColor(score);
+
+  return (
+    <div className="relative" style={{ width, height: width }}>
+      <svg width={width} height={width} className="-rotate-90">
+        <circle
+          cx={width / 2}
+          cy={width / 2}
+          r={radius}
+          fill="none"
+          stroke="rgba(255,255,255,0.1)"
+          strokeWidth={stroke}
+        />
+        <circle
+          cx={width / 2}
+          cy={width / 2}
+          r={radius}
+          fill="none"
+          stroke={colors.ring}
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={circumference - progress}
+          style={{ filter: `drop-shadow(0 0 6px ${colors.glow})` }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className={`font-bold text-white ${text}`}>{score}</span>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * StatusBadge - Compact status indicator
+ */
+const StatusBadge = ({ type, value }) => {
+  const styles = {
+    level: {
+      Critical: "bg-red-500/20 text-red-400 border-red-500/30",
+      High: "bg-orange-500/20 text-orange-400 border-orange-500/30",
+      Medium: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+      Low: "bg-blue-500/20 text-blue-400 border-blue-500/30",
     },
-    negative: {
-      bg: "bg-red-500/10",
-      border: "border-red-500/20",
-      icon: TrendingDown,
-      iconColor: "text-red-400",
-      badge: "bg-red-500/20 text-red-400"
+    urgency: {
+      High: "bg-red-500/20 text-red-400 border-red-500/30",
+      Medium: "bg-amber-500/20 text-amber-400 border-amber-500/30",
+      Low: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
     },
-    neutral: {
-      bg: "bg-white/[0.03]",
-      border: "border-white/[0.06]",
-      icon: Info,
-      iconColor: "text-white/50",
-      badge: "bg-white/10 text-white/60"
+    approach: {
+      immediate: "bg-red-500/20 text-red-400 border-red-500/30",
+      targeted: "bg-amber-500/20 text-amber-400 border-amber-500/30",
+      nurture: "bg-blue-500/20 text-blue-400 border-blue-500/30",
     },
   };
 
-  const impact = factor.impact || "neutral";
+  const labels = {
+    approach: {
+      immediate: "Act Now",
+      targeted: "Target",
+      nurture: "Nurture",
+    },
+  };
+
+  const style = styles[type]?.[value] || "bg-white/10 text-white/60 border-white/20";
+  const label = labels[type]?.[value] || value;
+
+  return (
+    <span className={`px-2 py-0.5 text-xs font-medium rounded border ${style}`}>
+      {label}
+    </span>
+  );
+};
+
+/**
+ * SignalRow - Compact signal display
+ */
+const SignalRow = ({ signal, impact }) => {
+  const impactStyles = {
+    positive: { icon: TrendingUp, color: "text-green-400", bg: "bg-green-500/10" },
+    negative: { icon: TrendingDown, color: "text-red-400", bg: "bg-red-500/10" },
+    neutral: { icon: Info, color: "text-white/40", bg: "bg-white/5" },
+  };
+
   const style = impactStyles[impact] || impactStyles.neutral;
   const Icon = style.icon;
 
   return (
-    <motion.div
-      variants={itemVariants}
-      className={`p-4 rounded-xl border ${style.bg} ${style.border}`}
-    >
-      <div className="flex items-start gap-3">
-        <div className={`p-2 rounded-lg ${style.badge.split(' ')[0]}`}>
-          <Icon className={`w-4 h-4 ${style.iconColor}`} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-1">
-            <h4 className="font-medium text-white text-sm">{factor.signal || "Signal"}</h4>
-            {factor.weight && (
-              <span className={`text-xs px-2 py-0.5 rounded ${style.badge}`}>
-                +{factor.weight} pts
-              </span>
-            )}
-          </div>
-          <p className="text-sm text-white/60">{factor.insight || factor.description || factor}</p>
-        </div>
+    <div className="flex items-start gap-3 py-2">
+      <div className={`p-1.5 rounded-lg ${style.bg} flex-shrink-0`}>
+        <Icon className={`w-3.5 h-3.5 ${style.color}`} />
       </div>
-    </motion.div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-white">{signal.signal}</p>
+        <p className="text-xs text-white/50 mt-0.5 line-clamp-2">{signal.insight || signal.description}</p>
+      </div>
+      {signal.weight && (
+        <span className={`text-xs font-medium flex-shrink-0 ${
+          impact === "positive" ? "text-green-400" :
+          impact === "negative" ? "text-red-400" : "text-white/40"
+        }`}>
+          {impact === "positive" ? "+" : impact === "negative" ? "-" : ""}{Math.abs(signal.weight)}
+        </span>
+      )}
+    </div>
   );
 };
 
 /**
- * TimingCard - Displays a timing signal
+ * TimingRow - Compact timing display
  */
-const TimingCard = ({ signal }) => {
+const TimingRow = ({ timing }) => {
   const urgencyStyles = {
-    high: { bg: "bg-red-500/10", border: "border-red-500/20", badge: "bg-red-500/20 text-red-400" },
-    medium: { bg: "bg-amber-500/10", border: "border-amber-500/20", badge: "bg-amber-500/20 text-amber-400" },
-    low: { bg: "bg-blue-500/10", border: "border-blue-500/20", badge: "bg-blue-500/20 text-blue-400" },
+    high: "text-red-400",
+    medium: "text-amber-400",
+    low: "text-blue-400",
   };
 
-  const urgency = signal.urgency || "medium";
-  const style = urgencyStyles[urgency] || urgencyStyles.medium;
-
   return (
-    <motion.div
-      variants={itemVariants}
-      className={`p-4 rounded-xl border ${style.bg} ${style.border}`}
-    >
-      <div className="flex items-start gap-3">
-        <div className="p-2 rounded-lg bg-red-500/10">
-          <Clock className="w-4 h-4 text-red-400" />
-        </div>
-        <div className="flex-1">
-          <div className="flex items-center justify-between mb-1">
-            <h4 className="font-medium text-white text-sm">{signal.trigger || signal.description || signal}</h4>
-            <span className={`text-xs px-2 py-0.5 rounded capitalize ${style.badge}`}>
-              {urgency}
-            </span>
-          </div>
-          {signal.window && (
-            <p className="text-sm text-white/60">{signal.window}</p>
-          )}
-        </div>
+    <div className="flex items-center justify-between py-2">
+      <div className="flex items-center gap-2">
+        <Timer className="w-3.5 h-3.5 text-white/40" />
+        <span className="text-sm text-white">{timing.trigger || timing.description}</span>
       </div>
-    </motion.div>
+      <div className="flex items-center gap-2">
+        {timing.window && <span className="text-xs text-white/40">{timing.window}</span>}
+        <span className={`text-xs font-medium capitalize ${urgencyStyles[timing.urgency] || "text-white/40"}`}>
+          {timing.urgency || "—"}
+        </span>
+      </div>
+    </div>
   );
 };
 
 /**
- * InsightCard - Displays key insights
+ * IntelligenceReport - Professional recruiter intelligence dashboard
  */
-const InsightCard = ({ insights = [] }) => {
-  if (!insights || insights.length === 0) return null;
-
-  return (
-    <motion.div
-      variants={itemVariants}
-      className="p-5 rounded-xl bg-gradient-to-br from-red-500/10 to-red-500/5 border border-red-500/20"
-    >
-      <div className="flex items-center gap-2 mb-4">
-        <div className="p-2 rounded-lg bg-red-500/20">
-          <Lightbulb className="w-5 h-5 text-red-400" />
-        </div>
-        <h3 className="font-semibold text-white">Key Insights</h3>
-      </div>
-      <ul className="space-y-2">
-        {insights.map((insight, idx) => (
-          <li key={idx} className="flex items-start gap-2">
-            <ArrowRight className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-            <span className="text-sm text-white/80">{insight}</span>
-          </li>
-        ))}
-      </ul>
-    </motion.div>
-  );
-};
-
-/**
- * OutreachHooksCard - Displays suggested outreach angles
- */
-const OutreachHooksCard = ({ hooks = [], bestAngle }) => {
-  if ((!hooks || hooks.length === 0) && !bestAngle) return null;
-
-  return (
-    <motion.div
-      variants={itemVariants}
-      className="p-5 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-500/5 border border-blue-500/20"
-    >
-      <div className="flex items-center gap-2 mb-4">
-        <div className="p-2 rounded-lg bg-blue-500/20">
-          <MessageSquare className="w-5 h-5 text-blue-400" />
-        </div>
-        <h3 className="font-semibold text-white">Outreach Hooks</h3>
-      </div>
-
-      {bestAngle && (
-        <div className="mb-4 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
-          <p className="text-xs text-blue-400 font-medium mb-1">BEST OPENING ANGLE</p>
-          <p className="text-sm text-white">{bestAngle}</p>
-        </div>
-      )}
-
-      {hooks && hooks.length > 0 && (
-        <ul className="space-y-2">
-          {hooks.map((hook, idx) => (
-            <li key={idx} className="flex items-start gap-2">
-              <span className="w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs flex-shrink-0">
-                {idx + 1}
-              </span>
-              <span className="text-sm text-white/80">{hook}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </motion.div>
-  );
-};
-
-/**
- * RecommendationCard - Displays engagement recommendation
- */
-const RecommendationCard = ({ approach, timeline, summary }) => {
-  const approachStyles = {
-    immediate: {
-      bg: "bg-gradient-to-br from-red-500/15 to-red-500/5",
-      border: "border-red-500/30",
-      iconBg: "bg-red-500/20",
-      icon: Zap,
-      iconColor: "text-red-400",
-      title: "Immediate Outreach",
-      description: "High receptiveness detected. Engage now."
-    },
-    targeted: {
-      bg: "bg-gradient-to-br from-amber-500/15 to-amber-500/5",
-      border: "border-amber-500/30",
-      iconBg: "bg-amber-500/20",
-      icon: Target,
-      iconColor: "text-amber-400",
-      title: "Targeted Engagement",
-      description: "Good signals present. Personalized approach recommended."
-    },
-    nurture: {
-      bg: "bg-gradient-to-br from-blue-500/15 to-blue-500/5",
-      border: "border-blue-500/30",
-      iconBg: "bg-blue-500/20",
-      icon: TrendingUp,
-      iconColor: "text-blue-400",
-      title: "Long-term Nurturing",
-      description: "Build relationship over time. Monitor for triggers."
-    },
-  };
-
-  const style = approachStyles[approach] || approachStyles.nurture;
-  const Icon = style.icon;
-
-  return (
-    <motion.div
-      variants={itemVariants}
-      className={`p-5 rounded-xl border ${style.bg} ${style.border}`}
-    >
-      <div className="flex items-start gap-4">
-        <div className={`p-3 rounded-xl ${style.iconBg}`}>
-          <Icon className={`w-6 h-6 ${style.iconColor}`} />
-        </div>
-        <div className="flex-1">
-          <h4 className="font-semibold text-white text-lg">{style.title}</h4>
-          <p className="text-sm text-white/60 mt-1">{style.description}</p>
-          {timeline && (
-            <div className="flex items-center gap-2 mt-3 text-white/70">
-              <Clock className="w-4 h-4" />
-              <span className="text-sm">{timeline}</span>
-            </div>
-          )}
-        </div>
-      </div>
-      {summary && (
-        <div className="mt-4 pt-4 border-t border-white/10">
-          <p className="text-sm text-white/70">{summary}</p>
-        </div>
-      )}
-    </motion.div>
-  );
-};
-
-/**
- * IntelligenceReport - Full intelligence report for a candidate
- */
-export const IntelligenceReport = ({ candidate, compact = false }) => {
+export const IntelligenceReport = ({ candidate, compact = false, onGenerate, isGenerating = false }) => {
   const {
     intelligence_score = 0,
     intelligence_level = "Low",
@@ -303,144 +230,279 @@ export const IntelligenceReport = ({ candidate, compact = false }) => {
   const negativeFactors = intelligence_factors.filter(f => f.impact === "negative");
   const neutralFactors = intelligence_factors.filter(f => !f.impact || f.impact === "neutral");
 
+  // Calculate totals
+  const positivePoints = positiveFactors.reduce((sum, f) => sum + (f.weight || 0), 0);
+  const negativePoints = negativeFactors.reduce((sum, f) => sum + (f.weight || 0), 0);
+
+  const hasData = intelligence_factors.length > 0 || intelligence_timing.length > 0 || insights.length > 0;
+
+  // Compact view for inline display
   if (compact) {
     return (
-      <div className="flex items-center gap-4">
-        <IntelligenceGauge score={intelligence_score} size="md" />
+      <div className="flex items-center gap-3">
+        <ScoreRing score={intelligence_score} size="sm" />
         <div>
-          <div className="flex items-center gap-2">
-            <IntelligenceLevelBadge level={intelligence_level} size="sm" />
-            <ApproachBadge approach={recommended_approach} />
+          <div className="flex items-center gap-1.5">
+            <StatusBadge type="level" value={intelligence_level} />
+            <StatusBadge type="approach" value={recommended_approach} />
           </div>
           <p className="text-xs text-white/40 mt-1">
-            {intelligence_factors.length} signals • {intelligence_timing.length} timing factors
+            {intelligence_factors.length} signals
           </p>
         </div>
       </div>
     );
   }
 
-  const hasData = intelligence_factors.length > 0 || intelligence_timing.length > 0 || insights.length > 0;
+  // No data state
+  if (!hasData) {
+    return (
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="flex items-center justify-center py-16"
+      >
+        <motion.div variants={itemVariants} className="text-center max-w-md">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-red-500/20 to-orange-500/20 flex items-center justify-center">
+            <Sparkles className="w-10 h-10 text-red-400" />
+          </div>
+          <h3 className="text-xl font-semibold text-white mb-3">No Intelligence Report Yet</h3>
+          <p className="text-white/50 text-sm mb-6 leading-relaxed">
+            Generate an AI-powered intelligence report to discover recruitment timing, outreach strategies, and key insights about this candidate.
+          </p>
+          {onGenerate && (
+            <button
+              onClick={onGenerate}
+              disabled={isGenerating}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-medium text-white transition-all"
+            >
+              {isGenerating ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  Generate Intelligence Report
+                </>
+              )}
+            </button>
+          )}
+        </motion.div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="space-y-6"
+      className="space-y-4"
     >
-      {/* Score Overview */}
-      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 bg-white/[0.03] rounded-2xl border border-white/[0.06]">
-        <div className="flex items-center gap-6">
-          <IntelligenceGauge score={intelligence_score} size="xl" showLabel />
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <IntelligenceLevelBadge level={intelligence_level} />
-              <UrgencyBadge urgency={intelligence_urgency} />
-            </div>
-            <p className="text-white/60 text-sm">
-              {intelligence_factors.length} intelligence signals • {intelligence_timing.length} timing factors
-            </p>
-            {last_intelligence_update && (
-              <p className="text-white/40 text-xs mt-1">
-                Last updated: {new Date(last_intelligence_update).toLocaleString()}
-              </p>
-            )}
-          </div>
-        </div>
-        <ApproachBadge approach={recommended_approach} />
-      </motion.div>
-
-      {/* Recommendation */}
-      <RecommendationCard
-        approach={recommended_approach}
-        timeline={recommended_timeline}
-        summary={risk_summary}
-      />
-
-      {/* Key Insights */}
-      <InsightCard insights={insights} />
-
-      {/* Outreach Hooks */}
-      <OutreachHooksCard hooks={hooks} bestAngle={best_outreach_angle} />
-
-      {/* Positive Signals (Recruitment Opportunities) */}
-      {positiveFactors.length > 0 && (
-        <motion.div variants={itemVariants}>
-          <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-green-400" />
-            Recruitment Opportunities
-            <span className="text-xs text-green-400/60 font-normal">({positiveFactors.length} signals)</span>
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {positiveFactors.map((factor, idx) => (
-              <SignalCard key={idx} factor={factor} />
-            ))}
-          </div>
-        </motion.div>
-      )}
-
-      {/* Negative Signals (Challenges) */}
-      {negativeFactors.length > 0 && (
-        <motion.div variants={itemVariants}>
-          <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
-            <TrendingDown className="w-5 h-5 text-red-400" />
-            Potential Challenges
-            <span className="text-xs text-red-400/60 font-normal">({negativeFactors.length} signals)</span>
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {negativeFactors.map((factor, idx) => (
-              <SignalCard key={idx} factor={factor} />
-            ))}
-          </div>
-        </motion.div>
-      )}
-
-      {/* Neutral Signals */}
-      {neutralFactors.length > 0 && (
-        <motion.div variants={itemVariants}>
-          <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
-            <Info className="w-5 h-5 text-white/50" />
-            Additional Context
-            <span className="text-xs text-white/40 font-normal">({neutralFactors.length} signals)</span>
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {neutralFactors.map((factor, idx) => (
-              <SignalCard key={idx} factor={factor} />
-            ))}
-          </div>
-        </motion.div>
-      )}
-
-      {/* Timing Intelligence */}
-      {intelligence_timing.length > 0 && (
-        <motion.div variants={itemVariants}>
-          <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
-            <Clock className="w-5 h-5 text-red-400" />
-            Timing Intelligence
-            <span className="text-xs text-red-400/60 font-normal">({intelligence_timing.length} windows)</span>
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {intelligence_timing.map((signal, idx) => (
-              <TimingCard key={idx} signal={signal} />
-            ))}
-          </div>
-        </motion.div>
-      )}
-
-      {/* No Data State */}
-      {!hasData && (
+      {/* Row 1: Executive Summary + Best Opening */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Left: Score & Status */}
         <motion.div
           variants={itemVariants}
-          className="text-center p-12 bg-white/[0.03] rounded-2xl border border-white/[0.06]"
+          className="bg-white/[0.02] rounded-xl border border-white/[0.06] p-5"
         >
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-red-500/10 flex items-center justify-center">
-            <Sparkles className="w-8 h-8 text-red-400" />
+          <div className="flex items-start gap-4">
+            <ScoreRing score={intelligence_score} size="lg" />
+            <div className="flex-1">
+              <div className="flex flex-wrap gap-1.5 mb-3">
+                <StatusBadge type="level" value={intelligence_level} />
+                <StatusBadge type="urgency" value={intelligence_urgency} />
+                <StatusBadge type="approach" value={recommended_approach} />
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-white/50">Timeline</span>
+                  <span className="text-white font-medium">{recommended_timeline || "—"}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-white/50">Signals</span>
+                  <span className="text-white font-medium">{intelligence_factors.length}</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <h3 className="text-lg font-semibold text-white mb-2">No Intelligence Data Yet</h3>
-          <p className="text-white/50 max-w-md mx-auto">
-            Click "Generate Intel" to run an AI-powered analysis and get actionable recruitment insights for this candidate.
-          </p>
+          {last_intelligence_update && (
+            <p className="text-xs text-white/30 mt-3 pt-3 border-t border-white/[0.06]">
+              Updated {new Date(last_intelligence_update).toLocaleDateString()}
+            </p>
+          )}
+        </motion.div>
+
+        {/* Right: Best Opening Angle + Hooks */}
+        <motion.div
+          variants={itemVariants}
+          className="lg:col-span-2 bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent rounded-xl border border-blue-500/20 p-5"
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <div className="p-1.5 rounded-lg bg-blue-500/20">
+              <MessageSquare className="w-4 h-4 text-blue-400" />
+            </div>
+            <h3 className="font-semibold text-white">Outreach Strategy</h3>
+          </div>
+
+          {best_outreach_angle && (
+            <div className="bg-blue-500/10 rounded-lg p-3 mb-4 border border-blue-500/20">
+              <p className="text-[10px] uppercase tracking-wider text-blue-400 font-semibold mb-1">Best Opening</p>
+              <p className="text-white font-medium">{best_outreach_angle}</p>
+            </div>
+          )}
+
+          {hooks.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {hooks.slice(0, 3).map((hook, idx) => (
+                <div key={idx} className="flex items-start gap-2 p-2 rounded-lg bg-white/[0.03]">
+                  <span className="w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs font-medium flex-shrink-0">
+                    {idx + 1}
+                  </span>
+                  <p className="text-xs text-white/70 line-clamp-2">{hook}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </motion.div>
+      </div>
+
+      {/* Row 2: Risk Summary (if present) */}
+      {risk_summary && (
+        <motion.div
+          variants={itemVariants}
+          className="bg-white/[0.02] rounded-xl border border-white/[0.06] p-4"
+        >
+          <p className="text-sm text-white/70 leading-relaxed">{risk_summary}</p>
+        </motion.div>
+      )}
+
+      {/* Row 3: Signals Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Opportunities */}
+        <motion.div
+          variants={itemVariants}
+          className="bg-white/[0.02] rounded-xl border border-white/[0.06] overflow-hidden"
+        >
+          <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] bg-green-500/5">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-green-400" />
+              <h3 className="font-semibold text-white text-sm">Opportunities</h3>
+              <span className="text-xs text-white/40">({positiveFactors.length})</span>
+            </div>
+            {positivePoints > 0 && (
+              <span className="text-xs font-semibold text-green-400">+{positivePoints} pts</span>
+            )}
+          </div>
+          <div className="px-4 py-2 divide-y divide-white/[0.04]">
+            {positiveFactors.length > 0 ? (
+              positiveFactors.map((factor, idx) => (
+                <SignalRow key={idx} signal={factor} impact="positive" />
+              ))
+            ) : (
+              <p className="text-sm text-white/30 py-4 text-center">No opportunities identified</p>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Challenges */}
+        <motion.div
+          variants={itemVariants}
+          className="bg-white/[0.02] rounded-xl border border-white/[0.06] overflow-hidden"
+        >
+          <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] bg-red-500/5">
+            <div className="flex items-center gap-2">
+              <TrendingDown className="w-4 h-4 text-red-400" />
+              <h3 className="font-semibold text-white text-sm">Challenges</h3>
+              <span className="text-xs text-white/40">({negativeFactors.length})</span>
+            </div>
+            {negativePoints > 0 && (
+              <span className="text-xs font-semibold text-red-400">-{negativePoints} pts</span>
+            )}
+          </div>
+          <div className="px-4 py-2 divide-y divide-white/[0.04]">
+            {negativeFactors.length > 0 ? (
+              negativeFactors.map((factor, idx) => (
+                <SignalRow key={idx} signal={factor} impact="negative" />
+              ))
+            ) : (
+              <p className="text-sm text-white/30 py-4 text-center">No challenges identified</p>
+            )}
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Row 4: Timing + Insights */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Timing Windows */}
+        <motion.div
+          variants={itemVariants}
+          className="bg-white/[0.02] rounded-xl border border-white/[0.06] overflow-hidden"
+        >
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06] bg-amber-500/5">
+            <Clock className="w-4 h-4 text-amber-400" />
+            <h3 className="font-semibold text-white text-sm">Timing Windows</h3>
+            <span className="text-xs text-white/40">({intelligence_timing.length})</span>
+          </div>
+          <div className="px-4 py-2 divide-y divide-white/[0.04]">
+            {intelligence_timing.length > 0 ? (
+              intelligence_timing.map((timing, idx) => (
+                <TimingRow key={idx} timing={timing} />
+              ))
+            ) : (
+              <p className="text-sm text-white/30 py-4 text-center">No timing signals</p>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Key Insights */}
+        <motion.div
+          variants={itemVariants}
+          className="bg-white/[0.02] rounded-xl border border-white/[0.06] overflow-hidden"
+        >
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06] bg-purple-500/5">
+            <Lightbulb className="w-4 h-4 text-purple-400" />
+            <h3 className="font-semibold text-white text-sm">Key Insights</h3>
+            <span className="text-xs text-white/40">({insights.length})</span>
+          </div>
+          <div className="px-4 py-2">
+            {insights.length > 0 ? (
+              <ul className="space-y-2">
+                {insights.map((insight, idx) => (
+                  <li key={idx} className="flex items-start gap-2 py-1">
+                    <ChevronRight className="w-3.5 h-3.5 text-purple-400 mt-0.5 flex-shrink-0" />
+                    <span className="text-sm text-white/70">{insight}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-white/30 py-4 text-center">No insights available</p>
+            )}
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Row 5: Additional Context (if any neutral signals) */}
+      {neutralFactors.length > 0 && (
+        <motion.div
+          variants={itemVariants}
+          className="bg-white/[0.02] rounded-xl border border-white/[0.06] overflow-hidden"
+        >
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06]">
+            <Info className="w-4 h-4 text-white/40" />
+            <h3 className="font-semibold text-white text-sm">Additional Context</h3>
+            <span className="text-xs text-white/40">({neutralFactors.length})</span>
+          </div>
+          <div className="px-4 py-2 grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 divide-white/[0.04]">
+            {neutralFactors.map((factor, idx) => (
+              <div key={idx} className={idx % 2 === 1 ? "lg:border-l lg:border-white/[0.04] lg:pl-4" : ""}>
+                <SignalRow signal={factor} impact="neutral" />
+              </div>
+            ))}
+          </div>
         </motion.div>
       )}
     </motion.div>
