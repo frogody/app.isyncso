@@ -349,10 +349,11 @@ const ProjectCard = ({ project, roles, onEdit, onDelete, onViewRoles, onAddRole 
 };
 
 // Project Modal Component
-const ProjectModal = ({ isOpen, onClose, project, onSave }) => {
+const ProjectModal = ({ isOpen, onClose, project, onSave, clients = [] }) => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
+    client_id: "",
     client_name: "",
     status: "active",
     priority: "medium",
@@ -367,6 +368,7 @@ const ProjectModal = ({ isOpen, onClose, project, onSave }) => {
       setFormData({
         name: project.name || "",
         description: project.description || "",
+        client_id: project.client_id || "",
         client_name: project.client_name || "",
         status: project.status || "active",
         priority: project.priority || "medium",
@@ -378,6 +380,7 @@ const ProjectModal = ({ isOpen, onClose, project, onSave }) => {
       setFormData({
         name: "",
         description: "",
+        client_id: "",
         client_name: "",
         status: "active",
         priority: "medium",
@@ -439,12 +442,31 @@ const ProjectModal = ({ isOpen, onClose, project, onSave }) => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-white/70">Client</Label>
-              <Input
-                value={formData.client_name}
-                onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
-                placeholder="Client name"
-                className="bg-zinc-800/50 border-zinc-700 text-white mt-1"
-              />
+              <Select
+                value={formData.client_id}
+                onValueChange={(value) => {
+                  const selectedClient = clients.find(c => c.id === value);
+                  setFormData({
+                    ...formData,
+                    client_id: value,
+                    client_name: selectedClient?.name || "",
+                  });
+                }}
+              >
+                <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white mt-1">
+                  <SelectValue placeholder="Select client" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-800 border-white/10">
+                  {clients.map(c => (
+                    <SelectItem key={c.id} value={c.id}>
+                      <span className="flex items-center gap-2">
+                        <Building2 className="w-3 h-3" />
+                        {c.name}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label className="text-white/70">Budget</Label>
@@ -800,6 +822,7 @@ export default function TalentProjects() {
 
   const [projects, setProjects] = useState([]);
   const [roles, setRoles] = useState([]);
+  const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -825,7 +848,7 @@ export default function TalentProjects() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [projectsRes, rolesRes] = await Promise.all([
+      const [projectsRes, rolesRes, clientsRes] = await Promise.all([
         supabase
           .from("projects")
           .select("*")
@@ -836,6 +859,12 @@ export default function TalentProjects() {
           .select("*")
           .eq("organization_id", user.organization_id)
           .order("created_at", { ascending: false }),
+        // Load clients (prospects with is_recruitment_client=true OR contact_type='client')
+        supabase
+          .from("prospects")
+          .select("id, first_name, last_name, company, email, phone, is_recruitment_client")
+          .or("is_recruitment_client.eq.true,contact_type.eq.client")
+          .eq("organization_id", user.organization_id),
       ]);
 
       if (projectsRes.error) throw projectsRes.error;
@@ -843,6 +872,13 @@ export default function TalentProjects() {
 
       setProjects(projectsRes.data || []);
       setRoles(rolesRes.data || []);
+
+      // Format clients for dropdown - use company name or full name
+      const formattedClients = (clientsRes.data || []).map(c => ({
+        id: c.id,
+        name: c.company || `${c.first_name || ""} ${c.last_name || ""}`.trim() || c.email || "Unknown",
+      }));
+      setClients(formattedClients);
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Failed to load projects");
@@ -1168,6 +1204,7 @@ export default function TalentProjects() {
           }}
           project={editingProject}
           onSave={handleSaveProject}
+          clients={clients}
         />
 
         {/* Role Modal */}
