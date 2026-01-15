@@ -447,9 +447,9 @@ Detailed report with executive summary`;
               </div>
             </div>
 
-            <button onClick={generatePrompt} className="w-full py-3 bg-red-500 hover:bg-red-400 text-white rounded-lg font-medium flex items-center justify-center gap-2">
+            <button onClick={generatePrompt} className="w-full py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-all">
               <Sparkles className="w-5 h-5" />
-              Generate Competitive Intel Prompt
+              SYNC INTEL
             </button>
 
             {prompt && (

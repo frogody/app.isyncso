@@ -275,12 +275,12 @@ export const CompanyIntelligenceReport = ({
               {isGenerating ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  Enriching from 8 sources...
+                  Syncing...
                 </>
               ) : (
                 <>
-                  <Zap className="w-4 h-4" />
-                  Generate Company Intel
+                  <Sparkles className="w-4 h-4" />
+                  SYNC INTEL
                 </>
               )}
             </button>
@@ -322,10 +322,14 @@ export const CompanyIntelligenceReport = ({
           <button
             onClick={generateIntelligence}
             disabled={isGenerating}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white/70 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] rounded-lg transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 disabled:opacity-50 rounded-lg transition-all"
           >
-            <RefreshCw className={`w-4 h-4 ${isGenerating ? "animate-spin" : ""}`} />
-            Refresh
+            {isGenerating ? (
+              <RefreshCw className="w-4 h-4 animate-spin" />
+            ) : (
+              <Sparkles className="w-4 h-4" />
+            )}
+            SYNC INTEL
           </button>
         )}
       </motion.div>

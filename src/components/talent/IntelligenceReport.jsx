@@ -285,7 +285,7 @@ export const IntelligenceReport = ({ candidate, compact = false, onGenerate, isG
               ) : (
                 <>
                   <Sparkles className="w-4 h-4" />
-                  Generate Intelligence Report
+                  SYNC INTEL
                 </>
               )}
             </button>
