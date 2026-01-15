@@ -56,9 +56,9 @@ const FlightRiskGauge = ({ score, maxScore = 100 }) => {
   const percentage = Math.min((score / maxScore) * 100, 100);
   const getColor = () => {
     if (percentage >= 80) return "bg-red-500";
-    if (percentage >= 60) return "bg-orange-500";
-    if (percentage >= 40) return "bg-yellow-500";
-    return "bg-green-500";
+    if (percentage >= 60) return "bg-red-400";
+    if (percentage >= 40) return "bg-red-300";
+    return "bg-zinc-500";
   };
 
   return (

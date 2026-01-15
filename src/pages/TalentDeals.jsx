@@ -585,9 +585,7 @@ export default function TalentDeals() {
         <div className="absolute bottom-20 right-1/4 w-[400px] h-[400px] bg-red-500/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full py-6">
-        {/* Header */}
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 space-y-6">
+      <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 py-6 space-y-6">
         <div ref={headerRef} style={{ opacity: 0 }}>
           <PageHeader
             icon={Handshake}
@@ -657,10 +655,9 @@ export default function TalentDeals() {
             </div>
           </div>
         </div>
-        </div>
 
         {/* Pipeline Board */}
-        <div className="px-6 lg:px-8 mt-6">
+        <div className="mt-6">
         {deals.length === 0 ? (
           <div className="p-16 text-center rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-red-500/20 to-red-600/20 flex items-center justify-center mx-auto mb-6">

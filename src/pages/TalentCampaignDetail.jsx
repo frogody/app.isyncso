@@ -455,11 +455,11 @@ const AnalyticsTab = ({ campaign }) => {
             <div>
               <div className="flex justify-between text-sm mb-1">
                 <span className="text-zinc-400">High Match (70%+)</span>
-                <span className="text-green-400 font-medium">{metrics.scoreDistribution.high}</span>
+                <span className="text-red-400 font-medium">{metrics.scoreDistribution.high}</span>
               </div>
               <div className="h-3 bg-zinc-800 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-green-500"
+                  className="h-full bg-red-500"
                   style={{
                     width: `${(metrics.scoreDistribution.high / Math.max(metrics.total, 1)) * 100}%`,
                   }}
@@ -509,7 +509,7 @@ const AnalyticsTab = ({ campaign }) => {
             </div>
             <div className="flex items-center justify-between p-3 bg-zinc-800/30 rounded-lg">
               <span className="text-zinc-400">Conversion Rate</span>
-              <span className="text-xl font-bold text-green-400">
+              <span className="text-xl font-bold text-red-400">
                 {metrics.total > 0
                   ? Math.round(((metrics.statusCounts.replied || 0) / metrics.total) * 100)
                   : 0}%

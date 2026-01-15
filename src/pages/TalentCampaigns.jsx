@@ -685,7 +685,7 @@ export default function TalentCampaigns() {
           title="Active Campaigns"
           value={stats.active}
           icon={Play}
-          color="green"
+          color="red"
         />
         <StatCard
           title="Total Candidates"

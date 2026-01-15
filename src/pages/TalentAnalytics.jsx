@@ -69,7 +69,7 @@ const TrendIndicator = ({ value, suffix = "%" }) => {
 
   const isPositive = value > 0;
   return (
-    <span className={`flex items-center text-sm ${isPositive ? "text-green-400" : "text-red-400"}`}>
+    <span className={`flex items-center text-sm ${isPositive ? "text-red-400" : "text-zinc-400"}`}>
       {isPositive ? <ArrowUp className="w-3 h-3 mr-1" /> : <ArrowDown className="w-3 h-3 mr-1" />}
       {Math.abs(value)}{suffix}
     </span>
@@ -210,9 +210,9 @@ const OutreachTypeStats = ({ data }) => {
 const IntelligenceDistribution = ({ data }) => {
   const levels = [
     { key: "Critical", color: "red", count: data.critical || 0 },
-    { key: "High", color: "yellow", count: data.high || 0 },
-    { key: "Medium", color: "blue", count: data.medium || 0 },
-    { key: "Low", color: "green", count: data.low || 0 },
+    { key: "High", color: "red", count: data.high || 0 },
+    { key: "Medium", color: "red", count: data.medium || 0 },
+    { key: "Low", color: "zinc", count: data.low || 0 },
   ];
 
   const total = levels.reduce((a, b) => a + b.count, 0);

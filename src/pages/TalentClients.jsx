@@ -354,7 +354,7 @@ export default function TalentClients() {
         <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-red-500/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 py-6 space-y-6">
         {/* Header */}
         <PageHeader
           icon={Building2}
