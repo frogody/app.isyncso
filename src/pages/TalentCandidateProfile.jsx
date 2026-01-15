@@ -46,6 +46,9 @@ import {
   Factory,
   Rocket,
   FileDown,
+  ArrowUpRight,
+  TrendingDown,
+  Activity,
 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -55,142 +58,141 @@ const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.05 },
+    transition: { staggerChildren: 0.03 },
   },
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, y: 10 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.4, ease: "easeOut" },
+    transition: { duration: 0.3, ease: "easeOut" },
   },
 };
 
-// Expandable Text component for long content
+// Expandable Text component
 const ExpandableText = ({ text, maxLength = 200 }) => {
   const [expanded, setExpanded] = useState(false);
-
-  if (!text) return null;
+  if (!text) return <span className="text-white/40">—</span>;
 
   const shouldTruncate = text.length > maxLength;
   const displayText = expanded || !shouldTruncate ? text : `${text.substring(0, maxLength)}...`;
 
   return (
     <div>
-      <p className="text-sm text-white/70 whitespace-pre-wrap">{displayText}</p>
+      <p className="text-sm text-white/70 leading-relaxed">{displayText}</p>
       {shouldTruncate && (
         <button
           onClick={() => setExpanded(!expanded)}
           className="text-xs text-red-400 hover:text-red-300 mt-2 flex items-center gap-1"
         >
-          {expanded ? (
-            <>Show less <ChevronUp className="w-3 h-3" /></>
-          ) : (
-            <>Read more <ChevronDown className="w-3 h-3" /></>
-          )}
+          {expanded ? <>Show less <ChevronUp className="w-3 h-3" /></> : <>Read more <ChevronDown className="w-3 h-3" /></>}
         </button>
       )}
     </div>
   );
 };
 
-// Key Value Row - compact display
-const KeyValue = ({ label, value, icon: Icon }) => {
-  if (!value) return null;
-  return (
-    <div className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
-      <span className="text-sm text-white/50 flex items-center gap-2">
-        {Icon && <Icon className="w-4 h-4" />}
-        {label}
-      </span>
-      <span className="text-sm text-white font-medium">{value}</span>
+// Stat Card
+const StatCard = ({ label, value, icon: Icon, color = "red", subtext }) => (
+  <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5 hover:bg-white/[0.05] transition-colors">
+    <div className="flex items-start justify-between mb-3">
+      <div className={`p-2.5 rounded-xl bg-${color}-500/10`}>
+        <Icon className={`w-5 h-5 text-${color}-400`} />
+      </div>
     </div>
-  );
-};
-
-// Metric Card - clean stat display
-const MetricCard = ({ label, value, icon: Icon, color = "white" }) => (
-  <div className="text-center p-4 bg-white/5 rounded-xl">
-    {Icon && <Icon className={`w-5 h-5 mx-auto mb-2 text-${color}/60`} />}
-    <p className={`text-2xl font-bold text-${color}`}>{value}</p>
-    <p className="text-xs text-white/50 mt-1">{label}</p>
+    <p className="text-2xl font-bold text-white mb-1">{value}</p>
+    <p className="text-sm text-white/50">{label}</p>
+    {subtext && <p className="text-xs text-white/30 mt-1">{subtext}</p>}
   </div>
 );
 
-// Urgency indicator
-const UrgencyIndicator = ({ level }) => {
-  const config = {
-    high: { color: "bg-red-500", text: "High", textColor: "text-red-400" },
-    medium: { color: "bg-amber-500", text: "Medium", textColor: "text-amber-400" },
-    low: { color: "bg-green-500", text: "Low", textColor: "text-green-400" },
-    response: { color: "bg-amber-500", text: "Response", textColor: "text-amber-400" },
-  };
-  const c = config[level?.toLowerCase()] || config.medium;
-
+// Info Row
+const InfoRow = ({ icon: Icon, label, value, link }) => {
+  if (!value) return null;
   return (
-    <div className="flex items-center gap-2">
-      <div className={`w-2 h-2 rounded-full ${c.color}`} />
-      <span className={`text-sm font-medium ${c.textColor}`}>{c.text} Priority</span>
+    <div className="flex items-center gap-3 py-3 border-b border-white/[0.04] last:border-0">
+      <div className="p-2 rounded-lg bg-white/[0.04]">
+        <Icon className="w-4 h-4 text-white/40" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs text-white/40">{label}</p>
+        {link ? (
+          <a href={link} target="_blank" rel="noopener noreferrer" className="text-sm text-red-400 hover:text-red-300 truncate flex items-center gap-1">
+            {value} <ExternalLink className="w-3 h-3" />
+          </a>
+        ) : (
+          <p className="text-sm text-white truncate">{value}</p>
+        )}
+      </div>
     </div>
   );
 };
 
-// Satisfaction indicator
-const SatisfactionIndicator = ({ level }) => {
-  const lowerLevel = level?.toLowerCase() || "";
-  let icon, color, label;
-
-  if (lowerLevel.includes("high") || lowerLevel.includes("satisfied")) {
-    icon = <Smile className="w-4 h-4" />;
-    color = "text-green-400";
-    label = "Satisfied";
-  } else if (lowerLevel.includes("low") || lowerLevel.includes("dissatisfied")) {
-    icon = <Frown className="w-4 h-4" />;
-    color = "text-red-400";
-    label = "Dissatisfied";
-  } else {
-    icon = <Meh className="w-4 h-4" />;
-    color = "text-amber-400";
-    label = level || "Mixed";
-  }
-
+// Urgency Badge
+const UrgencyBadge = ({ level }) => {
+  const config = {
+    high: { bg: "bg-red-500/20", text: "text-red-400", label: "High Priority" },
+    medium: { bg: "bg-amber-500/20", text: "text-amber-400", label: "Medium Priority" },
+    low: { bg: "bg-green-500/20", text: "text-green-400", label: "Low Priority" },
+    response: { bg: "bg-amber-500/20", text: "text-amber-400", label: "Response Priority" },
+  };
+  const c = config[level?.toLowerCase()] || config.medium;
   return (
-    <div className={`flex items-center gap-2 ${color}`}>
-      {icon}
-      <span className="text-sm font-medium">{label}</span>
-    </div>
+    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${c.bg} ${c.text}`}>
+      <span className="w-1.5 h-1.5 rounded-full bg-current" />
+      {c.label}
+    </span>
+  );
+};
+
+// Satisfaction Badge
+const SatisfactionBadge = ({ level }) => {
+  const lowerLevel = level?.toLowerCase() || "";
+  let config;
+  if (lowerLevel.includes("high") || lowerLevel.includes("satisfied")) {
+    config = { bg: "bg-green-500/20", text: "text-green-400", icon: Smile, label: "Satisfied" };
+  } else if (lowerLevel.includes("low") || lowerLevel.includes("dissatisfied")) {
+    config = { bg: "bg-red-500/20", text: "text-red-400", icon: Frown, label: "Dissatisfied" };
+  } else {
+    config = { bg: "bg-amber-500/20", text: "text-amber-400", icon: Meh, label: level || "Mixed" };
+  }
+  const Icon = config.icon;
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
+      <Icon className="w-3.5 h-3.5" />
+      {config.label}
+    </span>
   );
 };
 
 // Timeline Item
 const TimelineItem = ({ item, isLast }) => {
   const typeStyles = {
-    outreach: { icon: Send, color: "text-red-400", bg: "bg-red-500/20" },
-    reply: { icon: MessageSquare, color: "text-green-400", bg: "bg-green-500/20" },
-    note: { icon: FileText, color: "text-blue-400", bg: "bg-blue-500/20" },
-    status: { icon: History, color: "text-zinc-400", bg: "bg-zinc-500/20" },
-    import: { icon: FileDown, color: "text-purple-400", bg: "bg-purple-500/20" },
+    outreach: { icon: Send, color: "text-red-400", bg: "bg-red-500/15" },
+    reply: { icon: MessageSquare, color: "text-green-400", bg: "bg-green-500/15" },
+    note: { icon: FileText, color: "text-blue-400", bg: "bg-blue-500/15" },
+    status: { icon: History, color: "text-zinc-400", bg: "bg-zinc-500/15" },
+    import: { icon: FileDown, color: "text-purple-400", bg: "bg-purple-500/15" },
   };
-
   const style = typeStyles[item.type] || typeStyles.status;
   const Icon = style.icon;
 
   return (
-    <div className="flex gap-3">
+    <div className="flex gap-4">
       <div className="flex flex-col items-center">
-        <div className={`w-8 h-8 rounded-full ${style.bg} flex items-center justify-center`}>
+        <div className={`w-10 h-10 rounded-xl ${style.bg} flex items-center justify-center`}>
           <Icon className={`w-4 h-4 ${style.color}`} />
         </div>
-        {!isLast && <div className="w-px flex-1 bg-white/10 my-1" />}
+        {!isLast && <div className="w-px flex-1 bg-white/[0.06] my-2" />}
       </div>
-      <div className="flex-1 pb-4">
+      <div className="flex-1 pb-6">
         <div className="flex items-center justify-between">
-          <h4 className="text-sm font-medium text-white">{item.title}</h4>
-          <span className="text-xs text-white/40">{item.date}</span>
+          <h4 className="text-sm font-medium text-white capitalize">{item.title}</h4>
+          <span className="text-xs text-white/30">{item.date}</span>
         </div>
-        <p className="text-xs text-white/50 mt-0.5">{item.description}</p>
+        <p className="text-xs text-white/50 mt-1">{item.description}</p>
       </div>
     </div>
   );
@@ -199,27 +201,42 @@ const TimelineItem = ({ item, isLast }) => {
 // Outreach Task Card
 const OutreachTaskCard = ({ task }) => {
   const statusStyles = {
-    pending: { color: "text-yellow-400", bg: "bg-yellow-500/20", label: "Pending" },
-    approved_ready: { color: "text-blue-400", bg: "bg-blue-500/20", label: "Ready" },
-    sent: { color: "text-green-400", bg: "bg-green-500/20", label: "Sent" },
-    completed: { color: "text-green-400", bg: "bg-green-500/20", label: "Completed" },
-    cancelled: { color: "text-zinc-400", bg: "bg-zinc-500/20", label: "Cancelled" },
+    pending: { color: "text-yellow-400", bg: "bg-yellow-500/15", label: "Pending" },
+    approved_ready: { color: "text-blue-400", bg: "bg-blue-500/15", label: "Ready" },
+    sent: { color: "text-green-400", bg: "bg-green-500/15", label: "Sent" },
+    completed: { color: "text-green-400", bg: "bg-green-500/15", label: "Completed" },
+    cancelled: { color: "text-zinc-400", bg: "bg-zinc-500/15", label: "Cancelled" },
   };
-
   const style = statusStyles[task.status] || statusStyles.pending;
 
   return (
-    <div className="p-4 bg-white/5 rounded-xl border border-white/5">
-      <div className="flex items-center justify-between mb-2">
-        <span className={`text-xs px-2 py-0.5 rounded ${style.bg} ${style.color}`}>
+    <div className="p-5 bg-white/[0.03] border border-white/[0.06] rounded-2xl hover:bg-white/[0.05] transition-colors">
+      <div className="flex items-center justify-between mb-3">
+        <span className={`text-xs px-2.5 py-1 rounded-lg ${style.bg} ${style.color}`}>
           {style.label}
         </span>
-        <span className="text-xs text-white/40">{task.stage}</span>
+        <span className="text-xs text-white/30">{task.stage}</span>
       </div>
       <h4 className="text-sm font-medium text-white capitalize">{task.task_type?.replace(/_/g, " ")}</h4>
       {task.sent_at && (
         <p className="text-xs text-white/40 mt-2">Sent: {new Date(task.sent_at).toLocaleDateString()}</p>
       )}
+    </div>
+  );
+};
+
+// Analysis Card
+const AnalysisCard = ({ icon: Icon, title, content, maxLength = 300 }) => {
+  if (!content) return null;
+  return (
+    <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="p-2.5 rounded-xl bg-red-500/10">
+          <Icon className="w-5 h-5 text-red-400" />
+        </div>
+        <h3 className="text-base font-semibold text-white">{title}</h3>
+      </div>
+      <ExpandableText text={content} maxLength={maxLength} />
     </div>
   );
 };
@@ -244,7 +261,6 @@ export default function TalentCandidateProfile() {
 
   const fetchCandidate = async () => {
     if (!user?.organization_id || !candidateId) return;
-
     try {
       const { data, error } = await supabase
         .from("candidates")
@@ -252,7 +268,6 @@ export default function TalentCandidateProfile() {
         .eq("id", candidateId)
         .eq("organization_id", user.organization_id)
         .single();
-
       if (error) throw error;
       setCandidate(data);
     } catch (err) {
@@ -265,7 +280,6 @@ export default function TalentCandidateProfile() {
 
   const fetchOutreachTasks = async () => {
     if (!user?.organization_id || !candidateId) return;
-
     try {
       const { data, error } = await supabase
         .from("outreach_tasks")
@@ -273,7 +287,6 @@ export default function TalentCandidateProfile() {
         .eq("candidate_id", candidateId)
         .eq("organization_id", user.organization_id)
         .order("created_at", { ascending: false });
-
       if (error) throw error;
       setOutreachTasks(data || []);
     } catch (err) {
@@ -283,7 +296,6 @@ export default function TalentCandidateProfile() {
 
   const generateIntelligenceReport = async () => {
     setGeneratingIntelligence(true);
-
     try {
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generateCandidateIntelligence`,
@@ -299,7 +311,6 @@ export default function TalentCandidateProfile() {
           }),
         }
       );
-
       if (response.ok) {
         await fetchCandidate();
         setActiveTab("intelligence");
@@ -317,12 +328,12 @@ export default function TalentCandidateProfile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black relative">
-        <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
-          <Skeleton className="h-8 w-48" />
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Skeleton className="h-[500px] rounded-xl" />
-            <Skeleton className="h-[500px] rounded-xl lg:col-span-2" />
+      <div className="min-h-screen bg-black p-6">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <Skeleton className="h-10 w-48" />
+          <Skeleton className="h-48 rounded-2xl" />
+          <div className="grid grid-cols-4 gap-4">
+            {[1,2,3,4].map(i => <Skeleton key={i} className="h-32 rounded-2xl" />)}
           </div>
         </div>
       </div>
@@ -331,19 +342,20 @@ export default function TalentCandidateProfile() {
 
   if (!candidate) {
     return (
-      <div className="min-h-screen bg-black relative">
-        <div className="relative z-10 w-full px-6 lg:px-8 py-6">
-          <GlassCard className="p-12 text-center">
-            <User className="w-12 h-12 text-white/20 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-white mb-2">Candidate not found</h3>
-            <Link
-              to={createPageUrl("TalentCandidates")}
-              className="inline-flex items-center gap-2 text-red-400 hover:text-red-300"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Back to Candidates
-            </Link>
-          </GlassCard>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-white/5 flex items-center justify-center">
+            <User className="w-10 h-10 text-white/20" />
+          </div>
+          <h3 className="text-xl font-semibold text-white mb-2">Candidate not found</h3>
+          <p className="text-white/50 mb-6">The candidate you're looking for doesn't exist.</p>
+          <Link
+            to={createPageUrl("TalentCandidates")}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Back to Candidates
+          </Link>
         </div>
       </div>
     );
@@ -351,7 +363,7 @@ export default function TalentCandidateProfile() {
 
   const tabs = [
     { id: "overview", label: "Overview" },
-    { id: "details", label: "Details" },
+    { id: "company", label: "Company" },
     { id: "intelligence", label: "Intelligence" },
     { id: "outreach", label: "Outreach" },
   ];
@@ -359,17 +371,17 @@ export default function TalentCandidateProfile() {
   const fullName = `${candidate.first_name || ""} ${candidate.last_name || ""}`.trim();
   const initials = fullName.split(" ").filter(n => n).map(n => n[0]).join("").substring(0, 2).toUpperCase() || "?";
 
-  // Build history timeline
+  // Build history
   const historyItems = [];
   if (candidate.imported_at) {
     historyItems.push({
       type: "import",
       title: "Imported from CSV",
-      description: candidate.import_source || "Unknown file",
+      description: candidate.import_source || "External source",
       date: new Date(candidate.imported_at).toLocaleDateString(),
     });
   }
-  outreachTasks.slice(0, 3).forEach(task => {
+  outreachTasks.slice(0, 5).forEach(task => {
     historyItems.push({
       type: "outreach",
       title: task.task_type?.replace(/_/g, " "),
@@ -379,407 +391,352 @@ export default function TalentCandidateProfile() {
   });
 
   return (
-    <div className="min-h-screen bg-black relative">
+    <div className="min-h-screen bg-black">
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6"
+        className="max-w-7xl mx-auto px-6 py-6"
       >
         {/* Back Button */}
-        <Link
-          to={createPageUrl("TalentCandidates")}
-          className="inline-flex items-center gap-2 text-white/60 hover:text-white transition-colors text-sm"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          Back to Candidates
-        </Link>
+        <motion.div variants={itemVariants}>
+          <Link
+            to={createPageUrl("TalentCandidates")}
+            className="inline-flex items-center gap-2 text-white/50 hover:text-white transition-colors text-sm mb-6"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Back to Candidates
+          </Link>
+        </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Profile Card */}
-          <motion.div variants={itemVariants} className="lg:col-span-1">
-            <GlassCard className="p-6">
-              {/* Avatar & Name */}
-              <div className="text-center mb-6">
-                <div className="w-20 h-20 mx-auto mb-3 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-2xl font-bold text-white">
+        {/* Hero Section */}
+        <motion.div variants={itemVariants} className="mb-6">
+          <div className="bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-white/[0.06] rounded-3xl p-8">
+            <div className="flex flex-col lg:flex-row lg:items-center gap-6">
+              {/* Avatar & Basic Info */}
+              <div className="flex items-center gap-5 flex-1">
+                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-3xl font-bold text-white shadow-lg shadow-red-500/20">
                   {initials}
                 </div>
-                <h2 className="text-lg font-bold text-white">{fullName}</h2>
-                <p className="text-sm text-white/60">{candidate.job_title}</p>
-              </div>
-
-              {/* Intelligence Score */}
-              <div className="flex justify-center mb-6 pb-6 border-b border-white/10">
-                <IntelligenceGauge score={candidate.intelligence_score || 0} size="md" showLabel />
-              </div>
-
-              {/* Quick Info */}
-              <div className="space-y-3 mb-6 text-sm">
-                {candidate.company_name && (
-                  <div className="flex items-center gap-3 text-white/70">
-                    <Building2 className="w-4 h-4 text-white/40" />
-                    {candidate.company_name}
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-2xl font-bold text-white mb-1">{fullName}</h1>
+                  <p className="text-white/60 text-lg mb-3">{candidate.job_title || "—"}</p>
+                  <div className="flex flex-wrap items-center gap-3">
+                    {candidate.company_name && (
+                      <span className="inline-flex items-center gap-1.5 text-sm text-white/50">
+                        <Building2 className="w-4 h-4" />
+                        {candidate.company_name}
+                      </span>
+                    )}
+                    {candidate.person_home_location && (
+                      <span className="inline-flex items-center gap-1.5 text-sm text-white/50">
+                        <MapPin className="w-4 h-4" />
+                        {candidate.person_home_location}
+                      </span>
+                    )}
                   </div>
-                )}
-                {candidate.person_home_location && (
-                  <div className="flex items-center gap-3 text-white/70">
-                    <MapPin className="w-4 h-4 text-white/40" />
-                    {candidate.person_home_location}
-                  </div>
-                )}
-                {candidate.email && (
-                  <div className="flex items-center gap-3 text-white/70">
-                    <Mail className="w-4 h-4 text-white/40" />
-                    <a href={`mailto:${candidate.email}`} className="hover:text-red-400 truncate">
-                      {candidate.email}
-                    </a>
-                  </div>
-                )}
-                {candidate.linkedin_profile && (
-                  <div className="flex items-center gap-3">
-                    <Linkedin className="w-4 h-4 text-white/40" />
-                    <a
-                      href={candidate.linkedin_profile}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-white/70 hover:text-red-400 flex items-center gap-1"
-                    >
-                      LinkedIn <ExternalLink className="w-3 h-3" />
-                    </a>
-                  </div>
-                )}
-              </div>
-
-              {/* Key Metrics */}
-              <div className="grid grid-cols-2 gap-2 mb-6">
-                <div className="bg-white/5 rounded-lg p-3 text-center">
-                  <p className="text-xl font-bold text-white">{candidate.years_at_company || 0}</p>
-                  <p className="text-xs text-white/50">Years</p>
-                </div>
-                <div className="bg-white/5 rounded-lg p-3 text-center">
-                  <p className="text-xl font-bold text-white">{candidate.times_promoted || 0}</p>
-                  <p className="text-xs text-white/50">Promotions</p>
                 </div>
               </div>
 
-              {/* Actions */}
-              <div className="space-y-2">
-                <Button
-                  onClick={generateIntelligenceReport}
-                  disabled={generatingIntelligence}
-                  className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
-                >
-                  {generatingIntelligence ? (
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  ) : (
-                    <Sparkles className="w-4 h-4 mr-2" />
-                  )}
-                  Generate Intelligence
-                </Button>
-                <Button variant="outline" className="w-full border-white/10 text-white/70 hover:bg-white/5">
-                  <Send className="w-4 h-4 mr-2" />
-                  Start Outreach
-                </Button>
+              {/* Intelligence Score & Actions */}
+              <div className="flex items-center gap-6">
+                <div className="text-center">
+                  <IntelligenceGauge score={candidate.intelligence_score || 0} size="lg" showLabel />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Button
+                    onClick={generateIntelligenceReport}
+                    disabled={generatingIntelligence}
+                    className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-6"
+                  >
+                    {generatingIntelligence ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : (
+                      <Sparkles className="w-4 h-4 mr-2" />
+                    )}
+                    Generate Intel
+                  </Button>
+                  <Button variant="outline" className="border-white/10 text-white/70 hover:bg-white/5 px-6">
+                    <Send className="w-4 h-4 mr-2" />
+                    Start Outreach
+                  </Button>
+                </div>
               </div>
-            </GlassCard>
-          </motion.div>
-
-          {/* Right Column - Tabbed Content */}
-          <motion.div variants={itemVariants} className="lg:col-span-2">
-            {/* Tabs */}
-            <div className="flex gap-1 mb-6 bg-white/5 p-1 rounded-lg">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    activeTab === tab.id
-                      ? "bg-red-500/20 text-red-400"
-                      : "text-white/60 hover:text-white hover:bg-white/5"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
             </div>
 
-            {/* Overview Tab */}
-            {activeTab === "overview" && (
-              <div className="space-y-4">
-                {/* Key Insights Row */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Urgency */}
-                  <GlassCard className="p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Zap className="w-4 h-4 text-red-400" />
-                      <span className="text-sm font-medium text-white">Recruitment Urgency</span>
-                    </div>
-                    <UrgencyIndicator level={candidate.recruitment_urgency} />
-                  </GlassCard>
-
-                  {/* Satisfaction */}
-                  <GlassCard className="p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Smile className="w-4 h-4 text-red-400" />
-                      <span className="text-sm font-medium text-white">Job Satisfaction</span>
-                    </div>
-                    <SatisfactionIndicator level={candidate.job_satisfaction} />
-                  </GlassCard>
-
-                  {/* Salary */}
-                  <GlassCard className="p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <DollarSign className="w-4 h-4 text-red-400" />
-                      <span className="text-sm font-medium text-white">Salary Range</span>
-                    </div>
-                    <p className="text-lg font-bold text-green-400">
-                      {candidate.salary_range ? `$${Number(candidate.salary_range).toLocaleString()}` : "Unknown"}
-                    </p>
-                  </GlassCard>
-                </div>
-
-                {/* Urgency Reasoning */}
-                {candidate.outreach_urgency_reasoning && (
-                  <GlassCard className="p-4">
-                    <h3 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
-                      <Target className="w-4 h-4 text-red-400" />
-                      Recruitment Assessment
-                    </h3>
-                    <ExpandableText text={candidate.outreach_urgency_reasoning} maxLength={250} />
-                  </GlassCard>
-                )}
-
-                {/* Job Satisfaction Analysis */}
-                {candidate.job_satisfaction_analysis && (
-                  <GlassCard className="p-4">
-                    <h3 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
-                      <Briefcase className="w-4 h-4 text-red-400" />
-                      Job Satisfaction Analysis
-                    </h3>
-                    <ExpandableText text={candidate.job_satisfaction_analysis} maxLength={250} />
-                  </GlassCard>
-                )}
-
-                {/* Experience Summary */}
-                {candidate.experience_analysis && (
-                  <GlassCard className="p-4">
-                    <h3 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
-                      <Award className="w-4 h-4 text-red-400" />
-                      Experience Analysis
-                    </h3>
-                    <ExpandableText text={candidate.experience_analysis} maxLength={200} />
-                  </GlassCard>
-                )}
-
-                {/* Recent Activity */}
-                {historyItems.length > 0 && (
-                  <GlassCard className="p-4">
-                    <h3 className="text-sm font-medium text-white mb-4 flex items-center gap-2">
-                      <History className="w-4 h-4 text-red-400" />
-                      Recent Activity
-                    </h3>
-                    <div>
-                      {historyItems.map((item, idx) => (
-                        <TimelineItem key={idx} item={item} isLast={idx === historyItems.length - 1} />
-                      ))}
-                    </div>
-                  </GlassCard>
-                )}
+            {/* Quick Stats Bar */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4 mt-8 pt-8 border-t border-white/[0.06]">
+              <div>
+                <p className="text-xs text-white/40 mb-1">Urgency</p>
+                <UrgencyBadge level={candidate.recruitment_urgency} />
               </div>
-            )}
+              <div>
+                <p className="text-xs text-white/40 mb-1">Satisfaction</p>
+                <SatisfactionBadge level={candidate.job_satisfaction} />
+              </div>
+              <div>
+                <p className="text-xs text-white/40 mb-1">Salary Range</p>
+                <p className="text-lg font-semibold text-green-400">
+                  {candidate.salary_range ? `$${Number(candidate.salary_range).toLocaleString()}` : "—"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-white/40 mb-1">Years at Company</p>
+                <p className="text-lg font-semibold text-white">{candidate.years_at_company || 0}</p>
+              </div>
+              <div>
+                <p className="text-xs text-white/40 mb-1">Promotions</p>
+                <p className="text-lg font-semibold text-white">{candidate.times_promoted || 0}</p>
+              </div>
+              <div>
+                <p className="text-xs text-white/40 mb-1">Company Changes</p>
+                <p className="text-lg font-semibold text-white">{candidate.times_company_hopped || 0}</p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
 
-            {/* Details Tab */}
-            {activeTab === "details" && (
-              <div className="space-y-4">
-                {/* Company Information */}
-                <GlassCard className="p-4">
-                  <h3 className="text-sm font-medium text-white mb-4 flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-red-400" />
-                    Company Information
-                  </h3>
-                  <div className="space-y-1">
-                    <KeyValue label="Company" value={candidate.company_name} icon={Building2} />
-                    <KeyValue label="Industry" value={candidate.industry} icon={Factory} />
-                    <KeyValue label="Company Size" value={candidate.company_size} icon={Users} />
-                    <KeyValue label="Employee Count" value={candidate.company_employee_count?.toLocaleString()} icon={Users} />
-                    <KeyValue label="Company Type" value={candidate.company_type} icon={Building} />
-                    <KeyValue label="Headquarters" value={candidate.company_hq} icon={MapPin} />
-                    {candidate.company_domain && (
-                      <div className="flex items-center justify-between py-2 border-b border-white/5">
-                        <span className="text-sm text-white/50 flex items-center gap-2">
-                          <Globe className="w-4 h-4" /> Website
-                        </span>
-                        <a
-                          href={`https://${candidate.company_domain}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-red-400 hover:text-red-300 flex items-center gap-1"
-                        >
-                          {candidate.company_domain} <ExternalLink className="w-3 h-3" />
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                  {candidate.company_description && (
-                    <div className="mt-4 pt-4 border-t border-white/10">
-                      <p className="text-xs text-white/40 mb-2">About</p>
-                      <ExpandableText text={candidate.company_description} maxLength={200} />
-                    </div>
-                  )}
-                </GlassCard>
+        {/* Tab Navigation */}
+        <motion.div variants={itemVariants} className="mb-6">
+          <div className="flex gap-1 p-1 bg-white/[0.03] border border-white/[0.06] rounded-2xl">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 px-6 py-3 rounded-xl text-sm font-medium transition-all ${
+                  activeTab === tab.id
+                    ? "bg-red-500 text-white shadow-lg shadow-red-500/20"
+                    : "text-white/50 hover:text-white hover:bg-white/[0.04]"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Tab Content */}
+        <motion.div variants={itemVariants}>
+          {/* Overview Tab */}
+          {activeTab === "overview" && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Main Column */}
+              <div className="lg:col-span-2 space-y-6">
+                {/* Analysis Cards */}
+                <AnalysisCard
+                  icon={Target}
+                  title="Recruitment Assessment"
+                  content={candidate.outreach_urgency_reasoning}
+                  maxLength={400}
+                />
+                <AnalysisCard
+                  icon={Briefcase}
+                  title="Job Satisfaction Analysis"
+                  content={candidate.job_satisfaction_analysis}
+                  maxLength={400}
+                />
+                <AnalysisCard
+                  icon={Award}
+                  title="Experience Analysis"
+                  content={candidate.experience_analysis}
+                  maxLength={400}
+                />
 
                 {/* Career Metrics */}
-                <GlassCard className="p-4">
-                  <h3 className="text-sm font-medium text-white mb-4 flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-red-400" />
-                    Career Metrics
-                  </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <MetricCard label="Years at Company" value={candidate.years_at_company || 0} icon={Calendar} />
-                    <MetricCard label="Promotions" value={candidate.times_promoted || 0} icon={TrendingUp} />
-                    <MetricCard label="Avg Promo Time" value={candidate.avg_promotion_threshold ? `${candidate.avg_promotion_threshold}y` : "N/A"} icon={Clock} />
-                    <MetricCard label="Company Changes" value={candidate.times_company_hopped || 0} icon={Briefcase} />
-                  </div>
-                </GlassCard>
-
-                {/* Career Changes */}
-                {candidate.career_changes && (
-                  <GlassCard className="p-4">
-                    <h3 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
-                      <Briefcase className="w-4 h-4 text-red-400" />
-                      Career Changes & Promotions
-                    </h3>
-                    <ExpandableText text={candidate.career_changes} maxLength={300} />
-                  </GlassCard>
-                )}
-
-                {/* Salary & Market */}
-                {(candidate.salary_intelligence || candidate.market_position) && (
-                  <GlassCard className="p-4">
-                    <h3 className="text-sm font-medium text-white mb-4 flex items-center gap-2">
-                      <DollarSign className="w-4 h-4 text-red-400" />
-                      Compensation Intelligence
-                    </h3>
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      <div className="bg-white/5 rounded-lg p-3">
-                        <p className="text-xs text-white/40 mb-1">Salary Range</p>
-                        <p className="text-lg font-bold text-green-400">
-                          {candidate.salary_range ? `$${Number(candidate.salary_range).toLocaleString()}` : "Unknown"}
-                        </p>
-                      </div>
-                      <div className="bg-white/5 rounded-lg p-3">
-                        <p className="text-xs text-white/40 mb-1">Market Position</p>
-                        <p className="text-sm text-white">{candidate.market_position || "Unknown"}</p>
-                      </div>
-                    </div>
-                    {candidate.salary_intelligence && (
-                      <ExpandableText text={candidate.salary_intelligence} maxLength={200} />
-                    )}
-                  </GlassCard>
-                )}
-
-                {/* Experience Report */}
-                {candidate.experience_report && (
-                  <GlassCard className="p-4">
-                    <h3 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-red-400" />
-                      Experience Report
-                    </h3>
-                    <ExpandableText text={candidate.experience_report} maxLength={300} />
-                  </GlassCard>
-                )}
-
-                {/* M&A News */}
-                {candidate.recent_ma_news && (
-                  <GlassCard className="p-4">
-                    <h3 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-red-400" />
-                      Recent M&A News
-                    </h3>
-                    <ExpandableText text={candidate.recent_ma_news} maxLength={300} />
-                  </GlassCard>
-                )}
-
-                {/* Demographics */}
-                {candidate.estimated_age_range && (
-                  <GlassCard className="p-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-white/50 flex items-center gap-2">
-                        <User className="w-4 h-4" /> Estimated Age Range
-                      </span>
-                      <span className="text-sm text-white font-medium">{candidate.estimated_age_range}</span>
-                    </div>
-                  </GlassCard>
-                )}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <StatCard label="Years at Company" value={candidate.years_at_company || 0} icon={Calendar} color="blue" />
+                  <StatCard label="Promotions" value={candidate.times_promoted || 0} icon={TrendingUp} color="green" />
+                  <StatCard label="Avg Promo Time" value={candidate.avg_promotion_threshold ? `${candidate.avg_promotion_threshold}y` : "—"} icon={Clock} color="amber" />
+                  <StatCard label="Company Changes" value={candidate.times_company_hopped || 0} icon={Briefcase} color="purple" />
+                </div>
 
                 {/* Skills */}
                 {candidate.skills && candidate.skills.length > 0 && (
-                  <GlassCard className="p-4">
-                    <h3 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
-                      <Award className="w-4 h-4 text-red-400" />
+                  <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6">
+                    <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
+                      <Award className="w-5 h-5 text-red-400" />
                       Skills
                     </h3>
                     <div className="flex flex-wrap gap-2">
                       {candidate.skills.map((skill, idx) => (
-                        <Badge key={idx} variant="outline" className="bg-white/5 border-white/10 text-white/70 text-xs">
+                        <Badge key={idx} className="bg-white/[0.06] border-white/[0.08] text-white/70 px-3 py-1.5">
                           {skill}
                         </Badge>
                       ))}
                     </div>
-                  </GlassCard>
-                )}
-              </div>
-            )}
-
-            {/* Intelligence Tab */}
-            {activeTab === "intelligence" && (
-              <GlassCard className="p-6">
-                <IntelligenceReport candidate={candidate} />
-
-                {!candidate.intelligence_factors?.length && !candidate.intelligence_timing?.length && (
-                  <div className="mt-6 text-center">
-                    <p className="text-white/50 mb-4">No intelligence report generated yet.</p>
-                    <Button
-                      onClick={generateIntelligenceReport}
-                      disabled={generatingIntelligence}
-                      className="bg-gradient-to-r from-red-500 to-red-600"
-                    >
-                      {generatingIntelligence ? (
-                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      ) : (
-                        <Sparkles className="w-4 h-4 mr-2" />
-                      )}
-                      Generate Intelligence Report
-                    </Button>
                   </div>
                 )}
-              </GlassCard>
-            )}
+              </div>
 
-            {/* Outreach Tab */}
-            {activeTab === "outreach" && (
-              <div className="space-y-4">
-                {outreachTasks.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {outreachTasks.map((task) => (
-                      <OutreachTaskCard key={task.id} task={task} />
-                    ))}
+              {/* Side Column */}
+              <div className="space-y-6">
+                {/* Contact Info */}
+                <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6">
+                  <h3 className="text-base font-semibold text-white mb-4">Contact Information</h3>
+                  <div className="space-y-1">
+                    <InfoRow icon={Mail} label="Email" value={candidate.email} link={candidate.email ? `mailto:${candidate.email}` : null} />
+                    <InfoRow icon={Phone} label="Phone" value={candidate.phone} />
+                    <InfoRow icon={Linkedin} label="LinkedIn" value="View Profile" link={candidate.linkedin_profile} />
+                    <InfoRow icon={MapPin} label="Location" value={candidate.person_home_location} />
                   </div>
-                ) : (
-                  <GlassCard className="p-12 text-center">
-                    <MessageSquare className="w-10 h-10 text-white/20 mx-auto mb-3" />
-                    <h3 className="text-base font-medium text-white mb-2">No outreach yet</h3>
-                    <p className="text-sm text-white/50 mb-4">Start engaging with this candidate.</p>
-                    <Button className="bg-red-500 hover:bg-red-600">
-                      <Send className="w-4 h-4 mr-2" />
-                      Start Outreach
-                    </Button>
-                  </GlassCard>
+                </div>
+
+                {/* Recent Activity */}
+                {historyItems.length > 0 && (
+                  <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6">
+                    <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
+                      <History className="w-5 h-5 text-red-400" />
+                      Recent Activity
+                    </h3>
+                    <div>
+                      {historyItems.slice(0, 4).map((item, idx) => (
+                        <TimelineItem key={idx} item={item} isLast={idx === Math.min(historyItems.length - 1, 3)} />
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
-            )}
-          </motion.div>
-        </div>
+            </div>
+          )}
+
+          {/* Company Tab */}
+          {activeTab === "company" && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Company Details */}
+              <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6">
+                <h3 className="text-base font-semibold text-white mb-6 flex items-center gap-2">
+                  <Building2 className="w-5 h-5 text-red-400" />
+                  Company Information
+                </h3>
+                <div className="space-y-1">
+                  <InfoRow icon={Building2} label="Company" value={candidate.company_name} />
+                  <InfoRow icon={Factory} label="Industry" value={candidate.industry} />
+                  <InfoRow icon={Users} label="Company Size" value={candidate.company_size} />
+                  <InfoRow icon={Users} label="Employee Count" value={candidate.company_employee_count?.toLocaleString()} />
+                  <InfoRow icon={Building} label="Company Type" value={candidate.company_type} />
+                  <InfoRow icon={MapPin} label="Headquarters" value={candidate.company_hq} />
+                  <InfoRow icon={Globe} label="Website" value={candidate.company_domain} link={candidate.company_domain ? `https://${candidate.company_domain}` : null} />
+                </div>
+                {candidate.company_description && (
+                  <div className="mt-6 pt-6 border-t border-white/[0.06]">
+                    <p className="text-xs text-white/40 mb-2">About</p>
+                    <ExpandableText text={candidate.company_description} maxLength={300} />
+                  </div>
+                )}
+              </div>
+
+              {/* Compensation & Market */}
+              <div className="space-y-6">
+                <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6">
+                  <h3 className="text-base font-semibold text-white mb-6 flex items-center gap-2">
+                    <DollarSign className="w-5 h-5 text-red-400" />
+                    Compensation Intelligence
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="bg-white/[0.04] rounded-xl p-4 text-center">
+                      <p className="text-xs text-white/40 mb-2">Salary Range</p>
+                      <p className="text-2xl font-bold text-green-400">
+                        {candidate.salary_range ? `$${Number(candidate.salary_range).toLocaleString()}` : "—"}
+                      </p>
+                    </div>
+                    <div className="bg-white/[0.04] rounded-xl p-4 text-center">
+                      <p className="text-xs text-white/40 mb-2">Market Position</p>
+                      <p className="text-lg font-semibold text-white">{candidate.market_position || "—"}</p>
+                    </div>
+                  </div>
+                  {candidate.salary_intelligence && (
+                    <ExpandableText text={candidate.salary_intelligence} maxLength={200} />
+                  )}
+                </div>
+
+                {/* Career Changes */}
+                <AnalysisCard
+                  icon={TrendingUp}
+                  title="Career Progression"
+                  content={candidate.career_changes}
+                  maxLength={300}
+                />
+
+                {/* M&A News */}
+                <AnalysisCard
+                  icon={FileText}
+                  title="Recent M&A News"
+                  content={candidate.recent_ma_news}
+                  maxLength={300}
+                />
+              </div>
+
+              {/* Experience Report */}
+              {candidate.experience_report && (
+                <div className="lg:col-span-2">
+                  <AnalysisCard
+                    icon={FileText}
+                    title="Full Experience Report"
+                    content={candidate.experience_report}
+                    maxLength={600}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Intelligence Tab */}
+          {activeTab === "intelligence" && (
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-8">
+              <IntelligenceReport candidate={candidate} />
+              {!candidate.intelligence_factors?.length && !candidate.intelligence_timing?.length && (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-red-500/10 flex items-center justify-center">
+                    <Sparkles className="w-8 h-8 text-red-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-white mb-2">No Intelligence Report Yet</h3>
+                  <p className="text-white/50 mb-6 max-w-md mx-auto">
+                    Generate an AI-powered intelligence report to get insights on recruitment timing, approach strategies, and more.
+                  </p>
+                  <Button
+                    onClick={generateIntelligenceReport}
+                    disabled={generatingIntelligence}
+                    className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 px-8"
+                  >
+                    {generatingIntelligence ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : (
+                      <Sparkles className="w-4 h-4 mr-2" />
+                    )}
+                    Generate Intelligence Report
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Outreach Tab */}
+          {activeTab === "outreach" && (
+            <div>
+              {outreachTasks.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {outreachTasks.map((task) => (
+                    <OutreachTaskCard key={task.id} task={task} />
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-12 text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/[0.04] flex items-center justify-center">
+                    <MessageSquare className="w-8 h-8 text-white/20" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-white mb-2">No Outreach Yet</h3>
+                  <p className="text-white/50 mb-6 max-w-md mx-auto">
+                    Start engaging with this candidate through email, LinkedIn, or phone outreach.
+                  </p>
+                  <Button className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 px-8">
+                    <Send className="w-4 h-4 mr-2" />
+                    Start Outreach Campaign
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </motion.div>
       </motion.div>
     </div>
   );
