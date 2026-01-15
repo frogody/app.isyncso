@@ -120,7 +120,7 @@ function DealCard({ deal, onEdit, onDelete, stageConfig, index, clients, candida
                     </DropdownMenuItem>
                     {client && (
                       <DropdownMenuItem asChild className="text-zinc-300 focus:text-white focus:bg-zinc-800">
-                        <Link to={createPageUrl('TalentClients')}>
+                        <Link to={createPageUrl('CRMContacts') + '?type=client'}>
                           <Building2 className="w-4 h-4 mr-2" /> View Client
                         </Link>
                       </DropdownMenuItem>
