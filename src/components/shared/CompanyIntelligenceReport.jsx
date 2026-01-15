@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { supabase } from "@/api/supabaseClient";
 import { toast } from "sonner";
 import {
   Building2,
@@ -12,11 +11,11 @@ import {
   MapPin,
   Factory,
   TrendingUp,
+  TrendingDown,
   Cpu,
   Layers,
   Rocket,
   Briefcase,
-  ChevronRight,
   Sparkles,
   RefreshCw,
   ExternalLink,
@@ -27,6 +26,20 @@ import {
   Shield,
   BarChart3,
   Banknote,
+  Star,
+  ThumbsUp,
+  Heart,
+  Award,
+  Target,
+  Share2,
+  Twitter,
+  Activity,
+  Eye,
+  Clock,
+  Percent,
+  Building,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 
 const itemVariants = {
@@ -40,30 +53,37 @@ const containerVariants = {
 };
 
 /**
- * InfoItem - Simple info display row
+ * DataRow - Simple data display row
  */
-const InfoItem = ({ icon: Icon, label, value, link }) => {
-  if (!value) return null;
+const DataRow = ({ label, value, icon: Icon }) => {
+  if (!value && value !== 0) return null;
   return (
-    <div className="flex items-center gap-3 py-2">
-      <div className="p-1.5 rounded-lg bg-white/[0.04] flex-shrink-0">
-        <Icon className="w-3.5 h-3.5 text-white/40" />
+    <div className="flex items-center justify-between py-1.5">
+      <div className="flex items-center gap-2 text-white/50">
+        {Icon && <Icon className="w-3.5 h-3.5" />}
+        <span className="text-xs">{label}</span>
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[10px] uppercase tracking-wider text-white/40">{label}</p>
-        {link ? (
-          <a
-            href={link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-red-400 hover:text-red-300 flex items-center gap-1"
-          >
-            {value}
-            <ExternalLink className="w-3 h-3" />
-          </a>
-        ) : (
-          <p className="text-sm text-white truncate">{value}</p>
-        )}
+      <span className="text-sm text-white font-medium">{value}</span>
+    </div>
+  );
+};
+
+/**
+ * RatingBar - Visual rating display
+ */
+const RatingBar = ({ label, value, maxValue = 5 }) => {
+  if (!value) return null;
+  const percentage = (value / maxValue) * 100;
+  const color = value >= 4 ? "bg-green-500" : value >= 3 ? "bg-yellow-500" : "bg-red-500";
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-white/50">{label}</span>
+        <span className="text-xs font-medium text-white">{value.toFixed(1)}</span>
+      </div>
+      <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+        <div className={`h-full ${color} rounded-full`} style={{ width: `${percentage}%` }} />
       </div>
     </div>
   );
@@ -73,80 +93,61 @@ const InfoItem = ({ icon: Icon, label, value, link }) => {
  * TechBadge - Tech stack badge
  */
 const TechBadge = ({ name }) => (
-  <span className="px-2 py-1 text-xs bg-white/[0.06] text-white/70 rounded-md border border-white/[0.08]">
+  <span className="px-2 py-1 text-[11px] bg-blue-500/10 text-blue-400 rounded border border-blue-500/20">
     {name}
   </span>
 );
 
 /**
- * FundingRoundCard - Display funding round
+ * MetricCard - Large metric display
  */
-const FundingRoundCard = ({ round }) => (
-  <div className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-0">
-    <div className="flex items-center gap-2">
-      <div className="w-2 h-2 rounded-full bg-green-400" />
-      <span className="text-sm text-white">{round.round_type || "Funding"}</span>
+const MetricCard = ({ label, value, icon: Icon, color = "white", subtext }) => (
+  <div className="bg-white/[0.03] rounded-lg p-3 border border-white/[0.06]">
+    <div className="flex items-center gap-2 mb-2">
+      {Icon && <Icon className={`w-4 h-4 text-${color}-400`} />}
+      <span className="text-xs text-white/40">{label}</span>
     </div>
-    <div className="flex items-center gap-4">
-      {round.amount && (
-        <span className="text-sm font-medium text-green-400">
-          ${(round.amount / 1000000).toFixed(1)}M
-        </span>
-      )}
-      {round.date && (
-        <span className="text-xs text-white/40">{new Date(round.date).getFullYear()}</span>
-      )}
-    </div>
+    <p className={`text-xl font-bold text-${color}-400`}>{value}</p>
+    {subtext && <p className="text-xs text-white/40 mt-1">{subtext}</p>}
   </div>
 );
 
 /**
- * TechCategoryCard - Display tech category
+ * SectionCard - Reusable section wrapper
  */
-const TechCategoryCard = ({ category, technologies }) => {
-  const categoryIcons = {
-    "Analytics": BarChart3,
-    "Cloud": Cloud,
-    "Database": Database,
-    "Security": Shield,
-    "Development": Code,
-    "Marketing": Rocket,
-    "Sales": Briefcase,
-  };
+const SectionCard = ({ icon: Icon, title, iconColor = "white", children, badge }) => (
+  <motion.div
+    variants={itemVariants}
+    className="bg-white/[0.02] rounded-xl border border-white/[0.06] overflow-hidden"
+  >
+    <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
+      <div className="flex items-center gap-2">
+        <Icon className={`w-4 h-4 text-${iconColor}-400`} />
+        <h4 className="font-medium text-white text-sm">{title}</h4>
+      </div>
+      {badge}
+    </div>
+    <div className="p-4">{children}</div>
+  </motion.div>
+);
 
-  const Icon = categoryIcons[category] || Cpu;
+/**
+ * DataQualityBadge - Shows what data is available
+ */
+const DataQualityBadge = ({ quality }) => {
+  if (!quality) return null;
+  const { completeness } = quality;
+  const color = completeness >= 6 ? "green" : completeness >= 4 ? "yellow" : "red";
 
   return (
-    <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.04]">
-      <div className="flex items-center gap-2 mb-2">
-        <Icon className="w-3.5 h-3.5 text-blue-400" />
-        <span className="text-xs font-medium text-white/70 capitalize">{category}</span>
-        <span className="text-xs text-white/30">({technologies.length})</span>
-      </div>
-      <div className="flex flex-wrap gap-1.5">
-        {technologies.slice(0, 5).map((tech, idx) => (
-          <TechBadge key={idx} name={tech} />
-        ))}
-        {technologies.length > 5 && (
-          <span className="px-2 py-1 text-xs text-white/40">
-            +{technologies.length - 5} more
-          </span>
-        )}
-      </div>
-    </div>
+    <span className={`text-xs px-2 py-0.5 rounded bg-${color}-500/20 text-${color}-400`}>
+      {completeness}/8 sources
+    </span>
   );
 };
 
 /**
- * CompanyIntelligenceReport - Reusable company intelligence display
- *
- * @param {Object} props
- * @param {Object} props.intelligence - Company intelligence data from Explorium
- * @param {string} props.companyName - Company name for generating new intel
- * @param {string} props.companyDomain - Company domain for generating new intel
- * @param {string} props.entityType - Type of entity ("candidate", "prospect", "contact")
- * @param {string} props.entityId - ID of the entity to update after generation
- * @param {Function} props.onIntelligenceGenerated - Callback when new intelligence is generated
+ * CompanyIntelligenceReport - Comprehensive company intelligence display
  */
 export const CompanyIntelligenceReport = ({
   intelligence,
@@ -204,11 +205,23 @@ export const CompanyIntelligenceReport = ({
     }
   };
 
-  const { firmographics, funding, technographics, enriched_at } = intelligence || {};
+  const {
+    firmographics,
+    funding,
+    technographics,
+    employee_ratings,
+    social_media,
+    workforce,
+    competitive_landscape,
+    website_traffic,
+    enriched_at,
+    data_quality,
+  } = intelligence || {};
 
-  const hasData = firmographics || funding || technographics;
+  const hasData = firmographics || funding || technographics || employee_ratings ||
+    social_media || workforce || competitive_landscape || website_traffic;
 
-  // No data state with generate button
+  // No data state
   if (!hasData) {
     return (
       <motion.div
@@ -223,7 +236,7 @@ export const CompanyIntelligenceReport = ({
           </div>
           <h3 className="text-lg font-semibold text-white mb-2">No Company Intelligence</h3>
           <p className="text-white/50 text-sm mb-6">
-            Generate intelligence using Explorium to get firmographics, funding data, and tech stack information.
+            Generate intelligence using Explorium to get firmographics, funding, tech stack, employee ratings, and more.
           </p>
           {companyName && (
             <button
@@ -234,7 +247,7 @@ export const CompanyIntelligenceReport = ({
               {isGenerating ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  Generating...
+                  Enriching from 8 sources...
                 </>
               ) : (
                 <>
@@ -256,19 +269,22 @@ export const CompanyIntelligenceReport = ({
       animate="visible"
       className="space-y-4"
     >
-      {/* Header with refresh */}
+      {/* Header */}
       <motion.div variants={itemVariants} className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-blue-500/20">
-            <Zap className="w-4 h-4 text-blue-400" />
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-xl bg-blue-500/20">
+            <Zap className="w-5 h-5 text-blue-400" />
           </div>
           <div>
-            <h3 className="font-semibold text-white text-sm">Company Intelligence</h3>
-            {enriched_at && (
-              <p className="text-xs text-white/40">
-                Updated {new Date(enriched_at).toLocaleDateString()}
-              </p>
-            )}
+            <h3 className="font-semibold text-white">Company Intelligence</h3>
+            <div className="flex items-center gap-2 mt-0.5">
+              {enriched_at && (
+                <span className="text-xs text-white/40">
+                  Updated {new Date(enriched_at).toLocaleDateString()}
+                </span>
+              )}
+              <DataQualityBadge quality={data_quality} />
+            </div>
           </div>
         </div>
         {companyName && (
@@ -283,64 +299,136 @@ export const CompanyIntelligenceReport = ({
         )}
       </motion.div>
 
-      {/* Main Grid */}
+      {/* Row 1: Company Profile + Employee Ratings */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Firmographics */}
+        {/* Firmographics / Company Profile */}
         {firmographics && (
-          <motion.div
-            variants={itemVariants}
-            className="bg-white/[0.02] rounded-xl border border-white/[0.06] p-4"
-          >
-            <div className="flex items-center gap-2 mb-4 pb-3 border-b border-white/[0.06]">
-              <Building2 className="w-4 h-4 text-white/50" />
-              <h4 className="font-medium text-white text-sm">Company Profile</h4>
-            </div>
-            <div className="space-y-1">
-              <InfoItem icon={Building2} label="Company" value={firmographics.company_name} />
-              <InfoItem icon={Factory} label="Industry" value={firmographics.industry} />
-              <InfoItem icon={Users} label="Employees" value={firmographics.employee_count?.toLocaleString() || firmographics.employee_count_range} />
-              <InfoItem icon={DollarSign} label="Revenue" value={firmographics.revenue} />
-              <InfoItem icon={Calendar} label="Founded" value={firmographics.founded_year} />
-              <InfoItem icon={Briefcase} label="Type" value={firmographics.company_type} />
-              <InfoItem icon={MapPin} label="HQ" value={firmographics.headquarters} />
-              <InfoItem icon={Globe} label="Website" value={firmographics.website} link={firmographics.website?.startsWith("http") ? firmographics.website : `https://${firmographics.website}`} />
-              <InfoItem icon={Linkedin} label="LinkedIn" value="View Profile" link={firmographics.linkedin_url} />
-            </div>
-            {firmographics.description && (
-              <div className="mt-4 pt-3 border-t border-white/[0.06]">
-                <p className="text-xs text-white/40 mb-1">About</p>
-                <p className="text-xs text-white/60 line-clamp-3">{firmographics.description}</p>
-              </div>
-            )}
-          </motion.div>
-        )}
+          <SectionCard icon={Building2} title="Company Profile" iconColor="blue">
+            <div className="space-y-3">
+              {firmographics.logo_url && (
+                <img src={firmographics.logo_url} alt="" className="h-8 object-contain" />
+              )}
 
-        {/* Funding & Acquisitions */}
-        <motion.div variants={itemVariants} className="space-y-4">
-          {/* Funding */}
-          {funding && (funding.total_funding || funding.funding_rounds?.length > 0) && (
-            <div className="bg-white/[0.02] rounded-xl border border-white/[0.06] p-4">
-              <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/[0.06]">
-                <div className="flex items-center gap-2">
-                  <Banknote className="w-4 h-4 text-green-400" />
-                  <h4 className="font-medium text-white text-sm">Funding</h4>
+              <div className="grid grid-cols-2 gap-3">
+                <DataRow label="Industry" value={firmographics.industry} icon={Factory} />
+                <DataRow label="Employees" value={firmographics.employee_count_range || firmographics.employee_count?.toLocaleString()} icon={Users} />
+                <DataRow label="Revenue" value={firmographics.revenue_range} icon={DollarSign} />
+                <DataRow label="Founded" value={firmographics.founded_year} icon={Calendar} />
+                <DataRow label="Type" value={firmographics.company_type} icon={Building} />
+                <DataRow label="HQ" value={firmographics.headquarters} icon={MapPin} />
+              </div>
+
+              {(firmographics.naics_description || firmographics.sic_description) && (
+                <div className="pt-3 border-t border-white/[0.06]">
+                  <p className="text-xs text-white/40 mb-1">Industry Classification</p>
+                  <p className="text-xs text-white/70">{firmographics.naics_description || firmographics.sic_description}</p>
                 </div>
-                {funding.funding_stage && (
-                  <span className="px-2 py-0.5 text-xs bg-green-500/20 text-green-400 rounded">
-                    {funding.funding_stage}
+              )}
+
+              <div className="flex gap-2 pt-2">
+                {firmographics.website && (
+                  <a
+                    href={firmographics.website.startsWith("http") ? firmographics.website : `https://${firmographics.website}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-2.5 py-1 text-xs bg-white/[0.05] hover:bg-white/[0.1] rounded text-white/60 hover:text-white"
+                  >
+                    <Globe className="w-3 h-3" /> Website
+                  </a>
+                )}
+                {firmographics.linkedin_url && (
+                  <a
+                    href={firmographics.linkedin_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-2.5 py-1 text-xs bg-blue-500/10 hover:bg-blue-500/20 rounded text-blue-400"
+                  >
+                    <Linkedin className="w-3 h-3" /> LinkedIn
+                  </a>
+                )}
+                {firmographics.ticker && (
+                  <span className="px-2.5 py-1 text-xs bg-green-500/10 rounded text-green-400">
+                    ${firmographics.ticker}
                   </span>
                 )}
               </div>
+            </div>
+          </SectionCard>
+        )}
 
+        {/* Employee Ratings */}
+        {employee_ratings && (employee_ratings.overall_rating || employee_ratings.raw) && (
+          <SectionCard
+            icon={Star}
+            title="Employee Ratings"
+            iconColor="yellow"
+            badge={
+              employee_ratings.overall_rating && (
+                <span className="flex items-center gap-1 text-yellow-400 text-sm font-bold">
+                  <Star className="w-4 h-4 fill-yellow-400" />
+                  {employee_ratings.overall_rating.toFixed(1)}
+                </span>
+              )
+            }
+          >
+            <div className="space-y-3">
+              <RatingBar label="Culture & Values" value={employee_ratings.culture_rating} />
+              <RatingBar label="Work-Life Balance" value={employee_ratings.work_life_balance} />
+              <RatingBar label="Compensation" value={employee_ratings.compensation_rating} />
+              <RatingBar label="Career Opportunities" value={employee_ratings.career_opportunities} />
+              <RatingBar label="Management" value={employee_ratings.management_rating} />
+
+              <div className="grid grid-cols-2 gap-3 pt-3 border-t border-white/[0.06]">
+                {employee_ratings.recommend_percent && (
+                  <div className="text-center">
+                    <p className="text-lg font-bold text-green-400">{employee_ratings.recommend_percent}%</p>
+                    <p className="text-xs text-white/40">Would Recommend</p>
+                  </div>
+                )}
+                {employee_ratings.ceo_approval && (
+                  <div className="text-center">
+                    <p className="text-lg font-bold text-blue-400">{employee_ratings.ceo_approval}%</p>
+                    <p className="text-xs text-white/40">CEO Approval</p>
+                  </div>
+                )}
+              </div>
+
+              {employee_ratings.review_count && (
+                <p className="text-xs text-white/30 text-center">
+                  Based on {employee_ratings.review_count.toLocaleString()} reviews
+                </p>
+              )}
+            </div>
+          </SectionCard>
+        )}
+      </div>
+
+      {/* Row 2: Funding + Social Media */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Funding */}
+        {funding && (funding.total_funding || funding.funding_rounds?.length > 0 || funding.raw) && (
+          <SectionCard
+            icon={Banknote}
+            title="Funding & Investment"
+            iconColor="green"
+            badge={
+              funding.funding_stage && (
+                <span className="text-xs px-2 py-0.5 bg-green-500/20 text-green-400 rounded">
+                  {funding.funding_stage}
+                </span>
+              )
+            }
+          >
+            <div className="space-y-4">
               {funding.total_funding && (
-                <div className="mb-4 p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+                <div className="p-3 bg-green-500/10 rounded-lg border border-green-500/20 text-center">
                   <p className="text-xs text-green-400/70 mb-1">Total Raised</p>
                   <p className="text-2xl font-bold text-green-400">
                     ${(funding.total_funding / 1000000).toFixed(1)}M
                   </p>
                   {funding.last_funding_date && (
                     <p className="text-xs text-white/40 mt-1">
-                      Last round: {new Date(funding.last_funding_date).toLocaleDateString()}
+                      Last: {new Date(funding.last_funding_date).toLocaleDateString()}
                     </p>
                   )}
                 </div>
@@ -349,82 +437,232 @@ export const CompanyIntelligenceReport = ({
               {funding.funding_rounds?.length > 0 && (
                 <div>
                   <p className="text-xs text-white/40 mb-2">Funding Rounds</p>
-                  {funding.funding_rounds.slice(0, 4).map((round, idx) => (
-                    <FundingRoundCard key={idx} round={round} />
-                  ))}
-                  {funding.funding_rounds.length > 4 && (
-                    <p className="text-xs text-white/40 mt-2">
-                      +{funding.funding_rounds.length - 4} more rounds
-                    </p>
-                  )}
+                  <div className="space-y-2">
+                    {funding.funding_rounds.slice(0, 4).map((round, idx) => (
+                      <div key={idx} className="flex items-center justify-between text-sm">
+                        <span className="text-white">{round.round_type || "Round"}</span>
+                        <div className="flex items-center gap-3">
+                          {round.amount && (
+                            <span className="text-green-400 font-medium">
+                              ${(round.amount / 1000000).toFixed(1)}M
+                            </span>
+                          )}
+                          {round.date && (
+                            <span className="text-xs text-white/40">
+                              {new Date(round.date).getFullYear()}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {funding.is_public && (
+                <div className="flex items-center gap-2 text-xs text-white/50">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
+                  Publicly Traded
+                  {funding.ipo_date && ` (IPO: ${new Date(funding.ipo_date).getFullYear()})`}
                 </div>
               )}
             </div>
-          )}
+          </SectionCard>
+        )}
 
-          {/* Acquisitions */}
-          {funding?.acquisitions?.length > 0 && (
-            <div className="bg-white/[0.02] rounded-xl border border-white/[0.06] p-4">
-              <div className="flex items-center gap-2 mb-3 pb-3 border-b border-white/[0.06]">
-                <Rocket className="w-4 h-4 text-purple-400" />
-                <h4 className="font-medium text-white text-sm">Acquisitions</h4>
+        {/* Social Media */}
+        {social_media && (social_media.linkedin_followers || social_media.twitter_followers || social_media.raw) && (
+          <SectionCard icon={Share2} title="Social Presence" iconColor="purple">
+            <div className="grid grid-cols-3 gap-3">
+              {social_media.linkedin_followers && (
+                <div className="text-center p-2 bg-white/[0.03] rounded-lg">
+                  <Linkedin className="w-4 h-4 text-blue-400 mx-auto mb-1" />
+                  <p className="text-sm font-bold text-white">
+                    {social_media.linkedin_followers >= 1000
+                      ? `${(social_media.linkedin_followers / 1000).toFixed(1)}K`
+                      : social_media.linkedin_followers}
+                  </p>
+                  <p className="text-[10px] text-white/40">Followers</p>
+                </div>
+              )}
+              {social_media.twitter_followers && (
+                <div className="text-center p-2 bg-white/[0.03] rounded-lg">
+                  <Twitter className="w-4 h-4 text-sky-400 mx-auto mb-1" />
+                  <p className="text-sm font-bold text-white">
+                    {social_media.twitter_followers >= 1000
+                      ? `${(social_media.twitter_followers / 1000).toFixed(1)}K`
+                      : social_media.twitter_followers}
+                  </p>
+                  <p className="text-[10px] text-white/40">Followers</p>
+                </div>
+              )}
+              {social_media.facebook_followers && (
+                <div className="text-center p-2 bg-white/[0.03] rounded-lg">
+                  <Heart className="w-4 h-4 text-blue-500 mx-auto mb-1" />
+                  <p className="text-sm font-bold text-white">
+                    {social_media.facebook_followers >= 1000
+                      ? `${(social_media.facebook_followers / 1000).toFixed(1)}K`
+                      : social_media.facebook_followers}
+                  </p>
+                  <p className="text-[10px] text-white/40">Likes</p>
+                </div>
+              )}
+            </div>
+            {social_media.engagement_rate && (
+              <div className="mt-3 pt-3 border-t border-white/[0.06]">
+                <DataRow label="Engagement Rate" value={`${social_media.engagement_rate}%`} icon={Activity} />
               </div>
-              {funding.acquisitions.map((acq, idx) => (
-                <div key={idx} className="flex items-center justify-between py-2">
-                  <span className="text-sm text-white">{acq.acquired_by || "Acquired"}</span>
-                  {acq.acquisition_date && (
-                    <span className="text-xs text-white/40">
-                      {new Date(acq.acquisition_date).getFullYear()}
-                    </span>
-                  )}
+            )}
+          </SectionCard>
+        )}
+      </div>
+
+      {/* Row 3: Tech Stack (full width) */}
+      {technographics && (technographics.tech_stack?.length > 0 || technographics.raw) && (
+        <SectionCard
+          icon={Layers}
+          title="Technology Stack"
+          iconColor="cyan"
+          badge={
+            technographics.tech_count && (
+              <span className="text-xs text-white/40">{technographics.tech_count} technologies</span>
+            )
+          }
+        >
+          {technographics.tech_stack?.length > 0 ? (
+            <div className="space-y-4">
+              {technographics.tech_stack.slice(0, 6).map((cat, idx) => (
+                <div key={idx}>
+                  <p className="text-xs text-white/50 mb-2 capitalize">{cat.category}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {cat.technologies.slice(0, 8).map((tech, tidx) => (
+                      <TechBadge key={tidx} name={tech} />
+                    ))}
+                    {cat.technologies.length > 8 && (
+                      <span className="px-2 py-1 text-[11px] text-white/40">
+                        +{cat.technologies.length - 8}
+                      </span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
+          ) : (
+            <p className="text-sm text-white/40">Technology data available in raw format</p>
           )}
+        </SectionCard>
+      )}
 
-          {/* No funding data */}
-          {(!funding || (!funding.total_funding && !funding.funding_rounds?.length)) && (
-            <div className="bg-white/[0.02] rounded-xl border border-white/[0.06] p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Banknote className="w-4 h-4 text-white/30" />
-                <h4 className="font-medium text-white/50 text-sm">Funding</h4>
-              </div>
-              <p className="text-sm text-white/30">No funding data available</p>
+      {/* Row 4: Website Traffic + Competitors */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Website Traffic */}
+        {website_traffic && (website_traffic.monthly_visits || website_traffic.raw) && (
+          <SectionCard icon={Activity} title="Website Traffic" iconColor="orange">
+            <div className="grid grid-cols-2 gap-3">
+              {website_traffic.monthly_visits && (
+                <div className="p-3 bg-white/[0.03] rounded-lg text-center">
+                  <Eye className="w-4 h-4 text-orange-400 mx-auto mb-1" />
+                  <p className="text-lg font-bold text-white">
+                    {website_traffic.monthly_visits >= 1000000
+                      ? `${(website_traffic.monthly_visits / 1000000).toFixed(1)}M`
+                      : website_traffic.monthly_visits >= 1000
+                      ? `${(website_traffic.monthly_visits / 1000).toFixed(0)}K`
+                      : website_traffic.monthly_visits}
+                  </p>
+                  <p className="text-[10px] text-white/40">Monthly Visits</p>
+                </div>
+              )}
+              {website_traffic.bounce_rate && (
+                <div className="p-3 bg-white/[0.03] rounded-lg text-center">
+                  <Percent className="w-4 h-4 text-red-400 mx-auto mb-1" />
+                  <p className="text-lg font-bold text-white">{website_traffic.bounce_rate}%</p>
+                  <p className="text-[10px] text-white/40">Bounce Rate</p>
+                </div>
+              )}
+              {website_traffic.avg_visit_duration && (
+                <div className="p-3 bg-white/[0.03] rounded-lg text-center">
+                  <Clock className="w-4 h-4 text-blue-400 mx-auto mb-1" />
+                  <p className="text-lg font-bold text-white">{website_traffic.avg_visit_duration}</p>
+                  <p className="text-[10px] text-white/40">Avg Duration</p>
+                </div>
+              )}
+              {website_traffic.page_views && (
+                <div className="p-3 bg-white/[0.03] rounded-lg text-center">
+                  <BarChart3 className="w-4 h-4 text-green-400 mx-auto mb-1" />
+                  <p className="text-lg font-bold text-white">
+                    {website_traffic.page_views >= 1000
+                      ? `${(website_traffic.page_views / 1000).toFixed(0)}K`
+                      : website_traffic.page_views}
+                  </p>
+                  <p className="text-[10px] text-white/40">Page Views</p>
+                </div>
+              )}
             </div>
-          )}
-        </motion.div>
+          </SectionCard>
+        )}
+
+        {/* Competitors */}
+        {competitive_landscape && (competitive_landscape.competitors?.length > 0 || competitive_landscape.raw) && (
+          <SectionCard icon={Target} title="Competitive Landscape" iconColor="red">
+            {competitive_landscape.competitors?.length > 0 ? (
+              <div className="space-y-2">
+                {competitive_landscape.competitors.slice(0, 5).map((comp, idx) => (
+                  <div key={idx} className="flex items-center justify-between py-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-white/[0.05] text-white/50 flex items-center justify-center text-xs">
+                        {idx + 1}
+                      </span>
+                      <span className="text-sm text-white">{comp.name}</span>
+                    </div>
+                    {comp.similarity_score && (
+                      <span className="text-xs text-white/40">
+                        {Math.round(comp.similarity_score * 100)}% similar
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-white/40">Competitor data available</p>
+            )}
+          </SectionCard>
+        )}
       </div>
 
-      {/* Tech Stack - Full Width */}
-      {technographics?.tech_stack?.length > 0 && (
-        <motion.div
-          variants={itemVariants}
-          className="bg-white/[0.02] rounded-xl border border-white/[0.06] p-4"
-        >
-          <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/[0.06]">
-            <div className="flex items-center gap-2">
-              <Layers className="w-4 h-4 text-blue-400" />
-              <h4 className="font-medium text-white text-sm">Technology Stack</h4>
-            </div>
-            <span className="text-xs text-white/40">
-              {technographics.tech_count} technologies detected
-            </span>
+      {/* Row 5: Workforce Trends */}
+      {workforce && (workforce.growth_rate || workforce.departments || workforce.raw) && (
+        <SectionCard icon={Users} title="Workforce Trends" iconColor="indigo">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {workforce.total_employees && (
+              <div className="p-3 bg-white/[0.03] rounded-lg text-center">
+                <Users className="w-4 h-4 text-indigo-400 mx-auto mb-1" />
+                <p className="text-lg font-bold text-white">{workforce.total_employees.toLocaleString()}</p>
+                <p className="text-[10px] text-white/40">Total Employees</p>
+              </div>
+            )}
+            {workforce.growth_rate && (
+              <div className="p-3 bg-white/[0.03] rounded-lg text-center">
+                <TrendingUp className="w-4 h-4 text-green-400 mx-auto mb-1" />
+                <p className="text-lg font-bold text-green-400">+{workforce.growth_rate}%</p>
+                <p className="text-[10px] text-white/40">Growth Rate</p>
+              </div>
+            )}
+            {workforce.hiring_trend && (
+              <div className="p-3 bg-white/[0.03] rounded-lg text-center">
+                <Briefcase className="w-4 h-4 text-blue-400 mx-auto mb-1" />
+                <p className="text-sm font-bold text-white capitalize">{workforce.hiring_trend}</p>
+                <p className="text-[10px] text-white/40">Hiring Trend</p>
+              </div>
+            )}
+            {workforce.attrition_rate && (
+              <div className="p-3 bg-white/[0.03] rounded-lg text-center">
+                <TrendingDown className="w-4 h-4 text-red-400 mx-auto mb-1" />
+                <p className="text-lg font-bold text-red-400">{workforce.attrition_rate}%</p>
+                <p className="text-[10px] text-white/40">Attrition Rate</p>
+              </div>
+            )}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {technographics.tech_stack.slice(0, 6).map((cat, idx) => (
-              <TechCategoryCard
-                key={idx}
-                category={cat.category}
-                technologies={cat.technologies}
-              />
-            ))}
-          </div>
-          {technographics.tech_stack.length > 6 && (
-            <p className="text-xs text-white/40 mt-3">
-              +{technographics.tech_stack.length - 6} more categories
-            </p>
-          )}
-        </motion.div>
+        </SectionCard>
       )}
     </motion.div>
   );
