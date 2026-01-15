@@ -203,7 +203,7 @@ const TimingRow = ({ timing }) => {
 /**
  * IntelligenceReport - Professional recruiter intelligence dashboard
  */
-export const IntelligenceReport = ({ candidate, compact = false, onGenerate, isGenerating = false }) => {
+export const IntelligenceReport = ({ candidate, compact = false, onGenerate, isGenerating = false, syncStatus = "" }) => {
   const {
     intelligence_score = 0,
     intelligence_level = "Low",
@@ -217,6 +217,11 @@ export const IntelligenceReport = ({ candidate, compact = false, onGenerate, isG
     recommended_approach = "nurture",
     recommended_timeline = "",
     last_intelligence_update = null,
+    // New company-correlation fields
+    inferred_skills: rawInferredSkills = [],
+    company_pain_points: rawPainPoints = [],
+    lateral_opportunities: rawLateralOpps = [],
+    company_correlations: rawCorrelations = [],
   } = candidate || {};
 
   // Ensure arrays
@@ -224,6 +229,12 @@ export const IntelligenceReport = ({ candidate, compact = false, onGenerate, isG
   const intelligence_timing = Array.isArray(rawTiming) ? rawTiming : [];
   const insights = Array.isArray(key_insights) ? key_insights : [];
   const hooks = Array.isArray(outreach_hooks) ? outreach_hooks : [];
+
+  // Company-correlation arrays
+  const inferredSkills = Array.isArray(rawInferredSkills) ? rawInferredSkills : [];
+  const companyPainPoints = Array.isArray(rawPainPoints) ? rawPainPoints : [];
+  const lateralOpportunities = Array.isArray(rawLateralOpps) ? rawLateralOpps : [];
+  const companyCorrelations = Array.isArray(rawCorrelations) ? rawCorrelations : [];
 
   // Separate by impact
   const positiveFactors = intelligence_factors.filter(f => f.impact === "positive");
@@ -280,7 +291,9 @@ export const IntelligenceReport = ({ candidate, compact = false, onGenerate, isG
               {isGenerating ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Analyzing...
+                  {syncStatus === "company" ? "SYNCING COMPANY..." :
+                   syncStatus === "candidate" ? "ANALYZING CANDIDATE..." :
+                   "SYNCING..."}
                 </>
               ) : (
                 <>
@@ -485,7 +498,121 @@ export const IntelligenceReport = ({ candidate, compact = false, onGenerate, isG
         </motion.div>
       </div>
 
-      {/* Row 5: Additional Context (if any neutral signals) */}
+      {/* Row 5: Company Correlations (when available) */}
+      {companyCorrelations.length > 0 && (
+        <motion.div
+          variants={itemVariants}
+          className="bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent rounded-xl border border-amber-500/20 overflow-hidden"
+        >
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-amber-500/20 bg-amber-500/5">
+            <Sparkles className="w-4 h-4 text-amber-400" />
+            <h3 className="font-semibold text-white text-sm">Company-Candidate Correlations</h3>
+            <span className="text-xs text-amber-400/70 ml-auto">AI-Powered Insights</span>
+          </div>
+          <div className="p-4 space-y-4">
+            {companyCorrelations.map((correlation, idx) => (
+              <div key={idx} className="bg-white/[0.03] rounded-lg p-4 border border-white/[0.06]">
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                    {idx + 1}
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <p className="text-xs text-amber-400/70 uppercase tracking-wider font-semibold">Observation</p>
+                    <p className="text-sm text-white/90">{correlation.observation}</p>
+                    <p className="text-xs text-emerald-400/70 uppercase tracking-wider font-semibold mt-3">Inference</p>
+                    <p className="text-sm text-white/80">{correlation.inference}</p>
+                    <div className="mt-3 pt-3 border-t border-white/[0.06]">
+                      <p className="text-xs text-blue-400/70 uppercase tracking-wider font-semibold">Outreach Angle</p>
+                      <p className="text-sm text-blue-300">{correlation.outreach_angle}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Row 6: Inferred Skills + Company Pain Points + Lateral Opportunities */}
+      {(inferredSkills.length > 0 || companyPainPoints.length > 0 || lateralOpportunities.length > 0) && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Inferred Skills */}
+          {inferredSkills.length > 0 && (
+            <motion.div
+              variants={itemVariants}
+              className="bg-white/[0.02] rounded-xl border border-white/[0.06] overflow-hidden"
+            >
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06] bg-cyan-500/5">
+                <Award className="w-4 h-4 text-cyan-400" />
+                <h3 className="font-semibold text-white text-sm">Inferred Skills</h3>
+              </div>
+              <div className="p-4">
+                <div className="flex flex-wrap gap-2">
+                  {inferredSkills.map((skill, idx) => (
+                    <span
+                      key={idx}
+                      className="px-2.5 py-1 text-xs font-medium bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 rounded-full"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Company Pain Points */}
+          {companyPainPoints.length > 0 && (
+            <motion.div
+              variants={itemVariants}
+              className="bg-white/[0.02] rounded-xl border border-white/[0.06] overflow-hidden"
+            >
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06] bg-rose-500/5">
+                <AlertCircle className="w-4 h-4 text-rose-400" />
+                <h3 className="font-semibold text-white text-sm">Company Pain Points</h3>
+              </div>
+              <div className="p-4">
+                <ul className="space-y-2">
+                  {companyPainPoints.map((point, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-400 mt-1.5 flex-shrink-0" />
+                      <span className="text-xs text-white/70">{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Lateral Opportunities */}
+          {lateralOpportunities.length > 0 && (
+            <motion.div
+              variants={itemVariants}
+              className="bg-white/[0.02] rounded-xl border border-white/[0.06] overflow-hidden"
+            >
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06] bg-emerald-500/5">
+                <Building2 className="w-4 h-4 text-emerald-400" />
+                <h3 className="font-semibold text-white text-sm">Lateral Opportunities</h3>
+              </div>
+              <div className="p-4">
+                <p className="text-xs text-white/50 mb-2">Competitor companies to mention:</p>
+                <div className="flex flex-wrap gap-2">
+                  {lateralOpportunities.map((company, idx) => (
+                    <span
+                      key={idx}
+                      className="px-2.5 py-1 text-xs font-medium bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 rounded-lg"
+                    >
+                      {company}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </div>
+      )}
+
+      {/* Row 7: Additional Context (if any neutral signals) */}
       {neutralFactors.length > 0 && (
         <motion.div
           variants={itemVariants}

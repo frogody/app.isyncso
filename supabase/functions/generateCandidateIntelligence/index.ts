@@ -48,6 +48,63 @@ interface CandidateData {
   skills?: string[];
 }
 
+// Company intelligence from Explorium enrichment
+interface CompanyIntelligence {
+  firmographics?: {
+    industry?: string;
+    employee_count_range?: string;
+    employee_count?: number;
+    revenue_range?: string;
+    founded_year?: number;
+    company_type?: string;
+    headquarters?: string;
+  };
+  technographics?: {
+    tech_stack?: Array<{ category: string; technologies: string[] }>;
+    tech_count?: number;
+  };
+  employee_ratings?: {
+    overall_rating?: number;
+    culture_rating?: number;
+    work_life_balance?: number;
+    compensation_rating?: number;
+    career_opportunities?: number;
+    management_rating?: number;
+    recommend_percent?: number;
+    ceo_approval?: number;
+    review_count?: number;
+  };
+  funding?: {
+    total_funding?: number;
+    funding_stage?: string;
+    last_funding_date?: string;
+    funding_rounds?: Array<{ round_type: string; amount: number; date: string }>;
+    is_public?: boolean;
+    ipo_date?: string;
+  };
+  workforce?: {
+    total_employees?: number;
+    departments?: Array<{ name: string; percentage: number }>;
+    growth_rate?: number;
+    attrition_rate?: number;
+  };
+  competitive_landscape?: {
+    competitors?: Array<{ name: string; domain?: string; similarity_score?: number }>;
+  };
+  website_traffic?: {
+    monthly_visits?: number;
+    unique_visitors?: number;
+    bounce_rate?: number;
+    rank?: number;
+  };
+}
+
+interface CompanyCorrelation {
+  observation: string;
+  inference: string;
+  outreach_angle: string;
+}
+
 interface IntelligenceFactor {
   signal: string;
   insight: string;
@@ -74,11 +131,114 @@ interface IntelligenceResult {
   recommended_timeline: string;
   best_outreach_angle: string;
   last_intelligence_update: string;
+  // New company-enriched fields
+  inferred_skills?: string[];
+  company_pain_points?: string[];
+  lateral_opportunities?: string[];
+  company_correlations?: CompanyCorrelation[];
+}
+
+// Helper: Format tech stack for prompt
+function formatTechStack(techStack?: Array<{ category: string; technologies: string[] }>): string {
+  if (!techStack || techStack.length === 0) return 'Not available';
+  return techStack.map(cat => `${cat.category}: ${cat.technologies.join(', ')}`).join('\n');
+}
+
+// Helper: Format competitors for prompt
+function formatCompetitors(competitors?: Array<{ name: string; similarity_score?: number }>): string {
+  if (!competitors || competitors.length === 0) return 'Not available';
+  return competitors.slice(0, 5).map(c => c.name).join(', ');
+}
+
+// Helper: Format departments for prompt
+function formatDepartments(departments?: Array<{ name: string; percentage: number }>): string {
+  if (!departments || departments.length === 0) return 'Not available';
+  return departments.slice(0, 6).map(d => `${d.name} (${d.percentage}%)`).join(', ');
 }
 
 // Build the analysis prompt
-function buildPrompt(candidate: CandidateData): string {
+function buildPrompt(candidate: CandidateData, companyIntel?: CompanyIntelligence): string {
   const name = `${candidate.first_name || ''} ${candidate.last_name || ''}`.trim() || 'Unknown';
+
+  // Build company intelligence section if available
+  const companyIntelSection = companyIntel ? `
+
+EXPLORIUM COMPANY INTELLIGENCE (Use for sophisticated correlations):
+====================================================================
+
+TECHNOLOGY STACK:
+${formatTechStack(companyIntel.technographics?.tech_stack)}
+Total Technologies: ${companyIntel.technographics?.tech_count || 'Unknown'}
+
+EMPLOYEE RATINGS (Glassdoor-style):
+Overall: ${companyIntel.employee_ratings?.overall_rating ?? 'N/A'}/5
+Culture: ${companyIntel.employee_ratings?.culture_rating ?? 'N/A'}/5
+Work-Life Balance: ${companyIntel.employee_ratings?.work_life_balance ?? 'N/A'}/5
+Compensation: ${companyIntel.employee_ratings?.compensation_rating ?? 'N/A'}/5
+Career Opportunities: ${companyIntel.employee_ratings?.career_opportunities ?? 'N/A'}/5
+Management: ${companyIntel.employee_ratings?.management_rating ?? 'N/A'}/5
+Would Recommend: ${companyIntel.employee_ratings?.recommend_percent ?? 'N/A'}%
+CEO Approval: ${companyIntel.employee_ratings?.ceo_approval ?? 'N/A'}%
+Based on ${companyIntel.employee_ratings?.review_count ?? 0} reviews
+
+FUNDING & FINANCIAL:
+Stage: ${companyIntel.funding?.funding_stage || 'Unknown'}
+Total Raised: ${companyIntel.funding?.total_funding ? `$${(companyIntel.funding.total_funding / 1000000).toFixed(1)}M` : 'Unknown'}
+Public Company: ${companyIntel.funding?.is_public ? 'Yes' : 'No'}
+${companyIntel.funding?.is_public && companyIntel.funding?.ipo_date ? `IPO Date: ${companyIntel.funding.ipo_date}` : ''}
+
+WORKFORCE:
+Total Employees: ${companyIntel.workforce?.total_employees?.toLocaleString() || 'Unknown'}
+Growth Rate: ${companyIntel.workforce?.growth_rate !== undefined ? `${companyIntel.workforce.growth_rate}%` : 'Unknown'}
+Attrition Rate: ${companyIntel.workforce?.attrition_rate !== undefined ? `${companyIntel.workforce.attrition_rate}%` : 'Unknown'}
+Department Breakdown: ${formatDepartments(companyIntel.workforce?.departments)}
+
+WEBSITE TRAFFIC:
+Monthly Visits: ${companyIntel.website_traffic?.monthly_visits?.toLocaleString() || 'Unknown'}
+Global Rank: ${companyIntel.website_traffic?.rank?.toLocaleString() || 'Unknown'}
+
+COMPETITORS:
+${formatCompetitors(companyIntel.competitive_landscape?.competitors)}
+` : '';
+
+  const correlationInstructions = companyIntel ? `
+
+COMPANY-CANDIDATE CORRELATION ANALYSIS:
+=======================================
+You have rich company intelligence data. Generate sophisticated correlations:
+
+1. **TECH STACK + ROLE MATCHING**:
+   - Match company technologies to candidate's job title
+   - Finance roles + SAP/Oracle/NetSuite/QuickBooks = ERP proficiency
+   - Sales roles + Salesforce/HubSpot = CRM expertise
+   - Engineering + specific frameworks = direct tech experience
+   - HR roles + Workday/BambooHR/ADP = HRIS experience
+   - Marketing + HubSpot/Marketo = automation expertise
+   - Generate "inferred_skills" based on these matches
+
+2. **EMPLOYEE RATINGS + FLIGHT RISK**:
+   - Low ratings (<3.5) + long tenure = potential golden handcuffs
+   - Low career opportunities + no promotions = blocked growth
+   - Low work-life balance = potential burnout
+   - High attrition rate = colleagues leaving, reflection trigger
+   - Generate "company_pain_points" from low ratings
+
+3. **FUNDING + COMPENSATION STRATEGY**:
+   - Series A/B = startup equity considerations, vesting schedules
+   - Series C+ = competitive comp, need strong value prop
+   - Public company = RSU vesting cycles affect timing
+   - Recent funding = cash-rich, hard to outcompete on salary
+
+4. **WORKFORCE + ROLE VALUE**:
+   - Small department % + senior title = specialized critical role
+   - Large department % + IC = potentially replaceable
+   - High growth rate = scaling experience valuable
+   - Declining headcount = layoff risk, proactive timing
+
+5. **COMPETITORS AS OPPORTUNITIES**:
+   - List competitors as "lateral_opportunities" for outreach
+   - Frame as "similar companies you might consider"
+` : '';
 
   return `You are an elite recruiter intelligence analyst. Your job is to analyze candidate data and determine how likely this person is to respond positively to a job opportunity outreach.
 
@@ -130,10 +290,10 @@ Salary Intelligence: ${candidate.salary_intelligence || 'Not available'}
 SKILLS:
 =======
 ${candidate.skills?.join(', ') || 'Not specified'}
-
+${companyIntelSection}
 ---
 
-ANALYSIS INSTRUCTIONS:
+ANALYSIS INSTRUCTIONS:${correlationInstructions}
 Analyze ALL the data above and generate a comprehensive recruiter intelligence report. Consider:
 
 1. **STAGNATION SIGNALS**:
@@ -196,7 +356,23 @@ RESPOND WITH VALID JSON ONLY (no markdown, no explanation outside JSON):
   "risk_summary": "<one paragraph summary of recruitment potential>",
   "recommended_approach": "<nurture|targeted|immediate>",
   "recommended_timeline": "<specific timeframe like 'Within 48 hours' or 'Over 2-3 weeks'>",
-  "best_outreach_angle": "<the single best hook to lead with in outreach>"
+  "best_outreach_angle": "<the single best hook to lead with in outreach>",
+  "inferred_skills": [
+    "<skills inferred from company tech stack + role match, e.g. 'SAP ERP Administration', 'Salesforce CRM Expert'>"
+  ],
+  "company_pain_points": [
+    "<pain points derived from low ratings to use as outreach hooks, e.g. 'Limited career advancement (2.8/5 rating)'>"
+  ],
+  "lateral_opportunities": [
+    "<competitor company names that could be mentioned as alternative opportunities>"
+  ],
+  "company_correlations": [
+    {
+      "observation": "<what data points you connected, e.g. 'Company uses SAP + NetSuite, candidate is Finance Manager'>",
+      "inference": "<what this means, e.g. '5+ years likely ERP proficiency with hands-on financial systems experience'>",
+      "outreach_angle": "<how to use this in outreach, e.g. 'Highlight opportunity to work with modern cloud-native finance tools'>"
+    }
+  ]
 }
 
 Important scoring guidance:
@@ -270,14 +446,173 @@ async function callLLM(prompt: string): Promise<IntelligenceResult | null> {
 }
 
 // Fallback rule-based analysis when LLM fails
-function analyzeWithRules(candidate: CandidateData): IntelligenceResult {
+function analyzeWithRules(candidate: CandidateData, companyIntel?: CompanyIntelligence): IntelligenceResult {
   const factors: IntelligenceFactor[] = [];
   const timing: TimingSignal[] = [];
   const insights: string[] = [];
   const hooks: string[] = [];
+  const inferredSkills: string[] = [];
+  const companyPainPoints: string[] = [];
+  const lateralOpportunities: string[] = [];
+  const companyCorrelations: CompanyCorrelation[] = [];
   let score = 30;
 
   const name = `${candidate.first_name || ''} ${candidate.last_name || ''}`.trim() || 'This candidate';
+  const jobTitle = (candidate.job_title || '').toLowerCase();
+
+  // Company intelligence correlations
+  if (companyIntel) {
+    // Tech Stack + Role Matching
+    const techStack = companyIntel.technographics?.tech_stack || [];
+    const allTechs = techStack.flatMap(cat => cat.technologies.map(t => t.toLowerCase()));
+
+    // Finance role correlations
+    if (jobTitle.includes('finance') || jobTitle.includes('accounting') || jobTitle.includes('controller') || jobTitle.includes('cfo')) {
+      const financeTech = ['sap', 'oracle', 'netsuite', 'quickbooks', 'sage', 'workday'];
+      const matchedFinanceTech = financeTech.filter(t => allTechs.some(at => at.includes(t)));
+      if (matchedFinanceTech.length > 0) {
+        inferredSkills.push(...matchedFinanceTech.map(t => `${t.charAt(0).toUpperCase() + t.slice(1)} ERP Administration`));
+        companyCorrelations.push({
+          observation: `Company uses ${matchedFinanceTech.join(', ')}, candidate is ${candidate.job_title}`,
+          inference: `Likely proficient in enterprise ERP/accounting systems with hands-on financial management experience`,
+          outreach_angle: `Highlight modern finance tech stack or opportunity to expand ERP expertise`
+        });
+      }
+    }
+
+    // Sales role correlations
+    if (jobTitle.includes('sales') || jobTitle.includes('account exec') || jobTitle.includes('business dev') || jobTitle.includes('ae')) {
+      const salesTech = ['salesforce', 'hubspot', 'pipedrive', 'zoho'];
+      const matchedSalesTech = salesTech.filter(t => allTechs.some(at => at.includes(t)));
+      if (matchedSalesTech.length > 0) {
+        inferredSkills.push(...matchedSalesTech.map(t => `${t.charAt(0).toUpperCase() + t.slice(1)} CRM Expert`));
+        companyCorrelations.push({
+          observation: `Company uses ${matchedSalesTech.join(', ')}, candidate is ${candidate.job_title}`,
+          inference: `CRM power user with pipeline management and sales process automation experience`,
+          outreach_angle: `Emphasize sales tools and tech-enabled selling approach`
+        });
+      }
+    }
+
+    // HR role correlations
+    if (jobTitle.includes('hr') || jobTitle.includes('people') || jobTitle.includes('talent') || jobTitle.includes('recruiting')) {
+      const hrTech = ['workday', 'bamboohr', 'adp', 'greenhouse', 'lever'];
+      const matchedHrTech = hrTech.filter(t => allTechs.some(at => at.includes(t)));
+      if (matchedHrTech.length > 0) {
+        inferredSkills.push(...matchedHrTech.map(t => `${t.charAt(0).toUpperCase() + t.slice(1)} HRIS Administration`));
+        companyCorrelations.push({
+          observation: `Company uses ${matchedHrTech.join(', ')}, candidate is ${candidate.job_title}`,
+          inference: `HRIS and ATS administration experience with workforce analytics capabilities`,
+          outreach_angle: `Highlight HR technology modernization opportunities`
+        });
+      }
+    }
+
+    // Engineering role correlations
+    if (jobTitle.includes('engineer') || jobTitle.includes('developer') || jobTitle.includes('devops') || jobTitle.includes('sre')) {
+      const engTech = techStack.filter(cat =>
+        ['development', 'programming', 'cloud', 'infrastructure', 'devops'].some(k => cat.category.toLowerCase().includes(k))
+      ).flatMap(cat => cat.technologies);
+      if (engTech.length > 0) {
+        inferredSkills.push(...engTech.slice(0, 5).map(t => `${t} Experience`));
+        companyCorrelations.push({
+          observation: `Company tech stack includes ${engTech.slice(0, 4).join(', ')}`,
+          inference: `Direct hands-on experience with these technologies in production environment`,
+          outreach_angle: `Match tech stack or highlight opportunity to learn new technologies`
+        });
+      }
+    }
+
+    // Employee ratings pain points
+    const ratings = companyIntel.employee_ratings;
+    if (ratings) {
+      if (ratings.career_opportunities && ratings.career_opportunities < 3.0) {
+        companyPainPoints.push(`Limited career advancement opportunities (${ratings.career_opportunities}/5 rating)`);
+        score += 10;
+        factors.push({
+          signal: "Career Growth Blocked",
+          insight: `Company has low career opportunities rating (${ratings.career_opportunities}/5) - employees likely seeking growth elsewhere`,
+          impact: "positive",
+          weight: 10
+        });
+      }
+      if (ratings.management_rating && ratings.management_rating < 3.0) {
+        companyPainPoints.push(`Management concerns (${ratings.management_rating}/5 rating)`);
+        companyCorrelations.push({
+          observation: `Company management rating is ${ratings.management_rating}/5`,
+          inference: `Employee frustration with leadership creates openness to better-managed teams`,
+          outreach_angle: `Emphasize strong leadership and supportive management culture`
+        });
+      }
+      if (ratings.work_life_balance && ratings.work_life_balance < 3.0) {
+        companyPainPoints.push(`Poor work-life balance (${ratings.work_life_balance}/5 rating)`);
+        score += 8;
+      }
+      if (ratings.compensation_rating && ratings.compensation_rating < 3.0) {
+        companyPainPoints.push(`Below-market compensation perception (${ratings.compensation_rating}/5 rating)`);
+        score += 5;
+      }
+      if (ratings.overall_rating && ratings.overall_rating < 3.5 && (candidate.years_at_company || 0) > 4) {
+        companyCorrelations.push({
+          observation: `Low overall rating (${ratings.overall_rating}/5) + ${candidate.years_at_company?.toFixed(1)} years tenure`,
+          inference: `Possible golden handcuffs - explore equity/benefits situation, likely frustrated but vested`,
+          outreach_angle: `Lead with growth opportunity and team culture, address total comp later`
+        });
+      }
+    }
+
+    // Workforce signals
+    const workforce = companyIntel.workforce;
+    if (workforce) {
+      if (workforce.attrition_rate && workforce.attrition_rate > 20) {
+        score += 12;
+        factors.push({
+          signal: "High Company Attrition",
+          insight: `Company has ${workforce.attrition_rate}% attrition rate - colleagues leaving creates reflection moments`,
+          impact: "positive",
+          weight: 12
+        });
+        companyCorrelations.push({
+          observation: `Company attrition rate is ${workforce.attrition_rate}%`,
+          inference: `High turnover means colleagues leaving regularly, triggering career reflection`,
+          outreach_angle: `Reference industry opportunities and career advancement`
+        });
+      }
+      if (workforce.growth_rate && workforce.growth_rate < -5) {
+        score += 15;
+        timing.push({
+          trigger: "Company Contraction",
+          window: "Immediate - declining headcount signals instability",
+          urgency: "high"
+        });
+      }
+    }
+
+    // Funding stage insights
+    const funding = companyIntel.funding;
+    if (funding) {
+      if (funding.funding_stage?.toLowerCase().includes('series a') || funding.funding_stage?.toLowerCase().includes('series b')) {
+        companyCorrelations.push({
+          observation: `Company is ${funding.funding_stage} stage startup`,
+          inference: `Likely has unvested startup equity - timing around vesting schedule matters`,
+          outreach_angle: `Discuss equity and timing strategically, consider vesting cliffs`
+        });
+      }
+      if (funding.is_public) {
+        companyCorrelations.push({
+          observation: `Public company with RSU compensation`,
+          inference: `RSU vesting cycles (typically quarterly) affect optimal outreach timing`,
+          outreach_angle: `Best timing after vesting periods, lead with compelling growth opportunity`
+        });
+      }
+    }
+
+    // Competitors as lateral opportunities
+    const competitors = companyIntel.competitive_landscape?.competitors || [];
+    if (competitors.length > 0) {
+      lateralOpportunities.push(...competitors.slice(0, 5).map(c => c.name));
+    }
+  }
 
   // Stagnation analysis
   if (candidate.years_at_company && candidate.times_promoted !== undefined) {
@@ -488,6 +823,11 @@ function analyzeWithRules(candidate: CandidateData): IntelligenceResult {
     recommended_timeline: timeline,
     best_outreach_angle: hooks[0] || "Lead with a compelling opportunity description",
     last_intelligence_update: new Date().toISOString(),
+    // Company-correlation fields
+    inferred_skills: inferredSkills,
+    company_pain_points: companyPainPoints,
+    lateral_opportunities: lateralOpportunities,
+    company_correlations: companyCorrelations,
   };
 }
 
@@ -502,7 +842,7 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { candidate_id, organization_id, batch = false } = await req.json();
+    const { candidate_id, organization_id, batch = false, company_intelligence } = await req.json();
 
     if (!organization_id) {
       return new Response(
@@ -543,15 +883,16 @@ serve(async (req) => {
     for (const candidate of candidates) {
       try {
         // Try LLM first, fall back to rules
-        const prompt = buildPrompt(candidate);
+        // Pass company_intelligence for enriched correlations
+        const prompt = buildPrompt(candidate, company_intelligence as CompanyIntelligence | undefined);
         let intelligence = await callLLM(prompt);
 
         if (!intelligence) {
           console.log(`LLM failed for candidate ${candidate.id}, using rule-based fallback`);
-          intelligence = analyzeWithRules(candidate);
+          intelligence = analyzeWithRules(candidate, company_intelligence as CompanyIntelligence | undefined);
         }
 
-        // Update the candidate record with all intelligence fields
+        // Update the candidate record with all intelligence fields (including new company-correlation fields)
         const { error: updateError } = await supabase
           .from("candidates")
           .update({
@@ -567,6 +908,11 @@ serve(async (req) => {
             recommended_timeline: intelligence.recommended_timeline,
             best_outreach_angle: intelligence.best_outreach_angle,
             last_intelligence_update: intelligence.last_intelligence_update,
+            // New company-correlation fields
+            inferred_skills: intelligence.inferred_skills || [],
+            company_pain_points: intelligence.company_pain_points || [],
+            lateral_opportunities: intelligence.lateral_opportunities || [],
+            company_correlations: intelligence.company_correlations || [],
           })
           .eq("id", candidate.id);
 

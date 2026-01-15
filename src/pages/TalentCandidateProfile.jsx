@@ -263,6 +263,7 @@ export default function TalentCandidateProfile() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
   const [generatingIntelligence, setGeneratingIntelligence] = useState(false);
+  const [syncStatus, setSyncStatus] = useState(""); // "company" | "candidate" | ""
 
   useEffect(() => {
     if (candidateId) {
@@ -306,9 +307,40 @@ export default function TalentCandidateProfile() {
     }
   };
 
-  const generateIntelligenceReport = async () => {
+  const syncIntel = async () => {
     setGeneratingIntelligence(true);
     try {
+      let companyIntel = candidate.company_intelligence;
+
+      // Step 1: Sync company intelligence first (if company name exists)
+      if (candidate.company_name) {
+        setSyncStatus("company");
+        const companyResponse = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generateCompanyIntelligence`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify({
+              companyName: candidate.company_name,
+              companyDomain: candidate.company_domain,
+              entityType: "candidate",
+              entityId: candidateId,
+            }),
+          }
+        );
+        const companyData = await companyResponse.json();
+        if (companyData.intelligence) {
+          companyIntel = companyData.intelligence;
+          // Update local state with company data
+          setCandidate(prev => ({ ...prev, company_intelligence: companyIntel }));
+        }
+      }
+
+      // Step 2: Generate candidate intelligence with company data for correlations
+      setSyncStatus("candidate");
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generateCandidateIntelligence`,
         {
@@ -320,21 +352,24 @@ export default function TalentCandidateProfile() {
           body: JSON.stringify({
             candidate_id: candidateId,
             organization_id: user.organization_id,
+            company_intelligence: companyIntel, // Pass company data for correlations
           }),
         }
       );
+
       if (response.ok) {
         await fetchCandidate();
         setActiveTab("intelligence");
-        toast.success("Intelligence report generated");
+        toast.success("Intelligence synced successfully");
       } else {
-        toast.error("Failed to generate intelligence report");
+        toast.error("Failed to sync intelligence");
       }
     } catch (err) {
-      console.error("Error generating intelligence:", err);
+      console.error("Error syncing intelligence:", err);
       toast.error("Network error. Please try again.");
     } finally {
       setGeneratingIntelligence(false);
+      setSyncStatus("");
     }
   };
 
@@ -455,7 +490,7 @@ export default function TalentCandidateProfile() {
                 </div>
                 <div className="flex flex-col gap-2">
                   <Button
-                    onClick={generateIntelligenceReport}
+                    onClick={syncIntel}
                     disabled={generatingIntelligence}
                     className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-6"
                   >
@@ -464,7 +499,9 @@ export default function TalentCandidateProfile() {
                     ) : (
                       <Sparkles className="w-4 h-4 mr-2" />
                     )}
-                    SYNC INTEL
+                    {syncStatus === "company" ? "SYNCING COMPANY..." :
+                     syncStatus === "candidate" ? "ANALYZING CANDIDATE..." :
+                     "SYNC INTEL"}
                   </Button>
                   <Button variant="outline" className="border-white/10 text-white/70 hover:bg-white/5 px-6">
                     <Send className="w-4 h-4 mr-2" />
@@ -717,8 +754,9 @@ export default function TalentCandidateProfile() {
           {activeTab === "intelligence" && (
             <IntelligenceReport
               candidate={candidate}
-              onGenerate={generateIntelligenceReport}
+              onGenerate={syncIntel}
               isGenerating={generatingIntelligence}
+              syncStatus={syncStatus}
             />
           )}
 
