@@ -503,9 +503,22 @@ export default function TalentAnalytics() {
           .eq("organization_id", user.organization_id),
       ]);
 
-      if (candidatesRes.error) throw candidatesRes.error;
-      if (campaignsRes.error) throw campaignsRes.error;
-      if (tasksRes.error) throw tasksRes.error;
+      // Non-blocking error handling - log warnings but continue
+      if (candidatesRes.error) {
+        console.warn("Failed to fetch candidates:", candidatesRes.error);
+      }
+      if (campaignsRes.error) {
+        console.warn("Failed to fetch campaigns:", campaignsRes.error);
+      }
+      if (tasksRes.error) {
+        console.warn("Failed to fetch outreach tasks:", tasksRes.error);
+      }
+      if (projectsRes.error) {
+        console.warn("Failed to fetch projects:", projectsRes.error);
+      }
+      if (rolesRes.error) {
+        console.warn("Failed to fetch roles:", rolesRes.error);
+      }
 
       // Transform tasks to include candidate name
       const tasksWithNames = (tasksRes.data || []).map((task) => ({
