@@ -227,6 +227,8 @@ import TalentProjects from "./TalentProjects";
 
 import TalentAnalytics from "./TalentAnalytics";
 
+import TalentClients from "./TalentClients";
+
 import { BrowserRouter as Router, Route, Routes, useLocation, Navigate } from 'react-router-dom';
 
 const PAGES = {
@@ -460,6 +462,8 @@ const PAGES = {
     TalentProjects: TalentProjects,
 
     TalentAnalytics: TalentAnalytics,
+
+    TalentClients: TalentClients,
 
 }
 
@@ -705,8 +709,7 @@ function PagesContent() {
 
                 <Route path="/TalentDashboard" element={<TalentDashboard />} />
 
-                {/* TalentClients now redirects to CRMContacts with type=recruitment_client filter */}
-                <Route path="/TalentClients" element={<Navigate to="/CRMContacts?type=recruitment_client" replace />} />
+                <Route path="/TalentClients" element={<TalentClients />} />
 
                 <Route path="/TalentDeals" element={<TalentDeals />} />
 

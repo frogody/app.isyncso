@@ -250,7 +250,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       agent: 'talent',
       items: [
         { label: 'Dashboard', path: createPageUrl('TalentDashboard'), icon: LayoutDashboard },
-        { label: 'Clients', path: createPageUrl('CRMContacts') + '?type=recruitment_client', icon: Building2 },
+        { label: 'Clients', path: createPageUrl('TalentClients'), icon: Building2 },
         { label: 'Deals', path: createPageUrl('TalentDeals'), icon: Handshake },
         { label: 'Candidates', path: createPageUrl('TalentCandidates'), icon: Users },
         { label: 'Campaigns', path: createPageUrl('TalentCampaigns'), icon: Megaphone },
