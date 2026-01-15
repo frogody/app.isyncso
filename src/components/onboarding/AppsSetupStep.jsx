@@ -216,7 +216,7 @@ export function AppsSetupStep({ data, onChange, onNext, onBack }) {
       )}
 
       {/* App Library */}
-      <div className="relative max-w-2xl mx-auto">
+      <div className="relative max-w-5xl mx-auto">
         {/* Navigation buttons */}
         <button
           onClick={() => scrollCarousel('left')}
