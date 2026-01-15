@@ -859,16 +859,27 @@ export default function TalentProjects() {
           .select("*")
           .eq("organization_id", user.organization_id)
           .order("created_date", { ascending: false }),
-        // Load clients (prospects with is_recruitment_client=true OR contact_type='client')
+        // Load clients (prospects with is_recruitment_client=true OR contact_type in client types)
         supabase
           .from("prospects")
-          .select("id, first_name, last_name, company, email, phone, is_recruitment_client")
-          .or("is_recruitment_client.eq.true,contact_type.eq.client")
-          .eq("organization_id", user.organization_id),
+          .select("id, first_name, last_name, company, email, phone, is_recruitment_client, contact_type")
+          .or("is_recruitment_client.eq.true,contact_type.eq.client,contact_type.eq.recruitment_client")
+          .eq("organization_id", user.organization_id)
+          .order("created_date", { ascending: false }),
       ]);
+
+      console.log("Fetch results:", {
+        projects: projectsRes.error ? projectsRes.error : `${projectsRes.data?.length || 0} projects`,
+        roles: rolesRes.error ? rolesRes.error : `${rolesRes.data?.length || 0} roles`,
+        clients: clientsRes.error ? clientsRes.error : `${clientsRes.data?.length || 0} clients`
+      });
 
       if (projectsRes.error) throw projectsRes.error;
       if (rolesRes.error) throw rolesRes.error;
+      if (clientsRes.error) {
+        console.error("Error loading clients:", JSON.stringify(clientsRes.error, null, 2));
+        // Don't throw - just log and continue with empty clients
+      }
 
       setProjects(projectsRes.data || []);
       setRoles(rolesRes.data || []);
@@ -878,6 +889,7 @@ export default function TalentProjects() {
         id: c.id,
         name: c.company || `${c.first_name || ""} ${c.last_name || ""}`.trim() || c.email || "Unknown",
       }));
+      console.log("Formatted clients:", formattedClients);
       setClients(formattedClients);
     } catch (error) {
       console.error("Error fetching data:", error);
