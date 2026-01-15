@@ -611,43 +611,81 @@ export default function TalentCandidateProfile() {
 
           {/* Company Tab */}
           {activeTab === "company" && (
-            <div className="space-y-6">
-              {/* Top Row: Company Info + M&A News */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Company Details - Compact */}
-                <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5">
-                  <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-red-400" />
-                    Company Info
-                  </h3>
-                  <div className="space-y-0.5">
-                    <InfoRow icon={Building2} label="Company" value={candidate.company_name} />
-                    <InfoRow icon={Factory} label="Industry" value={candidate.industry} />
-                    <InfoRow icon={Users} label="Size" value={candidate.company_size || candidate.company_employee_count?.toLocaleString()} />
-                    <InfoRow icon={Building} label="Type" value={candidate.company_type} />
-                    <InfoRow icon={MapPin} label="HQ" value={candidate.company_hq} />
-                    <InfoRow icon={Globe} label="Website" value={candidate.company_domain} link={candidate.company_domain ? `https://${candidate.company_domain}` : null} />
-                  </div>
-                  {candidate.company_description && (
-                    <div className="mt-4 pt-4 border-t border-white/[0.06]">
-                      <p className="text-xs text-white/40 mb-1">About</p>
-                      <ExpandableText text={candidate.company_description} maxLength={200} />
+            <div className="space-y-4">
+              {/* Compact Company Info Bar */}
+              <motion.div
+                variants={itemVariants}
+                className="bg-white/[0.02] rounded-xl border border-white/[0.06] p-4"
+              >
+                <div className="flex flex-wrap items-center gap-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-red-500/10">
+                      <Building2 className="w-5 h-5 text-red-400" />
                     </div>
-                  )}
+                    <div>
+                      <p className="text-white font-semibold">{candidate.company_name || "—"}</p>
+                      <p className="text-xs text-white/40">{candidate.industry || "Industry unknown"}</p>
+                    </div>
+                  </div>
+                  <div className="h-8 w-px bg-white/10 hidden sm:block" />
+                  <div className="flex flex-wrap gap-4 text-sm">
+                    {candidate.company_size && (
+                      <div>
+                        <span className="text-white/40 text-xs">Size</span>
+                        <p className="text-white font-medium">{candidate.company_size}</p>
+                      </div>
+                    )}
+                    {candidate.company_type && (
+                      <div>
+                        <span className="text-white/40 text-xs">Type</span>
+                        <p className="text-white font-medium">{candidate.company_type}</p>
+                      </div>
+                    )}
+                    {candidate.company_hq && (
+                      <div>
+                        <span className="text-white/40 text-xs">HQ</span>
+                        <p className="text-white font-medium">{candidate.company_hq}</p>
+                      </div>
+                    )}
+                    {candidate.company_domain && (
+                      <div>
+                        <span className="text-white/40 text-xs">Website</span>
+                        <a
+                          href={`https://${candidate.company_domain}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-red-400 hover:text-red-300 font-medium flex items-center gap-1"
+                        >
+                          {candidate.company_domain} <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
+                    )}
+                  </div>
                 </div>
+                {candidate.company_description && (
+                  <div className="mt-3 pt-3 border-t border-white/[0.06]">
+                    <ExpandableText text={candidate.company_description} maxLength={250} />
+                  </div>
+                )}
+              </motion.div>
 
-                {/* M&A News */}
-                <div className="lg:col-span-2">
-                  <AnalysisCard
-                    icon={FileText}
-                    title="Recent M&A News"
-                    content={candidate.recent_ma_news}
-                    maxLength={400}
-                  />
-                </div>
-              </div>
+              {/* M&A News - if exists */}
+              {candidate.recent_ma_news && (
+                <motion.div
+                  variants={itemVariants}
+                  className="bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent rounded-xl border border-amber-500/20 p-4"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="p-1.5 rounded-lg bg-amber-500/20">
+                      <FileText className="w-4 h-4 text-amber-400" />
+                    </div>
+                    <h3 className="font-semibold text-white text-sm">Recent M&A News</h3>
+                  </div>
+                  <ExpandableText text={candidate.recent_ma_news} maxLength={300} />
+                </motion.div>
+              )}
 
-              {/* Company Intelligence from Explorium - No wrapper, direct integration */}
+              {/* Company Intelligence */}
               <CompanyIntelligenceReport
                 intelligence={candidate.company_intelligence}
                 companyName={candidate.company_name}
@@ -659,12 +697,18 @@ export default function TalentCandidateProfile() {
 
               {/* Experience Report */}
               {candidate.experience_report && (
-                <AnalysisCard
-                  icon={FileText}
-                  title="Full Experience Report"
-                  content={candidate.experience_report}
-                  maxLength={600}
-                />
+                <motion.div
+                  variants={itemVariants}
+                  className="bg-white/[0.02] rounded-xl border border-white/[0.06] p-4"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="p-1.5 rounded-lg bg-red-500/10">
+                      <FileText className="w-4 h-4 text-red-400" />
+                    </div>
+                    <h3 className="font-semibold text-white text-sm">Experience Report</h3>
+                  </div>
+                  <p className="text-sm text-white/70 leading-relaxed">{candidate.experience_report}</p>
+                </motion.div>
               )}
             </div>
           )}
