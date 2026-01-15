@@ -50,15 +50,15 @@ import {
   Save,
 } from "lucide-react";
 
+// Database constraint: contact_status IN ('new', 'contacted', 'replied', 'interested', 'not_interested', 'hired', 'archived')
 const STAGES = [
   { value: "new", label: "New" },
   { value: "contacted", label: "Contacted" },
-  { value: "responded", label: "Responded" },
-  { value: "screening", label: "Screening" },
-  { value: "interview", label: "Interview" },
-  { value: "offer", label: "Offer" },
+  { value: "replied", label: "Replied" },
+  { value: "interested", label: "Interested" },
+  { value: "not_interested", label: "Not Interested" },
   { value: "hired", label: "Hired" },
-  { value: "rejected", label: "Rejected" },
+  { value: "archived", label: "Archived" },
 ];
 
 const STATUSES = [
@@ -68,6 +68,7 @@ const STATUSES = [
   { value: "do_not_contact", label: "Do Not Contact" },
 ];
 
+// Database constraint: intelligence_level IN ('Low', 'Medium', 'High', 'Critical')
 const INTELLIGENCE_LEVELS = [
   { value: "Low", label: "Low" },
   { value: "Medium", label: "Medium" },
@@ -75,19 +76,18 @@ const INTELLIGENCE_LEVELS = [
   { value: "Critical", label: "Critical" },
 ];
 
+// Database constraint: intelligence_urgency IN ('Low', 'Medium', 'High')
 const URGENCY_LEVELS = [
   { value: "Low", label: "Low" },
   { value: "Medium", label: "Medium" },
   { value: "High", label: "High" },
-  { value: "Urgent", label: "Urgent" },
 ];
 
+// Database constraint: recommended_approach IN ('nurture', 'targeted', 'immediate')
 const APPROACHES = [
-  { value: "direct", label: "Direct Outreach" },
-  { value: "warm_intro", label: "Warm Introduction" },
-  { value: "referral", label: "Referral" },
-  { value: "inbound", label: "Inbound" },
-  { value: "event", label: "Event" },
+  { value: "nurture", label: "Nurture" },
+  { value: "targeted", label: "Targeted Outreach" },
+  { value: "immediate", label: "Immediate Action" },
 ];
 
 const SOURCES = [
@@ -146,7 +146,7 @@ export default function EditCandidateModal({ isOpen, onClose, candidate, onSucce
         intelligence_score: candidate.intelligence_score || 50,
         intelligence_level: candidate.intelligence_level || "Medium",
         intelligence_urgency: candidate.intelligence_urgency || "Medium",
-        recommended_approach: candidate.recommended_approach || "direct",
+        recommended_approach: candidate.recommended_approach || "nurture",
         intelligence_factors: candidate.intelligence_factors || [],
       });
     }

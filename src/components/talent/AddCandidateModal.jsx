@@ -38,15 +38,15 @@ import {
   Tag,
 } from "lucide-react";
 
+// Database constraint: contact_status IN ('new', 'contacted', 'replied', 'interested', 'not_interested', 'hired', 'archived')
 const STAGES = [
   { value: "new", label: "New" },
   { value: "contacted", label: "Contacted" },
-  { value: "responded", label: "Responded" },
-  { value: "screening", label: "Screening" },
-  { value: "interview", label: "Interview" },
-  { value: "offer", label: "Offer" },
+  { value: "replied", label: "Replied" },
+  { value: "interested", label: "Interested" },
+  { value: "not_interested", label: "Not Interested" },
   { value: "hired", label: "Hired" },
-  { value: "rejected", label: "Rejected" },
+  { value: "archived", label: "Archived" },
 ];
 
 const STATUSES = [
@@ -56,26 +56,26 @@ const STATUSES = [
   { value: "do_not_contact", label: "Do Not Contact" },
 ];
 
+// Database constraint: intelligence_level IN ('Low', 'Medium', 'High', 'Critical')
 const INTELLIGENCE_LEVELS = [
-  { value: "low", label: "Low" },
-  { value: "medium", label: "Medium" },
-  { value: "high", label: "High" },
-  { value: "critical", label: "Critical" },
+  { value: "Low", label: "Low" },
+  { value: "Medium", label: "Medium" },
+  { value: "High", label: "High" },
+  { value: "Critical", label: "Critical" },
 ];
 
+// Database constraint: intelligence_urgency IN ('Low', 'Medium', 'High')
 const URGENCY_LEVELS = [
-  { value: "low", label: "Low" },
-  { value: "medium", label: "Medium" },
-  { value: "high", label: "High" },
-  { value: "urgent", label: "Urgent" },
+  { value: "Low", label: "Low" },
+  { value: "Medium", label: "Medium" },
+  { value: "High", label: "High" },
 ];
 
+// Database constraint: recommended_approach IN ('nurture', 'targeted', 'immediate')
 const APPROACHES = [
-  { value: "direct", label: "Direct Outreach" },
-  { value: "warm_intro", label: "Warm Introduction" },
-  { value: "referral", label: "Referral" },
-  { value: "inbound", label: "Inbound" },
-  { value: "event", label: "Event" },
+  { value: "nurture", label: "Nurture" },
+  { value: "targeted", label: "Targeted Outreach" },
+  { value: "immediate", label: "Immediate Action" },
 ];
 
 const SOURCES = [
@@ -109,11 +109,11 @@ export default function AddCandidateModal({ isOpen, onClose, onSuccess }) {
     job_title: "",
     status_notes: "",
     contact_status: "new",
-    // Intelligence
+    // Intelligence (values must match database constraints)
     intelligence_score: 50,
-    intelligence_level: "medium",
-    intelligence_urgency: "medium",
-    recommended_approach: "direct",
+    intelligence_level: "Medium",
+    intelligence_urgency: "Medium",
+    recommended_approach: "nurture",
     intelligence_factors: [],
   });
 
@@ -201,9 +201,9 @@ export default function AddCandidateModal({ isOpen, onClose, onSuccess }) {
         status_notes: "",
         contact_status: "new",
         intelligence_score: 50,
-        intelligence_level: "medium",
-        intelligence_urgency: "medium",
-        recommended_approach: "direct",
+        intelligence_level: "Medium",
+        intelligence_urgency: "Medium",
+        recommended_approach: "nurture",
         intelligence_factors: [],
       });
       setActiveTab("basic");
