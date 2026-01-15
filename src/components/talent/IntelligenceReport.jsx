@@ -1,10 +1,10 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { 
-  AlertTriangle, 
-  Clock, 
-  Target, 
-  TrendingUp, 
+import {
+  AlertTriangle,
+  Clock,
+  Target,
+  TrendingUp,
   TrendingDown,
   CheckCircle2,
   XCircle,
@@ -16,6 +16,11 @@ import {
   Award,
   Building2,
   MapPin,
+  Lightbulb,
+  MessageSquare,
+  ArrowRight,
+  Sparkles,
+  FileText,
 } from "lucide-react";
 import { IntelligenceGauge, IntelligenceLevelBadge, UrgencyBadge, ApproachBadge } from "./IntelligenceGauge";
 
@@ -24,7 +29,7 @@ const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.1 },
+    transition: { staggerChildren: 0.08 },
   },
 };
 
@@ -38,84 +43,165 @@ const itemVariants = {
 };
 
 /**
- * FactorCard - Displays a single intelligence factor
+ * SignalCard - Displays an intelligence factor/signal
  */
-const FactorCard = ({ factor, type = "risk" }) => {
-  const typeStyles = {
-    risk: { 
-      bg: "bg-red-500/10", 
-      border: "border-red-500/20", 
-      icon: AlertTriangle,
-      iconColor: "text-red-400"
-    },
-    opportunity: { 
-      bg: "bg-green-500/10", 
-      border: "border-green-500/20", 
+const SignalCard = ({ factor }) => {
+  const impactStyles = {
+    positive: {
+      bg: "bg-green-500/10",
+      border: "border-green-500/20",
       icon: TrendingUp,
-      iconColor: "text-green-400"
+      iconColor: "text-green-400",
+      badge: "bg-green-500/20 text-green-400"
     },
-    neutral: { 
-      bg: "bg-white/5", 
-      border: "border-white/10", 
+    negative: {
+      bg: "bg-red-500/10",
+      border: "border-red-500/20",
+      icon: TrendingDown,
+      iconColor: "text-red-400",
+      badge: "bg-red-500/20 text-red-400"
+    },
+    neutral: {
+      bg: "bg-white/[0.03]",
+      border: "border-white/[0.06]",
       icon: Info,
-      iconColor: "text-white/60"
+      iconColor: "text-white/50",
+      badge: "bg-white/10 text-white/60"
     },
   };
 
-  const style = typeStyles[type] || typeStyles.neutral;
+  const impact = factor.impact || "neutral";
+  const style = impactStyles[impact] || impactStyles.neutral;
   const Icon = style.icon;
 
   return (
-    <motion.div 
+    <motion.div
       variants={itemVariants}
-      className={`flex items-start gap-3 p-3 rounded-lg border ${style.bg} ${style.border}`}
+      className={`p-4 rounded-xl border ${style.bg} ${style.border}`}
     >
-      <Icon className={`w-5 h-5 flex-shrink-0 mt-0.5 ${style.iconColor}`} />
-      <div>
-        <p className="text-sm text-white/80">{factor.description || factor}</p>
-        {factor.weight && (
-          <p className="text-xs text-white/40 mt-1">Impact: {factor.weight}%</p>
-        )}
+      <div className="flex items-start gap-3">
+        <div className={`p-2 rounded-lg ${style.badge.split(' ')[0]}`}>
+          <Icon className={`w-4 h-4 ${style.iconColor}`} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between mb-1">
+            <h4 className="font-medium text-white text-sm">{factor.signal || "Signal"}</h4>
+            {factor.weight && (
+              <span className={`text-xs px-2 py-0.5 rounded ${style.badge}`}>
+                +{factor.weight} pts
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-white/60">{factor.insight || factor.description || factor}</p>
+        </div>
       </div>
     </motion.div>
   );
 };
 
 /**
- * TimingSignal - Displays a timing-related intelligence signal
+ * TimingCard - Displays a timing signal
  */
-const TimingSignal = ({ signal }) => {
-  const getIcon = (type) => {
-    switch (type) {
-      case "anniversary": return Calendar;
-      case "promotion": return TrendingUp;
-      case "tenure": return Briefcase;
-      case "education": return GraduationCap;
-      case "achievement": return Award;
-      case "company": return Building2;
-      case "location": return MapPin;
-      default: return Clock;
-    }
+const TimingCard = ({ signal }) => {
+  const urgencyStyles = {
+    high: { bg: "bg-red-500/10", border: "border-red-500/20", badge: "bg-red-500/20 text-red-400" },
+    medium: { bg: "bg-amber-500/10", border: "border-amber-500/20", badge: "bg-amber-500/20 text-amber-400" },
+    low: { bg: "bg-blue-500/10", border: "border-blue-500/20", badge: "bg-blue-500/20 text-blue-400" },
   };
 
-  const Icon = getIcon(signal.type);
+  const urgency = signal.urgency || "medium";
+  const style = urgencyStyles[urgency] || urgencyStyles.medium;
 
   return (
-    <motion.div 
+    <motion.div
       variants={itemVariants}
-      className="flex items-start gap-3 p-3 bg-red-500/10 border border-red-500/20 rounded-lg"
+      className={`p-4 rounded-xl border ${style.bg} ${style.border}`}
     >
-      <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
-        <Icon className="w-4 h-4 text-red-400" />
+      <div className="flex items-start gap-3">
+        <div className="p-2 rounded-lg bg-red-500/10">
+          <Clock className="w-4 h-4 text-red-400" />
+        </div>
+        <div className="flex-1">
+          <div className="flex items-center justify-between mb-1">
+            <h4 className="font-medium text-white text-sm">{signal.trigger || signal.description || signal}</h4>
+            <span className={`text-xs px-2 py-0.5 rounded capitalize ${style.badge}`}>
+              {urgency}
+            </span>
+          </div>
+          {signal.window && (
+            <p className="text-sm text-white/60">{signal.window}</p>
+          )}
+        </div>
       </div>
-      <div className="flex-1">
-        <p className="text-sm text-white/80">{signal.description || signal}</p>
-        {signal.date && (
-          <p className="text-xs text-white/40 mt-1">{signal.date}</p>
-        )}
+    </motion.div>
+  );
+};
+
+/**
+ * InsightCard - Displays key insights
+ */
+const InsightCard = ({ insights = [] }) => {
+  if (!insights || insights.length === 0) return null;
+
+  return (
+    <motion.div
+      variants={itemVariants}
+      className="p-5 rounded-xl bg-gradient-to-br from-red-500/10 to-red-500/5 border border-red-500/20"
+    >
+      <div className="flex items-center gap-2 mb-4">
+        <div className="p-2 rounded-lg bg-red-500/20">
+          <Lightbulb className="w-5 h-5 text-red-400" />
+        </div>
+        <h3 className="font-semibold text-white">Key Insights</h3>
       </div>
-      {signal.relevance && (
-        <span className="text-xs text-red-400 font-medium">{signal.relevance}</span>
+      <ul className="space-y-2">
+        {insights.map((insight, idx) => (
+          <li key={idx} className="flex items-start gap-2">
+            <ArrowRight className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+            <span className="text-sm text-white/80">{insight}</span>
+          </li>
+        ))}
+      </ul>
+    </motion.div>
+  );
+};
+
+/**
+ * OutreachHooksCard - Displays suggested outreach angles
+ */
+const OutreachHooksCard = ({ hooks = [], bestAngle }) => {
+  if ((!hooks || hooks.length === 0) && !bestAngle) return null;
+
+  return (
+    <motion.div
+      variants={itemVariants}
+      className="p-5 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-500/5 border border-blue-500/20"
+    >
+      <div className="flex items-center gap-2 mb-4">
+        <div className="p-2 rounded-lg bg-blue-500/20">
+          <MessageSquare className="w-5 h-5 text-blue-400" />
+        </div>
+        <h3 className="font-semibold text-white">Outreach Hooks</h3>
+      </div>
+
+      {bestAngle && (
+        <div className="mb-4 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+          <p className="text-xs text-blue-400 font-medium mb-1">BEST OPENING ANGLE</p>
+          <p className="text-sm text-white">{bestAngle}</p>
+        </div>
+      )}
+
+      {hooks && hooks.length > 0 && (
+        <ul className="space-y-2">
+          {hooks.map((hook, idx) => (
+            <li key={idx} className="flex items-start gap-2">
+              <span className="w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs flex-shrink-0">
+                {idx + 1}
+              </span>
+              <span className="text-sm text-white/80">{hook}</span>
+            </li>
+          ))}
+        </ul>
       )}
     </motion.div>
   );
@@ -124,34 +210,34 @@ const TimingSignal = ({ signal }) => {
 /**
  * RecommendationCard - Displays engagement recommendation
  */
-const RecommendationCard = ({ approach, timeline, reasoning }) => {
+const RecommendationCard = ({ approach, timeline, summary }) => {
   const approachStyles = {
     immediate: {
-      bg: "bg-red-500/10",
+      bg: "bg-gradient-to-br from-red-500/15 to-red-500/5",
       border: "border-red-500/30",
       iconBg: "bg-red-500/20",
       icon: Zap,
       iconColor: "text-red-400",
-      title: "Immediate Outreach Required",
-      description: "High flight risk detected. Engage within 24-48 hours."
+      title: "Immediate Outreach",
+      description: "High receptiveness detected. Engage now."
     },
     targeted: {
-      bg: "bg-red-500/10",
-      border: "border-red-500/30",
-      iconBg: "bg-red-500/20",
+      bg: "bg-gradient-to-br from-amber-500/15 to-amber-500/5",
+      border: "border-amber-500/30",
+      iconBg: "bg-amber-500/20",
       icon: Target,
-      iconColor: "text-red-400",
+      iconColor: "text-amber-400",
       title: "Targeted Engagement",
-      description: "Strong opportunity signals. Personalized approach recommended."
+      description: "Good signals present. Personalized approach recommended."
     },
     nurture: {
-      bg: "bg-blue-500/10",
+      bg: "bg-gradient-to-br from-blue-500/15 to-blue-500/5",
       border: "border-blue-500/30",
       iconBg: "bg-blue-500/20",
       icon: TrendingUp,
       iconColor: "text-blue-400",
       title: "Long-term Nurturing",
-      description: "Build relationship over time. Monitor for timing signals."
+      description: "Build relationship over time. Monitor for triggers."
     },
   };
 
@@ -159,37 +245,36 @@ const RecommendationCard = ({ approach, timeline, reasoning }) => {
   const Icon = style.icon;
 
   return (
-    <motion.div 
+    <motion.div
       variants={itemVariants}
-      className={`p-4 rounded-xl border ${style.bg} ${style.border}`}
+      className={`p-5 rounded-xl border ${style.bg} ${style.border}`}
     >
       <div className="flex items-start gap-4">
         <div className={`p-3 rounded-xl ${style.iconBg}`}>
           <Icon className={`w-6 h-6 ${style.iconColor}`} />
         </div>
         <div className="flex-1">
-          <h4 className="font-semibold text-white">{style.title}</h4>
+          <h4 className="font-semibold text-white text-lg">{style.title}</h4>
           <p className="text-sm text-white/60 mt-1">{style.description}</p>
           {timeline && (
-            <div className="flex items-center gap-2 mt-3">
-              <Clock className="w-4 h-4 text-white/40" />
-              <span className="text-sm text-white/70">{timeline}</span>
+            <div className="flex items-center gap-2 mt-3 text-white/70">
+              <Clock className="w-4 h-4" />
+              <span className="text-sm">{timeline}</span>
             </div>
-          )}
-          {reasoning && (
-            <p className="text-sm text-white/50 mt-2 italic">"{reasoning}"</p>
           )}
         </div>
       </div>
+      {summary && (
+        <div className="mt-4 pt-4 border-t border-white/10">
+          <p className="text-sm text-white/70">{summary}</p>
+        </div>
+      )}
     </motion.div>
   );
 };
 
 /**
  * IntelligenceReport - Full intelligence report for a candidate
- * 
- * @param {object} candidate - Candidate object with intelligence data
- * @param {boolean} compact - Use compact layout
  */
 export const IntelligenceReport = ({ candidate, compact = false }) => {
   const {
@@ -198,26 +283,25 @@ export const IntelligenceReport = ({ candidate, compact = false }) => {
     intelligence_urgency = "Low",
     intelligence_factors: rawFactors = [],
     intelligence_timing: rawTiming = [],
+    key_insights = [],
+    outreach_hooks = [],
+    risk_summary = "",
+    best_outreach_angle = "",
     recommended_approach = "nurture",
     recommended_timeline = "",
     last_intelligence_update = null,
   } = candidate || {};
 
-  // Ensure intelligence_factors is an array (handle legacy object format {signals: [...]})
-  const intelligence_factors = Array.isArray(rawFactors)
-    ? rawFactors
-    : (rawFactors?.signals || []);
-
-  // Ensure intelligence_timing is an array
+  // Ensure arrays
+  const intelligence_factors = Array.isArray(rawFactors) ? rawFactors : (rawFactors?.signals || []);
   const intelligence_timing = Array.isArray(rawTiming) ? rawTiming : [];
+  const insights = Array.isArray(key_insights) ? key_insights : [];
+  const hooks = Array.isArray(outreach_hooks) ? outreach_hooks : [];
 
-  // Separate risk factors and opportunities
-  const riskFactors = intelligence_factors.filter(f =>
-    typeof f === 'string' || f.type === 'risk' || !f.type
-  );
-  const opportunities = intelligence_factors.filter(f =>
-    f.type === 'opportunity'
-  );
+  // Separate by impact
+  const positiveFactors = intelligence_factors.filter(f => f.impact === "positive");
+  const negativeFactors = intelligence_factors.filter(f => f.impact === "negative");
+  const neutralFactors = intelligence_factors.filter(f => !f.impact || f.impact === "neutral");
 
   if (compact) {
     return (
@@ -229,12 +313,14 @@ export const IntelligenceReport = ({ candidate, compact = false }) => {
             <ApproachBadge approach={recommended_approach} />
           </div>
           <p className="text-xs text-white/40 mt-1">
-            {riskFactors.length} risk factors • {intelligence_timing.length} timing signals
+            {intelligence_factors.length} signals • {intelligence_timing.length} timing factors
           </p>
         </div>
       </div>
     );
   }
+
+  const hasData = intelligence_factors.length > 0 || intelligence_timing.length > 0 || insights.length > 0;
 
   return (
     <motion.div
@@ -244,7 +330,7 @@ export const IntelligenceReport = ({ candidate, compact = false }) => {
       className="space-y-6"
     >
       {/* Score Overview */}
-      <motion.div variants={itemVariants} className="flex items-center justify-between p-6 bg-white/5 rounded-xl border border-white/10">
+      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 bg-white/[0.03] rounded-2xl border border-white/[0.06]">
         <div className="flex items-center gap-6">
           <IntelligenceGauge score={intelligence_score} size="xl" showLabel />
           <div>
@@ -253,7 +339,7 @@ export const IntelligenceReport = ({ candidate, compact = false }) => {
               <UrgencyBadge urgency={intelligence_urgency} />
             </div>
             <p className="text-white/60 text-sm">
-              Based on {riskFactors.length} risk factors and {intelligence_timing.length} timing signals
+              {intelligence_factors.length} intelligence signals • {intelligence_timing.length} timing factors
             </p>
             {last_intelligence_update && (
               <p className="text-white/40 text-xs mt-1">
@@ -266,66 +352,94 @@ export const IntelligenceReport = ({ candidate, compact = false }) => {
       </motion.div>
 
       {/* Recommendation */}
-      <RecommendationCard 
+      <RecommendationCard
         approach={recommended_approach}
         timeline={recommended_timeline}
+        summary={risk_summary}
       />
 
-      {/* Risk Factors */}
-      {riskFactors.length > 0 && (
-        <motion.div variants={itemVariants}>
-          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-orange-400" />
-            Flight Risk Factors
-          </h3>
-          <div className="space-y-2">
-            {riskFactors.map((factor, idx) => (
-              <FactorCard key={idx} factor={factor} type="risk" />
-            ))}
-          </div>
-        </motion.div>
-      )}
+      {/* Key Insights */}
+      <InsightCard insights={insights} />
 
-      {/* Opportunities */}
-      {opportunities.length > 0 && (
+      {/* Outreach Hooks */}
+      <OutreachHooksCard hooks={hooks} bestAngle={best_outreach_angle} />
+
+      {/* Positive Signals (Recruitment Opportunities) */}
+      {positiveFactors.length > 0 && (
         <motion.div variants={itemVariants}>
-          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-green-400" />
-            Opportunity Signals
+            Recruitment Opportunities
+            <span className="text-xs text-green-400/60 font-normal">({positiveFactors.length} signals)</span>
           </h3>
-          <div className="space-y-2">
-            {opportunities.map((factor, idx) => (
-              <FactorCard key={idx} factor={factor} type="opportunity" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {positiveFactors.map((factor, idx) => (
+              <SignalCard key={idx} factor={factor} />
             ))}
           </div>
         </motion.div>
       )}
 
-      {/* Timing Signals */}
+      {/* Negative Signals (Challenges) */}
+      {negativeFactors.length > 0 && (
+        <motion.div variants={itemVariants}>
+          <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
+            <TrendingDown className="w-5 h-5 text-red-400" />
+            Potential Challenges
+            <span className="text-xs text-red-400/60 font-normal">({negativeFactors.length} signals)</span>
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {negativeFactors.map((factor, idx) => (
+              <SignalCard key={idx} factor={factor} />
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Neutral Signals */}
+      {neutralFactors.length > 0 && (
+        <motion.div variants={itemVariants}>
+          <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
+            <Info className="w-5 h-5 text-white/50" />
+            Additional Context
+            <span className="text-xs text-white/40 font-normal">({neutralFactors.length} signals)</span>
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {neutralFactors.map((factor, idx) => (
+              <SignalCard key={idx} factor={factor} />
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Timing Intelligence */}
       {intelligence_timing.length > 0 && (
         <motion.div variants={itemVariants}>
-          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
             <Clock className="w-5 h-5 text-red-400" />
             Timing Intelligence
+            <span className="text-xs text-red-400/60 font-normal">({intelligence_timing.length} windows)</span>
           </h3>
-          <div className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {intelligence_timing.map((signal, idx) => (
-              <TimingSignal key={idx} signal={signal} />
+              <TimingCard key={idx} signal={signal} />
             ))}
           </div>
         </motion.div>
       )}
 
       {/* No Data State */}
-      {riskFactors.length === 0 && intelligence_timing.length === 0 && (
-        <motion.div 
+      {!hasData && (
+        <motion.div
           variants={itemVariants}
-          className="text-center p-8 bg-white/5 rounded-xl border border-white/10"
+          className="text-center p-12 bg-white/[0.03] rounded-2xl border border-white/[0.06]"
         >
-          <Info className="w-12 h-12 text-white/20 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-white mb-2">No Intelligence Data Yet</h3>
-          <p className="text-white/60">
-            Run an intelligence analysis to generate flight risk insights for this candidate.
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-red-500/10 flex items-center justify-center">
+            <Sparkles className="w-8 h-8 text-red-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-white mb-2">No Intelligence Data Yet</h3>
+          <p className="text-white/50 max-w-md mx-auto">
+            Click "Generate Intel" to run an AI-powered analysis and get actionable recruitment insights for this candidate.
           </p>
         </motion.div>
       )}
