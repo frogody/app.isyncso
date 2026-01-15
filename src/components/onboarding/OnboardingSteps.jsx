@@ -954,20 +954,35 @@ export function ReviewStep({ data, dossier, profileData, companyEnrichment, onCh
             </div>
             <div className="flex flex-wrap gap-2">
               {data.selectedApps.map((appId) => {
-                const appNames = {
+                const appConfig = {
+                  sync: { name: 'SYNC', icon: Bot, color: 'purple' },
                   learn: { name: 'Learn', icon: GraduationCap, color: 'cyan' },
                   growth: { name: 'Growth', icon: Rocket, color: 'indigo' },
-                  sentinel: { name: 'Sentinel', icon: Shield, color: 'green' }
+                  talent: { name: 'Talent', icon: UserPlus, color: 'violet' },
+                  finance: { name: 'Finance', icon: DollarSign, color: 'amber' },
+                  sentinel: { name: 'Sentinel', icon: Shield, color: 'sage' },
+                  raise: { name: 'Raise', icon: TrendingUp, color: 'orange' },
+                  products: { name: 'Products', icon: Briefcase, color: 'teal' },
+                  create: { name: 'Create', icon: Palette, color: 'rose' }
                 };
-                const app = appNames[appId];
+                const colorClasses = {
+                  purple: "bg-purple-500/10 text-purple-400 border-purple-500/20",
+                  cyan: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
+                  indigo: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
+                  violet: "bg-violet-500/10 text-violet-400 border-violet-500/20",
+                  amber: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+                  sage: "bg-[#86EFAC]/10 text-[#86EFAC] border-[#86EFAC]/20",
+                  orange: "bg-orange-500/10 text-orange-400 border-orange-500/20",
+                  teal: "bg-teal-500/10 text-teal-400 border-teal-500/20",
+                  rose: "bg-rose-500/10 text-rose-400 border-rose-500/20"
+                };
+                const app = appConfig[appId];
                 if (!app) return null;
                 const Icon = app.icon;
                 return (
                   <span key={appId} className={cn(
                     "px-3 py-1.5 rounded-lg text-sm flex items-center gap-2 border",
-                    app.color === 'cyan' && "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
-                    app.color === 'indigo' && "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
-                    app.color === 'green' && "bg-green-500/10 text-green-400 border-green-500/20"
+                    colorClasses[app.color]
                   )}>
                     <Icon className="w-4 h-4" />
                     {app.name}

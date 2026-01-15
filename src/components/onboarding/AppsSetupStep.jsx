@@ -3,7 +3,8 @@ import { motion } from "framer-motion";
 import {
   GraduationCap, Rocket, Shield, Sparkles, Check,
   ChevronLeft, ChevronRight, Plus, LayoutGrid,
-  Users, Palette, TrendingUp, Lock, Clock
+  Users, Palette, TrendingUp, Lock, Clock, Brain,
+  DollarSign, Package, Plug, MessageSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -15,8 +16,18 @@ const fadeIn = {
   exit: { opacity: 0, y: -12 }
 };
 
-// All available apps
+// All available apps - comprehensive list of iSyncSO capabilities
 const ALL_APPS = [
+  {
+    id: 'sync',
+    name: 'SYNC',
+    shortDesc: 'AI command center',
+    description: 'Your AI assistant that executes tasks across all apps with natural language commands.',
+    icon: Brain,
+    features: ['Natural language commands', 'Cross-app automation', 'Smart integrations', 'Activity tracking'],
+    recommendedFor: ['personal-assistant', 'manage-work', 'ai-strategy'],
+    color: 'purple'
+  },
   {
     id: 'learn',
     name: 'Learn',
@@ -24,60 +35,111 @@ const ALL_APPS = [
     description: 'Personalized courses, skill tracking, and AI tutors that adapt to your pace.',
     icon: GraduationCap,
     features: ['Personalized courses', 'Skill assessments', 'XP & gamification', 'AI tutor assistance'],
-    recommendedFor: ['learn-ai', 'personal-assistant', 'manage-work', 'creative-work']
+    recommendedFor: ['learn-ai', 'personal-assistant', 'creative-work'],
+    color: 'cyan'
   },
   {
     id: 'growth',
     name: 'Growth',
-    shortDesc: 'Pipeline & outreach',
-    description: 'AI-powered prospecting, pipeline management, and multi-channel campaigns.',
+    shortDesc: 'Sales pipeline & CRM',
+    description: 'AI-powered prospecting, pipeline management, and multi-channel outreach campaigns.',
     icon: Rocket,
     features: ['Smart prospecting', 'Pipeline tracking', 'Buying signals', 'Campaign automation'],
-    recommendedFor: ['grow-sales', 'recruitment', 'ai-strategy']
+    recommendedFor: ['grow-sales', 'ai-strategy'],
+    color: 'indigo'
+  },
+  {
+    id: 'talent',
+    name: 'Talent',
+    shortDesc: 'Recruitment intelligence',
+    description: 'AI-powered candidate sourcing, flight risk intelligence, and recruitment pipeline management.',
+    icon: Users,
+    features: ['Candidate intelligence', 'Flight risk scoring', 'Recruitment pipeline', 'Outreach campaigns'],
+    recommendedFor: ['recruitment', 'ai-strategy'],
+    color: 'violet'
+  },
+  {
+    id: 'finance',
+    name: 'Finance',
+    shortDesc: 'Business finances',
+    description: 'Invoice management, expense tracking, and financial reporting with AI-powered insights.',
+    icon: DollarSign,
+    features: ['Invoice creation', 'Expense tracking', 'Financial reports', 'Subscription management'],
+    recommendedFor: ['manage-work', 'grow-sales'],
+    color: 'amber'
   },
   {
     id: 'sentinel',
     name: 'Sentinel',
     shortDesc: 'AI compliance',
-    description: 'EU AI Act compliance management, risk assessments, and documentation.',
+    description: 'EU AI Act compliance management, risk assessments, and automated documentation.',
     icon: Shield,
     features: ['Risk classification', 'Compliance tracking', 'Task management', 'Auto documentation'],
-    recommendedFor: ['compliance-ethics', 'ai-strategy']
-  }
-];
-
-// Coming Soon apps
-const COMING_SOON_APPS = [
-  {
-    id: 'talent',
-    name: 'Talent',
-    shortDesc: 'Smart recruitment',
-    description: 'Deep research on candidates, AI-powered sourcing, and intelligent matching for your hiring needs.',
-    icon: Users,
-    features: ['Candidate deep research', 'AI talent matching', 'Interview scheduling', 'Hiring pipeline'],
-    color: 'violet'
-  },
-  {
-    id: 'create',
-    name: 'Create',
-    shortDesc: 'Content generation',
-    description: 'Generate quality content using your company context - writing, images, and videos with AI.',
-    icon: Palette,
-    features: ['AI copywriting', 'Image generation', 'Video creation', 'Brand-aware content'],
-    color: 'pink'
+    recommendedFor: ['compliance-ethics', 'ai-strategy'],
+    color: 'sage'
   },
   {
     id: 'raise',
     name: 'Raise',
     shortDesc: 'Fundraising toolkit',
-    description: 'Everything for raising capital - from education to pitch decks, investor search, and stakeholder reporting.',
+    description: 'Investor management, pitch deck organization, data rooms, and fundraising campaigns.',
     icon: TrendingUp,
-    features: ['Fundraising education', 'Pitch deck builder', 'Investor database', 'Stakeholder updates'],
-    color: 'emerald'
+    features: ['Investor pipeline', 'Pitch deck library', 'Data room', 'Campaign tracking'],
+    recommendedFor: ['ai-strategy', 'grow-sales'],
+    color: 'orange'
+  },
+  {
+    id: 'products',
+    name: 'Products',
+    shortDesc: 'Inventory & catalog',
+    description: 'Product catalog, inventory management, receiving, shipping, and stock tracking.',
+    icon: Package,
+    features: ['Product catalog', 'Stock management', 'Receiving & shipping', 'Purchase orders'],
+    recommendedFor: ['manage-work', 'grow-sales'],
+    color: 'teal'
+  },
+  {
+    id: 'create',
+    name: 'Create',
+    shortDesc: 'AI content studio',
+    description: 'Generate images, videos, and branded content using AI with your company context.',
+    icon: Palette,
+    features: ['AI image generation', 'Video creation', 'Brand assets', 'Content library'],
+    recommendedFor: ['creative-work', 'grow-sales'],
+    color: 'rose'
   }
 ];
 
-const MAX_MAIN_APPS = 4;
+// Coming Soon apps - future capabilities
+const COMING_SOON_APPS = [
+  {
+    id: 'inbox',
+    name: 'Inbox',
+    shortDesc: 'Unified messaging',
+    description: 'Centralized messaging hub connecting all your communication channels in one place.',
+    icon: MessageSquare,
+    features: ['Multi-channel inbox', 'AI responses', 'Team collaboration', 'Smart routing'],
+    color: 'sky'
+  }
+];
+
+const MAX_MAIN_APPS = 6;
+
+// Color classes for app cards
+const APP_COLORS = {
+  purple: { border: 'border-purple-500/50', bg: 'bg-purple-500/10', text: 'text-purple-400', iconBg: 'bg-purple-500/20' },
+  cyan: { border: 'border-cyan-500/50', bg: 'bg-cyan-500/10', text: 'text-cyan-400', iconBg: 'bg-cyan-500/20' },
+  indigo: { border: 'border-indigo-500/50', bg: 'bg-indigo-500/10', text: 'text-indigo-400', iconBg: 'bg-indigo-500/20' },
+  violet: { border: 'border-violet-500/50', bg: 'bg-violet-500/10', text: 'text-violet-400', iconBg: 'bg-violet-500/20' },
+  amber: { border: 'border-amber-500/50', bg: 'bg-amber-500/10', text: 'text-amber-400', iconBg: 'bg-amber-500/20' },
+  sage: { border: 'border-[#86EFAC]/50', bg: 'bg-[#86EFAC]/10', text: 'text-[#86EFAC]', iconBg: 'bg-[#86EFAC]/20' },
+  orange: { border: 'border-orange-500/50', bg: 'bg-orange-500/10', text: 'text-orange-400', iconBg: 'bg-orange-500/20' },
+  teal: { border: 'border-teal-500/50', bg: 'bg-teal-500/10', text: 'text-teal-400', iconBg: 'bg-teal-500/20' },
+  rose: { border: 'border-rose-500/50', bg: 'bg-rose-500/10', text: 'text-rose-400', iconBg: 'bg-rose-500/20' },
+  sky: { border: 'border-sky-500/50', bg: 'bg-sky-500/10', text: 'text-sky-400', iconBg: 'bg-sky-500/20' },
+  pink: { border: 'border-pink-500/50', bg: 'bg-pink-500/10', text: 'text-pink-400', iconBg: 'bg-pink-500/20' },
+  emerald: { border: 'border-emerald-500/50', bg: 'bg-emerald-500/10', text: 'text-emerald-400', iconBg: 'bg-emerald-500/20' },
+};
 
 export function AppsSetupStep({ data, onChange, onNext, onBack }) {
   const [selectedApps, setSelectedApps] = useState(data.selectedApps || []);
@@ -89,13 +151,18 @@ export function AppsSetupStep({ data, onChange, onNext, onBack }) {
     data.selectedGoals?.some(goal => app.recommendedFor.includes(goal))
   ).map(app => app.id);
 
-  // Auto-select recommended apps on first load
+  // Auto-select recommended apps on first load - always include SYNC
   useEffect(() => {
     if (!hasInitialized.current && !data.selectedApps) {
       hasInitialized.current = true;
-      const initialSelection = recommendations.length > 0
-        ? recommendations.slice(0, MAX_MAIN_APPS)
-        : ['learn', 'growth', 'sentinel'];
+      // Always include sync, then add recommendations up to MAX_MAIN_APPS
+      let initialSelection = ['sync'];
+      if (recommendations.length > 0) {
+        const additionalApps = recommendations.filter(id => id !== 'sync').slice(0, MAX_MAIN_APPS - 1);
+        initialSelection = ['sync', ...additionalApps];
+      } else {
+        initialSelection = ['sync', 'learn', 'growth', 'finance'];
+      }
       setSelectedApps(initialSelection);
       onChange({ selectedApps: initialSelection });
     }
@@ -184,6 +251,7 @@ export function AppsSetupStep({ data, onChange, onNext, onBack }) {
             const isSelected = selectedApps.includes(app.id);
             const isRecommended = recommendations.includes(app.id);
             const canSelect = isSelected || selectedApps.length < MAX_MAIN_APPS;
+            const colors = APP_COLORS[app.color] || APP_COLORS.cyan;
 
             return (
               <motion.div
@@ -195,7 +263,7 @@ export function AppsSetupStep({ data, onChange, onNext, onBack }) {
                 className={cn(
                   "flex-shrink-0 snap-start w-[200px] rounded-xl border transition-all cursor-pointer",
                   isSelected
-                    ? "border-cyan-500/50 bg-cyan-500/5"
+                    ? `${colors.border} ${colors.bg}`
                     : "border-zinc-800 hover:border-zinc-700",
                   !canSelect && !isSelected && "opacity-50 cursor-not-allowed"
                 )}
@@ -205,11 +273,11 @@ export function AppsSetupStep({ data, onChange, onNext, onBack }) {
                   <div className="flex items-start justify-between mb-3">
                     <div className={cn(
                       "w-10 h-10 rounded-xl flex items-center justify-center",
-                      isSelected ? "bg-cyan-500/20" : "bg-zinc-800/80"
+                      isSelected ? colors.iconBg : "bg-zinc-800/80"
                     )}>
                       <Icon className={cn(
                         "w-5 h-5",
-                        isSelected ? "text-cyan-400" : "text-zinc-400"
+                        isSelected ? colors.text : "text-zinc-400"
                       )} />
                     </div>
 
@@ -220,8 +288,8 @@ export function AppsSetupStep({ data, onChange, onNext, onBack }) {
                         </span>
                       )}
                       {isSelected && (
-                        <div className="w-5 h-5 rounded-full bg-cyan-500 flex items-center justify-center">
-                          <Check className="w-3 h-3 text-white" />
+                        <div className={cn("w-5 h-5 rounded-full flex items-center justify-center", colors.iconBg)}>
+                          <Check className={cn("w-3 h-3", colors.text)} />
                         </div>
                       )}
                     </div>
@@ -246,7 +314,7 @@ export function AppsSetupStep({ data, onChange, onNext, onBack }) {
                       <div key={i} className="flex items-center gap-1.5 text-[10px] text-zinc-600">
                         <div className={cn(
                           "w-1 h-1 rounded-full",
-                          isSelected ? "bg-cyan-500/50" : "bg-zinc-700"
+                          isSelected ? colors.bg.replace('/10', '/50') : "bg-zinc-700"
                         )} />
                         <span className="truncate">{feature}</span>
                       </div>
@@ -260,7 +328,7 @@ export function AppsSetupStep({ data, onChange, onNext, onBack }) {
                     className={cn(
                       "w-full py-2 rounded-lg text-xs font-medium transition-all border",
                       isSelected
-                        ? "border-cyan-500/30 bg-cyan-500/10 text-cyan-400"
+                        ? `${colors.border} ${colors.bg} ${colors.text}`
                         : canSelect
                           ? "border-zinc-700 bg-zinc-800/50 text-zinc-400 hover:border-zinc-600 hover:text-zinc-300"
                           : "border-zinc-800 bg-zinc-900/50 text-zinc-600 cursor-not-allowed"
@@ -280,12 +348,7 @@ export function AppsSetupStep({ data, onChange, onNext, onBack }) {
           {/* Coming Soon Apps */}
           {COMING_SOON_APPS.map((app, index) => {
             const Icon = app.icon;
-            const colorClasses = {
-              violet: { bg: 'bg-violet-500/10', border: 'border-violet-500/20', text: 'text-violet-400', icon: 'text-violet-400' },
-              pink: { bg: 'bg-pink-500/10', border: 'border-pink-500/20', text: 'text-pink-400', icon: 'text-pink-400' },
-              emerald: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', text: 'text-emerald-400', icon: 'text-emerald-400' },
-            };
-            const colors = colorClasses[app.color] || colorClasses.violet;
+            const colors = APP_COLORS[app.color] || APP_COLORS.sky;
 
             return (
               <motion.div
@@ -303,8 +366,8 @@ export function AppsSetupStep({ data, onChange, onNext, onBack }) {
                 {/* Card Header */}
                 <div className="p-4 pb-3">
                   <div className="flex items-start justify-between mb-3">
-                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", colors.bg)}>
-                      <Icon className={cn("w-5 h-5", colors.icon)} />
+                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", colors.iconBg)}>
+                      <Icon className={cn("w-5 h-5", colors.text)} />
                     </div>
                     <div className="flex items-center gap-1.5">
                       <span className={cn("px-1.5 py-0.5 rounded text-[9px] font-medium uppercase tracking-wide flex items-center gap-1", colors.bg, colors.text)}>
@@ -328,7 +391,7 @@ export function AppsSetupStep({ data, onChange, onNext, onBack }) {
                   <div className="space-y-1">
                     {app.features.slice(0, 3).map((feature, i) => (
                       <div key={i} className="flex items-center gap-1.5 text-[10px] text-zinc-700">
-                        <div className={cn("w-1 h-1 rounded-full", colors.bg.replace('/10', '/30'))} />
+                        <div className={cn("w-1 h-1 rounded-full", colors.bg)} />
                         <span className="truncate">{feature}</span>
                       </div>
                     ))}
@@ -363,15 +426,16 @@ export function AppsSetupStep({ data, onChange, onNext, onBack }) {
       </div>
 
       {/* Selection summary */}
-      <div className="flex items-center justify-center gap-2 text-xs text-zinc-500">
+      <div className="flex items-center justify-center gap-2 text-xs text-zinc-500 flex-wrap">
         <span>Selected:</span>
-        <div className="flex gap-1">
+        <div className="flex gap-1 flex-wrap justify-center">
           {selectedApps.map(appId => {
             const app = ALL_APPS.find(a => a.id === appId);
+            const colors = APP_COLORS[app?.color] || APP_COLORS.cyan;
             return (
               <span
                 key={appId}
-                className="px-2 py-0.5 rounded text-[10px] font-medium bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"
+                className={cn("px-2 py-0.5 rounded text-[10px] font-medium", colors.bg, colors.text, colors.border)}
               >
                 {app?.name}
               </span>
@@ -382,8 +446,8 @@ export function AppsSetupStep({ data, onChange, onNext, onBack }) {
           )}
         </div>
         <span className="text-zinc-600">({selectedApps.length}/{MAX_MAIN_APPS})</span>
-        <span className="text-zinc-700">•</span>
-        <span className="text-zinc-600">You can change this later in settings</span>
+        <span className="text-zinc-700 hidden sm:inline">•</span>
+        <span className="text-zinc-600 hidden sm:inline">Change later in settings</span>
       </div>
 
       {/* Navigation - matching other steps */}

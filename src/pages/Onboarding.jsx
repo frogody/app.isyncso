@@ -18,9 +18,15 @@ import { AppsSetupStep } from "@/components/onboarding/AppsSetupStep";
 // Helper to get default widgets based on selected apps
 const getDefaultWidgetsForApps = (apps) => {
   const widgets = ['actions_recent', 'quick_actions'];
+  if (apps.includes('sync')) widgets.push('sync_recent', 'sync_quick');
   if (apps.includes('learn')) widgets.push('learn_progress', 'learn_stats');
   if (apps.includes('growth')) widgets.push('growth_pipeline', 'growth_stats', 'growth_deals');
   if (apps.includes('sentinel')) widgets.push('sentinel_compliance', 'sentinel_systems');
+  if (apps.includes('finance')) widgets.push('finance_overview', 'finance_invoices');
+  if (apps.includes('raise')) widgets.push('raise_progress', 'raise_investors');
+  if (apps.includes('talent')) widgets.push('talent_pipeline', 'talent_candidates');
+  if (apps.includes('products')) widgets.push('products_inventory', 'products_lowstock');
+  if (apps.includes('create')) widgets.push('create_recent', 'create_gallery');
   return widgets;
 };
 
