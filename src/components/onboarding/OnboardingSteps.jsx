@@ -298,100 +298,111 @@ export function CompanyStep({ data, onChange, onNext, onBack }) {
   );
 }
 
-// Step 4: Goals
+// Step 4: Goals - Now shows iSyncSO Apps
 export function GoalsStep({ data, onChange, onNext, onBack }) {
-  // Category color schemes
-  const categoryColors = {
-    productivity: {
-      border: 'border-blue-500/50',
-      bg: 'bg-blue-500/10',
-      text: 'text-blue-400',
-      icon: 'text-blue-400'
+  // App color schemes matching the actual app colors
+  const appColors = {
+    growth: {
+      border: 'border-indigo-500/50',
+      bg: 'bg-indigo-500/10',
+      text: 'text-indigo-400',
+      icon: 'text-indigo-400'
     },
-    learning: {
-      border: 'border-teal-500/50',
-      bg: 'bg-teal-500/10',
-      text: 'text-teal-400',
-      icon: 'text-teal-400'
+    sentinel: {
+      border: 'border-[#86EFAC]/50',
+      bg: 'bg-[#86EFAC]/10',
+      text: 'text-[#86EFAC]',
+      icon: 'text-[#86EFAC]'
     },
-    business: {
+    learn: {
+      border: 'border-cyan-500/50',
+      bg: 'bg-cyan-500/10',
+      text: 'text-cyan-400',
+      icon: 'text-cyan-400'
+    },
+    finance: {
+      border: 'border-amber-500/50',
+      bg: 'bg-amber-500/10',
+      text: 'text-amber-400',
+      icon: 'text-amber-400'
+    },
+    raise: {
       border: 'border-orange-500/50',
       bg: 'bg-orange-500/10',
       text: 'text-orange-400',
       icon: 'text-orange-400'
     },
-    creative: {
-      border: 'border-pink-500/50',
-      bg: 'bg-pink-500/10',
-      text: 'text-pink-400',
-      icon: 'text-pink-400'
+    create: {
+      border: 'border-rose-500/50',
+      bg: 'bg-rose-500/10',
+      text: 'text-rose-400',
+      icon: 'text-rose-400'
+    },
+    talent: {
+      border: 'border-red-500/50',
+      bg: 'bg-red-500/10',
+      text: 'text-red-400',
+      icon: 'text-red-400'
     }
   };
 
-  const goals = [
+  const apps = [
     {
-      id: 'personal-assistant',
-      label: 'Personal AI Assistant',
-      description: 'Get help with daily tasks, writing, and research',
-      icon: Bot,
-      category: 'productivity'
+      id: 'growth',
+      label: 'Growth',
+      description: 'AI-powered prospecting, pipeline management, and multi-channel outreach',
+      icon: Rocket,
+      color: 'growth'
     },
     {
-      id: 'manage-work',
-      label: 'Manage My Work',
-      description: 'Organize projects, automate workflows, boost efficiency',
-      icon: Briefcase,
-      category: 'productivity'
+      id: 'sentinel',
+      label: 'Sentinel',
+      description: 'EU AI Act compliance management, risk assessments, and documentation',
+      icon: Shield,
+      color: 'sentinel'
     },
     {
-      id: 'learn-ai',
-      label: 'Learn AI Skills',
-      description: 'Master AI tools and techniques for your career',
+      id: 'learn',
+      label: 'Learn',
+      description: 'Personalized courses, skill tracking, and AI tutors that adapt to you',
       icon: GraduationCap,
-      category: 'learning'
+      color: 'learn'
     },
     {
-      id: 'ai-strategy',
-      label: 'AI Strategy & Leadership',
-      description: 'Lead AI initiatives and drive organizational change',
-      icon: TrendingUp,
-      category: 'business'
-    },
-    {
-      id: 'recruitment',
-      label: 'Recruitment & Hiring',
-      description: 'Find and attract top talent with AI assistance',
-      icon: UserPlus,
-      category: 'business'
-    },
-    {
-      id: 'grow-sales',
-      label: 'Grow My Sales',
-      description: 'Generate leads, personalize outreach, close more deals',
+      id: 'finance',
+      label: 'Finance',
+      description: 'Invoice management, expense tracking, and financial reporting',
       icon: DollarSign,
-      category: 'business'
+      color: 'finance'
     },
     {
-      id: 'compliance-ethics',
-      label: 'AI Compliance & Ethics',
-      description: 'Ensure responsible AI use and regulatory compliance',
-      icon: Scale,
-      category: 'learning'
+      id: 'raise',
+      label: 'Raise',
+      description: 'Investor management, pitch decks, data rooms, and fundraising',
+      icon: TrendingUp,
+      color: 'raise'
     },
     {
-      id: 'creative-work',
-      label: 'AI for Creative Work',
-      description: 'Design, create content, and produce media with AI',
+      id: 'create',
+      label: 'Create',
+      description: 'Generate images, videos, and branded content using AI',
       icon: Palette,
-      category: 'creative'
+      color: 'create'
+    },
+    {
+      id: 'talent',
+      label: 'Talent',
+      description: 'AI-powered candidate sourcing, flight risk intelligence, and recruitment',
+      icon: UserPlus,
+      color: 'talent'
     },
   ];
 
-  const toggleGoal = (goalId) => {
+  const toggleApp = (appId) => {
     const current = data.selectedGoals || [];
-    const updated = current.includes(goalId)
-      ? current.filter(g => g !== goalId)
-      : [...current, goalId];
+    const updated = current.includes(appId)
+      ? current.filter(g => g !== appId)
+      : [...current, appId];
     onChange({ selectedGoals: updated });
   };
 
@@ -406,21 +417,21 @@ export function GoalsStep({ data, onChange, onNext, onBack }) {
         </div>
         <h2 className="text-2xl font-semibold text-white">What brings you here?</h2>
         <p className="text-zinc-500 text-sm max-w-sm mx-auto">
-          Select all that apply to personalize your experience
+          Select the apps you're interested in to personalize your experience
         </p>
       </div>
 
       <motion.div variants={stagger} className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
-        {goals.map((goal) => {
-          const isSelected = data.selectedGoals?.includes(goal.id);
-          const Icon = goal.icon;
-          const colors = categoryColors[goal.category];
+        {apps.map((app) => {
+          const isSelected = data.selectedGoals?.includes(app.id);
+          const Icon = app.icon;
+          const colors = appColors[app.color];
 
           return (
             <motion.button
-              key={goal.id}
+              key={app.id}
               variants={fadeIn}
-              onClick={() => toggleGoal(goal.id)}
+              onClick={() => toggleApp(app.id)}
               className={cn(
                 "p-4 rounded-xl text-left transition-all border group",
                 isSelected
@@ -443,13 +454,13 @@ export function GoalsStep({ data, onChange, onNext, onBack }) {
                     "text-sm font-medium mb-1",
                     isSelected ? "text-white" : "text-zinc-300"
                   )}>
-                    {goal.label}
+                    {app.label}
                   </h3>
                   <p className={cn(
                     "text-xs leading-relaxed",
                     isSelected ? "text-zinc-400" : "text-zinc-600"
                   )}>
-                    {goal.description}
+                    {app.description}
                   </p>
                 </div>
                 {isSelected && (
@@ -469,7 +480,7 @@ export function GoalsStep({ data, onChange, onNext, onBack }) {
           className="text-center"
         >
           <span className="text-sm text-zinc-500">
-            {selectedCount} goal{selectedCount !== 1 ? 's' : ''} selected
+            {selectedCount} app{selectedCount !== 1 ? 's' : ''} selected
           </span>
         </motion.div>
       )}
