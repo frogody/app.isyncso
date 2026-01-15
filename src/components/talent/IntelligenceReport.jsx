@@ -196,18 +196,26 @@ export const IntelligenceReport = ({ candidate, compact = false }) => {
     intelligence_score = 0,
     intelligence_level = "Low",
     intelligence_urgency = "Low",
-    intelligence_factors = [],
-    intelligence_timing = [],
+    intelligence_factors: rawFactors = [],
+    intelligence_timing: rawTiming = [],
     recommended_approach = "nurture",
     recommended_timeline = "",
     last_intelligence_update = null,
   } = candidate || {};
 
+  // Ensure intelligence_factors is an array (handle legacy object format {signals: [...]})
+  const intelligence_factors = Array.isArray(rawFactors)
+    ? rawFactors
+    : (rawFactors?.signals || []);
+
+  // Ensure intelligence_timing is an array
+  const intelligence_timing = Array.isArray(rawTiming) ? rawTiming : [];
+
   // Separate risk factors and opportunities
-  const riskFactors = intelligence_factors.filter(f => 
+  const riskFactors = intelligence_factors.filter(f =>
     typeof f === 'string' || f.type === 'risk' || !f.type
   );
-  const opportunities = intelligence_factors.filter(f => 
+  const opportunities = intelligence_factors.filter(f =>
     f.type === 'opportunity'
   );
 

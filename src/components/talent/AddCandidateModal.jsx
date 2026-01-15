@@ -169,9 +169,10 @@ export default function AddCandidateModal({ isOpen, onClose, onSuccess }) {
       const candidateData = {
         ...formData,
         organization_id: user.organization_id,
+        // Save as plain array (database expects jsonb array, not object)
         intelligence_factors: formData.intelligence_factors.length > 0
-          ? { signals: formData.intelligence_factors }
-          : null,
+          ? formData.intelligence_factors
+          : [],
       };
 
       const { data, error } = await supabase
