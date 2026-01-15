@@ -490,7 +490,7 @@ export default function TalentAnalytics() {
           .eq("organization_id", user.organization_id),
         supabase
           .from("outreach_tasks")
-          .select("*, candidates(name)")
+          .select("*, candidates(first_name, last_name)")
           .eq("organization_id", user.organization_id)
           .gte("created_at", startDate.toISOString()),
         supabase
@@ -523,7 +523,7 @@ export default function TalentAnalytics() {
       // Transform tasks to include candidate name
       const tasksWithNames = (tasksRes.data || []).map((task) => ({
         ...task,
-        candidate_name: task.candidates?.name || "Unknown",
+        candidate_name: task.candidates?.first_name ? `${task.candidates.first_name} ${task.candidates.last_name || ''}`.trim() : "Unknown",
       }));
 
       setCandidates(candidatesRes.data || []);

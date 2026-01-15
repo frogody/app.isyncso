@@ -109,7 +109,7 @@ const TaskRow = ({ task, isSelected, onToggle, onEdit }) => {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="font-medium text-white truncate">
-            {task.candidates?.name || task.candidate_name || "Unknown"}
+            {task.candidates?.first_name ? `${task.candidates.first_name} ${task.candidates.last_name || ''}`.trim() : (task.candidate_name || "Unknown")}
           </span>
           <StatusBadge status={task.status} />
         </div>
@@ -163,7 +163,7 @@ export default function OutreachQueue({ campaignId, compact = false }) {
     try {
       let query = supabase
         .from("outreach_tasks")
-        .select("*, candidates(name, email, current_company)")
+        .select("*, candidates(first_name, last_name, email, company_name)")
         .eq("organization_id", user.organization_id)
         .order("created_at", { ascending: false });
 
