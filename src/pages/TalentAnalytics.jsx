@@ -602,6 +602,7 @@ export default function TalentAnalytics() {
         <PageHeader
           title="Talent Analytics"
           subtitle="Pipeline metrics and recruitment performance"
+          color="red"
           actions={
             <div className="flex items-center gap-3">
               <Select value={timeRange} onValueChange={setTimeRange}>

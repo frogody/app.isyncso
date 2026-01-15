@@ -360,6 +360,7 @@ const TalentDashboard = () => {
         <PageHeader
           title="Talent"
           subtitle="Monitor candidate intelligence, track outreach campaigns, and identify high-potential recruits"
+          color="red"
         />
       </motion.div>
 

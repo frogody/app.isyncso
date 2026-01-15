@@ -1003,6 +1003,7 @@ export default function TalentProjects() {
         <PageHeader
           title="Recruitment Projects"
           subtitle="Manage hiring projects and open roles"
+          color="red"
           actions={
             <Button
               onClick={() => {

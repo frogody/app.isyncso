@@ -543,9 +543,9 @@ export default function TalentCandidates() {
       <div className="flex items-center justify-between">
         <PageHeader
           title="Candidates"
-          description={`${filteredCandidates.length} candidates in your talent pool`}
+          subtitle={`${filteredCandidates.length} candidates in your talent pool`}
           icon={Users}
-          iconColor="red"
+          color="red"
         />
         <Button
           onClick={() => setShowAddModal(true)}

@@ -666,9 +666,9 @@ export default function TalentCampaigns() {
       <div className="flex items-center justify-between">
         <PageHeader
           title="Campaigns"
-          description="Manage your outreach campaigns"
+          subtitle="Manage your outreach campaigns"
           icon={Megaphone}
-          iconColor="red"
+          color="red"
         />
         <Button
           onClick={() => setShowCreateModal(true)}
