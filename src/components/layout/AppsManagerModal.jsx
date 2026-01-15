@@ -115,9 +115,10 @@ const AVAILABLE_APPS = [
     name: 'Talent',
     description: 'AI-powered recruitment & candidate intelligence',
     icon: Users,
-    color: 'violet',
+    color: 'red',
     defaultEnabled: true,
     widgets: [],
+    widgetsComingSoon: true,
     purpose: 'Streamline recruitment with AI-driven candidate intelligence and automated outreach.',
     capabilities: [
       { icon: Brain, text: 'Flight risk intelligence scoring' },
@@ -171,6 +172,14 @@ const COLOR_CLASSES = {
     activeBg: 'bg-violet-950/60',
     iconBg: 'bg-violet-500/20',
     gradient: 'from-violet-500/20 to-violet-500/5'
+  },
+  red: {
+    bg: 'bg-red-950/40',
+    border: 'border-red-500/30',
+    text: 'text-red-400',
+    activeBg: 'bg-red-950/60',
+    iconBg: 'bg-red-500/20',
+    gradient: 'from-red-500/20 to-red-500/5'
   },
   pink: {
     bg: 'bg-pink-950/40',
@@ -483,81 +492,95 @@ export default function AppsManagerModal({ isOpen, onClose, onConfigUpdate }) {
                       <LayoutGrid className="w-4 h-4" />
                       Dashboard Widgets
                     </h4>
-                    <span className="text-xs text-zinc-600">
-                      {enabledWidgets.filter(w => selectedAppData.widgets.some(sw => sw.id === w)).length}/{selectedAppData.widgets.length} enabled
-                    </span>
+                    {selectedAppData.widgets.length > 0 && (
+                      <span className="text-xs text-zinc-600">
+                        {enabledWidgets.filter(w => selectedAppData.widgets.some(sw => sw.id === w)).length}/{selectedAppData.widgets.length} enabled
+                      </span>
+                    )}
                   </div>
 
                   {/* Widget Grid - Scrollable */}
-                  <ScrollArea className="flex-1">
-                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 pb-4 pr-2">
-                    {selectedAppData.widgets.map((widget) => {
-                      const isWidgetEnabled = enabledWidgets.includes(widget.id);
-                      const colors = COLOR_CLASSES[selectedAppData.color];
-                      
-                      return (
-                        <div 
-                          key={widget.id}
-                          className={widget.size === 'large' ? 'col-span-2' : ''}
-                        >
-                          <div 
-                            className={`
-                              relative rounded-xl border-2 overflow-hidden transition-all cursor-pointer h-full
-                              ${isWidgetEnabled 
-                                ? `${colors.border} bg-gradient-to-b ${colors.gradient}` 
-                                : 'border-zinc-800 bg-zinc-800/30 opacity-60 hover:opacity-80'
-                              }
-                            `}
-                            onClick={() => toggleWidget(widget.id)}
-                          >
-                            {/* Preview Container */}
-                            <div className="p-3 h-28 overflow-hidden relative">
-                              <WidgetPreview 
-                                widgetId={widget.id} 
-                                appId={selectedAppData.id}
-                                size={widget.size}
-                              />
-                              
-                              {/* Overlay gradient */}
-                              <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-zinc-900/90 to-transparent" />
-                            </div>
-                            
-                            {/* Widget Info */}
-                            <div className="p-2 pt-0 relative">
-                              <div className="flex items-center justify-between">
-                                <div className="min-w-0 flex-1">
-                                  <h5 className="text-xs font-medium text-zinc-200 truncate">{widget.name}</h5>
-                                  <p className="text-[10px] text-zinc-500">{widget.size}</p>
-                                </div>
-                                <div className={`
-                                  w-6 h-6 rounded-lg flex items-center justify-center transition-colors flex-shrink-0 ml-2
-                                  ${isWidgetEnabled 
-                                    ? `${colors.iconBg} ${colors.text}` 
-                                    : 'bg-zinc-800 text-zinc-500'
-                                  }
-                                `}>
-                                  {isWidgetEnabled ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-                                </div>
-                              </div>
-                            </div>
+                  {selectedAppData.widgets.length > 0 ? (
+                    <ScrollArea className="flex-1">
+                      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 pb-4 pr-2">
+                      {selectedAppData.widgets.map((widget) => {
+                        const isWidgetEnabled = enabledWidgets.includes(widget.id);
+                        const colors = COLOR_CLASSES[selectedAppData.color];
 
-                            {/* Selection indicator */}
-                            {isWidgetEnabled && (
-                              <div className={`absolute top-2 right-2 w-4 h-4 rounded-full ${colors.iconBg} ${colors.border} border flex items-center justify-center`}>
-                                <Check className={`w-2.5 h-2.5 ${colors.text}`} />
+                        return (
+                          <div
+                            key={widget.id}
+                            className={widget.size === 'large' ? 'col-span-2' : ''}
+                          >
+                            <div
+                              className={`
+                                relative rounded-xl border-2 overflow-hidden transition-all cursor-pointer h-full
+                                ${isWidgetEnabled
+                                  ? `${colors.border} bg-gradient-to-b ${colors.gradient}`
+                                  : 'border-zinc-800 bg-zinc-800/30 opacity-60 hover:opacity-80'
+                                }
+                              `}
+                              onClick={() => toggleWidget(widget.id)}
+                            >
+                              {/* Preview Container */}
+                              <div className="p-3 h-28 overflow-hidden relative">
+                                <WidgetPreview
+                                  widgetId={widget.id}
+                                  appId={selectedAppData.id}
+                                  size={widget.size}
+                                />
+
+                                {/* Overlay gradient */}
+                                <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-zinc-900/90 to-transparent" />
                               </div>
-                            )}
+
+                              {/* Widget Info */}
+                              <div className="p-2 pt-0 relative">
+                                <div className="flex items-center justify-between">
+                                  <div className="min-w-0 flex-1">
+                                    <h5 className="text-xs font-medium text-zinc-200 truncate">{widget.name}</h5>
+                                    <p className="text-[10px] text-zinc-500">{widget.size}</p>
+                                  </div>
+                                  <div className={`
+                                    w-6 h-6 rounded-lg flex items-center justify-center transition-colors flex-shrink-0 ml-2
+                                    ${isWidgetEnabled
+                                      ? `${colors.iconBg} ${colors.text}`
+                                      : 'bg-zinc-800 text-zinc-500'
+                                    }
+                                  `}>
+                                    {isWidgetEnabled ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Selection indicator */}
+                              {isWidgetEnabled && (
+                                <div className={`absolute top-2 right-2 w-4 h-4 rounded-full ${colors.iconBg} ${colors.border} border flex items-center justify-center`}>
+                                  <Check className={`w-2.5 h-2.5 ${colors.text}`} />
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                      </div>
+                    </ScrollArea>
+                  ) : (
+                    <div className="flex-1 flex items-center justify-center">
+                      <div className={`text-center p-8 rounded-xl border border-dashed ${COLOR_CLASSES[selectedAppData.color].border} ${COLOR_CLASSES[selectedAppData.color].bg}`}>
+                        <Clock className={`w-8 h-8 mx-auto mb-3 ${COLOR_CLASSES[selectedAppData.color].text}`} />
+                        <h4 className="text-sm font-medium text-zinc-300 mb-1">Widgets Coming Soon</h4>
+                        <p className="text-xs text-zinc-500">Dashboard widgets for {selectedAppData.name} are in development</p>
+                      </div>
                     </div>
-                  </ScrollArea>
+                  )}
 
                   {/* Description */}
-                  <p className="text-xs text-zinc-600 mt-2">
-                    Click on a widget to toggle its visibility on your dashboard
-                  </p>
+                  {selectedAppData.widgets.length > 0 && (
+                    <p className="text-xs text-zinc-600 mt-2">
+                      Click on a widget to toggle its visibility on your dashboard
+                    </p>
+                  )}
                 </>
               ) : (
                 <div className="flex-1 flex items-center justify-center text-center">

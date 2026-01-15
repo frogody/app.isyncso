@@ -4,7 +4,7 @@ import {
   GraduationCap, Rocket, Shield, Sparkles, Check,
   ChevronLeft, ChevronRight, Plus, LayoutGrid,
   Users, Palette, TrendingUp, Lock, Clock, Brain,
-  DollarSign, Package, Plug, MessageSquare
+  DollarSign, Package
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -41,7 +41,7 @@ const ALL_APPS = [
   {
     id: 'growth',
     name: 'Growth',
-    shortDesc: 'Sales pipeline & CRM',
+    shortDesc: 'Sales pipeline',
     description: 'AI-powered prospecting, pipeline management, and multi-channel outreach campaigns.',
     icon: Rocket,
     features: ['Smart prospecting', 'Pipeline tracking', 'Buying signals', 'Campaign automation'],
@@ -56,7 +56,7 @@ const ALL_APPS = [
     icon: Users,
     features: ['Candidate intelligence', 'Flight risk scoring', 'Recruitment pipeline', 'Outreach campaigns'],
     recommendedFor: ['recruitment', 'ai-strategy'],
-    color: 'violet'
+    color: 'red'
   },
   {
     id: 'finance',
@@ -110,18 +110,8 @@ const ALL_APPS = [
   }
 ];
 
-// Coming Soon apps - future capabilities
-const COMING_SOON_APPS = [
-  {
-    id: 'inbox',
-    name: 'Inbox',
-    shortDesc: 'Unified messaging',
-    description: 'Centralized messaging hub connecting all your communication channels in one place.',
-    icon: MessageSquare,
-    features: ['Multi-channel inbox', 'AI responses', 'Team collaboration', 'Smart routing'],
-    color: 'sky'
-  }
-];
+// Coming Soon apps - future capabilities (not base package features)
+const COMING_SOON_APPS = [];
 
 const MAX_MAIN_APPS = 6;
 
@@ -131,6 +121,7 @@ const APP_COLORS = {
   cyan: { border: 'border-cyan-500/50', bg: 'bg-cyan-500/10', text: 'text-cyan-400', iconBg: 'bg-cyan-500/20' },
   indigo: { border: 'border-indigo-500/50', bg: 'bg-indigo-500/10', text: 'text-indigo-400', iconBg: 'bg-indigo-500/20' },
   violet: { border: 'border-violet-500/50', bg: 'bg-violet-500/10', text: 'text-violet-400', iconBg: 'bg-violet-500/20' },
+  red: { border: 'border-red-500/50', bg: 'bg-red-500/10', text: 'text-red-400', iconBg: 'bg-red-500/20' },
   amber: { border: 'border-amber-500/50', bg: 'bg-amber-500/10', text: 'text-amber-400', iconBg: 'bg-amber-500/20' },
   sage: { border: 'border-[#86EFAC]/50', bg: 'bg-[#86EFAC]/10', text: 'text-[#86EFAC]', iconBg: 'bg-[#86EFAC]/20' },
   orange: { border: 'border-orange-500/50', bg: 'bg-orange-500/10', text: 'text-orange-400', iconBg: 'bg-orange-500/20' },
