@@ -111,8 +111,8 @@ export default function AddCandidateModal({ isOpen, onClose, onSuccess }) {
     contact_status: "new",
     // Intelligence
     intelligence_score: 50,
-    intelligence_level: "Medium",
-    intelligence_urgency: "Medium",
+    intelligence_level: "medium",
+    intelligence_urgency: "medium",
     recommended_approach: "direct",
     intelligence_factors: [],
   });
@@ -201,8 +201,8 @@ export default function AddCandidateModal({ isOpen, onClose, onSuccess }) {
         status_notes: "",
         contact_status: "new",
         intelligence_score: 50,
-        intelligence_level: "Medium",
-        intelligence_urgency: "Medium",
+        intelligence_level: "medium",
+        intelligence_urgency: "medium",
         recommended_approach: "direct",
         intelligence_factors: [],
       });
