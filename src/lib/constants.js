@@ -74,12 +74,12 @@ export const THEME_COLORS = {
     glow: 'shadow-[0_0_10px_rgba(244,63,94,0.5)]'
   },
   talent: {
-    // Violet/Purple
-    text: 'text-violet-400',
-    bg: 'bg-violet-500/10',
-    border: 'border-violet-500/20',
-    solid: 'bg-violet-500',
-    glow: 'shadow-[0_0_10px_rgba(139,92,246,0.5)]'
+    // Red
+    text: 'text-red-400',
+    bg: 'bg-red-500/10',
+    border: 'border-red-500/20',
+    solid: 'bg-red-500',
+    glow: 'shadow-[0_0_10px_rgba(239,68,68,0.5)]'
   },
   default: {
     // Cyan (matches primary brand)

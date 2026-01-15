@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { db } from "@/api/supabaseClient";
 
 const STEP_TYPES = [
-  { id: 'email', label: 'Email', icon: Mail, color: 'from-violet-500 to-violet-600' },
+  { id: 'email', label: 'Email', icon: Mail, color: 'from-red-500 to-red-600' },
   { id: 'linkedin_connection', label: 'LinkedIn Connect', icon: Linkedin, color: 'from-blue-500 to-blue-600' },
   { id: 'linkedin_message', label: 'LinkedIn Message', icon: Linkedin, color: 'from-blue-500 to-blue-600' },
   { id: 'call', label: 'Phone Call', icon: Phone, color: 'from-amber-500 to-amber-600' },

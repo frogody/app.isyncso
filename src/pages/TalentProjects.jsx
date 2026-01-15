@@ -142,7 +142,7 @@ const ProgressRing = ({ filled, total, size = 40, strokeWidth = 3 }) => {
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#8b5cf6"
+          stroke="#ef4444"
           strokeWidth={strokeWidth}
           strokeLinecap="round"
           strokeDasharray={circumference}
@@ -161,7 +161,7 @@ const RoleCard = ({ role, onEdit, onDelete }) => {
   return (
     <motion.div
       variants={itemVariants}
-      className="p-4 bg-zinc-800/30 rounded-lg border border-zinc-700/30 hover:border-violet-500/20 transition-all"
+      className="p-4 bg-zinc-800/30 rounded-lg border border-zinc-700/30 hover:border-red-500/20 transition-all"
     >
       <div className="flex items-start justify-between mb-3">
         <div>
@@ -188,7 +188,7 @@ const RoleCard = ({ role, onEdit, onDelete }) => {
 
       <div className="flex items-center justify-between pt-3 border-t border-zinc-700/30">
         <div className="flex items-center gap-2">
-          <Users className="w-4 h-4 text-violet-400" />
+          <Users className="w-4 h-4 text-red-400" />
           <span className="text-sm text-white/70">
             {role.candidates_matched || 0} candidates matched
           </span>
@@ -220,7 +220,7 @@ const ProjectCard = ({ project, roles, onEdit, onDelete, onViewRoles, onAddRole 
 
   return (
     <motion.div variants={itemVariants}>
-      <GlassCard className="p-6 hover:border-violet-500/30 transition-all duration-300">
+      <GlassCard className="p-6 hover:border-red-500/30 transition-all duration-300">
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
@@ -317,7 +317,7 @@ const ProjectCard = ({ project, roles, onEdit, onDelete, onViewRoles, onAddRole 
             variant="ghost"
             size="sm"
             onClick={() => onViewRoles(project)}
-            className="text-violet-400 hover:text-violet-300"
+            className="text-red-400 hover:text-red-300"
           >
             View Roles
             <ChevronRight className="w-4 h-4 ml-1" />
@@ -524,7 +524,7 @@ const ProjectModal = ({ isOpen, onClose, project, onSave }) => {
           <Button
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="bg-violet-600 hover:bg-violet-700"
+            className="bg-red-600 hover:bg-red-700"
           >
             {isSubmitting ? (
               <>
@@ -717,7 +717,7 @@ const RoleModal = ({ isOpen, onClose, role, projectId, onSave }) => {
           <Button
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="bg-violet-600 hover:bg-violet-700"
+            className="bg-red-600 hover:bg-red-700"
           >
             {isSubmitting ? (
               <>
@@ -763,7 +763,7 @@ const RolesPanel = ({ project, roles, onClose, onEditRole, onDeleteRole, onAddRo
 
             <Button
               onClick={() => onAddRole(project)}
-              className="w-full mb-6 bg-violet-600 hover:bg-violet-700"
+              className="w-full mb-6 bg-red-600 hover:bg-red-700"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Role
@@ -1009,7 +1009,7 @@ export default function TalentProjects() {
                 setEditingProject(null);
                 setProjectModalOpen(true);
               }}
-              className="bg-violet-600 hover:bg-violet-700"
+              className="bg-red-600 hover:bg-red-700"
             >
               <Plus className="w-4 h-4 mr-2" />
               New Project
@@ -1029,7 +1029,7 @@ export default function TalentProjects() {
               title="Active Projects"
               value={stats.activeProjects}
               icon={Briefcase}
-              color="violet"
+              color="red"
             />
           </motion.div>
           <motion.div variants={itemVariants}>
@@ -1112,7 +1112,7 @@ export default function TalentProjects() {
                   setEditingProject(null);
                   setProjectModalOpen(true);
                 }}
-                className="bg-violet-600 hover:bg-violet-700"
+                className="bg-red-600 hover:bg-red-700"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 New Project

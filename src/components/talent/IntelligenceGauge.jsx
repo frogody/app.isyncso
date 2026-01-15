@@ -181,7 +181,7 @@ export const UrgencyBadge = ({ urgency }) => {
 export const ApproachBadge = ({ approach }) => {
   const styles = {
     immediate: { bg: "bg-red-500/20", text: "text-red-400", label: "Immediate" },
-    targeted: { bg: "bg-violet-500/20", text: "text-violet-400", label: "Targeted" },
+    targeted: { bg: "bg-red-500/20", text: "text-red-400", label: "Targeted" },
     nurture: { bg: "bg-blue-500/20", text: "text-blue-400", label: "Nurture" },
   };
 

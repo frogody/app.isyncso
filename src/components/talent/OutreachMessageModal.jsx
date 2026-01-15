@@ -213,14 +213,14 @@ Return as JSON with ${formData.task_type === "email" ? '"subject" and "content"'
       <DialogContent className="sm:max-w-[550px] bg-zinc-900 border-zinc-800 text-white">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-violet-400" />
+            <MessageSquare className="w-5 h-5 text-red-400" />
             {task ? "Edit Outreach Message" : "Compose Outreach Message"}
           </DialogTitle>
         </DialogHeader>
 
         {candidate && (
           <div className="flex items-center gap-3 p-3 bg-zinc-800/50 rounded-lg border border-zinc-700/50">
-            <div className="w-10 h-10 rounded-full bg-violet-500/20 flex items-center justify-center text-violet-400 font-semibold">
+            <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center text-red-400 font-semibold">
               {candidate.name?.charAt(0).toUpperCase()}
             </div>
             <div>
@@ -285,7 +285,7 @@ Return as JSON with ${formData.task_type === "email" ? '"subject" and "content"'
                 size="sm"
                 onClick={generateMessage}
                 disabled={isGenerating || !candidate}
-                className="text-violet-400 hover:text-violet-300 hover:bg-violet-500/10"
+                className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
               >
                 {isGenerating ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -350,7 +350,7 @@ Return as JSON with ${formData.task_type === "email" ? '"subject" and "content"'
               type="button"
               onClick={() => handleSubmit("pending")}
               disabled={isSubmitting}
-              className="bg-violet-500 hover:bg-violet-600"
+              className="bg-red-500 hover:bg-red-600"
             >
               {isSubmitting ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />

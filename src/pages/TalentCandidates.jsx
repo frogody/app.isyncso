@@ -98,7 +98,7 @@ const CandidateAvatar = ({ name, image, size = "md" }) => {
 
   return (
     <div
-      className={`${sizes[size]} rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center font-medium text-white ring-2 ring-white/10`}
+      className={`${sizes[size]} rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center font-medium text-white ring-2 ring-white/10`}
     >
       {initials}
     </div>
@@ -138,7 +138,7 @@ const FilterDropdown = ({ label, value, options, onChange, icon: Icon }) => {
                     setIsOpen(false);
                   }}
                   className={`w-full px-4 py-2 text-left text-sm hover:bg-white/10 transition-colors ${
-                    value === option.value ? "bg-violet-500/20 text-violet-400" : "text-white/70"
+                    value === option.value ? "bg-red-500/20 text-red-400" : "text-white/70"
                   }`}
                 >
                   {option.label}
@@ -168,7 +168,7 @@ const CandidateCard = ({ candidate, isSelected, onToggle, onClick, onEdit }) => 
           className="border-zinc-600 bg-zinc-800/80"
         />
       </div>
-      <GlassCard className="p-4 hover:border-violet-500/30 transition-all duration-300" onClick={onClick}>
+      <GlassCard className="p-4 hover:border-red-500/30 transition-all duration-300" onClick={onClick}>
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3 ml-6">
             <CandidateAvatar name={candidate.name} image={candidate.avatar_url} size="lg" />
@@ -521,32 +521,35 @@ export default function TalentCandidates() {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-10 w-64" />
-          <Skeleton className="h-10 w-32" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {[...Array(8)].map((_, i) => (
-            <Skeleton key={i} className="h-48 rounded-xl" />
-          ))}
+      <div className="min-h-screen p-6">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-10 w-64" />
+            <Skeleton className="h-10 w-32" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {[...Array(8)].map((_, i) => (
+              <Skeleton key={i} className="h-48 rounded-xl" />
+            ))}
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-h-screen p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <PageHeader
           title="Candidates"
           description={`${filteredCandidates.length} candidates in your talent pool`}
           icon={Users}
-          iconColor="violet"
+          iconColor="red"
         />
         <Button
           onClick={() => setShowAddModal(true)}
-          className="bg-violet-500 hover:bg-violet-600"
+          className="bg-red-500 hover:bg-red-600"
         >
           <Plus className="w-4 h-4 mr-2" />
           Add Candidate
@@ -565,7 +568,7 @@ export default function TalentCandidates() {
                 placeholder="Search candidates..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-violet-500/50"
+                className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-red-500/50"
               />
             </div>
           </div>
@@ -600,7 +603,7 @@ export default function TalentCandidates() {
             <button
               onClick={() => setViewMode("grid")}
               className={`p-2 rounded-lg transition-colors ${
-                viewMode === "grid" ? "bg-violet-500/20 text-violet-400" : "text-white/60 hover:text-white"
+                viewMode === "grid" ? "bg-red-500/20 text-red-400" : "text-white/60 hover:text-white"
               }`}
             >
               <Grid3X3 className="w-4 h-4" />
@@ -608,7 +611,7 @@ export default function TalentCandidates() {
             <button
               onClick={() => setViewMode("table")}
               className={`p-2 rounded-lg transition-colors ${
-                viewMode === "table" ? "bg-violet-500/20 text-violet-400" : "text-white/60 hover:text-white"
+                viewMode === "table" ? "bg-red-500/20 text-red-400" : "text-white/60 hover:text-white"
               }`}
             >
               <List className="w-4 h-4" />
@@ -751,7 +754,7 @@ export default function TalentCandidates() {
               ? "Try adjusting your filters or search query"
               : "Start building your talent pool by adding candidates"}
           </p>
-          <Button onClick={() => setShowAddModal(true)} className="bg-violet-500 hover:bg-violet-600">
+          <Button onClick={() => setShowAddModal(true)} className="bg-red-500 hover:bg-red-600">
             <Plus className="w-4 h-4 mr-2" />
             Add First Candidate
           </Button>
@@ -782,7 +785,7 @@ export default function TalentCandidates() {
                   onClick={() => setCurrentPage(page)}
                   className={`w-8 h-8 rounded-lg transition-colors ${
                     currentPage === page
-                      ? "bg-violet-500/20 text-violet-400"
+                      ? "bg-red-500/20 text-red-400"
                       : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
                   }`}
                 >
@@ -851,6 +854,7 @@ export default function TalentCandidates() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </div>
     </div>
   );
 }

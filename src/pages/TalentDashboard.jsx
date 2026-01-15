@@ -83,7 +83,7 @@ const StatusBadge = ({ status }) => {
     completed: "bg-green-500/10 text-green-400 border-green-500/20",
     failed: "bg-red-500/10 text-red-400 border-red-500/20",
     scheduled: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-    in_progress: "bg-violet-500/10 text-violet-400 border-violet-500/20",
+    in_progress: "bg-red-500/10 text-red-400 border-red-500/20",
   };
 
   const statusIcons = {
@@ -109,7 +109,7 @@ const StatusBadge = ({ status }) => {
 // Task Type Icon Component
 const TaskTypeIcon = ({ type }) => {
   const icons = {
-    email: <Mail className="w-4 h-4 text-violet-400" />,
+    email: <Mail className="w-4 h-4 text-red-400" />,
     call: <Phone className="w-4 h-4 text-cyan-400" />,
     meeting: <Calendar className="w-4 h-4 text-green-400" />,
     linkedin: <Target className="w-4 h-4 text-blue-400" />,
@@ -124,14 +124,14 @@ const CandidateRow = ({ candidate, index }) => {
     <Link to={createPageUrl("TalentCandidateProfile") + `?id=${candidate.id}`}>
       <motion.div
         variants={itemVariants}
-        className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg border border-zinc-700/50 hover:border-violet-500/30 transition-all duration-200 group cursor-pointer"
+        className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg border border-zinc-700/50 hover:border-red-500/30 transition-all duration-200 group cursor-pointer"
       >
         <div className="flex items-center gap-4">
-          <div className="w-8 h-8 rounded-full bg-violet-500/20 flex items-center justify-center text-violet-400 font-semibold text-sm">
+          <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center text-red-400 font-semibold text-sm">
             {index + 1}
           </div>
           <div>
-            <h4 className="text-sm font-medium text-zinc-200 group-hover:text-violet-300 transition-colors">
+            <h4 className="text-sm font-medium text-zinc-200 group-hover:text-red-300 transition-colors">
               {candidate.name || "Unknown Candidate"}
             </h4>
             <div className="flex items-center gap-1 text-xs text-zinc-500">
@@ -147,7 +147,7 @@ const CandidateRow = ({ candidate, index }) => {
               {candidate.recommended_approach || "No recommendation"}
             </p>
           </div>
-          <ArrowRight className="w-4 h-4 text-zinc-600 group-hover:text-violet-400 transition-colors" />
+          <ArrowRight className="w-4 h-4 text-zinc-600 group-hover:text-red-400 transition-colors" />
         </div>
       </motion.div>
     </Link>
@@ -174,7 +174,7 @@ const OutreachItem = ({ task }) => {
   return (
     <motion.div
       variants={itemVariants}
-      className="flex items-start gap-3 p-3 bg-zinc-800/30 rounded-lg border border-zinc-700/30 hover:border-violet-500/20 transition-all duration-200"
+      className="flex items-start gap-3 p-3 bg-zinc-800/30 rounded-lg border border-zinc-700/30 hover:border-red-500/20 transition-all duration-200"
     >
       <div className="p-2 rounded-lg bg-zinc-700/50">
         <TaskTypeIcon type={task.task_type} />
@@ -240,8 +240,8 @@ const OutreachItemSkeleton = () => (
 // Empty State Component
 const EmptyState = ({ icon: Icon, title, description }) => (
   <div className="flex flex-col items-center justify-center py-12 text-center">
-    <div className="p-4 rounded-full bg-violet-500/10 mb-4">
-      <Icon className="w-8 h-8 text-violet-400" />
+    <div className="p-4 rounded-full bg-red-500/10 mb-4">
+      <Icon className="w-8 h-8 text-red-400" />
     </div>
     <h3 className="text-lg font-medium text-zinc-300 mb-2">{title}</h3>
     <p className="text-sm text-zinc-500 max-w-sm">{description}</p>
@@ -348,12 +348,13 @@ const TalentDashboard = () => {
   }, [outreachTasks]);
 
   return (
-    <motion.div
-      initial="hidden"
-      animate="visible"
-      variants={containerVariants}
-      className="min-h-screen p-6 space-y-6"
-    >
+    <div className="min-h-screen p-6">
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+        className="max-w-7xl mx-auto space-y-6"
+      >
       {/* Page Header */}
       <motion.div variants={itemVariants}>
         <PageHeader
@@ -377,13 +378,13 @@ const TalentDashboard = () => {
               label="Total Candidates"
               value={stats.totalCandidates}
               icon={Users}
-              color="purple"
+              color="red"
             />
             <StatCard
               label="Active Campaigns"
               value={stats.activeCampaigns}
               icon={Megaphone}
-              color="purple"
+              color="red"
             />
             <StatCard
               label="High Flight Risk"
@@ -422,8 +423,8 @@ const TalentDashboard = () => {
           <GlassCard className="p-6">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-violet-500/10">
-                  <TrendingUp className="w-5 h-5 text-violet-400" />
+                <div className="p-2 rounded-lg bg-red-500/10">
+                  <TrendingUp className="w-5 h-5 text-red-400" />
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-zinc-200">
@@ -436,7 +437,7 @@ const TalentDashboard = () => {
               </div>
               <Link
                 to={createPageUrl("TalentCandidates")}
-                className="text-sm text-violet-400 hover:text-violet-300 transition-colors flex items-center gap-1"
+                className="text-sm text-red-400 hover:text-red-300 transition-colors flex items-center gap-1"
               >
                 View all
                 <ArrowRight className="w-4 h-4" />
@@ -478,8 +479,8 @@ const TalentDashboard = () => {
           <GlassCard className="p-6 h-full">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-violet-500/10">
-                  <Activity className="w-5 h-5 text-violet-400" />
+                <div className="p-2 rounded-lg bg-red-500/10">
+                  <Activity className="w-5 h-5 text-red-400" />
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-zinc-200">
@@ -520,8 +521,8 @@ const TalentDashboard = () => {
       <motion.div variants={itemVariants}>
         <GlassCard className="p-6">
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 rounded-lg bg-violet-500/10">
-              <Target className="w-5 h-5 text-violet-400" />
+            <div className="p-2 rounded-lg bg-red-500/10">
+              <Target className="w-5 h-5 text-red-400" />
             </div>
             <h2 className="text-lg font-semibold text-zinc-200">Quick Actions</h2>
           </div>
@@ -532,13 +533,13 @@ const TalentDashboard = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setShowAddCandidate(true)}
-              className="flex items-center gap-4 p-4 bg-gradient-to-r from-violet-500/10 to-purple-500/10 hover:from-violet-500/20 hover:to-purple-500/20 rounded-xl border border-violet-500/20 hover:border-violet-500/40 transition-all duration-200 group"
+              className="flex items-center gap-4 p-4 bg-gradient-to-r from-red-500/10 to-red-600/10 hover:from-red-500/20 hover:to-red-600/20 rounded-xl border border-red-500/20 hover:border-red-500/40 transition-all duration-200 group"
             >
-              <div className="p-3 rounded-lg bg-violet-500/20 group-hover:bg-violet-500/30 transition-colors">
-                <Plus className="w-6 h-6 text-violet-400" />
+              <div className="p-3 rounded-lg bg-red-500/20 group-hover:bg-red-500/30 transition-colors">
+                <Plus className="w-6 h-6 text-red-400" />
               </div>
               <div className="text-left">
-                <h3 className="text-sm font-medium text-zinc-200 group-hover:text-violet-300 transition-colors">
+                <h3 className="text-sm font-medium text-zinc-200 group-hover:text-red-300 transition-colors">
                   Add Candidate
                 </h3>
                 <p className="text-xs text-zinc-500">
@@ -552,13 +553,13 @@ const TalentDashboard = () => {
               <motion.div
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="flex items-center gap-4 p-4 bg-zinc-800/50 hover:bg-zinc-800/70 rounded-xl border border-zinc-700/50 hover:border-violet-500/30 transition-all duration-200 group h-full"
+                className="flex items-center gap-4 p-4 bg-zinc-800/50 hover:bg-zinc-800/70 rounded-xl border border-zinc-700/50 hover:border-red-500/30 transition-all duration-200 group h-full"
               >
-                <div className="p-3 rounded-lg bg-zinc-700/50 group-hover:bg-violet-500/20 transition-colors">
-                  <Megaphone className="w-6 h-6 text-zinc-400 group-hover:text-violet-400 transition-colors" />
+                <div className="p-3 rounded-lg bg-zinc-700/50 group-hover:bg-red-500/20 transition-colors">
+                  <Megaphone className="w-6 h-6 text-zinc-400 group-hover:text-red-400 transition-colors" />
                 </div>
                 <div className="text-left">
-                  <h3 className="text-sm font-medium text-zinc-200 group-hover:text-violet-300 transition-colors">
+                  <h3 className="text-sm font-medium text-zinc-200 group-hover:text-red-300 transition-colors">
                     Create Campaign
                   </h3>
                   <p className="text-xs text-zinc-500">
@@ -572,13 +573,13 @@ const TalentDashboard = () => {
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="flex items-center gap-4 p-4 bg-zinc-800/50 hover:bg-zinc-800/70 rounded-xl border border-zinc-700/50 hover:border-violet-500/30 transition-all duration-200 group"
+              className="flex items-center gap-4 p-4 bg-zinc-800/50 hover:bg-zinc-800/70 rounded-xl border border-zinc-700/50 hover:border-red-500/30 transition-all duration-200 group"
             >
-              <div className="p-3 rounded-lg bg-zinc-700/50 group-hover:bg-violet-500/20 transition-colors">
-                <FileText className="w-6 h-6 text-zinc-400 group-hover:text-violet-400 transition-colors" />
+              <div className="p-3 rounded-lg bg-zinc-700/50 group-hover:bg-red-500/20 transition-colors">
+                <FileText className="w-6 h-6 text-zinc-400 group-hover:text-red-400 transition-colors" />
               </div>
               <div className="text-left">
-                <h3 className="text-sm font-medium text-zinc-200 group-hover:text-violet-300 transition-colors">
+                <h3 className="text-sm font-medium text-zinc-200 group-hover:text-red-300 transition-colors">
                   Intelligence Report
                 </h3>
                 <p className="text-xs text-zinc-500">
@@ -592,13 +593,13 @@ const TalentDashboard = () => {
               <motion.div
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="flex items-center gap-4 p-4 bg-zinc-800/50 hover:bg-zinc-800/70 rounded-xl border border-zinc-700/50 hover:border-violet-500/30 transition-all duration-200 group h-full"
+                className="flex items-center gap-4 p-4 bg-zinc-800/50 hover:bg-zinc-800/70 rounded-xl border border-zinc-700/50 hover:border-red-500/30 transition-all duration-200 group h-full"
               >
-                <div className="p-3 rounded-lg bg-zinc-700/50 group-hover:bg-violet-500/20 transition-colors">
-                  <Upload className="w-6 h-6 text-zinc-400 group-hover:text-violet-400 transition-colors" />
+                <div className="p-3 rounded-lg bg-zinc-700/50 group-hover:bg-red-500/20 transition-colors">
+                  <Upload className="w-6 h-6 text-zinc-400 group-hover:text-red-400 transition-colors" />
                 </div>
                 <div className="text-left">
-                  <h3 className="text-sm font-medium text-zinc-200 group-hover:text-violet-300 transition-colors">
+                  <h3 className="text-sm font-medium text-zinc-200 group-hover:text-red-300 transition-colors">
                     Import Candidates
                   </h3>
                   <p className="text-xs text-zinc-500">
@@ -627,7 +628,8 @@ const TalentDashboard = () => {
           setShowAddCandidate(false);
         }}
       />
-    </motion.div>
+      </motion.div>
+    </div>
   );
 };
 

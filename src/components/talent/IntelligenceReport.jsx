@@ -103,10 +103,10 @@ const TimingSignal = ({ signal }) => {
   return (
     <motion.div 
       variants={itemVariants}
-      className="flex items-start gap-3 p-3 bg-violet-500/10 border border-violet-500/20 rounded-lg"
+      className="flex items-start gap-3 p-3 bg-red-500/10 border border-red-500/20 rounded-lg"
     >
-      <div className="w-8 h-8 rounded-full bg-violet-500/20 flex items-center justify-center flex-shrink-0">
-        <Icon className="w-4 h-4 text-violet-400" />
+      <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
+        <Icon className="w-4 h-4 text-red-400" />
       </div>
       <div className="flex-1">
         <p className="text-sm text-white/80">{signal.description || signal}</p>
@@ -115,7 +115,7 @@ const TimingSignal = ({ signal }) => {
         )}
       </div>
       {signal.relevance && (
-        <span className="text-xs text-violet-400 font-medium">{signal.relevance}</span>
+        <span className="text-xs text-red-400 font-medium">{signal.relevance}</span>
       )}
     </motion.div>
   );
@@ -136,11 +136,11 @@ const RecommendationCard = ({ approach, timeline, reasoning }) => {
       description: "High flight risk detected. Engage within 24-48 hours."
     },
     targeted: {
-      bg: "bg-violet-500/10",
-      border: "border-violet-500/30",
-      iconBg: "bg-violet-500/20",
+      bg: "bg-red-500/10",
+      border: "border-red-500/30",
+      iconBg: "bg-red-500/20",
       icon: Target,
-      iconColor: "text-violet-400",
+      iconColor: "text-red-400",
       title: "Targeted Engagement",
       description: "Strong opportunity signals. Personalized approach recommended."
     },
@@ -297,7 +297,7 @@ export const IntelligenceReport = ({ candidate, compact = false }) => {
       {intelligence_timing.length > 0 && (
         <motion.div variants={itemVariants}>
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <Clock className="w-5 h-5 text-violet-400" />
+            <Clock className="w-5 h-5 text-red-400" />
             Timing Intelligence
           </h3>
           <div className="space-y-2">

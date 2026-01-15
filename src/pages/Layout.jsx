@@ -246,7 +246,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
   if (path.includes('talent')) {
     return {
       title: 'TALENT',
-      color: 'violet',
+      color: 'red',
       agent: 'talent',
       items: [
         { label: 'Dashboard', path: createPageUrl('TalentDashboard'), icon: LayoutDashboard },
@@ -442,6 +442,13 @@ const COLOR_CLASSES = {
     border: 'border-violet-500/20',
     borderSolid: 'bg-violet-500',
     glow: 'shadow-[0_0_10px_rgba(139,92,246,0.5)]'
+  },
+  red: {
+    text: THEME_COLORS.talent.text,
+    bg: THEME_COLORS.talent.bg,
+    border: THEME_COLORS.talent.border,
+    borderSolid: THEME_COLORS.talent.solid,
+    glow: THEME_COLORS.talent.glow
   }
 };
 
@@ -662,7 +669,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
               if (isSync) return { text: 'text-purple-400', bg: 'bg-purple-950/30', solid: 'bg-purple-500', glow: 'shadow-[0_0_10px_rgba(168,85,247,0.5)]' };
               if (isFinance) return { text: 'text-amber-400', bg: 'bg-amber-950/30', solid: 'bg-amber-500', glow: 'shadow-[0_0_10px_rgba(245,158,11,0.5)]' };
               if (isRaise) return { text: 'text-orange-400', bg: 'bg-orange-950/30', solid: 'bg-orange-500', glow: 'shadow-[0_0_10px_rgba(249,115,22,0.5)]' };
-              if (isTalent) return { text: 'text-violet-400', bg: 'bg-violet-950/30', solid: 'bg-violet-500', glow: 'shadow-[0_0_10px_rgba(139,92,246,0.5)]' };
+              if (isTalent) return { text: 'text-red-400', bg: 'bg-red-950/30', solid: 'bg-red-500', glow: 'shadow-[0_0_10px_rgba(239,68,68,0.5)]' };
               return { text: 'text-cyan-400', bg: 'bg-cyan-950/30', solid: 'bg-cyan-500', glow: 'shadow-[0_0_10px_rgba(6,182,212,0.5)]' };
             };
             const colors = getEngineColors();

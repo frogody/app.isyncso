@@ -121,7 +121,7 @@ const ClientAvatar = ({ name, logo, size = "md" }) => {
 
   return (
     <div
-      className={`${sizes[size]} rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center font-medium text-white ring-2 ring-white/10`}
+      className={`${sizes[size]} rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center font-medium text-white ring-2 ring-white/10`}
     >
       {initials}
     </div>
@@ -350,8 +350,8 @@ export default function TalentClients() {
     <div className="min-h-screen bg-black relative">
       {/* Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 right-1/4 w-96 h-96 bg-violet-500/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-purple-500/5 rounded-full blur-3xl" />
+        <div className="absolute top-20 right-1/4 w-96 h-96 bg-red-500/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-red-500/5 rounded-full blur-3xl" />
       </div>
 
       <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
@@ -360,11 +360,11 @@ export default function TalentClients() {
           icon={Building2}
           title="Recruitment Clients"
           subtitle="Manage your hiring clients and track relationships"
-          color="violet"
+          color="red"
           actions={
             <Button
               onClick={openAddModal}
-              className="bg-violet-600 hover:bg-violet-500 text-white"
+              className="bg-red-600 hover:bg-red-500 text-white"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Client
@@ -374,10 +374,10 @@ export default function TalentClients() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard icon={Building2} label="Total Clients" value={stats.total} color="violet" />
-          <StatCard icon={CheckCircle2} label="Active Clients" value={stats.active} color="violet" />
-          <StatCard icon={Briefcase} label="Active Deals" value={stats.deals} color="violet" />
-          <StatCard icon={DollarSign} label="Total Revenue" value={`€${stats.revenue.toLocaleString()}`} color="violet" />
+          <StatCard icon={Building2} label="Total Clients" value={stats.total} color="red" />
+          <StatCard icon={CheckCircle2} label="Active Clients" value={stats.active} color="red" />
+          <StatCard icon={Briefcase} label="Active Deals" value={stats.deals} color="red" />
+          <StatCard icon={DollarSign} label="Total Revenue" value={`€${stats.revenue.toLocaleString()}`} color="red" />
         </div>
 
         {/* Filters */}
@@ -430,7 +430,7 @@ export default function TalentClients() {
             <Building2 className="w-16 h-16 text-zinc-600 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-white mb-2">No clients yet</h3>
             <p className="text-zinc-400 mb-6">Start building your client relationships</p>
-            <Button onClick={openAddModal} className="bg-violet-600 hover:bg-violet-500">
+            <Button onClick={openAddModal} className="bg-red-600 hover:bg-red-500">
               <Plus className="w-4 h-4 mr-2" />
               Add Your First Client
             </Button>
@@ -448,12 +448,12 @@ export default function TalentClients() {
 
               return (
                 <motion.div key={client.id} variants={itemVariants}>
-                  <GlassCard className="p-5 hover:border-violet-500/30 transition-all cursor-pointer group">
+                  <GlassCard className="p-5 hover:border-red-500/30 transition-all cursor-pointer group">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
                         <ClientAvatar name={client.name || client.company_name} logo={client.logo} />
                         <div>
-                          <h3 className="font-semibold text-white group-hover:text-violet-400 transition-colors">
+                          <h3 className="font-semibold text-white group-hover:text-red-400 transition-colors">
                             {client.name || client.company_name}
                           </h3>
                           {client.industry && (
@@ -512,7 +512,7 @@ export default function TalentClients() {
                           <p className="text-xs text-zinc-500">Deals</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-lg font-semibold text-violet-400">€{clientRevenue.toLocaleString()}</p>
+                          <p className="text-lg font-semibold text-red-400">€{clientRevenue.toLocaleString()}</p>
                           <p className="text-xs text-zinc-500">Revenue</p>
                         </div>
                       </div>
@@ -567,7 +567,7 @@ export default function TalentClients() {
                       </td>
                       <td className="p-4 text-zinc-400">{client.location || '-'}</td>
                       <td className="p-4 text-center text-white">{clientDeals.length}</td>
-                      <td className="p-4 text-right text-violet-400 font-medium">
+                      <td className="p-4 text-right text-red-400 font-medium">
                         €{clientRevenue.toLocaleString()}
                       </td>
                       <td className="p-4 text-center">
@@ -722,7 +722,7 @@ export default function TalentClients() {
               <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} className="border-zinc-700 text-zinc-300">
                 Cancel
               </Button>
-              <Button type="submit" disabled={saving} className="bg-violet-600 hover:bg-violet-500">
+              <Button type="submit" disabled={saving} className="bg-red-600 hover:bg-red-500">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                 {editingClient ? 'Update Client' : 'Add Client'}
               </Button>

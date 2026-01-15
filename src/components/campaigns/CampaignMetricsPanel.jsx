@@ -81,7 +81,7 @@ export default function CampaignMetricsPanel({ campaign, onUpdate }) {
       {/* Progress bar */}
       <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
         <motion.div
-          className="h-full bg-gradient-to-r from-indigo-500 to-violet-500"
+          className="h-full bg-gradient-to-r from-red-500 to-red-600"
           initial={{ width: 0 }}
           animate={{ width: `${progress}%` }}
           transition={{ duration: 0.5 }}
@@ -110,7 +110,7 @@ export default function CampaignMetricsPanel({ campaign, onUpdate }) {
           label="Meetings"
           value={campaign.meetings_booked || 0}
           icon={Calendar}
-          color="text-violet-400"
+          color="text-red-400"
           onIncrement={() => updateMetric('meetings_booked', 1)}
           onDecrement={() => updateMetric('meetings_booked', -1)}
         />

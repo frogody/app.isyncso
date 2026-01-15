@@ -88,7 +88,7 @@ const StatusBadge = ({ status }) => {
 // Type Badge
 const TypeBadge = ({ type }) => {
   const styles = {
-    email: { bg: "bg-violet-500/20", text: "text-violet-400", icon: Mail },
+    email: { bg: "bg-red-500/20", text: "text-red-400", icon: Mail },
     linkedin: { bg: "bg-blue-500/20", text: "text-blue-400", icon: Linkedin },
     cold_call: { bg: "bg-amber-500/20", text: "text-amber-400", icon: Phone },
     multi_channel: { bg: "bg-cyan-500/20", text: "text-cyan-400", icon: Zap },
@@ -117,7 +117,7 @@ const OverviewTab = ({ campaign, formData, stats }) => {
         <div className="lg:col-span-2 space-y-6">
           <GlassCard className="p-6">
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <Megaphone className="w-5 h-5 text-violet-400" />
+              <Megaphone className="w-5 h-5 text-red-400" />
               Campaign Details
             </h3>
             <div className="space-y-4">
@@ -163,14 +163,14 @@ const OverviewTab = ({ campaign, formData, stats }) => {
           {/* Sequence Preview */}
           <GlassCard className="p-6">
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <List className="w-5 h-5 text-violet-400" />
+              <List className="w-5 h-5 text-red-400" />
               Sequence Steps ({formData.sequence_steps?.length || 0})
             </h3>
             {formData.sequence_steps?.length > 0 ? (
               <div className="space-y-3">
                 {formData.sequence_steps.slice(0, 3).map((step, idx) => (
                   <div key={idx} className="flex items-center gap-3 p-3 bg-zinc-800/30 rounded-lg">
-                    <div className="w-8 h-8 rounded-full bg-violet-500/20 flex items-center justify-center text-violet-400 font-semibold text-sm">
+                    <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center text-red-400 font-semibold text-sm">
                       {idx + 1}
                     </div>
                     <div className="flex-1">
@@ -200,8 +200,8 @@ const OverviewTab = ({ campaign, formData, stats }) => {
         <div className="space-y-4">
           <GlassCard className="p-5">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-2.5 bg-violet-500/20 rounded-lg">
-                <Users className="w-5 h-5 text-violet-400" />
+              <div className="p-2.5 bg-red-500/20 rounded-lg">
+                <Users className="w-5 h-5 text-red-400" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-white">{stats.totalCandidates}</p>
@@ -210,7 +210,7 @@ const OverviewTab = ({ campaign, formData, stats }) => {
             </div>
             <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-violet-500 to-purple-500"
+                className="h-full bg-gradient-to-r from-red-500 to-red-600"
                 style={{ width: `${Math.min((stats.sent / Math.max(stats.totalCandidates, 1)) * 100, 100)}%` }}
               />
             </div>
@@ -250,7 +250,7 @@ const OverviewTab = ({ campaign, formData, stats }) => {
           {matchedCandidates.length > 0 && (
             <GlassCard className="p-5">
               <h4 className="text-sm font-medium text-zinc-400 mb-3 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-violet-400" />
+                <Sparkles className="w-4 h-4 text-red-400" />
                 Top Matches
               </h4>
               <div className="space-y-2">
@@ -262,7 +262,7 @@ const OverviewTab = ({ campaign, formData, stats }) => {
                       <span className="text-sm text-white truncate">
                         {match.candidate_name || "Unknown"}
                       </span>
-                      <span className="text-sm font-medium text-violet-400">
+                      <span className="text-sm font-medium text-red-400">
                         {match.match_score || 0}%
                       </span>
                     </div>
@@ -415,12 +415,12 @@ const AnalyticsTab = ({ campaign }) => {
       {/* Pipeline Funnel */}
       <GlassCard className="p-6">
         <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-violet-400" />
+          <TrendingUp className="w-5 h-5 text-red-400" />
           Pipeline Funnel
         </h3>
         <div className="grid grid-cols-5 gap-4">
           {[
-            { label: "Matched", count: metrics.statusCounts.matched || 0, color: "violet" },
+            { label: "Matched", count: metrics.statusCounts.matched || 0, color: "red" },
             { label: "Pending", count: metrics.statusCounts.pending || 0, color: "yellow" },
             { label: "Contacted", count: (metrics.statusCounts.contacted || 0) + (metrics.statusCounts.sent || 0), color: "blue" },
             { label: "Replied", count: metrics.statusCounts.replied || 0, color: "green" },
@@ -448,7 +448,7 @@ const AnalyticsTab = ({ campaign }) => {
       <div className="grid grid-cols-2 gap-6">
         <GlassCard className="p-6">
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <Target className="w-5 h-5 text-violet-400" />
+            <Target className="w-5 h-5 text-red-400" />
             Match Score Distribution
           </h3>
           <div className="space-y-4">
@@ -499,7 +499,7 @@ const AnalyticsTab = ({ campaign }) => {
 
         <GlassCard className="p-6">
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-violet-400" />
+            <BarChart3 className="w-5 h-5 text-red-400" />
             Campaign Performance
           </h3>
           <div className="space-y-4">
@@ -517,7 +517,7 @@ const AnalyticsTab = ({ campaign }) => {
             </div>
             <div className="flex items-center justify-between p-3 bg-zinc-800/30 rounded-lg">
               <span className="text-zinc-400">Avg Match Score</span>
-              <span className="text-xl font-bold text-violet-400">
+              <span className="text-xl font-bold text-red-400">
                 {metrics.total > 0
                   ? Math.round(
                       matchedCandidates.reduce((sum, m) => sum + (m.match_score || 0), 0) /
@@ -745,25 +745,28 @@ export default function TalentCampaignDetail() {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6">
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-10 w-10 rounded-lg" />
-          <div>
-            <Skeleton className="h-6 w-48" />
-            <Skeleton className="h-4 w-32 mt-1" />
+      <div className="min-h-screen p-6">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-10 w-10 rounded-lg" />
+            <div>
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-4 w-32 mt-1" />
+            </div>
           </div>
+          <Skeleton className="h-96 rounded-xl" />
         </div>
-        <Skeleton className="h-96 rounded-xl" />
       </div>
     );
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="p-6 space-y-6"
-    >
+    <div className="min-h-screen p-6">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="max-w-7xl mx-auto space-y-6"
+      >
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -829,7 +832,7 @@ export default function TalentCampaignDetail() {
           <Button
             onClick={handleSave}
             disabled={saving}
-            className="bg-violet-500 hover:bg-violet-600"
+            className="bg-red-500 hover:bg-red-600"
           >
             {saving ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -848,7 +851,7 @@ export default function TalentCampaignDetail() {
             {!isNew && (
               <TabsTrigger
                 value="overview"
-                className="data-[state=active]:bg-violet-500/20 data-[state=active]:text-violet-400"
+                className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
               >
                 <Eye className="w-4 h-4 mr-2" />
                 Overview
@@ -857,7 +860,7 @@ export default function TalentCampaignDetail() {
             {!isNew && (
               <TabsTrigger
                 value="matches"
-                className="data-[state=active]:bg-violet-500/20 data-[state=active]:text-violet-400"
+                className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
               >
                 <Sparkles className="w-4 h-4 mr-2" />
                 Matches
@@ -865,14 +868,14 @@ export default function TalentCampaignDetail() {
             )}
             <TabsTrigger
               value="settings"
-              className="data-[state=active]:bg-violet-500/20 data-[state=active]:text-violet-400"
+              className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
             >
               <Settings className="w-4 h-4 mr-2" />
               Settings
             </TabsTrigger>
             <TabsTrigger
               value="sequence"
-              className="data-[state=active]:bg-violet-500/20 data-[state=active]:text-violet-400"
+              className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
             >
               <List className="w-4 h-4 mr-2" />
               Sequence
@@ -881,14 +884,14 @@ export default function TalentCampaignDetail() {
               <>
                 <TabsTrigger
                   value="outreach"
-                  className="data-[state=active]:bg-violet-500/20 data-[state=active]:text-violet-400"
+                  className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
                 >
                   <Mail className="w-4 h-4 mr-2" />
                   Outreach
                 </TabsTrigger>
                 <TabsTrigger
                   value="analytics"
-                  className="data-[state=active]:bg-violet-500/20 data-[state=active]:text-violet-400"
+                  className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
                 >
                   <BarChart3 className="w-4 h-4 mr-2" />
                   Analytics
@@ -947,6 +950,7 @@ export default function TalentCampaignDetail() {
           )}
         </Tabs>
       </GlassCard>
-    </motion.div>
+      </motion.div>
+    </div>
   );
 }

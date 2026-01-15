@@ -46,7 +46,7 @@ const STATUS_CONFIG = {
   pending: { label: "Pending", color: "bg-yellow-500/20 text-yellow-400", icon: Clock },
   approved_ready: { label: "Ready", color: "bg-blue-500/20 text-blue-400", icon: Check },
   sent: { label: "Sent", color: "bg-green-500/20 text-green-400", icon: Send },
-  replied: { label: "Replied", color: "bg-violet-500/20 text-violet-400", icon: MessageSquare },
+  replied: { label: "Replied", color: "bg-red-500/20 text-red-400", icon: MessageSquare },
   failed: { label: "Failed", color: "bg-red-500/20 text-red-400", icon: XCircle },
 };
 
@@ -92,7 +92,7 @@ const TaskRow = ({ task, isSelected, onToggle, onEdit }) => {
       exit={{ opacity: 0, y: -10 }}
       className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
         isSelected
-          ? "bg-violet-500/10 border-violet-500/30"
+          ? "bg-red-500/10 border-red-500/30"
           : "bg-zinc-800/30 border-zinc-700/30 hover:border-zinc-600/50"
       }`}
     >
@@ -281,7 +281,7 @@ export default function OutreachQueue({ campaignId, compact = false }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="w-6 h-6 text-violet-400 animate-spin" />
+        <Loader2 className="w-6 h-6 text-red-400 animate-spin" />
       </div>
     );
   }
@@ -292,7 +292,7 @@ export default function OutreachQueue({ campaignId, compact = false }) {
       {!compact && (
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-violet-400" />
+            <MessageSquare className="w-5 h-5 text-red-400" />
             <h3 className="text-lg font-medium text-white">Outreach Queue</h3>
             <Badge variant="outline" className="border-zinc-700 text-zinc-400">
               {filteredTasks.length} tasks
@@ -355,7 +355,7 @@ export default function OutreachQueue({ campaignId, compact = false }) {
             Sent: <span className="text-green-400">{stats.sent}</span>
           </span>
           <span className="text-zinc-500">
-            Replied: <span className="text-violet-400">{stats.replied}</span>
+            Replied: <span className="text-red-400">{stats.replied}</span>
           </span>
         </div>
       )}

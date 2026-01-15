@@ -92,11 +92,11 @@ const StatusBadge = ({ status }) => {
 // Campaign Type Badge
 const TypeBadge = ({ type }) => {
   const styles = {
-    email: { bg: "bg-violet-500/20", text: "text-violet-400", label: "Email" },
+    email: { bg: "bg-red-500/20", text: "text-red-400", label: "Email" },
     linkedin: { bg: "bg-blue-500/20", text: "text-blue-400", label: "LinkedIn" },
     cold_call: { bg: "bg-amber-500/20", text: "text-amber-400", label: "Cold Call" },
     multi_channel: { bg: "bg-cyan-500/20", text: "text-cyan-400", label: "Multi-Channel" },
-    recruitment: { bg: "bg-violet-500/20", text: "text-violet-400", label: "Recruitment" },
+    recruitment: { bg: "bg-red-500/20", text: "text-red-400", label: "Recruitment" },
     growth: { bg: "bg-blue-500/20", text: "text-blue-400", label: "Growth" },
   };
 
@@ -131,7 +131,7 @@ const ProgressRing = ({ progress, size = 40, strokeWidth = 3 }) => {
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#8b5cf6"
+          stroke="#ef4444"
           strokeWidth={strokeWidth}
           strokeLinecap="round"
           strokeDasharray={circumference}
@@ -158,7 +158,7 @@ const CampaignCard = ({ campaign, onEdit, onToggle, onDelete, onDuplicate, onCli
 
   return (
     <motion.div variants={itemVariants}>
-      <GlassCard className="p-6 hover:border-violet-500/30 transition-all duration-300">
+      <GlassCard className="p-6 hover:border-red-500/30 transition-all duration-300">
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1 cursor-pointer" onClick={onClick}>
@@ -262,7 +262,7 @@ const CampaignCard = ({ campaign, onEdit, onToggle, onDelete, onDuplicate, onCli
             <p className="text-xs text-white/60">Candidates</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-bold text-violet-400">{sentCount}</p>
+            <p className="text-2xl font-bold text-red-400">{sentCount}</p>
             <p className="text-xs text-white/60">Sent</p>
           </div>
           <div className="text-center">
@@ -278,7 +278,7 @@ const CampaignCard = ({ campaign, onEdit, onToggle, onDelete, onDuplicate, onCli
         <div className="mb-4">
           <div className="h-2 bg-white/10 rounded-full overflow-hidden">
             <motion.div
-              className="h-full bg-gradient-to-r from-violet-500 to-purple-500"
+              className="h-full bg-gradient-to-r from-red-500 to-red-600"
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
               transition={{ duration: 1, ease: "easeOut" }}
@@ -294,7 +294,7 @@ const CampaignCard = ({ campaign, onEdit, onToggle, onDelete, onDuplicate, onCli
           </div>
           <button 
             onClick={onClick}
-            className="flex items-center gap-1 text-sm text-violet-400 hover:text-violet-300 transition-colors"
+            className="flex items-center gap-1 text-sm text-red-400 hover:text-red-300 transition-colors"
           >
             View Details
             <ArrowRight className="w-4 h-4" />
@@ -387,7 +387,7 @@ const CreateCampaignModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
                   onClick={() => setFormData((f) => ({ ...f, campaign_type: type.value }))}
                   className={`p-4 rounded-lg border transition-colors ${
                     formData.campaign_type === type.value
-                      ? "bg-violet-500/20 border-violet-500/50 text-violet-400"
+                      ? "bg-red-500/20 border-red-500/50 text-red-400"
                       : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10"
                   }`}
                 >
@@ -411,7 +411,7 @@ const CreateCampaignModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
             <Button
               type="submit"
               disabled={isSubmitting || !formData.name.trim()}
-              className="flex-1 bg-violet-500 hover:bg-violet-600"
+              className="flex-1 bg-red-500 hover:bg-red-600"
             >
               {isSubmitting ? (
                 <>
@@ -639,37 +639,40 @@ export default function TalentCampaigns() {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-10 w-64" />
-          <Skeleton className="h-10 w-32" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-24 rounded-xl" />
-          ))}
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-64 rounded-xl" />
-          ))}
+      <div className="min-h-screen p-6">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-10 w-64" />
+            <Skeleton className="h-10 w-32" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} className="h-24 rounded-xl" />
+            ))}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} className="h-64 rounded-xl" />
+            ))}
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-h-screen p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <PageHeader
           title="Campaigns"
           description="Manage your outreach campaigns"
           icon={Megaphone}
-          iconColor="violet"
+          iconColor="red"
         />
         <Button
           onClick={() => setShowCreateModal(true)}
-          className="bg-violet-500 hover:bg-violet-600"
+          className="bg-red-500 hover:bg-red-600"
         >
           <Plus className="w-4 h-4 mr-2" />
           New Campaign
@@ -688,7 +691,7 @@ export default function TalentCampaigns() {
           title="Total Candidates"
           value={stats.totalCandidates}
           icon={Users}
-          color="violet"
+          color="red"
         />
         <StatCard
           title="Messages Sent"
@@ -715,7 +718,7 @@ export default function TalentCampaigns() {
                 placeholder="Search campaigns..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-violet-500/50"
+                className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-red-500/50"
               />
             </div>
           </div>
@@ -723,7 +726,7 @@ export default function TalentCampaigns() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white/70 focus:outline-none focus:border-violet-500/50"
+            className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white/70 focus:outline-none focus:border-red-500/50"
           >
             <option value="">All Statuses</option>
             <option value="active">Active</option>
@@ -735,7 +738,7 @@ export default function TalentCampaigns() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white/70 focus:outline-none focus:border-violet-500/50"
+            className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white/70 focus:outline-none focus:border-red-500/50"
           >
             <option value="">All Types</option>
             <option value="email">Email</option>
@@ -784,7 +787,7 @@ export default function TalentCampaigns() {
           </p>
           <Button
             onClick={() => setShowCreateModal(true)}
-            className="bg-violet-500 hover:bg-violet-600"
+            className="bg-red-500 hover:bg-red-600"
           >
             <Plus className="w-4 h-4 mr-2" />
             Create Campaign
@@ -838,6 +841,7 @@ export default function TalentCampaigns() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </div>
     </div>
   );
 }

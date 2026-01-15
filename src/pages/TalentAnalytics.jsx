@@ -77,14 +77,13 @@ const TrendIndicator = ({ value, suffix = "%" }) => {
 };
 
 // Progress Bar Component
-const ProgressBar = ({ value, max = 100, color = "violet", label, showValue = true }) => {
+const ProgressBar = ({ value, max = 100, color = "red", label, showValue = true }) => {
   const percentage = max > 0 ? Math.min((value / max) * 100, 100) : 0;
   const colors = {
-    violet: "bg-violet-500",
+    red: "bg-red-500",
     blue: "bg-blue-500",
     green: "bg-green-500",
     yellow: "bg-yellow-500",
-    red: "bg-red-500",
     cyan: "bg-cyan-500",
   };
 
@@ -135,22 +134,20 @@ const FunnelStage = ({ stage, count, total, color, icon: Icon }) => {
 };
 
 // Metric Card Component
-const MetricCard = ({ title, value, subtitle, icon: Icon, color = "violet", trend }) => {
+const MetricCard = ({ title, value, subtitle, icon: Icon, color = "red", trend }) => {
   const colors = {
-    violet: "from-violet-500/20 to-purple-500/20 border-violet-500/30",
+    red: "from-red-500/20 to-red-600/20 border-red-500/30",
     blue: "from-blue-500/20 to-cyan-500/20 border-blue-500/30",
     green: "from-green-500/20 to-emerald-500/20 border-green-500/30",
     yellow: "from-yellow-500/20 to-amber-500/20 border-yellow-500/30",
-    red: "from-red-500/20 to-rose-500/20 border-red-500/30",
     cyan: "from-cyan-500/20 to-teal-500/20 border-cyan-500/30",
   };
 
   const iconColors = {
-    violet: "text-violet-400",
+    red: "text-red-400",
     blue: "text-blue-400",
     green: "text-green-400",
     yellow: "text-yellow-400",
-    red: "text-red-400",
     cyan: "text-cyan-400",
   };
 
@@ -176,7 +173,7 @@ const MetricCard = ({ title, value, subtitle, icon: Icon, color = "violet", tren
 // Outreach Type Stats Component
 const OutreachTypeStats = ({ data }) => {
   const types = [
-    { key: "email", label: "Email", icon: Mail, color: "violet" },
+    { key: "email", label: "Email", icon: Mail, color: "red" },
     { key: "linkedin", label: "LinkedIn", icon: Linkedin, color: "blue" },
     { key: "linkedin_connection", label: "Connection", icon: Linkedin, color: "cyan" },
     { key: "call", label: "Call", icon: Phone, color: "green" },
@@ -361,7 +358,7 @@ const PipelineStages = ({ candidates }) => {
                   initial={{ width: 0 }}
                   animate={{ width: `${barWidth}%` }}
                   transition={{ duration: 0.8, delay: index * 0.1, ease: "easeOut" }}
-                  className="h-full bg-gradient-to-r from-violet-500 to-purple-600 rounded flex items-center justify-end px-2"
+                  className="h-full bg-gradient-to-r from-red-500 to-red-600 rounded flex items-center justify-end px-2"
                 >
                   {stage.count > 0 && (
                     <span className="text-xs font-medium text-white">{stage.count}</span>
@@ -390,7 +387,7 @@ const RecentActivity = ({ outreachTasks }) => {
       case "sent":
         return <Send className="w-4 h-4 text-green-400" />;
       case "replied":
-        return <MessageSquare className="w-4 h-4 text-violet-400" />;
+        return <MessageSquare className="w-4 h-4 text-red-400" />;
       case "failed":
         return <XCircle className="w-4 h-4 text-red-400" />;
       default:
@@ -641,7 +638,7 @@ export default function TalentAnalytics() {
             value={metrics.totalCandidates}
             subtitle={`${metrics.highRiskCandidates} high-risk`}
             icon={Users}
-            color="violet"
+            color="red"
           />
           <MetricCard
             title="Active Campaigns"

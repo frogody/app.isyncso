@@ -36,9 +36,9 @@ import { toast } from 'sonner';
 // Recruitment Pipeline Stages
 const STAGES = [
   { id: 'lead', label: 'Lead', color: 'from-zinc-500 to-zinc-600', accent: 'text-zinc-400', bgAccent: 'bg-zinc-500', borderAccent: 'border-zinc-500/50', probability: 5 },
-  { id: 'briefing', label: 'Briefing', color: 'from-violet-600 to-violet-700', accent: 'text-violet-400', bgAccent: 'bg-violet-500', borderAccent: 'border-violet-500/50', probability: 15 },
-  { id: 'agreement', label: 'Agreement', color: 'from-violet-500 to-violet-600', accent: 'text-violet-400', bgAccent: 'bg-violet-500', borderAccent: 'border-violet-500/50', probability: 25 },
-  { id: 'search', label: 'Search', color: 'from-purple-500 to-purple-600', accent: 'text-purple-400', bgAccent: 'bg-purple-500', borderAccent: 'border-purple-500/50', probability: 35 },
+  { id: 'briefing', label: 'Briefing', color: 'from-red-600 to-red-700', accent: 'text-red-400', bgAccent: 'bg-red-500', borderAccent: 'border-red-500/50', probability: 15 },
+  { id: 'agreement', label: 'Agreement', color: 'from-red-500 to-red-600', accent: 'text-red-400', bgAccent: 'bg-red-500', borderAccent: 'border-red-500/50', probability: 25 },
+  { id: 'search', label: 'Search', color: 'from-red-400 to-red-500', accent: 'text-red-400', bgAccent: 'bg-red-500', borderAccent: 'border-red-500/50', probability: 35 },
   { id: 'presented', label: 'Presented', color: 'from-indigo-500 to-indigo-600', accent: 'text-indigo-400', bgAccent: 'bg-indigo-500', borderAccent: 'border-indigo-500/50', probability: 50 },
   { id: 'interviews', label: 'Interviews', color: 'from-blue-500 to-blue-600', accent: 'text-blue-400', bgAccent: 'bg-blue-500', borderAccent: 'border-blue-500/50', probability: 65 },
   { id: 'offer', label: 'Offer', color: 'from-cyan-500 to-cyan-600', accent: 'text-cyan-400', bgAccent: 'bg-cyan-500', borderAccent: 'border-cyan-500/50', probability: 80 },
@@ -83,7 +83,7 @@ function DealCard({ deal, onEdit, onDelete, stageConfig, index, clients, candida
           transition={{ delay: index * 0.03 }}
           className={`group relative bg-zinc-900/60 backdrop-blur-sm rounded-xl border transition-all duration-200 ${
             snapshot.isDragging
-              ? `shadow-2xl shadow-violet-500/10 border-violet-500/30 scale-[1.02]`
+              ? `shadow-2xl shadow-red-500/10 border-red-500/30 scale-[1.02]`
               : `border-zinc-800/60 hover:border-zinc-700/60`
           }`}
         >
@@ -94,7 +94,7 @@ function DealCard({ deal, onEdit, onDelete, stageConfig, index, clients, candida
             {/* Header */}
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0" onClick={() => onEdit(deal)}>
-                <h4 className="font-semibold text-white truncate cursor-pointer hover:text-violet-400/80 transition-colors">
+                <h4 className="font-semibold text-white truncate cursor-pointer hover:text-red-400/80 transition-colors">
                   {deal.title || 'Untitled Deal'}
                 </h4>
                 {client && (
@@ -230,7 +230,7 @@ function StageColumn({ stage, deals, onEdit, onDelete, onAddDeal, clients, candi
 
           <div className="space-y-1">
             <div className="flex items-baseline justify-between">
-              <span className="text-lg font-bold text-violet-400/80">€{stageValue.toLocaleString()}</span>
+              <span className="text-lg font-bold text-red-400/80">€{stageValue.toLocaleString()}</span>
               <span className="text-xs text-zinc-600">total</span>
             </div>
             <div className="flex items-baseline justify-between">
@@ -249,7 +249,7 @@ function StageColumn({ stage, deals, onEdit, onDelete, onAddDeal, clients, candi
             {...provided.droppableProps}
             className={`space-y-3 min-h-[300px] rounded-xl p-2 transition-all duration-200 ${
               snapshot.isDraggingOver
-                ? `bg-gradient-to-b from-violet-500/3 to-transparent border-2 border-dashed border-violet-500/30`
+                ? `bg-gradient-to-b from-red-500/3 to-transparent border-2 border-dashed border-red-500/30`
                 : 'border-2 border-transparent'
             }`}
           >
@@ -564,14 +564,14 @@ export default function TalentDeals() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black p-6">
-        <div className="space-y-6">
+        <div className="max-w-7xl mx-auto space-y-6">
           <Skeleton className="h-28 w-full bg-zinc-800 rounded-2xl" />
           <div className="grid grid-cols-4 gap-4">
             {[1,2,3,4].map(i => <Skeleton key={i} className="h-24 bg-zinc-800 rounded-xl" />)}
           </div>
-          <div className="flex gap-4 overflow-x-auto">
-            {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-[500px] w-72 flex-shrink-0 bg-zinc-800 rounded-2xl" />)}
-          </div>
+        </div>
+        <div className="flex gap-4 overflow-x-auto mt-6 px-6">
+          {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-[500px] w-72 flex-shrink-0 bg-zinc-800 rounded-2xl" />)}
         </div>
       </div>
     );
@@ -581,22 +581,23 @@ export default function TalentDeals() {
     <div className="min-h-screen bg-black relative">
       {/* Animated Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 left-1/4 w-[500px] h-[500px] bg-violet-500/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-1/4 w-[400px] h-[400px] bg-purple-500/5 rounded-full blur-3xl" />
+        <div className="absolute top-20 left-1/4 w-[500px] h-[500px] bg-red-500/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-1/4 w-[400px] h-[400px] bg-red-500/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full py-6">
         {/* Header */}
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 space-y-6">
         <div ref={headerRef} style={{ opacity: 0 }}>
           <PageHeader
             icon={Handshake}
             title="Recruitment Pipeline"
             subtitle={`${stats.activeDeals} active deals · €${stats.totalPipeline.toLocaleString()} in pipeline`}
-            color="violet"
+            color="red"
             actions={
               <Button
                 onClick={() => openNewModal()}
-                className="bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 border border-violet-500/30"
+                className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Deal
@@ -613,8 +614,8 @@ export default function TalentDeals() {
                 <p className="text-zinc-500 text-sm">Pipeline Value</p>
                 <p className="text-2xl font-bold text-white mt-1">€{stats.totalPipeline.toLocaleString()}</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-violet-500/20 flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-violet-400/70" />
+              <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-red-400/70" />
               </div>
             </div>
           </div>
@@ -625,8 +626,8 @@ export default function TalentDeals() {
                 <p className="text-zinc-500 text-sm">Weighted Forecast</p>
                 <p className="text-2xl font-bold text-white mt-1">€{Math.round(stats.weightedPipeline).toLocaleString()}</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-violet-500/20 flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-violet-400/70" />
+              <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-red-400/70" />
               </div>
             </div>
           </div>
@@ -636,10 +637,10 @@ export default function TalentDeals() {
               <div>
                 <p className="text-zinc-500 text-sm">Confirmed Revenue</p>
                 <p className="text-2xl font-bold text-white mt-1">€{stats.confirmedValue.toLocaleString()}</p>
-                <p className="text-xs text-violet-400/70 mt-0.5">{stats.confirmedDeals} placements</p>
+                <p className="text-xs text-red-400/70 mt-0.5">{stats.confirmedDeals} placements</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-violet-500/20 flex items-center justify-center">
-                <CheckCircle2 className="w-6 h-6 text-violet-400/70" />
+              <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center">
+                <CheckCircle2 className="w-6 h-6 text-red-400/70" />
               </div>
             </div>
           </div>
@@ -650,31 +651,33 @@ export default function TalentDeals() {
                 <p className="text-zinc-500 text-sm">Avg Deal Size</p>
                 <p className="text-2xl font-bold text-white mt-1">€{Math.round(stats.avgDealSize).toLocaleString()}</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-violet-500/15 flex items-center justify-center">
-                <Target className="w-6 h-6 text-violet-400/60" />
+              <div className="w-12 h-12 rounded-xl bg-red-500/15 flex items-center justify-center">
+                <Target className="w-6 h-6 text-red-400/60" />
               </div>
             </div>
           </div>
         </div>
+        </div>
 
         {/* Pipeline Board */}
+        <div className="px-6 lg:px-8 mt-6">
         {deals.length === 0 ? (
           <div className="p-16 text-center rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 flex items-center justify-center mx-auto mb-6">
-              <Handshake className="w-10 h-10 text-violet-400" />
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-red-500/20 to-red-600/20 flex items-center justify-center mx-auto mb-6">
+              <Handshake className="w-10 h-10 text-red-400" />
             </div>
             <h3 className="text-2xl font-bold text-white mb-3">Start Your Recruitment Pipeline</h3>
             <p className="text-zinc-400 mb-8 max-w-md mx-auto">
               Track your recruitment deals from lead to confirmed placement. Add your first deal to get started.
             </p>
-            <Button onClick={() => openNewModal()} className="bg-violet-600/80 hover:bg-violet-600 text-white font-medium px-6">
+            <Button onClick={() => openNewModal()} className="bg-red-600/80 hover:bg-red-600 text-white font-medium px-6">
               <Plus className="w-4 h-4 mr-2" />
               Add Your First Deal
             </Button>
           </div>
         ) : (
           <DragDropContext onDragEnd={handleDragEnd}>
-            <div ref={pipelineRef} className="flex gap-4 overflow-x-auto pb-6 -mx-6 px-6">
+            <div ref={pipelineRef} className="flex gap-4 overflow-x-auto pb-6">
               {STAGES.map((stage) => (
                 <StageColumn
                   key={stage.id}
@@ -690,14 +693,15 @@ export default function TalentDeals() {
             </div>
           </DragDropContext>
         )}
+        </div>
 
         {/* Modal */}
         <Dialog open={showModal} onOpenChange={setShowModal}>
           <DialogContent className="bg-zinc-900 border-zinc-800 max-w-xl p-0 overflow-hidden">
-            <div className="px-6 py-4 border-b border-zinc-800 bg-gradient-to-r from-violet-500/10 to-purple-500/10">
+            <div className="px-6 py-4 border-b border-zinc-800 bg-gradient-to-r from-red-500/10 to-red-600/10">
               <DialogTitle className="text-lg font-semibold text-white flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center">
-                  <Handshake className="w-5 h-5 text-violet-400" />
+                <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
+                  <Handshake className="w-5 h-5 text-red-400" />
                 </div>
                 {selectedDeal ? 'Edit Deal' : 'New Deal'}
               </DialogTitle>
@@ -706,11 +710,11 @@ export default function TalentDeals() {
             <div className="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
               {/* Title */}
               <div>
-                <label className="text-zinc-400 text-sm mb-1.5 block">Deal Title <span className="text-violet-400">*</span></label>
+                <label className="text-zinc-400 text-sm mb-1.5 block">Deal Title <span className="text-red-400">*</span></label>
                 <Input
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="bg-zinc-800/50 border-zinc-700 text-white focus:border-violet-500"
+                  className="bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500"
                   placeholder="e.g. Senior Developer - TechCorp"
                 />
               </div>
@@ -720,7 +724,7 @@ export default function TalentDeals() {
                 <div>
                   <label className="text-zinc-400 text-sm mb-1.5 block">Client</label>
                   <Select value={formData.client_id} onValueChange={(v) => setFormData({ ...formData, client_id: v })}>
-                    <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white focus:border-violet-500">
+                    <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500">
                       <SelectValue placeholder="Select client" />
                     </SelectTrigger>
                     <SelectContent className="bg-zinc-900 border-zinc-700">
@@ -738,7 +742,7 @@ export default function TalentDeals() {
                 <div>
                   <label className="text-zinc-400 text-sm mb-1.5 block">Project</label>
                   <Select value={formData.project_id} onValueChange={(v) => setFormData({ ...formData, project_id: v })}>
-                    <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white focus:border-violet-500">
+                    <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500">
                       <SelectValue placeholder="Select project" />
                     </SelectTrigger>
                     <SelectContent className="bg-zinc-900 border-zinc-700">
@@ -760,7 +764,7 @@ export default function TalentDeals() {
                 <div>
                   <label className="text-zinc-400 text-sm mb-1.5 block">Candidate</label>
                   <Select value={formData.candidate_id} onValueChange={(v) => setFormData({ ...formData, candidate_id: v })}>
-                    <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white focus:border-violet-500">
+                    <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500">
                       <SelectValue placeholder="Select candidate" />
                     </SelectTrigger>
                     <SelectContent className="bg-zinc-900 border-zinc-700">
@@ -778,7 +782,7 @@ export default function TalentDeals() {
                 <div>
                   <label className="text-zinc-400 text-sm mb-1.5 block">Stage</label>
                   <Select value={formData.stage} onValueChange={(v) => setFormData({ ...formData, stage: v })}>
-                    <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white focus:border-violet-500">
+                    <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-zinc-900 border-zinc-700">
@@ -796,8 +800,8 @@ export default function TalentDeals() {
               </div>
 
               {/* Fee Structure */}
-              <div className="p-4 rounded-xl bg-violet-500/5 border border-violet-500/20 space-y-4">
-                <div className="flex items-center gap-2 text-sm font-medium text-violet-400">
+              <div className="p-4 rounded-xl bg-red-500/5 border border-red-500/20 space-y-4">
+                <div className="flex items-center gap-2 text-sm font-medium text-red-400">
                   <DollarSign className="w-4 h-4" />
                   Fee Structure
                 </div>
@@ -862,7 +866,7 @@ export default function TalentDeals() {
                       />
                     </div>
                     {formData.candidate_salary && formData.fee_percentage && (
-                      <p className="text-xs text-violet-400 mt-2">
+                      <p className="text-xs text-red-400 mt-2">
                         Calculated fee: €{(parseFloat(formData.candidate_salary) * parseFloat(formData.fee_percentage) / 100).toLocaleString()}
                       </p>
                     )}
@@ -878,7 +882,7 @@ export default function TalentDeals() {
                     type="date"
                     value={formData.expected_start_date}
                     onChange={(e) => setFormData({ ...formData, expected_start_date: e.target.value })}
-                    className="bg-zinc-800/50 border-zinc-700 text-white focus:border-violet-500"
+                    className="bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500"
                   />
                 </div>
                 <div>
@@ -902,7 +906,7 @@ export default function TalentDeals() {
                 <Textarea
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className="bg-zinc-800/50 border-zinc-700 text-white focus:border-violet-500 resize-none"
+                  className="bg-zinc-800/50 border-zinc-700 text-white focus:border-red-500 resize-none"
                   rows={3}
                   placeholder="Add any relevant notes..."
                 />
@@ -913,14 +917,14 @@ export default function TalentDeals() {
             <div className="px-6 py-4 border-t border-zinc-800 bg-zinc-900/80 flex items-center justify-between">
               <div className="text-xs text-zinc-500">
                 {formData.fee_percentage && formData.candidate_salary && (
-                  <span>Est. Value: <span className="text-violet-400 font-medium">€{Math.round(parseFloat(formData.candidate_salary) * parseFloat(formData.fee_percentage) / 100).toLocaleString()}</span></span>
+                  <span>Est. Value: <span className="text-red-400 font-medium">€{Math.round(parseFloat(formData.candidate_salary) * parseFloat(formData.fee_percentage) / 100).toLocaleString()}</span></span>
                 )}
               </div>
               <div className="flex gap-3">
                 <Button variant="outline" onClick={() => setShowModal(false)} className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
                   Cancel
                 </Button>
-                <Button onClick={handleSave} disabled={!formData.title} className="bg-violet-500 hover:bg-violet-400 text-white min-w-[100px]">
+                <Button onClick={handleSave} disabled={!formData.title} className="bg-red-500 hover:bg-red-400 text-white min-w-[100px]">
                   {selectedDeal ? 'Update' : 'Create'}
                 </Button>
               </div>

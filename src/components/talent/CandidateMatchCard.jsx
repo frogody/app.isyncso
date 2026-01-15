@@ -35,7 +35,7 @@ const MatchScoreRing = ({ score, size = "md" }) => {
 
   const getColor = (score) => {
     if (score >= 80) return { stroke: "#22c55e", text: "text-green-400", glow: "shadow-[0_0_12px_rgba(34,197,94,0.4)]" };
-    if (score >= 60) return { stroke: "#8b5cf6", text: "text-violet-400", glow: "shadow-[0_0_12px_rgba(139,92,246,0.4)]" };
+    if (score >= 60) return { stroke: "#ef4444", text: "text-red-400", glow: "shadow-[0_0_12px_rgba(239,68,68,0.4)]" };
     if (score >= 40) return { stroke: "#eab308", text: "text-yellow-400", glow: "shadow-[0_0_12px_rgba(234,179,8,0.3)]" };
     return { stroke: "#64748b", text: "text-slate-400", glow: "" };
   };
@@ -92,7 +92,7 @@ const MatchReasonBadge = ({ reason }) => {
 
   return (
     <div className="flex items-start gap-2 text-sm">
-      <Icon className="w-4 h-4 text-violet-400 flex-shrink-0 mt-0.5" />
+      <Icon className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
       <span className="text-white/70">{reason}</span>
     </div>
   );
@@ -123,7 +123,7 @@ export const CandidateMatchCard = ({
   const status = match?.status || "matched";
 
   const statusStyles = {
-    matched: { bg: "bg-violet-500/20", text: "text-violet-400", label: "Matched" },
+    matched: { bg: "bg-red-500/20", text: "text-red-400", label: "Matched" },
     pending: { bg: "bg-yellow-500/20", text: "text-yellow-400", label: "Pending" },
     contacted: { bg: "bg-blue-500/20", text: "text-blue-400", label: "Contacted" },
     sent: { bg: "bg-blue-500/20", text: "text-blue-400", label: "Sent" },
@@ -146,10 +146,10 @@ export const CandidateMatchCard = ({
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center gap-4 p-3 bg-zinc-800/30 border border-zinc-700/30 rounded-lg hover:border-violet-500/30 transition-all"
+        className="flex items-center gap-4 p-3 bg-zinc-800/30 border border-zinc-700/30 rounded-lg hover:border-red-500/30 transition-all"
       >
         {/* Avatar */}
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-sm font-medium text-white flex-shrink-0">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-sm font-medium text-white flex-shrink-0">
           {initials}
         </div>
 
@@ -158,7 +158,7 @@ export const CandidateMatchCard = ({
           <div className="flex items-center gap-2">
             <Link
               to={`${createPageUrl("TalentCandidateProfile")}?id=${data?.id || match?.candidate_id}`}
-              className="font-medium text-white hover:text-violet-400 transition-colors truncate"
+              className="font-medium text-white hover:text-red-400 transition-colors truncate"
             >
               {data?.name || match?.candidate_name || "Unknown"}
             </Link>
@@ -184,12 +184,12 @@ export const CandidateMatchCard = ({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-zinc-800/30 border border-zinc-700/30 rounded-xl p-5 hover:border-violet-500/30 transition-all"
+      className="bg-zinc-800/30 border border-zinc-700/30 rounded-xl p-5 hover:border-red-500/30 transition-all"
     >
       {/* Header Row */}
       <div className="flex items-start gap-4 mb-4">
         {/* Avatar */}
-        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-lg font-bold text-white flex-shrink-0">
+        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-lg font-bold text-white flex-shrink-0">
           {initials}
         </div>
 
@@ -198,7 +198,7 @@ export const CandidateMatchCard = ({
           <div className="flex items-center gap-2 mb-1">
             <Link
               to={`${createPageUrl("TalentCandidateProfile")}?id=${data?.id || match?.candidate_id}`}
-              className="text-lg font-semibold text-white hover:text-violet-400 transition-colors"
+              className="text-lg font-semibold text-white hover:text-red-400 transition-colors"
             >
               {data?.name || match?.candidate_name || "Unknown Candidate"}
             </Link>
@@ -274,7 +274,7 @@ export const CandidateMatchCard = ({
         <div className="flex items-center justify-between pt-3 border-t border-zinc-700/30">
           <Link
             to={`${createPageUrl("TalentCandidateProfile")}?id=${data?.id || match?.candidate_id}`}
-            className="text-sm text-violet-400 hover:text-violet-300 flex items-center gap-1 transition-colors"
+            className="text-sm text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors"
           >
             View Profile
             <ExternalLink className="w-3 h-3" />
@@ -286,7 +286,7 @@ export const CandidateMatchCard = ({
                 size="sm"
                 variant="outline"
                 onClick={() => onAddToOutreach(match)}
-                className="border-violet-500/30 text-violet-400 hover:bg-violet-500/10"
+                className="border-red-500/30 text-red-400 hover:bg-red-500/10"
               >
                 <UserPlus className="w-4 h-4 mr-1" />
                 Add to Outreach
@@ -296,7 +296,7 @@ export const CandidateMatchCard = ({
               <Button
                 size="sm"
                 onClick={() => onContact(match)}
-                className="bg-violet-500 hover:bg-violet-600"
+                className="bg-red-500 hover:bg-red-600"
               >
                 <MessageSquare className="w-4 h-4 mr-1" />
                 Contact

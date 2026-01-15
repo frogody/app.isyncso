@@ -218,7 +218,7 @@ export default function AddCandidateModal({ isOpen, onClose, onSuccess }) {
       <DialogContent className="sm:max-w-[600px] bg-zinc-900 border-zinc-800 text-white max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold flex items-center gap-2">
-            <User className="w-5 h-5 text-violet-400" />
+            <User className="w-5 h-5 text-red-400" />
             Add New Candidate
           </DialogTitle>
         </DialogHeader>
@@ -226,15 +226,15 @@ export default function AddCandidateModal({ isOpen, onClose, onSuccess }) {
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1 overflow-hidden">
             <TabsList className="grid w-full grid-cols-3 bg-zinc-800/50">
-              <TabsTrigger value="basic" className="data-[state=active]:bg-violet-500/20 data-[state=active]:text-violet-400">
+              <TabsTrigger value="basic" className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400">
                 <User className="w-4 h-4 mr-2" />
                 Basic Info
               </TabsTrigger>
-              <TabsTrigger value="professional" className="data-[state=active]:bg-violet-500/20 data-[state=active]:text-violet-400">
+              <TabsTrigger value="professional" className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400">
                 <Briefcase className="w-4 h-4 mr-2" />
                 Professional
               </TabsTrigger>
-              <TabsTrigger value="intelligence" className="data-[state=active]:bg-violet-500/20 data-[state=active]:text-violet-400">
+              <TabsTrigger value="intelligence" className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400">
                 <Brain className="w-4 h-4 mr-2" />
                 Intelligence
               </TabsTrigger>
@@ -356,7 +356,7 @@ export default function AddCandidateModal({ isOpen, onClose, onSuccess }) {
                   {formData.tags.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-2">
                       {formData.tags.map((tag) => (
-                        <Badge key={tag} variant="secondary" className="bg-violet-500/20 text-violet-400">
+                        <Badge key={tag} variant="secondary" className="bg-red-500/20 text-red-400">
                           {tag}
                           <button type="button" onClick={() => removeTag(tag)} className="ml-1 hover:text-white">
                             <X className="w-3 h-3" />
@@ -451,7 +451,7 @@ export default function AddCandidateModal({ isOpen, onClose, onSuccess }) {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label className="text-zinc-400">Intelligence Score</Label>
-                      <span className="text-lg font-semibold text-violet-400">{formData.intelligence_score}</span>
+                      <span className="text-lg font-semibold text-red-400">{formData.intelligence_score}</span>
                     </div>
                     <Slider
                       value={[formData.intelligence_score]}
@@ -554,7 +554,7 @@ export default function AddCandidateModal({ isOpen, onClose, onSuccess }) {
             <Button type="button" variant="outline" onClick={onClose} className="border-zinc-700">
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting} className="bg-violet-500 hover:bg-violet-600">
+            <Button type="submit" disabled={isSubmitting} className="bg-red-500 hover:bg-red-600">
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />

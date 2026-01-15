@@ -61,7 +61,7 @@ const itemVariants = {
 // Timeline Item
 const TimelineItem = ({ item, isLast }) => {
   const typeStyles = {
-    outreach: { icon: Send, color: "text-violet-400", bg: "bg-violet-500/20" },
+    outreach: { icon: Send, color: "text-red-400", bg: "bg-red-500/20" },
     reply: { icon: MessageSquare, color: "text-green-400", bg: "bg-green-500/20" },
     note: { icon: FileText, color: "text-blue-400", bg: "bg-blue-500/20" },
     status: { icon: RefreshCw, color: "text-yellow-400", bg: "bg-yellow-500/20" },
@@ -94,7 +94,7 @@ const OutreachTaskCard = ({ task }) => {
   const statusStyles = {
     pending: { color: "text-yellow-400", bg: "bg-yellow-500/20", label: "Pending" },
     approved_ready: { color: "text-blue-400", bg: "bg-blue-500/20", label: "Ready" },
-    sent: { color: "text-violet-400", bg: "bg-violet-500/20", label: "Sent" },
+    sent: { color: "text-red-400", bg: "bg-red-500/20", label: "Sent" },
     completed: { color: "text-green-400", bg: "bg-green-500/20", label: "Completed" },
     cancelled: { color: "text-red-400", bg: "bg-red-500/20", label: "Cancelled" },
   };
@@ -221,11 +221,13 @@ export default function TalentCandidateProfile() {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6">
-        <Skeleton className="h-10 w-64" />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Skeleton className="h-96 rounded-xl lg:col-span-1" />
-          <Skeleton className="h-96 rounded-xl lg:col-span-2" />
+      <div className="min-h-screen p-6">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <Skeleton className="h-10 w-64" />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Skeleton className="h-96 rounded-xl lg:col-span-1" />
+            <Skeleton className="h-96 rounded-xl lg:col-span-2" />
+          </div>
         </div>
       </div>
     );
@@ -233,19 +235,21 @@ export default function TalentCandidateProfile() {
 
   if (!candidate) {
     return (
-      <div className="p-6">
-        <GlassCard className="p-12 text-center">
-          <User className="w-12 h-12 text-white/20 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-white mb-2">Candidate not found</h3>
-          <p className="text-white/60 mb-6">The candidate you're looking for doesn't exist or has been removed.</p>
-          <Link
-            to={createPageUrl("TalentCandidates")}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-violet-500/20 text-violet-400 rounded-lg hover:bg-violet-500/30 transition-colors"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            Back to Candidates
-          </Link>
-        </GlassCard>
+      <div className="min-h-screen p-6">
+        <div className="max-w-7xl mx-auto">
+          <GlassCard className="p-12 text-center">
+            <User className="w-12 h-12 text-white/20 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-white mb-2">Candidate not found</h3>
+            <p className="text-white/60 mb-6">The candidate you're looking for doesn't exist or has been removed.</p>
+            <Link
+              to={createPageUrl("TalentCandidates")}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Back to Candidates
+            </Link>
+          </GlassCard>
+        </div>
       </div>
     );
   }
@@ -258,12 +262,13 @@ export default function TalentCandidateProfile() {
   ];
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="p-6 space-y-6"
-    >
+    <div className="min-h-screen p-6">
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="max-w-7xl mx-auto space-y-6"
+      >
       {/* Back Button */}
       <Link
         to={createPageUrl("TalentCandidates")}
@@ -279,7 +284,7 @@ export default function TalentCandidateProfile() {
           <GlassCard className="p-6">
             {/* Avatar & Basic Info */}
             <div className="text-center mb-6">
-              <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-3xl font-bold text-white">
+              <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-3xl font-bold text-white">
                 {candidate.name?.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase()}
               </div>
               <h2 className="text-xl font-bold text-white">{candidate.name}</h2>
@@ -296,7 +301,7 @@ export default function TalentCandidateProfile() {
               {candidate.email && (
                 <div className="flex items-center gap-3 text-sm">
                   <Mail className="w-4 h-4 text-white/40" />
-                  <a href={`mailto:${candidate.email}`} className="text-white/80 hover:text-violet-400 transition-colors">
+                  <a href={`mailto:${candidate.email}`} className="text-white/80 hover:text-red-400 transition-colors">
                     {candidate.email}
                   </a>
                 </div>
@@ -326,7 +331,7 @@ export default function TalentCandidateProfile() {
                     href={candidate.linkedin_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-white/80 hover:text-violet-400 transition-colors flex items-center gap-1"
+                    className="text-white/80 hover:text-red-400 transition-colors flex items-center gap-1"
                   >
                     LinkedIn Profile
                     <ExternalLink className="w-3 h-3" />
@@ -354,8 +359,8 @@ export default function TalentCandidateProfile() {
                 disabled={generatingIntelligence}
                 className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all ${
                   generatingIntelligence
-                    ? "bg-violet-500/10 text-violet-400/60 cursor-not-allowed"
-                    : "bg-gradient-to-r from-violet-500/20 to-purple-500/20 text-violet-400 hover:from-violet-500/30 hover:to-purple-500/30 border border-violet-500/20"
+                    ? "bg-red-500/10 text-red-400/60 cursor-not-allowed"
+                    : "bg-gradient-to-r from-red-500/20 to-red-600/20 text-red-400 hover:from-red-500/30 hover:to-red-600/30 border border-red-500/20"
                 }`}
               >
                 {generatingIntelligence ? (
@@ -391,7 +396,7 @@ export default function TalentCandidateProfile() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   activeTab === tab.id
-                    ? "bg-violet-500/20 text-violet-400"
+                    ? "bg-red-500/20 text-red-400"
                     : "text-white/60 hover:text-white hover:bg-white/5"
                 }`}
               >
@@ -406,17 +411,17 @@ export default function TalentCandidateProfile() {
               {/* Recommended Action */}
               <GlassCard className="p-6">
                 <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                  <Target className="w-5 h-5 text-violet-400" />
+                  <Target className="w-5 h-5 text-red-400" />
                   Recommended Action
                 </h3>
                 <div className="flex items-start gap-4">
                   <div className={`p-3 rounded-xl ${
                     candidate.recommended_approach === "immediate" ? "bg-red-500/20" :
-                    candidate.recommended_approach === "targeted" ? "bg-violet-500/20" : "bg-blue-500/20"
+                    candidate.recommended_approach === "targeted" ? "bg-red-500/20" : "bg-blue-500/20"
                   }`}>
                     <Target className={`w-6 h-6 ${
                       candidate.recommended_approach === "immediate" ? "text-red-400" :
-                      candidate.recommended_approach === "targeted" ? "text-violet-400" : "text-blue-400"
+                      candidate.recommended_approach === "targeted" ? "text-red-400" : "text-blue-400"
                     }`} />
                   </div>
                   <div className="flex-1">
@@ -434,7 +439,7 @@ export default function TalentCandidateProfile() {
               {candidate.experience && (
                 <GlassCard className="p-6">
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <Briefcase className="w-5 h-5 text-violet-400" />
+                    <Briefcase className="w-5 h-5 text-red-400" />
                     Experience
                   </h3>
                   <div className="space-y-4">
@@ -458,7 +463,7 @@ export default function TalentCandidateProfile() {
               {candidate.skills && candidate.skills.length > 0 && (
                 <GlassCard className="p-6">
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <Award className="w-5 h-5 text-violet-400" />
+                    <Award className="w-5 h-5 text-red-400" />
                     Skills
                   </h3>
                   <div className="flex flex-wrap gap-2">
@@ -488,8 +493,8 @@ export default function TalentCandidateProfile() {
                     disabled={generatingIntelligence}
                     className={`inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
                       generatingIntelligence
-                        ? "bg-violet-500/10 text-violet-400/60 cursor-not-allowed"
-                        : "bg-gradient-to-r from-violet-500 to-purple-500 text-white hover:from-violet-600 hover:to-purple-600 shadow-lg shadow-violet-500/25"
+                        ? "bg-red-500/10 text-red-400/60 cursor-not-allowed"
+                        : "bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 shadow-lg shadow-red-500/25"
                     }`}
                   >
                     {generatingIntelligence ? (
@@ -522,7 +527,7 @@ export default function TalentCandidateProfile() {
                   <p className="text-white/60 mb-6">
                     Start an outreach campaign to engage with this candidate.
                   </p>
-                  <button className="inline-flex items-center gap-2 px-4 py-2 bg-violet-500/20 text-violet-400 rounded-lg hover:bg-violet-500/30 transition-colors">
+                  <button className="inline-flex items-center gap-2 px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors">
                     <Send className="w-4 h-4" />
                     Start Outreach
                   </button>
@@ -534,7 +539,7 @@ export default function TalentCandidateProfile() {
           {activeTab === "history" && (
             <GlassCard className="p-6">
               <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
-                <History className="w-5 h-5 text-violet-400" />
+                <History className="w-5 h-5 text-red-400" />
                 Activity History
               </h3>
               <div className="space-y-0">
@@ -552,6 +557,7 @@ export default function TalentCandidateProfile() {
           )}
         </motion.div>
       </div>
-    </motion.div>
+      </motion.div>
+    </div>
   );
 }

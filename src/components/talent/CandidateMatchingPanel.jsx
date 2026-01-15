@@ -268,7 +268,7 @@ export default function CandidateMatchingPanel({ campaign, onUpdate }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-6 h-6 text-violet-400 animate-spin" />
+        <Loader2 className="w-6 h-6 text-red-400 animate-spin" />
       </div>
     );
   }
@@ -276,10 +276,10 @@ export default function CandidateMatchingPanel({ campaign, onUpdate }) {
   return (
     <div className="space-y-6">
       {/* AI Matching Configuration */}
-      <div className="bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-500/20 rounded-xl p-5">
+      <div className="bg-gradient-to-r from-red-500/10 to-red-600/10 border border-red-500/20 rounded-xl p-5">
         <div className="flex items-start gap-4">
-          <div className="p-3 bg-violet-500/20 rounded-xl">
-            <Sparkles className="w-6 h-6 text-violet-400" />
+          <div className="p-3 bg-red-500/20 rounded-xl">
+            <Sparkles className="w-6 h-6 text-red-400" />
           </div>
           <div className="flex-1">
             <h3 className="text-lg font-semibold text-white mb-1">AI Candidate Matching</h3>
@@ -346,7 +346,7 @@ export default function CandidateMatchingPanel({ campaign, onUpdate }) {
             <Button
               onClick={runAIMatching}
               disabled={matching || (!selectedProject && !selectedRole)}
-              className="bg-violet-500 hover:bg-violet-600"
+              className="bg-red-500 hover:bg-red-600"
             >
               {matching ? (
                 <>
@@ -379,8 +379,8 @@ export default function CandidateMatchingPanel({ campaign, onUpdate }) {
             <p className="text-2xl font-bold text-yellow-400">{stats.medMatch}</p>
             <p className="text-xs text-zinc-500">Medium Match</p>
           </div>
-          <div className="bg-violet-500/10 border border-violet-500/20 rounded-lg p-4 text-center">
-            <p className="text-2xl font-bold text-violet-400">{stats.avgScore}%</p>
+          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 text-center">
+            <p className="text-2xl font-bold text-red-400">{stats.avgScore}%</p>
             <p className="text-xs text-zinc-500">Avg Score</p>
           </div>
         </div>
