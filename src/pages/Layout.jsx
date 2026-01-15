@@ -241,7 +241,25 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
           ]
         };
       }
-  
+
+  // TALENT routes - recruitment and candidate intelligence (must be before GROWTH to prevent 'talentdeals' matching 'deals')
+  if (path.includes('talent')) {
+    return {
+      title: 'TALENT',
+      color: 'violet',
+      agent: 'talent',
+      items: [
+        { label: 'Dashboard', path: createPageUrl('TalentDashboard'), icon: LayoutDashboard },
+        { label: 'Clients', path: createPageUrl('TalentClients'), icon: Building2 },
+        { label: 'Deals', path: createPageUrl('TalentDeals'), icon: Handshake },
+        { label: 'Candidates', path: createPageUrl('TalentCandidates'), icon: Users },
+        { label: 'Campaigns', path: createPageUrl('TalentCampaigns'), icon: Megaphone },
+        { label: 'Projects', path: createPageUrl('TalentProjects'), icon: Briefcase },
+        { label: 'Analytics', path: createPageUrl('TalentAnalytics'), icon: BarChart3 },
+      ]
+    };
+  }
+
   // GROWTH routes (merged with CIDE)
           if (path.includes('growth') || path.includes('sequences') || path.includes('deals') || path.includes('leads') || path.includes('insights') || path.includes('prospect') || path.includes('research') || path.includes('pipeline')) {
             return {
@@ -360,24 +378,6 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
         { label: 'Images', path: createPageUrl('CreateImages'), icon: Image },
         { label: 'Videos', path: createPageUrl('CreateVideos'), icon: Video },
         { label: 'Library', path: createPageUrl('CreateLibrary'), icon: FolderOpen },
-      ]
-    };
-  }
-
-  // TALENT routes - recruitment and candidate intelligence
-  if (path.includes('talent')) {
-    return {
-      title: 'TALENT',
-      color: 'violet',
-      agent: 'talent',
-      items: [
-        { label: 'Dashboard', path: createPageUrl('TalentDashboard'), icon: LayoutDashboard },
-        { label: 'Clients', path: createPageUrl('TalentClients'), icon: Building2 },
-        { label: 'Deals', path: createPageUrl('TalentDeals'), icon: Handshake },
-        { label: 'Candidates', path: createPageUrl('TalentCandidates'), icon: Users },
-        { label: 'Campaigns', path: createPageUrl('TalentCampaigns'), icon: Megaphone },
-        { label: 'Projects', path: createPageUrl('TalentProjects'), icon: Briefcase },
-        { label: 'Analytics', path: createPageUrl('TalentAnalytics'), icon: BarChart3 },
       ]
     };
   }
