@@ -1328,7 +1328,7 @@ export default function CRMContacts() {
                   {filteredContacts.map(contact => {
                     const stageConfig = PIPELINE_STAGES.find(s => s.id === contact.stage) || PIPELINE_STAGES[0];
                     return (
-                      <tr key={contact.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors" style={{ opacity: reducedMotion ? 1 : 0 }}>
+                      <tr key={contact.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors">
                         <td className="p-3">
                           <Checkbox
                             checked={selectedContacts.includes(contact.id)}

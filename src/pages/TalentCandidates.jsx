@@ -47,10 +47,11 @@ import {
   Trash2,
   Download,
   Loader2,
+  Upload,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { AddCandidateModal, EditCandidateModal } from "@/components/talent";
+import { AddCandidateModal, EditCandidateModal, CandidateImportModal } from "@/components/talent";
 import { IntelligenceGauge, IntelligenceLevelBadge, ApproachBadge } from "@/components/talent/IntelligenceGauge";
 
 // Animation variants
@@ -301,6 +302,7 @@ export default function TalentCandidates() {
 
   // Modal state
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [editingCandidate, setEditingCandidate] = useState(null);
 
   useEffect(() => {
@@ -547,13 +549,23 @@ export default function TalentCandidates() {
           icon={Users}
           color="red"
         />
-        <Button
-          onClick={() => setShowAddModal(true)}
-          className="bg-red-500 hover:bg-red-600"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Candidate
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => setShowImportModal(true)}
+            variant="outline"
+            className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            Import CSV
+          </Button>
+          <Button
+            onClick={() => setShowAddModal(true)}
+            className="bg-red-500 hover:bg-red-600"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Candidate
+          </Button>
+        </div>
       </div>
 
       {/* Filters Bar */}
@@ -818,6 +830,13 @@ export default function TalentCandidates() {
         candidate={editingCandidate}
         onSuccess={handleEditSuccess}
         onDelete={handleDeleteSuccess}
+      />
+
+      {/* Import Candidates Modal */}
+      <CandidateImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImportComplete={fetchCandidates}
       />
 
       {/* Bulk Delete Confirmation */}
