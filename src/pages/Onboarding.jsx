@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPageUrl } from "@/utils";
-import { db } from "@/api/supabaseClient";
+import { db, supabase } from "@/api/supabaseClient";
 import { Sparkles } from "lucide-react";
 
 import {
@@ -403,6 +403,22 @@ export default function Onboarding() {
           // Link user to company - this makes Settings work!
           if (companyId) {
             await db.auth.updateMe({ company_id: companyId });
+
+            // Assign super_admin role to company founder
+            try {
+              const { data: roleAssigned, error: roleError } = await supabase.rpc(
+                'assign_founder_role',
+                { p_user_id: user.id, p_company_id: companyId }
+              );
+
+              if (roleError) {
+                console.warn('[Onboarding] Failed to assign founder role:', roleError);
+              } else {
+                console.log('[Onboarding] Founder role assigned successfully:', roleAssigned);
+              }
+            } catch (roleErr) {
+              console.warn('[Onboarding] Role assignment error:', roleErr);
+            }
           }
         } catch (companyError) {
           console.error('[Onboarding] Company creation/linking error:', companyError);
