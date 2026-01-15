@@ -1,12 +1,12 @@
 /**
  * SyncVoiceMode
  * Low-latency voice conversation interface with SYNC
- * Uses Web Speech API for recognition and synthesis
+ * Uses Web Speech API for recognition + Cartesia Sonic for ultra-fast TTS (90ms)
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Mic, MicOff, Volume2, VolumeX, Loader2, MessageSquare } from 'lucide-react';
+import { X, Mic, MicOff, Volume2, VolumeX, Loader2, MessageSquare, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/components/context/UserContext';
 import { useSyncState } from '@/components/context/SyncStateContext';
@@ -19,6 +19,9 @@ const hasSpeechRecognition = !!SpeechRecognition;
 // Generate unique session ID
 const generateSessionId = () => `voice-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
+// Available voices for Cartesia Sonic
+const VOICES = ['nova', 'alloy', 'echo', 'fable', 'onyx', 'shimmer'];
+
 export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
   const { user } = useUser();
   const syncState = useSyncState();
@@ -30,10 +33,27 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
   const [error, setError] = useState(null);
   const [sessionId] = useState(generateSessionId);
   const [isMuted, setIsMuted] = useState(false);
+  const [conversationHistory, setConversationHistory] = useState([]);
+  const [latency, setLatency] = useState(null);
+  const [selectedVoice] = useState('nova'); // Best for conversational
 
   const recognitionRef = useRef(null);
-  const synthRef = useRef(window.speechSynthesis);
-  const utteranceRef = useRef(null);
+  const audioContextRef = useRef(null);
+  const audioQueueRef = useRef([]);
+  const isPlayingRef = useRef(false);
+
+  // Initialize audio context for playback
+  useEffect(() => {
+    if (isOpen && !audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    return () => {
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+        audioContextRef.current = null;
+      }
+    };
+  }, [isOpen]);
 
   // Initialize speech recognition
   useEffect(() => {
@@ -52,7 +72,7 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
 
     recognition.onend = () => {
       setIsListening(false);
-      // Auto-restart if still open and not processing
+      // Auto-restart if still open and not processing/speaking
       if (isOpen && !isProcessing && !isSpeaking) {
         try {
           recognition.start();
@@ -108,7 +128,52 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
     };
   }, [isOpen]);
 
-  // Process voice input and get response
+  // Play audio from base64 using Web Audio API
+  const playAudio = useCallback(async (audioBase64, format = 'mp3') => {
+    if (!audioContextRef.current || isMuted) return;
+
+    try {
+      // Resume audio context if suspended (browser autoplay policy)
+      if (audioContextRef.current.state === 'suspended') {
+        await audioContextRef.current.resume();
+      }
+
+      // Decode base64 to ArrayBuffer
+      const binaryString = atob(audioBase64);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+
+      // Decode audio data
+      const audioBuffer = await audioContextRef.current.decodeAudioData(bytes.buffer);
+
+      // Create and play source
+      const source = audioContextRef.current.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(audioContextRef.current.destination);
+
+      source.onended = () => {
+        setIsSpeaking(false);
+        setIsProcessing(false);
+        syncState.setMood('listening');
+        // Resume listening after speaking
+        startListening();
+      };
+
+      setIsSpeaking(true);
+      syncState.setMood('speaking');
+      source.start(0);
+
+    } catch (error) {
+      console.error('Audio playback error:', error);
+      setIsSpeaking(false);
+      setIsProcessing(false);
+      startListening();
+    }
+  }, [isMuted, syncState]);
+
+  // Process voice input with Cartesia Sonic TTS
   const processVoiceInput = useCallback(async (text) => {
     if (!text || isProcessing) return;
 
@@ -121,9 +186,12 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
       recognitionRef.current.stop();
     }
 
+    const startTime = Date.now();
+
     try {
+      // Call sync-voice endpoint (LLM + Cartesia Sonic TTS)
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-voice`,
         {
           method: 'POST',
           headers: {
@@ -133,7 +201,8 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
           body: JSON.stringify({
             message: text,
             sessionId,
-            stream: false,
+            conversationHistory,
+            voice: selectedVoice,
             context: {
               userId: user?.id,
               companyId: user?.company_id,
@@ -143,29 +212,31 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
         }
       );
 
-      if (!response.ok) throw new Error('Failed to get response');
+      if (!response.ok) {
+        throw new Error('Failed to get response');
+      }
 
       const data = await response.json();
-      const responseText = data.response || data.message || "Done!";
+      const totalLatency = Date.now() - startTime;
+      setLatency(totalLatency);
 
-      setLastResponse(responseText);
+      console.log(`[Voice] Response in ${totalLatency}ms:`, data.timing);
 
-      // Speak the response
-      if (!isMuted) {
-        speakResponse(responseText);
+      // Update conversation history
+      setConversationHistory(prev => [
+        ...prev,
+        { role: 'user', content: text },
+        { role: 'assistant', content: data.text }
+      ].slice(-10)); // Keep last 5 exchanges
+
+      setLastResponse(data.text);
+
+      // Play the Cartesia Sonic audio
+      if (!isMuted && data.audio) {
+        await playAudio(data.audio, data.audioFormat);
       } else {
         setIsProcessing(false);
-        // Resume listening
         startListening();
-      }
-
-      // Update sync state
-      if (data.delegatedTo) {
-        syncState.setActiveAgent(data.delegatedTo);
-        setTimeout(() => syncState.setActiveAgent(null), 2000);
-      }
-      if (data.actionExecuted) {
-        syncState.triggerSuccess();
       }
 
     } catch (error) {
@@ -174,65 +245,18 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
       setIsProcessing(false);
       startListening();
     }
-  }, [isProcessing, sessionId, user, isMuted, syncState]);
-
-  // Speak response using TTS
-  const speakResponse = useCallback((text) => {
-    if (!synthRef.current || isMuted) return;
-
-    // Cancel any ongoing speech
-    synthRef.current.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 1.1; // Slightly faster for more natural feel
-    utterance.pitch = 1;
-    utterance.volume = 1;
-
-    // Try to find a good voice
-    const voices = synthRef.current.getVoices();
-    const preferredVoice = voices.find(v =>
-      v.name.includes('Samantha') ||
-      v.name.includes('Google') ||
-      v.name.includes('Microsoft') ||
-      v.lang.startsWith('en')
-    );
-    if (preferredVoice) {
-      utterance.voice = preferredVoice;
-    }
-
-    utterance.onstart = () => {
-      setIsSpeaking(true);
-      syncState.setMood('speaking');
-    };
-
-    utterance.onend = () => {
-      setIsSpeaking(false);
-      setIsProcessing(false);
-      syncState.setMood('listening');
-      // Resume listening
-      startListening();
-    };
-
-    utterance.onerror = () => {
-      setIsSpeaking(false);
-      setIsProcessing(false);
-      startListening();
-    };
-
-    utteranceRef.current = utterance;
-    synthRef.current.speak(utterance);
-  }, [isMuted, syncState]);
+  }, [isProcessing, sessionId, user, isMuted, syncState, conversationHistory, selectedVoice, playAudio]);
 
   // Start listening
   const startListening = useCallback(() => {
-    if (recognitionRef.current && !isListening) {
+    if (recognitionRef.current && !isListening && !isSpeaking) {
       try {
         recognitionRef.current.start();
       } catch (e) {
         // Might already be running
       }
     }
-  }, [isListening]);
+  }, [isListening, isSpeaking]);
 
   // Stop listening
   const stopListening = useCallback(() => {
@@ -244,11 +268,7 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
   // Toggle mute
   const toggleMute = useCallback(() => {
     setIsMuted(prev => !prev);
-    if (isSpeaking && synthRef.current) {
-      synthRef.current.cancel();
-      setIsSpeaking(false);
-    }
-  }, [isSpeaking]);
+  }, []);
 
   // Manual mic toggle
   const toggleMic = useCallback(() => {
@@ -263,12 +283,11 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
   useEffect(() => {
     if (!isOpen) {
       stopListening();
-      if (synthRef.current) {
-        synthRef.current.cancel();
-      }
       setTranscript('');
       setLastResponse('');
       setError(null);
+      setLatency(null);
+      setConversationHistory([]);
     }
   }, [isOpen, stopListening]);
 
@@ -308,6 +327,13 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
         >
           {/* Close and controls */}
           <div className="absolute top-6 right-6 flex items-center gap-2">
+            {/* Latency indicator */}
+            {latency && (
+              <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-zinc-800/50 text-xs">
+                <Zap className="w-3 h-3 text-green-400" />
+                <span className="text-green-400">{latency}ms</span>
+              </div>
+            )}
             <button
               onClick={onSwitchToChat}
               className="p-3 rounded-full bg-zinc-800/50 text-zinc-400 hover:text-white hover:bg-zinc-700/50 transition-colors"
@@ -335,15 +361,23 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
             </button>
           </div>
 
+          {/* Powered by badge */}
+          <div className="absolute top-6 left-6">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-800/30 text-xs text-zinc-500">
+              <span>Powered by</span>
+              <span className="text-purple-400 font-medium">Cartesia Sonic</span>
+            </div>
+          </div>
+
           {/* Main content */}
           <div className="flex flex-col items-center gap-8">
             {/* Avatar - larger for voice mode */}
             <motion.div
               animate={{
-                scale: isSpeaking ? [1, 1.05, 1] : isListening ? [1, 1.02, 1] : 1,
+                scale: isSpeaking ? [1, 1.08, 1] : isListening ? [1, 1.03, 1] : 1,
               }}
               transition={{
-                duration: isSpeaking ? 0.5 : 2,
+                duration: isSpeaking ? 0.3 : 2,
                 repeat: Infinity,
                 ease: 'easeInOut',
               }}
@@ -354,7 +388,7 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
             {/* Status */}
             <div className="text-center space-y-2">
               <h2 className="text-2xl font-semibold text-white">
-                {isProcessing ? 'Processing...' : isSpeaking ? 'Speaking' : isListening ? 'Listening' : 'Ready'}
+                {isProcessing ? 'Thinking...' : isSpeaking ? 'Speaking' : isListening ? 'Listening' : 'Ready'}
               </h2>
               {error && (
                 <p className="text-red-400 text-sm">{error}</p>
@@ -362,7 +396,7 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
             </div>
 
             {/* Transcript / Response display */}
-            <div className="min-h-[80px] max-w-lg text-center px-6">
+            <div className="min-h-[100px] max-w-lg text-center px-6">
               {transcript && (
                 <motion.p
                   initial={{ opacity: 0, y: 10 }}
@@ -384,7 +418,7 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
               {isProcessing && !transcript && (
                 <div className="flex items-center justify-center gap-2 text-zinc-500">
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Thinking...</span>
+                  <span>Processing with AI...</span>
                 </div>
               )}
             </div>
@@ -411,6 +445,13 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
             <p className="text-sm text-zinc-600">
               {isListening ? "Speak naturally • SYNC is listening" : "Click mic to start"}
             </p>
+
+            {/* Voice quality indicator */}
+            <div className="flex items-center gap-4 text-xs text-zinc-600">
+              <span>Ultra-low latency TTS</span>
+              <span>•</span>
+              <span>Natural voice synthesis</span>
+            </div>
           </div>
         </motion.div>
       )}

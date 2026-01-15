@@ -45,3 +45,6 @@ verify_jwt = false
 
 [functions.processOutreachScheduler]
 verify_jwt = false
+
+[functions.sync-voice]
+verify_jwt = false
