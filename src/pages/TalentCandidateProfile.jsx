@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { IntelligenceGauge } from "@/components/talent/IntelligenceGauge";
 import { IntelligenceReport } from "@/components/talent/IntelligenceReport";
+import { CompanyIntelligenceReport } from "@/components/shared/CompanyIntelligenceReport";
 import {
   User,
   Building2,
@@ -610,81 +611,72 @@ export default function TalentCandidateProfile() {
 
           {/* Company Tab */}
           {activeTab === "company" && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Company Details */}
-              <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6">
-                <h3 className="text-base font-semibold text-white mb-6 flex items-center gap-2">
-                  <Building2 className="w-5 h-5 text-red-400" />
-                  Company Information
-                </h3>
-                <div className="space-y-1">
-                  <InfoRow icon={Building2} label="Company" value={candidate.company_name} />
-                  <InfoRow icon={Factory} label="Industry" value={candidate.industry} />
-                  <InfoRow icon={Users} label="Company Size" value={candidate.company_size} />
-                  <InfoRow icon={Users} label="Employee Count" value={candidate.company_employee_count?.toLocaleString()} />
-                  <InfoRow icon={Building} label="Company Type" value={candidate.company_type} />
-                  <InfoRow icon={MapPin} label="Headquarters" value={candidate.company_hq} />
-                  <InfoRow icon={Globe} label="Website" value={candidate.company_domain} link={candidate.company_domain ? `https://${candidate.company_domain}` : null} />
-                </div>
-                {candidate.company_description && (
-                  <div className="mt-6 pt-6 border-t border-white/[0.06]">
-                    <p className="text-xs text-white/40 mb-2">About</p>
-                    <ExpandableText text={candidate.company_description} maxLength={300} />
-                  </div>
-                )}
-              </div>
-
-              {/* Compensation & Market */}
-              <div className="space-y-6">
+            <div className="space-y-6">
+              {/* Company Info + Career/M&A in 2 columns */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Company Details */}
                 <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6">
                   <h3 className="text-base font-semibold text-white mb-6 flex items-center gap-2">
-                    <DollarSign className="w-5 h-5 text-red-400" />
-                    Compensation Intelligence
+                    <Building2 className="w-5 h-5 text-red-400" />
+                    Company Information
                   </h3>
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="bg-white/[0.04] rounded-xl p-4 text-center">
-                      <p className="text-xs text-white/40 mb-2">Salary Range</p>
-                      <p className="text-2xl font-bold text-green-400">
-                        {candidate.salary_range ? `$${Number(candidate.salary_range).toLocaleString()}` : "—"}
-                      </p>
-                    </div>
-                    <div className="bg-white/[0.04] rounded-xl p-4 text-center">
-                      <p className="text-xs text-white/40 mb-2">Market Position</p>
-                      <p className="text-lg font-semibold text-white">{candidate.market_position || "—"}</p>
-                    </div>
+                  <div className="space-y-1">
+                    <InfoRow icon={Building2} label="Company" value={candidate.company_name} />
+                    <InfoRow icon={Factory} label="Industry" value={candidate.industry} />
+                    <InfoRow icon={Users} label="Company Size" value={candidate.company_size} />
+                    <InfoRow icon={Users} label="Employee Count" value={candidate.company_employee_count?.toLocaleString()} />
+                    <InfoRow icon={Building} label="Company Type" value={candidate.company_type} />
+                    <InfoRow icon={MapPin} label="Headquarters" value={candidate.company_hq} />
+                    <InfoRow icon={Globe} label="Website" value={candidate.company_domain} link={candidate.company_domain ? `https://${candidate.company_domain}` : null} />
                   </div>
-                  {candidate.salary_intelligence && (
-                    <ExpandableText text={candidate.salary_intelligence} maxLength={200} />
+                  {candidate.company_description && (
+                    <div className="mt-6 pt-6 border-t border-white/[0.06]">
+                      <p className="text-xs text-white/40 mb-2">About</p>
+                      <ExpandableText text={candidate.company_description} maxLength={300} />
+                    </div>
                   )}
                 </div>
 
-                {/* Career Changes */}
-                <AnalysisCard
-                  icon={TrendingUp}
-                  title="Career Progression"
-                  content={candidate.career_changes}
-                  maxLength={300}
-                />
+                {/* Career & M&A Analysis */}
+                <div className="space-y-6">
+                  {/* Career Changes */}
+                  <AnalysisCard
+                    icon={TrendingUp}
+                    title="Career Progression"
+                    content={candidate.career_changes}
+                    maxLength={300}
+                  />
 
-                {/* M&A News */}
-                <AnalysisCard
-                  icon={FileText}
-                  title="Recent M&A News"
-                  content={candidate.recent_ma_news}
-                  maxLength={300}
+                  {/* M&A News */}
+                  <AnalysisCard
+                    icon={FileText}
+                    title="Recent M&A News"
+                    content={candidate.recent_ma_news}
+                    maxLength={300}
+                  />
+                </div>
+              </div>
+
+              {/* Company Intelligence from Explorium */}
+              <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6">
+                <CompanyIntelligenceReport
+                  intelligence={candidate.company_intelligence}
+                  companyName={candidate.company_name}
+                  companyDomain={candidate.company_domain}
+                  entityType="candidate"
+                  entityId={candidate.id}
+                  onIntelligenceGenerated={(intel) => setCandidate({ ...candidate, company_intelligence: intel })}
                 />
               </div>
 
               {/* Experience Report */}
               {candidate.experience_report && (
-                <div className="lg:col-span-2">
-                  <AnalysisCard
-                    icon={FileText}
-                    title="Full Experience Report"
-                    content={candidate.experience_report}
-                    maxLength={600}
-                  />
-                </div>
+                <AnalysisCard
+                  icon={FileText}
+                  title="Full Experience Report"
+                  content={candidate.experience_report}
+                  maxLength={600}
+                />
               )}
             </div>
           )}
