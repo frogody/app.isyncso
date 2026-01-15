@@ -954,11 +954,15 @@ export default function CRMContacts() {
         recruitment_terms: formData.recruitment_terms || null,
       };
 
+      console.log('Submitting prospect data:', JSON.stringify(prospectData, null, 2));
+
       if (editingContact) {
-        await db.entities.Prospect.update(editingContact.id, prospectData);
+        const result = await db.entities.Prospect.update(editingContact.id, prospectData);
+        console.log('Update result:', JSON.stringify(result, null, 2));
         toast.success(`${formData.name || 'Contact'} updated`);
       } else {
-        await db.entities.Prospect.create(prospectData);
+        const result = await db.entities.Prospect.create(prospectData);
+        console.log('Create result:', JSON.stringify(result, null, 2));
         toast.success(`${formData.name || 'Contact'} created`);
       }
 
@@ -967,7 +971,11 @@ export default function CRMContacts() {
       setEditingContact(null);
       loadContacts();
     } catch (error) {
-      console.error("Failed to save contact:", error?.message || error);
+      console.error("Failed to save contact:", JSON.stringify(error, null, 2));
+      console.error("Error message:", error?.message);
+      console.error("Error details:", error?.details);
+      console.error("Error hint:", error?.hint);
+      console.error("Error code:", error?.code);
       toast.error(error?.message || "Failed to save contact");
     }
   };
