@@ -101,8 +101,8 @@ const emptyContact = {
   score: 50,
   tags: [],
   notes: "",
-  last_contacted: null,
   next_follow_up: null,
+  is_starred: false,
   // Recruitment client fields
   is_recruitment_client: false,
   recruitment_fee_percentage: "",
@@ -922,37 +922,31 @@ export default function CRMContacts() {
       const lastName = nameParts.slice(1).join(' ') || '';
 
       // Use correct column names for the prospects table
+      // Only include columns that exist in the database schema
       const prospectData = {
         owner_id: user.id,
         organization_id: user.organization_id, // Required by RLS policy
         first_name: firstName,
         last_name: lastName,
-        email: formData.email,
-        phone: formData.phone,
-        job_title: formData.job_title,
-        company: formData.company_name,
-        stage: formData.stage,
-        source: formData.source,
+        email: formData.email || null,
+        phone: formData.phone || null,
+        job_title: formData.job_title || null,
+        company: formData.company_name || null,
+        stage: formData.stage || 'new',
+        source: formData.source || null,
         contact_type: formData.contact_type || 'lead',
-        linkedin_url: formData.linkedin_url,
-        twitter_url: formData.twitter_url,
-        website: formData.website,
-        location: formData.location,
-        industry: formData.industry,
-        company_size: formData.company_size,
+        linkedin_url: formData.linkedin_url || null,
+        twitter_url: formData.twitter_url || null,
+        website: formData.website || null,
+        location: formData.location || null,
+        industry: formData.industry || null,
+        company_size: formData.company_size || null,
         deal_value: formData.deal_value ? parseFloat(formData.deal_value) : null,
-        probability: formData.score,
-        tags: formData.tags,
-        notes: formData.notes,
+        probability: formData.score || 0,
+        tags: formData.tags || [],
+        notes: formData.notes || null,
         is_starred: formData.is_starred || false,
-        next_follow_up: formData.next_follow_up,
-        // Type-specific fields
-        lifetime_value: formData.lifetime_value ? parseFloat(formData.lifetime_value) : null,
-        contract_date: formData.contract_date,
-        renewal_date: formData.renewal_date,
-        partnership_type: formData.partnership_type,
-        candidate_status: formData.candidate_status,
-        target_priority: formData.target_priority,
+        next_follow_up: formData.next_follow_up || null,
         // Recruitment client fields
         is_recruitment_client: formData.contact_type === 'client' ? true : (formData.is_recruitment_client || false),
         recruitment_fee_percentage: formData.recruitment_fee_percentage ? parseFloat(formData.recruitment_fee_percentage) : null,
@@ -962,10 +956,10 @@ export default function CRMContacts() {
 
       if (editingContact) {
         await db.entities.Prospect.update(editingContact.id, prospectData);
-        toast.success("Contact updated");
+        toast.success(`${formData.name || 'Contact'} updated`);
       } else {
         await db.entities.Prospect.create(prospectData);
-        toast.success("Contact created");
+        toast.success(`${formData.name || 'Contact'} created`);
       }
 
       setShowModal(false);
@@ -973,8 +967,8 @@ export default function CRMContacts() {
       setEditingContact(null);
       loadContacts();
     } catch (error) {
-      console.error("Failed to save contact:", error);
-      toast.error("Failed to save contact");
+      console.error("Failed to save contact:", error?.message || error);
+      toast.error(error?.message || "Failed to save contact");
     }
   };
 
