@@ -18,4 +18,5 @@ export { CandidateMatchCard, CandidateMatchList } from './CandidateMatchCard';
 
 // Outreach Components
 export { default as OutreachMessageModal } from './OutreachMessageModal';
+export { default as OutreachPipeline } from './OutreachPipeline';
 export { default as OutreachQueue } from './OutreachQueue';

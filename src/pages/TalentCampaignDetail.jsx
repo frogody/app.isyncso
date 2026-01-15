@@ -22,7 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import CampaignSequenceEditor from "@/components/campaigns/CampaignSequenceEditor";
 import CampaignMetricsPanel from "@/components/campaigns/CampaignMetricsPanel";
-import { CandidateMatchingPanel, OutreachQueue } from "@/components/talent";
+import { CandidateMatchingPanel, OutreachPipeline, OutreachQueue } from "@/components/talent";
 import {
   Megaphone,
   Settings,
@@ -935,7 +935,7 @@ export default function TalentCampaignDetail() {
           {/* Outreach Tab */}
           {!isNew && (
             <TabsContent value="outreach" className="m-0">
-              <OutreachQueue campaignId={campaignId} />
+              <OutreachPipeline campaign={campaign} onUpdate={handleCampaignUpdate} />
             </TabsContent>
           )}
 

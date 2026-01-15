@@ -36,3 +36,9 @@ verify_jwt = false
 
 [functions.generateCandidateIntelligence]
 verify_jwt = false
+
+[functions.generateCampaignOutreach]
+verify_jwt = false
+
+[functions.analyzeCampaignProject]
+verify_jwt = false
