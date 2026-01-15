@@ -328,8 +328,8 @@ export default function TalentCandidateProfile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
+      <div className="min-h-screen bg-black">
+        <div className="w-full px-6 lg:px-8 py-6 space-y-6">
           <Skeleton className="h-10 w-48" />
           <Skeleton className="h-48 rounded-2xl" />
           <div className="grid grid-cols-4 gap-4">
@@ -396,21 +396,19 @@ export default function TalentCandidateProfile() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="max-w-7xl mx-auto px-6 py-6"
+        className="w-full px-6 lg:px-8 py-6 space-y-6"
       >
         {/* Back Button */}
-        <motion.div variants={itemVariants}>
-          <Link
-            to={createPageUrl("TalentCandidates")}
-            className="inline-flex items-center gap-2 text-white/50 hover:text-white transition-colors text-sm mb-6"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            Back to Candidates
-          </Link>
-        </motion.div>
+        <Link
+          to={createPageUrl("TalentCandidates")}
+          className="inline-flex items-center gap-2 text-white/50 hover:text-white transition-colors text-sm"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          Back to Candidates
+        </Link>
 
         {/* Hero Section */}
-        <motion.div variants={itemVariants} className="mb-6">
+        <motion.div variants={itemVariants}>
           <div className="bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-white/[0.06] rounded-3xl p-8">
             <div className="flex flex-col lg:flex-row lg:items-center gap-6">
               {/* Avatar & Basic Info */}
@@ -497,7 +495,7 @@ export default function TalentCandidateProfile() {
         </motion.div>
 
         {/* Tab Navigation */}
-        <motion.div variants={itemVariants} className="mb-6">
+        <motion.div variants={itemVariants}>
           <div className="flex gap-1 p-1 bg-white/[0.03] border border-white/[0.06] rounded-2xl">
             {tabs.map((tab) => (
               <button
