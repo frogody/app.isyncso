@@ -705,8 +705,8 @@ function PagesContent() {
 
                 <Route path="/TalentDashboard" element={<TalentDashboard />} />
 
-                {/* TalentClients now redirects to CRMContacts with type=client filter */}
-                <Route path="/TalentClients" element={<Navigate to="/CRMContacts?type=client" replace />} />
+                {/* TalentClients now redirects to CRMContacts with type=recruitment_client filter */}
+                <Route path="/TalentClients" element={<Navigate to="/CRMContacts?type=recruitment_client" replace />} />
 
                 <Route path="/TalentDeals" element={<TalentDeals />} />
 

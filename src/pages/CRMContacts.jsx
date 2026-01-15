@@ -18,7 +18,7 @@ const CONTACT_TYPES = [
   { id: 'partner', label: 'Partners' },
   { id: 'candidate', label: 'Candidates' },
   { id: 'target', label: 'Targets' },
-  { id: 'client', label: 'Recruitment Clients' },
+  { id: 'recruitment_client', label: 'Recruitment Clients' },
 ];
 import {
   Plus, Search, Filter, Mail, Phone, Building2, MapPin, MoreVertical, X,
@@ -948,7 +948,7 @@ export default function CRMContacts() {
         is_starred: formData.is_starred || false,
         next_follow_up: formData.next_follow_up || null,
         // Recruitment client fields
-        is_recruitment_client: formData.contact_type === 'client' ? true : (formData.is_recruitment_client || false),
+        is_recruitment_client: formData.contact_type === 'recruitment_client' ? true : (formData.is_recruitment_client || false),
         recruitment_fee_percentage: formData.recruitment_fee_percentage ? parseFloat(formData.recruitment_fee_percentage) : null,
         recruitment_fee_flat: formData.recruitment_fee_flat ? parseFloat(formData.recruitment_fee_flat) : null,
         recruitment_terms: formData.recruitment_terms || null,
@@ -1574,8 +1574,8 @@ export default function CRMContacts() {
               </div>
             </div>
 
-            {/* Recruitment Client Panel - shown when contact_type is 'client' */}
-            {formData.contact_type === 'client' && (
+            {/* Recruitment Client Panel - shown when contact_type is 'recruitment_client' */}
+            {formData.contact_type === 'recruitment_client' && (
               <div className="p-4 rounded-xl bg-violet-500/10 border border-violet-500/30 space-y-4">
                 <div className="flex items-center gap-2 text-sm font-medium text-violet-400">
                   <Building2 className="w-4 h-4" />
