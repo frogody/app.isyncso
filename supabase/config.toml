@@ -42,3 +42,6 @@ verify_jwt = false
 
 [functions.analyzeCampaignProject]
 verify_jwt = false
+
+[functions.processOutreachScheduler]
+verify_jwt = false
