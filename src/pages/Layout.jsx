@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { db } from "@/api/supabaseClient";
 import { SENTINEL, THEME_COLORS, UI, FEATURES } from "@/lib/constants";
@@ -108,6 +108,11 @@ import { AchievementProvider } from "@/components/learn/AchievementContext";
 import { UserProvider, useTeamAccess } from "@/components/context/UserContext";
 import { PermissionProvider, usePermissions } from "@/components/context/PermissionContext";
 import { AnimationProvider, useAnimation } from "@/components/context/AnimationContext";
+import { SyncStateProvider } from "@/components/context/SyncStateContext";
+
+// Import SYNC floating components
+import SyncFloatingChat from "@/components/sync/SyncFloatingChat";
+import SyncVoiceMode from "@/components/sync/SyncVoiceMode";
 
 // Navigation items with permission requirements
 // permission: null = always visible, string = requires that permission
@@ -513,8 +518,9 @@ function SecondarySidebar({ config, location }) {
 }
 
 // Reusable Sidebar Content - must be rendered inside PermissionProvider
-function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig, enabledApps, onOpenAppsManager }) {
+function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig, enabledApps, onOpenAppsManager, onOpenFloatingChat, onOpenVoiceMode }) {
     const location = useLocation();
+    const navigate = useNavigate();
   const [me, setMe] = React.useState(null);
 
   // Get permission context - use the hook directly
@@ -522,6 +528,39 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
 
   // Get animation context for avatar state
   const { avatarState, triggerActivity } = useAnimation();
+
+  // Click handling state for avatar (single/double/triple click)
+  const avatarClickRef = React.useRef({ count: 0, timer: null });
+
+  // Handle avatar click with multi-click detection
+  const handleAvatarClick = React.useCallback((e) => {
+    e.preventDefault();
+    const ref = avatarClickRef.current;
+    ref.count += 1;
+
+    // Clear existing timer
+    if (ref.timer) {
+      clearTimeout(ref.timer);
+    }
+
+    // Set new timer to process clicks after delay
+    ref.timer = setTimeout(() => {
+      const clicks = ref.count;
+      ref.count = 0;
+      ref.timer = null;
+
+      if (clicks === 1) {
+        // Single click: Open floating chat
+        onOpenFloatingChat?.();
+      } else if (clicks === 2) {
+        // Double click: Open voice mode
+        onOpenVoiceMode?.();
+      } else if (clicks >= 3) {
+        // Triple click: Navigate to full SYNC page
+        navigate(createPageUrl("SyncAgent"));
+      }
+    }, 300); // 300ms to detect multi-clicks
+  }, [navigate, onOpenFloatingChat, onOpenVoiceMode]);
 
   // Get team-based app access
   const { effectiveApps, hasTeams, isLoading: teamLoading } = useTeamAccess();
@@ -612,10 +651,15 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
 
       {/* Top Profile Section */}
       <div className="relative flex flex-col items-center justify-center pt-4 pb-3 transition-all duration-300 z-30">
-        {/* SYNC Avatar - matches SyncAgent page visualization */}
-        <Link to={createPageUrl("SyncAgent")} className="relative z-40 group cursor-pointer flex flex-col items-center" aria-label="Go to SYNC">
-          <SyncAvatarMini size={52} state={avatarState} className="transition-all duration-300" />
-        </Link>
+        {/* SYNC Avatar - click handling: 1x=chat, 2x=voice, 3x=full page */}
+        <button
+          onClick={handleAvatarClick}
+          className="relative z-40 group cursor-pointer flex flex-col items-center focus:outline-none focus:ring-2 focus:ring-purple-500/50 rounded-full"
+          aria-label="SYNC: Click for chat, double-click for voice, triple-click for full page"
+          title="Click: Chat • Double: Voice • Triple: Full page"
+        >
+          <SyncAvatarMini size={52} className="transition-all duration-300 group-hover:scale-105" />
+        </button>
       </div>
 
       {/* Navigation - Mobile optimized with larger touch targets */}
@@ -771,6 +815,39 @@ export default function Layout({ children, currentPageName }) {
   const [enabledApps, setEnabledApps] = useState(FEATURES.DEFAULT_ENABLED_APPS);
   const [appsManagerOpen, setAppsManagerOpen] = useState(false);
   const [productsSettings, setProductsSettings] = useState({ digitalEnabled: true, physicalEnabled: true });
+
+  // SYNC floating chat and voice mode state
+  const [isFloatingChatOpen, setIsFloatingChatOpen] = useState(false);
+  const [isVoiceModeOpen, setIsVoiceModeOpen] = useState(false);
+
+  // Handlers for SYNC avatar clicks
+  const handleOpenFloatingChat = useCallback(() => {
+    setIsVoiceModeOpen(false); // Close voice if open
+    setIsFloatingChatOpen(true);
+  }, []);
+
+  const handleOpenVoiceMode = useCallback(() => {
+    setIsFloatingChatOpen(false); // Close chat if open
+    setIsVoiceModeOpen(true);
+  }, []);
+
+  const handleCloseFloatingChat = useCallback(() => {
+    setIsFloatingChatOpen(false);
+  }, []);
+
+  const handleCloseVoiceMode = useCallback(() => {
+    setIsVoiceModeOpen(false);
+  }, []);
+
+  const handleExpandChatToFullPage = useCallback(() => {
+    setIsFloatingChatOpen(false);
+    // Navigation handled in child component
+  }, []);
+
+  const handleSwitchToChat = useCallback(() => {
+    setIsVoiceModeOpen(false);
+    setIsFloatingChatOpen(true);
+  }, []);
   
 
   // Load user app config
@@ -922,6 +999,7 @@ export default function Layout({ children, currentPageName }) {
     <ErrorBoundary>
       <OnboardingGuard>
           <UserProvider>
+          <SyncStateProvider>
           <AnimationProvider>
           <PermissionProvider>
             <AchievementProvider>
@@ -1106,6 +1184,8 @@ export default function Layout({ children, currentPageName }) {
               secondaryNavConfig={secondaryNavConfig}
               enabledApps={enabledApps}
               onOpenAppsManager={() => setAppsManagerOpen(true)}
+              onOpenFloatingChat={handleOpenFloatingChat}
+              onOpenVoiceMode={handleOpenVoiceMode}
             />
           </div>
 
@@ -1141,6 +1221,8 @@ export default function Layout({ children, currentPageName }) {
                     secondaryNavConfig={secondaryNavConfig}
                     enabledApps={enabledApps}
                     onOpenAppsManager={() => setAppsManagerOpen(true)}
+                    onOpenFloatingChat={handleOpenFloatingChat}
+                    onOpenVoiceMode={handleOpenVoiceMode}
                   />
                 </SheetContent>
               </Sheet>
@@ -1169,10 +1251,26 @@ export default function Layout({ children, currentPageName }) {
           onClose={() => setAppsManagerOpen(false)}
           onConfigUpdate={onAppsConfigChange}
         />
+
+        {/* SYNC Floating Chat Widget */}
+        <SyncFloatingChat
+          isOpen={isFloatingChatOpen}
+          onClose={handleCloseFloatingChat}
+          onExpandToFullPage={handleExpandChatToFullPage}
+          onStartVoice={handleOpenVoiceMode}
+        />
+
+        {/* SYNC Voice Mode */}
+        <SyncVoiceMode
+          isOpen={isVoiceModeOpen}
+          onClose={handleCloseVoiceMode}
+          onSwitchToChat={handleSwitchToChat}
+        />
         </div>
           </AchievementProvider>
           </PermissionProvider>
           </AnimationProvider>
+          </SyncStateProvider>
         </UserProvider>
         </OnboardingGuard>
         </ErrorBoundary>

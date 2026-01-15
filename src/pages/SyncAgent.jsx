@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/api/supabaseClient';
 import { useUser } from '@/components/context/UserContext';
+import { useSyncState } from '@/components/context/SyncStateContext';
 import anime from '@/lib/anime-wrapper';
 import { prefersReducedMotion } from '@/lib/animations';
 import { useLocalStorage } from '@/components/hooks/useLocalStorage';
@@ -1706,12 +1707,29 @@ const DEFAULT_MESSAGES = [
 
 export default function SyncAgent() {
   const { user } = useUser();
-  const [mood, setMood] = useState('listening');
+  const syncStateContext = useSyncState();
+  const [mood, setMoodLocal] = useState('listening');
   const [level, setLevel] = useState(0.18);
   const [seed, setSeed] = useState(4);
-  const [activeAgent, setActiveAgent] = useState(null);
+  const [activeAgent, setActiveAgentLocal] = useState(null);
   const [currentActionEffect, setCurrentActionEffect] = useState(null);
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [showSuccess, setShowSuccessLocal] = useState(false);
+
+  // Sync local state changes to global context for mini avatar synchronization
+  const setMood = useCallback((newMood) => {
+    setMoodLocal(newMood);
+    syncStateContext.setMood(newMood);
+  }, [syncStateContext]);
+
+  const setActiveAgent = useCallback((agent) => {
+    setActiveAgentLocal(agent);
+    syncStateContext.setActiveAgent(agent);
+  }, [syncStateContext]);
+
+  const setShowSuccess = useCallback((show) => {
+    setShowSuccessLocal(show);
+    if (show) syncStateContext.triggerSuccess();
+  }, [syncStateContext]);
 
   // Agent channel messages (inter-agent communication feed)
   const [agentMessages, setAgentMessages] = useState([]);
@@ -1790,18 +1808,27 @@ export default function SyncAgent() {
   useEffect(() => {
     let raf = 0;
     let t0 = performance.now();
+    let lastContextUpdate = 0;
 
     const loop = (t) => {
       const dt = (t - t0) / 1000;
       t0 = t;
       const target = mood === 'speaking' ? 0.55 : mood === 'thinking' ? 0.35 : 0.18;
-      setLevel((v) => v + (target - v) * clamp(dt * 3.2, 0, 1));
+      setLevel((v) => {
+        const newLevel = v + (target - v) * clamp(dt * 3.2, 0, 1);
+        // Throttle context updates to ~10fps to avoid performance issues
+        if (t - lastContextUpdate > 100) {
+          lastContextUpdate = t;
+          syncStateContext.updateState({ level: newLevel });
+        }
+        return newLevel;
+      });
       raf = requestAnimationFrame(loop);
     };
 
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [mood]);
+  }, [mood, syncStateContext]);
 
   // Send message to SYNC API
   const send = useCallback(async () => {
