@@ -2,15 +2,18 @@ import React, { useRef, useEffect } from 'react';
 import anime from '@/lib/anime-wrapper';
 import { cn } from '@/lib/utils';
 
-// Agent color segments (same colors as SyncAgent page)
+// Agent color segments - MUST match SyncAgent.jsx exactly
 const AGENT_SEGMENTS = [
-  { id: 'learn', color: '#06b6d4', from: 0.00, to: 0.12 },       // cyan
-  { id: 'growth', color: '#6366f1', from: 0.14, to: 0.26 },     // indigo
-  { id: 'products', color: '#10b981', from: 0.28, to: 0.40 },   // emerald
-  { id: 'finance', color: '#f59e0b', from: 0.42, to: 0.54 },    // amber
-  { id: 'sentinel', color: '#ec4899', from: 0.56, to: 0.68 },   // pink
-  { id: 'create', color: '#ef4444', from: 0.70, to: 0.82 },     // red
-  { id: 'raise', color: '#f97316', from: 0.84, to: 0.96 },      // orange
+  { id: 'orchestrator', color: '#ec4899', from: 0.00, to: 0.10 },  // pink - multi-agent workflows
+  { id: 'learn', color: '#06b6d4', from: 0.10, to: 0.20 },         // cyan
+  { id: 'growth', color: '#6366f1', from: 0.20, to: 0.30 },        // indigo
+  { id: 'products', color: '#10b981', from: 0.30, to: 0.40 },      // emerald
+  { id: 'sentinel', color: '#86EFAC', from: 0.40, to: 0.50 },      // sage green
+  { id: 'finance', color: '#f59e0b', from: 0.50, to: 0.60 },       // amber
+  { id: 'create', color: '#f43f5e', from: 0.60, to: 0.70 },        // rose
+  { id: 'tasks', color: '#f97316', from: 0.70, to: 0.80 },         // orange
+  { id: 'research', color: '#3b82f6', from: 0.80, to: 0.90 },      // blue
+  { id: 'inbox', color: '#14b8a6', from: 0.90, to: 1.00 },         // teal - completes the ring
 ];
 
 // Check for reduced motion preference
