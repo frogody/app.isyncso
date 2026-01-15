@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { IntelligenceGauge } from "@/components/talent/IntelligenceGauge";
 import { IntelligenceReport } from "@/components/talent/IntelligenceReport";
 import {
@@ -20,13 +21,14 @@ import {
   GraduationCap,
   Award,
   TrendingUp,
-  TrendingDown,
   AlertTriangle,
   Clock,
   Target,
   MessageSquare,
   FileText,
   ChevronLeft,
+  ChevronDown,
+  ChevronUp,
   ExternalLink,
   Send,
   History,
@@ -35,18 +37,14 @@ import {
   DollarSign,
   Users,
   Calendar,
-  ArrowUpRight,
-  ArrowDownRight,
   Smile,
   Meh,
   Frown,
   Zap,
   BarChart3,
-  UserCheck,
   Building,
   Factory,
   Rocket,
-  Shield,
   FileDown,
 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -70,89 +68,100 @@ const itemVariants = {
   },
 };
 
-// Info Row component for consistent display
-const InfoRow = ({ icon: Icon, label, value, link, className = "" }) => {
-  if (!value) return null;
+// Expandable Text component for long content
+const ExpandableText = ({ text, maxLength = 200 }) => {
+  const [expanded, setExpanded] = useState(false);
+
+  if (!text) return null;
+
+  const shouldTruncate = text.length > maxLength;
+  const displayText = expanded || !shouldTruncate ? text : `${text.substring(0, maxLength)}...`;
 
   return (
-    <div className={`flex items-start gap-3 py-2 ${className}`}>
-      <Icon className="w-4 h-4 text-white/40 mt-0.5 flex-shrink-0" />
-      <div className="flex-1 min-w-0">
-        <p className="text-xs text-white/40 mb-0.5">{label}</p>
-        {link ? (
-          <a
-            href={link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-white/80 hover:text-red-400 transition-colors flex items-center gap-1"
-          >
-            {value}
-            <ExternalLink className="w-3 h-3" />
-          </a>
-        ) : (
-          <p className="text-sm text-white/80">{value}</p>
-        )}
-      </div>
+    <div>
+      <p className="text-sm text-white/70 whitespace-pre-wrap">{displayText}</p>
+      {shouldTruncate && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="text-xs text-red-400 hover:text-red-300 mt-2 flex items-center gap-1"
+        >
+          {expanded ? (
+            <>Show less <ChevronUp className="w-3 h-3" /></>
+          ) : (
+            <>Read more <ChevronDown className="w-3 h-3" /></>
+          )}
+        </button>
+      )}
     </div>
   );
 };
 
-// Section Card component
-const SectionCard = ({ title, icon: Icon, children, className = "" }) => (
-  <GlassCard className={`p-5 ${className}`}>
-    <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
-      <Icon className="w-5 h-5 text-red-400" />
-      {title}
-    </h3>
-    {children}
-  </GlassCard>
-);
+// Key Value Row - compact display
+const KeyValue = ({ label, value, icon: Icon }) => {
+  if (!value) return null;
+  return (
+    <div className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
+      <span className="text-sm text-white/50 flex items-center gap-2">
+        {Icon && <Icon className="w-4 h-4" />}
+        {label}
+      </span>
+      <span className="text-sm text-white font-medium">{value}</span>
+    </div>
+  );
+};
 
-// Stat Box component
-const StatBox = ({ label, value, subValue, icon: Icon, trend, color = "white" }) => (
-  <div className="bg-white/5 rounded-xl p-4 border border-white/5">
-    <div className="flex items-center justify-between mb-2">
-      <span className="text-xs text-white/50 uppercase tracking-wide">{label}</span>
-      {Icon && <Icon className={`w-4 h-4 text-${color}/60`} />}
-    </div>
-    <div className="flex items-end gap-2">
-      <span className={`text-2xl font-bold text-${color}`}>{value}</span>
-      {trend && (
-        <span className={`text-xs flex items-center gap-0.5 ${trend > 0 ? 'text-green-400' : 'text-red-400'}`}>
-          {trend > 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-          {Math.abs(trend)}%
-        </span>
-      )}
-    </div>
-    {subValue && <p className="text-xs text-white/40 mt-1">{subValue}</p>}
+// Metric Card - clean stat display
+const MetricCard = ({ label, value, icon: Icon, color = "white" }) => (
+  <div className="text-center p-4 bg-white/5 rounded-xl">
+    {Icon && <Icon className={`w-5 h-5 mx-auto mb-2 text-${color}/60`} />}
+    <p className={`text-2xl font-bold text-${color}`}>{value}</p>
+    <p className="text-xs text-white/50 mt-1">{label}</p>
   </div>
 );
 
-// Urgency Badge component
-const UrgencyBadge = ({ urgency }) => {
-  const styles = {
-    high: { bg: "bg-red-500/20", text: "text-red-400", border: "border-red-500/30" },
-    medium: { bg: "bg-amber-500/20", text: "text-amber-400", border: "border-amber-500/30" },
-    low: { bg: "bg-green-500/20", text: "text-green-400", border: "border-green-500/30" },
+// Urgency indicator
+const UrgencyIndicator = ({ level }) => {
+  const config = {
+    high: { color: "bg-red-500", text: "High", textColor: "text-red-400" },
+    medium: { color: "bg-amber-500", text: "Medium", textColor: "text-amber-400" },
+    low: { color: "bg-green-500", text: "Low", textColor: "text-green-400" },
+    response: { color: "bg-amber-500", text: "Response", textColor: "text-amber-400" },
   };
-  const style = styles[urgency?.toLowerCase()] || styles.medium;
+  const c = config[level?.toLowerCase()] || config.medium;
 
   return (
-    <Badge className={`${style.bg} ${style.text} border ${style.border} font-medium`}>
-      {urgency || "Medium"} Priority
-    </Badge>
+    <div className="flex items-center gap-2">
+      <div className={`w-2 h-2 rounded-full ${c.color}`} />
+      <span className={`text-sm font-medium ${c.textColor}`}>{c.text} Priority</span>
+    </div>
   );
 };
 
-// Satisfaction Icon component
-const SatisfactionIcon = ({ level }) => {
+// Satisfaction indicator
+const SatisfactionIndicator = ({ level }) => {
   const lowerLevel = level?.toLowerCase() || "";
+  let icon, color, label;
+
   if (lowerLevel.includes("high") || lowerLevel.includes("satisfied")) {
-    return <Smile className="w-5 h-5 text-green-400" />;
+    icon = <Smile className="w-4 h-4" />;
+    color = "text-green-400";
+    label = "Satisfied";
   } else if (lowerLevel.includes("low") || lowerLevel.includes("dissatisfied")) {
-    return <Frown className="w-5 h-5 text-red-400" />;
+    icon = <Frown className="w-4 h-4" />;
+    color = "text-red-400";
+    label = "Dissatisfied";
+  } else {
+    icon = <Meh className="w-4 h-4" />;
+    color = "text-amber-400";
+    label = level || "Mixed";
   }
-  return <Meh className="w-5 h-5 text-amber-400" />;
+
+  return (
+    <div className={`flex items-center gap-2 ${color}`}>
+      {icon}
+      <span className="text-sm font-medium">{label}</span>
+    </div>
+  );
 };
 
 // Timeline Item
@@ -169,19 +178,19 @@ const TimelineItem = ({ item, isLast }) => {
   const Icon = style.icon;
 
   return (
-    <div className="flex gap-4">
+    <div className="flex gap-3">
       <div className="flex flex-col items-center">
-        <div className={`w-10 h-10 rounded-full ${style.bg} flex items-center justify-center`}>
-          <Icon className={`w-5 h-5 ${style.color}`} />
+        <div className={`w-8 h-8 rounded-full ${style.bg} flex items-center justify-center`}>
+          <Icon className={`w-4 h-4 ${style.color}`} />
         </div>
-        {!isLast && <div className="w-px flex-1 bg-white/10 my-2" />}
+        {!isLast && <div className="w-px flex-1 bg-white/10 my-1" />}
       </div>
-      <div className="flex-1 pb-6">
-        <div className="flex items-center justify-between mb-1">
-          <h4 className="font-medium text-white">{item.title}</h4>
-          <span className="text-sm text-white/40">{item.date}</span>
+      <div className="flex-1 pb-4">
+        <div className="flex items-center justify-between">
+          <h4 className="text-sm font-medium text-white">{item.title}</h4>
+          <span className="text-xs text-white/40">{item.date}</span>
         </div>
-        <p className="text-sm text-white/60">{item.description}</p>
+        <p className="text-xs text-white/50 mt-0.5">{item.description}</p>
       </div>
     </div>
   );
@@ -200,24 +209,18 @@ const OutreachTaskCard = ({ task }) => {
   const style = statusStyles[task.status] || statusStyles.pending;
 
   return (
-    <GlassCard className="p-4">
-      <div className="flex items-start justify-between mb-3">
-        <div>
-          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${style.bg} ${style.color}`}>
-            {style.label}
-          </span>
-          <h4 className="font-medium text-white mt-2 capitalize">{task.task_type?.replace(/_/g, " ")}</h4>
-        </div>
-        <span className="text-sm text-white/40">{task.stage}</span>
+    <div className="p-4 bg-white/5 rounded-xl border border-white/5">
+      <div className="flex items-center justify-between mb-2">
+        <span className={`text-xs px-2 py-0.5 rounded ${style.bg} ${style.color}`}>
+          {style.label}
+        </span>
+        <span className="text-xs text-white/40">{task.stage}</span>
       </div>
-      {task.message_content && (
-        <p className="text-sm text-white/60 line-clamp-3">{task.message_content}</p>
+      <h4 className="text-sm font-medium text-white capitalize">{task.task_type?.replace(/_/g, " ")}</h4>
+      {task.sent_at && (
+        <p className="text-xs text-white/40 mt-2">Sent: {new Date(task.sent_at).toLocaleDateString()}</p>
       )}
-      <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/10 text-sm text-white/40">
-        <span>Attempt #{task.attempt_number || 1}</span>
-        {task.sent_at && <span>Sent: {new Date(task.sent_at).toLocaleDateString()}</span>}
-      </div>
-    </GlassCard>
+    </div>
   );
 };
 
@@ -231,7 +234,6 @@ export default function TalentCandidateProfile() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
   const [generatingIntelligence, setGeneratingIntelligence] = useState(false);
-  const [intelligenceError, setIntelligenceError] = useState(null);
 
   useEffect(() => {
     if (candidateId) {
@@ -281,7 +283,6 @@ export default function TalentCandidateProfile() {
 
   const generateIntelligenceReport = async () => {
     setGeneratingIntelligence(true);
-    setIntelligenceError(null);
 
     try {
       const response = await fetch(
@@ -304,16 +305,11 @@ export default function TalentCandidateProfile() {
         setActiveTab("intelligence");
         toast.success("Intelligence report generated");
       } else {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.error || "Failed to generate intelligence report";
-        setIntelligenceError(errorMessage);
-        toast.error(errorMessage);
+        toast.error("Failed to generate intelligence report");
       }
     } catch (err) {
       console.error("Error generating intelligence:", err);
-      const errorMessage = "Network error. Please try again.";
-      setIntelligenceError(errorMessage);
-      toast.error(errorMessage);
+      toast.error("Network error. Please try again.");
     } finally {
       setGeneratingIntelligence(false);
     }
@@ -323,10 +319,10 @@ export default function TalentCandidateProfile() {
     return (
       <div className="min-h-screen bg-black relative">
         <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
-          <Skeleton className="h-10 w-64" />
+          <Skeleton className="h-8 w-48" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Skeleton className="h-[600px] rounded-xl lg:col-span-1" />
-            <Skeleton className="h-[600px] rounded-xl lg:col-span-2" />
+            <Skeleton className="h-[500px] rounded-xl" />
+            <Skeleton className="h-[500px] rounded-xl lg:col-span-2" />
           </div>
         </div>
       </div>
@@ -340,10 +336,9 @@ export default function TalentCandidateProfile() {
           <GlassCard className="p-12 text-center">
             <User className="w-12 h-12 text-white/20 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-white mb-2">Candidate not found</h3>
-            <p className="text-white/60 mb-6">The candidate you're looking for doesn't exist or has been removed.</p>
             <Link
               to={createPageUrl("TalentCandidates")}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors"
+              className="inline-flex items-center gap-2 text-red-400 hover:text-red-300"
             >
               <ChevronLeft className="w-4 h-4" />
               Back to Candidates
@@ -356,8 +351,7 @@ export default function TalentCandidateProfile() {
 
   const tabs = [
     { id: "overview", label: "Overview" },
-    { id: "company", label: "Company" },
-    { id: "career", label: "Career" },
+    { id: "details", label: "Details" },
     { id: "intelligence", label: "Intelligence" },
     { id: "outreach", label: "Outreach" },
   ];
@@ -371,22 +365,14 @@ export default function TalentCandidateProfile() {
     historyItems.push({
       type: "import",
       title: "Imported from CSV",
-      description: `Source: ${candidate.import_source || "Unknown file"}`,
+      description: candidate.import_source || "Unknown file",
       date: new Date(candidate.imported_at).toLocaleDateString(),
     });
   }
-  if (candidate.created_date) {
-    historyItems.push({
-      type: "status",
-      title: "Added to Talent Pool",
-      description: "Candidate record created",
-      date: new Date(candidate.created_date).toLocaleDateString(),
-    });
-  }
-  outreachTasks.slice(0, 5).forEach(task => {
+  outreachTasks.slice(0, 3).forEach(task => {
     historyItems.push({
       type: "outreach",
-      title: `Outreach: ${task.task_type?.replace(/_/g, " ")}`,
+      title: task.task_type?.replace(/_/g, " "),
       description: task.status,
       date: new Date(task.created_at).toLocaleDateString(),
     });
@@ -403,7 +389,7 @@ export default function TalentCandidateProfile() {
         {/* Back Button */}
         <Link
           to={createPageUrl("TalentCandidates")}
-          className="inline-flex items-center gap-2 text-white/60 hover:text-white transition-colors"
+          className="inline-flex items-center gap-2 text-white/60 hover:text-white transition-colors text-sm"
         >
           <ChevronLeft className="w-4 h-4" />
           Back to Candidates
@@ -411,118 +397,102 @@ export default function TalentCandidateProfile() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Profile Card */}
-          <motion.div variants={itemVariants} className="lg:col-span-1 space-y-4">
-            {/* Main Profile Card */}
+          <motion.div variants={itemVariants} className="lg:col-span-1">
             <GlassCard className="p-6">
-              {/* Avatar & Basic Info */}
+              {/* Avatar & Name */}
               <div className="text-center mb-6">
-                <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-3xl font-bold text-white shadow-lg shadow-red-500/30">
+                <div className="w-20 h-20 mx-auto mb-3 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-2xl font-bold text-white">
                   {initials}
                 </div>
-                <h2 className="text-xl font-bold text-white">{fullName}</h2>
-                <p className="text-white/60">{candidate.job_title}</p>
-                {candidate.recruitment_urgency && (
-                  <div className="mt-3">
-                    <UrgencyBadge urgency={candidate.recruitment_urgency} />
-                  </div>
-                )}
+                <h2 className="text-lg font-bold text-white">{fullName}</h2>
+                <p className="text-sm text-white/60">{candidate.job_title}</p>
               </div>
 
               {/* Intelligence Score */}
               <div className="flex justify-center mb-6 pb-6 border-b border-white/10">
-                <IntelligenceGauge score={candidate.intelligence_score || 0} size="lg" showLabel />
+                <IntelligenceGauge score={candidate.intelligence_score || 0} size="md" showLabel />
               </div>
 
-              {/* Contact Info */}
-              <div className="space-y-1 mb-6 border-b border-white/10 pb-6">
-                <InfoRow icon={Mail} label="Email" value={candidate.email} link={candidate.email ? `mailto:${candidate.email}` : null} />
-                <InfoRow icon={Phone} label="Phone" value={candidate.phone} />
-                <InfoRow icon={Building2} label="Company" value={candidate.company_name} />
-                <InfoRow icon={MapPin} label="Location" value={candidate.person_home_location} />
-                <InfoRow icon={MapPin} label="Work Address" value={candidate.work_address} />
-                <InfoRow icon={Linkedin} label="LinkedIn" value="View Profile" link={candidate.linkedin_profile} />
+              {/* Quick Info */}
+              <div className="space-y-3 mb-6 text-sm">
+                {candidate.company_name && (
+                  <div className="flex items-center gap-3 text-white/70">
+                    <Building2 className="w-4 h-4 text-white/40" />
+                    {candidate.company_name}
+                  </div>
+                )}
+                {candidate.person_home_location && (
+                  <div className="flex items-center gap-3 text-white/70">
+                    <MapPin className="w-4 h-4 text-white/40" />
+                    {candidate.person_home_location}
+                  </div>
+                )}
+                {candidate.email && (
+                  <div className="flex items-center gap-3 text-white/70">
+                    <Mail className="w-4 h-4 text-white/40" />
+                    <a href={`mailto:${candidate.email}`} className="hover:text-red-400 truncate">
+                      {candidate.email}
+                    </a>
+                  </div>
+                )}
+                {candidate.linkedin_profile && (
+                  <div className="flex items-center gap-3">
+                    <Linkedin className="w-4 h-4 text-white/40" />
+                    <a
+                      href={candidate.linkedin_profile}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-white/70 hover:text-red-400 flex items-center gap-1"
+                    >
+                      LinkedIn <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                )}
               </div>
 
-              {/* Quick Stats */}
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                <StatBox
-                  label="Years at Company"
-                  value={candidate.years_at_company || candidate.years_experience || 0}
-                  icon={Calendar}
-                />
-                <StatBox
-                  label="Times Promoted"
-                  value={candidate.times_promoted || 0}
-                  icon={TrendingUp}
-                />
-                <StatBox
-                  label="Company Hops"
-                  value={candidate.times_company_hopped || 0}
-                  icon={Briefcase}
-                />
-                <StatBox
-                  label="Outreach"
-                  value={outreachTasks.length}
-                  icon={MessageSquare}
-                />
+              {/* Key Metrics */}
+              <div className="grid grid-cols-2 gap-2 mb-6">
+                <div className="bg-white/5 rounded-lg p-3 text-center">
+                  <p className="text-xl font-bold text-white">{candidate.years_at_company || 0}</p>
+                  <p className="text-xs text-white/50">Years</p>
+                </div>
+                <div className="bg-white/5 rounded-lg p-3 text-center">
+                  <p className="text-xl font-bold text-white">{candidate.times_promoted || 0}</p>
+                  <p className="text-xs text-white/50">Promotions</p>
+                </div>
               </div>
 
               {/* Actions */}
               <div className="space-y-2">
-                <button
+                <Button
                   onClick={generateIntelligenceReport}
                   disabled={generatingIntelligence}
-                  className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all ${
-                    generatingIntelligence
-                      ? "bg-red-500/10 text-red-400/60 cursor-not-allowed"
-                      : "bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 shadow-lg shadow-red-500/25"
-                  }`}
+                  className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
                 >
                   {generatingIntelligence ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Generating...
-                    </>
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
                   ) : (
-                    <>
-                      <Sparkles className="w-4 h-4" />
-                      Generate Intelligence
-                    </>
+                    <Sparkles className="w-4 h-4 mr-2" />
                   )}
-                </button>
-                {intelligenceError && (
-                  <p className="text-xs text-red-400 text-center">{intelligenceError}</p>
-                )}
-                <button className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white/5 text-white/70 rounded-lg hover:bg-white/10 transition-colors border border-white/10">
-                  <Send className="w-4 h-4" />
+                  Generate Intelligence
+                </Button>
+                <Button variant="outline" className="w-full border-white/10 text-white/70 hover:bg-white/5">
+                  <Send className="w-4 h-4 mr-2" />
                   Start Outreach
-                </button>
+                </Button>
               </div>
             </GlassCard>
-
-            {/* Estimated Demographics */}
-            {candidate.estimated_age_range && (
-              <GlassCard className="p-4">
-                <div className="flex items-center gap-3">
-                  <User className="w-5 h-5 text-white/40" />
-                  <div>
-                    <p className="text-xs text-white/40">Estimated Age Range</p>
-                    <p className="text-sm text-white/80">{candidate.estimated_age_range}</p>
-                  </div>
-                </div>
-              </GlassCard>
-            )}
           </motion.div>
 
           {/* Right Column - Tabbed Content */}
           <motion.div variants={itemVariants} className="lg:col-span-2">
             {/* Tabs */}
-            <div className="flex gap-1 mb-6 bg-white/5 p-1 rounded-lg overflow-x-auto">
+            <div className="flex gap-1 mb-6 bg-white/5 p-1 rounded-lg">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                  className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     activeTab === tab.id
                       ? "bg-red-500/20 text-red-400"
                       : "text-white/60 hover:text-white hover:bg-white/5"
@@ -533,376 +503,277 @@ export default function TalentCandidateProfile() {
               ))}
             </div>
 
-            {/* Tab Content */}
+            {/* Overview Tab */}
             {activeTab === "overview" && (
               <div className="space-y-4">
-                {/* Recruitment Urgency & Recommended Action */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <SectionCard title="Recruitment Urgency" icon={Zap}>
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className={`p-3 rounded-xl ${
-                        candidate.recruitment_urgency?.toLowerCase() === 'high' ? 'bg-red-500/20' :
-                        candidate.recruitment_urgency?.toLowerCase() === 'low' ? 'bg-green-500/20' : 'bg-amber-500/20'
-                      }`}>
-                        <AlertTriangle className={`w-6 h-6 ${
-                          candidate.recruitment_urgency?.toLowerCase() === 'high' ? 'text-red-400' :
-                          candidate.recruitment_urgency?.toLowerCase() === 'low' ? 'text-green-400' : 'text-amber-400'
-                        }`} />
-                      </div>
-                      <div>
-                        <p className="font-medium text-white capitalize">{candidate.recruitment_urgency || "Medium"} Priority</p>
-                        <p className="text-xs text-white/50">Outreach timing indicator</p>
-                      </div>
+                {/* Key Insights Row */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Urgency */}
+                  <GlassCard className="p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Zap className="w-4 h-4 text-red-400" />
+                      <span className="text-sm font-medium text-white">Recruitment Urgency</span>
                     </div>
-                    {candidate.outreach_urgency_reasoning && (
-                      <p className="text-sm text-white/60 bg-white/5 rounded-lg p-3">
-                        {candidate.outreach_urgency_reasoning}
-                      </p>
-                    )}
-                  </SectionCard>
+                    <UrgencyIndicator level={candidate.recruitment_urgency} />
+                  </GlassCard>
 
-                  <SectionCard title="Recommended Action" icon={Target}>
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="p-3 rounded-xl bg-red-500/20">
-                        <Rocket className="w-6 h-6 text-red-400" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-white capitalize">{candidate.recommended_approach || "Nurture"} Approach</p>
-                        <p className="text-xs text-white/50">{candidate.recommended_timeline || "Engage within 2-4 weeks"}</p>
-                      </div>
+                  {/* Satisfaction */}
+                  <GlassCard className="p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Smile className="w-4 h-4 text-red-400" />
+                      <span className="text-sm font-medium text-white">Job Satisfaction</span>
                     </div>
-                  </SectionCard>
+                    <SatisfactionIndicator level={candidate.job_satisfaction} />
+                  </GlassCard>
+
+                  {/* Salary */}
+                  <GlassCard className="p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <DollarSign className="w-4 h-4 text-red-400" />
+                      <span className="text-sm font-medium text-white">Salary Range</span>
+                    </div>
+                    <p className="text-lg font-bold text-green-400">
+                      {candidate.salary_range ? `$${Number(candidate.salary_range).toLocaleString()}` : "Unknown"}
+                    </p>
+                  </GlassCard>
                 </div>
 
-                {/* Job Satisfaction */}
-                {(candidate.job_satisfaction || candidate.job_satisfaction_analysis) && (
-                  <SectionCard title="Job Satisfaction" icon={Smile}>
-                    <div className="flex items-start gap-4 mb-4">
-                      <div className="p-3 rounded-xl bg-white/10">
-                        <SatisfactionIcon level={candidate.job_satisfaction} />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-white">{candidate.job_satisfaction || "Unknown"}</p>
-                        {candidate.job_satisfaction_reasoning && (
-                          <p className="text-sm text-white/60 mt-1">{candidate.job_satisfaction_reasoning}</p>
-                        )}
-                      </div>
-                    </div>
-                    {candidate.job_satisfaction_analysis && (
-                      <div className="bg-white/5 rounded-lg p-4">
-                        <p className="text-xs text-white/40 mb-2">Detailed Analysis</p>
-                        <p className="text-sm text-white/70">{candidate.job_satisfaction_analysis}</p>
-                      </div>
-                    )}
-                  </SectionCard>
+                {/* Urgency Reasoning */}
+                {candidate.outreach_urgency_reasoning && (
+                  <GlassCard className="p-4">
+                    <h3 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
+                      <Target className="w-4 h-4 text-red-400" />
+                      Recruitment Assessment
+                    </h3>
+                    <ExpandableText text={candidate.outreach_urgency_reasoning} maxLength={250} />
+                  </GlassCard>
                 )}
 
-                {/* Salary Intelligence */}
-                {(candidate.salary_intelligence || candidate.salary_range || candidate.market_position) && (
-                  <SectionCard title="Salary Intelligence" icon={DollarSign}>
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      {candidate.salary_range && (
-                        <StatBox
-                          label="Salary Range"
-                          value={`$${Number(candidate.salary_range).toLocaleString()}`}
-                          icon={DollarSign}
-                          color="green-400"
-                        />
-                      )}
-                      {candidate.market_position && (
-                        <div className="bg-white/5 rounded-xl p-4 border border-white/5">
-                          <p className="text-xs text-white/50 uppercase tracking-wide mb-2">Market Position</p>
-                          <p className="text-sm text-white font-medium">{candidate.market_position}</p>
-                        </div>
-                      )}
-                    </div>
-                    {candidate.salary_intelligence && (
-                      <div className="bg-white/5 rounded-lg p-4">
-                        <p className="text-sm text-white/70">{candidate.salary_intelligence}</p>
-                      </div>
-                    )}
-                  </SectionCard>
+                {/* Job Satisfaction Analysis */}
+                {candidate.job_satisfaction_analysis && (
+                  <GlassCard className="p-4">
+                    <h3 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
+                      <Briefcase className="w-4 h-4 text-red-400" />
+                      Job Satisfaction Analysis
+                    </h3>
+                    <ExpandableText text={candidate.job_satisfaction_analysis} maxLength={250} />
+                  </GlassCard>
                 )}
 
-                {/* Experience Analysis */}
-                {(candidate.experience_analysis || candidate.experience_report) && (
-                  <SectionCard title="Experience Analysis" icon={Briefcase}>
-                    {candidate.experience_analysis && (
-                      <div className="bg-white/5 rounded-lg p-4 mb-4">
-                        <p className="text-sm text-white/70">{candidate.experience_analysis}</p>
-                      </div>
-                    )}
-                    {candidate.experience_report && (
-                      <div className="bg-white/5 rounded-lg p-4">
-                        <p className="text-xs text-white/40 mb-2">Experience Report</p>
-                        <p className="text-sm text-white/70 whitespace-pre-wrap">{candidate.experience_report}</p>
-                      </div>
-                    )}
-                  </SectionCard>
+                {/* Experience Summary */}
+                {candidate.experience_analysis && (
+                  <GlassCard className="p-4">
+                    <h3 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
+                      <Award className="w-4 h-4 text-red-400" />
+                      Experience Analysis
+                    </h3>
+                    <ExpandableText text={candidate.experience_analysis} maxLength={200} />
+                  </GlassCard>
                 )}
 
-                {/* Skills */}
-                {candidate.skills && candidate.skills.length > 0 && (
-                  <SectionCard title="Skills" icon={Award}>
-                    <div className="flex flex-wrap gap-2">
-                      {candidate.skills.map((skill, idx) => (
-                        <Badge
-                          key={idx}
-                          variant="outline"
-                          className="bg-white/5 border-white/10 text-white/80"
-                        >
-                          {skill}
-                        </Badge>
+                {/* Recent Activity */}
+                {historyItems.length > 0 && (
+                  <GlassCard className="p-4">
+                    <h3 className="text-sm font-medium text-white mb-4 flex items-center gap-2">
+                      <History className="w-4 h-4 text-red-400" />
+                      Recent Activity
+                    </h3>
+                    <div>
+                      {historyItems.map((item, idx) => (
+                        <TimelineItem key={idx} item={item} isLast={idx === historyItems.length - 1} />
                       ))}
                     </div>
-                  </SectionCard>
-                )}
-
-                {/* Recent M&A News */}
-                {candidate.recent_ma_news && (
-                  <SectionCard title="Recent M&A News" icon={FileText}>
-                    <p className="text-sm text-white/70">{candidate.recent_ma_news}</p>
-                  </SectionCard>
+                  </GlassCard>
                 )}
               </div>
             )}
 
-            {activeTab === "company" && (
+            {/* Details Tab */}
+            {activeTab === "details" && (
               <div className="space-y-4">
-                {/* Company Overview */}
-                <SectionCard title="Company Information" icon={Building2}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    <InfoRow icon={Building2} label="Company Name" value={candidate.company_name} />
-                    <InfoRow icon={MapPin} label="Company HQ" value={candidate.company_hq} />
-                    <InfoRow icon={Globe} label="Domain" value={candidate.company_domain} link={candidate.company_domain ? `https://${candidate.company_domain}` : null} />
-                    <InfoRow icon={Factory} label="Industry" value={candidate.industry} />
-                    <InfoRow icon={Users} label="Company Size" value={candidate.company_size} />
-                    <InfoRow icon={Building} label="Company Type" value={candidate.company_type} />
-                    <InfoRow icon={Linkedin} label="Company LinkedIn" value="View Page" link={candidate.company_linkedin_url} />
+                {/* Company Information */}
+                <GlassCard className="p-4">
+                  <h3 className="text-sm font-medium text-white mb-4 flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-red-400" />
+                    Company Information
+                  </h3>
+                  <div className="space-y-1">
+                    <KeyValue label="Company" value={candidate.company_name} icon={Building2} />
+                    <KeyValue label="Industry" value={candidate.industry} icon={Factory} />
+                    <KeyValue label="Company Size" value={candidate.company_size} icon={Users} />
+                    <KeyValue label="Employee Count" value={candidate.company_employee_count?.toLocaleString()} icon={Users} />
+                    <KeyValue label="Company Type" value={candidate.company_type} icon={Building} />
+                    <KeyValue label="Headquarters" value={candidate.company_hq} icon={MapPin} />
+                    {candidate.company_domain && (
+                      <div className="flex items-center justify-between py-2 border-b border-white/5">
+                        <span className="text-sm text-white/50 flex items-center gap-2">
+                          <Globe className="w-4 h-4" /> Website
+                        </span>
+                        <a
+                          href={`https://${candidate.company_domain}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-red-400 hover:text-red-300 flex items-center gap-1"
+                        >
+                          {candidate.company_domain} <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
+                    )}
                   </div>
-
                   {candidate.company_description && (
-                    <div className="bg-white/5 rounded-lg p-4">
-                      <p className="text-xs text-white/40 mb-2">Company Description</p>
-                      <p className="text-sm text-white/70">{candidate.company_description}</p>
-                    </div>
-                  )}
-                </SectionCard>
-
-                {/* Company Metrics */}
-                <SectionCard title="Company Metrics" icon={BarChart3}>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {candidate.company_employee_count && (
-                      <StatBox
-                        label="Employee Count"
-                        value={Number(candidate.company_employee_count).toLocaleString()}
-                        icon={Users}
-                      />
-                    )}
-                    {candidate.company_growth_percentage && (
-                      <StatBox
-                        label="Growth Rate"
-                        value={`${candidate.company_growth_percentage}%`}
-                        trend={candidate.company_growth_percentage}
-                        icon={TrendingUp}
-                      />
-                    )}
-                  </div>
-
-                  {candidate.company_headcount_growth && (
-                    <div className="mt-4 bg-white/5 rounded-lg p-4">
-                      <p className="text-xs text-white/40 mb-2">Headcount Growth Details</p>
-                      <p className="text-sm text-white/70">{candidate.company_headcount_growth}</p>
-                    </div>
-                  )}
-                </SectionCard>
-
-                {/* M&A News */}
-                {candidate.recent_ma_news && (
-                  <SectionCard title="Recent M&A Activity" icon={FileText}>
-                    <p className="text-sm text-white/70">{candidate.recent_ma_news}</p>
-                  </SectionCard>
-                )}
-              </div>
-            )}
-
-            {activeTab === "career" && (
-              <div className="space-y-4">
-                {/* Career Stats */}
-                <SectionCard title="Career Metrics" icon={TrendingUp}>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <StatBox
-                      label="Years at Company"
-                      value={candidate.years_at_company || 0}
-                      icon={Calendar}
-                    />
-                    <StatBox
-                      label="Times Promoted"
-                      value={candidate.times_promoted || 0}
-                      icon={TrendingUp}
-                    />
-                    <StatBox
-                      label="Avg Promotion Time"
-                      value={candidate.avg_promotion_threshold ? `${candidate.avg_promotion_threshold}y` : "N/A"}
-                      icon={Clock}
-                    />
-                    <StatBox
-                      label="Company Changes"
-                      value={candidate.times_company_hopped || 0}
-                      icon={Briefcase}
-                    />
-                  </div>
-                </SectionCard>
-
-                {/* Career Changes */}
-                {candidate.career_changes && (
-                  <SectionCard title="Career Changes & Promotions" icon={Briefcase}>
-                    <p className="text-sm text-white/70 whitespace-pre-wrap">{candidate.career_changes}</p>
-                  </SectionCard>
-                )}
-
-                {/* Experience Analysis */}
-                {candidate.experience_analysis && (
-                  <SectionCard title="Experience Analysis" icon={UserCheck}>
-                    <p className="text-sm text-white/70">{candidate.experience_analysis}</p>
-                  </SectionCard>
-                )}
-
-                {/* Experience Report */}
-                {candidate.experience_report && (
-                  <SectionCard title="Experience Report" icon={FileText}>
-                    <p className="text-sm text-white/70 whitespace-pre-wrap">{candidate.experience_report}</p>
-                  </SectionCard>
-                )}
-
-                {/* Skills & Certifications */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {candidate.skills && candidate.skills.length > 0 && (
-                    <SectionCard title="Skills" icon={Award}>
-                      <div className="flex flex-wrap gap-2">
-                        {candidate.skills.map((skill, idx) => (
-                          <Badge
-                            key={idx}
-                            variant="outline"
-                            className="bg-white/5 border-white/10 text-white/80"
-                          >
-                            {skill}
-                          </Badge>
-                        ))}
-                      </div>
-                    </SectionCard>
-                  )}
-
-                  {candidate.languages && candidate.languages.length > 0 && (
-                    <SectionCard title="Languages" icon={Globe}>
-                      <div className="flex flex-wrap gap-2">
-                        {candidate.languages.map((lang, idx) => (
-                          <Badge
-                            key={idx}
-                            variant="outline"
-                            className="bg-white/5 border-white/10 text-white/80"
-                          >
-                            {lang}
-                          </Badge>
-                        ))}
-                      </div>
-                    </SectionCard>
-                  )}
-                </div>
-
-                {/* Education */}
-                {candidate.education && (
-                  <SectionCard title="Education" icon={GraduationCap}>
-                    {Array.isArray(candidate.education) ? (
-                      <div className="space-y-4">
-                        {candidate.education.map((edu, idx) => (
-                          <div key={idx} className="flex gap-4">
-                            <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0">
-                              <GraduationCap className="w-5 h-5 text-white/60" />
-                            </div>
-                            <div>
-                              <h4 className="font-medium text-white">{edu.degree || edu.title}</h4>
-                              <p className="text-sm text-white/60">{edu.school || edu.institution}</p>
-                              {edu.year && <p className="text-xs text-white/40">{edu.year}</p>}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-white/70">{JSON.stringify(candidate.education)}</p>
-                    )}
-                  </SectionCard>
-                )}
-              </div>
-            )}
-
-            {activeTab === "intelligence" && (
-              <div className="space-y-4">
-                <GlassCard className="p-6">
-                  <IntelligenceReport candidate={candidate} />
-
-                  {/* Generate Button at bottom if no data */}
-                  {!candidate.intelligence_factors?.length && !candidate.intelligence_timing?.length && (
-                    <div className="mt-6 text-center">
-                      <button
-                        onClick={generateIntelligenceReport}
-                        disabled={generatingIntelligence}
-                        className={`inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
-                          generatingIntelligence
-                            ? "bg-red-500/10 text-red-400/60 cursor-not-allowed"
-                            : "bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 shadow-lg shadow-red-500/25"
-                        }`}
-                      >
-                        {generatingIntelligence ? (
-                          <>
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                            Analyzing Candidate...
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="w-5 h-5" />
-                            Generate Intelligence Report
-                          </>
-                        )}
-                      </button>
+                    <div className="mt-4 pt-4 border-t border-white/10">
+                      <p className="text-xs text-white/40 mb-2">About</p>
+                      <ExpandableText text={candidate.company_description} maxLength={200} />
                     </div>
                   )}
                 </GlassCard>
 
-                {/* Activity Timeline */}
-                {historyItems.length > 0 && (
-                  <SectionCard title="Activity History" icon={History}>
-                    <div className="space-y-0">
-                      {historyItems.map((item, idx) => (
-                        <TimelineItem
-                          key={idx}
-                          item={item}
-                          isLast={idx === historyItems.length - 1}
-                        />
+                {/* Career Metrics */}
+                <GlassCard className="p-4">
+                  <h3 className="text-sm font-medium text-white mb-4 flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-red-400" />
+                    Career Metrics
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <MetricCard label="Years at Company" value={candidate.years_at_company || 0} icon={Calendar} />
+                    <MetricCard label="Promotions" value={candidate.times_promoted || 0} icon={TrendingUp} />
+                    <MetricCard label="Avg Promo Time" value={candidate.avg_promotion_threshold ? `${candidate.avg_promotion_threshold}y` : "N/A"} icon={Clock} />
+                    <MetricCard label="Company Changes" value={candidate.times_company_hopped || 0} icon={Briefcase} />
+                  </div>
+                </GlassCard>
+
+                {/* Career Changes */}
+                {candidate.career_changes && (
+                  <GlassCard className="p-4">
+                    <h3 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
+                      <Briefcase className="w-4 h-4 text-red-400" />
+                      Career Changes & Promotions
+                    </h3>
+                    <ExpandableText text={candidate.career_changes} maxLength={300} />
+                  </GlassCard>
+                )}
+
+                {/* Salary & Market */}
+                {(candidate.salary_intelligence || candidate.market_position) && (
+                  <GlassCard className="p-4">
+                    <h3 className="text-sm font-medium text-white mb-4 flex items-center gap-2">
+                      <DollarSign className="w-4 h-4 text-red-400" />
+                      Compensation Intelligence
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div className="bg-white/5 rounded-lg p-3">
+                        <p className="text-xs text-white/40 mb-1">Salary Range</p>
+                        <p className="text-lg font-bold text-green-400">
+                          {candidate.salary_range ? `$${Number(candidate.salary_range).toLocaleString()}` : "Unknown"}
+                        </p>
+                      </div>
+                      <div className="bg-white/5 rounded-lg p-3">
+                        <p className="text-xs text-white/40 mb-1">Market Position</p>
+                        <p className="text-sm text-white">{candidate.market_position || "Unknown"}</p>
+                      </div>
+                    </div>
+                    {candidate.salary_intelligence && (
+                      <ExpandableText text={candidate.salary_intelligence} maxLength={200} />
+                    )}
+                  </GlassCard>
+                )}
+
+                {/* Experience Report */}
+                {candidate.experience_report && (
+                  <GlassCard className="p-4">
+                    <h3 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-red-400" />
+                      Experience Report
+                    </h3>
+                    <ExpandableText text={candidate.experience_report} maxLength={300} />
+                  </GlassCard>
+                )}
+
+                {/* M&A News */}
+                {candidate.recent_ma_news && (
+                  <GlassCard className="p-4">
+                    <h3 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-red-400" />
+                      Recent M&A News
+                    </h3>
+                    <ExpandableText text={candidate.recent_ma_news} maxLength={300} />
+                  </GlassCard>
+                )}
+
+                {/* Demographics */}
+                {candidate.estimated_age_range && (
+                  <GlassCard className="p-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-white/50 flex items-center gap-2">
+                        <User className="w-4 h-4" /> Estimated Age Range
+                      </span>
+                      <span className="text-sm text-white font-medium">{candidate.estimated_age_range}</span>
+                    </div>
+                  </GlassCard>
+                )}
+
+                {/* Skills */}
+                {candidate.skills && candidate.skills.length > 0 && (
+                  <GlassCard className="p-4">
+                    <h3 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
+                      <Award className="w-4 h-4 text-red-400" />
+                      Skills
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {candidate.skills.map((skill, idx) => (
+                        <Badge key={idx} variant="outline" className="bg-white/5 border-white/10 text-white/70 text-xs">
+                          {skill}
+                        </Badge>
                       ))}
                     </div>
-                  </SectionCard>
+                  </GlassCard>
                 )}
               </div>
             )}
 
+            {/* Intelligence Tab */}
+            {activeTab === "intelligence" && (
+              <GlassCard className="p-6">
+                <IntelligenceReport candidate={candidate} />
+
+                {!candidate.intelligence_factors?.length && !candidate.intelligence_timing?.length && (
+                  <div className="mt-6 text-center">
+                    <p className="text-white/50 mb-4">No intelligence report generated yet.</p>
+                    <Button
+                      onClick={generateIntelligenceReport}
+                      disabled={generatingIntelligence}
+                      className="bg-gradient-to-r from-red-500 to-red-600"
+                    >
+                      {generatingIntelligence ? (
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      ) : (
+                        <Sparkles className="w-4 h-4 mr-2" />
+                      )}
+                      Generate Intelligence Report
+                    </Button>
+                  </div>
+                )}
+              </GlassCard>
+            )}
+
+            {/* Outreach Tab */}
             {activeTab === "outreach" && (
               <div className="space-y-4">
                 {outreachTasks.length > 0 ? (
-                  outreachTasks.map((task) => (
-                    <OutreachTaskCard key={task.id} task={task} />
-                  ))
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {outreachTasks.map((task) => (
+                      <OutreachTaskCard key={task.id} task={task} />
+                    ))}
+                  </div>
                 ) : (
                   <GlassCard className="p-12 text-center">
-                    <MessageSquare className="w-12 h-12 text-white/20 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-white mb-2">No outreach yet</h3>
-                    <p className="text-white/60 mb-6">
-                      Start an outreach campaign to engage with this candidate.
-                    </p>
-                    <button className="inline-flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
-                      <Send className="w-4 h-4" />
+                    <MessageSquare className="w-10 h-10 text-white/20 mx-auto mb-3" />
+                    <h3 className="text-base font-medium text-white mb-2">No outreach yet</h3>
+                    <p className="text-sm text-white/50 mb-4">Start engaging with this candidate.</p>
+                    <Button className="bg-red-500 hover:bg-red-600">
+                      <Send className="w-4 h-4 mr-2" />
                       Start Outreach
-                    </button>
+                    </Button>
                   </GlassCard>
                 )}
               </div>
