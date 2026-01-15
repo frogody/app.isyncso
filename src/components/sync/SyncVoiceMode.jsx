@@ -19,8 +19,8 @@ const hasSpeechRecognition = !!SpeechRecognition;
 // Generate unique session ID
 const generateSessionId = () => `voice-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-// Available voices for Cartesia Sonic
-const VOICES = ['nova', 'alloy', 'echo', 'fable', 'onyx', 'shimmer'];
+// Available voices for Together.ai TTS (Orpheus model)
+const VOICES = ['tara', 'leah', 'jess', 'leo', 'dan', 'mia', 'zac', 'zoe'];
 
 export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
   const { user } = useUser();
@@ -35,7 +35,7 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
   const [isMuted, setIsMuted] = useState(false);
   const [conversationHistory, setConversationHistory] = useState([]);
   const [latency, setLatency] = useState(null);
-  const [selectedVoice] = useState('nova'); // Best for conversational
+  const [selectedVoice] = useState('tara'); // Female, friendly voice
 
   const recognitionRef = useRef(null);
   const audioContextRef = useRef(null);
@@ -365,7 +365,7 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
           <div className="absolute top-6 left-6">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-800/30 text-xs text-zinc-500">
               <span>Powered by</span>
-              <span className="text-purple-400 font-medium">Cartesia Sonic</span>
+              <span className="text-purple-400 font-medium">Together.ai</span>
             </div>
           </div>
 

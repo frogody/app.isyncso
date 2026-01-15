@@ -21,14 +21,17 @@ const TOGETHER_API_KEY = Deno.env.get("TOGETHER_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-// Available Cartesia Sonic voices (via Together.ai)
+// Available TTS voices via Together.ai
+// Using Orpheus model voices (confirmed working)
 const VOICES = {
-  alloy: 'alloy',
-  echo: 'echo',
-  fable: 'fable',
-  onyx: 'onyx',
-  nova: 'nova',
-  shimmer: 'shimmer',
+  tara: 'tara',     // Female, friendly
+  leah: 'leah',     // Female
+  jess: 'jess',     // Female
+  leo: 'leo',       // Male
+  dan: 'dan',       // Male
+  mia: 'mia',       // Female
+  zac: 'zac',       // Male
+  zoe: 'zoe',       // Female
 };
 
 // Conversational system prompt optimized for voice
@@ -87,10 +90,10 @@ async function getVoiceResponse(
   return data.choices[0]?.message?.content || "I'm here to help!";
 }
 
-// Generate speech with Cartesia Sonic via Together.ai
+// Generate speech with Together.ai TTS (Orpheus model - fast and natural)
 async function generateSpeech(
   text: string,
-  voice: string = 'nova'
+  voice: string = 'tara'
 ): Promise<ArrayBuffer> {
   console.log(`Generating speech for: "${text.substring(0, 50)}..." with voice: ${voice}`);
 
@@ -101,11 +104,10 @@ async function generateSpeech(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'cartesia/sonic',
+      model: 'canopylabs/orpheus-3b-0.1-ft',
       input: text,
       voice: voice,
-      response_format: 'mp3', // MP3 for broad browser support
-      speed: 1.0,
+      response_format: 'mp3',
     }),
   });
 
@@ -139,7 +141,7 @@ serve(async (req) => {
       message,
       sessionId,
       conversationHistory = [],
-      voice = 'nova',
+      voice: requestedVoice,
       context = {}
     } = await req.json();
 
@@ -150,7 +152,11 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[sync-voice] Processing: "${message.substring(0, 50)}..."`);
+    // Validate voice - use default if invalid
+    const validVoices = ['tara', 'leah', 'jess', 'leo', 'dan', 'mia', 'zac', 'zoe'];
+    const voice = validVoices.includes(requestedVoice) ? requestedVoice : 'tara';
+
+    console.log(`[sync-voice] Processing: "${message.substring(0, 50)}..." with voice: ${voice}`);
     const startTime = Date.now();
 
     // Get LLM response (optimized for voice)
@@ -158,7 +164,7 @@ serve(async (req) => {
     const responseText = await getVoiceResponse(message, conversationHistory, context);
     console.log(`[sync-voice] LLM response in ${Date.now() - llmStart}ms: "${responseText.substring(0, 50)}..."`);
 
-    // Generate speech with Cartesia Sonic
+    // Generate speech with Together.ai TTS
     const ttsStart = Date.now();
     const audioBuffer = await generateSpeech(responseText, voice);
     const audioBase64 = arrayBufferToBase64(audioBuffer);
