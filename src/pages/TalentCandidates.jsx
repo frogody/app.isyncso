@@ -51,6 +51,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { AddCandidateModal, EditCandidateModal } from "@/components/talent";
+import { IntelligenceGauge, IntelligenceLevelBadge, ApproachBadge } from "@/components/talent/IntelligenceGauge";
 
 // Animation variants
 const containerVariants = {
@@ -68,102 +69,6 @@ const itemVariants = {
     y: 0,
     transition: { duration: 0.4, ease: "easeOut" },
   },
-};
-
-// Intelligence Gauge Component
-const IntelligenceGauge = ({ score, size = "md" }) => {
-  const sizes = {
-    sm: { width: 48, height: 48, strokeWidth: 4, fontSize: "text-xs" },
-    md: { width: 64, height: 64, strokeWidth: 5, fontSize: "text-sm" },
-    lg: { width: 80, height: 80, strokeWidth: 6, fontSize: "text-base" },
-  };
-
-  const { width, height, strokeWidth, fontSize } = sizes[size];
-  const radius = (width - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (score / 100) * circumference;
-
-  const getColor = (score) => {
-    if (score >= 80) return { stroke: "#ef4444", text: "text-red-400", bg: "bg-red-500/20" };
-    if (score >= 60) return { stroke: "#f97316", text: "text-orange-400", bg: "bg-orange-500/20" };
-    if (score >= 40) return { stroke: "#eab308", text: "text-yellow-400", bg: "bg-yellow-500/20" };
-    return { stroke: "#22c55e", text: "text-green-400", bg: "bg-green-500/20" };
-  };
-
-  const colors = getColor(score);
-
-  return (
-    <div className="relative inline-flex items-center justify-center">
-      <svg width={width} height={height} className="-rotate-90">
-        <circle
-          cx={width / 2}
-          cy={height / 2}
-          r={radius}
-          fill="none"
-          stroke="rgba(255,255,255,0.1)"
-          strokeWidth={strokeWidth}
-        />
-        <motion.circle
-          cx={width / 2}
-          cy={height / 2}
-          r={radius}
-          fill="none"
-          stroke={colors.stroke}
-          strokeWidth={strokeWidth}
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          initial={{ strokeDashoffset: circumference }}
-          animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 1, ease: "easeOut" }}
-        />
-      </svg>
-      <span className={`absolute ${fontSize} font-bold ${colors.text}`}>
-        {score}
-      </span>
-    </div>
-  );
-};
-
-// Intelligence Level Badge
-const IntelligenceLevelBadge = ({ level }) => {
-  const styles = {
-    Critical: "bg-red-500/20 text-red-400 border-red-500/30",
-    High: "bg-orange-500/20 text-orange-400 border-orange-500/30",
-    Medium: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-    Low: "bg-green-500/20 text-green-400 border-green-500/30",
-    critical: "bg-red-500/20 text-red-400 border-red-500/30",
-    high: "bg-orange-500/20 text-orange-400 border-orange-500/30",
-    medium: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-    low: "bg-green-500/20 text-green-400 border-green-500/30",
-  };
-
-  return (
-    <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${styles[level] || styles.Low}`}>
-      {level?.charAt(0).toUpperCase() + level?.slice(1)}
-    </span>
-  );
-};
-
-// Approach Badge
-const ApproachBadge = ({ approach }) => {
-  const styles = {
-    immediate: { bg: "bg-red-500/20", text: "text-red-400", label: "Immediate" },
-    direct: { bg: "bg-violet-500/20", text: "text-violet-400", label: "Direct" },
-    targeted: { bg: "bg-violet-500/20", text: "text-violet-400", label: "Targeted" },
-    warm_intro: { bg: "bg-blue-500/20", text: "text-blue-400", label: "Warm Intro" },
-    referral: { bg: "bg-cyan-500/20", text: "text-cyan-400", label: "Referral" },
-    inbound: { bg: "bg-green-500/20", text: "text-green-400", label: "Inbound" },
-    event: { bg: "bg-amber-500/20", text: "text-amber-400", label: "Event" },
-    nurture: { bg: "bg-blue-500/20", text: "text-blue-400", label: "Nurture" },
-  };
-
-  const style = styles[approach] || styles.nurture;
-
-  return (
-    <span className={`px-2 py-0.5 rounded text-xs font-medium ${style.bg} ${style.text}`}>
-      {style.label}
-    </span>
-  );
 };
 
 // Candidate Avatar

@@ -40,6 +40,16 @@ import {
   Linkedin,
   Phone,
   Zap,
+  Target,
+  Calendar,
+  Clock,
+  TrendingUp,
+  CheckCircle2,
+  XCircle,
+  MessageSquare,
+  Send,
+  Eye,
+  Sparkles,
 } from "lucide-react";
 import { createPageUrl } from "@/utils";
 
@@ -75,6 +85,454 @@ const StatusBadge = ({ status }) => {
   );
 };
 
+// Type Badge
+const TypeBadge = ({ type }) => {
+  const styles = {
+    email: { bg: "bg-violet-500/20", text: "text-violet-400", icon: Mail },
+    linkedin: { bg: "bg-blue-500/20", text: "text-blue-400", icon: Linkedin },
+    cold_call: { bg: "bg-amber-500/20", text: "text-amber-400", icon: Phone },
+    multi_channel: { bg: "bg-cyan-500/20", text: "text-cyan-400", icon: Zap },
+  };
+
+  const style = styles[type] || styles.email;
+  const Icon = style.icon;
+
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-medium ${style.bg} ${style.text}`}>
+      <Icon className="w-4 h-4" />
+      {type?.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+    </span>
+  );
+};
+
+// Overview Tab Component
+const OverviewTab = ({ campaign, formData, stats }) => {
+  const matchedCandidates = campaign?.matched_candidates || [];
+
+  return (
+    <div className="space-y-6">
+      {/* Campaign Summary */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Campaign Info */}
+        <div className="lg:col-span-2 space-y-6">
+          <GlassCard className="p-6">
+            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <Megaphone className="w-5 h-5 text-violet-400" />
+              Campaign Details
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs text-zinc-500 uppercase tracking-wider">Description</label>
+                <p className="text-white/80 mt-1">
+                  {formData.description || "No description provided"}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs text-zinc-500 uppercase tracking-wider">Type</label>
+                  <div className="mt-1">
+                    <TypeBadge type={formData.campaign_type} />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-zinc-500 uppercase tracking-wider">Status</label>
+                  <div className="mt-1">
+                    <StatusBadge status={formData.status} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4 pt-4 border-t border-zinc-700/50">
+                <div>
+                  <label className="text-xs text-zinc-500 uppercase tracking-wider">Daily Limit</label>
+                  <p className="text-lg font-semibold text-white mt-1">{formData.daily_limit}</p>
+                </div>
+                <div>
+                  <label className="text-xs text-zinc-500 uppercase tracking-wider">Min Delay</label>
+                  <p className="text-lg font-semibold text-white mt-1">{formData.delay_min_minutes} min</p>
+                </div>
+                <div>
+                  <label className="text-xs text-zinc-500 uppercase tracking-wider">Max Delay</label>
+                  <p className="text-lg font-semibold text-white mt-1">{formData.delay_max_minutes} min</p>
+                </div>
+              </div>
+            </div>
+          </GlassCard>
+
+          {/* Sequence Preview */}
+          <GlassCard className="p-6">
+            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <List className="w-5 h-5 text-violet-400" />
+              Sequence Steps ({formData.sequence_steps?.length || 0})
+            </h3>
+            {formData.sequence_steps?.length > 0 ? (
+              <div className="space-y-3">
+                {formData.sequence_steps.slice(0, 3).map((step, idx) => (
+                  <div key={idx} className="flex items-center gap-3 p-3 bg-zinc-800/30 rounded-lg">
+                    <div className="w-8 h-8 rounded-full bg-violet-500/20 flex items-center justify-center text-violet-400 font-semibold text-sm">
+                      {idx + 1}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-white">{step.type || "Email"}</p>
+                      <p className="text-xs text-zinc-500">
+                        {step.delay_days ? `Wait ${step.delay_days} days` : "Immediate"}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+                {formData.sequence_steps.length > 3 && (
+                  <p className="text-sm text-zinc-500 text-center">
+                    +{formData.sequence_steps.length - 3} more steps
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <List className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
+                <p className="text-zinc-500">No sequence steps configured yet</p>
+              </div>
+            )}
+          </GlassCard>
+        </div>
+
+        {/* Stats Sidebar */}
+        <div className="space-y-4">
+          <GlassCard className="p-5">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2.5 bg-violet-500/20 rounded-lg">
+                <Users className="w-5 h-5 text-violet-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-white">{stats.totalCandidates}</p>
+                <p className="text-xs text-zinc-500">Matched Candidates</p>
+              </div>
+            </div>
+            <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-violet-500 to-purple-500"
+                style={{ width: `${Math.min((stats.sent / Math.max(stats.totalCandidates, 1)) * 100, 100)}%` }}
+              />
+            </div>
+            <p className="text-xs text-zinc-500 mt-2">
+              {stats.sent} contacted ({Math.round((stats.sent / Math.max(stats.totalCandidates, 1)) * 100)}%)
+            </p>
+          </GlassCard>
+
+          <GlassCard className="p-5">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2.5 bg-green-500/20 rounded-lg">
+                <MessageSquare className="w-5 h-5 text-green-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-white">{stats.replied}</p>
+                <p className="text-xs text-zinc-500">Replies</p>
+              </div>
+            </div>
+            <p className="text-sm text-green-400">
+              {stats.replyRate}% reply rate
+            </p>
+          </GlassCard>
+
+          <GlassCard className="p-5">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2.5 bg-blue-500/20 rounded-lg">
+                <Send className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-white">{stats.sent}</p>
+                <p className="text-xs text-zinc-500">Messages Sent</p>
+              </div>
+            </div>
+          </GlassCard>
+
+          {/* Top Matches Preview */}
+          {matchedCandidates.length > 0 && (
+            <GlassCard className="p-5">
+              <h4 className="text-sm font-medium text-zinc-400 mb-3 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-violet-400" />
+                Top Matches
+              </h4>
+              <div className="space-y-2">
+                {matchedCandidates
+                  .sort((a, b) => (b.match_score || 0) - (a.match_score || 0))
+                  .slice(0, 3)
+                  .map((match, idx) => (
+                    <div key={idx} className="flex items-center justify-between py-2 border-b border-zinc-800 last:border-0">
+                      <span className="text-sm text-white truncate">
+                        {match.candidate_name || "Unknown"}
+                      </span>
+                      <span className="text-sm font-medium text-violet-400">
+                        {match.match_score || 0}%
+                      </span>
+                    </div>
+                  ))}
+              </div>
+            </GlassCard>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Settings Tab Component
+const SettingsTab = ({ formData, handleChange, handleStatusChange, isNew }) => {
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <Label className="text-zinc-400">Campaign Name</Label>
+          <Input
+            value={formData.name}
+            onChange={(e) => handleChange("name", e.target.value)}
+            className="bg-zinc-800/50 border-zinc-700 text-white"
+            placeholder="Q1 Engineering Recruitment"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-zinc-400">Campaign Type</Label>
+          <Select
+            value={formData.campaign_type}
+            onValueChange={(v) => handleChange("campaign_type", v)}
+          >
+            <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-700">
+              {CAMPAIGN_TYPES.map((type) => (
+                <SelectItem key={type.value} value={type.value}>
+                  <div className="flex items-center gap-2">
+                    <type.icon className="w-4 h-4" />
+                    {type.label}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-zinc-400">Description</Label>
+        <Textarea
+          value={formData.description}
+          onChange={(e) => handleChange("description", e.target.value)}
+          className="bg-zinc-800/50 border-zinc-700 text-white resize-none"
+          placeholder="Campaign goals and target audience..."
+          rows={3}
+        />
+      </div>
+
+      <div className="grid grid-cols-3 gap-6">
+        <div className="space-y-2">
+          <Label className="text-zinc-400">Daily Limit</Label>
+          <Input
+            type="number"
+            value={formData.daily_limit}
+            onChange={(e) => handleChange("daily_limit", parseInt(e.target.value) || 50)}
+            className="bg-zinc-800/50 border-zinc-700 text-white"
+            min={1}
+            max={500}
+          />
+          <p className="text-xs text-zinc-600">Max messages per day</p>
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-zinc-400">Min Delay (minutes)</Label>
+          <Input
+            type="number"
+            value={formData.delay_min_minutes}
+            onChange={(e) => handleChange("delay_min_minutes", parseInt(e.target.value) || 5)}
+            className="bg-zinc-800/50 border-zinc-700 text-white"
+            min={1}
+          />
+          <p className="text-xs text-zinc-600">Between messages</p>
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-zinc-400">Max Delay (minutes)</Label>
+          <Input
+            type="number"
+            value={formData.delay_max_minutes}
+            onChange={(e) => handleChange("delay_max_minutes", parseInt(e.target.value) || 30)}
+            className="bg-zinc-800/50 border-zinc-700 text-white"
+            min={1}
+          />
+          <p className="text-xs text-zinc-600">Random delay range</p>
+        </div>
+      </div>
+
+      {!isNew && (
+        <div className="space-y-2">
+          <Label className="text-zinc-400">Status</Label>
+          <Select
+            value={formData.status}
+            onValueChange={(v) => handleStatusChange(v)}
+          >
+            <SelectTrigger className="w-[200px] bg-zinc-800/50 border-zinc-700 text-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-700">
+              {CAMPAIGN_STATUSES.map((status) => (
+                <SelectItem key={status.value} value={status.value}>
+                  {status.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Analytics Tab Component
+const AnalyticsTab = ({ campaign }) => {
+  const matchedCandidates = campaign?.matched_candidates || [];
+
+  // Calculate metrics
+  const metrics = useMemo(() => {
+    const total = matchedCandidates.length;
+    const statusCounts = matchedCandidates.reduce((acc, m) => {
+      const status = m.status || "matched";
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {});
+
+    const scoreDistribution = {
+      high: matchedCandidates.filter((m) => m.match_score >= 70).length,
+      medium: matchedCandidates.filter((m) => m.match_score >= 40 && m.match_score < 70).length,
+      low: matchedCandidates.filter((m) => m.match_score < 40).length,
+    };
+
+    return { total, statusCounts, scoreDistribution };
+  }, [matchedCandidates]);
+
+  return (
+    <div className="space-y-6">
+      {/* Pipeline Funnel */}
+      <GlassCard className="p-6">
+        <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+          <TrendingUp className="w-5 h-5 text-violet-400" />
+          Pipeline Funnel
+        </h3>
+        <div className="grid grid-cols-5 gap-4">
+          {[
+            { label: "Matched", count: metrics.statusCounts.matched || 0, color: "violet" },
+            { label: "Pending", count: metrics.statusCounts.pending || 0, color: "yellow" },
+            { label: "Contacted", count: (metrics.statusCounts.contacted || 0) + (metrics.statusCounts.sent || 0), color: "blue" },
+            { label: "Replied", count: metrics.statusCounts.replied || 0, color: "green" },
+            { label: "Scheduled", count: metrics.statusCounts.scheduled || 0, color: "cyan" },
+          ].map((stage, idx) => (
+            <div key={idx} className="text-center">
+              <div className={`text-3xl font-bold text-${stage.color}-400 mb-1`}>
+                {stage.count}
+              </div>
+              <p className="text-xs text-zinc-500">{stage.label}</p>
+              <div className="mt-2 h-2 bg-zinc-800 rounded-full overflow-hidden">
+                <div
+                  className={`h-full bg-${stage.color}-500`}
+                  style={{
+                    width: `${Math.min((stage.count / Math.max(metrics.total, 1)) * 100, 100)}%`,
+                  }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </GlassCard>
+
+      {/* Match Score Distribution */}
+      <div className="grid grid-cols-2 gap-6">
+        <GlassCard className="p-6">
+          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <Target className="w-5 h-5 text-violet-400" />
+            Match Score Distribution
+          </h3>
+          <div className="space-y-4">
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span className="text-zinc-400">High Match (70%+)</span>
+                <span className="text-green-400 font-medium">{metrics.scoreDistribution.high}</span>
+              </div>
+              <div className="h-3 bg-zinc-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-green-500"
+                  style={{
+                    width: `${(metrics.scoreDistribution.high / Math.max(metrics.total, 1)) * 100}%`,
+                  }}
+                />
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span className="text-zinc-400">Medium Match (40-70%)</span>
+                <span className="text-yellow-400 font-medium">{metrics.scoreDistribution.medium}</span>
+              </div>
+              <div className="h-3 bg-zinc-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-yellow-500"
+                  style={{
+                    width: `${(metrics.scoreDistribution.medium / Math.max(metrics.total, 1)) * 100}%`,
+                  }}
+                />
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span className="text-zinc-400">Low Match (&lt;40%)</span>
+                <span className="text-zinc-400 font-medium">{metrics.scoreDistribution.low}</span>
+              </div>
+              <div className="h-3 bg-zinc-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-zinc-600"
+                  style={{
+                    width: `${(metrics.scoreDistribution.low / Math.max(metrics.total, 1)) * 100}%`,
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </GlassCard>
+
+        <GlassCard className="p-6">
+          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-violet-400" />
+            Campaign Performance
+          </h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-3 bg-zinc-800/30 rounded-lg">
+              <span className="text-zinc-400">Total Candidates</span>
+              <span className="text-xl font-bold text-white">{metrics.total}</span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-zinc-800/30 rounded-lg">
+              <span className="text-zinc-400">Conversion Rate</span>
+              <span className="text-xl font-bold text-green-400">
+                {metrics.total > 0
+                  ? Math.round(((metrics.statusCounts.replied || 0) / metrics.total) * 100)
+                  : 0}%
+              </span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-zinc-800/30 rounded-lg">
+              <span className="text-zinc-400">Avg Match Score</span>
+              <span className="text-xl font-bold text-violet-400">
+                {metrics.total > 0
+                  ? Math.round(
+                      matchedCandidates.reduce((sum, m) => sum + (m.match_score || 0), 0) /
+                        metrics.total
+                    )
+                  : 0}%
+              </span>
+            </div>
+          </div>
+        </GlassCard>
+      </div>
+    </div>
+  );
+};
+
 export default function TalentCampaignDetail() {
   const { user } = useUser();
   const navigate = useNavigate();
@@ -85,7 +543,7 @@ export default function TalentCampaignDetail() {
   const [campaign, setCampaign] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState("settings");
+  const [activeTab, setActiveTab] = useState(isNew ? "settings" : "overview");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -228,8 +686,8 @@ export default function TalentCampaignDetail() {
         name: `${formData.name} (Copy)`,
         status: "draft",
         organization_id: user.organization_id,
+        matched_candidates: [],
       };
-      delete duplicateData.id;
 
       const { data, error } = await supabase
         .from("campaigns")
@@ -274,7 +732,7 @@ export default function TalentCampaignDetail() {
   // Stats
   const stats = useMemo(() => {
     const matched = formData.matched_candidates || [];
-    const sent = matched.filter((c) => c.status === "sent").length;
+    const sent = matched.filter((c) => c.status === "sent" || c.status === "contacted").length;
     const replied = matched.filter((c) => c.status === "replied").length;
 
     return {
@@ -323,7 +781,7 @@ export default function TalentCampaignDetail() {
               {!isNew && <StatusBadge status={formData.status} />}
             </div>
             <p className="text-sm text-zinc-500 mt-0.5">
-              {isNew ? "Create a new outreach campaign" : "Manage your campaign settings and sequence"}
+              {isNew ? "Create a new outreach campaign" : "Manage your campaign settings and candidates"}
             </p>
           </div>
         </div>
@@ -383,40 +841,28 @@ export default function TalentCampaignDetail() {
         </div>
       </div>
 
-      {/* Stats (non-new campaigns) */}
-      {!isNew && (
-        <div className="grid grid-cols-4 gap-4">
-          <StatCard
-            title="Matched Candidates"
-            value={stats.totalCandidates}
-            icon={Users}
-            color="violet"
-          />
-          <StatCard
-            title="Messages Sent"
-            value={stats.sent}
-            icon={Mail}
-            color="blue"
-          />
-          <StatCard
-            title="Replies"
-            value={stats.replied}
-            icon={Mail}
-            color="green"
-          />
-          <StatCard
-            title="Reply Rate"
-            value={`${stats.replyRate}%`}
-            icon={BarChart3}
-            color="amber"
-          />
-        </div>
-      )}
-
       {/* Main Content */}
       <GlassCard className="p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="bg-zinc-800/50 mb-6">
+            {!isNew && (
+              <TabsTrigger
+                value="overview"
+                className="data-[state=active]:bg-violet-500/20 data-[state=active]:text-violet-400"
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                Overview
+              </TabsTrigger>
+            )}
+            {!isNew && (
+              <TabsTrigger
+                value="matches"
+                className="data-[state=active]:bg-violet-500/20 data-[state=active]:text-violet-400"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                Matches
+              </TabsTrigger>
+            )}
             <TabsTrigger
               value="settings"
               className="data-[state=active]:bg-violet-500/20 data-[state=active]:text-violet-400"
@@ -434,13 +880,6 @@ export default function TalentCampaignDetail() {
             {!isNew && (
               <>
                 <TabsTrigger
-                  value="candidates"
-                  className="data-[state=active]:bg-violet-500/20 data-[state=active]:text-violet-400"
-                >
-                  <Users className="w-4 h-4 mr-2" />
-                  Candidates
-                </TabsTrigger>
-                <TabsTrigger
                   value="outreach"
                   className="data-[state=active]:bg-violet-500/20 data-[state=active]:text-violet-400"
                 >
@@ -448,123 +887,44 @@ export default function TalentCampaignDetail() {
                   Outreach
                 </TabsTrigger>
                 <TabsTrigger
-                  value="metrics"
+                  value="analytics"
                   className="data-[state=active]:bg-violet-500/20 data-[state=active]:text-violet-400"
                 >
                   <BarChart3 className="w-4 h-4 mr-2" />
-                  Metrics
+                  Analytics
                 </TabsTrigger>
               </>
             )}
           </TabsList>
 
-          <TabsContent value="settings" className="space-y-6 m-0">
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label className="text-zinc-400">Campaign Name</Label>
-                <Input
-                  value={formData.name}
-                  onChange={(e) => handleChange("name", e.target.value)}
-                  className="bg-zinc-800/50 border-zinc-700 text-white"
-                  placeholder="Q1 Engineering Recruitment"
-                />
-              </div>
+          {/* Overview Tab */}
+          {!isNew && (
+            <TabsContent value="overview" className="m-0">
+              <OverviewTab campaign={campaign} formData={formData} stats={stats} />
+            </TabsContent>
+          )}
 
-              <div className="space-y-2">
-                <Label className="text-zinc-400">Campaign Type</Label>
-                <Select
-                  value={formData.campaign_type}
-                  onValueChange={(v) => handleChange("campaign_type", v)}
-                >
-                  <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-700">
-                    {CAMPAIGN_TYPES.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        <div className="flex items-center gap-2">
-                          <type.icon className="w-4 h-4" />
-                          {type.label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-zinc-400">Description</Label>
-              <Textarea
-                value={formData.description}
-                onChange={(e) => handleChange("description", e.target.value)}
-                className="bg-zinc-800/50 border-zinc-700 text-white resize-none"
-                placeholder="Campaign goals and target audience..."
-                rows={3}
+          {/* Matches Tab */}
+          {!isNew && (
+            <TabsContent value="matches" className="m-0">
+              <CandidateMatchingPanel
+                campaign={campaign}
+                onUpdate={handleCampaignUpdate}
               />
-            </div>
+            </TabsContent>
+          )}
 
-            <div className="grid grid-cols-3 gap-6">
-              <div className="space-y-2">
-                <Label className="text-zinc-400">Daily Limit</Label>
-                <Input
-                  type="number"
-                  value={formData.daily_limit}
-                  onChange={(e) => handleChange("daily_limit", parseInt(e.target.value) || 50)}
-                  className="bg-zinc-800/50 border-zinc-700 text-white"
-                  min={1}
-                  max={500}
-                />
-                <p className="text-xs text-zinc-600">Max messages per day</p>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-zinc-400">Min Delay (minutes)</Label>
-                <Input
-                  type="number"
-                  value={formData.delay_min_minutes}
-                  onChange={(e) => handleChange("delay_min_minutes", parseInt(e.target.value) || 5)}
-                  className="bg-zinc-800/50 border-zinc-700 text-white"
-                  min={1}
-                />
-                <p className="text-xs text-zinc-600">Between messages</p>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-zinc-400">Max Delay (minutes)</Label>
-                <Input
-                  type="number"
-                  value={formData.delay_max_minutes}
-                  onChange={(e) => handleChange("delay_max_minutes", parseInt(e.target.value) || 30)}
-                  className="bg-zinc-800/50 border-zinc-700 text-white"
-                  min={1}
-                />
-                <p className="text-xs text-zinc-600">Random delay range</p>
-              </div>
-            </div>
-
-            {!isNew && (
-              <div className="space-y-2">
-                <Label className="text-zinc-400">Status</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(v) => handleStatusChange(v)}
-                >
-                  <SelectTrigger className="w-[200px] bg-zinc-800/50 border-zinc-700 text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-700">
-                    {CAMPAIGN_STATUSES.map((status) => (
-                      <SelectItem key={status.value} value={status.value}>
-                        {status.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+          {/* Settings Tab */}
+          <TabsContent value="settings" className="space-y-6 m-0">
+            <SettingsTab
+              formData={formData}
+              handleChange={handleChange}
+              handleStatusChange={handleStatusChange}
+              isNew={isNew}
+            />
           </TabsContent>
 
+          {/* Sequence Tab */}
           <TabsContent value="sequence" className="m-0">
             <CampaignSequenceEditor
               steps={formData.sequence_steps}
@@ -572,23 +932,18 @@ export default function TalentCampaignDetail() {
             />
           </TabsContent>
 
+          {/* Outreach Tab */}
           {!isNew && (
-            <>
-              <TabsContent value="candidates" className="m-0">
-                <CandidateMatchingPanel
-                  campaign={campaign}
-                  onUpdate={handleCampaignUpdate}
-                />
-              </TabsContent>
+            <TabsContent value="outreach" className="m-0">
+              <OutreachQueue campaignId={campaignId} />
+            </TabsContent>
+          )}
 
-              <TabsContent value="outreach" className="m-0">
-                <OutreachQueue campaignId={campaignId} />
-              </TabsContent>
-
-              <TabsContent value="metrics" className="m-0">
-                <CampaignMetricsPanel campaign={campaign} />
-              </TabsContent>
-            </>
+          {/* Analytics Tab */}
+          {!isNew && (
+            <TabsContent value="analytics" className="m-0">
+              <AnalyticsTab campaign={campaign} />
+            </TabsContent>
           )}
         </Tabs>
       </GlassCard>

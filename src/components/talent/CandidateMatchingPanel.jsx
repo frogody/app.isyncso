@@ -5,7 +5,6 @@ import { useUser } from "@/components/context/UserContext";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -18,261 +17,253 @@ import {
   Users,
   Search,
   Sparkles,
-  Check,
   Loader2,
-  Building2,
-  AlertTriangle,
   RefreshCw,
-  UserPlus,
-  X,
+  Filter,
+  SortAsc,
+  SortDesc,
+  Target,
+  Zap,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
+import { CandidateMatchCard, CandidateMatchList } from "./CandidateMatchCard";
 
-// Intelligence Gauge Component
-const IntelligenceGauge = ({ score, size = "sm" }) => {
-  const sizes = {
-    sm: { width: 32, height: 32, strokeWidth: 3, fontSize: "text-xs" },
-  };
-  const { width, height, strokeWidth, fontSize } = sizes[size];
-  const radius = (width - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (score / 100) * circumference;
-
-  const getColor = (score) => {
-    if (score >= 80) return "#ef4444";
-    if (score >= 60) return "#f97316";
-    if (score >= 40) return "#eab308";
-    return "#22c55e";
-  };
-
-  return (
-    <div className="relative inline-flex items-center justify-center">
-      <svg width={width} height={height} className="-rotate-90">
-        <circle
-          cx={width / 2}
-          cy={height / 2}
-          r={radius}
-          fill="none"
-          stroke="rgba(255,255,255,0.1)"
-          strokeWidth={strokeWidth}
-        />
-        <circle
-          cx={width / 2}
-          cy={height / 2}
-          r={radius}
-          fill="none"
-          stroke={getColor(score)}
-          strokeWidth={strokeWidth}
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-        />
-      </svg>
-      <span className={`absolute ${fontSize} font-bold text-white`}>{score}</span>
-    </div>
-  );
-};
-
-// Intelligence Level Badge
-const IntelligenceLevelBadge = ({ level }) => {
-  const styles = {
-    critical: "bg-red-500/20 text-red-400",
-    high: "bg-orange-500/20 text-orange-400",
-    medium: "bg-yellow-500/20 text-yellow-400",
-    low: "bg-green-500/20 text-green-400",
-  };
-
-  return (
-    <span className={`px-2 py-0.5 rounded text-xs font-medium ${styles[level] || styles.low}`}>
-      {level?.charAt(0).toUpperCase() + level?.slice(1)}
-    </span>
-  );
-};
-
-// Candidate Row Component
-const CandidateRow = ({ candidate, isSelected, onToggle }) => {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`flex items-center gap-3 p-3 rounded-lg border transition-all cursor-pointer ${
-        isSelected
-          ? "bg-violet-500/10 border-violet-500/30"
-          : "bg-zinc-800/30 border-zinc-700/30 hover:border-zinc-600/50"
-      }`}
-      onClick={() => onToggle(candidate.id)}
-    >
-      <Checkbox
-        checked={isSelected}
-        onCheckedChange={() => onToggle(candidate.id)}
-        className="border-zinc-600"
-      />
-
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="font-medium text-white truncate">{candidate.name}</span>
-          <IntelligenceLevelBadge level={candidate.intelligence_level} />
-        </div>
-        <div className="flex items-center gap-2 text-xs text-zinc-500 mt-0.5">
-          <Building2 className="w-3 h-3" />
-          <span className="truncate">
-            {candidate.current_title ? `${candidate.current_title} at ` : ""}
-            {candidate.current_company || "Unknown Company"}
-          </span>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-3">
-        <IntelligenceGauge score={candidate.intelligence_score || 0} />
-        {candidate.urgency === "urgent" || candidate.urgency === "high" ? (
-          <AlertTriangle className="w-4 h-4 text-amber-400" />
-        ) : null}
-      </div>
-    </motion.div>
-  );
-};
-
+/**
+ * CandidateMatchingPanel - AI-powered candidate matching for campaigns
+ *
+ * @param {object} campaign - Campaign object with matched_candidates
+ * @param {function} onUpdate - Callback when campaign is updated
+ */
 export default function CandidateMatchingPanel({ campaign, onUpdate }) {
   const { user } = useUser();
   const [candidates, setCandidates] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [matching, setMatching] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [levelFilter, setLevelFilter] = useState("all");
-  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [scoreFilter, setScoreFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("score");
+  const [sortOrder, setSortOrder] = useState("desc");
 
-  // Load candidates and pre-select matched ones
+  // AI Matching config
+  const [selectedProject, setSelectedProject] = useState("");
+  const [selectedRole, setSelectedRole] = useState("");
+  const [minScore, setMinScore] = useState(30);
+
+  // Load initial data
   useEffect(() => {
-    fetchCandidates();
+    if (user?.organization_id) {
+      fetchData();
+    }
   }, [user]);
 
-  useEffect(() => {
-    if (campaign?.matched_candidates) {
-      const matchedIds = campaign.matched_candidates.map((c) => c.candidate_id || c.id);
-      setSelectedIds(new Set(matchedIds));
-    }
-  }, [campaign]);
-
-  const fetchCandidates = async () => {
-    if (!user?.organization_id) return;
-
+  const fetchData = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("candidates")
-        .select("*")
-        .eq("organization_id", user.organization_id)
-        .in("status", ["active", "passive"])
-        .order("intelligence_score", { ascending: false });
+      // Fetch candidates, projects, and roles in parallel
+      const [candidatesRes, projectsRes, rolesRes] = await Promise.all([
+        supabase
+          .from("candidates")
+          .select("*")
+          .eq("organization_id", user.organization_id)
+          .in("status", ["active", "passive"])
+          .order("intelligence_score", { ascending: false }),
+        supabase
+          .from("projects")
+          .select("*")
+          .eq("organization_id", user.organization_id)
+          .eq("status", "active"),
+        supabase
+          .from("roles")
+          .select("*")
+          .eq("organization_id", user.organization_id)
+          .eq("status", "active"),
+      ]);
 
-      if (error) throw error;
-      setCandidates(data || []);
+      if (candidatesRes.error) throw candidatesRes.error;
+      if (projectsRes.error) throw projectsRes.error;
+      if (rolesRes.error) throw rolesRes.error;
+
+      setCandidates(candidatesRes.data || []);
+      setProjects(projectsRes.data || []);
+      setRoles(rolesRes.data || []);
     } catch (error) {
-      console.error("Error fetching candidates:", error);
-      toast.error("Failed to load candidates");
+      console.error("Error fetching data:", error);
+      toast.error("Failed to load data");
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredCandidates = useMemo(() => {
-    let result = [...candidates];
+  // Get matched candidates from campaign
+  const matchedCandidates = useMemo(() => {
+    return campaign?.matched_candidates || [];
+  }, [campaign]);
 
+  // Filter and sort matched candidates
+  const filteredMatches = useMemo(() => {
+    let result = [...matchedCandidates];
+
+    // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      result = result.filter(
-        (c) =>
-          c.name?.toLowerCase().includes(query) ||
-          c.email?.toLowerCase().includes(query) ||
-          c.current_company?.toLowerCase().includes(query) ||
-          c.current_title?.toLowerCase().includes(query)
-      );
+      result = result.filter((m) => {
+        const candidate = candidates.find((c) => c.id === m.candidate_id);
+        return (
+          m.candidate_name?.toLowerCase().includes(query) ||
+          candidate?.name?.toLowerCase().includes(query) ||
+          candidate?.email?.toLowerCase().includes(query) ||
+          candidate?.current_company?.toLowerCase().includes(query) ||
+          candidate?.current_title?.toLowerCase().includes(query)
+        );
+      });
     }
 
-    if (levelFilter !== "all") {
-      result = result.filter((c) => c.intelligence_level === levelFilter);
+    // Score filter
+    if (scoreFilter !== "all") {
+      const threshold = parseInt(scoreFilter);
+      result = result.filter((m) => m.match_score >= threshold);
     }
+
+    // Sort
+    result.sort((a, b) => {
+      let aVal, bVal;
+      if (sortBy === "score") {
+        aVal = a.match_score || 0;
+        bVal = b.match_score || 0;
+      } else if (sortBy === "intelligence") {
+        aVal = a.intelligence_score || 0;
+        bVal = b.intelligence_score || 0;
+      } else if (sortBy === "name") {
+        aVal = a.candidate_name?.toLowerCase() || "";
+        bVal = b.candidate_name?.toLowerCase() || "";
+      }
+      return sortOrder === "desc" ? bVal - aVal : aVal - bVal;
+    });
 
     return result;
-  }, [candidates, searchQuery, levelFilter]);
+  }, [matchedCandidates, candidates, searchQuery, scoreFilter, sortBy, sortOrder]);
 
-  const toggleCandidate = (id) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
+  // Run AI matching using the edge function
+  const runAIMatching = async () => {
+    if (!campaign?.id) {
+      toast.error("Campaign not found");
+      return;
+    }
+
+    if (!selectedProject && !selectedRole) {
+      toast.error("Please select a project or role to match against");
+      return;
+    }
+
+    setMatching(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyzeCampaignProject`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            campaign_id: campaign.id,
+            organization_id: user.organization_id,
+            project_id: selectedProject || undefined,
+            role_id: selectedRole || undefined,
+            min_score: minScore,
+            limit: 50,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to run AI matching");
       }
-      return next;
-    });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success(
+          `AI matched ${result.matched_candidates?.length || 0} candidates from ${result.candidates_analyzed} analyzed`
+        );
+
+        // Update campaign in parent
+        if (onUpdate && result.matched_candidates) {
+          onUpdate({
+            ...campaign,
+            matched_candidates: result.matched_candidates.map((m) => ({
+              candidate_id: m.candidate_id,
+              candidate_name: m.candidate_name,
+              match_score: m.match_score,
+              match_reasons: m.match_reasons,
+              intelligence_score: m.intelligence_score,
+              recommended_approach: m.recommended_approach,
+              status: "matched",
+              added_at: new Date().toISOString(),
+            })),
+          });
+        }
+      } else {
+        toast.error(result.message || "No matches found");
+      }
+    } catch (error) {
+      console.error("Error running AI matching:", error);
+      toast.error(error.message || "Failed to run AI matching");
+    } finally {
+      setMatching(false);
+    }
   };
 
-  const selectAll = () => {
-    setSelectedIds(new Set(filteredCandidates.map((c) => c.id)));
-  };
-
-  const deselectAll = () => {
-    setSelectedIds(new Set());
-  };
-
-  const aiMatch = () => {
-    // AI matching algorithm: score candidates based on intelligence_score, urgency, and level
-    const scored = candidates.map((c) => {
-      let score = c.intelligence_score || 0;
-
-      // Urgency bonus
-      if (c.urgency === "urgent") score += 30;
-      else if (c.urgency === "high") score += 20;
-      else if (c.urgency === "medium") score += 10;
-
-      // Level bonus
-      if (c.intelligence_level === "critical") score += 25;
-      else if (c.intelligence_level === "high") score += 15;
-      else if (c.intelligence_level === "medium") score += 5;
-
-      return { ...c, matchScore: score };
-    });
-
-    // Sort by match score and take top candidates (max 50)
-    const topCandidates = scored
-      .sort((a, b) => b.matchScore - a.matchScore)
-      .slice(0, Math.min(50, Math.ceil(candidates.length * 0.3)));
-
-    setSelectedIds(new Set(topCandidates.map((c) => c.id)));
-    toast.success(`AI matched ${topCandidates.length} top candidates`);
-  };
-
-  const saveMatching = async () => {
+  // Update candidate status in campaign
+  const updateCandidateStatus = async (candidateId, newStatus) => {
     if (!campaign?.id) return;
 
-    setSaving(true);
     try {
-      const matchedCandidates = Array.from(selectedIds).map((id) => {
-        const candidate = candidates.find((c) => c.id === id);
-        return {
-          candidate_id: id,
-          name: candidate?.name,
-          status: "pending",
-          added_at: new Date().toISOString(),
-        };
-      });
+      const updatedMatches = matchedCandidates.map((m) =>
+        m.candidate_id === candidateId ? { ...m, status: newStatus } : m
+      );
 
       const { error } = await supabase
         .from("campaigns")
-        .update({ matched_candidates: matchedCandidates })
+        .update({ matched_candidates: updatedMatches })
         .eq("id", campaign.id);
 
       if (error) throw error;
 
-      toast.success(`${selectedIds.size} candidates matched to campaign`);
-      onUpdate?.({ ...campaign, matched_candidates: matchedCandidates });
+      onUpdate?.({ ...campaign, matched_candidates: updatedMatches });
+      toast.success("Status updated");
     } catch (error) {
-      console.error("Error saving matching:", error);
-      toast.error("Failed to save candidate matching");
-    } finally {
-      setSaving(false);
+      console.error("Error updating status:", error);
+      toast.error("Failed to update status");
     }
   };
+
+  // Handle adding to outreach queue
+  const handleAddToOutreach = (match) => {
+    updateCandidateStatus(match.candidate_id, "pending");
+  };
+
+  // Stats
+  const stats = useMemo(() => {
+    const total = matchedCandidates.length;
+    const highMatch = matchedCandidates.filter((m) => m.match_score >= 70).length;
+    const medMatch = matchedCandidates.filter((m) => m.match_score >= 40 && m.match_score < 70).length;
+    const avgScore = total > 0
+      ? Math.round(matchedCandidates.reduce((sum, m) => sum + (m.match_score || 0), 0) / total)
+      : 0;
+
+    return { total, highMatch, medMatch, avgScore };
+  }, [matchedCandidates]);
+
+  // Available roles for selected project
+  const availableRoles = useMemo(() => {
+    if (!selectedProject) return roles;
+    return roles.filter((r) => r.project_id === selectedProject);
+  }, [roles, selectedProject]);
 
   if (loading) {
     return (
@@ -283,129 +274,202 @@ export default function CandidateMatchingPanel({ campaign, onUpdate }) {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Users className="w-5 h-5 text-violet-400" />
-          <h3 className="text-lg font-medium text-white">Match Candidates</h3>
-          <Badge variant="outline" className="border-zinc-700 text-zinc-400">
-            {selectedIds.size} selected
-          </Badge>
-        </div>
+    <div className="space-y-6">
+      {/* AI Matching Configuration */}
+      <div className="bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-500/20 rounded-xl p-5">
+        <div className="flex items-start gap-4">
+          <div className="p-3 bg-violet-500/20 rounded-xl">
+            <Sparkles className="w-6 h-6 text-violet-400" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-white mb-1">AI Candidate Matching</h3>
+            <p className="text-sm text-zinc-400 mb-4">
+              Match candidates against project requirements using AI analysis
+            </p>
 
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={aiMatch}
-            className="border-violet-500/30 text-violet-400 hover:bg-violet-500/10"
-          >
-            <Sparkles className="w-4 h-4 mr-2" />
-            AI Match
-          </Button>
-          <Button
-            onClick={saveMatching}
-            disabled={saving}
-            size="sm"
-            className="bg-violet-500 hover:bg-violet-600"
-          >
-            {saving ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Check className="w-4 h-4 mr-2" />
-            )}
-            Save
-          </Button>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              {/* Project Selection */}
+              <div>
+                <label className="text-xs text-zinc-500 mb-1 block">Project (Optional)</label>
+                <Select value={selectedProject} onValueChange={setSelectedProject}>
+                  <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
+                    <SelectValue placeholder="Select project..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-zinc-700">
+                    <SelectItem value="">All Projects</SelectItem>
+                    {projects.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Role Selection */}
+              <div>
+                <label className="text-xs text-zinc-500 mb-1 block">Role (Optional)</label>
+                <Select value={selectedRole} onValueChange={setSelectedRole}>
+                  <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
+                    <SelectValue placeholder="Select role..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-zinc-700">
+                    <SelectItem value="">All Roles</SelectItem>
+                    {availableRoles.map((r) => (
+                      <SelectItem key={r.id} value={r.id}>
+                        {r.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Min Score */}
+              <div>
+                <label className="text-xs text-zinc-500 mb-1 block">Minimum Score</label>
+                <Select value={minScore.toString()} onValueChange={(v) => setMinScore(parseInt(v))}>
+                  <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-zinc-700">
+                    <SelectItem value="20">20%+</SelectItem>
+                    <SelectItem value="30">30%+</SelectItem>
+                    <SelectItem value="40">40%+</SelectItem>
+                    <SelectItem value="50">50%+</SelectItem>
+                    <SelectItem value="60">60%+</SelectItem>
+                    <SelectItem value="70">70%+</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <Button
+              onClick={runAIMatching}
+              disabled={matching || (!selectedProject && !selectedRole)}
+              className="bg-violet-500 hover:bg-violet-600"
+            >
+              {matching ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Analyzing Candidates...
+                </>
+              ) : (
+                <>
+                  <Zap className="w-4 h-4 mr-2" />
+                  Run AI Matching
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
+
+      {/* Stats Bar */}
+      {matchedCandidates.length > 0 && (
+        <div className="grid grid-cols-4 gap-4">
+          <div className="bg-zinc-800/30 border border-zinc-700/30 rounded-lg p-4 text-center">
+            <p className="text-2xl font-bold text-white">{stats.total}</p>
+            <p className="text-xs text-zinc-500">Total Matches</p>
+          </div>
+          <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 text-center">
+            <p className="text-2xl font-bold text-green-400">{stats.highMatch}</p>
+            <p className="text-xs text-zinc-500">High Match (70%+)</p>
+          </div>
+          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 text-center">
+            <p className="text-2xl font-bold text-yellow-400">{stats.medMatch}</p>
+            <p className="text-xs text-zinc-500">Medium Match</p>
+          </div>
+          <div className="bg-violet-500/10 border border-violet-500/20 rounded-lg p-4 text-center">
+            <p className="text-2xl font-bold text-violet-400">{stats.avgScore}%</p>
+            <p className="text-xs text-zinc-500">Avg Score</p>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search candidates..."
-            className="pl-10 bg-zinc-800/50 border-zinc-700 text-white"
-          />
-        </div>
-
-        <Select value={levelFilter} onValueChange={setLevelFilter}>
-          <SelectTrigger className="w-[160px] bg-zinc-800/50 border-zinc-700 text-white">
-            <SelectValue placeholder="Filter by level" />
-          </SelectTrigger>
-          <SelectContent className="bg-zinc-900 border-zinc-700">
-            <SelectItem value="all">All Levels</SelectItem>
-            <SelectItem value="critical">Critical</SelectItem>
-            <SelectItem value="high">High</SelectItem>
-            <SelectItem value="medium">Medium</SelectItem>
-            <SelectItem value="low">Low</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={selectAll}
-          className="text-zinc-400 hover:text-white"
-        >
-          <UserPlus className="w-4 h-4 mr-1" />
-          All
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={deselectAll}
-          className="text-zinc-400 hover:text-white"
-        >
-          <X className="w-4 h-4 mr-1" />
-          None
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={fetchCandidates}
-          className="text-zinc-400 hover:text-white"
-        >
-          <RefreshCw className="w-4 h-4" />
-        </Button>
-      </div>
-
-      {/* Candidate List */}
-      <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
-        {filteredCandidates.length === 0 ? (
-          <div className="text-center py-8">
-            <Users className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
-            <p className="text-zinc-500">No candidates found</p>
-            <p className="text-xs text-zinc-600 mt-1">
-              {searchQuery || levelFilter !== "all"
-                ? "Try adjusting your filters"
-                : "Add candidates to your talent pool first"}
-            </p>
-          </div>
-        ) : (
-          filteredCandidates.map((candidate) => (
-            <CandidateRow
-              key={candidate.id}
-              candidate={candidate}
-              isSelected={selectedIds.has(candidate.id)}
-              onToggle={toggleCandidate}
+      {matchedCandidates.length > 0 && (
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search matched candidates..."
+              className="pl-10 bg-zinc-800/50 border-zinc-700 text-white"
             />
-          ))
-        )}
-      </div>
+          </div>
 
-      {/* Footer Stats */}
-      <div className="flex items-center justify-between pt-3 border-t border-zinc-800 text-sm text-zinc-500">
-        <span>
-          {filteredCandidates.length} candidates available • {selectedIds.size} selected
-        </span>
-        <span>
-          {candidates.filter((c) => c.intelligence_level === "critical" || c.intelligence_level === "high").length} high priority
-        </span>
-      </div>
+          <Select value={scoreFilter} onValueChange={setScoreFilter}>
+            <SelectTrigger className="w-[140px] bg-zinc-800/50 border-zinc-700 text-white">
+              <Filter className="w-4 h-4 mr-2" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-700">
+              <SelectItem value="all">All Scores</SelectItem>
+              <SelectItem value="70">70%+</SelectItem>
+              <SelectItem value="50">50%+</SelectItem>
+              <SelectItem value="30">30%+</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-[140px] bg-zinc-800/50 border-zinc-700 text-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-700">
+              <SelectItem value="score">Match Score</SelectItem>
+              <SelectItem value="intelligence">Flight Risk</SelectItem>
+              <SelectItem value="name">Name</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSortOrder(sortOrder === "desc" ? "asc" : "desc")}
+            className="text-zinc-400 hover:text-white"
+          >
+            {sortOrder === "desc" ? (
+              <SortDesc className="w-4 h-4" />
+            ) : (
+              <SortAsc className="w-4 h-4" />
+            )}
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={fetchData}
+            className="text-zinc-400 hover:text-white"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
+
+      {/* Matched Candidates List */}
+      <CandidateMatchList
+        matches={filteredMatches}
+        candidates={candidates}
+        onAddToOutreach={handleAddToOutreach}
+        emptyMessage={
+          matchedCandidates.length === 0
+            ? "No candidates matched yet. Run AI matching to find suitable candidates."
+            : "No candidates match your filters"
+        }
+      />
+
+      {/* Footer */}
+      {matchedCandidates.length > 0 && (
+        <div className="flex items-center justify-between pt-3 border-t border-zinc-800 text-sm text-zinc-500">
+          <span>
+            Showing {filteredMatches.length} of {matchedCandidates.length} matched candidates
+          </span>
+          <span>
+            {candidates.length} total candidates in pool
+          </span>
+        </div>
+      )}
     </div>
   );
 }

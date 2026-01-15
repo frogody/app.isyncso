@@ -5,6 +5,8 @@ import { useUser } from "@/components/context/UserContext";
 import { GlassCard, StatCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
+import { IntelligenceGauge, IntelligenceLevelBadge } from "@/components/talent/IntelligenceGauge";
+import { IntelligenceReport } from "@/components/talent/IntelligenceReport";
 import {
   User,
   Building2,
@@ -32,6 +34,8 @@ import {
   CheckCircle2,
   XCircle,
   History,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -52,78 +56,6 @@ const itemVariants = {
     y: 0,
     transition: { duration: 0.5, ease: "easeOut" },
   },
-};
-
-// Intelligence Gauge Component
-const IntelligenceGauge = ({ score, size = "lg" }) => {
-  const sizes = {
-    sm: { width: 48, height: 48, strokeWidth: 4, fontSize: "text-xs" },
-    md: { width: 64, height: 64, strokeWidth: 5, fontSize: "text-sm" },
-    lg: { width: 120, height: 120, strokeWidth: 8, fontSize: "text-2xl" },
-  };
-
-  const { width, height, strokeWidth, fontSize } = sizes[size];
-  const radius = (width - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (score / 100) * circumference;
-
-  const getColor = (score) => {
-    if (score >= 80) return { stroke: "#ef4444", text: "text-red-400", bg: "bg-red-500/20", label: "Critical" };
-    if (score >= 60) return { stroke: "#f97316", text: "text-orange-400", bg: "bg-orange-500/20", label: "High" };
-    if (score >= 40) return { stroke: "#eab308", text: "text-yellow-400", bg: "bg-yellow-500/20", label: "Medium" };
-    return { stroke: "#22c55e", text: "text-green-400", bg: "bg-green-500/20", label: "Low" };
-  };
-
-  const colors = getColor(score);
-
-  return (
-    <div className="flex flex-col items-center">
-      <div className="relative inline-flex items-center justify-center">
-        <svg width={width} height={height} className="-rotate-90">
-          <circle
-            cx={width / 2}
-            cy={height / 2}
-            r={radius}
-            fill="none"
-            stroke="rgba(255,255,255,0.1)"
-            strokeWidth={strokeWidth}
-          />
-          <motion.circle
-            cx={width / 2}
-            cy={height / 2}
-            r={radius}
-            fill="none"
-            stroke={colors.stroke}
-            strokeWidth={strokeWidth}
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            initial={{ strokeDashoffset: circumference }}
-            animate={{ strokeDashoffset: offset }}
-            transition={{ duration: 1.5, ease: "easeOut" }}
-          />
-        </svg>
-        <span className={`absolute ${fontSize} font-bold ${colors.text}`}>
-          {score}
-        </span>
-      </div>
-      <span className={`mt-2 text-sm font-medium ${colors.text}`}>{colors.label} Risk</span>
-    </div>
-  );
-};
-
-// Factor Badge
-const FactorBadge = ({ factor, type = "positive" }) => {
-  const styles = {
-    positive: "bg-red-500/10 text-red-400 border-red-500/20",
-    negative: "bg-green-500/10 text-green-400 border-green-500/20",
-    neutral: "bg-white/10 text-white/60 border-white/10",
-  };
-
-  return (
-    <span className={`inline-flex items-center px-3 py-1.5 rounded-lg text-sm border ${styles[type]}`}>
-      {factor}
-    </span>
-  );
 };
 
 // Timeline Item
@@ -201,6 +133,8 @@ export default function TalentCandidateProfile() {
   const [outreachTasks, setOutreachTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
+  const [generatingIntelligence, setGeneratingIntelligence] = useState(false);
+  const [intelligenceError, setIntelligenceError] = useState(null);
 
   useEffect(() => {
     if (candidateId) {
@@ -247,8 +181,10 @@ export default function TalentCandidateProfile() {
     }
   };
 
-  const refreshIntelligence = async () => {
-    // Call the Edge Function to refresh intelligence
+  const generateIntelligenceReport = async () => {
+    setGeneratingIntelligence(true);
+    setIntelligenceError(null);
+
     try {
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generateCandidateIntelligence`,
@@ -256,7 +192,7 @@ export default function TalentCandidateProfile() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${user?.access_token}`,
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           },
           body: JSON.stringify({
             candidate_id: candidateId,
@@ -266,10 +202,20 @@ export default function TalentCandidateProfile() {
       );
 
       if (response.ok) {
-        fetchCandidate();
+        const result = await response.json();
+        // Refresh candidate data to show updated intelligence
+        await fetchCandidate();
+        // Switch to intelligence tab to show the results
+        setActiveTab("intelligence");
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        setIntelligenceError(errorData.error || "Failed to generate intelligence report");
       }
     } catch (err) {
-      console.error("Error refreshing intelligence:", err);
+      console.error("Error generating intelligence:", err);
+      setIntelligenceError("Network error. Please try again.");
+    } finally {
+      setGeneratingIntelligence(false);
     }
   };
 
@@ -303,9 +249,6 @@ export default function TalentCandidateProfile() {
       </div>
     );
   }
-
-  const intelligenceFactors = candidate.intelligence_factors || [];
-  const intelligenceTiming = candidate.intelligence_timing || [];
 
   const tabs = [
     { id: "overview", label: "Overview" },
@@ -345,7 +288,7 @@ export default function TalentCandidateProfile() {
 
             {/* Intelligence Score */}
             <div className="flex justify-center mb-6 pb-6 border-b border-white/10">
-              <IntelligenceGauge score={candidate.intelligence_score || 0} />
+              <IntelligenceGauge score={candidate.intelligence_score || 0} size="lg" showLabel />
             </div>
 
             {/* Contact Info */}
@@ -407,12 +350,29 @@ export default function TalentCandidateProfile() {
             {/* Actions */}
             <div className="space-y-2">
               <button
-                onClick={refreshIntelligence}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-violet-500/20 text-violet-400 rounded-lg hover:bg-violet-500/30 transition-colors"
+                onClick={generateIntelligenceReport}
+                disabled={generatingIntelligence}
+                className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all ${
+                  generatingIntelligence
+                    ? "bg-violet-500/10 text-violet-400/60 cursor-not-allowed"
+                    : "bg-gradient-to-r from-violet-500/20 to-purple-500/20 text-violet-400 hover:from-violet-500/30 hover:to-purple-500/30 border border-violet-500/20"
+                }`}
               >
-                <RefreshCw className="w-4 h-4" />
-                Refresh Intelligence
+                {generatingIntelligence ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Generating Report...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    Generate Intelligence Report
+                  </>
+                )}
               </button>
+              {intelligenceError && (
+                <p className="text-xs text-red-400 text-center">{intelligenceError}</p>
+              )}
               <button className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white/5 text-white/70 rounded-lg hover:bg-white/10 transition-colors">
                 <Send className="w-4 h-4" />
                 Start Outreach
@@ -517,56 +477,36 @@ export default function TalentCandidateProfile() {
           )}
 
           {activeTab === "intelligence" && (
-            <div className="space-y-6">
-              {/* Intelligence Factors */}
-              <GlassCard className="p-6">
-                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-orange-400" />
-                  Flight Risk Factors
-                </h3>
-                {intelligenceFactors.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {intelligenceFactors.map((factor, idx) => (
-                      <FactorBadge key={idx} factor={factor} type="positive" />
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-white/60">No risk factors identified yet.</p>
-                )}
-              </GlassCard>
+            <GlassCard className="p-6">
+              <IntelligenceReport candidate={candidate} />
 
-              {/* Timing Intelligence */}
-              <GlassCard className="p-6">
-                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-blue-400" />
-                  Timing Signals
-                </h3>
-                {intelligenceTiming.length > 0 ? (
-                  <div className="space-y-3">
-                    {intelligenceTiming.map((signal, idx) => (
-                      <div key={idx} className="flex items-start gap-3 p-3 bg-white/5 rounded-lg">
-                        <TrendingUp className="w-5 h-5 text-violet-400 flex-shrink-0 mt-0.5" />
-                        <div>
-                          <p className="text-white/80">{signal.signal || signal}</p>
-                          {signal.date && (
-                            <p className="text-xs text-white/40 mt-1">{signal.date}</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-white/60">No timing signals detected yet.</p>
-                )}
-              </GlassCard>
-
-              {/* Last Updated */}
-              {candidate.last_intelligence_update && (
-                <div className="text-center text-sm text-white/40">
-                  Last updated: {new Date(candidate.last_intelligence_update).toLocaleString()}
+              {/* Generate Button at bottom if no data */}
+              {!candidate.intelligence_factors?.length && !candidate.intelligence_timing?.length && (
+                <div className="mt-6 text-center">
+                  <button
+                    onClick={generateIntelligenceReport}
+                    disabled={generatingIntelligence}
+                    className={`inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
+                      generatingIntelligence
+                        ? "bg-violet-500/10 text-violet-400/60 cursor-not-allowed"
+                        : "bg-gradient-to-r from-violet-500 to-purple-500 text-white hover:from-violet-600 hover:to-purple-600 shadow-lg shadow-violet-500/25"
+                    }`}
+                  >
+                    {generatingIntelligence ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Analyzing Candidate...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-5 h-5" />
+                        Generate Intelligence Report
+                      </>
+                    )}
+                  </button>
                 </div>
               )}
-            </div>
+            </GlassCard>
           )}
 
           {activeTab === "outreach" && (

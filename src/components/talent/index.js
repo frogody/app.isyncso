@@ -1,9 +1,9 @@
 // Talent Components Index
-export { 
-  IntelligenceGauge, 
-  IntelligenceLevelBadge, 
-  UrgencyBadge, 
-  ApproachBadge 
+export {
+  IntelligenceGauge,
+  IntelligenceLevelBadge,
+  UrgencyBadge,
+  ApproachBadge
 } from './IntelligenceGauge';
 
 export { IntelligenceReport } from './IntelligenceReport';
@@ -14,6 +14,7 @@ export { default as EditCandidateModal } from './EditCandidateModal';
 
 // Campaign Components
 export { default as CandidateMatchingPanel } from './CandidateMatchingPanel';
+export { CandidateMatchCard, CandidateMatchList } from './CandidateMatchCard';
 
 // Outreach Components
 export { default as OutreachMessageModal } from './OutreachMessageModal';
