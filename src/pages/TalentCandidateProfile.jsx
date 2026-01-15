@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
+import { toast } from "sonner";
 import { GlassCard, StatCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -158,6 +159,7 @@ export default function TalentCandidateProfile() {
       setCandidate(data);
     } catch (err) {
       console.error("Error fetching candidate:", err);
+      toast.error("Failed to load candidate");
     } finally {
       setLoading(false);
     }
@@ -207,13 +209,18 @@ export default function TalentCandidateProfile() {
         await fetchCandidate();
         // Switch to intelligence tab to show the results
         setActiveTab("intelligence");
+        toast.success("Intelligence report generated");
       } else {
         const errorData = await response.json().catch(() => ({}));
-        setIntelligenceError(errorData.error || "Failed to generate intelligence report");
+        const errorMessage = errorData.error || "Failed to generate intelligence report";
+        setIntelligenceError(errorMessage);
+        toast.error(errorMessage);
       }
     } catch (err) {
       console.error("Error generating intelligence:", err);
-      setIntelligenceError("Network error. Please try again.");
+      const errorMessage = "Network error. Please try again.";
+      setIntelligenceError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setGeneratingIntelligence(false);
     }

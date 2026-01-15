@@ -912,13 +912,13 @@ export default function TalentProjects() {
           .update(projectData)
           .eq("id", projectId);
         if (error) throw error;
-        toast.success("Project updated successfully");
+        toast.success(`Project "${formData.name}" updated`);
       } else {
         const { error } = await supabase
           .from("projects")
           .insert([projectData]);
         if (error) throw error;
-        toast.success("Project created successfully");
+        toast.success(`Project "${formData.name}" created`);
       }
       fetchData();
     } catch (error) {
@@ -944,12 +944,12 @@ export default function TalentProjects() {
         .eq("id", deleteProjectDialog.id);
 
       if (error) throw error;
-      toast.success("Project deleted successfully");
+      toast.success(`Project "${deleteProjectDialog.name}" deleted`);
       setDeleteProjectDialog(null);
       fetchData();
     } catch (error) {
       console.error("Error deleting project:", error);
-      toast.error("Failed to delete project");
+      toast.error(error.message || "Failed to delete project");
     }
   };
 

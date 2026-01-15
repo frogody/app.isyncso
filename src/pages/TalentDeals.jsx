@@ -11,7 +11,7 @@ import {
   Plus, GripVertical, Building2, User, DollarSign, Calendar, Target, Clock,
   TrendingUp, ArrowRight, MoreHorizontal, Mail, Phone, ExternalLink, Trash2,
   Sparkles, Filter, ChevronDown, AlertCircle, CheckCircle2, Zap, Users,
-  Briefcase, UserPlus, Handshake, Search, Edit2, Eye
+  Briefcase, UserPlus, Handshake, Search, Edit2, Eye, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -298,6 +298,7 @@ export default function TalentDeals() {
   const [showModal, setShowModal] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
+  const [saving, setSaving] = useState(false);
 
   // Refs for anime.js animations
   const headerRef = useRef(null);
@@ -406,6 +407,7 @@ export default function TalentDeals() {
       return;
     }
 
+    setSaving(true);
     try {
       const stageConfig = STAGES.find(s => s.id === formData.stage);
 
@@ -442,13 +444,13 @@ export default function TalentDeals() {
           .update(dealData)
           .eq('id', selectedDeal.id);
         if (error) throw error;
-        toast.success('Deal updated');
+        toast.success(`Deal "${formData.title}" updated`);
       } else {
         const { error } = await supabase
           .from('talent_deals')
           .insert(dealData);
         if (error) throw error;
-        toast.success('Deal created');
+        toast.success(`Deal "${formData.title}" created`);
       }
 
       setShowModal(false);
@@ -457,7 +459,9 @@ export default function TalentDeals() {
       loadData();
     } catch (error) {
       console.error('Failed to save:', error);
-      toast.error('Failed to save deal');
+      toast.error(error.message || 'Failed to save deal');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -921,8 +925,15 @@ export default function TalentDeals() {
                 <Button variant="outline" onClick={() => setShowModal(false)} className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
                   Cancel
                 </Button>
-                <Button onClick={handleSave} disabled={!formData.title} className="bg-red-500 hover:bg-red-400 text-white min-w-[100px]">
-                  {selectedDeal ? 'Update' : 'Create'}
+                <Button onClick={handleSave} disabled={!formData.title || saving} className="bg-red-500 hover:bg-red-400 text-white min-w-[100px]">
+                  {saving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      {selectedDeal ? 'Updating...' : 'Creating...'}
+                    </>
+                  ) : (
+                    selectedDeal ? 'Update' : 'Create'
+                  )}
                 </Button>
               </div>
             </div>
