@@ -578,8 +578,8 @@ export default function TalentAnalytics() {
 
   if (loading) {
     return (
-      <div className="min-h-screen p-6">
-        <div className="max-w-7xl mx-auto">
+      <div className="min-h-screen bg-black relative">
+        <div className="relative z-10 w-full px-6 lg:px-8 py-6">
           <Skeleton className="h-10 w-64 mb-8" />
           <div className="grid grid-cols-4 gap-4 mb-8">
             {[...Array(4)].map((_, i) => (
@@ -597,8 +597,8 @@ export default function TalentAnalytics() {
   }
 
   return (
-    <div className="min-h-screen p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-black relative">
+      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
         <PageHeader
           title="Talent Analytics"
           subtitle="Pipeline metrics and recruitment performance"

@@ -221,8 +221,8 @@ export default function TalentCandidateProfile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
+      <div className="min-h-screen bg-black relative">
+        <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
           <Skeleton className="h-10 w-64" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Skeleton className="h-96 rounded-xl lg:col-span-1" />
@@ -235,8 +235,8 @@ export default function TalentCandidateProfile() {
 
   if (!candidate) {
     return (
-      <div className="min-h-screen p-6">
-        <div className="max-w-7xl mx-auto">
+      <div className="min-h-screen bg-black relative">
+        <div className="relative z-10 w-full px-6 lg:px-8 py-6">
           <GlassCard className="p-12 text-center">
             <User className="w-12 h-12 text-white/20 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-white mb-2">Candidate not found</h3>
@@ -262,12 +262,12 @@ export default function TalentCandidateProfile() {
   ];
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen bg-black relative">
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="max-w-7xl mx-auto space-y-6"
+        className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6"
       >
       {/* Back Button */}
       <Link

@@ -332,8 +332,8 @@ export default function TalentClients() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
+      <div className="min-h-screen bg-black relative">
+        <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
           <Skeleton className="h-24 w-full bg-zinc-800 rounded-2xl" />
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((i) => (
@@ -354,7 +354,7 @@ export default function TalentClients() {
         <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-red-500/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
         {/* Header */}
         <PageHeader
           icon={Building2}

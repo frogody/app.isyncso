@@ -348,12 +348,12 @@ const TalentDashboard = () => {
   }, [outreachTasks]);
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen bg-black relative">
       <motion.div
         initial="hidden"
         animate="visible"
         variants={containerVariants}
-        className="max-w-7xl mx-auto space-y-6"
+        className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6"
       >
       {/* Page Header */}
       <motion.div variants={itemVariants}>

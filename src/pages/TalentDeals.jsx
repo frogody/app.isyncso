@@ -563,15 +563,15 @@ export default function TalentDeals() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
+      <div className="min-h-screen bg-black relative">
+        <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
           <Skeleton className="h-28 w-full bg-zinc-800 rounded-2xl" />
           <div className="grid grid-cols-4 gap-4">
             {[1,2,3,4].map(i => <Skeleton key={i} className="h-24 bg-zinc-800 rounded-xl" />)}
           </div>
-        </div>
-        <div className="flex gap-4 overflow-x-auto mt-6 px-6">
-          {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-[500px] w-72 flex-shrink-0 bg-zinc-800 rounded-2xl" />)}
+          <div className="flex gap-4 overflow-x-auto">
+            {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-[500px] w-72 flex-shrink-0 bg-zinc-800 rounded-2xl" />)}
+          </div>
         </div>
       </div>
     );
@@ -585,7 +585,7 @@ export default function TalentDeals() {
         <div className="absolute bottom-20 right-1/4 w-[400px] h-[400px] bg-red-500/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
         <div ref={headerRef} style={{ opacity: 0 }}>
           <PageHeader
             icon={Handshake}

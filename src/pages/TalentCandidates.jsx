@@ -521,8 +521,8 @@ export default function TalentCandidates() {
 
   if (loading) {
     return (
-      <div className="min-h-screen p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
+      <div className="min-h-screen bg-black relative">
+        <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
           <div className="flex items-center justify-between">
             <Skeleton className="h-10 w-64" />
             <Skeleton className="h-10 w-32" />
@@ -538,8 +538,8 @@ export default function TalentCandidates() {
   }
 
   return (
-    <div className="min-h-screen p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-black relative">
+      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
       <div className="flex items-center justify-between">
         <PageHeader
           title="Candidates"

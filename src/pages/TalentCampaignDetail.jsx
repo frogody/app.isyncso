@@ -745,8 +745,8 @@ export default function TalentCampaignDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
+      <div className="min-h-screen bg-black relative">
+        <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
           <div className="flex items-center gap-4">
             <Skeleton className="h-10 w-10 rounded-lg" />
             <div>
@@ -761,11 +761,11 @@ export default function TalentCampaignDetail() {
   }
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="min-h-screen bg-black relative">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="max-w-7xl mx-auto space-y-6"
+        className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6"
       >
       {/* Header */}
       <div className="flex items-center justify-between">
