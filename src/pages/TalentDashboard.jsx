@@ -132,7 +132,7 @@ const CandidateRow = ({ candidate, index }) => {
           </div>
           <div>
             <h4 className="text-sm font-medium text-zinc-200 group-hover:text-red-300 transition-colors">
-              {candidate.name || "Unknown Candidate"}
+              {candidate.first_name && candidate.last_name ? `${candidate.first_name} ${candidate.last_name}` : "Unknown Candidate"}
             </h4>
             <div className="flex items-center gap-1 text-xs text-zinc-500">
               <Building2 className="w-3 h-3" />
@@ -282,7 +282,7 @@ const TalentDashboard = () => {
         // Fetch outreach tasks with candidate names
         const { data: tasksData, error: tasksError } = await supabase
           .from("outreach_tasks")
-          .select("*, candidates(name)")
+          .select("*, candidates(first_name, last_name)")
           .eq("organization_id", user.organization_id)
           .order("created_at", { ascending: false })
           .limit(20);
@@ -294,7 +294,9 @@ const TalentDashboard = () => {
         // Map task data to include candidate_name
         const tasksWithNames = (tasksData || []).map(task => ({
           ...task,
-          candidate_name: task.candidates?.name || "Unknown"
+          candidate_name: task.candidate_name || (task.candidates?.first_name && task.candidates?.last_name
+            ? `${task.candidates.first_name} ${task.candidates.last_name}`
+            : "Unknown")
         }));
 
         setCandidates(candidatesData || []);

@@ -171,10 +171,10 @@ const CandidateCard = ({ candidate, isSelected, onToggle, onClick, onEdit }) => 
       <GlassCard className="p-4 hover:border-red-500/30 transition-all duration-300" onClick={onClick}>
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3 ml-6">
-            <CandidateAvatar name={candidate.name} image={candidate.avatar_url} size="lg" />
+            <CandidateAvatar name={`${candidate.first_name} ${candidate.last_name}`} image={candidate.profile_image_url} size="lg" />
             <div>
-              <h3 className="font-semibold text-white">{candidate.name}</h3>
-              <p className="text-sm text-white/60">{candidate.current_title}</p>
+              <h3 className="font-semibold text-white">{`${candidate.first_name} ${candidate.last_name}`}</h3>
+              <p className="text-sm text-white/60">{candidate.job_title}</p>
             </div>
           </div>
           <IntelligenceGauge score={candidate.intelligence_score || 0} size="sm" />
@@ -183,11 +183,11 @@ const CandidateCard = ({ candidate, isSelected, onToggle, onClick, onEdit }) => 
         <div className="space-y-2 mb-4">
           <div className="flex items-center gap-2 text-sm text-white/60">
             <Building2 className="w-4 h-4" />
-            <span className="truncate">{candidate.current_company || "Not specified"}</span>
+            <span className="truncate">{candidate.company_name || "Not specified"}</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-white/60">
             <MapPin className="w-4 h-4" />
-            <span className="truncate">{candidate.location || "Not specified"}</span>
+            <span className="truncate">{candidate.person_home_location || "Not specified"}</span>
           </div>
         </div>
 
@@ -228,16 +228,16 @@ const CandidateRow = ({ candidate, isSelected, onToggle, onClick, onEdit }) => {
       </td>
       <td className="py-4 px-4" onClick={onClick}>
         <div className="flex items-center gap-3">
-          <CandidateAvatar name={candidate.name} image={candidate.avatar_url} />
+          <CandidateAvatar name={`${candidate.first_name} ${candidate.last_name}`} image={candidate.profile_image_url} />
           <div>
-            <p className="font-medium text-white">{candidate.name}</p>
+            <p className="font-medium text-white">{`${candidate.first_name} ${candidate.last_name}`}</p>
             <p className="text-sm text-white/60">{candidate.email}</p>
           </div>
         </div>
       </td>
       <td className="py-4 px-4" onClick={onClick}>
-        <p className="text-white/80">{candidate.current_title || "—"}</p>
-        <p className="text-sm text-white/60">{candidate.current_company || "—"}</p>
+        <p className="text-white/80">{candidate.job_title || "—"}</p>
+        <p className="text-sm text-white/60">{candidate.company_name || "—"}</p>
       </td>
       <td className="py-4 px-4" onClick={onClick}>
         <div className="flex items-center gap-3">
@@ -316,7 +316,7 @@ export default function TalentCandidates() {
         .from("candidates")
         .select("*")
         .eq("organization_id", user.organization_id)
-        .order("created_at", { ascending: false });
+        .order("created_date", { ascending: false });
 
       if (error) throw error;
       setCandidates(data || []);
@@ -336,10 +336,10 @@ export default function TalentCandidates() {
       const query = searchQuery.toLowerCase();
       result = result.filter(
         (c) =>
-          c.name?.toLowerCase().includes(query) ||
+          `${c.first_name} ${c.last_name}`.toLowerCase().includes(query) ||
           c.email?.toLowerCase().includes(query) ||
-          c.current_company?.toLowerCase().includes(query) ||
-          c.current_title?.toLowerCase().includes(query)
+          c.company_name?.toLowerCase().includes(query) ||
+          c.job_title?.toLowerCase().includes(query)
       );
     }
 
@@ -454,18 +454,18 @@ export default function TalentCandidates() {
       : filteredCandidates;
 
     const rows = dataToExport.map((c) => [
-      c.name || "",
+      `${c.first_name || ""} ${c.last_name || ""}`.trim(),
       c.email || "",
       c.phone || "",
-      c.linkedin_url || "",
-      c.location || "",
-      c.current_company || "",
-      c.current_title || "",
-      c.stage || "",
-      c.status || "",
+      c.linkedin_profile || "",
+      c.person_home_location || "",
+      c.company_name || "",
+      c.job_title || "",
+      c.outreach_stage || "",
+      c.contact_status || "",
       c.intelligence_score || "",
       c.intelligence_level || "",
-      c.urgency || "",
+      c.intelligence_urgency || "",
       c.recommended_approach || "",
     ]);
 

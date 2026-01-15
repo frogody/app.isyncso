@@ -90,13 +90,16 @@ export default function OutreachMessageModal({
 
     setIsGenerating(true);
     try {
+      const candidateName = candidate.first_name && candidate.last_name
+        ? `${candidate.first_name} ${candidate.last_name}`
+        : "Unknown";
       const prompt = `Generate a personalized ${formData.task_type === "email" ? "cold email" : formData.task_type === "linkedin" ? "LinkedIn message" : "LinkedIn connection request"} for recruiting.
 
 Candidate Information:
-- Name: ${candidate.name}
-- Current Company: ${candidate.current_company || "Unknown"}
-- Current Title: ${candidate.current_title || "Unknown"}
-- Location: ${candidate.location || "Unknown"}
+- Name: ${candidateName}
+- Current Company: ${candidate.company_name || "Unknown"}
+- Current Title: ${candidate.job_title || "Unknown"}
+- Location: ${candidate.person_home_location || "Unknown"}
 
 Requirements:
 - Keep it concise (${formData.task_type === "email" ? "3-4 sentences" : "2-3 sentences"})
@@ -221,13 +224,17 @@ Return as JSON with ${formData.task_type === "email" ? '"subject" and "content"'
         {candidate && (
           <div className="flex items-center gap-3 p-3 bg-zinc-800/50 rounded-lg border border-zinc-700/50">
             <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center text-red-400 font-semibold">
-              {candidate.name?.charAt(0).toUpperCase()}
+              {candidate.first_name?.charAt(0).toUpperCase() || "?"}
             </div>
             <div>
-              <p className="font-medium text-white">{candidate.name}</p>
+              <p className="font-medium text-white">
+                {candidate.first_name && candidate.last_name
+                  ? `${candidate.first_name} ${candidate.last_name}`
+                  : "Unknown Candidate"}
+              </p>
               <p className="text-sm text-zinc-400">
-                {candidate.current_title ? `${candidate.current_title} at ` : ""}
-                {candidate.current_company || "Unknown Company"}
+                {candidate.job_title ? `${candidate.job_title} at ` : ""}
+                {candidate.company_name || "Unknown Company"}
               </p>
             </div>
           </div>
@@ -300,7 +307,7 @@ Return as JSON with ${formData.task_type === "email" ? '"subject" and "content"'
               value={formData.content}
               onChange={(e) => handleChange("content", e.target.value)}
               className="bg-zinc-800/50 border-zinc-700 text-white resize-none min-h-[150px]"
-              placeholder={`Hi ${candidate?.name?.split(" ")[0] || "there"},\n\nI noticed your background in...`}
+              placeholder={`Hi ${candidate?.first_name || "there"},\n\nI noticed your background in...`}
             />
             <p className="text-xs text-zinc-600">
               Use {"{{first_name}}"}, {"{{company}}"}, {"{{title}}"} for personalization

@@ -96,25 +96,25 @@ export default function AddCandidateModal({ isOpen, onClose, onSuccess }) {
 
   const [formData, setFormData] = useState({
     // Basic Info
-    name: "",
+    first_name: "",
+    last_name: "",
     email: "",
     phone: "",
-    linkedin_url: "",
-    location: "",
+    linkedin_profile: "",
+    person_home_location: "",
     source: "",
-    tags: [],
+    skills: [],
     // Professional
-    current_company: "",
-    current_title: "",
-    notes: "",
-    stage: "new",
-    status: "active",
+    company_name: "",
+    job_title: "",
+    status_notes: "",
+    contact_status: "new",
     // Intelligence
     intelligence_score: 50,
-    intelligence_level: "medium",
-    urgency: "medium",
+    intelligence_level: "Medium",
+    intelligence_urgency: "Medium",
     recommended_approach: "direct",
-    intelligence_signals: [],
+    intelligence_factors: [],
   });
 
   const handleChange = (field, value) => {
@@ -122,38 +122,38 @@ export default function AddCandidateModal({ isOpen, onClose, onSuccess }) {
   };
 
   const addTag = () => {
-    if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
-      handleChange("tags", [...formData.tags, tagInput.trim()]);
+    if (tagInput.trim() && !formData.skills.includes(tagInput.trim())) {
+      handleChange("skills", [...formData.skills, tagInput.trim()]);
       setTagInput("");
     }
   };
 
   const removeTag = (tagToRemove) => {
     handleChange(
-      "tags",
-      formData.tags.filter((tag) => tag !== tagToRemove)
+      "skills",
+      formData.skills.filter((tag) => tag !== tagToRemove)
     );
   };
 
   const addSignal = () => {
-    if (signalInput.trim() && !formData.intelligence_signals.includes(signalInput.trim())) {
-      handleChange("intelligence_signals", [...formData.intelligence_signals, signalInput.trim()]);
+    if (signalInput.trim() && !formData.intelligence_factors.includes(signalInput.trim())) {
+      handleChange("intelligence_factors", [...formData.intelligence_factors, signalInput.trim()]);
       setSignalInput("");
     }
   };
 
   const removeSignal = (signalToRemove) => {
     handleChange(
-      "intelligence_signals",
-      formData.intelligence_signals.filter((signal) => signal !== signalToRemove)
+      "intelligence_factors",
+      formData.intelligence_factors.filter((signal) => signal !== signalToRemove)
     );
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.name.trim()) {
-      toast.error("Name is required");
+    if (!formData.first_name.trim() || !formData.last_name.trim()) {
+      toast.error("First name and last name are required");
       setActiveTab("basic");
       return;
     }
@@ -169,7 +169,9 @@ export default function AddCandidateModal({ isOpen, onClose, onSuccess }) {
       const candidateData = {
         ...formData,
         organization_id: user.organization_id,
-        created_by: user.id,
+        intelligence_factors: formData.intelligence_factors.length > 0
+          ? { signals: formData.intelligence_factors }
+          : null,
       };
 
       const { data, error } = await supabase
@@ -183,26 +185,26 @@ export default function AddCandidateModal({ isOpen, onClose, onSuccess }) {
       toast.success("Candidate added successfully");
       onSuccess?.(data);
       onClose();
-      
+
       // Reset form
       setFormData({
-        name: "",
+        first_name: "",
+        last_name: "",
         email: "",
         phone: "",
-        linkedin_url: "",
-        location: "",
+        linkedin_profile: "",
+        person_home_location: "",
         source: "",
-        tags: [],
-        current_company: "",
-        current_title: "",
-        notes: "",
-        stage: "new",
-        status: "active",
+        skills: [],
+        company_name: "",
+        job_title: "",
+        status_notes: "",
+        contact_status: "new",
         intelligence_score: 50,
-        intelligence_level: "medium",
-        urgency: "medium",
+        intelligence_level: "Medium",
+        intelligence_urgency: "Medium",
         recommended_approach: "direct",
-        intelligence_signals: [],
+        intelligence_factors: [],
       });
       setActiveTab("basic");
     } catch (error) {
@@ -242,18 +244,33 @@ export default function AddCandidateModal({ isOpen, onClose, onSuccess }) {
 
             <div className="flex-1 overflow-y-auto mt-4 pr-2">
               <TabsContent value="basic" className="space-y-4 m-0">
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="text-zinc-400">
-                    Name <span className="text-red-400">*</span>
-                  </Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="first_name" className="text-zinc-400">
+                      First Name <span className="text-red-400">*</span>
+                    </Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                      <Input
+                        id="first_name"
+                        value={formData.first_name}
+                        onChange={(e) => handleChange("first_name", e.target.value)}
+                        className="pl-10 bg-zinc-800/50 border-zinc-700 text-white"
+                        placeholder="John"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="last_name" className="text-zinc-400">
+                      Last Name <span className="text-red-400">*</span>
+                    </Label>
                     <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => handleChange("name", e.target.value)}
-                      className="pl-10 bg-zinc-800/50 border-zinc-700 text-white"
-                      placeholder="John Doe"
+                      id="last_name"
+                      value={formData.last_name}
+                      onChange={(e) => handleChange("last_name", e.target.value)}
+                      className="bg-zinc-800/50 border-zinc-700 text-white"
+                      placeholder="Doe"
                       required
                     />
                   </div>
@@ -291,13 +308,13 @@ export default function AddCandidateModal({ isOpen, onClose, onSuccess }) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="linkedin_url" className="text-zinc-400">LinkedIn URL</Label>
+                  <Label htmlFor="linkedin_profile" className="text-zinc-400">LinkedIn URL</Label>
                   <div className="relative">
                     <Linkedin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                     <Input
-                      id="linkedin_url"
-                      value={formData.linkedin_url}
-                      onChange={(e) => handleChange("linkedin_url", e.target.value)}
+                      id="linkedin_profile"
+                      value={formData.linkedin_profile}
+                      onChange={(e) => handleChange("linkedin_profile", e.target.value)}
                       className="pl-10 bg-zinc-800/50 border-zinc-700 text-white"
                       placeholder="https://linkedin.com/in/johndoe"
                     />
@@ -306,13 +323,13 @@ export default function AddCandidateModal({ isOpen, onClose, onSuccess }) {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="location" className="text-zinc-400">Location</Label>
+                    <Label htmlFor="person_home_location" className="text-zinc-400">Location</Label>
                     <div className="relative">
                       <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                       <Input
-                        id="location"
-                        value={formData.location}
-                        onChange={(e) => handleChange("location", e.target.value)}
+                        id="person_home_location"
+                        value={formData.person_home_location}
+                        onChange={(e) => handleChange("person_home_location", e.target.value)}
                         className="pl-10 bg-zinc-800/50 border-zinc-700 text-white"
                         placeholder="San Francisco, CA"
                       />
@@ -353,9 +370,9 @@ export default function AddCandidateModal({ isOpen, onClose, onSuccess }) {
                       <Plus className="w-4 h-4" />
                     </Button>
                   </div>
-                  {formData.tags.length > 0 && (
+                  {formData.skills.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-2">
-                      {formData.tags.map((tag) => (
+                      {formData.skills.map((tag) => (
                         <Badge key={tag} variant="secondary" className="bg-red-500/20 text-red-400">
                           {tag}
                           <button type="button" onClick={() => removeTag(tag)} className="ml-1 hover:text-white">
@@ -371,13 +388,13 @@ export default function AddCandidateModal({ isOpen, onClose, onSuccess }) {
               <TabsContent value="professional" className="space-y-4 m-0">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="current_company" className="text-zinc-400">Current Company</Label>
+                    <Label htmlFor="company_name" className="text-zinc-400">Current Company</Label>
                     <div className="relative">
                       <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                       <Input
-                        id="current_company"
-                        value={formData.current_company}
-                        onChange={(e) => handleChange("current_company", e.target.value)}
+                        id="company_name"
+                        value={formData.company_name}
+                        onChange={(e) => handleChange("company_name", e.target.value)}
                         className="pl-10 bg-zinc-800/50 border-zinc-700 text-white"
                         placeholder="Acme Inc."
                       />
@@ -385,13 +402,13 @@ export default function AddCandidateModal({ isOpen, onClose, onSuccess }) {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="current_title" className="text-zinc-400">Current Title</Label>
+                    <Label htmlFor="job_title" className="text-zinc-400">Current Title</Label>
                     <div className="relative">
                       <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                       <Input
-                        id="current_title"
-                        value={formData.current_title}
-                        onChange={(e) => handleChange("current_title", e.target.value)}
+                        id="job_title"
+                        value={formData.job_title}
+                        onChange={(e) => handleChange("job_title", e.target.value)}
                         className="pl-10 bg-zinc-800/50 border-zinc-700 text-white"
                         placeholder="Senior Engineer"
                       />
@@ -401,8 +418,8 @@ export default function AddCandidateModal({ isOpen, onClose, onSuccess }) {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-zinc-400">Stage</Label>
-                    <Select value={formData.stage} onValueChange={(v) => handleChange("stage", v)}>
+                    <Label className="text-zinc-400">Contact Status</Label>
+                    <Select value={formData.contact_status} onValueChange={(v) => handleChange("contact_status", v)}>
                       <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
                         <SelectValue />
                       </SelectTrigger>
@@ -417,28 +434,23 @@ export default function AddCandidateModal({ isOpen, onClose, onSuccess }) {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-zinc-400">Status</Label>
-                    <Select value={formData.status} onValueChange={(v) => handleChange("status", v)}>
-                      <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-zinc-900 border-zinc-700">
-                        {STATUSES.map((status) => (
-                          <SelectItem key={status.value} value={status.value}>
-                            {status.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label className="text-zinc-400">Years Experience</Label>
+                    <Input
+                      type="number"
+                      value={formData.years_experience || ""}
+                      onChange={(e) => handleChange("years_experience", parseInt(e.target.value) || null)}
+                      className="bg-zinc-800/50 border-zinc-700 text-white"
+                      placeholder="5"
+                    />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="notes" className="text-zinc-400">Notes</Label>
+                  <Label htmlFor="status_notes" className="text-zinc-400">Notes</Label>
                   <Textarea
-                    id="notes"
-                    value={formData.notes}
-                    onChange={(e) => handleChange("notes", e.target.value)}
+                    id="status_notes"
+                    value={formData.status_notes}
+                    onChange={(e) => handleChange("status_notes", e.target.value)}
                     className="bg-zinc-800/50 border-zinc-700 text-white resize-none"
                     placeholder="Additional notes about the candidate..."
                     rows={4}
@@ -484,7 +496,7 @@ export default function AddCandidateModal({ isOpen, onClose, onSuccess }) {
 
                     <div className="space-y-2">
                       <Label className="text-zinc-400">Urgency</Label>
-                      <Select value={formData.urgency} onValueChange={(v) => handleChange("urgency", v)}>
+                      <Select value={formData.intelligence_urgency} onValueChange={(v) => handleChange("intelligence_urgency", v)}>
                         <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
                           <SelectValue />
                         </SelectTrigger>
@@ -529,9 +541,9 @@ export default function AddCandidateModal({ isOpen, onClose, onSuccess }) {
                         <Plus className="w-4 h-4" />
                       </Button>
                     </div>
-                    {formData.intelligence_signals.length > 0 && (
+                    {formData.intelligence_factors.length > 0 && (
                       <div className="flex flex-wrap gap-2 mt-2">
-                        {formData.intelligence_signals.map((signal) => (
+                        {formData.intelligence_factors.map((signal) => (
                           <Badge key={signal} variant="secondary" className="bg-amber-500/20 text-amber-400">
                             {signal}
                             <button type="button" onClick={() => removeSignal(signal)} className="ml-1 hover:text-white">

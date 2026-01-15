@@ -285,10 +285,10 @@ export default function TalentCandidateProfile() {
             {/* Avatar & Basic Info */}
             <div className="text-center mb-6">
               <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-3xl font-bold text-white">
-                {candidate.name?.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase()}
+                {`${candidate.first_name || ""} ${candidate.last_name || ""}`.split(" ").filter(n => n).map((n) => n[0]).join("").substring(0, 2).toUpperCase()}
               </div>
-              <h2 className="text-xl font-bold text-white">{candidate.name}</h2>
-              <p className="text-white/60">{candidate.current_title}</p>
+              <h2 className="text-xl font-bold text-white">{`${candidate.first_name || ""} ${candidate.last_name || ""}`}</h2>
+              <p className="text-white/60">{candidate.job_title}</p>
             </div>
 
             {/* Intelligence Score */}
@@ -312,23 +312,23 @@ export default function TalentCandidateProfile() {
                   <span className="text-white/80">{candidate.phone}</span>
                 </div>
               )}
-              {candidate.current_company && (
+              {candidate.company_name && (
                 <div className="flex items-center gap-3 text-sm">
                   <Building2 className="w-4 h-4 text-white/40" />
-                  <span className="text-white/80">{candidate.current_company}</span>
+                  <span className="text-white/80">{candidate.company_name}</span>
                 </div>
               )}
-              {candidate.location && (
+              {candidate.person_home_location && (
                 <div className="flex items-center gap-3 text-sm">
                   <MapPin className="w-4 h-4 text-white/40" />
-                  <span className="text-white/80">{candidate.location}</span>
+                  <span className="text-white/80">{candidate.person_home_location}</span>
                 </div>
               )}
-              {candidate.linkedin_url && (
+              {candidate.linkedin_profile && (
                 <div className="flex items-center gap-3 text-sm">
                   <Linkedin className="w-4 h-4 text-white/40" />
                   <a
-                    href={candidate.linkedin_url}
+                    href={candidate.linkedin_profile}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-white/80 hover:text-red-400 transition-colors flex items-center gap-1"
