@@ -248,9 +248,12 @@ export default function TalentClients() {
 
   const loadData = async () => {
     if (!user?.organization_id) {
+      console.log('No organization_id found, user:', user);
       setLoading(false);
       return;
     }
+
+    console.log('Loading clients for organization:', user.organization_id);
 
     try {
       const { data, error } = await supabase
@@ -260,11 +263,22 @@ export default function TalentClients() {
         .eq('contact_type', 'recruitment_client')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      console.log('Query result:', { data, error });
+
+      if (error) {
+        console.error('Supabase error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        throw error;
+      }
       setClients(data || []);
+      console.log('Loaded', data?.length || 0, 'clients');
     } catch (error) {
-      console.error('Failed to load clients:', error);
-      toast.error('Failed to load recruitment clients');
+      console.error('Failed to load clients:', error?.message || error);
+      toast.error(error?.message || 'Failed to load recruitment clients');
     } finally {
       setLoading(false);
     }
@@ -301,17 +315,41 @@ export default function TalentClients() {
       console.log('Submitting client:', clientData);
 
       if (selectedClient) {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('prospects')
           .update(clientData)
-          .eq('id', selectedClient.id);
-        if (error) throw error;
+          .eq('id', selectedClient.id)
+          .select();
+
+        console.log('Update result:', { data, error });
+
+        if (error) {
+          console.error('Update error details:', {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+          });
+          throw error;
+        }
         toast.success('Client updated successfully');
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('prospects')
-          .insert(clientData);
-        if (error) throw error;
+          .insert(clientData)
+          .select();
+
+        console.log('Insert result:', { data, error });
+
+        if (error) {
+          console.error('Insert error details:', {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+          });
+          throw error;
+        }
         toast.success('Client created successfully');
       }
 
@@ -320,8 +358,8 @@ export default function TalentClients() {
       setFormData(emptyForm);
       loadData();
     } catch (error) {
-      console.error('Failed to save:', error);
-      toast.error(error.message || 'Failed to save client');
+      console.error('Failed to save:', error?.message || error);
+      toast.error(error?.message || 'Failed to save client');
     } finally {
       setSaving(false);
     }
