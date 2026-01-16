@@ -368,8 +368,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
         { label: 'SYNC Agent', path: createPageUrl('SyncAgent'), icon: Brain },
         { label: 'Agents', path: createPageUrl('Agents'), icon: Bot },
         { label: 'Integrations', path: createPageUrl('Integrations'), icon: Plug },
-        { label: 'Browser Activity', path: createPageUrl('Activity'), icon: Activity },
-        { label: 'Desktop Activity', path: createPageUrl('DesktopActivity'), icon: Monitor },
+        { label: 'Activity', path: createPageUrl('DesktopActivity'), icon: Monitor },
         { label: 'Daily Journals', path: createPageUrl('DailyJournal'), icon: BookOpen },
       ]
     };

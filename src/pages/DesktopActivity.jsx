@@ -346,8 +346,8 @@ export default function DesktopActivity() {
                 <Laptop className="w-7 h-7 text-cyan-400" />
               </div>
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-zinc-100">Desktop Activity</h1>
-                <p className="text-zinc-500 mt-1">Track your productivity from SYNC Desktop Companion</p>
+                <h1 className="text-2xl md:text-3xl font-bold text-zinc-100">Activity</h1>
+                <p className="text-zinc-500 mt-1">Track your productivity across all devices</p>
               </div>
             </div>
 
