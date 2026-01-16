@@ -2038,19 +2038,19 @@ export default function SyncAgent() {
 
       {/* Layout - fills remaining height */}
       <div className="flex-1 min-h-0 mx-auto w-full max-w-[1600px] grid grid-cols-1 gap-6 px-6 py-4 lg:grid-cols-[480px_1fr]">
-        {/* Left: Avatar + Agent Messages */}
+        {/* Left: Container with Avatar + Agent Messages */}
         <div
           data-animate
-          className="flex flex-col items-center"
+          className="flex flex-col rounded-2xl border border-zinc-700/50 bg-zinc-900/30 overflow-hidden"
           style={{ opacity: 0 }}
         >
           {/* Avatar - at top */}
-          <div className="shrink-0 grid place-items-center">
+          <div className="shrink-0 grid place-items-center pt-4 pb-2">
             <AgentAvatar size={280} agentName="SYNC" mood={mood} level={level} seed={seed} activeAgent={activeAgent} actionEffect={currentActionEffect} showSuccess={showSuccess} />
           </div>
 
-          {/* Agent orchestration messages - below avatar, no container */}
-          <div className="flex-1 w-full min-h-0 overflow-y-auto mt-4">
+          {/* Agent orchestration messages - below avatar */}
+          <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4">
             <AgentChannel messages={agentMessages} isActive={isSending} />
           </div>
         </div>
