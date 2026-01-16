@@ -22,6 +22,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Copy, Check, ExternalLink } from 'lucide-react';
 
 // App icon mapping
 const APP_ICONS = {
@@ -85,6 +92,25 @@ export default function DesktopActivity() {
   });
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [generatingJournal, setGeneratingJournal] = useState(false);
+  const [showInstallModal, setShowInstallModal] = useState(false);
+  const [copiedCommand, setCopiedCommand] = useState(false);
+
+  const DOWNLOAD_URL = "https://github.com/frogody/sync.desktop/releases/download/v1.0.0/SYNC.Desktop-1.0.0-arm64.dmg";
+  const BYPASS_COMMAND = "xattr -cr ~/Downloads/SYNC.Desktop*.dmg && open ~/Downloads/SYNC.Desktop*.dmg";
+
+  const handleDownload = () => {
+    // Start the download
+    window.open(DOWNLOAD_URL, '_blank');
+    // Show the installation guide
+    setShowInstallModal(true);
+  };
+
+  const copyCommand = () => {
+    navigator.clipboard.writeText(BYPASS_COMMAND);
+    setCopiedCommand(true);
+    toast.success('Command copied to clipboard');
+    setTimeout(() => setCopiedCommand(false), 2000);
+  };
 
   useEffect(() => {
     loadData();
@@ -364,18 +390,14 @@ export default function DesktopActivity() {
                 </SelectContent>
               </Select>
 
-              <a
-                href="https://github.com/frogody/sync.desktop/releases/download/v1.0.0/install-macos.command"
-                download
+              <Button
+                onClick={handleDownload}
+                variant="outline"
+                className="border-cyan-500/30 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 hover:text-cyan-200"
               >
-                <Button
-                  variant="outline"
-                  className="border-cyan-500/30 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 hover:text-cyan-200"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Get Desktop App
-                </Button>
-              </a>
+                <Download className="w-4 h-4 mr-2" />
+                Get Desktop App
+              </Button>
 
               <Button
                 onClick={handleRefresh}
@@ -454,17 +476,13 @@ export default function DesktopActivity() {
               </div>
 
               <div className="flex flex-col gap-3 lg:flex-shrink-0">
-                <a
-                  href="https://github.com/frogody/sync.desktop/releases/download/v1.0.0/install-macos.command"
-                  download
+                <Button
+                  onClick={handleDownload}
+                  className="bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/25 px-6 py-3 h-auto w-full"
                 >
-                  <Button
-                    className="bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/25 px-6 py-3 h-auto w-full"
-                  >
-                    <Download className="w-5 h-5 mr-2" />
-                    Download for macOS
-                  </Button>
-                </a>
+                  <Download className="w-5 h-5 mr-2" />
+                  Download for macOS
+                </Button>
                 <p className="text-xs text-zinc-500 text-center">Windows coming soon</p>
               </div>
             </div>
@@ -917,6 +935,109 @@ export default function DesktopActivity() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Installation Guide Modal */}
+      <Dialog open={showInstallModal} onOpenChange={setShowInstallModal}>
+        <DialogContent className="bg-zinc-900 border-zinc-700 max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-xl text-zinc-100 flex items-center gap-2">
+              <Download className="w-5 h-5 text-cyan-400" />
+              Install SYNC Desktop
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-6 pt-2">
+            {/* Step 1 */}
+            <div className="flex gap-4">
+              <div className="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center flex-shrink-0">
+                <span className="text-cyan-400 font-bold text-sm">1</span>
+              </div>
+              <div>
+                <h4 className="font-medium text-zinc-200 mb-1">Download Started</h4>
+                <p className="text-sm text-zinc-400">
+                  The download should begin automatically. If not,
+                  <a href={DOWNLOAD_URL} className="text-cyan-400 hover:underline ml-1">click here</a>.
+                </p>
+              </div>
+            </div>
+
+            {/* Step 2 */}
+            <div className="flex gap-4">
+              <div className="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center flex-shrink-0">
+                <span className="text-cyan-400 font-bold text-sm">2</span>
+              </div>
+              <div className="flex-1">
+                <h4 className="font-medium text-zinc-200 mb-1">Open Terminal & Run This Command</h4>
+                <p className="text-sm text-zinc-400 mb-3">
+                  macOS blocks apps from unidentified developers. Run this command to bypass:
+                </p>
+                <div className="relative">
+                  <pre className="bg-zinc-800 border border-zinc-700 rounded-lg p-3 pr-12 text-sm text-cyan-300 overflow-x-auto">
+                    {BYPASS_COMMAND}
+                  </pre>
+                  <Button
+                    onClick={copyCommand}
+                    size="sm"
+                    variant="ghost"
+                    className="absolute right-2 top-2 h-8 w-8 p-0 hover:bg-zinc-700"
+                  >
+                    {copiedCommand ? (
+                      <Check className="w-4 h-4 text-green-400" />
+                    ) : (
+                      <Copy className="w-4 h-4 text-zinc-400" />
+                    )}
+                  </Button>
+                </div>
+                <p className="text-xs text-zinc-500 mt-2">
+                  Press <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-zinc-400">⌘ + Space</kbd>, type "Terminal", press Enter, then paste the command.
+                </p>
+              </div>
+            </div>
+
+            {/* Step 3 */}
+            <div className="flex gap-4">
+              <div className="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center flex-shrink-0">
+                <span className="text-cyan-400 font-bold text-sm">3</span>
+              </div>
+              <div>
+                <h4 className="font-medium text-zinc-200 mb-1">Drag to Applications</h4>
+                <p className="text-sm text-zinc-400">
+                  When the disk image opens, drag SYNC Desktop to Applications.
+                </p>
+              </div>
+            </div>
+
+            {/* Step 4 */}
+            <div className="flex gap-4">
+              <div className="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center flex-shrink-0">
+                <span className="text-cyan-400 font-bold text-sm">4</span>
+              </div>
+              <div>
+                <h4 className="font-medium text-zinc-200 mb-1">Launch & Connect</h4>
+                <p className="text-sm text-zinc-400">
+                  Open SYNC Desktop from Applications and sign in with your iSyncSO account.
+                </p>
+              </div>
+            </div>
+
+            {/* Help link */}
+            <div className="pt-2 border-t border-zinc-800">
+              <p className="text-xs text-zinc-500 flex items-center gap-1">
+                <ExternalLink className="w-3 h-3" />
+                Having trouble?
+                <a
+                  href="https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unknown-developer-mh40616/mac"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-cyan-400 hover:underline"
+                >
+                  Apple's guide for opening apps from unknown developers
+                </a>
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
