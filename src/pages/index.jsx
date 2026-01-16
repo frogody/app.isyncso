@@ -11,8 +11,6 @@ import Login from "./Login";
 
 import Actions from "./Actions";
 
-import Activity from "./Activity";
-
 import ActivityTimeline from "./ActivityTimeline";
 
 import AdminDashboard from "./AdminDashboard";
@@ -249,9 +247,7 @@ const PAGES = {
     Login: Login,
     
     Actions: Actions,
-    
-    Activity: Activity,
-    
+
     ActivityTimeline: ActivityTimeline,
     
     AdminDashboard: AdminDashboard,
@@ -512,9 +508,7 @@ function PagesContent() {
                 <Route path="/Login" element={<Login />} />
 
                 <Route path="/Actions" element={<Actions />} />
-                
-                <Route path="/Activity" element={<Activity />} />
-                
+
                 <Route path="/ActivityTimeline" element={<ActivityTimeline />} />
                 
                 <Route path="/AdminDashboard" element={<AdminDashboard />} />
