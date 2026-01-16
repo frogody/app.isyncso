@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import { supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
 import { toast } from "sonner";
@@ -26,20 +27,24 @@ import {
   Zap,
   CheckCircle2,
   AlertCircle,
+  Briefcase,
+  FolderKanban,
+  ExternalLink,
 } from "lucide-react";
 import { CandidateMatchCard, CandidateMatchList } from "./CandidateMatchCard";
+import { createPageUrl } from "@/utils";
 
 /**
  * CandidateMatchingPanel - AI-powered candidate matching for campaigns
  *
- * @param {object} campaign - Campaign object with matched_candidates
+ * @param {object} campaign - Campaign object with project_id, role_id, matched_candidates
  * @param {function} onUpdate - Callback when campaign is updated
  */
 export default function CandidateMatchingPanel({ campaign, onUpdate }) {
   const { user } = useUser();
   const [candidates, setCandidates] = useState([]);
-  const [projects, setProjects] = useState([]);
-  const [roles, setRoles] = useState([]);
+  const [linkedProject, setLinkedProject] = useState(null);
+  const [linkedRole, setLinkedRole] = useState(null);
   const [loading, setLoading] = useState(true);
   const [matching, setMatching] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -48,47 +53,70 @@ export default function CandidateMatchingPanel({ campaign, onUpdate }) {
   const [sortOrder, setSortOrder] = useState("desc");
 
   // AI Matching config
-  const [selectedProject, setSelectedProject] = useState("");
-  const [selectedRole, setSelectedRole] = useState("");
   const [minScore, setMinScore] = useState(30);
 
   // Load initial data
   useEffect(() => {
-    if (user?.organization_id) {
+    if (user?.organization_id && campaign) {
       fetchData();
     }
-  }, [user]);
+  }, [user, campaign?.id, campaign?.project_id, campaign?.role_id]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch candidates, projects, and roles in parallel
-      const [candidatesRes, projectsRes, rolesRes] = await Promise.all([
+      // Build queries
+      const queries = [
         supabase
           .from("candidates")
           .select("*")
           .eq("organization_id", user.organization_id)
           .in("status", ["active", "passive"])
           .order("intelligence_score", { ascending: false }),
-        supabase
-          .from("projects")
-          .select("*")
-          .eq("organization_id", user.organization_id)
-          .eq("status", "active"),
-        supabase
-          .from("roles")
-          .select("*")
-          .eq("organization_id", user.organization_id)
-          .eq("status", "active"),
-      ]);
+      ];
 
+      // Fetch linked project if campaign has one
+      if (campaign?.project_id) {
+        queries.push(
+          supabase
+            .from("projects")
+            .select("*")
+            .eq("id", campaign.project_id)
+            .single()
+        );
+      }
+
+      // Fetch linked role if campaign has one
+      if (campaign?.role_id) {
+        queries.push(
+          supabase
+            .from("roles")
+            .select("*")
+            .eq("id", campaign.role_id)
+            .single()
+        );
+      }
+
+      const results = await Promise.all(queries);
+
+      const [candidatesRes, ...rest] = results;
       if (candidatesRes.error) throw candidatesRes.error;
-      if (projectsRes.error) throw projectsRes.error;
-      if (rolesRes.error) throw rolesRes.error;
-
       setCandidates(candidatesRes.data || []);
-      setProjects(projectsRes.data || []);
-      setRoles(rolesRes.data || []);
+
+      // Set linked project/role
+      let idx = 0;
+      if (campaign?.project_id && rest[idx]) {
+        setLinkedProject(rest[idx].data);
+        idx++;
+      } else {
+        setLinkedProject(null);
+      }
+
+      if (campaign?.role_id && rest[idx]) {
+        setLinkedRole(rest[idx].data);
+      } else {
+        setLinkedRole(null);
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Failed to load data");
@@ -146,6 +174,9 @@ export default function CandidateMatchingPanel({ campaign, onUpdate }) {
     return result;
   }, [matchedCandidates, candidates, searchQuery, scoreFilter, sortBy, sortOrder]);
 
+  // Check if campaign has targeting info
+  const hasTargetingInfo = campaign?.project_id || campaign?.role_id;
+
   // Run AI matching using the edge function
   const runAIMatching = async () => {
     if (!campaign?.id) {
@@ -153,8 +184,8 @@ export default function CandidateMatchingPanel({ campaign, onUpdate }) {
       return;
     }
 
-    if (!selectedProject && !selectedRole) {
-      toast.error("Please select a project or role to match against");
+    if (!hasTargetingInfo) {
+      toast.error("Campaign must be linked to a project or role. Go to Settings tab to configure.");
       return;
     }
 
@@ -171,8 +202,8 @@ export default function CandidateMatchingPanel({ campaign, onUpdate }) {
           body: JSON.stringify({
             campaign_id: campaign.id,
             organization_id: user.organization_id,
-            project_id: selectedProject || undefined,
-            role_id: selectedRole || undefined,
+            project_id: campaign.project_id || undefined,
+            role_id: campaign.role_id || undefined,
             min_score: minScore,
             limit: 50,
           }),
@@ -259,12 +290,6 @@ export default function CandidateMatchingPanel({ campaign, onUpdate }) {
     return { total, highMatch, medMatch, avgScore };
   }, [matchedCandidates]);
 
-  // Available roles for selected project
-  const availableRoles = useMemo(() => {
-    if (!selectedProject) return roles;
-    return roles.filter((r) => r.project_id === selectedProject);
-  }, [roles, selectedProject]);
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -284,51 +309,59 @@ export default function CandidateMatchingPanel({ campaign, onUpdate }) {
           <div className="flex-1">
             <h3 className="text-lg font-semibold text-white mb-1">AI Candidate Matching</h3>
             <p className="text-sm text-zinc-400 mb-4">
-              Match candidates against project requirements using AI analysis
+              Automatically find candidates that match this campaign's requirements
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              {/* Project Selection */}
-              <div>
-                <label className="text-xs text-zinc-500 mb-1 block">Project (Optional)</label>
-                <Select value={selectedProject || "__all__"} onValueChange={(v) => setSelectedProject(v === "__all__" ? "" : v)}>
-                  <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
-                    <SelectValue placeholder="Select project..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-700">
-                    <SelectItem value="__all__">All Projects</SelectItem>
-                    {projects.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            {/* Campaign Targeting Info */}
+            {hasTargetingInfo ? (
+              <div className="mb-4">
+                <label className="text-xs text-zinc-500 mb-2 block">Matching Against</label>
+                <div className="flex flex-wrap gap-3">
+                  {linkedProject && (
+                    <div className="flex items-center gap-2 bg-zinc-800/50 border border-zinc-700 rounded-lg px-3 py-2">
+                      <FolderKanban className="w-4 h-4 text-red-400" />
+                      <span className="text-white font-medium">{linkedProject.name}</span>
+                      <Link
+                        to={`${createPageUrl("TalentProjectDetail")}?id=${linkedProject.id}`}
+                        className="text-zinc-500 hover:text-red-400 transition-colors"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </Link>
+                    </div>
+                  )}
+                  {linkedRole && (
+                    <div className="flex items-center gap-2 bg-zinc-800/50 border border-zinc-700 rounded-lg px-3 py-2">
+                      <Briefcase className="w-4 h-4 text-red-400" />
+                      <span className="text-white font-medium">{linkedRole.title}</span>
+                      {linkedRole.department && (
+                        <Badge variant="secondary" className="text-xs">
+                          {linkedRole.department}
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
-
-              {/* Role Selection */}
-              <div>
-                <label className="text-xs text-zinc-500 mb-1 block">Role (Optional)</label>
-                <Select value={selectedRole || "__all__"} onValueChange={(v) => setSelectedRole(v === "__all__" ? "" : v)}>
-                  <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
-                    <SelectValue placeholder="Select role..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-700">
-                    <SelectItem value="__all__">All Roles</SelectItem>
-                    {availableRoles.map((r) => (
-                      <SelectItem key={r.id} value={r.id}>
-                        {r.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            ) : (
+              <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-400 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-amber-200 font-medium">No targeting configured</p>
+                    <p className="text-xs text-amber-400/70 mt-0.5">
+                      Link this campaign to a project or role in the Settings tab to enable AI matching.
+                    </p>
+                  </div>
+                </div>
               </div>
+            )}
 
+            <div className="flex items-center gap-4">
               {/* Min Score */}
               <div>
-                <label className="text-xs text-zinc-500 mb-1 block">Minimum Score</label>
+                <label className="text-xs text-zinc-500 mb-1 block">Minimum Match Score</label>
                 <Select value={minScore.toString()} onValueChange={(v) => setMinScore(parseInt(v))}>
-                  <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
+                  <SelectTrigger className="w-[120px] bg-zinc-800/50 border-zinc-700 text-white">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-zinc-900 border-zinc-700">
@@ -341,25 +374,27 @@ export default function CandidateMatchingPanel({ campaign, onUpdate }) {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
 
-            <Button
-              onClick={runAIMatching}
-              disabled={matching || (!selectedProject && !selectedRole)}
-              className="bg-red-500 hover:bg-red-600"
-            >
-              {matching ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Analyzing Candidates...
-                </>
-              ) : (
-                <>
-                  <Zap className="w-4 h-4 mr-2" />
-                  Run AI Matching
-                </>
-              )}
-            </Button>
+              <div className="flex-1" />
+
+              <Button
+                onClick={runAIMatching}
+                disabled={matching || !hasTargetingInfo}
+                className="bg-red-500 hover:bg-red-600"
+              >
+                {matching ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Analyzing {candidates.length} Candidates...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-4 h-4 mr-2" />
+                    Run AI Matching
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </div>

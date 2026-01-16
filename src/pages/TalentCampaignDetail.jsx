@@ -277,7 +277,13 @@ const OverviewTab = ({ campaign, formData, stats }) => {
 };
 
 // Settings Tab Component
-const SettingsTab = ({ formData, handleChange, handleStatusChange, isNew }) => {
+const SettingsTab = ({ formData, handleChange, handleStatusChange, isNew, projects, roles }) => {
+  // Filter roles based on selected project
+  const availableRoles = useMemo(() => {
+    if (!formData.project_id) return roles;
+    return roles.filter((r) => r.project_id === formData.project_id);
+  }, [roles, formData.project_id]);
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-6">
@@ -323,6 +329,67 @@ const SettingsTab = ({ formData, handleChange, handleStatusChange, isNew }) => {
           placeholder="Campaign goals and target audience..."
           rows={3}
         />
+      </div>
+
+      {/* Campaign Targeting */}
+      <div className="p-4 bg-zinc-800/30 border border-zinc-700/50 rounded-xl space-y-4">
+        <div>
+          <h4 className="text-sm font-semibold text-white mb-1 flex items-center gap-2">
+            <Target className="w-4 h-4 text-red-400" />
+            Campaign Targeting
+          </h4>
+          <p className="text-xs text-zinc-500">
+            Link this campaign to a project or role for AI candidate matching
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label className="text-zinc-400">Project</Label>
+            <Select
+              value={formData.project_id || "__none__"}
+              onValueChange={(v) => {
+                handleChange("project_id", v === "__none__" ? null : v);
+                // Clear role if changing project
+                if (v !== formData.project_id) {
+                  handleChange("role_id", null);
+                }
+              }}
+            >
+              <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
+                <SelectValue placeholder="Select project..." />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-700">
+                <SelectItem value="__none__">No Project</SelectItem>
+                {projects.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-zinc-400">Role</Label>
+            <Select
+              value={formData.role_id || "__none__"}
+              onValueChange={(v) => handleChange("role_id", v === "__none__" ? null : v)}
+            >
+              <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
+                <SelectValue placeholder="Select role..." />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-700">
+                <SelectItem value="__none__">No Specific Role</SelectItem>
+                {availableRoles.map((r) => (
+                  <SelectItem key={r.id} value={r.id}>
+                    {r.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-6">
@@ -544,6 +611,8 @@ export default function TalentCampaignDetail() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState(isNew ? "settings" : "overview");
+  const [projects, setProjects] = useState([]);
+  const [roles, setRoles] = useState([]);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -555,7 +624,40 @@ export default function TalentCampaignDetail() {
     delay_max_minutes: 30,
     sequence_steps: [],
     matched_candidates: [],
+    project_id: null,
+    role_id: null,
   });
+
+  // Fetch projects and roles for selection
+  useEffect(() => {
+    if (user?.organization_id) {
+      fetchProjectsAndRoles();
+    }
+  }, [user?.organization_id]);
+
+  const fetchProjectsAndRoles = async () => {
+    try {
+      const [projectsRes, rolesRes] = await Promise.all([
+        supabase
+          .from("projects")
+          .select("id, name")
+          .eq("organization_id", user.organization_id)
+          .eq("status", "active")
+          .order("name"),
+        supabase
+          .from("roles")
+          .select("id, title, project_id")
+          .eq("organization_id", user.organization_id)
+          .eq("status", "active")
+          .order("title"),
+      ]);
+
+      if (projectsRes.data) setProjects(projectsRes.data);
+      if (rolesRes.data) setRoles(rolesRes.data);
+    } catch (error) {
+      console.error("Error fetching projects/roles:", error);
+    }
+  };
 
   // Fetch campaign data
   useEffect(() => {
@@ -591,6 +693,8 @@ export default function TalentCampaignDetail() {
         delay_max_minutes: data.delay_max_minutes || 30,
         sequence_steps: data.sequence_steps || [],
         matched_candidates: data.matched_candidates || [],
+        project_id: data.project_id || null,
+        role_id: data.role_id || null,
       });
     } catch (error) {
       console.error("Error fetching campaign:", error);
@@ -924,6 +1028,8 @@ export default function TalentCampaignDetail() {
               handleChange={handleChange}
               handleStatusChange={handleStatusChange}
               isNew={isNew}
+              projects={projects}
+              roles={roles}
             />
           </TabsContent>
 
