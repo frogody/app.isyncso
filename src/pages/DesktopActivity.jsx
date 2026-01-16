@@ -365,7 +365,7 @@ export default function DesktopActivity() {
               </Select>
 
               <a
-                href="https://github.com/frogody/sync.desktop/releases/download/v1.0.0/SYNC.Desktop-1.0.0-arm64.dmg"
+                href="https://github.com/frogody/sync.desktop/releases/download/v1.0.0/install-macos.command"
                 download
               >
                 <Button
@@ -455,7 +455,7 @@ export default function DesktopActivity() {
 
               <div className="flex flex-col gap-3 lg:flex-shrink-0">
                 <a
-                  href="https://github.com/frogody/sync.desktop/releases/download/v1.0.0/SYNC.Desktop-1.0.0-arm64.dmg"
+                  href="https://github.com/frogody/sync.desktop/releases/download/v1.0.0/install-macos.command"
                   download
                 >
                   <Button
