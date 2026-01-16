@@ -2093,54 +2093,35 @@ export default function SyncAgent() {
 
       {/* Layout - fills remaining height */}
       <div className="flex-1 min-h-0 mx-auto w-full max-w-[1600px] grid grid-cols-1 gap-6 px-6 py-6 lg:grid-cols-[480px_1fr]">
-        {/* Left: Avatar Panel - Premium Glass Design */}
+        {/* Left: Avatar - Clean, No Container */}
         <div
           data-animate
-          className="relative flex flex-col rounded-2xl overflow-hidden"
+          className="flex flex-col items-center justify-center"
           style={{ opacity: 0 }}
         >
-          {/* Glass background with gradient border */}
-          <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-zinc-800/40 via-zinc-900/60 to-black/80 backdrop-blur-xl" />
-          <div className="absolute inset-0 rounded-2xl border border-zinc-700/50" />
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-zinc-500/30 to-transparent" />
+          {/* Avatar */}
+          <div className="grid place-items-center">
+            <AgentAvatar size={320} agentName="SYNC" mood={mood} level={level} seed={seed} activeAgent={activeAgent} actionEffect={currentActionEffect} showSuccess={showSuccess} />
+          </div>
 
-          {/* Subtle glow effect */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-32 bg-cyan-500/5 blur-3xl" />
-
-          <div className="relative z-10 flex flex-col h-full p-5">
-            {/* Header */}
-            <div className="shrink-0 flex items-start justify-between gap-3 mb-4">
-              <div>
-                <div className="text-lg font-semibold bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">SYNC</div>
-                <div className="text-xs text-zinc-500">AI Orchestrator</div>
-              </div>
-              <span
-                className={cn(
-                  'inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium capitalize transition-all duration-300 shadow-lg',
-                  mood === 'speaking'
-                    ? 'border-cyan-500/40 bg-cyan-500/15 text-cyan-300 shadow-cyan-500/10'
-                    : mood === 'thinking'
-                    ? 'border-amber-500/40 bg-amber-500/15 text-amber-300 shadow-amber-500/10'
-                    : 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300 shadow-emerald-500/10'
-                )}
-              >
-                <span className={cn(
-                  'h-2 w-2 rounded-full',
-                  mood === 'speaking' ? 'bg-cyan-400 animate-pulse' : mood === 'thinking' ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'
-                )} />
-                {mood}
-              </span>
-            </div>
-
-            {/* Avatar Container */}
-            <div className="shrink-0 grid place-items-center py-2">
-              <AgentAvatar size={320} agentName="SYNC" mood={mood} level={level} seed={seed} activeAgent={activeAgent} actionEffect={currentActionEffect} showSuccess={showSuccess} />
-            </div>
-
-            {/* Agent Channel - Premium styled */}
-            <div className="mt-4 flex-1 min-h-0 rounded-xl bg-black/30 border border-zinc-800/60 overflow-hidden">
-              <AgentChannel messages={agentMessages} isActive={isSending} />
-            </div>
+          {/* Status chip - below avatar */}
+          <div className="mt-6 flex items-center justify-center">
+            <span
+              className={cn(
+                'inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium capitalize transition-all duration-300 shadow-lg',
+                mood === 'speaking'
+                  ? 'border-cyan-500/40 bg-cyan-500/15 text-cyan-300 shadow-cyan-500/10'
+                  : mood === 'thinking'
+                  ? 'border-amber-500/40 bg-amber-500/15 text-amber-300 shadow-amber-500/10'
+                  : 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300 shadow-emerald-500/10'
+              )}
+            >
+              <span className={cn(
+                'h-2 w-2 rounded-full',
+                mood === 'speaking' ? 'bg-cyan-400 animate-pulse' : mood === 'thinking' ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'
+              )} />
+              SYNC · {mood}
+            </span>
           </div>
         </div>
 
