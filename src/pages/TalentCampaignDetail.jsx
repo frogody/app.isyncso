@@ -22,7 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import CampaignSequenceEditor from "@/components/campaigns/CampaignSequenceEditor";
 import CampaignMetricsPanel from "@/components/campaigns/CampaignMetricsPanel";
-import { CandidateMatchingPanel, OutreachPipeline, OutreachQueue } from "@/components/talent";
+import { OutreachPipeline, OutreachQueue } from "@/components/talent";
 import {
   Megaphone,
   Settings,
@@ -106,8 +106,15 @@ const TypeBadge = ({ type }) => {
 };
 
 // Overview Tab Component
-const OverviewTab = ({ campaign, formData, stats }) => {
+const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching }) => {
   const matchedCandidates = campaign?.matched_candidates || [];
+  const [showAllCandidates, setShowAllCandidates] = useState(false);
+
+  const sortedCandidates = useMemo(() => {
+    return [...matchedCandidates].sort((a, b) => (b.match_score || 0) - (a.match_score || 0));
+  }, [matchedCandidates]);
+
+  const displayedCandidates = showAllCandidates ? sortedCandidates : sortedCandidates.slice(0, 10);
 
   return (
     <div className="space-y-6">
@@ -158,6 +165,107 @@ const OverviewTab = ({ campaign, formData, stats }) => {
                 </div>
               </div>
             </div>
+          </GlassCard>
+
+          {/* Matched Candidates */}
+          <GlassCard className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-red-400" />
+                Matched Candidates ({matchedCandidates.length})
+              </h3>
+              {(formData.project_id || formData.role_id) && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={onRunMatching}
+                  disabled={isMatching}
+                  className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                >
+                  {isMatching ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Matching...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Run Matching
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+
+            {matchedCandidates.length > 0 ? (
+              <div className="space-y-2">
+                {displayedCandidates.map((match, idx) => (
+                  <Link
+                    key={match.candidate_id || idx}
+                    to={`${createPageUrl("TalentCandidateProfile")}?id=${match.candidate_id}`}
+                    className="flex items-center justify-between p-3 bg-zinc-800/30 rounded-lg hover:bg-zinc-800/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                        match.match_score >= 70 ? "bg-red-500/20 text-red-400" :
+                        match.match_score >= 40 ? "bg-yellow-500/20 text-yellow-400" :
+                        "bg-zinc-700/50 text-zinc-400"
+                      }`}>
+                        {match.match_score || 0}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-white">
+                          {match.candidate_name || "Unknown"}
+                        </p>
+                        {match.match_reasons && (
+                          <p className="text-xs text-zinc-500 truncate max-w-xs">
+                            {Array.isArray(match.match_reasons)
+                              ? match.match_reasons.slice(0, 2).join(", ")
+                              : match.match_reasons}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge className={`text-xs ${
+                        match.status === "contacted" || match.status === "sent" ? "bg-blue-500/20 text-blue-400" :
+                        match.status === "replied" ? "bg-green-500/20 text-green-400" :
+                        match.status === "scheduled" ? "bg-purple-500/20 text-purple-400" :
+                        "bg-zinc-700/50 text-zinc-400"
+                      }`}>
+                        {match.status || "matched"}
+                      </Badge>
+                    </div>
+                  </Link>
+                ))}
+                {sortedCandidates.length > 10 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAllCandidates(!showAllCandidates)}
+                    className="w-full text-zinc-400 hover:text-white"
+                  >
+                    {showAllCandidates
+                      ? "Show less"
+                      : `Show all ${sortedCandidates.length} candidates`}
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Users className="w-10 h-10 text-zinc-700 mx-auto mb-3" />
+                <p className="text-zinc-500 mb-2">No matched candidates yet</p>
+                {formData.project_id || formData.role_id ? (
+                  <p className="text-xs text-zinc-600">
+                    Click "Run Matching" or activate the campaign to find matches
+                  </p>
+                ) : (
+                  <p className="text-xs text-zinc-600">
+                    Link this campaign to a project or role in Settings to enable matching
+                  </p>
+                )}
+              </div>
+            )}
           </GlassCard>
 
           {/* Sequence Preview */}
@@ -246,30 +354,31 @@ const OverviewTab = ({ campaign, formData, stats }) => {
             </div>
           </GlassCard>
 
-          {/* Top Matches Preview */}
-          {matchedCandidates.length > 0 && (
-            <GlassCard className="p-5">
-              <h4 className="text-sm font-medium text-zinc-400 mb-3 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-red-400" />
-                Top Matches
-              </h4>
-              <div className="space-y-2">
-                {matchedCandidates
-                  .sort((a, b) => (b.match_score || 0) - (a.match_score || 0))
-                  .slice(0, 3)
-                  .map((match, idx) => (
-                    <div key={idx} className="flex items-center justify-between py-2 border-b border-zinc-800 last:border-0">
-                      <span className="text-sm text-white truncate">
-                        {match.candidate_name || "Unknown"}
-                      </span>
-                      <span className="text-sm font-medium text-red-400">
-                        {match.match_score || 0}%
-                      </span>
-                    </div>
-                  ))}
+          {/* Auto-Match Status */}
+          <GlassCard className="p-5">
+            <h4 className="text-sm font-medium text-zinc-400 mb-3 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-red-400" />
+              Auto-Match
+            </h4>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-zinc-500">Status</span>
+                <span className={`text-xs font-medium ${formData.auto_match_enabled ? "text-green-400" : "text-zinc-500"}`}>
+                  {formData.auto_match_enabled ? "Enabled" : "Disabled"}
+                </span>
               </div>
-            </GlassCard>
-          )}
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-zinc-500">Min Score</span>
+                <span className="text-xs font-medium text-white">{formData.min_match_score || 30}%</span>
+              </div>
+              {formData.project_id && (
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-zinc-500">Target</span>
+                  <span className="text-xs text-white">Project linked</span>
+                </div>
+              )}
+            </div>
+          </GlassCard>
         </div>
       </div>
     </div>
@@ -390,6 +499,71 @@ const SettingsTab = ({ formData, handleChange, handleStatusChange, isNew, projec
             </Select>
           </div>
         </div>
+      </div>
+
+      {/* Auto-Match Settings */}
+      <div className="p-4 bg-zinc-800/30 border border-zinc-700/50 rounded-xl space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h4 className="text-sm font-semibold text-white mb-1 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-red-400" />
+              Auto-Match Candidates
+            </h4>
+            <p className="text-xs text-zinc-500">
+              Automatically find and match candidates when campaign is activated
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleChange("auto_match_enabled", !formData.auto_match_enabled)}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              formData.auto_match_enabled ? "bg-red-500" : "bg-zinc-700"
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                formData.auto_match_enabled ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+          </button>
+        </div>
+
+        {formData.auto_match_enabled && (
+          <div className="pt-3 border-t border-zinc-700/50">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-zinc-400">Minimum Match Score</Label>
+                <Select
+                  value={String(formData.min_match_score || 30)}
+                  onValueChange={(v) => handleChange("min_match_score", parseInt(v))}
+                >
+                  <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-zinc-700">
+                    <SelectItem value="20">20% - Include more candidates</SelectItem>
+                    <SelectItem value="30">30% - Balanced (Recommended)</SelectItem>
+                    <SelectItem value="50">50% - Higher quality</SelectItem>
+                    <SelectItem value="70">70% - Only best matches</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-zinc-600">
+                  Only candidates above this score will be matched
+                </p>
+              </div>
+              <div className="flex items-center">
+                <div className="p-3 bg-zinc-800/50 rounded-lg text-xs text-zinc-400">
+                  <p className="font-medium text-zinc-300 mb-1">How it works:</p>
+                  <ul className="space-y-1 list-disc list-inside">
+                    <li>Analyzes all candidates against role requirements</li>
+                    <li>Matches run when campaign is activated</li>
+                    <li>Matched candidates appear in Overview & Outreach</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-3 gap-6">
@@ -626,7 +800,11 @@ export default function TalentCampaignDetail() {
     matched_candidates: [],
     project_id: null,
     role_id: null,
+    auto_match_enabled: true,
+    min_match_score: 30,
   });
+
+  const [isMatching, setIsMatching] = useState(false);
 
   // Fetch projects and roles for selection
   useEffect(() => {
@@ -695,6 +873,8 @@ export default function TalentCampaignDetail() {
         matched_candidates: data.matched_candidates || [],
         project_id: data.project_id || null,
         role_id: data.role_id || null,
+        auto_match_enabled: data.auto_match_enabled !== false, // Default true
+        min_match_score: data.min_match_score || 30,
       });
     } catch (error) {
       console.error("Error fetching campaign:", error);
@@ -761,6 +941,68 @@ export default function TalentCampaignDetail() {
     }
   };
 
+  // Run auto-matching against linked project/role
+  const runAutoMatching = async (campaignData) => {
+    const targetCampaign = campaignData || campaign;
+    if (!targetCampaign?.id) return;
+
+    // Must have project or role to match against
+    if (!targetCampaign.project_id && !targetCampaign.role_id) {
+      console.log("No project/role linked - skipping auto-match");
+      return;
+    }
+
+    setIsMatching(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyzeCampaignProject`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            campaign_id: targetCampaign.id,
+            organization_id: user.organization_id,
+            project_id: targetCampaign.project_id || undefined,
+            role_id: targetCampaign.role_id || undefined,
+            min_score: targetCampaign.min_match_score || 30,
+            limit: 100,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.success && result.matched_candidates?.length > 0) {
+        // Update local state with matched candidates
+        const updatedMatches = result.matched_candidates.map((m) => ({
+          candidate_id: m.candidate_id,
+          candidate_name: m.candidate_name,
+          match_score: m.match_score,
+          match_reasons: m.match_reasons,
+          intelligence_score: m.intelligence_score,
+          recommended_approach: m.recommended_approach,
+          status: "matched",
+          added_at: new Date().toISOString(),
+        }));
+
+        setCampaign((prev) => prev ? { ...prev, matched_candidates: updatedMatches } : null);
+        setFormData((prev) => ({ ...prev, matched_candidates: updatedMatches }));
+
+        toast.success(`Auto-matched ${result.matched_candidates.length} candidates`);
+      } else {
+        toast.info("No matching candidates found");
+      }
+    } catch (error) {
+      console.error("Auto-matching error:", error);
+      // Don't show error toast for background matching
+    } finally {
+      setIsMatching(false);
+    }
+  };
+
   const handleStatusChange = async (newStatus) => {
     if (!campaignId) return;
 
@@ -773,8 +1015,16 @@ export default function TalentCampaignDetail() {
       if (error) throw error;
 
       handleChange("status", newStatus);
-      setCampaign((prev) => prev ? { ...prev, status: newStatus } : null);
-      toast.success(`Campaign ${newStatus === "active" ? "activated" : newStatus}`);
+      const updatedCampaign = { ...campaign, status: newStatus };
+      setCampaign(updatedCampaign);
+
+      // Auto-match when activating campaign
+      if (newStatus === "active" && formData.auto_match_enabled) {
+        toast.success("Campaign activated - running auto-match...");
+        runAutoMatching(updatedCampaign);
+      } else {
+        toast.success(`Campaign ${newStatus === "active" ? "activated" : newStatus}`);
+      }
     } catch (error) {
       console.error("Error updating status:", error);
       toast.error("Failed to update status");
@@ -961,15 +1211,6 @@ export default function TalentCampaignDetail() {
                 Overview
               </TabsTrigger>
             )}
-            {!isNew && (
-              <TabsTrigger
-                value="matches"
-                className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
-              >
-                <Sparkles className="w-4 h-4 mr-2" />
-                Matches
-              </TabsTrigger>
-            )}
             <TabsTrigger
               value="settings"
               className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400"
@@ -1007,19 +1248,16 @@ export default function TalentCampaignDetail() {
           {/* Overview Tab */}
           {!isNew && (
             <TabsContent value="overview" className="m-0">
-              <OverviewTab campaign={campaign} formData={formData} stats={stats} />
-            </TabsContent>
-          )}
-
-          {/* Matches Tab */}
-          {!isNew && (
-            <TabsContent value="matches" className="m-0">
-              <CandidateMatchingPanel
+              <OverviewTab
                 campaign={campaign}
-                onUpdate={handleCampaignUpdate}
+                formData={formData}
+                stats={stats}
+                onRunMatching={() => runAutoMatching(campaign)}
+                isMatching={isMatching}
               />
             </TabsContent>
           )}
+
 
           {/* Settings Tab */}
           <TabsContent value="settings" className="space-y-6 m-0">

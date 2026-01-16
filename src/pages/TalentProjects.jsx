@@ -283,6 +283,7 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
 
       // Create new project if needed
       if (!selectedProject && newProjectName.trim()) {
+        console.log('[Quick Add] Creating new project:', newProjectName.trim());
         const newProject = await onCreateProject({
           name: newProjectName.trim(),
           status: "active",
@@ -290,8 +291,21 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
           client_id: activeClient?.id, // Link to client if available
           client_name: activeClient?.name,
         });
-        projectId = newProject?.id;
+        console.log('[Quick Add] Project created:', newProject);
+
+        // Validate project was created successfully
+        if (!newProject || !newProject.id) {
+          throw new Error("Failed to create project - no ID returned");
+        }
+        projectId = newProject.id;
       }
+
+      // Validate we have a project ID before creating the role
+      if (!projectId) {
+        throw new Error("No project selected or created");
+      }
+
+      console.log('[Quick Add] Creating role with project_id:', projectId);
 
       // Create the role with auto-filled data
       await onCreateRole({
@@ -304,10 +318,11 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
         status: "active",
       }, null, projectId);
 
+      console.log('[Quick Add] Role created successfully');
       toast.success(`Role "${parsedJob.title}" added to project!`);
       onClose();
     } catch (error) {
-      console.error("Error creating role:", error);
+      console.error("[Quick Add] Error creating role:", error);
       toast.error(error.message || "Failed to create role");
     } finally {
       setIsCreating(false);
@@ -1622,6 +1637,12 @@ export default function TalentProjects() {
 
   // Project CRUD
   const handleSaveProject = async (formData, projectId) => {
+    console.log('[handleSaveProject] Called with:', {
+      name: formData.name,
+      projectId,
+      isUpdate: !!projectId,
+    });
+
     try {
       // Map form field 'name' to database column 'title'
       const projectData = {
@@ -1638,7 +1659,7 @@ export default function TalentProjects() {
         organization_id: user.organization_id,
       };
 
-      console.log('Saving project with data:', JSON.stringify(projectData, null, 2));
+      console.log('[handleSaveProject] Saving with data:', JSON.stringify(projectData, null, 2));
 
       if (projectId) {
         const { data, error } = await supabase
@@ -1647,7 +1668,7 @@ export default function TalentProjects() {
           .eq("id", projectId)
           .select();
 
-        console.log('Update result:', JSON.stringify({ data, error }, null, 2));
+        console.log('[handleSaveProject] Update result:', JSON.stringify({ data, error }, null, 2));
         if (error) throw error;
         toast.success(`Project "${formData.name}" updated`);
         fetchData();
@@ -1658,16 +1679,31 @@ export default function TalentProjects() {
           .insert([projectData])
           .select();
 
-        console.log('Insert result:', JSON.stringify({ data, error }, null, 2));
+        console.log('[handleSaveProject] Insert result:', {
+          data: data,
+          error: error,
+          firstItem: data?.[0],
+          firstItemId: data?.[0]?.id,
+        });
+
         if (error) throw error;
+
+        // CRITICAL: Validate that we got the created project back
+        const createdProject = data?.[0];
+        if (!createdProject || !createdProject.id) {
+          console.error('[handleSaveProject] No project returned from insert!');
+          throw new Error("Project was created but no ID was returned");
+        }
+
+        console.log('[handleSaveProject] Project created successfully with id:', createdProject.id);
         toast.success(`Project "${formData.name}" created`);
         fetchData();
-        return data?.[0]; // Return created project for quick add modal
+        return createdProject; // Return created project for quick add modal
       }
     } catch (error) {
-      console.error("Error saving project:", JSON.stringify(error, null, 2));
-      console.error("Error message:", error?.message);
-      console.error("Error code:", error?.code);
+      console.error("[handleSaveProject] Error:", JSON.stringify(error, null, 2));
+      console.error("[handleSaveProject] Error message:", error?.message);
+      console.error("[handleSaveProject] Error code:", error?.code);
       toast.error(error?.message || "Failed to save project");
       throw error;
     }
@@ -1700,6 +1736,24 @@ export default function TalentProjects() {
 
   // Role CRUD
   const handleSaveRole = async (formData, roleId, projectId) => {
+    // Determine the final project_id to use
+    const finalProjectId = projectId || selectedProjectForRole?.id;
+
+    console.log('[handleSaveRole] Called with:', {
+      formData_title: formData.title,
+      roleId,
+      projectId_param: projectId,
+      selectedProjectForRole_id: selectedProjectForRole?.id,
+      finalProjectId,
+    });
+
+    // Validate we have a project_id
+    if (!finalProjectId) {
+      console.error('[handleSaveRole] No project_id available!');
+      toast.error("Role must be assigned to a project");
+      throw new Error("No project_id provided");
+    }
+
     try {
       // Map form fields to database columns
       // DB schema: title, description, required_skills (ARRAY), preferred_skills (ARRAY),
@@ -1715,10 +1769,10 @@ export default function TalentProjects() {
         status: formData.status === 'active' ? 'open' : formData.status, // DB uses 'open' not 'active'
         notes: formData.department || null, // Store department in notes field for now
         organization_id: user.organization_id,
-        project_id: projectId || selectedProjectForRole?.id,
+        project_id: finalProjectId,
       };
 
-      console.log('Saving role with data:', JSON.stringify(roleData, null, 2));
+      console.log('[handleSaveRole] Saving role with data:', JSON.stringify(roleData, null, 2));
 
       if (roleId) {
         const { data, error } = await supabase
@@ -1726,7 +1780,7 @@ export default function TalentProjects() {
           .update(roleData)
           .eq("id", roleId)
           .select();
-        console.log('Role update result:', JSON.stringify({ data, error }, null, 2));
+        console.log('[handleSaveRole] Update result:', JSON.stringify({ data, error }, null, 2));
         if (error) throw error;
         toast.success("Role updated successfully");
       } else {
@@ -1734,13 +1788,18 @@ export default function TalentProjects() {
           .from("roles")
           .insert([roleData])
           .select();
-        console.log('Role insert result:', JSON.stringify({ data, error }, null, 2));
+        console.log('[handleSaveRole] Insert result:', JSON.stringify({ data, error }, null, 2));
         if (error) throw error;
+
+        // Verify the role was created with the correct project_id
+        if (data && data[0]) {
+          console.log('[handleSaveRole] Role created with id:', data[0].id, 'project_id:', data[0].project_id);
+        }
         toast.success("Role created successfully");
       }
       fetchData();
     } catch (error) {
-      console.error("Error saving role:", error);
+      console.error("[handleSaveRole] Error saving role:", error);
       toast.error(error.message || "Failed to save role");
       throw error;
     }
