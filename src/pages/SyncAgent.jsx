@@ -496,7 +496,6 @@ function AgentChannelMessage({ message, isLatest }) {
 
 function AgentChannel({ messages, isActive }) {
   const scrollerRef = useRef(null);
-  const channelRef = useRef(null);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -505,80 +504,26 @@ function AgentChannel({ messages, isActive }) {
     }
   }, [messages.length]);
 
-  // Pulse animation when active
-  useEffect(() => {
-    if (prefersReducedMotion() || !channelRef.current) return;
-
-    if (isActive) {
-      anime({
-        targets: channelRef.current,
-        borderColor: ['rgba(168, 85, 247, 0.1)', 'rgba(168, 85, 247, 0.3)', 'rgba(168, 85, 247, 0.1)'],
-        duration: 1500,
-        loop: true,
-        easing: 'easeInOutSine',
-      });
-    } else {
-      anime.remove(channelRef.current);
-    }
-
-    return () => {
-      if (channelRef.current) anime.remove(channelRef.current);
-    };
-  }, [isActive]);
+  // Don't show anything if no messages
+  if (messages.length === 0) {
+    return null;
+  }
 
   return (
-    <div
-      ref={channelRef}
-      className="rounded-2xl border border-white/10 bg-black/40 overflow-hidden flex flex-col h-full"
-    >
-      {/* Header */}
-      <div className="shrink-0 flex items-center justify-between px-3 py-2 border-b border-white/10 bg-black/20">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
-          <span className="text-xs font-medium text-white/90">Agent Channel</span>
-        </div>
-        <span className="text-[10px] text-zinc-600">
-          {messages.length} messages
-        </span>
-      </div>
-
-      {/* Messages */}
-      <div
-        ref={scrollerRef}
-        className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent"
-      >
-        {messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-center px-4">
-            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mb-2">
-              <Brain className="w-5 h-5 text-cyan-400/50" />
-            </div>
-            <p className="text-xs text-zinc-600">
-              Agent communications will appear here
-            </p>
-            <p className="text-[10px] text-zinc-700 mt-1">
-              Watch SYNC coordinate with specialized agents
-            </p>
-          </div>
-        ) : (
-          <div className="py-1">
-            {messages.map((msg, idx) => (
-              <AgentChannelMessage
-                key={msg.id || idx}
-                message={msg}
-                isLatest={idx === messages.length - 1}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+    <div ref={scrollerRef} className="space-y-2 px-2">
+      {messages.map((msg, idx) => (
+        <AgentChannelMessage
+          key={msg.id || idx}
+          message={msg}
+          isLatest={idx === messages.length - 1}
+        />
+      ))}
 
       {/* Active indicator */}
       {isActive && (
-        <div className="shrink-0 px-3 py-1.5 border-t border-white/5 bg-cyan-500/5">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-400" />
-            <span className="text-[10px] text-cyan-400">Processing...</span>
-          </div>
+        <div className="flex items-center gap-2 px-2 py-1">
+          <span className="inline-flex h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-400" />
+          <span className="text-[10px] text-cyan-400">Processing...</span>
         </div>
       )}
     </div>
@@ -2092,36 +2037,21 @@ export default function SyncAgent() {
       </div>
 
       {/* Layout - fills remaining height */}
-      <div className="flex-1 min-h-0 mx-auto w-full max-w-[1600px] grid grid-cols-1 gap-6 px-6 py-6 lg:grid-cols-[480px_1fr]">
-        {/* Left: Avatar - Clean, No Container */}
+      <div className="flex-1 min-h-0 mx-auto w-full max-w-[1600px] grid grid-cols-1 gap-6 px-6 py-4 lg:grid-cols-[480px_1fr]">
+        {/* Left: Avatar + Agent Messages */}
         <div
           data-animate
-          className="flex flex-col items-center justify-center"
+          className="flex flex-col items-center"
           style={{ opacity: 0 }}
         >
-          {/* Avatar */}
-          <div className="grid place-items-center">
-            <AgentAvatar size={320} agentName="SYNC" mood={mood} level={level} seed={seed} activeAgent={activeAgent} actionEffect={currentActionEffect} showSuccess={showSuccess} />
+          {/* Avatar - at top */}
+          <div className="shrink-0 grid place-items-center">
+            <AgentAvatar size={280} agentName="SYNC" mood={mood} level={level} seed={seed} activeAgent={activeAgent} actionEffect={currentActionEffect} showSuccess={showSuccess} />
           </div>
 
-          {/* Status chip - below avatar */}
-          <div className="mt-6 flex items-center justify-center">
-            <span
-              className={cn(
-                'inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium capitalize transition-all duration-300 shadow-lg',
-                mood === 'speaking'
-                  ? 'border-cyan-500/40 bg-cyan-500/15 text-cyan-300 shadow-cyan-500/10'
-                  : mood === 'thinking'
-                  ? 'border-amber-500/40 bg-amber-500/15 text-amber-300 shadow-amber-500/10'
-                  : 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300 shadow-emerald-500/10'
-              )}
-            >
-              <span className={cn(
-                'h-2 w-2 rounded-full',
-                mood === 'speaking' ? 'bg-cyan-400 animate-pulse' : mood === 'thinking' ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'
-              )} />
-              SYNC · {mood}
-            </span>
+          {/* Agent orchestration messages - below avatar, no container */}
+          <div className="flex-1 w-full min-h-0 overflow-y-auto mt-4">
+            <AgentChannel messages={agentMessages} isActive={isSending} />
           </div>
         </div>
 
