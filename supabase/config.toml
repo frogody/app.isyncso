@@ -51,3 +51,6 @@ verify_jwt = false
 
 [functions.generateCompanyIntelligence]
 verify_jwt = false
+
+[functions.searchJobPosting]
+verify_jwt = false

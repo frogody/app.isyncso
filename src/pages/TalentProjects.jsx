@@ -86,340 +86,134 @@ import {
   Wand2,
 } from "lucide-react";
 
-// ============================================================================
-// LOCATION DATA - Hierarchical city → region → country auto-derivation
-// ============================================================================
-const LOCATION_DATA = {
-  // Netherlands
-  "amsterdam": { city: "Amsterdam", region: "North Holland", country: "Netherlands", remote: false },
-  "rotterdam": { city: "Rotterdam", region: "South Holland", country: "Netherlands", remote: false },
-  "the hague": { city: "The Hague", region: "South Holland", country: "Netherlands", remote: false },
-  "utrecht": { city: "Utrecht", region: "Utrecht", country: "Netherlands", remote: false },
-  "eindhoven": { city: "Eindhoven", region: "North Brabant", country: "Netherlands", remote: false },
-  // UK
-  "london": { city: "London", region: "Greater London", country: "United Kingdom", remote: false },
-  "manchester": { city: "Manchester", region: "Greater Manchester", country: "United Kingdom", remote: false },
-  "birmingham": { city: "Birmingham", region: "West Midlands", country: "United Kingdom", remote: false },
-  "edinburgh": { city: "Edinburgh", region: "Scotland", country: "United Kingdom", remote: false },
-  "bristol": { city: "Bristol", region: "South West", country: "United Kingdom", remote: false },
-  // Germany
-  "berlin": { city: "Berlin", region: "Berlin", country: "Germany", remote: false },
-  "munich": { city: "Munich", region: "Bavaria", country: "Germany", remote: false },
-  "frankfurt": { city: "Frankfurt", region: "Hesse", country: "Germany", remote: false },
-  "hamburg": { city: "Hamburg", region: "Hamburg", country: "Germany", remote: false },
-  "cologne": { city: "Cologne", region: "North Rhine-Westphalia", country: "Germany", remote: false },
-  // USA
-  "new york": { city: "New York", region: "New York", country: "United States", remote: false },
-  "san francisco": { city: "San Francisco", region: "California", country: "United States", remote: false },
-  "los angeles": { city: "Los Angeles", region: "California", country: "United States", remote: false },
-  "chicago": { city: "Chicago", region: "Illinois", country: "United States", remote: false },
-  "austin": { city: "Austin", region: "Texas", country: "United States", remote: false },
-  "seattle": { city: "Seattle", region: "Washington", country: "United States", remote: false },
-  "boston": { city: "Boston", region: "Massachusetts", country: "United States", remote: false },
-  "miami": { city: "Miami", region: "Florida", country: "United States", remote: false },
-  "denver": { city: "Denver", region: "Colorado", country: "United States", remote: false },
-  // France
-  "paris": { city: "Paris", region: "Île-de-France", country: "France", remote: false },
-  "lyon": { city: "Lyon", region: "Auvergne-Rhône-Alpes", country: "France", remote: false },
-  "marseille": { city: "Marseille", region: "Provence-Alpes-Côte d'Azur", country: "France", remote: false },
-  // Spain
-  "madrid": { city: "Madrid", region: "Community of Madrid", country: "Spain", remote: false },
-  "barcelona": { city: "Barcelona", region: "Catalonia", country: "Spain", remote: false },
-  // Remote options
-  "remote": { city: "Remote", region: "Worldwide", country: "Any", remote: true },
-  "hybrid": { city: "Hybrid", region: "Flexible", country: "Negotiable", remote: true },
-};
-
-// Common job titles for quick selection
-const COMMON_JOB_TITLES = [
-  "Software Engineer",
-  "Senior Software Engineer",
-  "Frontend Developer",
-  "Backend Developer",
-  "Full Stack Developer",
-  "DevOps Engineer",
-  "Data Scientist",
-  "Data Engineer",
-  "Product Manager",
-  "Project Manager",
-  "UX Designer",
-  "UI Designer",
-  "Account Executive",
-  "Sales Representative",
-  "Marketing Manager",
-  "Finance Manager",
-  "HR Manager",
-  "Operations Manager",
-  "Business Analyst",
-  "Technical Lead",
-  "Engineering Manager",
-  "Chief Technology Officer",
-];
-
-// Role title → suggested skills mapping
-const ROLE_SKILLS_MAP = {
-  "software engineer": ["JavaScript", "Python", "Git", "SQL", "REST APIs", "Agile"],
-  "senior software engineer": ["System Design", "Code Review", "Mentoring", "CI/CD", "Cloud Services", "Architecture"],
-  "frontend developer": ["React", "TypeScript", "CSS", "HTML5", "Responsive Design", "Web Performance"],
-  "backend developer": ["Node.js", "Python", "Java", "Databases", "REST APIs", "Microservices"],
-  "full stack developer": ["React", "Node.js", "PostgreSQL", "AWS", "Git", "Docker"],
-  "devops engineer": ["AWS", "Docker", "Kubernetes", "Terraform", "CI/CD", "Linux"],
-  "data scientist": ["Python", "Machine Learning", "Statistics", "SQL", "TensorFlow", "Data Visualization"],
-  "data engineer": ["Python", "SQL", "Apache Spark", "ETL", "Data Warehousing", "Airflow"],
-  "product manager": ["Roadmapping", "User Research", "Agile", "Analytics", "Stakeholder Management"],
-  "project manager": ["Project Planning", "Risk Management", "Agile/Scrum", "Budget Management", "Communication"],
-  "ux designer": ["User Research", "Wireframing", "Figma", "Prototyping", "Usability Testing"],
-  "ui designer": ["Figma", "Adobe XD", "Visual Design", "Design Systems", "Typography"],
-  "account executive": ["Sales", "Negotiation", "CRM", "Pipeline Management", "Relationship Building"],
-  "marketing manager": ["Digital Marketing", "SEO", "Content Strategy", "Analytics", "Campaign Management"],
-  "finance manager": ["Financial Analysis", "Budgeting", "Forecasting", "Excel", "ERP Systems"],
-  "hr manager": ["Recruitment", "Employee Relations", "HRIS", "Performance Management", "Compliance"],
-};
-
-// Role title → suggested salary ranges
-const ROLE_SALARY_MAP = {
-  "software engineer": { min: 70000, max: 120000, currency: "EUR" },
-  "senior software engineer": { min: 100000, max: 160000, currency: "EUR" },
-  "frontend developer": { min: 60000, max: 100000, currency: "EUR" },
-  "backend developer": { min: 65000, max: 110000, currency: "EUR" },
-  "full stack developer": { min: 70000, max: 120000, currency: "EUR" },
-  "devops engineer": { min: 80000, max: 140000, currency: "EUR" },
-  "data scientist": { min: 75000, max: 130000, currency: "EUR" },
-  "data engineer": { min: 70000, max: 120000, currency: "EUR" },
-  "product manager": { min: 80000, max: 140000, currency: "EUR" },
-  "project manager": { min: 65000, max: 110000, currency: "EUR" },
-  "ux designer": { min: 55000, max: 95000, currency: "EUR" },
-  "ui designer": { min: 50000, max: 85000, currency: "EUR" },
-  "account executive": { min: 50000, max: 100000, currency: "EUR" },
-  "marketing manager": { min: 60000, max: 100000, currency: "EUR" },
-  "finance manager": { min: 70000, max: 120000, currency: "EUR" },
-  "hr manager": { min: 60000, max: 100000, currency: "EUR" },
-};
-
-// Helper function to derive location from input
-const deriveLocation = (input) => {
-  if (!input) return null;
-  const normalized = input.toLowerCase().trim();
-  if (LOCATION_DATA[normalized]) {
-    return LOCATION_DATA[normalized];
-  }
-  // Try partial match
-  for (const [key, data] of Object.entries(LOCATION_DATA)) {
-    if (key.includes(normalized) || normalized.includes(key)) {
-      return data;
-    }
-  }
-  return null;
-};
-
-// Helper function to get suggested skills for a role
-const getSuggestedSkills = (roleTitle) => {
-  if (!roleTitle) return [];
-  const normalized = roleTitle.toLowerCase().trim();
-  for (const [key, skills] of Object.entries(ROLE_SKILLS_MAP)) {
-    if (normalized.includes(key) || key.includes(normalized)) {
-      return skills;
-    }
-  }
-  return [];
-};
-
-// Helper function to get suggested salary for a role
-const getSuggestedSalary = (roleTitle) => {
-  if (!roleTitle) return null;
-  const normalized = roleTitle.toLowerCase().trim();
-  for (const [key, salary] of Object.entries(ROLE_SALARY_MAP)) {
-    if (normalized.includes(key) || key.includes(normalized)) {
-      return `€${(salary.min / 1000).toFixed(0)}k - €${(salary.max / 1000).toFixed(0)}k`;
-    }
-  }
-  return null;
-};
 
 // ============================================================================
-// SMART QUICK ADD MODAL - The sophisticated role/project creation system
+// SMART QUICK ADD MODAL - AI-powered job search and auto-fill
 // ============================================================================
 const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, onCreateProject }) => {
+  // Step: 1 = Input, 2 = Searching, 3 = Review
   const [step, setStep] = useState(1);
-  const [mode, setMode] = useState("quick"); // quick, url, advanced
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [searchError, setSearchError] = useState(null);
 
-  // Step 1: Basic Info
+  // Step 1: Simple inputs
   const [roleTitle, setRoleTitle] = useState("");
-  const [selectedClient, setSelectedClient] = useState(null);
+  const [companyName, setCompanyName] = useState("");
+  const [location, setLocation] = useState("");
+
+  // Step 3: Auto-filled data from AI search
+  const [parsedJob, setParsedJob] = useState(null);
   const [selectedProject, setSelectedProject] = useState(null);
   const [createNewProject, setCreateNewProject] = useState(false);
-  const [newProjectName, setNewProjectName] = useState("");
-
-  // Step 2: Location with auto-derivation
-  const [locationInput, setLocationInput] = useState("");
-  const [derivedLocation, setDerivedLocation] = useState(null);
-  const [locationOpen, setLocationOpen] = useState(false);
-
-  // Step 3: Auto-populated fields
-  const [suggestedSkills, setSuggestedSkills] = useState([]);
-  const [selectedSkills, setSelectedSkills] = useState([]);
-  const [suggestedSalary, setSuggestedSalary] = useState("");
-  const [employmentType, setEmploymentType] = useState("full_time");
-  const [description, setDescription] = useState("");
-
-  // URL parsing
-  const [jobUrl, setJobUrl] = useState("");
-  const [parsedJob, setParsedJob] = useState(null);
-
-  // Title suggestions dropdown
-  const [titleOpen, setTitleOpen] = useState(false);
-  const [filteredTitles, setFilteredTitles] = useState(COMMON_JOB_TITLES);
 
   // Reset on open
   useEffect(() => {
     if (isOpen) {
       setStep(1);
       setRoleTitle("");
-      setSelectedClient(null);
+      setCompanyName("");
+      setLocation("");
+      setParsedJob(null);
+      setSearchError(null);
       setSelectedProject(null);
       setCreateNewProject(false);
-      setNewProjectName("");
-      setLocationInput("");
-      setDerivedLocation(null);
-      setSuggestedSkills([]);
-      setSelectedSkills([]);
-      setSuggestedSalary("");
-      setEmploymentType("full_time");
-      setDescription("");
-      setJobUrl("");
-      setParsedJob(null);
     }
   }, [isOpen]);
 
-  // Auto-derive location when input changes
-  useEffect(() => {
-    if (locationInput) {
-      const derived = deriveLocation(locationInput);
-      setDerivedLocation(derived);
-    } else {
-      setDerivedLocation(null);
-    }
-  }, [locationInput]);
-
-  // Auto-suggest skills and salary when role title changes
-  useEffect(() => {
-    if (roleTitle) {
-      const skills = getSuggestedSkills(roleTitle);
-      setSuggestedSkills(skills);
-      if (selectedSkills.length === 0 && skills.length > 0) {
-        setSelectedSkills(skills.slice(0, 4)); // Pre-select top 4
-      }
-
-      const salary = getSuggestedSalary(roleTitle);
-      if (salary && !suggestedSalary) {
-        setSuggestedSalary(salary);
-      }
-    }
-  }, [roleTitle]);
-
-  // Filter job titles based on input
-  useEffect(() => {
-    if (roleTitle) {
-      const filtered = COMMON_JOB_TITLES.filter(t =>
-        t.toLowerCase().includes(roleTitle.toLowerCase())
-      );
-      setFilteredTitles(filtered.length > 0 ? filtered : COMMON_JOB_TITLES);
-    } else {
-      setFilteredTitles(COMMON_JOB_TITLES);
-    }
-  }, [roleTitle]);
-
-  // Parse job posting URL
-  const parseJobUrl = async () => {
-    if (!jobUrl) return;
-    setIsProcessing(true);
-    try {
-      // Simulate parsing (in production, call an edge function)
-      await new Promise(r => setTimeout(r, 1500));
-
-      // Extract domain for demo
-      const url = new URL(jobUrl);
-      const domain = url.hostname.replace('www.', '');
-
-      // Demo parsed data
-      setParsedJob({
-        title: "Software Engineer", // Would come from scraping
-        company: domain.split('.')[0].charAt(0).toUpperCase() + domain.split('.')[0].slice(1),
-        location: "Remote",
-        description: `Parsed from ${domain}`,
-        source: url.hostname,
-      });
-
-      setRoleTitle("Software Engineer");
-      setLocationInput("remote");
-      toast.success("Job posting parsed successfully!");
-    } catch (error) {
-      toast.error("Could not parse job posting URL");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  // Handle form submission
-  const handleSubmit = async () => {
-    if (!roleTitle.trim()) {
-      toast.error("Please enter a role title");
+  // Search for job posting using AI
+  const handleSearch = async () => {
+    if (!roleTitle.trim() || !companyName.trim()) {
+      toast.error("Please enter both role title and company name");
       return;
     }
 
-    setIsProcessing(true);
+    setIsSearching(true);
+    setSearchError(null);
+    setStep(2);
+
     try {
-      // Determine or create project
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/searchJobPosting`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            roleTitle: roleTitle.trim(),
+            companyName: companyName.trim(),
+            location: location.trim(),
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to search for job posting");
+      }
+
+      if (data.success && data.job) {
+        setParsedJob(data.job);
+        setStep(3);
+        toast.success(
+          data.has_source
+            ? `Found job posting from ${data.job.source_domain}`
+            : "Generated role details based on role type"
+        );
+      } else {
+        throw new Error("No job data returned");
+      }
+    } catch (error) {
+      console.error("Job search error:", error);
+      setSearchError(error.message);
+      setStep(1);
+      toast.error(error.message || "Failed to search for job posting");
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Create the role with auto-filled data
+  const handleCreateRole = async () => {
+    if (!parsedJob) return;
+
+    setIsCreating(true);
+    try {
+      // Create project if needed
       let projectId = selectedProject?.id;
 
-      if (createNewProject && newProjectName) {
-        // Create new project first
+      if (createNewProject) {
         const newProject = await onCreateProject({
-          name: newProjectName,
-          client_id: selectedClient?.id,
-          client_name: selectedClient?.name,
+          name: `${companyName} - ${roleTitle}`,
           status: "active",
           priority: "medium",
         });
         projectId = newProject?.id;
       }
 
-      // Build location string
-      const locationStr = derivedLocation
-        ? `${derivedLocation.city}, ${derivedLocation.region}, ${derivedLocation.country}`
-        : locationInput;
-
-      // Create the role
+      // Create the role with auto-filled data
       await onCreateRole({
-        title: roleTitle,
-        location: locationStr,
-        requirements: selectedSkills.join('\n'),
-        salary_range: suggestedSalary,
-        employment_type: employmentType,
-        responsibilities: description,
+        title: parsedJob.title,
+        location: parsedJob.location,
+        requirements: parsedJob.requirements?.join('\n') || "",
+        responsibilities: parsedJob.responsibilities?.join('\n') || parsedJob.description,
+        salary_range: parsedJob.salary_range || "",
+        employment_type: parsedJob.employment_type || "full_time",
         status: "active",
       }, null, projectId);
 
-      toast.success(`Role "${roleTitle}" created successfully!`);
+      toast.success(`Role "${parsedJob.title}" created successfully!`);
       onClose();
     } catch (error) {
       console.error("Error creating role:", error);
       toast.error(error.message || "Failed to create role");
     } finally {
-      setIsProcessing(false);
+      setIsCreating(false);
     }
   };
-
-  // Quick location suggestions
-  const quickLocations = [
-    { label: "Remote", value: "remote" },
-    { label: "Hybrid", value: "hybrid" },
-    { label: "Amsterdam", value: "amsterdam" },
-    { label: "London", value: "london" },
-    { label: "New York", value: "new york" },
-    { label: "Berlin", value: "berlin" },
-  ];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -428,454 +222,281 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
           <DialogTitle className="text-white flex items-center gap-2">
             <Zap className="w-5 h-5 text-red-400" />
             Quick Add Role
+            {step === 2 && (
+              <Badge className="bg-red-600/20 text-red-400 border-red-500/30 ml-2">
+                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                Searching...
+              </Badge>
+            )}
           </DialogTitle>
         </DialogHeader>
 
-        {/* Mode Tabs */}
-        <Tabs value={mode} onValueChange={setMode} className="mt-2">
-          <TabsList className="grid grid-cols-3 bg-zinc-800/50">
-            <TabsTrigger value="quick" className="data-[state=active]:bg-red-600">
-              <Zap className="w-4 h-4 mr-2" />
-              Quick
-            </TabsTrigger>
-            <TabsTrigger value="url" className="data-[state=active]:bg-red-600">
-              <Link2 className="w-4 h-4 mr-2" />
-              From URL
-            </TabsTrigger>
-            <TabsTrigger value="advanced" className="data-[state=active]:bg-red-600">
-              <FileText className="w-4 h-4 mr-2" />
-              Advanced
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Quick Mode */}
-          <TabsContent value="quick" className="space-y-6 mt-6">
-            {/* Step 1: Role Title with Autocomplete */}
-            <div className="space-y-3">
-              <Label className="text-white/70 flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-red-600 text-white text-xs flex items-center justify-center">1</span>
-                What role are you hiring for?
-              </Label>
-              <Popover open={titleOpen} onOpenChange={setTitleOpen}>
-                <PopoverTrigger asChild>
-                  <div className="relative">
-                    <Input
-                      value={roleTitle}
-                      onChange={(e) => {
-                        setRoleTitle(e.target.value);
-                        setTitleOpen(true);
-                      }}
-                      onFocus={() => setTitleOpen(true)}
-                      placeholder="Start typing or select..."
-                      className="bg-zinc-800/50 border-zinc-700 text-white text-lg h-12"
-                    />
-                    {roleTitle && (
-                      <button
-                        onClick={() => setRoleTitle("")}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                </PopoverTrigger>
-                <PopoverContent className="w-[500px] p-0 bg-slate-800 border-white/10" align="start">
-                  <Command className="bg-transparent">
-                    <CommandList>
-                      <CommandEmpty>No matching titles</CommandEmpty>
-                      <CommandGroup heading="Suggested Titles">
-                        {filteredTitles.slice(0, 8).map((title) => (
-                          <CommandItem
-                            key={title}
-                            onSelect={() => {
-                              setRoleTitle(title);
-                              setTitleOpen(false);
-                            }}
-                            className="text-white cursor-pointer"
-                          >
-                            <Briefcase className="w-4 h-4 mr-2 text-red-400" />
-                            {title}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-
-              {/* Quick select chips */}
-              <div className="flex flex-wrap gap-2">
-                {["Software Engineer", "Product Manager", "Data Scientist", "UX Designer"].map((title) => (
-                  <button
-                    key={title}
-                    onClick={() => setRoleTitle(title)}
-                    className={`px-3 py-1 rounded-full text-sm transition-all ${
-                      roleTitle === title
-                        ? "bg-red-600 text-white"
-                        : "bg-zinc-800 text-white/60 hover:bg-zinc-700 hover:text-white"
-                    }`}
-                  >
-                    {title}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Step 2: Client Selection */}
-            {roleTitle && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="space-y-3"
-              >
-                <Label className="text-white/70 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-red-600 text-white text-xs flex items-center justify-center">2</span>
-                  Which client is this for?
-                </Label>
-                <div className="flex flex-wrap gap-2">
-                  {clients.slice(0, 6).map((client) => (
-                    <button
-                      key={client.id}
-                      onClick={() => setSelectedClient(client)}
-                      className={`px-4 py-2 rounded-lg text-sm transition-all flex items-center gap-2 ${
-                        selectedClient?.id === client.id
-                          ? "bg-red-600 text-white"
-                          : "bg-zinc-800 text-white/60 hover:bg-zinc-700 hover:text-white"
-                      }`}
-                    >
-                      <Building2 className="w-4 h-4" />
-                      {client.name}
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => setSelectedClient({ id: "internal", name: "Internal Hiring" })}
-                    className={`px-4 py-2 rounded-lg text-sm transition-all flex items-center gap-2 ${
-                      selectedClient?.id === "internal"
-                        ? "bg-red-600 text-white"
-                        : "bg-zinc-800 text-white/60 hover:bg-zinc-700 hover:text-white"
-                    }`}
-                  >
-                    <Users className="w-4 h-4" />
-                    Internal
-                  </button>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Step 3: Project Selection */}
-            {selectedClient && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="space-y-3"
-              >
-                <Label className="text-white/70 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-red-600 text-white text-xs flex items-center justify-center">3</span>
-                  Add to existing project or create new?
-                </Label>
-                <div className="flex flex-wrap gap-2">
-                  {projects
-                    .filter(p => !selectedClient?.id || selectedClient.id === "internal" || p.client_id === selectedClient.id)
-                    .slice(0, 4)
-                    .map((project) => (
-                      <button
-                        key={project.id}
-                        onClick={() => {
-                          setSelectedProject(project);
-                          setCreateNewProject(false);
-                        }}
-                        className={`px-4 py-2 rounded-lg text-sm transition-all flex items-center gap-2 ${
-                          selectedProject?.id === project.id
-                            ? "bg-red-600 text-white"
-                            : "bg-zinc-800 text-white/60 hover:bg-zinc-700 hover:text-white"
-                        }`}
-                      >
-                        <Briefcase className="w-4 h-4" />
-                        {project.title || project.name}
-                      </button>
-                    ))}
-                  <button
-                    onClick={() => {
-                      setCreateNewProject(true);
-                      setSelectedProject(null);
-                    }}
-                    className={`px-4 py-2 rounded-lg text-sm transition-all flex items-center gap-2 ${
-                      createNewProject
-                        ? "bg-red-600 text-white"
-                        : "bg-zinc-800 text-white/60 hover:bg-zinc-700 hover:text-white"
-                    }`}
-                  >
-                    <Plus className="w-4 h-4" />
-                    New Project
-                  </button>
-                </div>
-
-                {createNewProject && (
-                  <Input
-                    value={newProjectName}
-                    onChange={(e) => setNewProjectName(e.target.value)}
-                    placeholder="New project name..."
-                    className="bg-zinc-800/50 border-zinc-700 text-white"
-                    autoFocus
-                  />
-                )}
-              </motion.div>
-            )}
-
-            {/* Step 4: Location with Auto-Derivation */}
-            {(selectedProject || createNewProject) && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="space-y-3"
-              >
-                <Label className="text-white/70 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-red-600 text-white text-xs flex items-center justify-center">4</span>
-                  Where is this role located?
-                </Label>
-
-                {/* Quick location chips */}
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {quickLocations.map((loc) => (
-                    <button
-                      key={loc.value}
-                      onClick={() => setLocationInput(loc.value)}
-                      className={`px-3 py-1 rounded-full text-sm transition-all flex items-center gap-1 ${
-                        locationInput.toLowerCase() === loc.value
-                          ? "bg-red-600 text-white"
-                          : "bg-zinc-800 text-white/60 hover:bg-zinc-700 hover:text-white"
-                      }`}
-                    >
-                      {loc.value === "remote" || loc.value === "hybrid" ? (
-                        <Globe className="w-3 h-3" />
-                      ) : (
-                        <MapPin className="w-3 h-3" />
-                      )}
-                      {loc.label}
-                    </button>
-                  ))}
-                </div>
-
-                <Input
-                  value={locationInput}
-                  onChange={(e) => setLocationInput(e.target.value)}
-                  placeholder="Type a city name..."
-                  className="bg-zinc-800/50 border-zinc-700 text-white"
-                />
-
-                {/* Auto-derived location display */}
-                {derivedLocation && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg"
-                  >
-                    <div className="flex items-center gap-2 text-green-400 text-sm mb-2">
-                      <Sparkles className="w-4 h-4" />
-                      Auto-derived location
-                    </div>
-                    <div className="flex items-center gap-2 text-white">
-                      <MapPin className="w-4 h-4 text-white/60" />
-                      <span className="font-medium">{derivedLocation.city}</span>
-                      <ChevronRight className="w-4 h-4 text-white/40" />
-                      <span className="text-white/70">{derivedLocation.region}</span>
-                      <ChevronRight className="w-4 h-4 text-white/40" />
-                      <span className="text-white/70">{derivedLocation.country}</span>
-                    </div>
-                  </motion.div>
-                )}
-              </motion.div>
-            )}
-
-            {/* Step 5: Auto-suggested fields */}
-            {derivedLocation && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="space-y-4"
-              >
-                <Label className="text-white/70 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-red-600 text-white text-xs flex items-center justify-center">5</span>
-                  Confirm auto-filled details
-                  <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/30">
-                    <Wand2 className="w-3 h-3 mr-1" />
-                    AI Suggested
-                  </Badge>
-                </Label>
-
-                {/* Suggested Skills */}
-                {suggestedSkills.length > 0 && (
-                  <div className="space-y-2">
-                    <span className="text-sm text-white/60">Required Skills</span>
-                    <div className="flex flex-wrap gap-2">
-                      {suggestedSkills.map((skill) => (
-                        <button
-                          key={skill}
-                          onClick={() => {
-                            if (selectedSkills.includes(skill)) {
-                              setSelectedSkills(selectedSkills.filter(s => s !== skill));
-                            } else {
-                              setSelectedSkills([...selectedSkills, skill]);
-                            }
-                          }}
-                          className={`px-3 py-1 rounded-full text-sm transition-all flex items-center gap-1 ${
-                            selectedSkills.includes(skill)
-                              ? "bg-red-600 text-white"
-                              : "bg-zinc-800 text-white/40 hover:text-white"
-                          }`}
-                        >
-                          {selectedSkills.includes(skill) && <Check className="w-3 h-3" />}
-                          {skill}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Suggested Salary */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <span className="text-sm text-white/60">Salary Range</span>
-                    <Input
-                      value={suggestedSalary}
-                      onChange={(e) => setSuggestedSalary(e.target.value)}
-                      placeholder="e.g., €70k - €120k"
-                      className="bg-zinc-800/50 border-zinc-700 text-white"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <span className="text-sm text-white/60">Employment Type</span>
-                    <Select value={employmentType} onValueChange={setEmploymentType}>
-                      <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-slate-800 border-white/10">
-                        <SelectItem value="full_time">Full Time</SelectItem>
-                        <SelectItem value="part_time">Part Time</SelectItem>
-                        <SelectItem value="contract">Contract</SelectItem>
-                        <SelectItem value="freelance">Freelance</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </TabsContent>
-
-          {/* URL Mode */}
-          <TabsContent value="url" className="space-y-6 mt-6">
-            <div className="space-y-3">
-              <Label className="text-white/70">Paste a job posting URL</Label>
-              <div className="flex gap-2">
-                <Input
-                  value={jobUrl}
-                  onChange={(e) => setJobUrl(e.target.value)}
-                  placeholder="https://linkedin.com/jobs/... or https://indeed.com/..."
-                  className="bg-zinc-800/50 border-zinc-700 text-white flex-1"
-                />
-                <Button
-                  onClick={parseJobUrl}
-                  disabled={!jobUrl || isProcessing}
-                  className="bg-red-600 hover:bg-red-700"
-                >
-                  {isProcessing ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
-                      <Wand2 className="w-4 h-4 mr-2" />
-                      Parse
-                    </>
-                  )}
-                </Button>
-              </div>
-              <p className="text-xs text-white/40">
-                We'll extract the job title, location, and description automatically
-              </p>
-            </div>
-
-            {parsedJob && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="p-4 bg-zinc-800/50 rounded-lg border border-zinc-700"
-              >
-                <div className="flex items-center gap-2 text-green-400 text-sm mb-3">
-                  <CheckCircle2 className="w-4 h-4" />
-                  Parsed successfully from {parsedJob.source}
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-white/60 text-sm w-20">Title:</span>
-                    <span className="text-white">{parsedJob.title}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-white/60 text-sm w-20">Company:</span>
-                    <span className="text-white">{parsedJob.company}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-white/60 text-sm w-20">Location:</span>
-                    <span className="text-white">{parsedJob.location}</span>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {parsedJob && (
-              <div className="pt-4">
-                <Button
-                  onClick={() => setMode("quick")}
-                  className="w-full bg-red-600 hover:bg-red-700"
-                >
-                  <ArrowRight className="w-4 h-4 mr-2" />
-                  Continue to Complete Role
-                </Button>
-              </div>
-            )}
-          </TabsContent>
-
-          {/* Advanced Mode - Full Form */}
-          <TabsContent value="advanced" className="space-y-4 mt-6">
-            <p className="text-sm text-white/60">
-              For detailed role configuration, use the full form with all available options.
-            </p>
-            <Button
-              onClick={() => {
-                onClose();
-                // Trigger advanced modal (the original RoleModal)
-              }}
-              variant="outline"
-              className="w-full border-zinc-700 text-white"
-            >
-              <FileText className="w-4 h-4 mr-2" />
-              Open Advanced Form
-            </Button>
-          </TabsContent>
-        </Tabs>
-
-        {/* Submit Button */}
-        {mode === "quick" && derivedLocation && (
+        {/* Step 1: Simple Input Form */}
+        {step === 1 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="pt-4 border-t border-zinc-700 mt-4"
+            className="space-y-6 py-4"
           >
+            <p className="text-white/60 text-sm">
+              Enter the role details and we'll automatically search for the job posting online to fill in requirements, responsibilities, and more.
+            </p>
+
+            <div className="space-y-4">
+              {/* Role Title */}
+              <div className="space-y-2">
+                <Label className="text-white/70 flex items-center gap-2">
+                  <Briefcase className="w-4 h-4 text-red-400" />
+                  Role Title
+                </Label>
+                <Input
+                  value={roleTitle}
+                  onChange={(e) => setRoleTitle(e.target.value)}
+                  placeholder="e.g., Senior Software Engineer, Finance Manager..."
+                  className="bg-zinc-800/50 border-zinc-700 text-white text-lg h-12"
+                  autoFocus
+                />
+              </div>
+
+              {/* Company Name */}
+              <div className="space-y-2">
+                <Label className="text-white/70 flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-red-400" />
+                  Company Name
+                </Label>
+                <Input
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  placeholder="e.g., Google, Philips, ABN AMRO..."
+                  className="bg-zinc-800/50 border-zinc-700 text-white text-lg h-12"
+                />
+              </div>
+
+              {/* Location */}
+              <div className="space-y-2">
+                <Label className="text-white/70 flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-red-400" />
+                  Location <span className="text-white/40">(optional)</span>
+                </Label>
+                <Input
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="e.g., Amsterdam, London, Remote..."
+                  className="bg-zinc-800/50 border-zinc-700 text-white text-lg h-12"
+                />
+              </div>
+            </div>
+
+            {searchError && (
+              <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+                {searchError}
+              </div>
+            )}
+
             <Button
-              onClick={handleSubmit}
-              disabled={isProcessing || !roleTitle}
+              onClick={handleSearch}
+              disabled={!roleTitle.trim() || !companyName.trim() || isSearching}
               className="w-full h-12 bg-red-600 hover:bg-red-700 text-lg"
             >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="w-5 h-5 mr-2" />
-                  Create {roleTitle || "Role"}
-                </>
-              )}
+              <Search className="w-5 h-5 mr-2" />
+              Find Job Posting
             </Button>
+          </motion.div>
+        )}
+
+        {/* Step 2: Searching Animation */}
+        {step === 2 && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="py-12 text-center"
+          >
+            <div className="relative w-24 h-24 mx-auto mb-6">
+              <motion.div
+                className="absolute inset-0 rounded-full border-4 border-red-500/30"
+                animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.2, 0.5] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+              <motion.div
+                className="absolute inset-2 rounded-full border-4 border-red-500/50"
+                animate={{ scale: [1, 1.15, 1], opacity: [0.7, 0.3, 0.7] }}
+                transition={{ duration: 2, repeat: Infinity, delay: 0.3 }}
+              />
+              <div className="absolute inset-4 rounded-full bg-red-600 flex items-center justify-center">
+                <Globe className="w-8 h-8 text-white animate-pulse" />
+              </div>
+            </div>
+
+            <h3 className="text-xl font-semibold text-white mb-2">
+              Searching for Job Posting
+            </h3>
+            <p className="text-white/60 mb-4">
+              Looking for <span className="text-red-400">{roleTitle}</span> at{" "}
+              <span className="text-red-400">{companyName}</span>
+              {location && (
+                <> in <span className="text-red-400">{location}</span></>
+              )}
+            </p>
+
+            <div className="flex items-center justify-center gap-2 text-white/40 text-sm">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Searching LinkedIn, Indeed, Glassdoor...
+            </div>
+          </motion.div>
+        )}
+
+        {/* Step 3: Review Auto-filled Data */}
+        {step === 3 && parsedJob && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6 py-4"
+          >
+            {/* Source Badge */}
+            {parsedJob.source_url && (
+              <div className="flex items-center gap-2 text-green-400 text-sm">
+                <CheckCircle2 className="w-4 h-4" />
+                Found on {parsedJob.source_domain}
+                <a
+                  href={parsedJob.source_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white/40 hover:text-white underline"
+                >
+                  View original
+                </a>
+              </div>
+            )}
+
+            {/* Job Details Card */}
+            <div className="p-4 bg-zinc-800/50 rounded-lg border border-zinc-700 space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold text-white">{parsedJob.title}</h3>
+                <p className="text-white/60">{parsedJob.company} • {parsedJob.location}</p>
+              </div>
+
+              <p className="text-white/70 text-sm">{parsedJob.description}</p>
+
+              <div className="flex flex-wrap gap-2">
+                {parsedJob.employment_type && (
+                  <Badge className="bg-red-600/20 text-red-400 border-red-500/30">
+                    {parsedJob.employment_type.replace('_', ' ')}
+                  </Badge>
+                )}
+                {parsedJob.experience_level && (
+                  <Badge className="bg-zinc-700 text-white/70">
+                    {parsedJob.experience_level}
+                  </Badge>
+                )}
+                {parsedJob.salary_range && (
+                  <Badge className="bg-green-600/20 text-green-400 border-green-500/30">
+                    <DollarSign className="w-3 h-3 mr-1" />
+                    {parsedJob.salary_range}
+                  </Badge>
+                )}
+              </div>
+            </div>
+
+            {/* Requirements */}
+            {parsedJob.requirements?.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-white/70">Requirements</Label>
+                <div className="p-3 bg-zinc-800/30 rounded-lg max-h-32 overflow-y-auto">
+                  <ul className="text-sm text-white/70 space-y-1">
+                    {parsedJob.requirements.slice(0, 6).map((req, i) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <Check className="w-3 h-3 text-green-400 mt-1 flex-shrink-0" />
+                        {req}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+
+            {/* Responsibilities */}
+            {parsedJob.responsibilities?.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-white/70">Responsibilities</Label>
+                <div className="p-3 bg-zinc-800/30 rounded-lg max-h-32 overflow-y-auto">
+                  <ul className="text-sm text-white/70 space-y-1">
+                    {parsedJob.responsibilities.slice(0, 6).map((resp, i) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <ChevronRight className="w-3 h-3 text-red-400 mt-1 flex-shrink-0" />
+                        {resp}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+
+            {/* Project Selection */}
+            <div className="space-y-2">
+              <Label className="text-white/70">Add to Project (optional)</Label>
+              <div className="flex flex-wrap gap-2">
+                {projects.slice(0, 4).map((project) => (
+                  <button
+                    key={project.id}
+                    onClick={() => {
+                      setSelectedProject(project);
+                      setCreateNewProject(false);
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-sm transition-all flex items-center gap-2 ${
+                      selectedProject?.id === project.id
+                        ? "bg-red-600 text-white"
+                        : "bg-zinc-800 text-white/60 hover:bg-zinc-700 hover:text-white"
+                    }`}
+                  >
+                    <Briefcase className="w-3 h-3" />
+                    {project.title || project.name}
+                  </button>
+                ))}
+                <button
+                  onClick={() => {
+                    setCreateNewProject(true);
+                    setSelectedProject(null);
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-sm transition-all flex items-center gap-2 ${
+                    createNewProject
+                      ? "bg-red-600 text-white"
+                      : "bg-zinc-800 text-white/60 hover:bg-zinc-700 hover:text-white"
+                  }`}
+                >
+                  <Plus className="w-3 h-3" />
+                  New Project
+                </button>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-4 border-t border-zinc-700">
+              <Button
+                variant="outline"
+                onClick={() => setStep(1)}
+                className="flex-1 border-zinc-700 text-white hover:bg-zinc-800"
+              >
+                <ArrowRight className="w-4 h-4 mr-2 rotate-180" />
+                Back
+              </Button>
+              <Button
+                onClick={handleCreateRole}
+                disabled={isCreating}
+                className="flex-[2] bg-red-600 hover:bg-red-700"
+              >
+                {isCreating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                    Create Role
+                  </>
+                )}
+              </Button>
+            </div>
           </motion.div>
         )}
       </DialogContent>
