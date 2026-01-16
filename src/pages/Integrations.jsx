@@ -717,27 +717,27 @@ export default function Integrations() {
       <div className="min-h-screen bg-black relative">
         {/* Background */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-20 left-1/4 w-96 h-96 bg-purple-900/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-indigo-900/10 rounded-full blur-3xl" />
+          <div className="absolute top-20 left-1/4 w-96 h-96 bg-cyan-900/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-cyan-900/5 rounded-full blur-3xl" />
         </div>
 
         <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
           {/* Header */}
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden rounded-2xl bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/60 p-6">
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
-              <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full blur-3xl opacity-10 bg-purple-600" />
-              <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full blur-2xl opacity-10 bg-indigo-700" />
+              <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full blur-3xl opacity-10 bg-cyan-600" />
+              <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full blur-2xl opacity-10 bg-cyan-700" />
             </div>
 
             <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center">
-                  <Plug className="w-7 h-7 text-purple-400/80" />
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 border border-cyan-500/20 flex items-center justify-center">
+                  <Plug className="w-7 h-7 text-cyan-400" />
                 </div>
                 <div>
                   <div className="flex items-center gap-3">
                     <h1 className="text-2xl md:text-3xl font-bold text-zinc-100">Integrations</h1>
-                    <Badge className="bg-purple-950/40 text-purple-300/80 border-purple-800/30">
+                    <Badge className="bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30">
                       {totalConnected} Connected
                     </Badge>
                   </div>
@@ -763,7 +763,7 @@ export default function Integrations() {
               <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
                 <div className="flex items-center justify-between mb-3">
                   <div className="w-11 h-11 rounded-xl bg-zinc-800/80 border border-zinc-700/40 flex items-center justify-center">
-                    <Plug className="w-5 h-5 text-purple-400/70" />
+                    <Plug className="w-5 h-5 text-cyan-400/70" />
                   </div>
                 </div>
                 <div className="text-2xl font-bold text-zinc-100">{composioConnectedCount}</div>
@@ -814,28 +814,28 @@ export default function Integrations() {
           {/* Main Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="bg-zinc-900/60 border border-zinc-800/60 p-1.5 gap-1">
-              <TabsTrigger value="overview" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-purple-300/90 text-zinc-500 px-4">
+              <TabsTrigger value="overview" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300 text-zinc-500 px-4">
                 <Sparkles className="w-4 h-4 mr-2" />Overview
               </TabsTrigger>
-              <TabsTrigger value="apps" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-purple-300/90 text-zinc-500 px-4">
+              <TabsTrigger value="apps" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300 text-zinc-500 px-4">
                 <Plug className="w-4 h-4 mr-2" />Third-Party Apps
-                {composioConnectedCount > 0 && <Badge className="ml-2 bg-purple-950/40 text-purple-300/80 border-purple-800/30 text-[10px] px-1.5">{composioConnectedCount}</Badge>}
+                {composioConnectedCount > 0 && <Badge className="ml-2 bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-[10px] px-1.5">{composioConnectedCount}</Badge>}
               </TabsTrigger>
-              <TabsTrigger value="desktop" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-purple-300/90 text-zinc-500 px-4">
+              <TabsTrigger value="desktop" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300 text-zinc-500 px-4">
                 <Monitor className="w-4 h-4 mr-2" />SYNC Desktop
                 {desktopConnected && <Badge className="ml-2 bg-emerald-950/40 text-emerald-300/80 border-emerald-800/30 text-[10px] px-1.5">Active</Badge>}
               </TabsTrigger>
-              <TabsTrigger value="google" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-purple-300/90 text-zinc-500 px-4">
+              <TabsTrigger value="google" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300 text-zinc-500 px-4">
                 <Globe className="w-4 h-4 mr-2" />Google Workspace
               </TabsTrigger>
-              <TabsTrigger value="actions" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-purple-300/90 text-zinc-500 px-4">
+              <TabsTrigger value="actions" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300 text-zinc-500 px-4">
                 <Zap className="w-4 h-4 mr-2" />Actions
                 {queuedActions.length > 0 && <Badge className="ml-2 bg-orange-950/40 text-orange-300/80 border-orange-800/30 text-[10px] px-1.5">{queuedActions.length}</Badge>}
               </TabsTrigger>
-              <TabsTrigger value="history" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-purple-300/90 text-zinc-500 px-4">
+              <TabsTrigger value="history" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300 text-zinc-500 px-4">
                 <History className="w-4 h-4 mr-2" />History
               </TabsTrigger>
-              <TabsTrigger value="mcp" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-purple-300/90 text-zinc-500 px-4">
+              <TabsTrigger value="mcp" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300 text-zinc-500 px-4">
                 <Server className="w-4 h-4 mr-2" />MCP Servers
                 {mcpServers.length > 0 && <Badge className="ml-2 bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-[10px] px-1.5">{mcpServers.length}</Badge>}
               </TabsTrigger>
@@ -848,11 +848,11 @@ export default function Integrations() {
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-950/40 via-zinc-900/60 to-purple-950/30 border border-emerald-800/30 p-6"
+                  className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-950/40 via-zinc-900/60 to-cyan-950/30 border border-emerald-800/30 p-6"
                 >
                   <div className="absolute inset-0 pointer-events-none">
                     <div className="absolute top-0 right-0 w-72 h-72 bg-emerald-500/5 rounded-full blur-3xl" />
-                    <div className="absolute bottom-0 left-0 w-56 h-56 bg-purple-500/5 rounded-full blur-3xl" />
+                    <div className="absolute bottom-0 left-0 w-56 h-56 bg-cyan-500/5 rounded-full blur-3xl" />
                   </div>
 
                   <div className="relative z-10">
@@ -872,13 +872,13 @@ export default function Integrations() {
                       {desktopConnected && (
                         <div className="group relative p-4 rounded-xl bg-zinc-900/60 border border-zinc-700/50 hover:border-emerald-500/40 transition-all cursor-pointer">
                           <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
                             <Monitor className="w-6 h-6 text-white" />
                           </div>
                           <h4 className="font-semibold text-white text-sm">SYNC Desktop</h4>
                           <p className="text-[11px] text-zinc-500 truncate">Activity tracking</p>
                           <div className="mt-2 flex gap-1">
-                            <span className="px-1.5 py-0.5 rounded text-[9px] bg-purple-500/20 text-purple-400">Context</span>
+                            <span className="px-1.5 py-0.5 rounded text-[9px] bg-cyan-500/20 text-cyan-400">Context</span>
                             <span className="px-1.5 py-0.5 rounded text-[9px] bg-blue-500/20 text-blue-400">Sync</span>
                           </div>
                         </div>
@@ -934,7 +934,7 @@ export default function Integrations() {
                       {/* Add More Button */}
                       <button
                         onClick={() => setActiveTab('apps')}
-                        className="p-4 rounded-xl border-2 border-dashed border-zinc-700/50 hover:border-purple-500/40 hover:bg-purple-500/5 transition-all flex flex-col items-center justify-center min-h-[140px]"
+                        className="p-4 rounded-xl border-2 border-dashed border-zinc-700/50 hover:border-cyan-500/30 hover:bg-cyan-500/5 transition-all flex flex-col items-center justify-center min-h-[140px]"
                       >
                         <Plus className="w-8 h-8 text-zinc-600 mb-2" />
                         <span className="text-sm text-zinc-500">Add App</span>
@@ -958,7 +958,7 @@ export default function Integrations() {
                   <p className="text-zinc-500 mb-6 max-w-md mx-auto">
                     Connect your favorite tools like Gmail, Slack, HubSpot, and more to unlock powerful automation with SYNC.
                   </p>
-                  <Button onClick={() => setActiveTab('apps')} className="bg-purple-600 hover:bg-purple-500">
+                  <Button onClick={() => setActiveTab('apps')} className="bg-cyan-600 hover:bg-cyan-500">
                     <Plus className="w-4 h-4 mr-2" />
                     Connect Your First App
                   </Button>
@@ -970,14 +970,14 @@ export default function Integrations() {
                 {/* What You Can Do */}
                 <GlassCard hover={false} className="p-6">
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-purple-400" />
+                    <Sparkles className="w-5 h-5 text-cyan-400" />
                     What You Can Do with SYNC
                   </h3>
                   <div className="space-y-3">
                     {[
                       { icon: Mail, label: 'Send emails via Gmail', color: 'text-red-400', connected: composioConnections['gmail'] || googleConnected },
                       { icon: Calendar, label: 'Schedule calendar events', color: 'text-blue-400', connected: composioConnections['googlecalendar'] || googleConnected },
-                      { icon: Activity, label: 'Post to Slack channels', color: 'text-purple-400', connected: !!composioConnections['slack'] },
+                      { icon: Activity, label: 'Post to Slack channels', color: 'text-cyan-400', connected: !!composioConnections['slack'] },
                       { icon: TrendingUp, label: 'Create HubSpot contacts', color: 'text-orange-400', connected: !!composioConnections['hubspot'] },
                       { icon: FileText, label: 'Add notes to Notion', color: 'text-zinc-400', connected: !!composioConnections['notion'] },
                     ].map((item, i) => (
@@ -1060,13 +1060,13 @@ export default function Integrations() {
               {/* Category Tabs */}
               <Tabs value={activeCategory} onValueChange={setActiveCategory}>
                 <TabsList className="flex-wrap h-auto gap-1 bg-zinc-900/50 p-1">
-                  <TabsTrigger value="all" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">
+                  <TabsTrigger value="all" className="data-[state=active]:bg-cyan-600 data-[state=active]:text-white">
                     All ({INTEGRATION_CATALOG.length})
                   </TabsTrigger>
                   {INTEGRATION_CATEGORIES.map((category) => {
                     const count = INTEGRATION_CATALOG.filter((i) => i.category === category.name).length;
                     return (
-                      <TabsTrigger key={category.id} value={category.id} className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">
+                      <TabsTrigger key={category.id} value={category.id} className="data-[state=active]:bg-cyan-600 data-[state=active]:text-white">
                         {category.name} ({count})
                       </TabsTrigger>
                     );
@@ -1077,7 +1077,7 @@ export default function Integrations() {
               {/* Integration Grid */}
               {loadingComposio ? (
                 <div className="flex items-center justify-center py-12">
-                  <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+                  <Loader2 className="w-8 h-8 animate-spin text-cyan-500" />
                 </div>
               ) : (
                 <div className="space-y-8">
@@ -1118,7 +1118,7 @@ export default function Integrations() {
               >
                 <div className="flex items-start justify-between mb-6">
                   <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center">
                       <Monitor className="w-8 h-8 text-white" />
                     </div>
                     <div>
@@ -1148,7 +1148,7 @@ export default function Integrations() {
                 {/* Features Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
                   <div className="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50">
-                    <Activity className="w-5 h-5 text-purple-400 mb-2" />
+                    <Activity className="w-5 h-5 text-cyan-400 mb-2" />
                     <h4 className="font-medium text-white text-sm">Activity Tracking</h4>
                     <p className="text-xs text-zinc-500">Track app usage & focus</p>
                   </div>
@@ -1168,7 +1168,7 @@ export default function Integrations() {
                     <p className="text-xs text-zinc-500">Sync with web app</p>
                   </div>
                   <div className="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50">
-                    <Sparkles className="w-5 h-5 text-pink-400 mb-2" />
+                    <Sparkles className="w-5 h-5 text-cyan-400 mb-2" />
                     <h4 className="font-medium text-white text-sm">SYNC Assistant</h4>
                     <p className="text-xs text-zinc-500">Always-on-top chat</p>
                   </div>
@@ -1186,7 +1186,7 @@ export default function Integrations() {
                       href="https://github.com/frogody/sync-desktop/releases"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm text-zinc-400 hover:text-purple-400 transition-colors"
+                      className="flex items-center gap-2 text-sm text-zinc-400 hover:text-cyan-400 transition-colors"
                     >
                       <ExternalLink className="w-4 h-4" />
                       Download Desktop App
@@ -1218,13 +1218,13 @@ export default function Integrations() {
               {!desktopConnected && (
                 <GlassCard className="p-6">
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <Laptop className="w-5 h-5 text-purple-400" />
+                    <Laptop className="w-5 h-5 text-cyan-400" />
                     Get Started with SYNC Desktop
                   </h3>
                   <div className="space-y-4">
                     <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center flex-shrink-0">
-                        <span className="text-purple-400 font-semibold">1</span>
+                      <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
+                        <span className="text-cyan-400 font-semibold">1</span>
                       </div>
                       <div>
                         <h4 className="text-white font-medium">Download the App</h4>
@@ -1232,8 +1232,8 @@ export default function Integrations() {
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center flex-shrink-0">
-                        <span className="text-purple-400 font-semibold">2</span>
+                      <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
+                        <span className="text-cyan-400 font-semibold">2</span>
                       </div>
                       <div>
                         <h4 className="text-white font-medium">Sign In</h4>
@@ -1241,8 +1241,8 @@ export default function Integrations() {
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center flex-shrink-0">
-                        <span className="text-purple-400 font-semibold">3</span>
+                      <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
+                        <span className="text-cyan-400 font-semibold">3</span>
                       </div>
                       <div>
                         <h4 className="text-white font-medium">Start Working</h4>
@@ -1349,7 +1349,7 @@ export default function Integrations() {
                     <p className="text-xs text-zinc-500">Read spreadsheets</p>
                   </div>
                   <div className="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50">
-                    <Shield className="w-5 h-5 text-purple-400 mb-2" />
+                    <Shield className="w-5 h-5 text-cyan-400 mb-2" />
                     <h4 className="font-medium text-white text-sm">Secure</h4>
                     <p className="text-xs text-zinc-500">OAuth 2.0</p>
                   </div>
@@ -1491,7 +1491,7 @@ export default function Integrations() {
                   <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-zinc-800/80 border border-zinc-700/40 flex items-center justify-center">
-                        <History className="w-5 h-5 text-purple-400/70" />
+                        <History className="w-5 h-5 text-cyan-400/70" />
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-zinc-200">Action History</h3>
@@ -1690,7 +1690,7 @@ export default function Integrations() {
             </DialogHeader>
 
             <div className="flex flex-col items-center py-6">
-              {connectionDialog.status === 'connecting' && <Loader2 className="w-12 h-12 animate-spin text-purple-500" />}
+              {connectionDialog.status === 'connecting' && <Loader2 className="w-12 h-12 animate-spin text-cyan-500" />}
               {connectionDialog.status === 'polling' && (
                 <div className="text-center">
                   <Loader2 className="w-12 h-12 animate-spin text-blue-500 mx-auto" />

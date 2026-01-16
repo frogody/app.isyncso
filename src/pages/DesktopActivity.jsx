@@ -325,8 +325,8 @@ export default function DesktopActivity() {
     <div className="min-h-screen bg-black relative">
       {/* Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 right-1/4 w-96 h-96 bg-blue-900/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-purple-900/10 rounded-full blur-3xl" />
+        <div className="absolute top-20 right-1/4 w-96 h-96 bg-cyan-900/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-cyan-900/5 rounded-full blur-3xl" />
       </div>
 
       <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
@@ -342,8 +342,8 @@ export default function DesktopActivity() {
 
           <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                <Laptop className="w-7 h-7 text-white" />
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 flex items-center justify-center border border-cyan-500/20">
+                <Laptop className="w-7 h-7 text-cyan-400" />
               </div>
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-zinc-100">Desktop Activity</h1>
@@ -396,8 +396,8 @@ export default function DesktopActivity() {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
             <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-11 h-11 rounded-xl bg-purple-950/60 border border-purple-800/40 flex items-center justify-center">
-                  <Target className="w-5 h-5 text-purple-400" />
+                <div className="w-11 h-11 rounded-xl bg-cyan-950/60 border border-cyan-800/40 flex items-center justify-center">
+                  <Target className="w-5 h-5 text-cyan-400" />
                 </div>
               </div>
               <div className="text-2xl font-bold text-zinc-100">{Math.round(stats.avgFocusScore * 100)}%</div>
@@ -477,7 +477,7 @@ export default function DesktopActivity() {
                             initial={{ width: 0 }}
                             animate={{ width: `${(day.minutes / maxDailyMinutes) * 100}%` }}
                             transition={{ delay: i * 0.1, duration: 0.5 }}
-                            className="h-full bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg"
+                            className="h-full bg-gradient-to-r from-cyan-600 to-cyan-400 rounded-lg"
                           />
                           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-300 font-medium">
                             {formatDuration(day.minutes)}
@@ -495,7 +495,7 @@ export default function DesktopActivity() {
               {/* Top Apps */}
               <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
                 <h3 className="text-lg font-semibold text-zinc-200 mb-6 flex items-center gap-2">
-                  <PieChart className="w-5 h-5 text-purple-400" />
+                  <PieChart className="w-5 h-5 text-cyan-400" />
                   Top Applications
                 </h3>
 
@@ -599,8 +599,8 @@ export default function DesktopActivity() {
               {/* Quick Actions Header */}
               <div className="flex items-center justify-between p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
-                    <Sparkles className="w-5 h-5 text-white" />
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 flex items-center justify-center border border-cyan-500/20">
+                    <Sparkles className="w-5 h-5 text-cyan-400" />
                   </div>
                   <div>
                     <h3 className="text-sm font-semibold text-zinc-200">Daily Journals</h3>
@@ -612,7 +612,7 @@ export default function DesktopActivity() {
                     onClick={() => generateJournal(new Date())}
                     disabled={generatingJournal}
                     variant="outline"
-                    className="border-purple-500/40 text-purple-300 hover:bg-purple-500/10 hover:border-purple-500/60"
+                    className="border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/10 hover:border-cyan-500/50"
                   >
                     {generatingJournal ? (
                       <>
@@ -627,7 +627,7 @@ export default function DesktopActivity() {
                     )}
                   </Button>
                   <Link to={createPageUrl('DailyJournal')}>
-                    <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white">
+                    <Button className="bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/20">
                       <BookOpen className="w-4 h-4 mr-2" />
                       View All Journals
                       <ArrowRight className="w-4 h-4 ml-2" />
@@ -647,7 +647,7 @@ export default function DesktopActivity() {
                   <Button
                     onClick={() => generateJournal(new Date())}
                     disabled={generatingJournal}
-                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                    className="bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/20"
                   >
                     {generatingJournal ? (
                       <>
@@ -667,14 +667,14 @@ export default function DesktopActivity() {
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60 group-hover:border-purple-500/40 transition-all cursor-pointer"
+                    className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60 group-hover:border-cyan-500/30 transition-all cursor-pointer"
                   >
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-2 text-xs text-zinc-500 uppercase tracking-wider">
                         <BookOpen className="w-3.5 h-3.5" />
                         Latest Journal
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-purple-400 group-hover:text-purple-300 transition-colors">
+                      <div className="flex items-center gap-2 text-sm text-cyan-400 group-hover:text-cyan-300 transition-colors">
                         View all {journals.length} journals
                         <ArrowRight className="w-4 h-4" />
                       </div>
@@ -682,8 +682,8 @@ export default function DesktopActivity() {
 
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
-                          <Calendar className="w-6 h-6 text-white" />
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 flex items-center justify-center border border-cyan-500/20">
+                          <Calendar className="w-6 h-6 text-cyan-400" />
                         </div>
                         <div>
                           <h4 className="text-lg font-semibold text-zinc-100">
@@ -696,7 +696,7 @@ export default function DesktopActivity() {
                           <div className="flex items-center gap-3 text-sm text-zinc-500">
                             <span>{formatDuration(journals[0].total_active_minutes)} active</span>
                             {journals[0].ai_generated && (
-                              <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30 text-xs">
+                              <Badge className="bg-cyan-500/15 text-cyan-300 border-cyan-500/30 text-xs">
                                 <Sparkles className="w-3 h-3 mr-1" />
                                 AI Enhanced
                               </Badge>
@@ -788,7 +788,7 @@ export default function DesktopActivity() {
                           <Badge className="bg-blue-950/40 text-blue-300/80 border-blue-800/30 text-xs">
                             {formatDuration(log.total_minutes)}
                           </Badge>
-                          <Badge className="bg-purple-950/40 text-purple-300/80 border-purple-800/30 text-xs">
+                          <Badge className="bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-xs">
                             {Math.round((log.focus_score || 0) * 100)}% focus
                           </Badge>
                         </div>

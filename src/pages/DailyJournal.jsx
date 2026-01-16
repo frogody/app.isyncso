@@ -157,8 +157,8 @@ export default function DailyJournal() {
     <div className="min-h-screen bg-black relative">
       {/* Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 right-1/4 w-96 h-96 bg-purple-900/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-blue-900/10 rounded-full blur-3xl" />
+        <div className="absolute top-20 right-1/4 w-96 h-96 bg-cyan-900/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-cyan-900/5 rounded-full blur-3xl" />
       </div>
 
       <div className="relative z-10 h-screen flex flex-col p-6">
@@ -170,8 +170,8 @@ export default function DailyJournal() {
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
-                <BookOpen className="w-7 h-7 text-white" />
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 flex items-center justify-center border border-cyan-500/20">
+                <BookOpen className="w-7 h-7 text-cyan-400" />
               </div>
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-zinc-100">Daily Journals</h1>
@@ -211,18 +211,18 @@ export default function DailyJournal() {
                       onClick={() => setSelectedJournal(journal)}
                       className={`w-full text-left p-3 rounded-xl transition-all ${
                         selectedJournal?.id === journal.id
-                          ? 'bg-purple-500/20 border border-purple-500/40'
+                          ? 'bg-cyan-500/10 border border-cyan-500/30'
                           : 'hover:bg-zinc-800/50 border border-transparent'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1">
                         <span className={`text-sm font-medium ${
-                          selectedJournal?.id === journal.id ? 'text-purple-300' : 'text-zinc-200'
+                          selectedJournal?.id === journal.id ? 'text-cyan-300' : 'text-zinc-200'
                         }`}>
                           {formatJournalDate(journal.journal_date)}
                         </span>
                         {isToday(journal.journal_date) && (
-                          <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30 text-xs px-1.5">
+                          <Badge className="bg-cyan-500/15 text-cyan-300 border-cyan-500/30 text-xs px-1.5">
                             Today
                           </Badge>
                         )}
@@ -234,7 +234,7 @@ export default function DailyJournal() {
                           {Math.round((journal.productivity_score || 0) * 100)}%
                         </span>
                         {journal.ai_generated && (
-                          <Sparkles className="w-3 h-3 text-purple-400" />
+                          <Sparkles className="w-3 h-3 text-cyan-400" />
                         )}
                       </div>
                     </button>
@@ -248,7 +248,7 @@ export default function DailyJournal() {
               <Button
                 onClick={() => generateJournal(new Date())}
                 disabled={generatingJournal}
-                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                className="w-full bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/20"
               >
                 {generatingJournal ? (
                   <>
@@ -285,7 +285,7 @@ export default function DailyJournal() {
                         {formatDuration(selectedJournal.total_active_minutes)} active
                       </span>
                       {selectedJournal.ai_generated && (
-                        <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30">
+                        <Badge className="bg-cyan-500/15 text-cyan-300 border-cyan-500/30">
                           <Sparkles className="w-3 h-3 mr-1" />
                           AI Enhanced
                         </Badge>
@@ -422,7 +422,7 @@ export default function DailyJournal() {
                         {selectedJournal.focus_areas.map((area, idx) => (
                           <Badge
                             key={idx}
-                            className="bg-green-950/40 text-green-300/80 border-green-800/30"
+                            className="bg-cyan-500/10 text-cyan-300/80 border-cyan-500/25"
                           >
                             {typeof area === 'string'
                               ? area
@@ -445,7 +445,7 @@ export default function DailyJournal() {
                   <Button
                     onClick={() => generateJournal(new Date())}
                     disabled={generatingJournal}
-                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                    className="bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/20"
                   >
                     {generatingJournal ? (
                       <>
