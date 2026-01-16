@@ -84,6 +84,8 @@ import {
   ArrowRight,
   FileText,
   Wand2,
+  FileEdit,
+  AlertCircle,
 } from "lucide-react";
 
 
@@ -113,6 +115,10 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
   const [createdClient, setCreatedClient] = useState(null);
   const [isAddingClient, setIsAddingClient] = useState(false);
 
+  // State for "not found" mode - allows manual entry
+  const [notFoundMode, setNotFoundMode] = useState(false);
+  const [notFoundMessage, setNotFoundMessage] = useState("");
+
   // Check if company is already a client
   const existingClient = useMemo(() => {
     if (!parsedJob?.company) return null;
@@ -139,6 +145,8 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
       setSelectedProject(null);
       setNewProjectName("");
       setCreatedClient(null);
+      setNotFoundMode(false);
+      setNotFoundMessage("");
     }
   }, [isOpen]);
 
@@ -185,6 +193,7 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
 
     setIsSearching(true);
     setSearchError(null);
+    setNotFoundMode(false);
     setStep(2);
 
     try {
@@ -210,18 +219,21 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
         throw new Error(data.error || "Failed to search for job posting");
       }
 
-      if (data.success && data.job) {
+      // GUARDRAIL: Check if job was actually found
+      if (data.success && data.found && data.job) {
         setParsedJob(data.job);
         setStep(3);
         // Pre-fill new project name
         setNewProjectName(`${data.job.company} - ${data.job.title}`);
-        toast.success(
-          data.has_source
-            ? `Found job posting from ${data.job.source_domain}`
-            : "Generated role details based on role type"
-        );
+        toast.success(`Found job posting from ${data.job.source_domain || 'web search'}`);
+      } else if (data.success && !data.found) {
+        // No job found - show not found mode with manual entry option
+        setNotFoundMode(true);
+        setNotFoundMessage(data.message || "No job posting found");
+        setStep(1);
+        toast.info("No matching job posting found. You can enter details manually.");
       } else {
-        throw new Error("No job data returned");
+        throw new Error("Unexpected response from job search");
       }
     } catch (error) {
       console.error("Job search error:", error);
@@ -231,6 +243,28 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
     } finally {
       setIsSearching(false);
     }
+  };
+
+  // Switch to manual entry mode
+  const handleManualEntry = () => {
+    // Create a minimal job object for manual entry
+    setParsedJob({
+      title: roleTitle.trim(),
+      company: companyName.trim(),
+      location: location.trim() || null,
+      description: "",
+      requirements: [],
+      responsibilities: [],
+      salary_range: null,
+      employment_type: "full_time",
+      experience_level: null,
+      benefits: [],
+      source_url: null,
+      source_domain: null,
+    });
+    setNewProjectName(`${companyName.trim()} - ${roleTitle.trim()}`);
+    setNotFoundMode(false);
+    setStep(3);
   };
 
   // Create the role with project
@@ -358,14 +392,49 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
               </div>
             )}
 
-            <Button
-              onClick={handleSearch}
-              disabled={!roleTitle.trim() || !companyName.trim() || isSearching}
-              className="w-full h-12 bg-red-600 hover:bg-red-700 text-lg"
-            >
-              <Search className="w-5 h-5 mr-2" />
-              Find Job Posting
-            </Button>
+            {/* Not Found Mode - Show when no job posting was found */}
+            {notFoundMode && (
+              <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-3">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-amber-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-amber-200 font-medium text-sm">No job posting found</p>
+                    <p className="text-amber-400/70 text-xs mt-1">{notFoundMessage}</p>
+                  </div>
+                </div>
+                <Button
+                  onClick={handleManualEntry}
+                  variant="outline"
+                  className="w-full border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
+                >
+                  <FileEdit className="w-4 h-4 mr-2" />
+                  Enter Role Details Manually
+                </Button>
+              </div>
+            )}
+
+            {!notFoundMode && (
+              <Button
+                onClick={handleSearch}
+                disabled={!roleTitle.trim() || !companyName.trim() || isSearching}
+                className="w-full h-12 bg-red-600 hover:bg-red-700 text-lg"
+              >
+                <Search className="w-5 h-5 mr-2" />
+                Find Job Posting
+              </Button>
+            )}
+
+            {notFoundMode && (
+              <Button
+                onClick={handleSearch}
+                disabled={!roleTitle.trim() || !companyName.trim() || isSearching}
+                variant="ghost"
+                className="w-full text-white/60 hover:text-white"
+              >
+                <Search className="w-4 h-4 mr-2" />
+                Try Search Again
+              </Button>
+            )}
           </motion.div>
         )}
 
