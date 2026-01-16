@@ -1531,12 +1531,21 @@ interface SyncRequest {
   stream?: boolean;
   // Workflow mode: 'auto' (default), 'fast', 'workflow', or specific workflow type
   mode?: 'auto' | 'fast' | 'workflow' | 'parallel' | 'sequential' | 'iterative' | 'hybrid';
+  // Voice mode: uses faster model and shorter responses for low-latency voice conversations
+  voice?: boolean;
   context?: {
     userId?: string;
     companyId?: string;
     metadata?: Record<string, unknown>;
+    source?: string;
   };
 }
+
+// Model selection based on mode - voice uses much faster model for low latency
+const MODELS = {
+  default: 'moonshotai/Kimi-K2-Instruct',           // Best quality (~3-5s)
+  voice: 'meta-llama/Llama-3.3-70B-Instruct-Turbo', // Fast and capable (~0.5-1.5s)
+};
 
 interface SyncResponse {
   response: string;
@@ -1853,7 +1862,12 @@ serve(async (req) => {
 
     const body: SyncRequest = await req.json();
     let { message } = body;
-    const { sessionId, stream = false, mode = 'auto', context } = body;
+    const { sessionId, stream = false, mode = 'auto', voice = false, context } = body;
+
+    // Select model based on voice mode for optimal latency
+    const selectedModel = voice ? MODELS.voice : MODELS.default;
+    const maxTokens = voice ? 200 : 2048; // Shorter responses for voice
+    console.log(`[SYNC] Mode: ${mode}, Voice: ${voice}, Model: ${selectedModel}`);
 
     if (!message?.trim()) {
       return new Response(
@@ -2595,29 +2609,34 @@ serve(async (req) => {
 
         // === INTELLIGENCE ORCHESTRATION ===
         // Orchestrate deep intelligence before LLM call for "mouth-dropping" results
+        // Skip for voice mode to reduce latency
         let intelligenceResult: IntelligenceResult | null = null;
-        try {
-                intelligenceResult = await orchestrateIntelligence(
-                          supabase,
-                          session,
-                          message,
-                          enrichedApiMessages.map(m => typeof m.content === 'string' ? m.content : ''),
-                          []
-                        );
-                if (intelligenceResult) {
-                          const intelligenceContext = generateEnhancedSystemContext(intelligenceResult);
-                          // Find system message and enhance it
-                          const sysIdx = enrichedApiMessages.findIndex(m => m.role === 'system');
-                          if (sysIdx >= 0) {
-                                      enrichedApiMessages[sysIdx] = {
-                                                    ...enrichedApiMessages[sysIdx],
-                                                    content: enrichedApiMessages[sysIdx].content + '\n\n' + intelligenceContext,
-                                      };
-                          }
-                          console.log(`[SYNC] Intelligence orchestration added ${intelligenceResult.deepInsights.length} insights`);
-                }
-        } catch (intelligenceError) {
-                console.warn('[SYNC] Intelligence orchestration failed, continuing without:', intelligenceError);
+        if (!voice) {
+          try {
+                  intelligenceResult = await orchestrateIntelligence(
+                            supabase,
+                            session,
+                            message,
+                            enrichedApiMessages.map(m => typeof m.content === 'string' ? m.content : ''),
+                            []
+                          );
+                  if (intelligenceResult) {
+                            const intelligenceContext = generateEnhancedSystemContext(intelligenceResult);
+                            // Find system message and enhance it
+                            const sysIdx = enrichedApiMessages.findIndex(m => m.role === 'system');
+                            if (sysIdx >= 0) {
+                                        enrichedApiMessages[sysIdx] = {
+                                                      ...enrichedApiMessages[sysIdx],
+                                                      content: enrichedApiMessages[sysIdx].content + '\n\n' + intelligenceContext,
+                                        };
+                            }
+                            console.log(`[SYNC] Intelligence orchestration added ${intelligenceResult.deepInsights.length} insights`);
+                  }
+          } catch (intelligenceError) {
+                  console.warn('[SYNC] Intelligence orchestration failed, continuing without:', intelligenceError);
+          }
+        } else {
+          console.log('[SYNC] Voice mode: skipping intelligence orchestration for low latency');
         }
     
 
@@ -2628,10 +2647,10 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'moonshotai/Kimi-K2-Instruct',
+        model: selectedModel,
         messages: enrichedApiMessages,
         temperature: 0.7,
-        max_tokens: 2048,
+        max_tokens: maxTokens,
       }),
     });
 

@@ -41,7 +41,8 @@ async function callSyncAgent(
       message,
       sessionId,
       stream: false, // Don't stream for voice - we need complete response
-      mode: 'auto',
+      mode: 'fast',  // Use fast mode to skip workflows
+      voice: true,   // Enable voice mode for faster model + shorter responses
       context: {
         userId: context.userId,
         companyId: context.companyId,
