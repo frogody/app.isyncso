@@ -545,6 +545,9 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
       clearTimeout(ref.timer);
     }
 
+    // Check if we're on the SyncAgent page
+    const isOnSyncAgentPage = location.pathname.toLowerCase().includes('syncagent');
+
     // Set new timer to process clicks after delay
     ref.timer = setTimeout(() => {
       const clicks = ref.count;
@@ -552,8 +555,13 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
       ref.timer = null;
 
       if (clicks === 1) {
-        // Single click: Open floating chat
-        onOpenFloatingChat?.();
+        if (isOnSyncAgentPage) {
+          // On SyncAgent page: trigger glow effect instead of opening chat
+          window.dispatchEvent(new CustomEvent('sync-highlight-borders'));
+        } else {
+          // Single click: Open floating chat
+          onOpenFloatingChat?.();
+        }
       } else if (clicks === 2) {
         // Double click: Open voice mode
         onOpenVoiceMode?.();
@@ -562,7 +570,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
         navigate(createPageUrl("SyncAgent"));
       }
     }, 300); // 300ms to detect multi-clicks
-  }, [navigate, onOpenFloatingChat, onOpenVoiceMode]);
+  }, [navigate, onOpenFloatingChat, onOpenVoiceMode, location.pathname]);
 
   // Get team-based app access
   const { effectiveApps, hasTeams, isLoading: teamLoading } = useTeamAccess();

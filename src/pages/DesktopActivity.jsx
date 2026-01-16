@@ -365,6 +365,15 @@ export default function DesktopActivity() {
               </Select>
 
               <Button
+                onClick={() => window.open('https://github.com/frogody/sync.desktop/releases/latest', '_blank')}
+                variant="outline"
+                className="border-cyan-500/30 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 hover:text-cyan-200"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Get Desktop App
+              </Button>
+
+              <Button
                 onClick={handleRefresh}
                 disabled={refreshing}
                 variant="outline"
@@ -375,6 +384,84 @@ export default function DesktopActivity() {
             </div>
           </div>
         </motion.div>
+
+        {/* Download SYNC Desktop Banner */}
+        {activityLogs.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-cyan-950/40 via-zinc-900/60 to-zinc-900/60 border border-cyan-500/20 p-6"
+          >
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+              <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full blur-3xl opacity-20 bg-cyan-500" />
+              <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full blur-3xl opacity-10 bg-cyan-400" />
+            </div>
+
+            <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+              <div className="flex items-start gap-5">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500/30 to-cyan-600/20 flex items-center justify-center border border-cyan-500/30 flex-shrink-0">
+                  <Download className="w-8 h-8 text-cyan-400" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-zinc-100 mb-2">Download SYNC Desktop</h2>
+                  <p className="text-zinc-400 mb-4 max-w-xl">
+                    Unlock powerful productivity tracking with the SYNC Desktop companion app.
+                    Get detailed insights into your work patterns and let SYNC understand your context.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                    <div className="flex items-center gap-2 text-zinc-300">
+                      <div className="w-5 h-5 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                        <Activity className="w-3 h-3 text-cyan-400" />
+                      </div>
+                      <span>Automatic activity tracking</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-zinc-300">
+                      <div className="w-5 h-5 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                        <Target className="w-3 h-3 text-cyan-400" />
+                      </div>
+                      <span>Focus score calculation</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-zinc-300">
+                      <div className="w-5 h-5 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                        <Brain className="w-3 h-3 text-cyan-400" />
+                      </div>
+                      <span>AI-generated daily journals</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-zinc-300">
+                      <div className="w-5 h-5 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                        <MessageSquare className="w-3 h-3 text-cyan-400" />
+                      </div>
+                      <span>Context-aware SYNC chat</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-zinc-300">
+                      <div className="w-5 h-5 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                        <Clock className="w-3 h-3 text-cyan-400" />
+                      </div>
+                      <span>Hourly productivity summaries</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-zinc-300">
+                      <div className="w-5 h-5 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                        <Sparkles className="w-3 h-3 text-cyan-400" />
+                      </div>
+                      <span>Floating avatar widget</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3 lg:flex-shrink-0">
+                <Button
+                  onClick={() => window.open('https://github.com/frogody/sync.desktop/releases/latest', '_blank')}
+                  className="bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/25 px-6 py-3 h-auto"
+                >
+                  <Download className="w-5 h-5 mr-2" />
+                  Download for macOS
+                </Button>
+                <p className="text-xs text-zinc-500 text-center">Windows coming soon</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

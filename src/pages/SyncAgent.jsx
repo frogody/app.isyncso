@@ -425,7 +425,7 @@ function getActionEffect(actionType) {
 // AGENT CHANNEL MESSAGE COMPONENT
 // ============================================================================
 
-function AgentChannelMessage({ message, isLatest }) {
+function AgentChannelMessage({ message, isLatest, highlightBorders }) {
   const messageRef = useRef(null);
   const agent = AGENT_SEGMENTS.find(a => a.id === message.agentId) || AGENT_SEGMENTS.find(a => a.id === 'sync');
   const isSyncMessage = message.agentId === 'sync' || !message.agentId;
@@ -447,10 +447,11 @@ function AgentChannelMessage({ message, isLatest }) {
     <div
       ref={messageRef}
       className={cn(
-        "flex items-start gap-3 py-3 px-4 rounded-2xl transition-all max-w-[90%]",
+        "flex items-start gap-3 py-3 px-4 rounded-2xl max-w-[85%] transition-all duration-300",
         isSyncMessage
           ? "mr-auto bg-gradient-to-br from-zinc-800/70 to-zinc-800/40 border border-zinc-700/30"
-          : "ml-auto flex-row-reverse bg-gradient-to-bl from-zinc-700/50 to-zinc-700/30 border border-zinc-600/30"
+          : "ml-auto flex-row-reverse bg-gradient-to-bl from-zinc-700/50 to-zinc-700/30 border border-zinc-600/30",
+        highlightBorders && "border-cyan-400/70 shadow-[0_0_20px_rgba(34,211,238,0.4)]"
       )}
       style={{ opacity: 0 }}
     >
@@ -495,7 +496,7 @@ function AgentChannelMessage({ message, isLatest }) {
 // AGENT CHANNEL COMPONENT (Slack-like feed)
 // ============================================================================
 
-function AgentChannel({ messages, isActive }) {
+function AgentChannel({ messages, isActive, highlightBorders }) {
   const scrollerRef = useRef(null);
 
   // Auto-scroll to bottom on new messages
@@ -514,13 +515,14 @@ function AgentChannel({ messages, isActive }) {
   const visibleMessages = messages.slice(-5);
 
   return (
-    <div ref={scrollerRef} className="flex flex-col justify-end h-full px-3 pb-4">
-      <div className="space-y-3">
+    <div ref={scrollerRef} className="flex flex-col justify-end h-full px-5 pb-6">
+      <div className="space-y-4">
         {visibleMessages.map((msg, idx) => (
           <AgentChannelMessage
             key={msg.id || idx}
             message={msg}
             isLatest={idx === visibleMessages.length - 1}
+            highlightBorders={highlightBorders}
           />
         ))}
 
@@ -1548,7 +1550,7 @@ function AgentAvatar({ size = 360, agentName = 'SYNC', mood = 'listening', level
       <InnerViz size={size} mood={mood} level={level} seed={seed} actionEffect={actionEffect} activeAgentColor={activeAgentColor} showSuccess={showSuccess} activeAgentAngle={activeAgentAngle} />
 
       {/* Label - positioned below avatar */}
-      <div className="absolute inset-x-0 bottom-[-32px] flex justify-center">
+      <div className="absolute inset-x-0 bottom-[-52px] flex justify-center">
         <div
           ref={labelRef}
           className="rounded-xl border border-white/10 bg-black/60 px-3 py-1.5 text-xs shadow-lg backdrop-blur"
@@ -1580,7 +1582,7 @@ function AgentAvatar({ size = 360, agentName = 'SYNC', mood = 'listening', level
 // CHAT BUBBLE COMPONENT
 // ============================================================================
 
-function Bubble({ role, text, ts, index, document }) {
+function Bubble({ role, text, ts, index, document, highlightBorders }) {
   const bubbleRef = useRef(null);
   const isUser = role === 'user';
 
@@ -1608,10 +1610,11 @@ function Bubble({ role, text, ts, index, document }) {
     <div ref={bubbleRef} className={cn('flex', isUser ? 'justify-end' : 'justify-start')} style={{ opacity: 0 }}>
       <div
         className={cn(
-          'max-w-[78%] rounded-2xl border px-4 py-3 text-sm leading-relaxed shadow-sm',
+          'max-w-[78%] rounded-2xl border px-4 py-3 text-sm leading-relaxed shadow-sm transition-all duration-300',
           isUser
             ? 'border-cyan-500/20 bg-cyan-600/20 text-white'
-            : 'border-white/10 bg-black/40 text-white/90'
+            : 'border-white/10 bg-black/40 text-white/90',
+          highlightBorders && "border-cyan-400/70 shadow-[0_0_20px_rgba(34,211,238,0.4)]"
         )}
       >
         <div className="mb-1.5 flex items-center gap-2 text-[11px] text-zinc-500">
@@ -1711,8 +1714,21 @@ export default function SyncAgent() {
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState(null);
+  const [highlightBorders, setHighlightBorders] = useState(false);
   const scrollerRef = useRef(null);
   const pageRef = useRef(null);
+
+  // Listen for highlight borders event (when avatar clicked on this page)
+  useEffect(() => {
+    const handleHighlight = () => {
+      setHighlightBorders(true);
+      // Remove highlight after animation
+      setTimeout(() => setHighlightBorders(false), 800);
+    };
+
+    window.addEventListener('sync-highlight-borders', handleHighlight);
+    return () => window.removeEventListener('sync-highlight-borders', handleHighlight);
+  }, []);
 
   // Sync messages to cache (limit to last 50)
   useEffect(() => {
@@ -2028,17 +2044,22 @@ export default function SyncAgent() {
         {/* Left: Container with Avatar + Agent Messages */}
         <div
           data-animate
-          className="flex flex-col rounded-2xl border border-zinc-700/50 bg-zinc-900/30 overflow-hidden"
+          className={cn(
+            "flex flex-col rounded-2xl border bg-zinc-900/30 overflow-hidden transition-all duration-300",
+            highlightBorders
+              ? "border-cyan-400/70 shadow-[0_0_30px_rgba(34,211,238,0.5)]"
+              : "border-zinc-700/50"
+          )}
           style={{ opacity: 0 }}
         >
           {/* Avatar - centered with room for status chip below */}
-          <div className="shrink-0 grid place-items-center pt-6 pb-10">
+          <div className="shrink-0 grid place-items-center pt-10 pb-16">
             <AgentAvatar size={260} agentName="SYNC" mood={mood} level={level} seed={seed} activeAgent={activeAgent} actionEffect={currentActionEffect} showSuccess={showSuccess} />
           </div>
 
           {/* Agent orchestration messages - below avatar, fills remaining space */}
-          <div className="flex-1 min-h-0 overflow-hidden">
-            <AgentChannel messages={agentMessages} isActive={isSending} />
+          <div className="flex-1 min-h-0 overflow-hidden pb-3">
+            <AgentChannel messages={agentMessages} isActive={isSending} highlightBorders={highlightBorders} />
           </div>
         </div>
 
@@ -2080,12 +2101,17 @@ export default function SyncAgent() {
               ) : (
                 <>
                   {messages.map((m, idx) => (
-                    <Bubble key={idx} role={m.role} text={m.text} ts={m.ts} index={idx} document={m.document} />
+                    <Bubble key={idx} role={m.role} text={m.text} ts={m.ts} index={idx} document={m.document} highlightBorders={highlightBorders} />
                   ))}
 
                   {isSending && (
                     <div className="flex justify-start">
-                      <div className="rounded-2xl bg-gradient-to-br from-zinc-800/60 to-zinc-900/60 border border-zinc-700/50 px-5 py-4 text-sm backdrop-blur-sm">
+                      <div className={cn(
+                        "rounded-2xl bg-gradient-to-br from-zinc-800/60 to-zinc-900/60 border px-5 py-4 text-sm backdrop-blur-sm transition-all duration-300",
+                        highlightBorders
+                          ? "border-cyan-400/70 shadow-[0_0_20px_rgba(34,211,238,0.4)]"
+                          : "border-zinc-700/50"
+                      )}>
                         <div className="flex items-center gap-3">
                           <div className="flex items-center gap-1.5">
                             <span className="inline-flex h-2 w-2 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '0ms', animationDuration: '600ms' }} />
