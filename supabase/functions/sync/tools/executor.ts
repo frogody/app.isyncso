@@ -386,6 +386,55 @@ function resolveInputs(step: TaskStep, previousResults: Record<string, any>): Re
   return resolved;
 }
 
+/**
+ * Formats a value for display in user-facing messages
+ * Handles arrays, objects, and primitives nicely
+ */
+function formatTemplateValue(value: any): string {
+  if (value === null || value === undefined) return '';
+
+  // Format arrays nicely
+  if (Array.isArray(value)) {
+    if (value.length === 0) return 'none';
+
+    // Extract displayable names from objects
+    const items = value.map(v => {
+      if (typeof v === 'object' && v !== null) {
+        // Try common name fields in order of preference
+        return v.name || v.title || v.client_name || v.product_name ||
+               v.description || v.email || v.id || JSON.stringify(v);
+      }
+      return String(v);
+    });
+
+    // Format as "A, B, C" or "A, B, C, D, E, and 5 more"
+    if (items.length <= 5) {
+      return items.join(', ');
+    }
+    return `${items.slice(0, 5).join(', ')}, and ${items.length - 5} more`;
+  }
+
+  // Format objects by extracting key fields
+  if (typeof value === 'object') {
+    const name = value.name || value.title || value.client_name || value.product_name;
+    if (name) return name;
+
+    // For objects without obvious name, list key fields
+    const keys = Object.keys(value).slice(0, 3);
+    if (keys.length > 0) {
+      return keys.map(k => `${k}: ${value[k]}`).join(', ');
+    }
+    return JSON.stringify(value);
+  }
+
+  // Format numbers with locale
+  if (typeof value === 'number') {
+    return value.toLocaleString();
+  }
+
+  return String(value);
+}
+
 export function injectTemplateValues(
   template: string,
   results: Record<string, any>,
@@ -423,7 +472,8 @@ export function injectTemplateValues(
         }
       }
 
-      return value !== undefined ? String(value) : match;
+      // Use nice formatting for arrays and objects
+      return value !== undefined ? formatTemplateValue(value) : match;
     } catch {
       return match;
     }

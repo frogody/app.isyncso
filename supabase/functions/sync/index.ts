@@ -1693,6 +1693,13 @@ async function handleStreamingRequest(
           console.warn('Failed to update streaming session:', err)
         );
 
+        // Safety: Remove any remaining unresolved template variables
+        const templatePattern = /\{\{[^}]+\}\}/g;
+        if (templatePattern.test(fullContent)) {
+          console.log('[SYNC] Streaming: Found unresolved template variables, cleaning up');
+          fullContent = fullContent.replace(templatePattern, '');
+        }
+
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({
           event: 'end',
           content: fullContent,
@@ -3012,6 +3019,14 @@ Output the create_${docType} [ACTION] block NOW. Do NOT ask any more questions!`
     if (documentInfo) {
       finalResponse = documentInfo.shortMessage;
       console.log('[SYNC] Long response converted to document:', documentInfo.documentTitle);
+    }
+
+    // Safety: Remove any remaining unresolved template variables from response
+    // These appear as {{variable.path}} and shouldn't be shown to users
+    const templatePattern = /\{\{[^}]+\}\}/g;
+    if (templatePattern.test(finalResponse)) {
+      console.log('[SYNC] Found unresolved template variables in response, cleaning up');
+      finalResponse = finalResponse.replace(templatePattern, '');
     }
 
     const syncResponse: SyncResponse = {
