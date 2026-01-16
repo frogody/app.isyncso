@@ -1,19 +1,37 @@
 /**
  * Explorium API Integration for Contact & Company Enrichment
  *
- * This service provides direct API calls to Explorium for:
+ * This service calls the explorium-enrich edge function which proxies
+ * requests to the Explorium API (to avoid CORS issues).
+ *
+ * Available enrichment capabilities:
  * - Prospect matching (LinkedIn, email, name+company)
  * - Contact enrichment (emails, phones)
  * - Profile enrichment (skills, experience, education)
  * - Business matching and enrichment (firmographics, funding, tech stack)
  */
 
-const EXPLORIUM_API_BASE = 'https://api.explorium.ai/v1';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-const getHeaders = () => ({
-  'API_KEY': import.meta.env.VITE_EXPLORIUM_API_KEY,
-  'Content-Type': 'application/json'
-});
+async function callEnrichmentFunction(body) {
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/explorium-enrich`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || 'Enrichment request failed');
+  }
+
+  return data;
+}
 
 /**
  * Match prospect by LinkedIn URL, email, or name+company
@@ -25,26 +43,14 @@ const getHeaders = () => ({
  * @returns {Promise<string|null>} Prospect ID if found
  */
 export async function matchProspect({ linkedin, email, full_name, company_name }) {
-  const response = await fetch(`${EXPLORIUM_API_BASE}/prospects/match`, {
-    method: 'POST',
-    headers: getHeaders(),
-    body: JSON.stringify({
-      prospects_to_match: [{
-        ...(linkedin && { linkedin }),
-        ...(email && { email }),
-        ...(full_name && { full_name }),
-        ...(company_name && { company_name })
-      }]
-    })
+  const result = await callEnrichmentFunction({
+    action: 'match_prospect',
+    linkedin,
+    email,
+    full_name,
+    company_name,
   });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Prospect match failed: ${error}`);
-  }
-
-  const data = await response.json();
-  return data.matched_prospects?.[0]?.prospect_id || null;
+  return result.prospect_id;
 }
 
 /**
@@ -53,18 +59,10 @@ export async function matchProspect({ linkedin, email, full_name, company_name }
  * @returns {Promise<Object>} Contact data
  */
 export async function enrichProspectContact(prospectId) {
-  const response = await fetch(`${EXPLORIUM_API_BASE}/prospects/contacts_information/enrich`, {
-    method: 'POST',
-    headers: getHeaders(),
-    body: JSON.stringify({ prospect_id: prospectId })
+  return callEnrichmentFunction({
+    action: 'enrich_contact',
+    prospect_id: prospectId,
   });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Contact enrichment failed: ${error}`);
-  }
-
-  return response.json();
 }
 
 /**
@@ -73,18 +71,10 @@ export async function enrichProspectContact(prospectId) {
  * @returns {Promise<Object>} Profile data
  */
 export async function enrichProspectProfile(prospectId) {
-  const response = await fetch(`${EXPLORIUM_API_BASE}/prospects/enrich`, {
-    method: 'POST',
-    headers: getHeaders(),
-    body: JSON.stringify({ prospect_id: prospectId })
+  return callEnrichmentFunction({
+    action: 'enrich_profile',
+    prospect_id: prospectId,
   });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Profile enrichment failed: ${error}`);
-  }
-
-  return response.json();
 }
 
 /**
@@ -95,24 +85,12 @@ export async function enrichProspectProfile(prospectId) {
  * @returns {Promise<string|null>} Business ID if found
  */
 export async function matchBusiness({ company_name, domain }) {
-  const response = await fetch(`${EXPLORIUM_API_BASE}/businesses/match`, {
-    method: 'POST',
-    headers: getHeaders(),
-    body: JSON.stringify({
-      businesses_to_match: [{
-        ...(company_name && { company_name }),
-        ...(domain && { domain })
-      }]
-    })
+  const result = await callEnrichmentFunction({
+    action: 'match_business',
+    company_name,
+    domain,
   });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Business match failed: ${error}`);
-  }
-
-  const data = await response.json();
-  return data.matched_businesses?.[0]?.business_id || null;
+  return result.business_id;
 }
 
 /**
@@ -121,18 +99,10 @@ export async function matchBusiness({ company_name, domain }) {
  * @returns {Promise<Object>} Business data
  */
 export async function enrichBusiness(businessId) {
-  const response = await fetch(`${EXPLORIUM_API_BASE}/businesses/enrich`, {
-    method: 'POST',
-    headers: getHeaders(),
-    body: JSON.stringify({ business_id: businessId })
+  return callEnrichmentFunction({
+    action: 'enrich_business',
+    business_id: businessId,
   });
-
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Business enrichment failed: ${error}`);
-  }
-
-  return response.json();
 }
 
 /**
@@ -143,89 +113,10 @@ export async function enrichBusiness(businessId) {
  * @returns {Promise<Object>} Combined enrichment data
  */
 export async function fullEnrichFromLinkedIn(linkedinUrl) {
-  // Step 1: Match prospect by LinkedIn
-  const prospectId = await matchProspect({ linkedin: linkedinUrl });
-  if (!prospectId) {
-    throw new Error('Could not find prospect in Explorium database');
-  }
-
-  // Step 2 & 3: Get contact and profile info in parallel
-  const [contactData, profileData] = await Promise.all([
-    enrichProspectContact(prospectId),
-    enrichProspectProfile(prospectId)
-  ]);
-
-  const contact = contactData.data?.[0]?.data || {};
-  const profile = profileData.data?.[0]?.data || {};
-
-  // Step 4: Match and enrich company
-  let companyData = {};
-  if (profile.company_name || profile.company_website) {
-    try {
-      const businessId = await matchBusiness({
-        company_name: profile.company_name,
-        domain: profile.company_website
-      });
-      if (businessId) {
-        const bizEnrich = await enrichBusiness(businessId);
-        companyData = bizEnrich.data?.[0]?.data || {};
-        companyData.business_id = businessId;
-      }
-    } catch (e) {
-      console.warn('Business enrichment failed:', e.message);
-      // Continue without company data
-    }
-  }
-
-  // Step 5: Return combined data in normalized format
-  const nameParts = (profile.full_name || '').split(' ');
-
-  return {
-    // Contact
-    first_name: nameParts[0] || '',
-    last_name: nameParts.slice(1).join(' ') || '',
-    email: contact.professional_email || contact.work_email,
-    personal_email: contact.personal_email,
-    phone: contact.work_phone || contact.office_phone,
-    mobile_phone: contact.mobile_phone,
-    linkedin_url: linkedinUrl,
-
-    // Professional
-    job_title: profile.job_title || profile.current_title,
-    job_department: profile.job_department,
-    job_seniority_level: profile.job_seniority_level,
-    skills: profile.skills || [],
-    interests: profile.interests || [],
-    education: profile.education || [],
-    work_history: profile.experience || [],
-    age_group: profile.age_group,
-
-    // Location
-    location_city: profile.city,
-    location_region: profile.region_name,
-    location_country: profile.country_name,
-
-    // Company
-    company: profile.company_name,
-    company_domain: companyData.domain || profile.company_website,
-    company_linkedin: companyData.linkedin || profile.company_linkedin,
-    company_industry: companyData.industry,
-    company_size: companyData.size_range,
-    company_employee_count: companyData.employee_count,
-    company_revenue: companyData.revenue_range,
-    company_founded_year: companyData.founded_year,
-    company_hq_location: companyData.hq_location,
-    company_description: companyData.description,
-    company_tech_stack: companyData.technologies || [],
-    company_funding_total: companyData.total_funding,
-    company_latest_funding: companyData.latest_funding_round,
-
-    // Metadata
-    enriched_at: new Date().toISOString(),
-    enrichment_source: 'explorium',
-    explorium_prospect_id: prospectId,
-    explorium_business_id: companyData.business_id
-  };
+  return callEnrichmentFunction({
+    action: 'full_enrich',
+    linkedin: linkedinUrl,
+  });
 }
 
 /**
@@ -235,78 +126,11 @@ export async function fullEnrichFromLinkedIn(linkedinUrl) {
  * @returns {Promise<Object>} Combined enrichment data
  */
 export async function fullEnrichFromEmail(email, companyName) {
-  // Step 1: Match prospect by email
-  const prospectId = await matchProspect({ email, company_name: companyName });
-  if (!prospectId) {
-    throw new Error('Could not find prospect with this email');
-  }
-
-  // Reuse the enrichment flow
-  const [contactData, profileData] = await Promise.all([
-    enrichProspectContact(prospectId),
-    enrichProspectProfile(prospectId)
-  ]);
-
-  const contact = contactData.data?.[0]?.data || {};
-  const profile = profileData.data?.[0]?.data || {};
-
-  // Enrich company
-  let companyData = {};
-  if (profile.company_name || profile.company_website) {
-    try {
-      const businessId = await matchBusiness({
-        company_name: profile.company_name,
-        domain: profile.company_website
-      });
-      if (businessId) {
-        const bizEnrich = await enrichBusiness(businessId);
-        companyData = bizEnrich.data?.[0]?.data || {};
-        companyData.business_id = businessId;
-      }
-    } catch (e) {
-      console.warn('Business enrichment failed:', e.message);
-    }
-  }
-
-  const nameParts = (profile.full_name || '').split(' ');
-
-  return {
-    first_name: nameParts[0] || '',
-    last_name: nameParts.slice(1).join(' ') || '',
-    email: email,
-    personal_email: contact.personal_email,
-    phone: contact.work_phone || contact.office_phone,
-    mobile_phone: contact.mobile_phone,
-    linkedin_url: profile.linkedin,
-    job_title: profile.job_title || profile.current_title,
-    job_department: profile.job_department,
-    job_seniority_level: profile.job_seniority_level,
-    skills: profile.skills || [],
-    interests: profile.interests || [],
-    education: profile.education || [],
-    work_history: profile.experience || [],
-    age_group: profile.age_group,
-    location_city: profile.city,
-    location_region: profile.region_name,
-    location_country: profile.country_name,
-    company: profile.company_name,
-    company_domain: companyData.domain || profile.company_website,
-    company_linkedin: companyData.linkedin || profile.company_linkedin,
-    company_industry: companyData.industry,
-    company_size: companyData.size_range,
-    company_employee_count: companyData.employee_count,
-    company_revenue: companyData.revenue_range,
-    company_founded_year: companyData.founded_year,
-    company_hq_location: companyData.hq_location,
-    company_description: companyData.description,
-    company_tech_stack: companyData.technologies || [],
-    company_funding_total: companyData.total_funding,
-    company_latest_funding: companyData.latest_funding_round,
-    enriched_at: new Date().toISOString(),
-    enrichment_source: 'explorium',
-    explorium_prospect_id: prospectId,
-    explorium_business_id: companyData.business_id
-  };
+  return callEnrichmentFunction({
+    action: 'full_enrich',
+    email,
+    company_name: companyName,
+  });
 }
 
 /**
@@ -317,11 +141,13 @@ export async function fullEnrichFromEmail(email, companyName) {
  * @returns {Promise<Object>} Company data
  */
 export async function enrichCompanyOnly({ company_name, domain }) {
+  // First match the business
   const businessId = await matchBusiness({ company_name, domain });
   if (!businessId) {
     throw new Error('Could not find company in Explorium database');
   }
 
+  // Then enrich it
   const bizEnrich = await enrichBusiness(businessId);
   const data = bizEnrich.data?.[0]?.data || {};
 
@@ -341,6 +167,6 @@ export async function enrichCompanyOnly({ company_name, domain }) {
     funding_total: data.total_funding,
     latest_funding: data.latest_funding_round,
     enriched_at: new Date().toISOString(),
-    enrichment_source: 'explorium'
+    enrichment_source: 'explorium',
   };
 }
