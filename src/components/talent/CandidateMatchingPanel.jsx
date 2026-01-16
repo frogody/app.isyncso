@@ -291,12 +291,12 @@ export default function CandidateMatchingPanel({ campaign, onUpdate }) {
               {/* Project Selection */}
               <div>
                 <label className="text-xs text-zinc-500 mb-1 block">Project (Optional)</label>
-                <Select value={selectedProject} onValueChange={setSelectedProject}>
+                <Select value={selectedProject || "__all__"} onValueChange={(v) => setSelectedProject(v === "__all__" ? "" : v)}>
                   <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
                     <SelectValue placeholder="Select project..." />
                   </SelectTrigger>
                   <SelectContent className="bg-zinc-900 border-zinc-700">
-                    <SelectItem value="">All Projects</SelectItem>
+                    <SelectItem value="__all__">All Projects</SelectItem>
                     {projects.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
                         {p.name}
@@ -309,12 +309,12 @@ export default function CandidateMatchingPanel({ campaign, onUpdate }) {
               {/* Role Selection */}
               <div>
                 <label className="text-xs text-zinc-500 mb-1 block">Role (Optional)</label>
-                <Select value={selectedRole} onValueChange={setSelectedRole}>
+                <Select value={selectedRole || "__all__"} onValueChange={(v) => setSelectedRole(v === "__all__" ? "" : v)}>
                   <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
                     <SelectValue placeholder="Select role..." />
                   </SelectTrigger>
                   <SelectContent className="bg-zinc-900 border-zinc-700">
-                    <SelectItem value="">All Roles</SelectItem>
+                    <SelectItem value="__all__">All Roles</SelectItem>
                     {availableRoles.map((r) => (
                       <SelectItem key={r.id} value={r.id}>
                         {r.title}
