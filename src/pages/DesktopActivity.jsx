@@ -161,13 +161,25 @@ export default function DesktopActivity() {
       ? journalData.reduce((sum, j) => sum + (j.productivity_score || 0), 0) / journalData.length
       : 0;
 
-    // Aggregate app usage
+    // Aggregate app usage - handle both array and object formats
     const appTotals = {};
     logs.forEach(log => {
       if (log.app_breakdown) {
-        Object.entries(log.app_breakdown).forEach(([app, mins]) => {
-          appTotals[app] = (appTotals[app] || 0) + (typeof mins === 'number' ? mins : parseInt(mins) || 0);
-        });
+        if (Array.isArray(log.app_breakdown)) {
+          // New array format: [{appName, minutes, category, percentage}, ...]
+          log.app_breakdown.forEach(item => {
+            const appName = item.appName || item.app;
+            const mins = item.minutes || 0;
+            if (appName) {
+              appTotals[appName] = (appTotals[appName] || 0) + mins;
+            }
+          });
+        } else {
+          // Legacy object format: {appName: minutes, ...}
+          Object.entries(log.app_breakdown).forEach(([app, mins]) => {
+            appTotals[app] = (appTotals[app] || 0) + (typeof mins === 'number' ? mins : parseInt(mins) || 0);
+          });
+        }
       }
     });
 
@@ -697,12 +709,18 @@ export default function DesktopActivity() {
                             {Math.round((log.focus_score || 0) * 100)}% focus
                           </Badge>
                         </div>
-                        {log.app_breakdown && Object.keys(log.app_breakdown).length > 0 && (
+                        {log.app_breakdown && (Array.isArray(log.app_breakdown) ? log.app_breakdown.length > 0 : Object.keys(log.app_breakdown).length > 0) && (
                           <div className="flex flex-wrap gap-1.5 mt-2">
-                            {Object.entries(log.app_breakdown)
-                              .sort(([,a], [,b]) => b - a)
-                              .slice(0, 5)
-                              .map(([app, mins]) => (
+                            {(Array.isArray(log.app_breakdown)
+                              ? log.app_breakdown
+                                  .sort((a, b) => (b.minutes || 0) - (a.minutes || 0))
+                                  .slice(0, 5)
+                                  .map(item => ({ app: item.appName || item.app, mins: item.minutes || 0 }))
+                              : Object.entries(log.app_breakdown)
+                                  .sort(([,a], [,b]) => b - a)
+                                  .slice(0, 5)
+                                  .map(([app, mins]) => ({ app, mins }))
+                            ).map(({ app, mins }) => (
                                 <Badge
                                   key={app}
                                   className="bg-zinc-700/50 text-zinc-400 border-zinc-600/50 text-xs"
