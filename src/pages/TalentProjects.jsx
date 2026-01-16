@@ -158,6 +158,9 @@ const ProgressRing = ({ filled, total, size = 40, strokeWidth = 3 }) => {
 
 // Role Card Component
 const RoleCard = ({ role, onEdit, onDelete }) => {
+  // Map DB fields to display: notes contains department, location_requirements is location
+  const displayStatus = role.status === 'open' ? 'active' : role.status;
+
   return (
     <motion.div
       variants={itemVariants}
@@ -166,16 +169,16 @@ const RoleCard = ({ role, onEdit, onDelete }) => {
       <div className="flex items-start justify-between mb-3">
         <div>
           <h4 className="font-medium text-white">{role.title}</h4>
-          <p className="text-sm text-white/60">{role.department}</p>
+          {role.notes && <p className="text-sm text-white/60">{role.notes}</p>}
         </div>
-        <StatusBadge status={role.status} />
+        <StatusBadge status={displayStatus} />
       </div>
-      
+
       <div className="flex items-center gap-4 text-sm text-white/50 mb-3">
-        {role.location && (
+        {role.location_requirements && (
           <span className="flex items-center gap-1">
             <MapPin className="w-3.5 h-3.5" />
-            {role.location}
+            {role.location_requirements}
           </span>
         )}
         {role.salary_range && (
@@ -579,15 +582,18 @@ const RoleModal = ({ isOpen, onClose, role, projectId, onSave }) => {
 
   useEffect(() => {
     if (role) {
+      // Map DB fields back to form fields
+      // DB: notes -> department, location_requirements -> location,
+      // required_skills (array) -> requirements (string), description -> responsibilities
       setFormData({
         title: role.title || "",
-        department: role.department || "",
-        location: role.location || "",
+        department: role.notes || "", // department stored in notes
+        location: role.location_requirements || "", // location_requirements -> location
         employment_type: role.employment_type || "full_time",
         salary_range: role.salary_range || "",
-        requirements: role.requirements || "",
-        responsibilities: role.responsibilities || "",
-        status: role.status || "active",
+        requirements: Array.isArray(role.required_skills) ? role.required_skills.join('\n') : "", // array -> string
+        responsibilities: role.description || "", // description -> responsibilities
+        status: role.status === 'open' ? 'active' : (role.status || "active"),
       });
     } else {
       setFormData({
@@ -988,23 +994,40 @@ export default function TalentProjects() {
   // Role CRUD
   const handleSaveRole = async (formData, roleId, projectId) => {
     try {
+      // Map form fields to database columns
+      // DB schema: title, description, required_skills (ARRAY), preferred_skills (ARRAY),
+      // location_requirements, salary_range, employment_type, seniority_level, remote_policy,
+      // status, project_id, organization_id, notes
       const roleData = {
-        ...formData,
+        title: formData.title,
+        description: formData.responsibilities || null, // Map responsibilities to description
+        required_skills: formData.requirements ? formData.requirements.split('\n').filter(s => s.trim()) : [], // Convert to array
+        location_requirements: formData.location || null, // Map location to location_requirements
+        salary_range: formData.salary_range || null,
+        employment_type: formData.employment_type || 'full_time',
+        status: formData.status === 'active' ? 'open' : formData.status, // DB uses 'open' not 'active'
+        notes: formData.department || null, // Store department in notes field for now
         organization_id: user.organization_id,
         project_id: projectId || selectedProjectForRole?.id,
       };
 
+      console.log('Saving role with data:', JSON.stringify(roleData, null, 2));
+
       if (roleId) {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from("roles")
           .update(roleData)
-          .eq("id", roleId);
+          .eq("id", roleId)
+          .select();
+        console.log('Role update result:', JSON.stringify({ data, error }, null, 2));
         if (error) throw error;
         toast.success("Role updated successfully");
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from("roles")
-          .insert([roleData]);
+          .insert([roleData])
+          .select();
+        console.log('Role insert result:', JSON.stringify({ data, error }, null, 2));
         if (error) throw error;
         toast.success("Role created successfully");
       }
