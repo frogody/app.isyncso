@@ -74,6 +74,7 @@ import {
   Presentation,
   FolderKey,
   Building2,
+  Monitor,
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -359,7 +360,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
   }
 
   // SYNC routes - core feature, uses cyan like other main features
-  if (path.includes('sync') || path.includes('aiassistant') || path.includes('actions') || path.includes('activity') || path.includes('agents') || path.includes('agentdetail') || path.includes('integration')) {
+  if (path.includes('sync') || path.includes('aiassistant') || path.includes('actions') || path.includes('activity') || path.includes('desktop') || path.includes('agents') || path.includes('agentdetail') || path.includes('integration')) {
     return {
       title: 'SYNC',
       color: 'cyan',
@@ -367,7 +368,8 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
         { label: 'SYNC Agent', path: createPageUrl('SyncAgent'), icon: Brain },
         { label: 'Agents', path: createPageUrl('Agents'), icon: Bot },
         { label: 'Integrations', path: createPageUrl('Integrations'), icon: Plug },
-        { label: 'Activity', path: createPageUrl('Activity'), icon: Activity },
+        { label: 'Browser Activity', path: createPageUrl('Activity'), icon: Activity },
+        { label: 'Desktop Activity', path: createPageUrl('DesktopActivity'), icon: Monitor },
       ]
     };
   }

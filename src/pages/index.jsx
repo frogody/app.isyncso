@@ -59,6 +59,8 @@ import Dashboard from "./Dashboard";
 
 import Deals from "./Deals";
 
+import DesktopActivity from "./DesktopActivity";
+
 import DocumentGenerator from "./DocumentGenerator";
 
 import DownloadApp from "./DownloadApp";
@@ -557,7 +559,9 @@ function PagesContent() {
                 <Route path="/Deals" element={<Deals />} />
                 
                 <Route path="/DocumentGenerator" element={<DocumentGenerator />} />
-                
+
+                <Route path="/DesktopActivity" element={<DesktopActivity />} />
+
                 <Route path="/DownloadApp" element={<DownloadApp />} />
                 
                 <Route path="/Glossary" element={<Glossary />} />
