@@ -4,7 +4,7 @@ import {
   Monitor, Clock, Zap, TrendingUp, Calendar, BarChart3, PieChart,
   RefreshCw, Download, ChevronLeft, ChevronRight, Loader2, Laptop,
   Target, Activity, Brain, Coffee, Code, Chrome, MessageSquare, FileText,
-  Music, Video, Mail, Terminal, Folder, Settings
+  Music, Video, Mail, Terminal, Folder, Settings, Plus, Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { db } from "@/api/supabaseClient";
@@ -82,6 +82,7 @@ export default function DesktopActivity() {
     dailyBreakdown: [],
   });
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [generatingJournal, setGeneratingJournal] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -221,6 +222,52 @@ export default function DesktopActivity() {
     setRefreshing(true);
     await loadData();
     toast.success('Activity data refreshed');
+  };
+
+  const generateJournal = async (date = new Date()) => {
+    if (!user?.id) {
+      toast.error('Please log in to generate journals');
+      return;
+    }
+
+    setGeneratingJournal(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-daily-journal`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            user_id: user.id,
+            company_id: user.company_id,
+            date: date.toISOString(),
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        if (result.error === 'No activity data for this date') {
+          toast.error('No activity data available for this date. The desktop app needs to sync some hourly data first.');
+        } else {
+          toast.error(result.error || 'Failed to generate journal');
+        }
+        return;
+      }
+
+      toast.success(`Journal generated for ${result.date}`);
+      // Refresh data to show the new journal
+      await loadData();
+    } catch (error) {
+      console.error('Error generating journal:', error);
+      toast.error('Failed to generate journal');
+    } finally {
+      setGeneratingJournal(false);
+    }
   };
 
   const formatDuration = (minutes) => {
@@ -547,12 +594,42 @@ export default function DesktopActivity() {
           {/* Journals Tab */}
           <TabsContent value="journals" className="mt-6">
             <div className="space-y-4">
+              {/* Generate Journal Header */}
+              <div className="flex items-center justify-between p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
+                    <Sparkles className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-zinc-200">Generate Daily Journal</h3>
+                    <p className="text-xs text-zinc-500">Create a summary from today's activity data</p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => generateJournal(new Date())}
+                  disabled={generatingJournal}
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                >
+                  {generatingJournal ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Generate Today's Journal
+                    </>
+                  )}
+                </Button>
+              </div>
+
               {journals.length === 0 ? (
                 <div className="p-8 rounded-2xl bg-zinc-900/50 border border-zinc-800/60 text-center">
                   <FileText className="w-16 h-16 text-zinc-600 mx-auto mb-4" />
                   <h4 className="text-lg font-semibold text-zinc-100 mb-2">No Daily Journals Yet</h4>
-                  <p className="text-zinc-500 max-w-sm mx-auto">
-                    Daily journals are automatically generated at midnight based on your desktop activity.
+                  <p className="text-zinc-500 max-w-sm mx-auto mb-4">
+                    Journals are generated from your hourly activity data. Click the button above to generate today's journal, or they'll be created automatically at midnight.
                   </p>
                 </div>
               ) : (
@@ -609,7 +686,7 @@ export default function DesktopActivity() {
                             {journal.highlights.map((highlight, idx) => (
                               <li key={idx} className="flex items-start gap-2 text-sm text-zinc-300">
                                 <span className="text-amber-400 mt-1">•</span>
-                                {highlight}
+                                {typeof highlight === 'string' ? highlight : highlight.description || highlight.type}
                               </li>
                             ))}
                           </ul>
