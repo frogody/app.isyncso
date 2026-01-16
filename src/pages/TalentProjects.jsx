@@ -90,7 +90,7 @@ import {
 // ============================================================================
 // SMART QUICK ADD MODAL - AI-powered job search and auto-fill
 // ============================================================================
-const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, onCreateProject }) => {
+const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, onCreateProject, onRefreshClients, user }) => {
   // Step: 1 = Input, 2 = Searching, 3 = Review Role, 4 = Add to Project
   const [step, setStep] = useState(1);
   const [isSearching, setIsSearching] = useState(false);
@@ -109,6 +109,24 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
   const [selectedProject, setSelectedProject] = useState(null);
   const [newProjectName, setNewProjectName] = useState("");
 
+  // Client detection and creation
+  const [createdClient, setCreatedClient] = useState(null);
+  const [isAddingClient, setIsAddingClient] = useState(false);
+
+  // Check if company is already a client
+  const existingClient = useMemo(() => {
+    if (!parsedJob?.company) return null;
+    const companyLower = parsedJob.company.toLowerCase().trim();
+    return clients.find(c =>
+      c.name?.toLowerCase().trim() === companyLower ||
+      c.name?.toLowerCase().includes(companyLower) ||
+      companyLower.includes(c.name?.toLowerCase())
+    );
+  }, [parsedJob?.company, clients]);
+
+  // The active client (existing or newly created)
+  const activeClient = existingClient || createdClient;
+
   // Reset on open
   useEffect(() => {
     if (isOpen) {
@@ -120,8 +138,43 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
       setSearchError(null);
       setSelectedProject(null);
       setNewProjectName("");
+      setCreatedClient(null);
     }
   }, [isOpen]);
+
+  // Add company as recruitment client
+  const handleAddAsClient = async () => {
+    if (!parsedJob?.company || !user?.organization_id) return;
+
+    setIsAddingClient(true);
+    try {
+      const { data, error } = await supabase
+        .from("prospects")
+        .insert([{
+          company: parsedJob.company,
+          first_name: parsedJob.company, // Use company name as display name
+          is_recruitment_client: true,
+          contact_type: "recruitment_client",
+          organization_id: user.organization_id,
+          notes: `Added via Quick Add Role for ${parsedJob.title}`,
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setCreatedClient({ id: data.id, name: data.company });
+      toast.success(`${parsedJob.company} added as recruitment client!`);
+
+      // Refresh clients list
+      if (onRefreshClients) onRefreshClients();
+    } catch (error) {
+      console.error("Error adding client:", error);
+      toast.error("Failed to add client");
+    } finally {
+      setIsAddingClient(false);
+    }
+  };
 
   // Search for job posting using AI
   const handleSearch = async () => {
@@ -200,6 +253,8 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
           name: newProjectName.trim(),
           status: "active",
           priority: "medium",
+          client_id: activeClient?.id, // Link to client if available
+          client_name: activeClient?.name,
         });
         projectId = newProject?.id;
       }
@@ -479,7 +534,15 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
                 </div>
                 <div>
                   <span className="text-xs text-white/40">Company</span>
-                  <p className="text-white font-medium">{parsedJob.company}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-white font-medium">{parsedJob.company}</p>
+                    {activeClient && (
+                      <Badge className="bg-green-600/20 text-green-400 border-green-500/30 text-xs">
+                        <CheckCircle2 className="w-3 h-3 mr-1" />
+                        Client
+                      </Badge>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <span className="text-xs text-white/40">Location</span>
@@ -505,6 +568,37 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
                 ))}
               </div>
             </div>
+
+            {/* Add as Client Banner */}
+            {!activeClient && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg flex items-center justify-between gap-3"
+              >
+                <div className="flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-amber-400" />
+                  <span className="text-sm text-amber-200">
+                    <strong>{parsedJob.company}</strong> is not registered as a client
+                  </span>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={handleAddAsClient}
+                  disabled={isAddingClient}
+                  className="bg-amber-600 hover:bg-amber-500 text-white shrink-0"
+                >
+                  {isAddingClient ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <>
+                      <UserPlus className="w-3 h-3 mr-1.5" />
+                      Add as Client
+                    </>
+                  )}
+                </Button>
+              </motion.div>
+            )}
 
             {/* Existing Projects */}
             {projects.length > 0 && (
@@ -1881,6 +1975,8 @@ export default function TalentProjects() {
           projects={projects}
           onCreateRole={handleSaveRole}
           onCreateProject={handleSaveProject}
+          onRefreshClients={fetchData}
+          user={user}
         />
 
         {/* Delete Project Dialog */}
