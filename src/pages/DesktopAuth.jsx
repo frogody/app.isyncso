@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2, CheckCircle, XCircle, Monitor } from "lucide-react";
-import { db } from "@/api/supabaseClient";
+import { supabase, auth } from "@/api/supabaseClient";
 
 /**
  * DesktopAuth - Handles authentication for the SYNC Desktop app
@@ -32,7 +32,7 @@ export default function DesktopAuth() {
         }
 
         // Check if user is logged in
-        const isAuth = await db.auth.isAuthenticated();
+        const isAuth = await auth.isAuthenticated();
 
         if (!isAuth) {
           // Not logged in - redirect to login with returnUrl
@@ -44,7 +44,7 @@ export default function DesktopAuth() {
         }
 
         // User is logged in - get the session
-        const { data: sessionData, error: sessionError } = await db.supabase.auth.getSession();
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
 
         if (sessionError || !sessionData?.session?.access_token) {
           setStatus("error");
