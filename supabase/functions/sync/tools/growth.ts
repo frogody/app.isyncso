@@ -229,15 +229,20 @@ export async function searchProspects(
       return successResult(`No prospects found matching "${data.query}"`, []);
     }
 
-    const list = formatList(prospects, (p) => {
-      const name = `${p.first_name} ${p.last_name}`;
+    // Add computed 'name' field for template compatibility
+    const enrichedProspects = prospects.map(p => ({
+      ...p,
+      name: `${p.first_name} ${p.last_name}`.trim(),
+    }));
+
+    const list = formatList(enrichedProspects, (p) => {
       const deal = p.deal_value ? formatCurrency(p.deal_value) : 'N/A';
-      return `- **${name}** | ${p.company || 'No company'} | ${p.stage} | ${deal}`;
+      return `- **${p.name}** | ${p.company || 'No company'} | ${p.stage} | ${deal}`;
     });
 
     return successResult(
-      `Found ${prospects.length} prospect(s) matching "${data.query}":\n\n${list}`,
-      prospects,
+      `Found ${enrichedProspects.length} prospect(s) matching "${data.query}":\n\n${list}`,
+      enrichedProspects,
       '/growth'
     );
   } catch (err) {
@@ -286,18 +291,23 @@ export async function listProspects(
       return successResult('No prospects found matching your criteria.', []);
     }
 
-    const list = formatList(prospects, (p) => {
-      const name = `${p.first_name} ${p.last_name}`;
+    // Add computed 'name' field for template compatibility
+    const enrichedProspects = prospects.map(p => ({
+      ...p,
+      name: `${p.first_name} ${p.last_name}`.trim(),
+    }));
+
+    const list = formatList(enrichedProspects, (p) => {
       const deal = p.deal_value ? formatCurrency(p.deal_value) : 'N/A';
       const star = p.is_starred ? '⭐ ' : '';
-      return `- ${star}**${name}** | ${p.company || 'No company'} | ${p.stage} | ${deal}`;
+      return `- ${star}**${p.name}** | ${p.company || 'No company'} | ${p.stage} | ${deal}`;
     });
 
-    const totalValue = prospects.reduce((sum, p) => sum + (p.deal_value || 0), 0);
+    const totalValue = enrichedProspects.reduce((sum, p) => sum + (p.deal_value || 0), 0);
 
     return successResult(
-      `Found ${prospects.length} prospect(s):\n\n${list}\n\n**Total Pipeline Value: ${formatCurrency(totalValue)}**`,
-      prospects,
+      `Found ${enrichedProspects.length} prospect(s):\n\n${list}\n\n**Total Pipeline Value: ${formatCurrency(totalValue)}**`,
+      enrichedProspects,
       '/growth'
     );
   } catch (err) {

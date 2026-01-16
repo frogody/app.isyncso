@@ -1437,6 +1437,71 @@ If something fails, don't just report the error. Offer an alternative: "That did
 
 Never leave them hanging. Always end with either a next step, a question, or an offer.
 
+## Context Retention (CRITICAL!)
+
+**You have a memory. USE IT.** Look at the conversation history - you can see previous messages and their results tagged with [Previous result data: ...]. This contains actual data from earlier actions.
+
+### NEVER re-ask for information you already have:
+
+1. **Invoice/client data**: If you just showed invoices with client names, emails, amounts - you HAVE that data. Use it.
+   - Bad: Shows 6 invoices, user says "send reminders to TechCorp" → you ask "What's TechCorp's email?"
+   - Good: Look at the invoice data - TechCorp's email is RIGHT THERE.
+
+2. **Topic context**: If the conversation is about invoices, don't ask "what should the reminder be about?"
+   - The reminder is obviously about the invoice you just discussed.
+
+3. **Integration status**: If you already checked integrations earlier, don't ask "what integrations do you have?"
+   - You remember Gmail is connected. Just use it.
+
+4. **Client details**: If someone says "send to TechCorp" after you showed invoice data with TechCorp's email, you KNOW the email.
+   - Extract it from the [Previous result data] in the conversation.
+
+### Handling Short Confirmations (yes, sure, do it, go ahead):
+
+When user gives a SHORT response like "yes", "sure", "do it", "go ahead", "send it", "ok", "sounds good":
+- This is CONFIRMING whatever you just proposed or the ongoing topic
+- DO NOT ask what they mean - figure it out from context!
+
+Examples:
+- You showed invoices, suggested reminders → user says "yes" → they mean send the reminders
+- You offered to draft an email → user says "go ahead" → draft and send the email
+- You asked if they want to update status → user says "do it" → update the status
+
+### Use context to EXECUTE, not interrogate:
+
+When user says "yes send reminders to TechCorp and Design Studio" after seeing invoices:
+1. Look at previous result data - find TechCorp's email, Design Studio's email
+2. Know that "reminders" = payment reminder about the overdue invoices
+3. Draft and send the emails without asking what they should contain
+
+When user just says "yes" or "send reminders":
+1. What did you just show them? Invoices → reminders are about payment for those invoices
+2. Which clients? The ones from the invoice data you just displayed
+3. What platform? Gmail (if connected) or draft in Inbox
+
+### Don't ask questions you can answer yourself:
+
+| User says | DON'T ask | DO this |
+|-----------|-----------|---------|
+| "send to TechCorp" (after showing invoices) | "What's their email?" | Use email from invoice data |
+| "remind them about payment" | "What should the reminder say?" | Write a professional payment reminder |
+| "yes, send it" | "Via what platform?" | Use Gmail (you know it's connected) |
+| "send reminders to all overdue" | "Which clients?" | All clients from the overdue invoice list |
+
+**You're a smart assistant who remembers the conversation. Act like it.**
+
+### DON'T re-query data you already have:
+
+If you just executed list_invoices and found 6 invoices, and the user asks "set reminders for the oldest ones":
+- **DON'T** execute list_invoices again with different filters - that might return empty/different results
+- **DO** use the invoice data from your previous result to identify the oldest ones
+- The data is in [Previous result data] - use it directly!
+
+Example:
+- Turn 1: list_invoices → found 6 invoices, data includes created_at dates
+- Turn 2: "remind the 3 oldest" → look at [Previous result data], sort by date, pick oldest 3 → draft reminders
+- **WRONG**: Execute list_invoices again with date filters (might return different results or empty)
+
 ## Formatting
 
 NEVER use markdown tables, bullet lists, or verbose formatting. Keep responses conversational.
@@ -2021,14 +2086,31 @@ serve(async (req) => {
     const apiMessages = [
       { role: 'system', content: enhancedSystemPrompt },
       ...bufferMessages.map(m => {
-        // Include action results for follow-up context
+        // Include action results for follow-up context in a more usable format
         let content = m.content;
         if (m.actionExecuted?.result && m.actionExecuted.success) {
           const resultData = m.actionExecuted.result;
+          const actionType = m.actionExecuted.type;
+
+          // Format result data in a clear, usable way
           if (Array.isArray(resultData) && resultData.length > 0) {
-            content += `\n\n[Previous result data: ${JSON.stringify(resultData.slice(0, 10))}]`;
+            // For invoice/expense/prospect lists, extract key fields
+            const formatted = resultData.slice(0, 10).map(item => {
+              if (item.client_name || item.client_email) {
+                // Invoice/expense format
+                return `${item.client_name || 'Unknown'} (${item.client_email || 'no email'}) - ${item.status || ''} ${item.total ? '€' + item.total : ''}`;
+              } else if (item.first_name || item.name) {
+                // Prospect/contact format
+                return `${item.name || (item.first_name + ' ' + item.last_name)} - ${item.email || 'no email'} - ${item.company || ''}`;
+              } else if (item.title) {
+                // Task format
+                return `${item.title} - ${item.status || ''}`;
+              }
+              return JSON.stringify(item);
+            });
+            content += `\n\n[Context from ${actionType || 'previous action'}: ${formatted.join('; ')}]`;
           } else if (resultData && typeof resultData === 'object') {
-            content += `\n\n[Previous result data: ${JSON.stringify(resultData)}]`;
+            content += `\n\n[Context from ${actionType || 'previous action'}: ${JSON.stringify(resultData)}]`;
           }
         }
         return { role: m.role, content };
@@ -2667,9 +2749,49 @@ serve(async (req) => {
       assistantMessage = assistantMessage.replace(/\[ACTION\][\s\S]*?\[\/ACTION\]/g, '').trim();
 
       if (actionExecuted) {
-        // Use the action's message directly - it's already brief and conversational
-        // Skip verbose synthesis which adds tables and redundant summaries
-        assistantMessage = assistantMessage + '\n\n' + actionExecuted.message;
+        // Check if action message would contradict existing content
+        // (e.g., "No invoices found" when LLM already mentioned invoice data)
+        const isEmptyResultMsg = /^No \w+ found/i.test(actionExecuted.message);
+        // More flexible regex: matches "6 pending invoices", "Found 3 prospects", etc.
+        const dataPattern = /\d+\s+(?:\w+\s+)*(invoices?|prospects?|tasks?|products?|expenses?)/i;
+        const llmMentionsData = dataPattern.test(assistantMessage);
+
+        // Also check recent conversation history for data mentions (last 3 messages)
+        const recentHistory = session.messages.slice(-3).map(m => m.content).join(' ');
+        const historyMentionsData = dataPattern.test(recentHistory);
+
+        // Check if recent actions returned non-empty results for same entity type
+        const entityType = actionExecuted.message.match(/No (\w+) found/i)?.[1]?.toLowerCase();
+        const recentActionHadData = session.messages.slice(-3).some(m => {
+          if (!m.actionExecuted?.result) return false;
+          const result = m.actionExecuted.result;
+          return Array.isArray(result) && result.length > 0;
+        });
+
+        console.log('[SYNC] === MESSAGE CONTRADICTION CHECK ===');
+        console.log('[SYNC] Action executed:', actionData.action);
+        console.log('[SYNC] Action data:', JSON.stringify(actionData.data));
+        console.log('[SYNC] Action success:', actionExecuted.success);
+        console.log('[SYNC] Action message (full):', actionExecuted.message);
+        console.log('[SYNC] Action result count:', Array.isArray(actionExecuted.result) ? actionExecuted.result.length : 'not array');
+        console.log('[SYNC] isEmpty check:', isEmptyResultMsg);
+        console.log('[SYNC] llmMentionsData:', llmMentionsData);
+        console.log('[SYNC] historyMentionsData:', historyMentionsData);
+        console.log('[SYNC] recentActionHadData:', recentActionHadData);
+        console.log('[SYNC] entityType:', entityType);
+        console.log('[SYNC] LLM response preview:', assistantMessage?.substring(0, 200));
+        console.log('[SYNC] ================================');
+
+        // Skip contradictory message if EITHER current response OR recent history mentions data
+        const shouldSkipEmptyMessage = isEmptyResultMsg && (llmMentionsData || historyMentionsData || recentActionHadData);
+
+        if (shouldSkipEmptyMessage) {
+          // Skip appending contradictory "No X found" message
+          console.log('[SYNC] Skipping contradictory empty result message:', actionExecuted.message);
+        } else {
+          // Use the action's message directly - it's already brief and conversational
+          assistantMessage = assistantMessage + '\n\n' + actionExecuted.message;
+        }
 
             // === INTELLIGENCE RESPONSE ENHANCEMENT ===
             // Enhance response with deep insights and follow-up suggestions

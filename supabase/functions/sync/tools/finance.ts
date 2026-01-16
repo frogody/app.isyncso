@@ -178,7 +178,7 @@ export async function listInvoices(
   try {
     let query = ctx.supabase
       .from('invoices')
-      .select('id, invoice_number, client_name, total, status, due_date, created_at')
+      .select('id, invoice_number, client_name, client_email, total, status, due_date, created_at')
       .eq('company_id', ctx.companyId)
       .order('created_at', { ascending: false })
       .limit(filters.limit || 20);

@@ -259,15 +259,18 @@ export async function executePlan(
 
 /**
  * Wraps action results with useful template-accessible properties
- * Makes {{result.count}}, {{result.total}}, {{result.first.name}} etc. work
+ * Makes {{result.count}}, {{result.total}}, {{result.length}}, {{result.first.name}} etc. work
  */
 function wrapResultForTemplates(rawData: any, fullResult: any): any {
   // If already an object with useful properties, enhance it
   if (rawData && typeof rawData === 'object' && !Array.isArray(rawData)) {
+    const itemCount = rawData.count ?? 1;
     return {
       ...rawData,
-      // Add count if not present (for single item results)
-      count: rawData.count ?? 1,
+      // Add count/length/total for template compatibility
+      count: itemCount,
+      length: itemCount,
+      total: itemCount,
       // Preserve message for templates
       message: fullResult.message,
     };
@@ -275,12 +278,14 @@ function wrapResultForTemplates(rawData: any, fullResult: any): any {
 
   // If it's an array, wrap with useful properties
   if (Array.isArray(rawData)) {
+    const len = rawData.length;
     return {
       items: rawData,
-      count: rawData.length,
-      total: rawData.length,
+      count: len,
+      length: len,  // Alias for count (templates may use {{result.length}})
+      total: len,
       first: rawData[0] || null,
-      last: rawData[rawData.length - 1] || null,
+      last: rawData[len - 1] || null,
       // Also make array indexable directly: {{result[0].name}}
       ...rawData.reduce((acc: any, item: any, idx: number) => {
         acc[idx] = item;
@@ -295,6 +300,8 @@ function wrapResultForTemplates(rawData: any, fullResult: any): any {
   return {
     value: rawData,
     count: rawData ? 1 : 0,
+    length: rawData ? 1 : 0,
+    total: rawData ? 1 : 0,
     message: fullResult.message,
   };
 }

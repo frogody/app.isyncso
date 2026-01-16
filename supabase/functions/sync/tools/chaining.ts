@@ -300,14 +300,29 @@ function buildChainResult(
 ): ActionChainResult {
   const success = !failed || completed.length === chain.actions.length;
 
+  // Check if any action found data (has results)
+  const hasDataResults = completed.some(c => {
+    const result = c.result.result;
+    return Array.isArray(result) ? result.length > 0 : result && typeof result === 'object';
+  });
+
   // Build message
   let message = '';
 
   if (success) {
-    message = `Successfully completed ${completed.length} action(s):\n`;
-    completed.forEach((c, i) => {
-      message += `${i + 1}. ${c.action}: ${c.result.message}\n`;
-    });
+    // Filter out "No X found" messages if other actions found data
+    const messages = completed
+      .filter(c => {
+        const isEmptyResultMsg = /^No \w+ found/i.test(c.result.message);
+        return !(isEmptyResultMsg && hasDataResults);
+      })
+      .map(c => c.result.message);
+
+    if (messages.length > 0) {
+      message = messages.join('\n\n');
+    } else {
+      message = `Completed ${completed.length} action(s).`;
+    }
   } else {
     message = '';
     if (completed.length > 0) {

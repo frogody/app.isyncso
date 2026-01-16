@@ -421,10 +421,20 @@ export async function executeComposioAction(
         bcc?: string;
       };
 
-      if (!to || !subject || !body) {
+      // Provide specific error messages for missing fields
+      const missing: string[] = [];
+      if (!to) missing.push('recipient email (to)');
+      if (!subject) missing.push('subject');
+      if (!body) missing.push('body');
+
+      if (missing.length > 0) {
+        console.log(`[Composio] Missing email fields: ${missing.join(', ')}`);
+        console.log(`[Composio] Received data:`, JSON.stringify({ to, subject, body: body?.substring(0, 50) }));
         return {
           success: false,
-          message: "Please provide: to (recipient email), subject, and body for the email.",
+          message: missing.length === 1
+            ? `Missing ${missing[0]} for the email. The client may not have an email address on file.`
+            : `Missing required fields: ${missing.join(', ')}`,
         };
       }
 
