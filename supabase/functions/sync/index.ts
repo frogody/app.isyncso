@@ -125,10 +125,10 @@ import {
   ExecutionContext,
   ExecutionResult,
   ProgressUpdate,
+  injectTemplateValues,
 } from './tools/executor.ts';
 import {
   getTaskAck,
-  getPlanIntro,
   getTaskCompleteMessage,
   getClarificationMessage,
   getProblemMessage,
@@ -1716,10 +1716,23 @@ async function executeAdvancedWorkflow(
     sessionId: session.session_id,
     userId: session.user_id || undefined,
     companyId: session.company_id || undefined,
-    conversationHistory: session.messages.slice(-10).map(m => ({
-      role: m.role as 'system' | 'user' | 'assistant',
-      content: m.content,
-    })),
+    conversationHistory: session.messages.slice(-10).map(m => {
+      // Include action results for follow-up context
+      let content = m.content;
+      if (m.actionExecuted?.result && m.actionExecuted.success) {
+        // Append summarized result data for follow-up queries
+        const resultData = m.actionExecuted.result;
+        if (Array.isArray(resultData) && resultData.length > 0) {
+          content += `\n\n[Previous result data: ${JSON.stringify(resultData.slice(0, 10))}]`;
+        } else if (resultData && typeof resultData === 'object') {
+          content += `\n\n[Previous result data: ${JSON.stringify(resultData)}]`;
+        }
+      }
+      return {
+        role: m.role as 'system' | 'user' | 'assistant',
+        content,
+      };
+    }),
     entities: session.active_entities || {},
     memories: memoryContext?.relevantMemories?.map(m => m.content) || [],
     actionTemplates: memoryContext?.actionTemplates || [],
@@ -2003,7 +2016,19 @@ serve(async (req) => {
     const bufferMessages = memorySystem.session.getBufferMessages(session);
     const apiMessages = [
       { role: 'system', content: enhancedSystemPrompt },
-      ...bufferMessages.map(m => ({ role: m.role, content: m.content })),
+      ...bufferMessages.map(m => {
+        // Include action results for follow-up context
+        let content = m.content;
+        if (m.actionExecuted?.result && m.actionExecuted.success) {
+          const resultData = m.actionExecuted.result;
+          if (Array.isArray(resultData) && resultData.length > 0) {
+            content += `\n\n[Previous result data: ${JSON.stringify(resultData.slice(0, 10))}]`;
+          } else if (resultData && typeof resultData === 'object') {
+            content += `\n\n[Previous result data: ${JSON.stringify(resultData)}]`;
+          }
+        }
+        return { role: m.role, content };
+      }),
     ];
 
     if (stream) {
@@ -2094,14 +2119,8 @@ serve(async (req) => {
         // We have a valid plan - execute it
         if (plan && plan.steps.length > 0) {
           // Build acknowledgment with plan preview
+          // Brief acknowledgment only - no verbose plan preview
           const ackMessage = getTaskAck();
-          const planIntro = getPlanIntro();
-
-          let planPreview = `${ackMessage}\n\n${planIntro}\n`;
-          plan.steps.forEach((step, i) => {
-            const icon = getStepIcon(step.action);
-            planPreview += `${i + 1}. ${icon} ${step.description}\n`;
-          });
 
           // Create action context for executor
           const actionCtx: ActionContext = { supabase, companyId, userId };
@@ -2125,30 +2144,32 @@ serve(async (req) => {
           // Execute the plan
           const execResult = await executePlan(plan, execContext);
 
-          // Build human-friendly response
-          let responseMessage = planPreview + '\n---\n\n';
+          // Build brief response - just results, no verbose preview
+          let responseMessage = `${ackMessage}\n`;
 
-          // Add step results
-          for (const step of plan.steps) {
-            const icon = getStepIcon(step.action);
-            if (step.status === 'completed') {
-              responseMessage += `${icon} ${step.completionMessage || step.description} ✓\n`;
-            } else if (step.status === 'failed') {
-              responseMessage += `${icon} ${step.failureMessage || `Failed: ${step.description}`} ✗\n`;
-            } else if (step.status === 'skipped') {
-              responseMessage += `${icon} ${step.description} (skipped)\n`;
+          // Only show key results (1-2 lines per step max)
+          const completedSteps = plan.steps.filter(s => s.status === 'completed');
+          const failedSteps = plan.steps.filter(s => s.status === 'failed');
+
+          // Show results briefly
+          if (completedSteps.length > 0) {
+            for (const step of completedSteps) {
+              const completionText = injectTemplateValues(step.completionMessage || step.description, execResult.results, step.id);
+              responseMessage += `✓ ${completionText}\n`;
             }
           }
 
-          // Add completion summary
-          if (execResult.success) {
-            responseMessage += '\n---\n\n' + getTaskCompleteMessage(true);
+          // Show failures if any
+          for (const step of failedSteps) {
+            responseMessage += `✗ ${step.failureMessage || step.description}\n`;
+          }
 
-            // Build summary bullets
+          // Brief completion summary
+          if (execResult.success) {
+            // Only add summary if there's meaningful data to summarize
             const summaryBullets: string[] = [];
-            for (const step of plan.steps.filter(s => s.status === 'completed')) {
+            for (const step of completedSteps) {
               if (step.result) {
-                // Extract key info from result
                 const resultSummary = summarizeStepResult(step);
                 if (resultSummary) {
                   summaryBullets.push(resultSummary);
@@ -2156,8 +2177,8 @@ serve(async (req) => {
               }
             }
 
-            if (summaryBullets.length > 0) {
-              responseMessage += '\n';
+            // Only show bullets if different from step messages
+            if (summaryBullets.length > 0 && summaryBullets.length < completedSteps.length) {
               summaryBullets.forEach(bullet => {
                 responseMessage += `• ${bullet}\n`;
               });

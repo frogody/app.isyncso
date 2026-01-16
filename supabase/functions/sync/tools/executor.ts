@@ -330,7 +330,7 @@ function resolveInputs(step: TaskStep, previousResults: Record<string, any>): Re
   return resolved;
 }
 
-function injectTemplateValues(
+export function injectTemplateValues(
   template: string,
   results: Record<string, any>,
   currentStepId?: string
