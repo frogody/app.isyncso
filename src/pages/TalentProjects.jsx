@@ -91,7 +91,7 @@ import {
 // SMART QUICK ADD MODAL - AI-powered job search and auto-fill
 // ============================================================================
 const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, onCreateProject }) => {
-  // Step: 1 = Input, 2 = Searching, 3 = Review
+  // Step: 1 = Input, 2 = Searching, 3 = Review Role, 4 = Add to Project
   const [step, setStep] = useState(1);
   const [isSearching, setIsSearching] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -104,8 +104,10 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
 
   // Step 3: Auto-filled data from AI search
   const [parsedJob, setParsedJob] = useState(null);
+
+  // Step 4: Project selection
   const [selectedProject, setSelectedProject] = useState(null);
-  const [createNewProject, setCreateNewProject] = useState(false);
+  const [newProjectName, setNewProjectName] = useState("");
 
   // Reset on open
   useEffect(() => {
@@ -117,7 +119,7 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
       setParsedJob(null);
       setSearchError(null);
       setSelectedProject(null);
-      setCreateNewProject(false);
+      setNewProjectName("");
     }
   }, [isOpen]);
 
@@ -158,6 +160,8 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
       if (data.success && data.job) {
         setParsedJob(data.job);
         setStep(3);
+        // Pre-fill new project name
+        setNewProjectName(`${data.job.company} - ${data.job.title}`);
         toast.success(
           data.has_source
             ? `Found job posting from ${data.job.source_domain}`
@@ -176,18 +180,24 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
     }
   };
 
-  // Create the role with auto-filled data
+  // Create the role with project
   const handleCreateRole = async () => {
     if (!parsedJob) return;
 
+    // Must have either a selected project or a new project name
+    if (!selectedProject && !newProjectName.trim()) {
+      toast.error("Please select a project or enter a new project name");
+      return;
+    }
+
     setIsCreating(true);
     try {
-      // Create project if needed
       let projectId = selectedProject?.id;
 
-      if (createNewProject) {
+      // Create new project if needed
+      if (!selectedProject && newProjectName.trim()) {
         const newProject = await onCreateProject({
-          name: `${companyName} - ${roleTitle}`,
+          name: newProjectName.trim(),
           status: "active",
           priority: "medium",
         });
@@ -205,7 +215,7 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
         status: "active",
       }, null, projectId);
 
-      toast.success(`Role "${parsedJob.title}" created successfully!`);
+      toast.success(`Role "${parsedJob.title}" added to project!`);
       onClose();
     } catch (error) {
       console.error("Error creating role:", error);
@@ -350,7 +360,7 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="space-y-6 py-4"
+            className="space-y-5 py-4"
           >
             {/* Source Badge */}
             {parsedJob.source_url && (
@@ -401,9 +411,9 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
             {parsedJob.requirements?.length > 0 && (
               <div className="space-y-2">
                 <Label className="text-white/70">Requirements</Label>
-                <div className="p-3 bg-zinc-800/30 rounded-lg max-h-32 overflow-y-auto">
+                <div className="p-3 bg-zinc-800/30 rounded-lg max-h-28 overflow-y-auto">
                   <ul className="text-sm text-white/70 space-y-1">
-                    {parsedJob.requirements.slice(0, 6).map((req, i) => (
+                    {parsedJob.requirements.slice(0, 5).map((req, i) => (
                       <li key={i} className="flex items-start gap-2">
                         <Check className="w-3 h-3 text-green-400 mt-1 flex-shrink-0" />
                         {req}
@@ -418,9 +428,9 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
             {parsedJob.responsibilities?.length > 0 && (
               <div className="space-y-2">
                 <Label className="text-white/70">Responsibilities</Label>
-                <div className="p-3 bg-zinc-800/30 rounded-lg max-h-32 overflow-y-auto">
+                <div className="p-3 bg-zinc-800/30 rounded-lg max-h-28 overflow-y-auto">
                   <ul className="text-sm text-white/70 space-y-1">
-                    {parsedJob.responsibilities.slice(0, 6).map((resp, i) => (
+                    {parsedJob.responsibilities.slice(0, 5).map((resp, i) => (
                       <li key={i} className="flex items-start gap-2">
                         <ChevronRight className="w-3 h-3 text-red-400 mt-1 flex-shrink-0" />
                         {resp}
@@ -430,44 +440,6 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
                 </div>
               </div>
             )}
-
-            {/* Project Selection */}
-            <div className="space-y-2">
-              <Label className="text-white/70">Add to Project (optional)</Label>
-              <div className="flex flex-wrap gap-2">
-                {projects.slice(0, 4).map((project) => (
-                  <button
-                    key={project.id}
-                    onClick={() => {
-                      setSelectedProject(project);
-                      setCreateNewProject(false);
-                    }}
-                    className={`px-3 py-1.5 rounded-lg text-sm transition-all flex items-center gap-2 ${
-                      selectedProject?.id === project.id
-                        ? "bg-red-600 text-white"
-                        : "bg-zinc-800 text-white/60 hover:bg-zinc-700 hover:text-white"
-                    }`}
-                  >
-                    <Briefcase className="w-3 h-3" />
-                    {project.title || project.name}
-                  </button>
-                ))}
-                <button
-                  onClick={() => {
-                    setCreateNewProject(true);
-                    setSelectedProject(null);
-                  }}
-                  className={`px-3 py-1.5 rounded-lg text-sm transition-all flex items-center gap-2 ${
-                    createNewProject
-                      ? "bg-red-600 text-white"
-                      : "bg-zinc-800 text-white/60 hover:bg-zinc-700 hover:text-white"
-                  }`}
-                >
-                  <Plus className="w-3 h-3" />
-                  New Project
-                </button>
-              </div>
-            </div>
 
             {/* Action Buttons */}
             <div className="flex gap-3 pt-4 border-t border-zinc-700">
@@ -480,9 +452,128 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
                 Back
               </Button>
               <Button
-                onClick={handleCreateRole}
-                disabled={isCreating}
+                onClick={() => setStep(4)}
                 className="flex-[2] bg-red-600 hover:bg-red-700"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add to Project
+              </Button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Step 4: Add to Project (Final Step) */}
+        {step === 4 && parsedJob && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-5 py-4"
+          >
+            {/* Summary Card */}
+            <div className="p-4 bg-zinc-800/30 rounded-lg border border-zinc-700/50 space-y-3">
+              <h4 className="text-sm font-medium text-white/50 uppercase tracking-wide">Role Summary</h4>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <span className="text-xs text-white/40">Role</span>
+                  <p className="text-white font-medium">{parsedJob.title}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-white/40">Company</span>
+                  <p className="text-white font-medium">{parsedJob.company}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-white/40">Location</span>
+                  <p className="text-white/80">{parsedJob.location}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-white/40">Type</span>
+                  <p className="text-white/80">{parsedJob.employment_type?.replace('_', ' ') || 'Full time'}</p>
+                </div>
+                {parsedJob.salary_range && (
+                  <div className="col-span-2">
+                    <span className="text-xs text-white/40">Salary</span>
+                    <p className="text-green-400">{parsedJob.salary_range}</p>
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-1.5 pt-2 border-t border-zinc-700/50">
+                <span className="text-xs text-white/40 w-full mb-1">Key Requirements:</span>
+                {parsedJob.requirements?.slice(0, 3).map((req, i) => (
+                  <Badge key={i} variant="outline" className="text-xs bg-zinc-800 border-zinc-600 text-white/70">
+                    {req.length > 30 ? req.slice(0, 30) + '...' : req}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            {/* Existing Projects */}
+            {projects.length > 0 && (
+              <div className="space-y-3">
+                <Label className="text-white/70">Add to existing project</Label>
+                <div className="flex flex-wrap gap-2">
+                  {projects.slice(0, 6).map((project) => (
+                    <button
+                      key={project.id}
+                      onClick={() => {
+                        setSelectedProject(project);
+                        setNewProjectName("");
+                      }}
+                      className={`px-3 py-2 rounded-lg text-sm transition-all flex items-center gap-2 ${
+                        selectedProject?.id === project.id
+                          ? "bg-red-600 text-white ring-2 ring-red-400"
+                          : "bg-zinc-800 text-white/60 hover:bg-zinc-700 hover:text-white"
+                      }`}
+                    >
+                      <Briefcase className="w-3.5 h-3.5" />
+                      {project.title || project.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Divider */}
+            {projects.length > 0 && (
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px bg-zinc-700" />
+                <span className="text-xs text-white/40 uppercase">or create new</span>
+                <div className="flex-1 h-px bg-zinc-700" />
+              </div>
+            )}
+
+            {/* New Project Name */}
+            <div className="space-y-2">
+              <Label className="text-white/70 flex items-center gap-2">
+                <Plus className="w-4 h-4 text-red-400" />
+                Name your project
+              </Label>
+              <Input
+                value={newProjectName}
+                onChange={(e) => {
+                  setNewProjectName(e.target.value);
+                  setSelectedProject(null);
+                }}
+                placeholder="e.g., Q1 Engineering Hires, Finance Team Expansion..."
+                className={`bg-zinc-800/50 border-zinc-700 text-white h-12 ${
+                  newProjectName && !selectedProject ? "ring-2 ring-red-500/50 border-red-500/50" : ""
+                }`}
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-4 border-t border-zinc-700">
+              <Button
+                variant="outline"
+                onClick={() => setStep(3)}
+                className="flex-1 border-zinc-700 text-white hover:bg-zinc-800"
+              >
+                <ArrowRight className="w-4 h-4 mr-2 rotate-180" />
+                Back
+              </Button>
+              <Button
+                onClick={handleCreateRole}
+                disabled={isCreating || (!selectedProject && !newProjectName.trim())}
+                className="flex-[2] bg-red-600 hover:bg-red-700 disabled:opacity-50"
               >
                 {isCreating ? (
                   <>
@@ -492,7 +583,7 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
                 ) : (
                   <>
                     <CheckCircle2 className="w-4 h-4 mr-2" />
-                    Create Role
+                    {selectedProject ? `Add to ${selectedProject.title || selectedProject.name}` : "Create Project & Role"}
                   </>
                 )}
               </Button>
