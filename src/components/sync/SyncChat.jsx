@@ -302,6 +302,20 @@ export default function SyncChat({
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
+  // Set user-based sessionId when authenticated (syncs with desktop app)
+  useEffect(() => {
+    const initUserSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.id && !sessionId) {
+        // Use consistent sessionId format so web and desktop share conversation
+        const userSessionId = `sync_user_${session.user.id}`;
+        setSessionId(userSessionId);
+        console.log('[SyncChat] Using user-based sessionId:', userSessionId);
+      }
+    };
+    initUserSession();
+  }, [sessionId, setSessionId]);
+
   // Restore messages from cache on mount
   useEffect(() => {
     if (cachedMessages.length > 0 && messages.length === 0) {
