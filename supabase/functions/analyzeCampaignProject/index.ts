@@ -253,6 +253,20 @@ serve(async (req) => {
       .sort((a, b) => b.match_score - a.match_score)
       .slice(0, limit);
 
+    // Get project name if we have project_id
+    let projectName: string | null = null;
+    if (project_id) {
+      const { data: projectData } = await supabase
+        .from("projects")
+        .select("title, name")
+        .eq("id", project_id)
+        .single();
+      projectName = projectData?.title || projectData?.name || null;
+    }
+
+    // Get the primary role for reference
+    const primaryRole = roles[0];
+
     // If campaign_id provided, update the campaign with matched candidates
     if (campaign_id && sortedMatches.length > 0) {
       const matchedCandidatesData = sortedMatches.map(m => ({
@@ -270,6 +284,37 @@ serve(async (req) => {
 
       if (updateError) {
         console.error("Error updating campaign:", updateError);
+      }
+
+      // Also store matches in candidate_campaign_matches table for candidate-side viewing
+      const candidateMatchRecords = sortedMatches.map(m => ({
+        candidate_id: m.candidate_id,
+        campaign_id: campaign_id,
+        organization_id: organization_id,
+        match_score: m.match_score,
+        match_reasons: m.match_reasons,
+        intelligence_score: m.intelligence_score,
+        recommended_approach: m.recommended_approach,
+        status: "matched",
+        role_id: role_id || primaryRole?.id || null,
+        role_title: primaryRole?.title || null,
+        project_id: project_id || null,
+        project_name: projectName,
+        matched_at: new Date().toISOString(),
+      }));
+
+      // Use upsert to update existing matches or insert new ones
+      const { error: matchesError } = await supabase
+        .from("candidate_campaign_matches")
+        .upsert(candidateMatchRecords, {
+          onConflict: "candidate_id,campaign_id",
+          ignoreDuplicates: false
+        });
+
+      if (matchesError) {
+        console.error("Error storing candidate matches:", matchesError);
+      } else {
+        console.log(`Stored ${candidateMatchRecords.length} candidate-campaign matches`);
       }
     }
 

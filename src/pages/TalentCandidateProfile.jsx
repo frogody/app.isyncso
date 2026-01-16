@@ -50,6 +50,8 @@ import {
   ArrowUpRight,
   TrendingDown,
   Activity,
+  CheckCircle2,
+  Percent,
 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -260,6 +262,7 @@ export default function TalentCandidateProfile() {
 
   const [candidate, setCandidate] = useState(null);
   const [outreachTasks, setOutreachTasks] = useState([]);
+  const [campaignMatches, setCampaignMatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
   const [generatingIntelligence, setGeneratingIntelligence] = useState(false);
@@ -269,6 +272,7 @@ export default function TalentCandidateProfile() {
     if (candidateId) {
       fetchCandidate();
       fetchOutreachTasks();
+      fetchCampaignMatches();
     }
   }, [candidateId, user]);
 
@@ -304,6 +308,33 @@ export default function TalentCandidateProfile() {
       setOutreachTasks(data || []);
     } catch (err) {
       console.error("Error fetching outreach tasks:", err);
+    }
+  };
+
+  const fetchCampaignMatches = async () => {
+    if (!user?.organization_id || !candidateId) return;
+    try {
+      // Fetch matches with campaign details
+      const { data, error } = await supabase
+        .from("candidate_campaign_matches")
+        .select(`
+          *,
+          campaigns:campaign_id (
+            id,
+            name,
+            description,
+            status,
+            campaign_type
+          )
+        `)
+        .eq("candidate_id", candidateId)
+        .eq("organization_id", user.organization_id)
+        .order("match_score", { ascending: false });
+
+      if (error) throw error;
+      setCampaignMatches(data || []);
+    } catch (err) {
+      console.error("Error fetching campaign matches:", err);
     }
   };
 
@@ -412,6 +443,7 @@ export default function TalentCandidateProfile() {
     { id: "overview", label: "Overview" },
     { id: "company", label: "Company" },
     { id: "intelligence", label: "Intelligence" },
+    { id: "matches", label: "Matches", count: campaignMatches.length },
     { id: "outreach", label: "Outreach" },
   ];
 
@@ -550,13 +582,22 @@ export default function TalentCandidateProfile() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 px-6 py-3 rounded-xl text-sm font-medium transition-all ${
+                className={`flex-1 px-6 py-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 ${
                   activeTab === tab.id
                     ? "bg-red-500 text-white shadow-lg shadow-red-500/20"
                     : "text-white/50 hover:text-white hover:bg-white/[0.04]"
                 }`}
               >
                 {tab.label}
+                {tab.count > 0 && (
+                  <span className={`px-1.5 py-0.5 text-xs rounded-full ${
+                    activeTab === tab.id
+                      ? "bg-white/20"
+                      : "bg-red-500/20 text-red-400"
+                  }`}>
+                    {tab.count}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -758,6 +799,160 @@ export default function TalentCandidateProfile() {
               isGenerating={generatingIntelligence}
               syncStatus={syncStatus}
             />
+          )}
+
+          {/* Matches Tab */}
+          {activeTab === "matches" && (
+            <div>
+              {campaignMatches.length > 0 ? (
+                <div className="space-y-4">
+                  {/* Match Summary */}
+                  <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-white">Campaign Matches</h3>
+                      <Badge className="bg-red-500/20 text-red-400 border-red-500/30">
+                        {campaignMatches.length} {campaignMatches.length === 1 ? "match" : "matches"}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-white/50">
+                      This candidate has been matched to the following campaigns through the auto-match process.
+                      Higher scores indicate better fit for the role requirements.
+                    </p>
+                  </div>
+
+                  {/* Match Cards - Ranked by Score */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {campaignMatches.map((match, index) => (
+                      <motion.div
+                        key={match.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5 hover:bg-white/[0.05] transition-colors"
+                      >
+                        {/* Rank Badge & Score */}
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold ${
+                              index === 0
+                                ? "bg-gradient-to-br from-yellow-500 to-amber-600 text-white"
+                                : index === 1
+                                ? "bg-gradient-to-br from-gray-300 to-gray-400 text-gray-800"
+                                : index === 2
+                                ? "bg-gradient-to-br from-amber-600 to-amber-700 text-white"
+                                : "bg-white/10 text-white/60"
+                            }`}>
+                              #{index + 1}
+                            </div>
+                            <div>
+                              <Link
+                                to={`${createPageUrl("TalentCampaignDetail")}?id=${match.campaign_id}`}
+                                className="text-white font-semibold hover:text-red-400 transition-colors"
+                              >
+                                {match.campaigns?.name || "Unknown Campaign"}
+                              </Link>
+                              <p className="text-sm text-white/50">
+                                {match.role_title || "General Match"}
+                                {match.project_name && ` • ${match.project_name}`}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Match Score Circle */}
+                          <div className="relative w-16 h-16">
+                            <svg className="w-full h-full -rotate-90">
+                              <circle
+                                cx="32"
+                                cy="32"
+                                r="28"
+                                fill="none"
+                                stroke="rgba(255,255,255,0.1)"
+                                strokeWidth="6"
+                              />
+                              <circle
+                                cx="32"
+                                cy="32"
+                                r="28"
+                                fill="none"
+                                stroke={match.match_score >= 70 ? "#22c55e" : match.match_score >= 50 ? "#eab308" : "#ef4444"}
+                                strokeWidth="6"
+                                strokeLinecap="round"
+                                strokeDasharray={`${(match.match_score / 100) * 176} 176`}
+                              />
+                            </svg>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <span className="text-lg font-bold text-white">{Math.round(match.match_score)}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Match Reasons */}
+                        {match.match_reasons?.length > 0 && (
+                          <div className="space-y-2 mb-4">
+                            <p className="text-xs text-white/40 uppercase tracking-wide">Match Reasons</p>
+                            <div className="flex flex-wrap gap-2">
+                              {match.match_reasons.slice(0, 4).map((reason, i) => (
+                                <span
+                                  key={i}
+                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white/[0.05] text-xs text-white/70"
+                                >
+                                  <CheckCircle2 className="w-3 h-3 text-green-400" />
+                                  {reason}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Meta Info */}
+                        <div className="flex items-center justify-between pt-3 border-t border-white/[0.06]">
+                          <div className="flex items-center gap-4 text-xs text-white/40">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              {new Date(match.matched_at).toLocaleDateString()}
+                            </span>
+                            {match.campaigns?.status && (
+                              <Badge
+                                className={`text-xs ${
+                                  match.campaigns.status === "active"
+                                    ? "bg-green-500/20 text-green-400 border-green-500/30"
+                                    : "bg-zinc-500/20 text-zinc-400 border-zinc-500/30"
+                                }`}
+                              >
+                                {match.campaigns.status}
+                              </Badge>
+                            )}
+                          </div>
+                          {match.recommended_approach && (
+                            <span className="text-xs text-white/50">
+                              {match.recommended_approach === "immediate" && "⚡ Immediate"}
+                              {match.recommended_approach === "targeted" && "🎯 Targeted"}
+                              {match.recommended_approach === "nurture" && "🌱 Nurture"}
+                            </span>
+                          )}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-12 text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-white/[0.04] flex items-center justify-center">
+                    <Target className="w-8 h-8 text-white/20" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-white mb-2">No Matches Yet</h3>
+                  <p className="text-white/50 mb-6 max-w-md mx-auto">
+                    This candidate hasn't been matched to any campaigns yet. Run auto-match on a campaign to see how well they fit.
+                  </p>
+                  <Link to={createPageUrl("TalentCampaigns")}>
+                    <Button className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 px-8">
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      View Campaigns
+                    </Button>
+                  </Link>
+                </div>
+              )}
+            </div>
           )}
 
           {/* Outreach Tab */}
