@@ -1,16 +1,15 @@
 /**
  * SYNC Voice API
- * Real-time voice conversation endpoint with Cartesia Sonic TTS
+ * Real-time voice conversation endpoint with full SYNC capabilities + TTS
  *
  * Flow:
  * 1. Receives transcribed text from client (browser STT)
- * 2. Processes with SYNC LLM (Kimi-K2)
- * 3. Generates speech with Cartesia Sonic (90ms TTFA)
+ * 2. Calls main /sync endpoint for full action capabilities
+ * 3. Generates speech with Together.ai TTS
  * 4. Returns audio for playback
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,83 +18,85 @@ const corsHeaders = {
 
 const TOGETHER_API_KEY = Deno.env.get("TOGETHER_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-// Available TTS voices via Together.ai
-// Using Orpheus model voices (confirmed working)
-const VOICES = {
-  tara: 'tara',     // Female, friendly
-  leah: 'leah',     // Female
-  jess: 'jess',     // Female
-  leo: 'leo',       // Male
-  dan: 'dan',       // Male
-  mia: 'mia',       // Female
-  zac: 'zac',       // Male
-  zoe: 'zoe',       // Female
-};
+// Available TTS voices via Together.ai (Orpheus model)
+const VALID_VOICES = ['tara', 'leah', 'jess', 'leo', 'dan', 'mia', 'zac', 'zoe'];
 
-// Conversational system prompt optimized for voice
-const VOICE_SYSTEM_PROMPT = `You are SYNC, a friendly AI assistant for iSyncSO. You're having a real-time voice conversation.
-
-CRITICAL VOICE RULES:
-- Keep responses SHORT and conversational (1-3 sentences max)
-- Be warm, natural, and engaging
-- Never use markdown, bullet points, or formatting
-- Speak like a helpful colleague, not a robot
-- If asked to do something complex, briefly acknowledge and say you'll handle it
-- Use contractions naturally (I'm, you're, let's, etc.)
-- Avoid technical jargon unless the user uses it first
-
-Examples of good voice responses:
-- "Sure, I'll create that invoice for you right now."
-- "Got it! I found 3 products matching that search."
-- "I've added that task to your list. Anything else?"
-
-Current date: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
-
-// Simple LLM call for voice (faster, more concise)
-async function getVoiceResponse(
+// Call the main SYNC endpoint for full capabilities
+async function callSyncAgent(
   message: string,
-  conversationHistory: Array<{ role: string; content: string }>,
+  sessionId: string,
   context: { userId?: string; companyId?: string }
-): Promise<string> {
-  const messages = [
-    { role: 'system', content: VOICE_SYSTEM_PROMPT },
-    ...conversationHistory.slice(-6), // Keep last 3 exchanges for context
-    { role: 'user', content: message }
-  ];
+): Promise<{ text: string; actionExecuted?: any }> {
+  console.log(`[sync-voice] Calling main SYNC agent with: "${message.substring(0, 50)}..."`);
 
-  const response = await fetch('https://api.together.ai/v1/chat/completions', {
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/sync`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${TOGETHER_API_KEY}`,
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'moonshotai/Kimi-K2-Instruct',
-      messages,
-      max_tokens: 150, // Keep responses short for voice
-      temperature: 0.7,
-      stream: false,
+      message,
+      sessionId,
+      stream: false, // Don't stream for voice - we need complete response
+      mode: 'auto',
+      context: {
+        userId: context.userId,
+        companyId: context.companyId,
+        source: 'voice-mode',
+      },
     }),
   });
 
   if (!response.ok) {
     const error = await response.text();
-    console.error('LLM error:', error);
-    throw new Error('Failed to get response');
+    console.error('[sync-voice] SYNC agent error:', error);
+    throw new Error('Failed to get response from SYNC');
   }
 
   const data = await response.json();
-  return data.choices[0]?.message?.content || "I'm here to help!";
+
+  // Clean up the response for voice (remove markdown, links, etc.)
+  let cleanText = data.response || "I'm here to help!";
+
+  // Remove markdown formatting
+  cleanText = cleanText
+    .replace(/\*\*([^*]+)\*\*/g, '$1')  // Bold
+    .replace(/\*([^*]+)\*/g, '$1')      // Italic
+    .replace(/`([^`]+)`/g, '$1')        // Code
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')  // Links
+    .replace(/#{1,6}\s+/g, '')          // Headers
+    .replace(/•\s+/g, '')               // Bullet points
+    .replace(/\n{2,}/g, '. ')           // Multiple newlines to period
+    .replace(/\n/g, ' ')                // Single newlines to space
+    .replace(/\s{2,}/g, ' ')            // Multiple spaces
+    .trim();
+
+  // Truncate for voice if too long (aim for ~30 seconds of speech max)
+  if (cleanText.length > 500) {
+    // Find a good break point
+    const breakPoint = cleanText.lastIndexOf('.', 450);
+    if (breakPoint > 200) {
+      cleanText = cleanText.substring(0, breakPoint + 1);
+    } else {
+      cleanText = cleanText.substring(0, 450) + '...';
+    }
+  }
+
+  return {
+    text: cleanText,
+    actionExecuted: data.actionExecuted,
+  };
 }
 
-// Generate speech with Together.ai TTS (Orpheus model - fast and natural)
+// Generate speech with Together.ai TTS (Orpheus model)
 async function generateSpeech(
   text: string,
   voice: string = 'tara'
 ): Promise<ArrayBuffer> {
-  console.log(`Generating speech for: "${text.substring(0, 50)}..." with voice: ${voice}`);
+  console.log(`[sync-voice] Generating speech for: "${text.substring(0, 50)}..." with voice: ${voice}`);
 
   const response = await fetch('https://api.together.ai/v1/audio/speech', {
     method: 'POST',
@@ -113,7 +114,7 @@ async function generateSpeech(
 
   if (!response.ok) {
     const error = await response.text();
-    console.error('TTS error:', error);
+    console.error('[sync-voice] TTS error:', error);
     throw new Error(`TTS failed: ${error}`);
   }
 
@@ -140,7 +141,7 @@ serve(async (req) => {
     const {
       message,
       sessionId,
-      conversationHistory = [],
+      conversationHistory = [], // Kept for compatibility but SYNC manages its own history
       voice: requestedVoice,
       context = {}
     } = await req.json();
@@ -152,36 +153,43 @@ serve(async (req) => {
       );
     }
 
-    // Validate voice - use default if invalid
-    const validVoices = ['tara', 'leah', 'jess', 'leo', 'dan', 'mia', 'zac', 'zoe'];
-    const voice = validVoices.includes(requestedVoice) ? requestedVoice : 'tara';
+    // Validate voice
+    const voice = VALID_VOICES.includes(requestedVoice) ? requestedVoice : 'tara';
 
     console.log(`[sync-voice] Processing: "${message.substring(0, 50)}..." with voice: ${voice}`);
     const startTime = Date.now();
 
-    // Get LLM response (optimized for voice)
-    const llmStart = Date.now();
-    const responseText = await getVoiceResponse(message, conversationHistory, context);
-    console.log(`[sync-voice] LLM response in ${Date.now() - llmStart}ms: "${responseText.substring(0, 50)}..."`);
+    // Call main SYNC agent for full capabilities (proposals, invoices, products, etc.)
+    const syncStart = Date.now();
+    const syncResponse = await callSyncAgent(message, sessionId, context);
+    const syncTime = Date.now() - syncStart;
+    console.log(`[sync-voice] SYNC response in ${syncTime}ms: "${syncResponse.text.substring(0, 50)}..."`);
 
-    // Generate speech with Together.ai TTS
+    // Log if an action was executed
+    if (syncResponse.actionExecuted) {
+      console.log(`[sync-voice] Action executed: ${syncResponse.actionExecuted.type} - success: ${syncResponse.actionExecuted.success}`);
+    }
+
+    // Generate speech
     const ttsStart = Date.now();
-    const audioBuffer = await generateSpeech(responseText, voice);
+    const audioBuffer = await generateSpeech(syncResponse.text, voice);
     const audioBase64 = arrayBufferToBase64(audioBuffer);
-    console.log(`[sync-voice] TTS generated in ${Date.now() - ttsStart}ms (${audioBuffer.byteLength} bytes)`);
+    const ttsTime = Date.now() - ttsStart;
+    console.log(`[sync-voice] TTS generated in ${ttsTime}ms (${audioBuffer.byteLength} bytes)`);
 
     const totalTime = Date.now() - startTime;
     console.log(`[sync-voice] Total processing time: ${totalTime}ms`);
 
     return new Response(
       JSON.stringify({
-        text: responseText,
+        text: syncResponse.text,
         audio: audioBase64,
         audioFormat: 'mp3',
+        actionExecuted: syncResponse.actionExecuted,
         timing: {
           total: totalTime,
-          llm: Date.now() - llmStart - (Date.now() - ttsStart),
-          tts: Date.now() - ttsStart,
+          sync: syncTime,
+          tts: ttsTime,
         }
       }),
       {
