@@ -2049,200 +2049,251 @@ export default function SyncAgent() {
 
   return (
     <div ref={pageRef} className="h-screen flex flex-col bg-black text-white overflow-hidden">
-      {/* Top bar */}
-      <div className="shrink-0 z-20 border-b border-white/10 bg-black/40 backdrop-blur">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-6 py-3">
-          <div className="flex items-center gap-2">
-            <div className="grid h-9 w-9 place-items-center rounded-2xl border border-cyan-500/30 bg-cyan-500/10">
-              <Brain className="h-4 w-4 text-cyan-400" />
+      {/* Premium Top bar */}
+      <div className="shrink-0 z-20 relative">
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent" />
+        <div className="bg-gradient-to-b from-zinc-900/80 to-black/60 backdrop-blur-xl">
+          <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-6 py-4">
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <div className="absolute inset-0 bg-cyan-500/20 rounded-xl blur-xl" />
+                <div className="relative grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 border border-cyan-500/30 shadow-lg shadow-cyan-500/10">
+                  <Brain className="h-5 w-5 text-cyan-400" />
+                </div>
+              </div>
+              <div>
+                <div className="text-base font-semibold tracking-tight bg-gradient-to-r from-white to-zinc-300 bg-clip-text text-transparent">SYNC Agent</div>
+                <div className="text-xs text-zinc-500">AI Orchestrator</div>
+              </div>
             </div>
-            <div>
-              <div className="text-sm font-semibold tracking-tight">SYNC Agent</div>
-              <div className="text-xs text-zinc-400">AI Orchestrator</div>
-            </div>
-          </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              className="inline-flex items-center gap-2 rounded-2xl border border-cyan-500/30 bg-cyan-500/10 px-3 py-2 text-xs text-cyan-400 hover:bg-cyan-500/20 transition-colors"
-              onClick={handleNewChat}
-              title="Start new conversation"
-            >
-              <Plus className="h-4 w-4" />
-              New Chat
-            </button>
-            <button
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/80 hover:bg-white/10 transition-colors"
-              onClick={() => setSeed((s) => s + 1)}
-              title="Refresh inner visual"
-            >
-              <RotateCcw className="h-4 w-4" />
-              Refresh
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                className="group relative inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium overflow-hidden transition-all duration-300"
+                onClick={handleNewChat}
+                title="Start new conversation"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-cyan-500 opacity-90 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-cyan-300 opacity-0 group-hover:opacity-20 transition-opacity" />
+                <Plus className="relative h-4 w-4 text-white" />
+                <span className="relative text-white">New Chat</span>
+              </button>
+              <button
+                className="inline-flex items-center gap-2 rounded-xl border border-zinc-700/60 bg-zinc-800/50 px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white hover:border-zinc-600 transition-all duration-200"
+                onClick={() => setSeed((s) => s + 1)}
+                title="Refresh inner visual"
+              >
+                <RotateCcw className="h-4 w-4" />
+                Refresh
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Layout - fills remaining height */}
       <div className="flex-1 min-h-0 mx-auto w-full max-w-[1600px] grid grid-cols-1 gap-6 px-6 py-6 lg:grid-cols-[480px_1fr]">
-        {/* Left: Avatar */}
+        {/* Left: Avatar Panel - Premium Glass Design */}
         <div
           data-animate
-          className="flex flex-col rounded-3xl border border-white/10 bg-white/5 p-5 shadow-[0_30px_80px_rgba(0,0,0,0.55)] overflow-hidden"
+          className="relative flex flex-col rounded-2xl overflow-hidden"
           style={{ opacity: 0 }}
         >
-          <div className="shrink-0 flex items-start justify-between gap-3">
-            <div>
-              <div className="text-sm font-semibold">SYNC</div>
-              <div className="text-xs text-zinc-500">AI Orchestrator</div>
+          {/* Glass background with gradient border */}
+          <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-zinc-800/40 via-zinc-900/60 to-black/80 backdrop-blur-xl" />
+          <div className="absolute inset-0 rounded-2xl border border-zinc-700/50" />
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-zinc-500/30 to-transparent" />
+
+          {/* Subtle glow effect */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-32 bg-cyan-500/5 blur-3xl" />
+
+          <div className="relative z-10 flex flex-col h-full p-5">
+            {/* Header */}
+            <div className="shrink-0 flex items-start justify-between gap-3 mb-4">
+              <div>
+                <div className="text-lg font-semibold bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">SYNC</div>
+                <div className="text-xs text-zinc-500">AI Orchestrator</div>
+              </div>
+              <span
+                className={cn(
+                  'inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium capitalize transition-all duration-300 shadow-lg',
+                  mood === 'speaking'
+                    ? 'border-cyan-500/40 bg-cyan-500/15 text-cyan-300 shadow-cyan-500/10'
+                    : mood === 'thinking'
+                    ? 'border-amber-500/40 bg-amber-500/15 text-amber-300 shadow-amber-500/10'
+                    : 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300 shadow-emerald-500/10'
+                )}
+              >
+                <span className={cn(
+                  'h-2 w-2 rounded-full',
+                  mood === 'speaking' ? 'bg-cyan-400 animate-pulse' : mood === 'thinking' ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'
+                )} />
+                {mood}
+              </span>
             </div>
-            <span
-              className={cn(
-                'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs capitalize transition-colors',
-                mood === 'speaking'
-                  ? 'border-cyan-400/30 bg-cyan-500/10 text-cyan-300'
-                  : mood === 'thinking'
-                  ? 'border-amber-400/30 bg-amber-500/10 text-amber-300'
-                  : 'border-emerald-400/30 bg-emerald-500/10 text-emerald-300'
-              )}
-            >
-              <span className={cn(
-                'h-1.5 w-1.5 rounded-full',
-                mood === 'speaking' ? 'bg-cyan-400' : mood === 'thinking' ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'
-              )} />
-              {mood}
-            </span>
-          </div>
 
-          <div className="shrink-0 mt-2 grid place-items-center">
-            <AgentAvatar size={320} agentName="SYNC" mood={mood} level={level} seed={seed} activeAgent={activeAgent} actionEffect={currentActionEffect} showSuccess={showSuccess} />
-          </div>
+            {/* Avatar Container */}
+            <div className="shrink-0 grid place-items-center py-2">
+              <AgentAvatar size={320} agentName="SYNC" mood={mood} level={level} seed={seed} activeAgent={activeAgent} actionEffect={currentActionEffect} showSuccess={showSuccess} />
+            </div>
 
-          {/* Agent Channel - Live communication feed */}
-          <div className="mt-4 flex-1 min-h-0">
-            <AgentChannel messages={agentMessages} isActive={isSending} />
+            {/* Agent Channel - Premium styled */}
+            <div className="mt-4 flex-1 min-h-0 rounded-xl bg-black/30 border border-zinc-800/60 overflow-hidden">
+              <AgentChannel messages={agentMessages} isActive={isSending} />
+            </div>
           </div>
         </div>
 
-        {/* Right: Chat */}
+        {/* Right: Chat Panel - Premium Glass Design */}
         <div
           data-animate
-          className="flex flex-col min-h-0 rounded-3xl border border-white/10 bg-white/5 shadow-[0_30px_80px_rgba(0,0,0,0.55)]"
+          className="relative flex flex-col min-h-0 rounded-2xl overflow-hidden"
           style={{ opacity: 0 }}
         >
-          <div className="flex items-center justify-between border-b border-white/10 px-5 py-3.5">
-            <div>
-              <div className="text-sm font-semibold">Conversation</div>
-              <div className="text-xs text-zinc-500">Chat with SYNC</div>
-            </div>
-            <div className="text-xs text-zinc-500 tabular-nums">{messages.length} messages</div>
-          </div>
+          {/* Glass background with gradient */}
+          <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-zinc-800/40 via-zinc-900/60 to-black/80 backdrop-blur-xl" />
+          <div className="absolute inset-0 rounded-2xl border border-zinc-700/50" />
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-zinc-500/30 to-transparent" />
 
-          <div ref={scrollerRef} className="flex-1 min-h-0 space-y-4 overflow-y-auto px-5 py-5">
-            {messages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center px-4">
-                <div className="w-16 h-16 rounded-2xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center mb-4">
-                  <Sparkles className="w-8 h-8 text-cyan-400" />
+          {/* Content */}
+          <div className="relative z-10 flex flex-col h-full">
+            {/* Premium Header */}
+            <div className="shrink-0 relative">
+              <div className="flex items-center justify-between px-6 py-4">
+                <div>
+                  <div className="text-base font-semibold bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">Conversation</div>
+                  <div className="text-xs text-zinc-500">Chat with SYNC</div>
                 </div>
-                <h4 className="text-lg font-medium text-white mb-2">How can I help you?</h4>
-                <p className="text-sm text-zinc-500 mb-6 max-w-sm">
-                  I can help with invoices, prospects, compliance, learning, and more.
-                </p>
-                <div className="flex flex-wrap gap-2 justify-center">
-                  {suggestions.map((suggestion, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => {
-                        setInput(suggestion.action);
-                        setTimeout(() => send(), 100);
-                      }}
-                      className="px-3.5 py-2 text-xs rounded-xl border border-white/10 bg-white/5 text-zinc-300 hover:bg-white/10 hover:text-white transition-colors"
-                    >
-                      {suggestion.label}
-                    </button>
-                  ))}
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-800/60 border border-zinc-700/50">
+                  <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
+                  <span className="text-xs text-zinc-400 tabular-nums">{messages.length} messages</span>
                 </div>
               </div>
-            ) : (
-              <>
-                {messages.map((m, idx) => (
-                  <Bubble key={idx} role={m.role} text={m.text} ts={m.ts} index={idx} document={m.document} />
-                ))}
+              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-zinc-700/50 to-transparent" />
+            </div>
 
-                {isSending && (
-                  <div className="flex justify-start">
-                    <div className="rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm">
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1">
-                          <span className="inline-flex h-2 w-2 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '0ms', animationDuration: '600ms' }} />
-                          <span className="inline-flex h-2 w-2 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '150ms', animationDuration: '600ms' }} />
-                          <span className="inline-flex h-2 w-2 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '300ms', animationDuration: '600ms' }} />
+            {/* Messages Area */}
+            <div ref={scrollerRef} className="flex-1 min-h-0 space-y-4 overflow-y-auto px-6 py-5">
+              {messages.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-center px-4">
+                  <div className="relative mb-6">
+                    <div className="absolute inset-0 bg-cyan-500/20 rounded-2xl blur-2xl scale-150" />
+                    <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 border border-cyan-500/30 flex items-center justify-center shadow-lg shadow-cyan-500/10">
+                      <Sparkles className="w-10 h-10 text-cyan-400" />
+                    </div>
+                  </div>
+                  <h4 className="text-xl font-semibold bg-gradient-to-r from-white to-zinc-300 bg-clip-text text-transparent mb-2">How can I help you?</h4>
+                  <p className="text-sm text-zinc-500 mb-8 max-w-sm">
+                    I can help with invoices, prospects, compliance, learning, and more.
+                  </p>
+                  <div className="flex flex-wrap gap-2 justify-center max-w-lg">
+                    {suggestions.map((suggestion, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => {
+                          setInput(suggestion.action);
+                          setTimeout(() => send(), 100);
+                        }}
+                        className="group px-4 py-2.5 text-sm rounded-xl border border-zinc-700/60 bg-zinc-800/40 text-zinc-300 hover:bg-zinc-800 hover:text-white hover:border-cyan-500/30 transition-all duration-200 hover:shadow-lg hover:shadow-cyan-500/5"
+                      >
+                        {suggestion.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {messages.map((m, idx) => (
+                    <Bubble key={idx} role={m.role} text={m.text} ts={m.ts} index={idx} document={m.document} />
+                  ))}
+
+                  {isSending && (
+                    <div className="flex justify-start">
+                      <div className="rounded-2xl bg-gradient-to-br from-zinc-800/60 to-zinc-900/60 border border-zinc-700/50 px-5 py-4 text-sm backdrop-blur-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-1.5">
+                            <span className="inline-flex h-2 w-2 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '0ms', animationDuration: '600ms' }} />
+                            <span className="inline-flex h-2 w-2 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '150ms', animationDuration: '600ms' }} />
+                            <span className="inline-flex h-2 w-2 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '300ms', animationDuration: '600ms' }} />
+                          </div>
+                          <span className="text-zinc-400">SYNC is {mood === 'thinking' ? 'thinking' : 'responding'}…</span>
                         </div>
-                        <span className="text-zinc-400">SYNC is {mood === 'thinking' ? 'thinking' : 'responding'}…</span>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {error && (
-                  <div className="flex items-start gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20">
-                    <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
-                    <div className="flex-1">
-                      <p className="text-sm text-red-400 font-medium">Something went wrong</p>
-                      <p className="text-xs text-red-400/70 mt-1">{error}</p>
+                  {error && (
+                    <div className="flex items-start gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/30 backdrop-blur-sm">
+                      <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-sm text-red-400 font-medium">Something went wrong</p>
+                        <p className="text-xs text-red-400/70 mt-1">{error}</p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleRetry}
+                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                      >
+                        <RefreshCw className="w-4 h-4 mr-1" />
+                        Retry
+                      </Button>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={handleRetry}
-                      className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                    >
-                      <RefreshCw className="w-4 h-4 mr-1" />
-                      Retry
-                    </Button>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+                  )}
+                </>
+              )}
+            </div>
 
-          <div className="border-t border-white/10 px-5 py-4">
-            <div className="flex items-end gap-3">
-              <div className="flex-1 rounded-2xl border border-white/10 bg-black/30 px-4 py-3">
-                <textarea
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      send();
-                    }
-                  }}
-                  placeholder="Message SYNC…"
-                  rows={2}
-                  disabled={isSending}
-                  className="w-full resize-none bg-transparent text-sm text-white/90 outline-none placeholder:text-zinc-500 disabled:opacity-50"
-                />
-                <div className="mt-1.5 flex items-center justify-between text-[11px] text-zinc-500">
-                  <span>Enter to send · Shift+Enter for newline</span>
-                  <span className="tabular-nums">{input.length}</span>
+            {/* Premium Input Area */}
+            <div className="shrink-0 relative">
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-zinc-700/50 to-transparent" />
+              <div className="px-6 py-5">
+                <div className="flex items-end gap-4">
+                  <div className="flex-1 rounded-xl bg-zinc-900/60 border border-zinc-700/50 hover:border-zinc-600/60 focus-within:border-cyan-500/40 focus-within:shadow-lg focus-within:shadow-cyan-500/5 transition-all duration-200">
+                    <textarea
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          send();
+                        }
+                      }}
+                      placeholder="Message SYNC…"
+                      rows={2}
+                      disabled={isSending}
+                      className="w-full resize-none bg-transparent text-sm text-white/90 outline-none placeholder:text-zinc-500 disabled:opacity-50 px-4 py-3"
+                    />
+                    <div className="px-4 pb-3 flex items-center justify-between text-[11px] text-zinc-600">
+                      <span>Enter to send · Shift+Enter for newline</span>
+                      <span className="tabular-nums">{input.length}</span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={send}
+                    disabled={isSending || !input.trim()}
+                    className={cn(
+                      'group relative inline-flex h-14 w-14 items-center justify-center rounded-xl transition-all duration-300 overflow-hidden',
+                      isSending || !input.trim()
+                        ? 'cursor-not-allowed bg-zinc-800/60 border border-zinc-700/50 text-zinc-600'
+                        : 'shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30 hover:scale-105 active:scale-95'
+                    )}
+                    title="Send (Enter)"
+                  >
+                    {input.trim() && !isSending && (
+                      <>
+                        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-cyan-600" />
+                        <div className="absolute inset-0 bg-gradient-to-br from-cyan-400 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </>
+                    )}
+                    <Send className={cn(
+                      "relative h-5 w-5 transition-all duration-300",
+                      input.trim() && !isSending ? "text-white" : "text-zinc-600"
+                    )} />
+                  </button>
                 </div>
               </div>
-
-              <button
-                onClick={send}
-                disabled={isSending || !input.trim()}
-                className={cn(
-                  'inline-flex h-[54px] w-[54px] items-center justify-center rounded-2xl border transition-all',
-                  isSending || !input.trim()
-                    ? 'cursor-not-allowed border-white/10 bg-white/5 text-white/30'
-                    : 'border-cyan-500/30 bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 hover:scale-105 active:scale-95',
-                  input.trim() && !isSending && 'shadow-[0_0_20px_rgba(59,130,246,0.3)]'
-                )}
-                title="Send (Enter)"
-              >
-                <Send className={cn("h-5 w-5 transition-transform", input.trim() && !isSending && "animate-pulse")} />
-              </button>
             </div>
           </div>
         </div>
