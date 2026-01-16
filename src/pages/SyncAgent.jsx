@@ -436,10 +436,10 @@ function AgentChannelMessage({ message, isLatest }) {
 
     anime({
       targets: messageRef.current,
-      translateX: [isSyncMessage ? -10 : 10, 0],
+      translateX: [isSyncMessage ? -15 : 15, 0],
       opacity: [0, 1],
-      duration: 250,
-      easing: 'easeOutQuad',
+      duration: 300,
+      easing: 'easeOutCubic',
     });
   }, []);
 
@@ -447,17 +447,20 @@ function AgentChannelMessage({ message, isLatest }) {
     <div
       ref={messageRef}
       className={cn(
-        "flex items-start gap-2.5 py-2 px-3 rounded-xl transition-colors max-w-[85%]",
-        isSyncMessage ? "mr-auto bg-zinc-800/50" : "ml-auto flex-row-reverse bg-zinc-700/40"
+        "flex items-start gap-3 py-3 px-4 rounded-2xl transition-all max-w-[90%]",
+        isSyncMessage
+          ? "mr-auto bg-gradient-to-br from-zinc-800/70 to-zinc-800/40 border border-zinc-700/30"
+          : "ml-auto flex-row-reverse bg-gradient-to-bl from-zinc-700/50 to-zinc-700/30 border border-zinc-600/30"
       )}
       style={{ opacity: 0 }}
     >
       {/* Agent Avatar */}
       <div
-        className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs border"
+        className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm border-2 shadow-lg"
         style={{
-          backgroundColor: `${agent?.color}20`,
-          borderColor: `${agent?.color}40`,
+          backgroundColor: `${agent?.color}15`,
+          borderColor: `${agent?.color}50`,
+          boxShadow: `0 4px 12px ${agent?.color}20`,
         }}
       >
         {agent?.icon || '🤖'}
@@ -465,28 +468,25 @@ function AgentChannelMessage({ message, isLatest }) {
 
       {/* Message Content */}
       <div className={cn("flex-1 min-w-0", !isSyncMessage && "text-right")}>
-        <div className={cn("flex items-baseline gap-2", !isSyncMessage && "justify-end")}>
+        <div className={cn("flex items-center gap-2 mb-1", !isSyncMessage && "justify-end")}>
           <span
-            className="text-xs font-medium"
+            className="text-sm font-semibold"
             style={{ color: agent?.color }}
           >
             {agent?.name || 'Agent'}
           </span>
-          <span className="text-[10px] text-zinc-600">
+          <span className="text-[10px] text-zinc-500">
             {formatTime(message.ts)}
           </span>
+          {/* Status indicator for latest */}
+          {isLatest && message.status === 'thinking' && (
+            <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-amber-400" />
+          )}
         </div>
-        <p className="text-xs text-zinc-400 mt-0.5 leading-relaxed">
+        <p className="text-sm text-zinc-300 leading-relaxed">
           {message.text}
         </p>
       </div>
-
-      {/* Status indicator for latest */}
-      {isLatest && message.status === 'thinking' && (
-        <div className="shrink-0">
-          <span className="inline-flex h-1.5 w-1.5 animate-pulse rounded-full bg-amber-400" />
-        </div>
-      )}
     </div>
   );
 }
@@ -510,21 +510,24 @@ function AgentChannel({ messages, isActive }) {
     return null;
   }
 
+  // Show only the last 3 messages
+  const visibleMessages = messages.slice(-3);
+
   return (
-    <div ref={scrollerRef} className="space-y-2 px-2">
-      {messages.map((msg, idx) => (
+    <div ref={scrollerRef} className="space-y-3 px-3 pt-4">
+      {visibleMessages.map((msg, idx) => (
         <AgentChannelMessage
           key={msg.id || idx}
           message={msg}
-          isLatest={idx === messages.length - 1}
+          isLatest={idx === visibleMessages.length - 1}
         />
       ))}
 
       {/* Active indicator */}
       {isActive && (
-        <div className="flex items-center gap-2 px-2 py-1">
-          <span className="inline-flex h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-400" />
-          <span className="text-[10px] text-cyan-400">Processing...</span>
+        <div className="flex items-center justify-center gap-2 py-2">
+          <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-cyan-400" />
+          <span className="text-xs text-cyan-400">Processing...</span>
         </div>
       )}
     </div>
