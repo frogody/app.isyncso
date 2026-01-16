@@ -41,6 +41,7 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
   const audioContextRef = useRef(null);
   const audioQueueRef = useRef([]);
   const isPlayingRef = useRef(false);
+  const isAudioPlayingRef = useRef(false); // Track if audio is currently playing (for echo prevention)
 
   // Initialize audio context for playback
   useEffect(() => {
@@ -72,8 +73,9 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
 
     recognition.onend = () => {
       setIsListening(false);
-      // Auto-restart if still open and not processing/speaking
-      if (isOpen && !isProcessing && !isSpeaking) {
+      // Auto-restart if still open and not processing/speaking/playing audio
+      // IMPORTANT: Check isAudioPlayingRef to prevent echo feedback loop
+      if (isOpen && !isProcessing && !isSpeaking && !isAudioPlayingRef.current) {
         try {
           recognition.start();
         } catch (e) {
@@ -93,6 +95,12 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
     };
 
     recognition.onresult = (event) => {
+      // ECHO PREVENTION: Ignore results if audio is playing
+      if (isAudioPlayingRef.current) {
+        console.log('[Voice] Ignoring speech result - audio is playing (likely echo)');
+        return;
+      }
+
       let interimTranscript = '';
       let finalTranscript = '';
 
@@ -107,9 +115,16 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
 
       setTranscript(interimTranscript || finalTranscript);
 
-      // Process final transcript
-      if (finalTranscript.trim()) {
-        processVoiceInput(finalTranscript.trim());
+      // Process final transcript (with minimum length to filter echo artifacts)
+      const trimmedTranscript = finalTranscript.trim();
+      if (trimmedTranscript && trimmedTranscript.length >= 2) {
+        // Filter out common echo artifacts (single words that sound like agent responses)
+        const echoPatterns = /^(okay|ok|um|uh|hmm|yeah|yes|no|the|a|an|i|is|it|on|in)$/i;
+        if (!echoPatterns.test(trimmedTranscript)) {
+          processVoiceInput(trimmedTranscript);
+        } else {
+          console.log('[Voice] Filtered potential echo artifact:', trimmedTranscript);
+        }
       }
     };
 
@@ -133,6 +148,12 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
     if (!audioContextRef.current || isMuted) return;
 
     try {
+      // Stop listening BEFORE playing audio to prevent echo
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      isAudioPlayingRef.current = true;
+
       // Resume audio context if suspended (browser autoplay policy)
       if (audioContextRef.current.state === 'suspended') {
         await audioContextRef.current.resume();
@@ -157,8 +178,13 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
         setIsSpeaking(false);
         setIsProcessing(false);
         syncState.setMood('listening');
-        // Resume listening after speaking
-        startListening();
+
+        // CRITICAL: Wait before resuming listening to prevent echo feedback
+        // This delay allows any reverb/echo to die down before mic activates
+        setTimeout(() => {
+          isAudioPlayingRef.current = false;
+          startListening();
+        }, 500); // 500ms delay to prevent picking up echo
       };
 
       setIsSpeaking(true);
@@ -167,6 +193,7 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
 
     } catch (error) {
       console.error('Audio playback error:', error);
+      isAudioPlayingRef.current = false;
       setIsSpeaking(false);
       setIsProcessing(false);
       startListening();
@@ -249,6 +276,11 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
 
   // Start listening
   const startListening = useCallback(() => {
+    // Don't start if audio is playing (echo prevention)
+    if (isAudioPlayingRef.current) {
+      console.log('[Voice] Skipping startListening - audio still playing');
+      return;
+    }
     if (recognitionRef.current && !isListening && !isSpeaking) {
       try {
         recognitionRef.current.start();
