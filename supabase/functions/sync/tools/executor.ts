@@ -468,7 +468,19 @@ export function injectTemplateValues(
         if (arrayMatch) {
           value = value[arrayMatch[1]]?.[parseInt(arrayMatch[2])];
         } else {
-          value = value[part];
+          // Try direct property access first
+          let nextValue = value[part];
+
+          // If property doesn't exist and we have 'items' array, use it
+          // This handles cases like {{result.products}} when data is wrapped with {items: [...]}
+          if (nextValue === undefined && value.items && Array.isArray(value.items)) {
+            // Check if this looks like a collection name (products, invoices, tasks, etc.)
+            if (/^(products?|invoices?|tasks?|expenses?|prospects?|items?|results?)$/i.test(part)) {
+              nextValue = value.items;
+            }
+          }
+
+          value = nextValue;
         }
       }
 
