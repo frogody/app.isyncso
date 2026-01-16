@@ -360,7 +360,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
   }
 
   // SYNC routes - core feature, uses cyan like other main features
-  if (path.includes('sync') || path.includes('aiassistant') || path.includes('actions') || path.includes('activity') || path.includes('desktop') || path.includes('agents') || path.includes('agentdetail') || path.includes('integration')) {
+  if (path.includes('sync') || path.includes('aiassistant') || path.includes('actions') || path.includes('activity') || path.includes('desktop') || path.includes('agents') || path.includes('agentdetail') || path.includes('integration') || path.includes('dailyjournal')) {
     return {
       title: 'SYNC',
       color: 'cyan',
@@ -370,6 +370,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
         { label: 'Integrations', path: createPageUrl('Integrations'), icon: Plug },
         { label: 'Browser Activity', path: createPageUrl('Activity'), icon: Activity },
         { label: 'Desktop Activity', path: createPageUrl('DesktopActivity'), icon: Monitor },
+        { label: 'Daily Journals', path: createPageUrl('DailyJournal'), icon: BookOpen },
       ]
     };
   }

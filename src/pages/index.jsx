@@ -61,6 +61,8 @@ import Deals from "./Deals";
 
 import DesktopActivity from "./DesktopActivity";
 
+import DailyJournal from "./DailyJournal";
+
 import DocumentGenerator from "./DocumentGenerator";
 
 import DownloadApp from "./DownloadApp";
@@ -295,7 +297,9 @@ const PAGES = {
     Dashboard: Dashboard,
     
     Deals: Deals,
-    
+
+    DailyJournal: DailyJournal,
+
     DocumentGenerator: DocumentGenerator,
     
     DownloadApp: DownloadApp,
@@ -561,6 +565,8 @@ function PagesContent() {
                 <Route path="/DocumentGenerator" element={<DocumentGenerator />} />
 
                 <Route path="/DesktopActivity" element={<DesktopActivity />} />
+
+                <Route path="/DailyJournal" element={<DailyJournal />} />
 
                 <Route path="/DownloadApp" element={<DownloadApp />} />
                 

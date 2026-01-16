@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Monitor, Clock, Zap, TrendingUp, Calendar, BarChart3, PieChart,
   RefreshCw, Download, ChevronLeft, ChevronRight, Loader2, Laptop,
   Target, Activity, Brain, Coffee, Code, Chrome, MessageSquare, FileText,
-  Music, Video, Mail, Terminal, Folder, Settings, Plus, Sparkles
+  Music, Video, Mail, Terminal, Folder, Settings, Plus, Sparkles, BookOpen, ArrowRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { db } from "@/api/supabaseClient";
+import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -594,53 +596,90 @@ export default function DesktopActivity() {
           {/* Journals Tab */}
           <TabsContent value="journals" className="mt-6">
             <div className="space-y-4">
-              {/* Generate Journal Header */}
+              {/* Quick Actions Header */}
               <div className="flex items-center justify-between p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
                     <Sparkles className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold text-zinc-200">Generate Daily Journal</h3>
-                    <p className="text-xs text-zinc-500">Create a summary from today's activity data</p>
+                    <h3 className="text-sm font-semibold text-zinc-200">Daily Journals</h3>
+                    <p className="text-xs text-zinc-500">AI-powered productivity reflections</p>
                   </div>
                 </div>
-                <Button
-                  onClick={() => generateJournal(new Date())}
-                  disabled={generatingJournal}
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-                >
-                  {generatingJournal ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Generate Today's Journal
-                    </>
-                  )}
-                </Button>
+                <div className="flex items-center gap-3">
+                  <Button
+                    onClick={() => generateJournal(new Date())}
+                    disabled={generatingJournal}
+                    variant="outline"
+                    className="border-purple-500/40 text-purple-300 hover:bg-purple-500/10 hover:border-purple-500/60"
+                  >
+                    {generatingJournal ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Generate Today
+                      </>
+                    )}
+                  </Button>
+                  <Link to={createPageUrl('DailyJournal')}>
+                    <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white">
+                      <BookOpen className="w-4 h-4 mr-2" />
+                      View All Journals
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
+                </div>
               </div>
 
+              {/* Latest Journal Preview */}
               {journals.length === 0 ? (
                 <div className="p-8 rounded-2xl bg-zinc-900/50 border border-zinc-800/60 text-center">
                   <FileText className="w-16 h-16 text-zinc-600 mx-auto mb-4" />
                   <h4 className="text-lg font-semibold text-zinc-100 mb-2">No Daily Journals Yet</h4>
-                  <p className="text-zinc-500 max-w-sm mx-auto mb-4">
-                    Journals are generated from your hourly activity data. Click the button above to generate today's journal, or they'll be created automatically at midnight.
+                  <p className="text-zinc-500 max-w-sm mx-auto mb-6">
+                    Generate your first journal to see AI-powered insights about your productivity.
                   </p>
+                  <Button
+                    onClick={() => generateJournal(new Date())}
+                    disabled={generatingJournal}
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                  >
+                    {generatingJournal ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        Generate Today's Journal
+                      </>
+                    )}
+                  </Button>
                 </div>
               ) : (
-                journals.map((journal, i) => (
+                <Link to={createPageUrl('DailyJournal')} className="block group">
                   <motion.div
-                    key={journal.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60"
+                    className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60 group-hover:border-purple-500/40 transition-all cursor-pointer"
                   >
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2 text-xs text-zinc-500 uppercase tracking-wider">
+                        <BookOpen className="w-3.5 h-3.5" />
+                        Latest Journal
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-purple-400 group-hover:text-purple-300 transition-colors">
+                        View all {journals.length} journals
+                        <ArrowRight className="w-4 h-4" />
+                      </div>
+                    </div>
+
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
@@ -648,95 +687,60 @@ export default function DesktopActivity() {
                         </div>
                         <div>
                           <h4 className="text-lg font-semibold text-zinc-100">
-                            {new Date(journal.journal_date).toLocaleDateString('en-US', {
+                            {new Date(journals[0].journal_date).toLocaleDateString('en-US', {
                               weekday: 'long',
-                              year: 'numeric',
                               month: 'long',
                               day: 'numeric'
                             })}
                           </h4>
-                          <p className="text-sm text-zinc-500">
-                            {formatDuration(journal.total_active_minutes)} active
-                          </p>
+                          <div className="flex items-center gap-3 text-sm text-zinc-500">
+                            <span>{formatDuration(journals[0].total_active_minutes)} active</span>
+                            {journals[0].ai_generated && (
+                              <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30 text-xs">
+                                <Sparkles className="w-3 h-3 mr-1" />
+                                AI Enhanced
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <div className="text-right">
                         <div className="text-2xl font-bold text-zinc-100">
-                          {Math.round((journal.productivity_score || 0) * 100)}%
+                          {Math.round((journals[0].productivity_score || 0) * 100)}%
                         </div>
                         <div className="text-sm text-zinc-500">Productivity</div>
                       </div>
                     </div>
 
-                    {journal.overview && (
-                      <p className="text-zinc-300 mb-4 leading-relaxed">
-                        {journal.overview}
+                    {journals[0].overview && (
+                      <p className="text-zinc-300 leading-relaxed line-clamp-3">
+                        {journals[0].overview}
                       </p>
                     )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Highlights */}
-                      {journal.highlights && journal.highlights.length > 0 && (
-                        <div className="p-4 rounded-xl bg-zinc-800/30 border border-zinc-700/30">
-                          <h5 className="text-sm font-semibold text-zinc-400 mb-3 flex items-center gap-2">
-                            <Zap className="w-4 h-4 text-amber-400" />
-                            Highlights
-                          </h5>
-                          <ul className="space-y-2">
-                            {journal.highlights.map((highlight, idx) => (
-                              <li key={idx} className="flex items-start gap-2 text-sm text-zinc-300">
-                                <span className="text-amber-400 mt-1">•</span>
-                                {typeof highlight === 'string' ? highlight : highlight.description || highlight.type}
-                              </li>
-                            ))}
-                          </ul>
+                    {/* Summary stats row */}
+                    <div className="mt-4 pt-4 border-t border-zinc-800/60 flex items-center gap-6 text-sm text-zinc-500">
+                      {journals[0].top_apps && journals[0].top_apps.length > 0 && (
+                        <div className="flex items-center gap-2">
+                          <Monitor className="w-4 h-4 text-blue-400" />
+                          <span>{journals[0].top_apps.length} apps tracked</span>
                         </div>
                       )}
-
-                      {/* Top Apps */}
-                      {journal.top_apps && journal.top_apps.length > 0 && (
-                        <div className="p-4 rounded-xl bg-zinc-800/30 border border-zinc-700/30">
-                          <h5 className="text-sm font-semibold text-zinc-400 mb-3 flex items-center gap-2">
-                            <Monitor className="w-4 h-4 text-blue-400" />
-                            Top Apps
-                          </h5>
-                          <div className="flex flex-wrap gap-2">
-                            {journal.top_apps.map((app, idx) => (
-                              <Badge
-                                key={idx}
-                                className="bg-zinc-700/50 text-zinc-300 border-zinc-600/50"
-                              >
-                                {typeof app === 'string' ? app : app.name || app.app}
-                              </Badge>
-                            ))}
-                          </div>
+                      {journals[0].focus_areas && journals[0].focus_areas.length > 0 && (
+                        <div className="flex items-center gap-2">
+                          <Target className="w-4 h-4 text-green-400" />
+                          <span>{journals[0].focus_areas.length} focus areas</span>
+                        </div>
+                      )}
+                      {journals[0].highlights && journals[0].highlights.length > 0 && (
+                        <div className="flex items-center gap-2">
+                          <Zap className="w-4 h-4 text-amber-400" />
+                          <span>{journals[0].highlights.length} highlights</span>
                         </div>
                       )}
                     </div>
-
-                    {/* Focus Areas */}
-                    {journal.focus_areas && journal.focus_areas.length > 0 && (
-                      <div className="mt-4 p-4 rounded-xl bg-zinc-800/30 border border-zinc-700/30">
-                        <h5 className="text-sm font-semibold text-zinc-400 mb-3 flex items-center gap-2">
-                          <Target className="w-4 h-4 text-green-400" />
-                          Focus Areas
-                        </h5>
-                        <div className="flex flex-wrap gap-2">
-                          {journal.focus_areas.map((area, idx) => (
-                            <Badge
-                              key={idx}
-                              className="bg-green-950/40 text-green-300/80 border-green-800/30"
-                            >
-                              {typeof area === 'string'
-                                ? area
-                                : `${area.category || area.name || 'Unknown'}: ${area.percentage || 0}%`}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </motion.div>
-                ))
+                </Link>
               )}
             </div>
           </TabsContent>

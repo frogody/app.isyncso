@@ -2,6 +2,7 @@
  * Generate Daily Journal Edge Function
  *
  * Generates a daily journal from hourly activity summaries.
+ * Includes AI-generated rich narrative content using Together.ai.
  * Can be called on-demand from the web app.
  */
 
@@ -15,6 +16,7 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const TOGETHER_API_KEY = Deno.env.get("TOGETHER_API_KEY");
 
 // Types
 interface AppBreakdown {
@@ -39,6 +41,20 @@ interface DayHighlight {
   description: string;
   timeRange?: string;
   durationMinutes?: number;
+}
+
+interface AIGeneratedContent {
+  overview: string;
+  summaryPoints: string[];
+  timelineNarrative: string;
+  personalNotes: string;
+}
+
+interface WeeklyJournal {
+  journal_date: string;
+  total_active_minutes: number;
+  productivity_score: number;
+  overview?: string;
 }
 
 interface FocusArea {
@@ -189,6 +205,140 @@ function generateOverview(
   return overview;
 }
 
+// AI Content Generation using Together.ai
+async function generateAIContent(
+  date: Date,
+  totalMinutes: number,
+  avgFocusScore: number,
+  topApps: { name: string; minutes: number }[],
+  focusAreas: FocusArea[],
+  highlights: DayHighlight[],
+  hourlyData: { hour: number; minutes: number; focusScore: number }[],
+  weeklyJournals: WeeklyJournal[]
+): Promise<AIGeneratedContent | null> {
+  if (!TOGETHER_API_KEY) {
+    console.log('[generate-daily-journal] No TOGETHER_API_KEY, skipping AI generation');
+    return null;
+  }
+
+  // Skip AI generation if less than 30 minutes tracked
+  if (totalMinutes < 30) {
+    console.log('[generate-daily-journal] Less than 30 minutes tracked, skipping AI generation');
+    return null;
+  }
+
+  const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+  const dateStr = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const hours = Math.round(totalMinutes / 60 * 10) / 10;
+  const focusPercent = Math.round(avgFocusScore * 100);
+
+  // Build hourly breakdown for timeline
+  const hourlyBreakdown = hourlyData
+    .filter(h => h.minutes > 5)
+    .sort((a, b) => a.hour - b.hour)
+    .map(h => `${formatHour(h.hour)}: ${h.minutes}m active, ${Math.round(h.focusScore * 100)}% focus`)
+    .join('\n');
+
+  // Build weekly context
+  let weeklyContext = '';
+  if (weeklyJournals.length > 0) {
+    const avgWeeklyMinutes = weeklyJournals.reduce((sum, j) => sum + j.total_active_minutes, 0) / weeklyJournals.length;
+    const avgWeeklyScore = weeklyJournals.reduce((sum, j) => sum + j.productivity_score, 0) / weeklyJournals.length;
+    const comparison = totalMinutes > avgWeeklyMinutes ? 'more active than' : totalMinutes < avgWeeklyMinutes ? 'less active than' : 'about the same as';
+    weeklyContext = `This week's average: ${Math.round(avgWeeklyMinutes)} minutes/day, ${Math.round(avgWeeklyScore * 100)}% productivity. Today was ${comparison} average.`;
+  }
+
+  const systemPrompt = `You are a personal productivity assistant writing a daily journal entry. Write in first person as if you are the user reflecting on their day. Be warm, insightful, and encouraging. Focus on patterns and achievements rather than just listing activities. Keep responses concise but meaningful.
+
+Important: Do NOT use markdown formatting, bullet points with *, or headers with #. Write in plain prose.`;
+
+  const userPrompt = `Write a daily productivity journal for ${dayName}, ${dateStr}.
+
+Activity Data:
+- Total active time: ${hours} hours (${totalMinutes} minutes)
+- Overall focus score: ${focusPercent}%
+- Top applications: ${topApps.slice(0, 5).map(a => `${a.name} (${a.minutes}m)`).join(', ')}
+- Focus areas: ${focusAreas.slice(0, 3).map(f => `${f.category}: ${f.percentage}%`).join(', ')}
+- Highlights: ${highlights.map(h => h.description).join(', ') || 'None detected'}
+
+Hourly Activity:
+${hourlyBreakdown || 'No detailed hourly data'}
+
+${weeklyContext ? `Weekly Context: ${weeklyContext}` : ''}
+
+Generate the following sections in JSON format:
+{
+  "overview": "A 2-3 sentence narrative summary of my day, written warmly in first person. Focus on the story of the day, not just stats.",
+  "summaryPoints": ["4-6 bullet points capturing key activities, achievements, and observations. Each should be a complete sentence."],
+  "timelineNarrative": "A chronological narrative of my day with approximate timestamps. Write it as flowing prose, not a list. Example: 'My morning started around 9 AM with...'",
+  "personalNotes": "2-3 sentences of personal insights, observations about patterns, or gentle encouragement for tomorrow."
+}
+
+Respond ONLY with valid JSON, no additional text.`;
+
+  try {
+    console.log('[generate-daily-journal] Calling Together.ai for AI content generation');
+
+    const response = await fetch('https://api.together.xyz/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${TOGETHER_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'moonshotai/Kimi-K2-Instruct',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 1500,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[generate-daily-journal] Together.ai error:', response.status, errorText);
+      return null;
+    }
+
+    const result = await response.json();
+    const content = result.choices?.[0]?.message?.content;
+
+    if (!content) {
+      console.error('[generate-daily-journal] No content in response');
+      return null;
+    }
+
+    // Parse JSON from response (handle markdown code blocks if present)
+    let jsonStr = content.trim();
+    if (jsonStr.startsWith('```json')) {
+      jsonStr = jsonStr.slice(7);
+    }
+    if (jsonStr.startsWith('```')) {
+      jsonStr = jsonStr.slice(3);
+    }
+    if (jsonStr.endsWith('```')) {
+      jsonStr = jsonStr.slice(0, -3);
+    }
+    jsonStr = jsonStr.trim();
+
+    const parsed = JSON.parse(jsonStr);
+
+    console.log('[generate-daily-journal] AI content generated successfully');
+
+    return {
+      overview: parsed.overview || '',
+      summaryPoints: Array.isArray(parsed.summaryPoints) ? parsed.summaryPoints : [],
+      timelineNarrative: parsed.timelineNarrative || '',
+      personalNotes: parsed.personalNotes || '',
+    };
+  } catch (error: any) {
+    console.error('[generate-daily-journal] AI generation error:', error.message);
+    return null;
+  }
+}
+
 function computeJournal(summaries: HourlySummary[], date: Date) {
   let totalMinutes = 0;
   let totalFocusScore = 0;
@@ -287,6 +437,7 @@ function computeJournal(summaries: HourlySummary[], date: Date) {
     peak_productivity_hour: peakProductivityHour,
     most_used_app: mostUsedApp,
     top_apps: topApps,
+    hourly_data: hourlyData,
   };
 }
 
@@ -348,23 +499,69 @@ serve(async (req) => {
 
     console.log(`[generate-daily-journal] Found ${summaries.length} hourly summaries`);
 
-    // Generate the journal
+    // Generate the deterministic journal data
     const journalData = computeJournal(summaries as HourlySummary[], targetDate);
+
+    // Fetch last 7 days of journals for weekly context
+    const weekStart = new Date(targetDate);
+    weekStart.setDate(weekStart.getDate() - 7);
+    const { data: weeklyJournals } = await supabase
+      .from('daily_journals')
+      .select('journal_date, total_active_minutes, productivity_score, overview')
+      .eq('user_id', user_id)
+      .gte('journal_date', weekStart.toISOString().split('T')[0])
+      .lt('journal_date', journalDate)
+      .order('journal_date', { ascending: false })
+      .limit(7);
+
+    // Generate AI content if API key is available and sufficient data
+    let aiContent: AIGeneratedContent | null = null;
+    let weeklyContext = '';
+
+    if (TOGETHER_API_KEY && journalData.total_active_minutes >= 30) {
+      // Build weekly context string
+      if (weeklyJournals && weeklyJournals.length > 0) {
+        const avgWeeklyMinutes = weeklyJournals.reduce((sum, j) => sum + j.total_active_minutes, 0) / weeklyJournals.length;
+        const avgWeeklyScore = weeklyJournals.reduce((sum, j) => sum + j.productivity_score, 0) / weeklyJournals.length;
+        const comparison = journalData.total_active_minutes > avgWeeklyMinutes ? 'more active than' : journalData.total_active_minutes < avgWeeklyMinutes ? 'less active than' : 'about the same as';
+        weeklyContext = `Compared to your ${weeklyJournals.length}-day average of ${Math.round(avgWeeklyMinutes)} minutes and ${Math.round(avgWeeklyScore * 100)}% productivity, today was ${comparison} your recent baseline.`;
+      }
+
+      aiContent = await generateAIContent(
+        targetDate,
+        journalData.total_active_minutes,
+        journalData.productivity_score,
+        journalData.top_apps,
+        journalData.focus_areas,
+        journalData.highlights,
+        journalData.hourly_data,
+        (weeklyJournals || []) as WeeklyJournal[]
+      );
+    }
+
+    // Prepare journal record with AI content if available
+    const journalRecord = {
+      user_id,
+      company_id: company_id || summaries[0]?.company_id,
+      journal_date: journalDate,
+      overview: aiContent?.overview || journalData.overview,
+      highlights: journalData.highlights,
+      focus_areas: journalData.focus_areas,
+      total_active_minutes: journalData.total_active_minutes,
+      productivity_score: journalData.productivity_score,
+      top_apps: journalData.top_apps,
+      // New AI-generated fields
+      summary_points: aiContent?.summaryPoints || [],
+      timeline_narrative: aiContent?.timelineNarrative || null,
+      personal_notes: aiContent?.personalNotes || null,
+      weekly_context: weeklyContext || null,
+      ai_generated: !!aiContent,
+    };
 
     // Upsert the journal
     const { data: journal, error: journalError } = await supabase
       .from('daily_journals')
-      .upsert({
-        user_id,
-        company_id: company_id || summaries[0]?.company_id,
-        journal_date: journalDate,
-        overview: journalData.overview,
-        highlights: journalData.highlights,
-        focus_areas: journalData.focus_areas,
-        total_active_minutes: journalData.total_active_minutes,
-        productivity_score: journalData.productivity_score,
-        top_apps: journalData.top_apps,
-      }, {
+      .upsert(journalRecord, {
         onConflict: 'user_id,journal_date',
       })
       .select()
@@ -378,7 +575,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[generate-daily-journal] Successfully generated journal for ${journalDate}`);
+    console.log(`[generate-daily-journal] Successfully generated ${aiContent ? 'AI-enhanced' : 'basic'} journal for ${journalDate}`);
 
     return new Response(
       JSON.stringify({
@@ -386,6 +583,7 @@ serve(async (req) => {
         journal,
         summaries_count: summaries.length,
         date: journalDate,
+        ai_generated: !!aiContent,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
