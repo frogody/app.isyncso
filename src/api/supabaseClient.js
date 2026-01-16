@@ -873,7 +873,10 @@ export const db = {
   functions,
   storage,
   agents,
-  integrations
+  integrations,
+  // Direct access to Supabase client methods for advanced queries
+  from: (table) => supabase.from(table),
+  rpc: (fn, params) => supabase.rpc(fn, params),
 };
 
 export default db;
