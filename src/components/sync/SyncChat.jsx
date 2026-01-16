@@ -13,7 +13,6 @@ import {
   Loader2,
   AlertCircle,
   RefreshCw,
-  Sparkles,
   GraduationCap,
   TrendingUp,
   Shield,
@@ -30,6 +29,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/api/supabaseClient';
 import { useLocalStorage } from '@/components/hooks/useLocalStorage';
+import SyncAvatarMini from '@/components/icons/SyncAvatarMini';
 
 // Agent icon mapping
 const AGENT_ICONS = {
@@ -504,11 +504,9 @@ export default function SyncChat({
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-zinc-900/80">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center">
-            <Brain className="w-5 h-5 text-purple-400" />
-          </div>
+          <SyncAvatarMini size={40} />
           <div>
-            <h3 className="font-semibold text-white">SYNC</h3>
+            <h3 className="font-semibold text-white text-sm">SYNC</h3>
             <p className="text-xs text-zinc-500">AI Orchestrator</p>
           </div>
         </div>
@@ -550,13 +548,12 @@ export default function SyncChat({
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center px-4">
-            <div className="w-16 h-16 rounded-2xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center mb-4">
-              <Sparkles className="w-8 h-8 text-purple-400" />
+            <div className="mb-4">
+              <SyncAvatarMini size={64} />
             </div>
-            <h4 className="text-lg font-medium text-white mb-2">How can I help you?</h4>
-            <p className="text-sm text-zinc-500 mb-6 max-w-sm">
-              I can help with invoices, prospects, compliance, learning, and more.
-              Just ask!
+            <h4 className="text-lg font-medium text-white mb-2">Hey! How can I help?</h4>
+            <p className="text-sm text-zinc-500 mb-4 max-w-sm">
+              I can help with invoices, products, prospects, and more. Just ask!
             </p>
             <div className="flex flex-wrap gap-2 justify-center">
               {suggestions.map((suggestion, idx) => (
@@ -637,7 +634,7 @@ export default function SyncChat({
           </Button>
         </div>
         <p className="text-[10px] text-zinc-600 text-center mt-2">
-          SYNC routes your requests to specialized agents automatically
+          Press Enter to send • Esc to close
         </p>
       </div>
     </div>
