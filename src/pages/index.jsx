@@ -5,6 +5,7 @@ import AIAssistant from "./AIAssistant";
 import AISystemInventory from "./AISystemInventory";
 
 import AuthCallback from "./AuthCallback";
+import DesktopAuth from "./DesktopAuth";
 
 import Login from "./Login";
 
@@ -499,6 +500,8 @@ function PagesContent() {
                 <Route path="/AISystemInventory" element={<AISystemInventory />} />
 
                 <Route path="/AuthCallback" element={<AuthCallback />} />
+
+                <Route path="/desktop-auth" element={<DesktopAuth />} />
 
                 <Route path="/Login" element={<Login />} />
 
