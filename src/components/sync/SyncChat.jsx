@@ -547,7 +547,7 @@ export default function SyncChat({
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-center px-4">
+          <div className="h-full flex flex-col items-center justify-center text-center px-4 py-8">
             <div className="mb-4">
               <SyncAvatarMini size={64} />
             </div>
@@ -555,17 +555,6 @@ export default function SyncChat({
             <p className="text-sm text-zinc-500 mb-4 max-w-sm">
               I can help with invoices, products, prospects, and more. Just ask!
             </p>
-            <div className="flex flex-wrap gap-2 justify-center">
-              {suggestions.map((suggestion, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleSend(suggestion.action)}
-                  className="px-3 py-1.5 text-xs rounded-full bg-zinc-800 border border-white/10 text-zinc-300 hover:bg-zinc-700 hover:text-white transition-colors"
-                >
-                  {suggestion.label}
-                </button>
-              ))}
-            </div>
           </div>
         ) : (
           <>
@@ -592,30 +581,19 @@ export default function SyncChat({
       {/* Input area */}
       <div className="p-4 border-t border-white/10 bg-zinc-900/80">
         <div className="flex items-end gap-2">
-          <div className="flex-1 relative">
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask SYNC anything..."
-              rows={1}
-              disabled={isLoading}
-              className={cn(
-                'w-full px-4 py-3 rounded-xl bg-zinc-800/50 border border-white/10 text-white placeholder-zinc-500 resize-none focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all',
-                'min-h-[48px] max-h-[120px]',
-                isLoading && 'opacity-50 cursor-not-allowed'
-              )}
-              style={{
-                height: 'auto',
-                minHeight: '48px',
-              }}
-              onInput={(e) => {
-                e.target.style.height = 'auto';
-                e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
-              }}
-            />
-          </div>
+          <input
+            ref={inputRef}
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Ask SYNC anything..."
+            disabled={isLoading}
+            className={cn(
+              'flex-1 px-4 py-3 rounded-xl bg-zinc-800/50 border border-white/10 text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all',
+              isLoading && 'opacity-50 cursor-not-allowed'
+            )}
+          />
           <Button
             onClick={() => handleSend()}
             disabled={!input.trim() || isLoading}
