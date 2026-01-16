@@ -510,26 +510,28 @@ function AgentChannel({ messages, isActive }) {
     return null;
   }
 
-  // Show only the last 3 messages
-  const visibleMessages = messages.slice(-3);
+  // Show only the last 5 messages
+  const visibleMessages = messages.slice(-5);
 
   return (
-    <div ref={scrollerRef} className="space-y-3 px-3 pt-4">
-      {visibleMessages.map((msg, idx) => (
-        <AgentChannelMessage
-          key={msg.id || idx}
-          message={msg}
-          isLatest={idx === visibleMessages.length - 1}
-        />
-      ))}
+    <div ref={scrollerRef} className="flex flex-col justify-end h-full px-3 pb-4">
+      <div className="space-y-3">
+        {visibleMessages.map((msg, idx) => (
+          <AgentChannelMessage
+            key={msg.id || idx}
+            message={msg}
+            isLatest={idx === visibleMessages.length - 1}
+          />
+        ))}
 
-      {/* Active indicator */}
-      {isActive && (
-        <div className="flex items-center justify-center gap-2 py-2">
-          <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-cyan-400" />
-          <span className="text-xs text-cyan-400">Processing...</span>
-        </div>
-      )}
+        {/* Active indicator */}
+        {isActive && (
+          <div className="flex items-center justify-center gap-2 py-2">
+            <span className="inline-flex h-2 w-2 animate-pulse rounded-full bg-cyan-400" />
+            <span className="text-xs text-cyan-400">Processing...</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -2021,21 +2023,21 @@ export default function SyncAgent() {
         </div>
       </div>
 
-      {/* Layout - fills remaining height */}
-      <div className="flex-1 min-h-0 mx-auto w-full max-w-[1600px] grid grid-cols-1 gap-6 px-6 py-4 lg:grid-cols-[480px_1fr]">
+      {/* Layout - fills remaining height, minimal top padding to align with buttons */}
+      <div className="flex-1 min-h-0 mx-auto w-full max-w-[1600px] grid grid-cols-1 gap-6 px-6 pb-4 lg:grid-cols-[480px_1fr]">
         {/* Left: Container with Avatar + Agent Messages */}
         <div
           data-animate
           className="flex flex-col rounded-2xl border border-zinc-700/50 bg-zinc-900/30 overflow-hidden"
           style={{ opacity: 0 }}
         >
-          {/* Avatar - with balanced padding and room for status chip below */}
-          <div className="shrink-0 grid place-items-center pt-8 pb-12">
-            <AgentAvatar size={280} agentName="SYNC" mood={mood} level={level} seed={seed} activeAgent={activeAgent} actionEffect={currentActionEffect} showSuccess={showSuccess} />
+          {/* Avatar - centered with room for status chip below */}
+          <div className="shrink-0 grid place-items-center pt-6 pb-10">
+            <AgentAvatar size={260} agentName="SYNC" mood={mood} level={level} seed={seed} activeAgent={activeAgent} actionEffect={currentActionEffect} showSuccess={showSuccess} />
           </div>
 
-          {/* Agent orchestration messages - below avatar */}
-          <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4">
+          {/* Agent orchestration messages - below avatar, fills remaining space */}
+          <div className="flex-1 min-h-0 overflow-hidden">
             <AgentChannel messages={agentMessages} isActive={isSending} />
           </div>
         </div>
