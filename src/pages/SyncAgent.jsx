@@ -1994,45 +1994,26 @@ export default function SyncAgent() {
 
   return (
     <div ref={pageRef} className="h-screen flex flex-col bg-black text-white overflow-hidden">
-      {/* Premium Top bar */}
-      <div className="shrink-0 z-20 relative">
-        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent" />
-        <div className="bg-gradient-to-b from-zinc-900/80 to-black/60 backdrop-blur-xl">
-          <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-6 py-4">
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <div className="absolute inset-0 bg-cyan-500/20 rounded-xl blur-xl" />
-                <div className="relative grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 border border-cyan-500/30 shadow-lg shadow-cyan-500/10">
-                  <Brain className="h-5 w-5 text-cyan-400" />
-                </div>
-              </div>
-              <div>
-                <div className="text-base font-semibold tracking-tight bg-gradient-to-r from-white to-zinc-300 bg-clip-text text-transparent">SYNC Agent</div>
-                <div className="text-xs text-zinc-500">AI Orchestrator</div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <button
-                className="group relative inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium overflow-hidden transition-all duration-300"
-                onClick={handleNewChat}
-                title="Start new conversation"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-cyan-500 opacity-90 group-hover:opacity-100 transition-opacity" />
-                <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-cyan-300 opacity-0 group-hover:opacity-20 transition-opacity" />
-                <Plus className="relative h-4 w-4 text-white" />
-                <span className="relative text-white">New Chat</span>
-              </button>
-              <button
-                className="inline-flex items-center gap-2 rounded-xl border border-zinc-700/60 bg-zinc-800/50 px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white hover:border-zinc-600 transition-all duration-200"
-                onClick={() => setSeed((s) => s + 1)}
-                title="Refresh inner visual"
-              >
-                <RotateCcw className="h-4 w-4" />
-                Refresh
-              </button>
-            </div>
-          </div>
+      {/* Top bar - just buttons */}
+      <div className="shrink-0 z-20">
+        <div className="mx-auto flex max-w-[1600px] items-center justify-end gap-3 px-6 py-3">
+          <button
+            className="group relative inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium overflow-hidden transition-all duration-300"
+            onClick={handleNewChat}
+            title="Start new conversation"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-cyan-500 opacity-90 group-hover:opacity-100 transition-opacity" />
+            <Plus className="relative h-4 w-4 text-white" />
+            <span className="relative text-white">New Chat</span>
+          </button>
+          <button
+            className="inline-flex items-center gap-2 rounded-xl border border-zinc-700/60 bg-zinc-800/50 px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-800 hover:text-white hover:border-zinc-600 transition-all duration-200"
+            onClick={() => setSeed((s) => s + 1)}
+            title="Refresh inner visual"
+          >
+            <RotateCcw className="h-4 w-4" />
+            Refresh
+          </button>
         </div>
       </div>
 
@@ -2044,8 +2025,8 @@ export default function SyncAgent() {
           className="flex flex-col rounded-2xl border border-zinc-700/50 bg-zinc-900/30 overflow-hidden"
           style={{ opacity: 0 }}
         >
-          {/* Avatar - at top */}
-          <div className="shrink-0 grid place-items-center pt-4 pb-2">
+          {/* Avatar - with balanced padding */}
+          <div className="shrink-0 grid place-items-center py-8">
             <AgentAvatar size={280} agentName="SYNC" mood={mood} level={level} seed={seed} activeAgent={activeAgent} actionEffect={currentActionEffect} showSuccess={showSuccess} />
           </div>
 
