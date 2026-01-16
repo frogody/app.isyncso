@@ -59,8 +59,11 @@ async function callSyncAgent(
 
   const data = await response.json();
 
-  // Clean up the response for voice (remove markdown, links, etc.)
+  // Clean up the response for voice (remove markdown, emojis, structured data)
   let cleanText = data.response || "I'm here to help!";
+
+  // Remove all emojis (comprehensive regex)
+  cleanText = cleanText.replace(/[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA00}-\u{1FA6F}]|[\u{1FA70}-\u{1FAFF}]|[\u{231A}-\u{231B}]|[\u{23E9}-\u{23F3}]|[\u{23F8}-\u{23FA}]|✅|❌|📊|📈|💡|🎯|⚡|✓|✗/gu, '');
 
   // Remove markdown formatting
   cleanText = cleanText
@@ -70,19 +73,36 @@ async function callSyncAgent(
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')  // Links
     .replace(/#{1,6}\s+/g, '')          // Headers
     .replace(/•\s+/g, '')               // Bullet points
+    .replace(/---+/g, '')               // Horizontal rules
+    .replace(/\|/g, ', ')               // Table separators
+
+  // Remove structured data labels (common patterns from SYNC responses)
+  cleanText = cleanText
+    .replace(/Client:\s*/gi, '')
+    .replace(/Total:\s*/gi, '')
+    .replace(/Status:\s*/gi, '')
+    .replace(/Valid until:\s*/gi, 'valid until ')
+    .replace(/Amount:\s*/gi, '')
+    .replace(/\(incl\.\s*BTW\)/gi, 'including tax')
+    .replace(/\(excl\.\s*BTW\)/gi, 'excluding tax')
+
+  // Clean up whitespace
+  cleanText = cleanText
     .replace(/\n{2,}/g, '. ')           // Multiple newlines to period
     .replace(/\n/g, ' ')                // Single newlines to space
     .replace(/\s{2,}/g, ' ')            // Multiple spaces
+    .replace(/\.\s*\./g, '.')           // Double periods
+    .replace(/,\s*,/g, ',')             // Double commas
     .trim();
 
-  // Truncate for voice if too long (aim for ~30 seconds of speech max)
-  if (cleanText.length > 500) {
+  // Truncate for voice - much shorter for natural conversation (~15 seconds max)
+  if (cleanText.length > 250) {
     // Find a good break point
-    const breakPoint = cleanText.lastIndexOf('.', 450);
-    if (breakPoint > 200) {
+    const breakPoint = cleanText.lastIndexOf('.', 220);
+    if (breakPoint > 100) {
       cleanText = cleanText.substring(0, breakPoint + 1);
     } else {
-      cleanText = cleanText.substring(0, 450) + '...';
+      cleanText = cleanText.substring(0, 220) + '.';
     }
   }
 

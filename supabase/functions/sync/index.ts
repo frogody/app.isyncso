@@ -1547,6 +1547,25 @@ const MODELS = {
   voice: 'meta-llama/Llama-3.3-70B-Instruct-Turbo', // Fast and capable (~0.5-1.5s)
 };
 
+// Voice mode system prompt addition - makes responses conversational for TTS
+const VOICE_MODE_PROMPT = `
+## VOICE MODE ACTIVE - CRITICAL INSTRUCTIONS
+
+You are speaking out loud via text-to-speech. Your response will be READ ALOUD.
+
+VOICE RULES (OVERRIDE ALL OTHER FORMATTING):
+1. MAX 2 sentences. Be extremely brief.
+2. NO emojis, NO bullet points, NO dashes, NO structured data
+3. NO "Client:", "Total:", "Status:" labels - just speak naturally
+4. NO numbers with many decimals - round them ("about 640 euros" not "€638,70")
+5. Sound like a helpful friend, not a robot reading a database
+
+GOOD voice response: "Done! Created a proposal for Acme Corp, about 640 euros for the OneBlades. Want me to send it?"
+
+BAD voice response: "✅ Proposal created! Client: Acme Corp - Total: €638,70 (incl. BTW) - Status: Draft"
+
+Keep it SHORT and NATURAL. This will be spoken aloud.`;
+
 interface SyncResponse {
   response: string;
   sessionId: string;
@@ -2098,9 +2117,11 @@ serve(async (req) => {
     const dateContext = `\n\n## Current Date & Time\nToday is ${now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}. Current time: ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}.`;
 
     // Build enhanced system prompt with memory context
+    // Add voice mode instructions if voice is enabled (must come FIRST to override other formatting)
+    const voiceInstructions = voice ? VOICE_MODE_PROMPT : '';
     const enhancedSystemPrompt = memoryContextStr
-      ? `${SYNC_SYSTEM_PROMPT}\n\n${memoryContextStr}${dateContext}`
-      : `${SYNC_SYSTEM_PROMPT}${dateContext}`;
+      ? `${voiceInstructions}${SYNC_SYSTEM_PROMPT}\n\n${memoryContextStr}${dateContext}`
+      : `${voiceInstructions}${SYNC_SYSTEM_PROMPT}${dateContext}`;
 
     // Get buffer messages for API
     const bufferMessages = memorySystem.session.getBufferMessages(session);
