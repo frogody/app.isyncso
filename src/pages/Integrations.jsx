@@ -62,6 +62,8 @@ import {
   Copy,
   Trash2,
   Network,
+  Monitor,
+  Laptop,
 } from 'lucide-react';
 
 // Lazy load action components
@@ -160,6 +162,12 @@ export default function Integrations() {
   const [selectedIntegration, setSelectedIntegration] = useState(null);
   const [disconnecting, setDisconnecting] = useState(null);
   const [executingAction, setExecutingAction] = useState(null);
+
+  // SYNC Desktop state
+  const [desktopConnected, setDesktopConnected] = useState(false);
+  const [desktopLastActivity, setDesktopLastActivity] = useState(null);
+  const [loadingDesktop, setLoadingDesktop] = useState(true);
+  const [disconnectingDesktop, setDisconnectingDesktop] = useState(false);
 
   // MCP Server state
   const [mcpServers, setMcpServers] = useState([]);
@@ -303,6 +311,81 @@ export default function Integrations() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
+  // Load SYNC Desktop connection status
+  const loadDesktopConnection = useCallback(async () => {
+    if (!user?.id) return;
+    setLoadingDesktop(true);
+    try {
+      // Check for recent desktop activity (within last 7 days)
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+      const { data: activityData, error } = await db.from('desktop_activity_logs')
+        .select('created_at')
+        .eq('user_id', user.id)
+        .gte('created_at', sevenDaysAgo.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (!error && activityData && activityData.length > 0) {
+        setDesktopConnected(true);
+        setDesktopLastActivity(activityData[0].created_at);
+      } else {
+        // Also check sync_sessions for desktop sessions
+        const { data: sessionData } = await db.from('sync_sessions')
+          .select('updated_at')
+          .eq('user_id', user.id)
+          .like('session_id', 'sync_user_%')
+          .order('updated_at', { ascending: false })
+          .limit(1);
+
+        if (sessionData && sessionData.length > 0) {
+          setDesktopConnected(true);
+          setDesktopLastActivity(sessionData[0].updated_at);
+        } else {
+          setDesktopConnected(false);
+          setDesktopLastActivity(null);
+        }
+      }
+    } catch (error) {
+      console.warn('Error loading desktop connection:', error.message);
+      setDesktopConnected(false);
+    } finally {
+      setLoadingDesktop(false);
+    }
+  }, [user?.id]);
+
+  // Disconnect SYNC Desktop
+  const handleDesktopDisconnect = async () => {
+    if (!user?.id) return;
+    setDisconnectingDesktop(true);
+    try {
+      // Clear desktop sessions from sync_sessions
+      await db.from('sync_sessions')
+        .delete()
+        .eq('user_id', user.id)
+        .like('session_id', 'desktop_%');
+
+      // Also clear user-based desktop sessions
+      await db.from('sync_sessions')
+        .delete()
+        .eq('user_id', user.id)
+        .like('session_id', 'sync_user_%');
+
+      // Clear desktop activity logs (optional - keeps history but marks as disconnected)
+      // await db.from('desktop_activity_logs').delete().eq('user_id', user.id);
+
+      setDesktopConnected(false);
+      setDesktopLastActivity(null);
+      toast.success('SYNC Desktop disconnected. Sign in again from the desktop app to reconnect.');
+    } catch (error) {
+      console.error('Failed to disconnect desktop:', error);
+      toast.error('Failed to disconnect desktop app');
+    } finally {
+      setDisconnectingDesktop(false);
+    }
+  };
+
   // Create MCP server
   const handleCreateMcpServer = async () => {
     if (!newMcpServerName.trim() || selectedMcpToolkits.length === 0) {
@@ -365,6 +448,7 @@ export default function Integrations() {
       loadMergeIntegrations();
       loadActionLogs();
       loadMcpServers();
+      loadDesktopConnection();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
@@ -601,7 +685,8 @@ export default function Integrations() {
   const composioConnectedCount = Object.values(composioConnections).filter(c => c.status === 'ACTIVE').length;
   const mergeConnectedCount = mergeIntegrations.length;
   const googleConnectedCount = googleConnected ? 1 : 0;
-  const totalConnected = composioConnectedCount + mergeConnectedCount + googleConnectedCount;
+  const desktopConnectedCount = desktopConnected ? 1 : 0;
+  const totalConnected = composioConnectedCount + mergeConnectedCount + googleConnectedCount + desktopConnectedCount;
 
   const queuedActions = actionLogs.filter(a => a.status === 'queued');
   const inProgressActions = actionLogs.filter(a => a.status === 'in_progress');
@@ -736,6 +821,10 @@ export default function Integrations() {
                 <Plug className="w-4 h-4 mr-2" />Third-Party Apps
                 {composioConnectedCount > 0 && <Badge className="ml-2 bg-purple-950/40 text-purple-300/80 border-purple-800/30 text-[10px] px-1.5">{composioConnectedCount}</Badge>}
               </TabsTrigger>
+              <TabsTrigger value="desktop" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-purple-300/90 text-zinc-500 px-4">
+                <Monitor className="w-4 h-4 mr-2" />SYNC Desktop
+                {desktopConnected && <Badge className="ml-2 bg-emerald-950/40 text-emerald-300/80 border-emerald-800/30 text-[10px] px-1.5">Active</Badge>}
+              </TabsTrigger>
               <TabsTrigger value="google" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-purple-300/90 text-zinc-500 px-4">
                 <Globe className="w-4 h-4 mr-2" />Google Workspace
               </TabsTrigger>
@@ -779,6 +868,22 @@ export default function Integrations() {
 
                     {/* Connected Apps Grid */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                      {/* SYNC Desktop App */}
+                      {desktopConnected && (
+                        <div className="group relative p-4 rounded-xl bg-zinc-900/60 border border-zinc-700/50 hover:border-emerald-500/40 transition-all cursor-pointer">
+                          <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                            <Monitor className="w-6 h-6 text-white" />
+                          </div>
+                          <h4 className="font-semibold text-white text-sm">SYNC Desktop</h4>
+                          <p className="text-[11px] text-zinc-500 truncate">Activity tracking</p>
+                          <div className="mt-2 flex gap-1">
+                            <span className="px-1.5 py-0.5 rounded text-[9px] bg-purple-500/20 text-purple-400">Context</span>
+                            <span className="px-1.5 py-0.5 rounded text-[9px] bg-blue-500/20 text-blue-400">Sync</span>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Google Workspace */}
                       {googleConnected && (
                         <div className="group relative p-4 rounded-xl bg-zinc-900/60 border border-zinc-700/50 hover:border-emerald-500/40 transition-all cursor-pointer">
@@ -1001,6 +1106,182 @@ export default function Integrations() {
                     </div>
                   )}
                 </div>
+              )}
+            </TabsContent>
+
+            {/* SYNC Desktop Tab */}
+            <TabsContent value="desktop" className="mt-6 space-y-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`p-6 rounded-2xl border transition-all ${desktopConnected ? "bg-emerald-500/5 border-emerald-500/30" : "bg-zinc-900/50 border-zinc-800"}`}
+              >
+                <div className="flex items-start justify-between mb-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
+                      <Monitor className="w-8 h-8 text-white" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <h2 className="text-2xl font-bold text-white">SYNC Desktop</h2>
+                        {desktopConnected ? (
+                          <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">Connected</Badge>
+                        ) : (
+                          <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">Not Connected</Badge>
+                        )}
+                      </div>
+                      {desktopConnected && desktopLastActivity && (
+                        <p className="text-sm text-zinc-400 mt-1">
+                          Last activity: <span className="text-white">{new Date(desktopLastActivity).toLocaleString()}</span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  {desktopConnected && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-xs text-emerald-400">Active</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Features Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                  <div className="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50">
+                    <Activity className="w-5 h-5 text-purple-400 mb-2" />
+                    <h4 className="font-medium text-white text-sm">Activity Tracking</h4>
+                    <p className="text-xs text-zinc-500">Track app usage & focus</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50">
+                    <Clock className="w-5 h-5 text-blue-400 mb-2" />
+                    <h4 className="font-medium text-white text-sm">Smart Context</h4>
+                    <p className="text-xs text-zinc-500">10-min rolling context</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50">
+                    <FileText className="w-5 h-5 text-orange-400 mb-2" />
+                    <h4 className="font-medium text-white text-sm">Daily Journal</h4>
+                    <p className="text-xs text-zinc-500">Auto-generated summaries</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50">
+                    <RefreshCw className="w-5 h-5 text-cyan-400 mb-2" />
+                    <h4 className="font-medium text-white text-sm">Cloud Sync</h4>
+                    <p className="text-xs text-zinc-500">Sync with web app</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50">
+                    <Sparkles className="w-5 h-5 text-pink-400 mb-2" />
+                    <h4 className="font-medium text-white text-sm">SYNC Assistant</h4>
+                    <p className="text-xs text-zinc-500">Always-on-top chat</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50">
+                    <Shield className="w-5 h-5 text-green-400 mb-2" />
+                    <h4 className="font-medium text-white text-sm">Privacy First</h4>
+                    <p className="text-xs text-zinc-500">Local-first, encrypted</p>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center justify-between pt-4 border-t border-zinc-800">
+                  {!desktopConnected && (
+                    <a
+                      href="https://github.com/frogody/sync-desktop/releases"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm text-zinc-400 hover:text-purple-400 transition-colors"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      Download Desktop App
+                    </a>
+                  )}
+                  {desktopConnected && (
+                    <p className="text-sm text-zinc-500">
+                      The desktop app is connected to your account.
+                    </p>
+                  )}
+                  {desktopConnected && (
+                    <Button
+                      onClick={handleDesktopDisconnect}
+                      disabled={disconnectingDesktop}
+                      variant="outline"
+                      className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                    >
+                      {disconnectingDesktop ? (
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Disconnecting...</>
+                      ) : (
+                        <><Unlink className="w-4 h-4 mr-2" />Disconnect</>
+                      )}
+                    </Button>
+                  )}
+                </div>
+              </motion.div>
+
+              {/* Download/Setup Instructions */}
+              {!desktopConnected && (
+                <GlassCard className="p-6">
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <Laptop className="w-5 h-5 text-purple-400" />
+                    Get Started with SYNC Desktop
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                        <span className="text-purple-400 font-semibold">1</span>
+                      </div>
+                      <div>
+                        <h4 className="text-white font-medium">Download the App</h4>
+                        <p className="text-sm text-zinc-500">Get SYNC Desktop for macOS or Windows</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                        <span className="text-purple-400 font-semibold">2</span>
+                      </div>
+                      <div>
+                        <h4 className="text-white font-medium">Sign In</h4>
+                        <p className="text-sm text-zinc-500">Click the SYNC avatar and sign in with your iSyncSO account</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                        <span className="text-purple-400 font-semibold">3</span>
+                      </div>
+                      <div>
+                        <h4 className="text-white font-medium">Start Working</h4>
+                        <p className="text-sm text-zinc-500">SYNC will track your activity and provide context-aware assistance</p>
+                      </div>
+                    </div>
+                  </div>
+                </GlassCard>
+              )}
+
+              {/* Connection Details */}
+              {desktopConnected && (
+                <GlassCard className="p-6">
+                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-emerald-400" />
+                    Connection Details
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-zinc-500">Status</p>
+                      <p className="text-white flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        Connected
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-zinc-500">Last Activity</p>
+                      <p className="text-white">{desktopLastActivity ? new Date(desktopLastActivity).toLocaleString() : 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-zinc-500">Features</p>
+                      <p className="text-white">Activity Tracking, Cloud Sync, Journals</p>
+                    </div>
+                    <div>
+                      <p className="text-zinc-500">Sync Frequency</p>
+                      <p className="text-white">Hourly summaries, Daily journals</p>
+                    </div>
+                  </div>
+                </GlassCard>
               )}
             </TabsContent>
 
