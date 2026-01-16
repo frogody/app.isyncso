@@ -46,15 +46,12 @@ export async function searchProductsAction(
       return successResult(`No products found matching "${data.query}"`, []);
     }
 
-    const list = formatList(result.products, (p) => {
-      const stockInfo = p.type === 'physical'
-        ? ` | Stock: ${p.quantity ?? 0} ${p.in_stock ? '✅' : '⚠️'}`
-        : '';
-      return `- **${p.name}** | ${formatCurrency(p.price)} | ${p.type}${stockInfo}`;
-    });
+    // Brief summary only - no list unless asked
+    const outOfStock = result.products.filter(p => p.type === 'physical' && !p.in_stock).length;
+    const stockNote = outOfStock > 0 ? ` ${outOfStock} out of stock.` : '';
 
     return successResult(
-      `Found ${result.products.length} product(s) matching "${data.query}":\n\n${list}`,
+      `${result.products.length} products match "${data.query}".${stockNote}`,
       result.products,
       '/products'
     );
@@ -396,15 +393,20 @@ export async function listProducts(
       physicalData = ppData || [];
     }
 
-    const list = formatList(products, (p) => {
-      const physical = physicalData.find(pp => pp.product_id === p.id);
-      const price = physical?.pricing?.base_price ? formatCurrency(physical.pricing.base_price) : 'N/A';
-      const stock = physical?.inventory?.quantity ?? (p.type === 'digital' ? '∞' : 'N/A');
-      return `- **${p.name}** | ${p.type} | ${price} | Stock: ${stock} | ${p.status}`;
-    });
+    // Brief summary only
+    const outOfStock = physicalData.filter(pp => (pp.inventory?.quantity ?? 0) === 0).length;
+    const lowStock = physicalData.filter(pp => {
+      const qty = pp.inventory?.quantity ?? 0;
+      const threshold = pp.inventory?.low_stock_threshold ?? 10;
+      return qty > 0 && qty <= threshold;
+    }).length;
+
+    let stockNote = '';
+    if (outOfStock > 0) stockNote += ` ${outOfStock} out of stock.`;
+    if (lowStock > 0) stockNote += ` ${lowStock} low.`;
 
     return successResult(
-      `Found ${products.length} product(s):\n\n${list}`,
+      `${products.length} products.${stockNote}`,
       products.map(p => {
         const physical = physicalData.find(pp => pp.product_id === p.id);
         return {
@@ -469,15 +471,16 @@ export async function getLowStock(
       (a.inventory?.quantity ?? 0) - (b.inventory?.quantity ?? 0)
     );
 
-    const list = formatList(sorted, (p) => {
-      const qty = p.inventory?.quantity ?? 0;
-      const name = (p as any).products.name;
-      const status = qty === 0 ? '🔴 OUT OF STOCK' : '⚠️ LOW';
-      return `- **${name}** | SKU: ${p.sku} | Stock: ${qty} units ${status}`;
-    });
+    // Brief summary only
+    const outOfStock = sorted.filter(p => (p.inventory?.quantity ?? 0) === 0).length;
+    const justLow = sorted.length - outOfStock;
+
+    let msg = `${sorted.length} need attention.`;
+    if (outOfStock > 0) msg += ` ${outOfStock} out of stock.`;
+    if (justLow > 0) msg += ` ${justLow} running low.`;
 
     return successResult(
-      `⚠️ Found ${lowStock.length} product(s) with low stock:\n\n${list}`,
+      msg,
       sorted.map(p => ({
         id: p.product_id,
         name: (p as any).products.name,

@@ -206,14 +206,13 @@ export async function listInvoices(
       return successResult('No invoices found matching your criteria.', []);
     }
 
-    const list = formatList(invoices, (inv) =>
-      `- **${inv.invoice_number}** | ${inv.client_name} | ${formatCurrency(inv.total)} | ${inv.status} | Due: ${formatDate(inv.due_date)}`
-    );
-
+    // Brief summary only
     const totalAmount = invoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
+    const unpaid = invoices.filter(inv => inv.status !== 'paid').length;
+    const unpaidNote = unpaid > 0 ? ` ${unpaid} unpaid.` : '';
 
     return successResult(
-      `Found ${invoices.length} invoice(s):\n\n${list}\n\n**Total: ${formatCurrency(totalAmount)}**`,
+      `${invoices.length} invoices. ${formatCurrency(totalAmount)} total.${unpaidNote}`,
       invoices,
       '/financeinvoices'
     );

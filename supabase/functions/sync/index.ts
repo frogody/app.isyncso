@@ -325,7 +325,7 @@ function summarizeStepResult(step: TaskStep): string | null {
     case 'search_prospects':
     case 'search_products':
       if (result.items?.length > 0) {
-        return `Found ${result.items.length} ${step.action.includes('prospect') ? 'contact(s)' : 'product(s)'}`;
+        return `${result.items.length} ${step.action.includes('prospect') ? 'contacts' : 'products'}`;
       }
       break;
 
@@ -2679,12 +2679,7 @@ serve(async (req) => {
                               if (enhancement.postResponse) {
                                           assistantMessage += enhancement.postResponse;
                               }
-                              if (enhancement.suggestedFollowUps && enhancement.suggestedFollowUps.length > 0) {
-                                          assistantMessage += '\n\n**You might also want to:**\n';
-                                          enhancement.suggestedFollowUps.slice(0, 3).forEach(q => {
-                                                        assistantMessage += `• ${q}\n`;
-                                          });
-                              }
+                              // Removed verbose "You might also want to" suggestions - keep responses brief
                               console.log('[SYNC] Response enhanced with intelligence insights');
                     } catch (enhanceError) {
                               console.warn('[SYNC] Response enhancement failed:', enhanceError);

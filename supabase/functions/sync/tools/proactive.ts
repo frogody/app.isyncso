@@ -600,9 +600,9 @@ async function generateProductInsights(
   if (outOfStock.length > 0) {
     insights.push({
       type: 'warning',
-      message: `${outOfStock.length} product(s) are out of stock: ${outOfStock.map((p: any) => p.name).join(', ')}`,
+      message: `${outOfStock.length} out of stock.`,
       action: {
-        label: 'Check all low stock',
+        label: 'Details',
         action: 'get_low_stock',
         data: {},
       },
@@ -611,9 +611,9 @@ async function generateProductInsights(
   } else if (lowStock.length > 0) {
     insights.push({
       type: 'warning',
-      message: `${lowStock.length} product(s) are running low on stock.`,
+      message: `${lowStock.length} running low.`,
       action: {
-        label: 'View low stock items',
+        label: 'Details',
         action: 'get_low_stock',
         data: {},
       },
