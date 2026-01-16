@@ -727,7 +727,9 @@ export default function DesktopActivity() {
                               key={idx}
                               className="bg-green-950/40 text-green-300/80 border-green-800/30"
                             >
-                              {area}
+                              {typeof area === 'string'
+                                ? area
+                                : `${area.category || area.name || 'Unknown'}: ${area.percentage || 0}%`}
                             </Badge>
                           ))}
                         </div>
