@@ -254,6 +254,52 @@ export async function executePlan(
 }
 
 // =============================================================================
+// Result Wrapper for Templates
+// =============================================================================
+
+/**
+ * Wraps action results with useful template-accessible properties
+ * Makes {{result.count}}, {{result.total}}, {{result.first.name}} etc. work
+ */
+function wrapResultForTemplates(rawData: any, fullResult: any): any {
+  // If already an object with useful properties, enhance it
+  if (rawData && typeof rawData === 'object' && !Array.isArray(rawData)) {
+    return {
+      ...rawData,
+      // Add count if not present (for single item results)
+      count: rawData.count ?? 1,
+      // Preserve message for templates
+      message: fullResult.message,
+    };
+  }
+
+  // If it's an array, wrap with useful properties
+  if (Array.isArray(rawData)) {
+    return {
+      items: rawData,
+      count: rawData.length,
+      total: rawData.length,
+      first: rawData[0] || null,
+      last: rawData[rawData.length - 1] || null,
+      // Also make array indexable directly: {{result[0].name}}
+      ...rawData.reduce((acc: any, item: any, idx: number) => {
+        acc[idx] = item;
+        return acc;
+      }, {}),
+      // Preserve message for templates
+      message: fullResult.message,
+    };
+  }
+
+  // Primitive value - wrap in object
+  return {
+    value: rawData,
+    count: rawData ? 1 : 0,
+    message: fullResult.message,
+  };
+}
+
+// =============================================================================
 // Step Execution
 // =============================================================================
 
@@ -295,9 +341,12 @@ async function executeStep(
     step.executionTimeMs = Date.now() - startTime;
 
     if (result.success) {
+      // Wrap result with useful template properties
+      const rawData = result.result || result;
+      const wrappedData = wrapResultForTemplates(rawData, result);
       return {
         success: true,
-        data: result.result || result,
+        data: wrappedData,
       };
     } else {
       return {

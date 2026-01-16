@@ -320,7 +320,12 @@ ${Object.entries(ACTION_CATALOG).map(([action, def]) =>
 5. **ANNOUNCEMENTS**: Write friendly, human messages for each step.
    - announcement: What you're about to do ("Let me find Erik in your contacts...")
    - completionMessage: What you accomplished ("Found Erik Bakker at LogiTech!")
-   - Use {{result.field}} placeholders for dynamic data
+   - Use {{result.field}} placeholders for dynamic data:
+     * {{result.count}} - Number of items found
+     * {{result.total}} - Same as count (for clarity)
+     * {{result.first.name}} - First item's field
+     * {{result.items}} - Array of all items
+     * {{result.message}} - Action's summary message
 
 6. **CHECKPOINTS**: Set isCheckpoint=true for irreversible actions (send_email, create_invoice).
 
