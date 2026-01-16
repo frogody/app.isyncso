@@ -34,7 +34,7 @@ export interface TaskStep {
   agent: string;
   action: string;
   inputs: Record<string, any>;
-  inputTemplates: Record<string, string>; // Templates like {{step_1.result.id}}
+  inputTemplates: Record<string, string>; // Templates like {{step_1.first.id}} for arrays, {{step_1.id}} for objects
   dependsOn: string[];
   status: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
   result?: any;
@@ -312,7 +312,9 @@ ${Object.entries(ACTION_CATALOG).map(([action, def]) =>
    - Step 4: send_email (send to Erik's email)
 
 3. **DEPENDENCIES**: Use {{step_id.field}} to reference previous results.
-   Example: inputs: { "to": "{{search_client.result.email}}" }
+   For array results (searches): use {{step_id.first.field}} to get first item
+   Example: inputs: { "to": "{{search_client.first.email}}" }
+   Example: inputs: { "product_id": "{{find_product.first.id}}" }
 
 4. **CLARIFICATION**: If critical info is missing, set needsClarification=true.
    Example: "Make a proposal" → Missing: who for? what products?
@@ -347,7 +349,7 @@ ${Object.entries(ACTION_CATALOG).map(([action, def]) =>
       "inputTemplates": {},
       "dependsOn": [],
       "announcement": "Let me find Erik in your contacts...",
-      "completionMessage": "Found {{result.name}} at {{result.company}}!",
+      "completionMessage": "Found {{result.first.name}} at {{result.first.company}}!",
       "failureMessage": "Couldn't find anyone named Erik. Want me to search differently?",
       "isCheckpoint": false,
       "fallbackAction": null
@@ -754,10 +756,10 @@ export const QUICK_PLAN_TEMPLATES: Record<string, (entities: ExtractedEntities) 
         action: 'create_proposal',
         inputs: {},
         inputTemplates: {
-          client_name: '{{find_client.result.name}}',
-          client_email: '{{find_client.result.email}}',
+          client_name: '{{find_client.first.name}}',
+          client_email: '{{find_client.first.email}}',
           items: JSON.stringify([{
-            product_id: '{{find_product.result.id}}',
+            product_id: '{{find_product.first.id}}',
             quantity: entities.products[0]?.quantity || 1,
           }]),
         },
@@ -778,13 +780,13 @@ export const QUICK_PLAN_TEMPLATES: Record<string, (entities: ExtractedEntities) 
         action: 'send_email',
         inputs: {},
         inputTemplates: {
-          to: '{{find_client.result.email}}',
+          to: '{{find_client.first.email}}',
           subject: 'Proposal {{create_proposal.result.proposal_number}}',
           body: 'Please find attached your proposal.',
         },
         dependsOn: ['create_proposal'],
         status: 'pending',
-        announcement: 'Sending to {{find_client.result.email}}...',
+        announcement: 'Sending to {{find_client.first.email}}...',
         completionMessage: 'Email sent!',
         failureMessage: 'Failed to send email.',
         isCheckpoint: true,
@@ -823,8 +825,8 @@ export const QUICK_PLAN_TEMPLATES: Record<string, (entities: ExtractedEntities) 
         action: 'create_invoice',
         inputs: {},
         inputTemplates: {
-          client_name: '{{find_client.result.name}}',
-          client_email: '{{find_client.result.email}}',
+          client_name: '{{find_client.first.name}}',
+          client_email: '{{find_client.first.email}}',
         },
         dependsOn: ['find_client'],
         status: 'pending',

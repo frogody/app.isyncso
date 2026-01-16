@@ -1439,7 +1439,11 @@ Never leave them hanging. Always end with either a next step, a question, or an 
 
 ## Formatting
 
-Use markdown tables for financial data and invoice previews. Keep it scannable.
+NEVER use markdown tables, bullet lists, or verbose formatting. Keep responses conversational.
+
+Good: "You have 6 pending invoices totaling €14,044. TechCorp (€3,250, 15 days overdue) and Design Studio (€1,875, 11 days) need attention. Send reminders?"
+
+Bad: Tables, bullet points, numbered lists, headers, or any verbose formatting.
 
 For action buttons the UI can render, use this format:
 [ACTIONS]
@@ -2663,28 +2667,9 @@ serve(async (req) => {
       assistantMessage = assistantMessage.replace(/\[ACTION\][\s\S]*?\[\/ACTION\]/g, '').trim();
 
       if (actionExecuted) {
-        // ---------------------------------------------------------------------
-        // DATA SYNTHESIS: Transform raw results into meaningful insights
-        // ---------------------------------------------------------------------
-        let synthesizedMessage = actionExecuted.message;
-        try {
-          const synthesized = await synthesizeResults(
-            actionData.action,
-            actionExecuted.result,
-            message, // Original query for intent detection
-            supabase,
-            companyId
-          );
-
-          if (synthesized) {
-            synthesizedMessage = formatSynthesizedResult(synthesized);
-            console.log(`[SYNC] Data synthesized for ${actionData.action} (${synthesized.type})`);
-          }
-        } catch (synthError) {
-          console.warn('[SYNC] Data synthesis failed, using raw result:', synthError);
-        }
-
-        assistantMessage = assistantMessage + '\n\n' + synthesizedMessage;
+        // Use the action's message directly - it's already brief and conversational
+        // Skip verbose synthesis which adds tables and redundant summaries
+        assistantMessage = assistantMessage + '\n\n' + actionExecuted.message;
 
             // === INTELLIGENCE RESPONSE ENHANCEMENT ===
             // Enhance response with deep insights and follow-up suggestions
