@@ -428,6 +428,7 @@ function getActionEffect(actionType) {
 function AgentChannelMessage({ message, isLatest }) {
   const messageRef = useRef(null);
   const agent = AGENT_SEGMENTS.find(a => a.id === message.agentId) || AGENT_SEGMENTS.find(a => a.id === 'sync');
+  const isSyncMessage = message.agentId === 'sync' || !message.agentId;
 
   // Animate message entrance
   useEffect(() => {
@@ -435,7 +436,7 @@ function AgentChannelMessage({ message, isLatest }) {
 
     anime({
       targets: messageRef.current,
-      translateX: [-10, 0],
+      translateX: [isSyncMessage ? -10 : 10, 0],
       opacity: [0, 1],
       duration: 250,
       easing: 'easeOutQuad',
@@ -446,8 +447,8 @@ function AgentChannelMessage({ message, isLatest }) {
     <div
       ref={messageRef}
       className={cn(
-        "flex items-start gap-2.5 py-2 px-3 rounded-lg transition-colors",
-        isLatest && "bg-white/5"
+        "flex items-start gap-2.5 py-2 px-3 rounded-xl transition-colors max-w-[85%]",
+        isSyncMessage ? "mr-auto bg-zinc-800/50" : "ml-auto flex-row-reverse bg-zinc-700/40"
       )}
       style={{ opacity: 0 }}
     >
@@ -463,8 +464,8 @@ function AgentChannelMessage({ message, isLatest }) {
       </div>
 
       {/* Message Content */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-baseline gap-2">
+      <div className={cn("flex-1 min-w-0", !isSyncMessage && "text-right")}>
+        <div className={cn("flex items-baseline gap-2", !isSyncMessage && "justify-end")}>
           <span
             className="text-xs font-medium"
             style={{ color: agent?.color }}
@@ -1541,8 +1542,8 @@ function AgentAvatar({ size = 360, agentName = 'SYNC', mood = 'listening', level
       <OuterRing size={size} mood={mood} level={level} activeAgent={activeAgent} activeAgentAngle={activeAgentAngle} />
       <InnerViz size={size} mood={mood} level={level} seed={seed} actionEffect={actionEffect} activeAgentColor={activeAgentColor} showSuccess={showSuccess} activeAgentAngle={activeAgentAngle} />
 
-      {/* Label */}
-      <div className="absolute inset-x-0 bottom-[-10px] flex justify-center">
+      {/* Label - positioned below avatar */}
+      <div className="absolute inset-x-0 bottom-[-32px] flex justify-center">
         <div
           ref={labelRef}
           className="rounded-xl border border-white/10 bg-black/60 px-3 py-1.5 text-xs shadow-lg backdrop-blur"
@@ -2025,8 +2026,8 @@ export default function SyncAgent() {
           className="flex flex-col rounded-2xl border border-zinc-700/50 bg-zinc-900/30 overflow-hidden"
           style={{ opacity: 0 }}
         >
-          {/* Avatar - with balanced padding */}
-          <div className="shrink-0 grid place-items-center py-8">
+          {/* Avatar - with balanced padding and room for status chip below */}
+          <div className="shrink-0 grid place-items-center pt-8 pb-12">
             <AgentAvatar size={280} agentName="SYNC" mood={mood} level={level} seed={seed} activeAgent={activeAgent} actionEffect={currentActionEffect} showSuccess={showSuccess} />
           </div>
 
