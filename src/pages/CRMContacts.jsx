@@ -32,6 +32,7 @@ import {
   ChevronLeft, Home, Layers, GripVertical, Hash, Loader2
 } from "lucide-react";
 import { enrichContact, mapEnrichedDataToContact } from "@/components/integrations/ExploriumAPI";
+import { QuickAddContactModal } from "@/components/crm/QuickAddContactModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -732,6 +733,7 @@ export default function CRMContacts() {
   const [activities, setActivities] = useState([]);
   const [deals, setDeals] = useState([]);
   const [enriching, setEnriching] = useState(false);
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
   const tableBodyRef = useRef(null);
   const reducedMotion = prefersReducedMotion();
 
@@ -1189,6 +1191,14 @@ export default function CRMContacts() {
 
             <Button variant="outline" size="sm" onClick={handleExport} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
               <Download className="w-4 h-4 mr-1" /> Export
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => setShowQuickAdd(true)}
+              className="border-cyan-600/50 bg-cyan-600/10 text-cyan-400 hover:bg-cyan-600/20"
+            >
+              <Sparkles className="w-4 h-4 mr-1" /> Quick Add
             </Button>
 
             <Button onClick={() => {
@@ -1675,6 +1685,14 @@ export default function CRMContacts() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Quick Add Contact Modal with Explorium Enrichment */}
+      <QuickAddContactModal
+        isOpen={showQuickAdd}
+        onClose={() => setShowQuickAdd(false)}
+        onSuccess={loadContacts}
+        targetTable="contacts"
+      />
     </div>
   );
 }

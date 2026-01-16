@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
 import { toast } from "sonner";
+import { fullEnrichFromLinkedIn } from "@/lib/explorium-api";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -267,6 +268,7 @@ export default function TalentCandidateProfile() {
   const [activeTab, setActiveTab] = useState("overview");
   const [generatingIntelligence, setGeneratingIntelligence] = useState(false);
   const [syncStatus, setSyncStatus] = useState(""); // "company" | "candidate" | ""
+  const [enrichingContact, setEnrichingContact] = useState(false);
 
   useEffect(() => {
     if (candidateId) {
@@ -401,6 +403,61 @@ export default function TalentCandidateProfile() {
     } finally {
       setGeneratingIntelligence(false);
       setSyncStatus("");
+    }
+  };
+
+  // Enrich contact info via Explorium API
+  const enrichContact = async () => {
+    if (!candidate.linkedin_profile) {
+      toast.error("No LinkedIn URL available", {
+        description: "Add a LinkedIn profile URL to enable contact enrichment",
+      });
+      return;
+    }
+
+    setEnrichingContact(true);
+    try {
+      const enriched = await fullEnrichFromLinkedIn(candidate.linkedin_profile);
+
+      // Update candidate with verified contact info
+      const { error } = await supabase
+        .from("candidates")
+        .update({
+          verified_email: enriched.email,
+          verified_phone: enriched.phone,
+          verified_mobile: enriched.mobile_phone,
+          personal_email: enriched.personal_email,
+          explorium_prospect_id: enriched.explorium_prospect_id,
+          explorium_business_id: enriched.explorium_business_id,
+          enriched_at: enriched.enriched_at,
+          enrichment_source: "explorium",
+          // Also update any missing profile fields
+          job_title: candidate.job_title || enriched.job_title,
+          company_name: candidate.company_name || enriched.company,
+          person_home_location: candidate.person_home_location ||
+            [enriched.location_city, enriched.location_country].filter(Boolean).join(", "),
+          skills: candidate.skills?.length ? candidate.skills : enriched.skills,
+          inferred_skills: enriched.skills,
+          company_domain: candidate.company_domain || enriched.company_domain,
+          company_size: candidate.company_size || enriched.company_size,
+          company_employee_count: candidate.company_employee_count || enriched.company_employee_count,
+          industry: candidate.industry || enriched.company_industry,
+        })
+        .eq("id", candidateId);
+
+      if (error) throw error;
+
+      await fetchCandidate();
+      toast.success("Contact info enriched!", {
+        description: `Found ${enriched.email ? "email" : ""}${enriched.email && enriched.phone ? " & " : ""}${enriched.phone ? "phone" : ""}`,
+      });
+    } catch (err) {
+      console.error("Enrichment error:", err);
+      toast.error("Enrichment failed", {
+        description: err.message || "Could not enrich contact information",
+      });
+    } finally {
+      setEnrichingContact(false);
     }
   };
 
@@ -539,6 +596,27 @@ export default function TalentCandidateProfile() {
                     <Send className="w-4 h-4 mr-2" />
                     Start Outreach
                   </Button>
+                  {/* Enrich Contact Button */}
+                  {candidate.linkedin_profile && !candidate.enriched_at ? (
+                    <Button
+                      variant="outline"
+                      onClick={enrichContact}
+                      disabled={enrichingContact}
+                      className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 px-6"
+                    >
+                      {enrichingContact ? (
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      ) : (
+                        <Zap className="w-4 h-4 mr-2" />
+                      )}
+                      {enrichingContact ? "Enriching..." : "Enrich Contact"}
+                    </Button>
+                  ) : candidate.enriched_at ? (
+                    <div className="flex items-center gap-1.5 text-xs text-green-400 px-3 py-1.5 bg-green-500/10 rounded-lg border border-green-500/20">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      Enriched {new Date(candidate.enriched_at).toLocaleDateString()}
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </div>
