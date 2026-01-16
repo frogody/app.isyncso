@@ -2048,8 +2048,8 @@ export default function SyncAgent() {
           className="flex flex-col min-h-0"
           style={{ opacity: 0 }}
         >
-          {/* Messages Area - directly on background */}
-          <div ref={scrollerRef} className="flex-1 min-h-0 space-y-4 overflow-y-auto px-2 py-4">
+          {/* Messages Area - directly on background, with top spacing */}
+          <div ref={scrollerRef} className="flex-1 min-h-0 space-y-4 overflow-y-auto px-2 pt-16 pb-4">
               {messages.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center px-4">
                   <div className="relative mb-6">
