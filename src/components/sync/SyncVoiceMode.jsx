@@ -22,6 +22,46 @@ const generateSessionId = () => `voice-${Date.now()}-${Math.random().toString(36
 // Available voices for Together.ai TTS (Orpheus model)
 const VOICES = ['tara', 'leah', 'jess', 'leo', 'dan', 'mia', 'zac', 'zoe'];
 
+// Quick acknowledgment phrases for immediate feedback (using browser TTS)
+const ACKNOWLEDGMENTS = [
+  "Let me check that for you.",
+  "One moment.",
+  "Looking into that.",
+  "Let me have a look.",
+  "Checking now.",
+  "On it.",
+  "Give me a second.",
+];
+
+// Speak quick acknowledgment using browser's built-in TTS (instant, no API call)
+const speakAcknowledgment = () => {
+  if (!window.speechSynthesis) return Promise.resolve();
+
+  return new Promise((resolve) => {
+    // Pick a random acknowledgment
+    const text = ACKNOWLEDGMENTS[Math.floor(Math.random() * ACKNOWLEDGMENTS.length)];
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.1; // Slightly faster for snappiness
+    utterance.pitch = 1.0;
+    utterance.volume = 0.8;
+
+    // Try to find a good English voice
+    const voices = window.speechSynthesis.getVoices();
+    const englishVoice = voices.find(v =>
+      v.lang.startsWith('en') && (v.name.includes('Samantha') || v.name.includes('Karen') || v.name.includes('Google'))
+    ) || voices.find(v => v.lang.startsWith('en'));
+    if (englishVoice) utterance.voice = englishVoice;
+
+    utterance.onend = () => resolve();
+    utterance.onerror = () => resolve(); // Continue even if TTS fails
+
+    window.speechSynthesis.speak(utterance);
+
+    // Fallback timeout in case onend doesn't fire
+    setTimeout(resolve, 1500);
+  });
+};
+
 export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
   const { user } = useUser();
   const syncState = useSyncState();
@@ -213,10 +253,18 @@ export default function SyncVoiceMode({ isOpen, onClose, onSwitchToChat }) {
       recognitionRef.current.stop();
     }
 
+    // IMMEDIATE FEEDBACK: Speak a quick acknowledgment using browser TTS
+    // This gives instant response while the backend processes
+    if (!isMuted) {
+      isAudioPlayingRef.current = true; // Prevent echo
+      await speakAcknowledgment();
+      isAudioPlayingRef.current = false;
+    }
+
     const startTime = Date.now();
 
     try {
-      // Call sync-voice endpoint (LLM + Cartesia Sonic TTS)
+      // Call sync-voice endpoint (LLM + TTS)
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-voice`,
         {

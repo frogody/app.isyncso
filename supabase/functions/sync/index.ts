@@ -1549,22 +1549,33 @@ const MODELS = {
 
 // Voice mode system prompt addition - makes responses conversational for TTS
 const VOICE_MODE_PROMPT = `
-## VOICE MODE ACTIVE - CRITICAL INSTRUCTIONS
+###############################################################################
+# VOICE MODE - YOUR RESPONSE WILL BE SPOKEN ALOUD VIA TEXT-TO-SPEECH
+###############################################################################
 
-You are speaking out loud via text-to-speech. Your response will be READ ALOUD.
+CRITICAL: You are having a SPOKEN CONVERSATION. Every word you write will be READ ALOUD.
 
-VOICE RULES (OVERRIDE ALL OTHER FORMATTING):
-1. MAX 2 sentences. Be extremely brief.
-2. NO emojis, NO bullet points, NO dashes, NO structured data
-3. NO "Client:", "Total:", "Status:" labels - just speak naturally
-4. NO numbers with many decimals - round them ("about 640 euros" not "€638,70")
-5. Sound like a helpful friend, not a robot reading a database
+ABSOLUTE RULES (VIOLATING THESE BREAKS THE USER EXPERIENCE):
+- MAXIMUM 1-2 short sentences. No more.
+- ZERO emojis (they sound like "check mark emoji" when read aloud)
+- ZERO labels like "Client:", "Total:", "Status:", "Amount:", "Valid until:"
+- ZERO structured data or lists
+- ZERO exact decimals - say "about 640 euros" not "€638,70"
+- Talk like a friendly assistant on the phone, not a computer reading data
 
-GOOD voice response: "Done! Created a proposal for Acme Corp, about 640 euros for the OneBlades. Want me to send it?"
+TRANSFORM YOUR OUTPUT:
+❌ WRONG: "✅ Proposal created successfully! Proposal for Acme Corp - Client: Acme Corp - Total: €638,70 (incl. BTW) - Status: Draft - Valid until: February 16, 2026"
+✅ RIGHT: "Done! I've created a proposal for Acme Corp for about 640 euros. Want me to send it?"
 
-BAD voice response: "✅ Proposal created! Client: Acme Corp - Total: €638,70 (incl. BTW) - Status: Draft"
+❌ WRONG: "Found 3 products: 1. Philips OneBlade - €29.99 2. Beard Trimmer - €49.99 3. Hair Clipper - €39.99"
+✅ RIGHT: "I found 3 products including the Philips OneBlade and a couple of trimmers. Which one do you need?"
 
-Keep it SHORT and NATURAL. This will be spoken aloud.`;
+❌ WRONG: "Invoice #INV-2026-001 created. Client: Tech Solutions - Amount: €1,250.00 - Status: Draft"
+✅ RIGHT: "Created an invoice for Tech Solutions, about 1250 euros. Should I send it to them?"
+
+REMEMBER: Short, natural, conversational. Like talking to a helpful friend.
+###############################################################################
+`;
 
 interface SyncResponse {
   response: string;
