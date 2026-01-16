@@ -2144,36 +2144,14 @@ export default function SyncAgent() {
           </div>
         </div>
 
-        {/* Right: Chat Panel - Premium Glass Design */}
+        {/* Right: Chat Panel - Clean, No Border */}
         <div
           data-animate
-          className="relative flex flex-col min-h-0 rounded-2xl overflow-hidden"
+          className="flex flex-col min-h-0"
           style={{ opacity: 0 }}
         >
-          {/* Glass background with gradient */}
-          <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-zinc-800/40 via-zinc-900/60 to-black/80 backdrop-blur-xl" />
-          <div className="absolute inset-0 rounded-2xl border border-zinc-700/50" />
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-zinc-500/30 to-transparent" />
-
-          {/* Content */}
-          <div className="relative z-10 flex flex-col h-full">
-            {/* Premium Header */}
-            <div className="shrink-0 relative">
-              <div className="flex items-center justify-between px-6 py-4">
-                <div>
-                  <div className="text-base font-semibold bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">Conversation</div>
-                  <div className="text-xs text-zinc-500">Chat with SYNC</div>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-800/60 border border-zinc-700/50">
-                  <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
-                  <span className="text-xs text-zinc-400 tabular-nums">{messages.length} messages</span>
-                </div>
-              </div>
-              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-zinc-700/50 to-transparent" />
-            </div>
-
-            {/* Messages Area */}
-            <div ref={scrollerRef} className="flex-1 min-h-0 space-y-4 overflow-y-auto px-6 py-5">
+          {/* Messages Area - directly on background */}
+          <div ref={scrollerRef} className="flex-1 min-h-0 space-y-4 overflow-y-auto px-2 py-4">
               {messages.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center px-4">
                   <div className="relative mb-6">
@@ -2244,56 +2222,52 @@ export default function SyncAgent() {
               )}
             </div>
 
-            {/* Premium Input Area */}
-            <div className="shrink-0 relative">
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-zinc-700/50 to-transparent" />
-              <div className="px-6 py-5">
-                <div className="flex items-end gap-4">
-                  <div className="flex-1 rounded-xl bg-zinc-900/60 border border-zinc-700/50 hover:border-zinc-600/60 focus-within:border-cyan-500/40 focus-within:shadow-lg focus-within:shadow-cyan-500/5 transition-all duration-200">
-                    <textarea
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          send();
-                        }
-                      }}
-                      placeholder="Message SYNC…"
-                      rows={2}
-                      disabled={isSending}
-                      className="w-full resize-none bg-transparent text-sm text-white/90 outline-none placeholder:text-zinc-500 disabled:opacity-50 px-4 py-3"
-                    />
-                    <div className="px-4 pb-3 flex items-center justify-between text-[11px] text-zinc-600">
-                      <span>Enter to send · Shift+Enter for newline</span>
-                      <span className="tabular-nums">{input.length}</span>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={send}
-                    disabled={isSending || !input.trim()}
-                    className={cn(
-                      'group relative inline-flex h-14 w-14 items-center justify-center rounded-xl transition-all duration-300 overflow-hidden',
-                      isSending || !input.trim()
-                        ? 'cursor-not-allowed bg-zinc-800/60 border border-zinc-700/50 text-zinc-600'
-                        : 'shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30 hover:scale-105 active:scale-95'
-                    )}
-                    title="Send (Enter)"
-                  >
-                    {input.trim() && !isSending && (
-                      <>
-                        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-cyan-600" />
-                        <div className="absolute inset-0 bg-gradient-to-br from-cyan-400 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </>
-                    )}
-                    <Send className={cn(
-                      "relative h-5 w-5 transition-all duration-300",
-                      input.trim() && !isSending ? "text-white" : "text-zinc-600"
-                    )} />
-                  </button>
+          {/* Input Area - clean, no container border */}
+          <div className="shrink-0 px-2 py-4">
+            <div className="flex items-end gap-4">
+              <div className="flex-1 rounded-xl bg-zinc-900/60 border border-zinc-700/50 hover:border-zinc-600/60 focus-within:border-cyan-500/40 focus-within:shadow-lg focus-within:shadow-cyan-500/5 transition-all duration-200">
+                <textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      send();
+                    }
+                  }}
+                  placeholder="Message SYNC…"
+                  rows={2}
+                  disabled={isSending}
+                  className="w-full resize-none bg-transparent text-sm text-white/90 outline-none placeholder:text-zinc-500 disabled:opacity-50 px-4 py-3"
+                />
+                <div className="px-4 pb-3 flex items-center justify-between text-[11px] text-zinc-600">
+                  <span>Enter to send · Shift+Enter for newline</span>
+                  <span className="tabular-nums">{input.length}</span>
                 </div>
               </div>
+
+              <button
+                onClick={send}
+                disabled={isSending || !input.trim()}
+                className={cn(
+                  'group relative inline-flex h-14 w-14 items-center justify-center rounded-xl transition-all duration-300 overflow-hidden',
+                  isSending || !input.trim()
+                    ? 'cursor-not-allowed bg-zinc-800/60 border border-zinc-700/50 text-zinc-600'
+                    : 'shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30 hover:scale-105 active:scale-95'
+                )}
+                title="Send (Enter)"
+              >
+                {input.trim() && !isSending && (
+                  <>
+                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 to-cyan-600" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-400 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </>
+                )}
+                <Send className={cn(
+                  "relative h-5 w-5 transition-all duration-300",
+                  input.trim() && !isSending ? "text-white" : "text-zinc-600"
+                )} />
+              </button>
             </div>
           </div>
         </div>
