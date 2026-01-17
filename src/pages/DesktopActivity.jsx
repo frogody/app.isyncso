@@ -287,8 +287,19 @@ export default function DesktopActivity() {
         return;
       }
 
-      toast.success(`Journal generated for ${result.date}`);
-      // Refresh data to show the new journal
+      toast.success(`Journal generated for ${result.date}${result.ai_generated ? ' with AI insights' : ''}`);
+
+      // Immediately update UI with the returned journal
+      if (result.journal) {
+        setJournals(prev => {
+          // Remove existing journal for same date if exists
+          const filtered = prev.filter(j => j.journal_date !== result.journal.journal_date);
+          // Add new journal at the beginning
+          return [result.journal, ...filtered];
+        });
+      }
+
+      // Also do a full refresh to ensure sync
       await loadData();
     } catch (error) {
       console.error('Error generating journal:', error);

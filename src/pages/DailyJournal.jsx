@@ -93,7 +93,20 @@ export default function DailyJournal() {
       }
 
       toast.success(`Journal generated for ${result.date}${result.ai_generated ? ' with AI insights' : ''}`);
-      // Refresh data to show the new journal
+
+      // Immediately update UI with the returned journal
+      if (result.journal) {
+        setJournals(prev => {
+          // Remove existing journal for same date if exists
+          const filtered = prev.filter(j => j.journal_date !== result.journal.journal_date);
+          // Add new journal at the beginning
+          return [result.journal, ...filtered];
+        });
+        // Select the new journal immediately
+        setSelectedJournal(result.journal);
+      }
+
+      // Also do a full refresh to ensure sync
       await loadData();
     } catch (error) {
       console.error('Error generating journal:', error);
