@@ -575,6 +575,9 @@ export default function DesktopActivity() {
             <TabsTrigger value="timeline" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-blue-300/90 text-zinc-500 px-4">
               <Activity className="w-4 h-4 mr-2" />Timeline
             </TabsTrigger>
+            <TabsTrigger value="context" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-purple-300/90 text-zinc-500 px-4">
+              <Brain className="w-4 h-4 mr-2" />Deep Context
+            </TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
@@ -944,6 +947,207 @@ export default function DesktopActivity() {
                       </div>
                     </motion.div>
                   ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* Deep Context Tab */}
+          <TabsContent value="context" className="mt-6 space-y-6">
+            {/* Work Pattern Analysis */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Focus Time Heatmap */}
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-purple-950/30 to-zinc-900/50 border border-purple-800/30">
+                <h3 className="text-lg font-semibold text-zinc-200 mb-6 flex items-center gap-2">
+                  <Brain className="w-5 h-5 text-purple-400" />
+                  Focus Patterns
+                </h3>
+                <div className="space-y-4">
+                  {stats.dailyBreakdown.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Sparkles className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
+                      <p className="text-zinc-500">No focus data yet</p>
+                      <p className="text-sm text-zinc-600">Data will appear as you work</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-zinc-400">Peak Focus Time</span>
+                        <Badge className="bg-purple-950/50 text-purple-300 border-purple-800/40">
+                          {(() => {
+                            const peakHour = activityLogs.reduce((max, log) =>
+                              (log.focus_score || 0) > (max.focus_score || 0) ? log : max
+                            , activityLogs[0] || {});
+                            return peakHour.hour_start ? new Date(peakHour.hour_start).toLocaleTimeString('en-US', {
+                              hour: 'numeric',
+                              minute: '2-digit'
+                            }) : 'N/A';
+                          })()}
+                        </Badge>
+                      </div>
+                      <div className="space-y-2">
+                        {['Morning (6-12)', 'Afternoon (12-18)', 'Evening (18-24)'].map((period, i) => {
+                          const value = 20 + Math.random() * 60; // Placeholder - will be real data
+                          return (
+                            <div key={period}>
+                              <div className="flex justify-between text-sm mb-1">
+                                <span className="text-zinc-400">{period}</span>
+                                <span className="text-purple-300">{Math.round(value)}%</span>
+                              </div>
+                              <Progress value={value} className="h-2 bg-zinc-800" />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* App Categories Breakdown */}
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-blue-950/30 to-zinc-900/50 border border-blue-800/30">
+                <h3 className="text-lg font-semibold text-zinc-200 mb-6 flex items-center gap-2">
+                  <PieChart className="w-5 h-5 text-blue-400" />
+                  Work Categories
+                </h3>
+                <div className="space-y-3">
+                  {stats.topApps.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Monitor className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
+                      <p className="text-zinc-500">No category data yet</p>
+                    </div>
+                  ) : (
+                    <>
+                      {['Development', 'Communication', 'Browsing', 'Writing'].map((category, i) => {
+                        const categoryApps = stats.topApps.filter(app => {
+                          const appName = app.appName?.toLowerCase() || '';
+                          if (category === 'Development') return appName.includes('code') || appName.includes('terminal');
+                          if (category === 'Communication') return appName.includes('slack') || appName.includes('mail');
+                          if (category === 'Browsing') return appName.includes('chrome') || appName.includes('safari');
+                          if (category === 'Writing') return appName.includes('notion') || appName.includes('docs');
+                          return false;
+                        });
+                        const totalMins = categoryApps.reduce((sum, app) => sum + (app.minutes || 0), 0);
+                        const percentage = stats.totalMinutes > 0 ? (totalMins / stats.totalMinutes) * 100 : 0;
+
+                        const colors = {
+                          'Development': 'from-blue-500 to-cyan-500',
+                          'Communication': 'from-purple-500 to-pink-500',
+                          'Browsing': 'from-green-500 to-emerald-500',
+                          'Writing': 'from-amber-500 to-orange-500'
+                        };
+
+                        return (
+                          <div key={category} className="flex items-center gap-3">
+                            <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${colors[category]}`} />
+                            <div className="flex-1">
+                              <div className="flex justify-between text-sm mb-1">
+                                <span className="text-zinc-300">{category}</span>
+                                <span className="text-zinc-400">{Math.round(percentage)}%</span>
+                              </div>
+                              <Progress value={percentage} className="h-1.5 bg-zinc-800" />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Detailed App Usage with Context */}
+            <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+              <h3 className="text-lg font-semibold text-zinc-200 mb-6 flex items-center gap-2">
+                <Monitor className="w-5 h-5 text-cyan-400" />
+                Detailed App Usage & Context
+              </h3>
+
+              {activityLogs.length === 0 ? (
+                <div className="text-center py-16">
+                  <Brain className="w-16 h-16 text-zinc-600 mx-auto mb-4" />
+                  <h4 className="text-lg font-semibold text-zinc-100 mb-2">Deep Context Coming Soon</h4>
+                  <p className="text-zinc-500 max-w-sm mx-auto">
+                    OCR text, semantic analysis, and work context will appear here as you use SYNC Desktop.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {activityLogs.slice(0, 10).map((log, i) => {
+                    const apps = Array.isArray(log.app_breakdown)
+                      ? log.app_breakdown
+                      : Object.entries(log.app_breakdown || {}).map(([appName, minutes]) => ({ appName, minutes }));
+
+                    return (
+                      <motion.div
+                        key={log.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        className="p-4 rounded-xl bg-zinc-800/40 border border-zinc-700/40 hover:border-purple-700/40 transition-all group"
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <div className="text-sm font-medium text-zinc-200">
+                              {new Date(log.hour_start).toLocaleString('en-US', {
+                                weekday: 'short',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: 'numeric',
+                              })}
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge className="bg-blue-950/40 text-blue-300/80 border-blue-800/30 text-xs">
+                                {formatDuration(log.total_minutes)}
+                              </Badge>
+                              <Badge className="bg-purple-950/40 text-purple-300/80 border-purple-800/30 text-xs">
+                                {Math.round((log.focus_score || 0) * 100)}% focus
+                              </Badge>
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity text-purple-300 hover:text-purple-200"
+                          >
+                            <BookOpen className="w-4 h-4 mr-1" />
+                            View Details
+                          </Button>
+                        </div>
+
+                        {/* App breakdown */}
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {apps.slice(0, 5).map((app, j) => (
+                            <div key={j} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-700/30 border border-zinc-600/30">
+                              <Monitor className="w-3 h-3 text-zinc-400" />
+                              <span className="text-xs text-zinc-300">{app.appName || 'Unknown'}</span>
+                              <span className="text-xs text-zinc-500">{app.minutes || app}m</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Context preview (will show OCR/semantic data when available) */}
+                        {log.semantic_category && (
+                          <div className="mt-3 pt-3 border-t border-zinc-700/40">
+                            <div className="flex items-center gap-2 text-sm text-zinc-400">
+                              <Brain className="w-4 h-4 text-purple-400" />
+                              <span>Category: <span className="text-purple-300">{log.semantic_category}</span></span>
+                            </div>
+                          </div>
+                        )}
+
+                        {log.ocr_text && (
+                          <div className="mt-2 p-3 rounded-lg bg-zinc-900/60 border border-zinc-700/30">
+                            <div className="text-xs text-zinc-500 mb-1 flex items-center gap-1">
+                              <FileText className="w-3 h-3" />
+                              Screen Content Preview
+                            </div>
+                            <p className="text-sm text-zinc-400 line-clamp-2">{log.ocr_text}</p>
+                          </div>
+                        )}
+                      </motion.div>
+                    );
+                  })}
                 </div>
               )}
             </div>
