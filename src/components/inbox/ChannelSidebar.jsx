@@ -4,7 +4,7 @@ import {
   Hash, Lock, Plus, ChevronDown, MessageSquare,
   Search, Settings, BellOff, Bell, Star, StarOff, MoreHorizontal,
   Archive, Trash2, UserPlus, Sparkles, Bookmark, AtSign,
-  Circle, Clock, MinusCircle, Moon
+  Circle, Clock, MinusCircle, Moon, X
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -33,7 +33,8 @@ export default function ChannelSidebar({
   unreadCounts = {},
   onArchiveChannel,
   onDeleteChannel,
-  onOpenSettings
+  onOpenSettings,
+  onClose,
 }) {
   const [channelsExpanded, setChannelsExpanded] = useState(true);
   const [dmsExpanded, setDmsExpanded] = useState(true);
@@ -325,13 +326,25 @@ export default function ChannelSidebar({
               <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Workspace</p>
             </div>
           </div>
-          <button
-            onClick={onOpenSettings}
-            className="p-2 hover:bg-zinc-800/80 rounded-xl transition-all group"
-            title="Workspace settings"
-          >
-            <Settings className="w-5 h-5 text-zinc-500 group-hover:text-cyan-400 transition-colors" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={onOpenSettings}
+              className="p-2 hover:bg-zinc-800/80 rounded-xl transition-all group"
+              title="Workspace settings"
+            >
+              <Settings className="w-5 h-5 text-zinc-500 group-hover:text-cyan-400 transition-colors" />
+            </button>
+            {/* Mobile close button */}
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-zinc-800/80 rounded-xl transition-all group lg:hidden"
+                aria-label="Close sidebar"
+              >
+                <X className="w-5 h-5 text-zinc-500 group-hover:text-white transition-colors" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Search */}

@@ -2,9 +2,10 @@ import React, { useRef, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   MoreHorizontal, Reply, Smile, Bookmark, Share, Pin, Edit2,
-  Trash2, MessageSquare, FileText, Download, ExternalLink, Loader2,
-  ChevronDown, ChevronUp, Send, CornerDownRight
+  Trash2, MessageSquare, Loader2, Forward,
+  ChevronDown, ChevronUp, Send, CornerDownRight, CheckCheck, BookmarkCheck
 } from 'lucide-react';
+import FilePreview from './FilePreview';
 import { format, isToday, isYesterday } from 'date-fns';
 import { AVAILABLE_AGENTS } from './AgentMentionHandler';
 import {
@@ -76,7 +77,12 @@ function MessageBubble({
   showThread = true,
   currentUserId,
   teamMembers = [],
-  currentUser
+  currentUser,
+  readReceipts = [],
+  readStatusText,
+  onBookmark,
+  onForward,
+  isBookmarked = false
 }) {
   const [showActions, setShowActions] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -154,48 +160,16 @@ function MessageBubble({
   };
 
   const renderAttachment = () => {
-    if (message.type === 'image' && message.file_url) {
-      return (
-        <div className="mt-3 relative group max-w-md">
-          <img 
-            src={message.file_url} 
-            alt={message.file_name || 'Image'} 
-            className="rounded-xl max-h-80 object-cover cursor-pointer hover:opacity-90 transition-opacity border border-zinc-700"
-            onClick={() => window.open(message.file_url, '_blank')}
-          />
-          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-            <button className="p-2 bg-black/70 rounded-lg hover:bg-black/90 backdrop-blur-sm">
-              <Download className="w-4 h-4 text-white" />
-            </button>
-            <button className="p-2 bg-black/70 rounded-lg hover:bg-black/90 backdrop-blur-sm">
-              <ExternalLink className="w-4 h-4 text-white" />
-            </button>
-          </div>
-        </div>
-      );
-    }
-    
-    if (message.type === 'file' && message.file_url) {
-      return (
-        <a
-          href={message.file_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-3 flex items-center gap-3 p-3 bg-zinc-800/50 border border-zinc-700 rounded-lg hover:bg-zinc-800 hover:border-zinc-600 transition-all max-w-sm"
-        >
-          <div className="w-10 h-10 rounded-lg bg-zinc-700 border border-zinc-600 flex items-center justify-center">
-            <FileText className="w-5 h-5 text-zinc-400" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm text-zinc-200 truncate font-medium">{message.file_name || 'File'}</div>
-            <div className="text-xs text-zinc-500">Click to download</div>
-          </div>
-          <Download className="w-4 h-4 text-zinc-500" />
-        </a>
-      );
-    }
-    
-    return null;
+    if (!message.file_url) return null;
+
+    return (
+      <FilePreview
+        type={message.type}
+        url={message.file_url}
+        filename={message.file_name}
+        fileSize={message.file_size}
+      />
+    );
   };
 
   if (message.type === 'system') {
@@ -218,17 +192,17 @@ function MessageBubble({
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="group flex gap-3 px-6 py-3 bg-zinc-900/30"
+        className="group flex gap-2 sm:gap-3 px-3 sm:px-6 py-2 sm:py-3 bg-zinc-900/30"
       >
-        <div className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-lg">
+        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-base sm:text-lg flex-shrink-0">
           {agent?.icon || '🤖'}
         </div>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-sm text-zinc-300">
+            <span className="font-semibold text-sm text-zinc-300 truncate">
               {message.sender_name}
             </span>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400/80 border border-cyan-500/20">
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400/80 border border-cyan-500/20 flex-shrink-0">
               AI
             </span>
           </div>
@@ -246,7 +220,7 @@ function MessageBubble({
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`group relative flex gap-3 px-6 py-3 hover:bg-zinc-800/20 transition-colors ${
+      className={`group relative flex gap-2 sm:gap-3 px-3 sm:px-6 py-2 sm:py-3 hover:bg-zinc-800/20 transition-colors ${
         message.is_pinned ? 'bg-zinc-800/30 border-l-2 border-zinc-600' : ''
       } ${isAgentMessage ? 'bg-cyan-950/10 border-l border-cyan-500/20' : ''}`}
       onMouseEnter={() => setShowActions(true)}
@@ -255,20 +229,20 @@ function MessageBubble({
       {/* Avatar */}
       <div className="flex-shrink-0">
         {isAgentMessage ? (
-          <div className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-lg relative">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-base sm:text-lg relative">
             {agent?.icon || '🤖'}
             {message.sender_avatar && (
               <img
                 src={message.sender_avatar}
                 alt=""
-                className="w-4 h-4 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-zinc-950"
+                className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-zinc-950"
               />
             )}
           </div>
         ) : message.sender_avatar ? (
-          <img src={message.sender_avatar} alt="" className="w-10 h-10 rounded-full border border-zinc-700/50" />
+          <img src={message.sender_avatar} alt="" className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-zinc-700/50" />
         ) : (
-          <div className="w-10 h-10 rounded-full bg-zinc-700 flex items-center justify-center text-sm font-bold text-zinc-300">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-zinc-700 flex items-center justify-center text-xs sm:text-sm font-bold text-zinc-300">
             {message.sender_name?.charAt(0) || '?'}
           </div>
         )}
@@ -322,6 +296,43 @@ function MessageBubble({
 
         {renderAttachment()}
         {renderReactions()}
+
+        {/* Read receipts indicator (only for own messages) */}
+        {isOwn && readStatusText && (
+          <div className="flex items-center gap-1.5 mt-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-400 transition-colors">
+                  <CheckCheck className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>{readStatusText}</span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="bg-zinc-900 border-zinc-700 p-3 w-56" align="start">
+                <div className="text-xs text-zinc-400 mb-2 font-medium">Read by</div>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {readReceipts.map((reader) => (
+                    <div key={reader.user_id} className="flex items-center gap-2">
+                      {reader.user_avatar ? (
+                        <img src={reader.user_avatar} alt="" className="w-5 h-5 rounded-full" />
+                      ) : (
+                        <div className="w-5 h-5 rounded-full bg-zinc-700 flex items-center justify-center text-[10px] font-bold text-zinc-300">
+                          {reader.user_name?.charAt(0) || '?'}
+                        </div>
+                      )}
+                      <span className="text-sm text-zinc-300 flex-1 truncate">{reader.user_name}</span>
+                      <span className="text-xs text-zinc-500">
+                        {format(new Date(reader.read_at), 'h:mm a')}
+                      </span>
+                    </div>
+                  ))}
+                  {readReceipts.length === 0 && (
+                    <div className="text-xs text-zinc-500">No one has read this message yet</div>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+        )}
 
         {/* Thread indicator & inline replies */}
         {showThread && (message.reply_count > 0 || threadExpanded) && (
@@ -501,11 +512,21 @@ function MessageBubble({
                   <Pin className="w-4 h-4 mr-2" />
                   {message.is_pinned ? 'Unpin message' : 'Pin to channel'}
                 </DropdownMenuItem>
-                <DropdownMenuItem className="text-zinc-300 hover:text-white focus:text-white focus:bg-zinc-800">
-                  <Bookmark className="w-4 h-4 mr-2" /> Save message
+                <DropdownMenuItem
+                  onClick={() => onBookmark?.(message.id)}
+                  className="text-zinc-300 hover:text-white focus:text-white focus:bg-zinc-800"
+                >
+                  {isBookmarked ? (
+                    <><BookmarkCheck className="w-4 h-4 mr-2 text-cyan-400" /> Saved</>
+                  ) : (
+                    <><Bookmark className="w-4 h-4 mr-2" /> Save message</>
+                  )}
                 </DropdownMenuItem>
-                <DropdownMenuItem className="text-zinc-300 hover:text-white focus:text-white focus:bg-zinc-800">
-                  <Share className="w-4 h-4 mr-2" /> Share message
+                <DropdownMenuItem
+                  onClick={() => onForward?.(message)}
+                  className="text-zinc-300 hover:text-white focus:text-white focus:bg-zinc-800"
+                >
+                  <Forward className="w-4 h-4 mr-2" /> Forward message
                 </DropdownMenuItem>
                 {isOwn && (
                   <>
@@ -546,7 +567,15 @@ export default function MessageList({
   onOpenThread,
   onLoadReplies,
   onSendReply,
-  isLoading
+  isLoading,
+  isLoadingMore = false,
+  hasMore = false,
+  onLoadMore,
+  getMessageReaders,
+  getReadStatusText,
+  onBookmark,
+  onForward,
+  isBookmarked
 }) {
   const userMap = React.useMemo(() => {
     const map = {};
@@ -556,7 +585,10 @@ export default function MessageList({
   }, [currentUser, teamMembers]);
 
   const containerRef = useRef(null);
+  const loadMoreTriggerRef = useRef(null);
   const [autoScroll, setAutoScroll] = useState(true);
+  const prevMessagesLength = useRef(messages.length);
+  const prevScrollHeight = useRef(0);
 
   // State for inline thread replies
   const [threadReplies, setThreadReplies] = useState({});
@@ -595,16 +627,42 @@ export default function MessageList({
     }
   };
 
+  // Auto-scroll to bottom for new messages
   useEffect(() => {
     if (autoScroll && containerRef.current) {
       containerRef.current.scrollTop = containerRef.current.scrollHeight;
     }
   }, [messages, autoScroll]);
 
+  // Maintain scroll position when loading older messages
+  useEffect(() => {
+    if (containerRef.current && messages.length > prevMessagesLength.current) {
+      const isLoadingOlder = prevScrollHeight.current > 0;
+      if (isLoadingOlder && !autoScroll) {
+        // Messages were prepended - maintain scroll position
+        const newScrollHeight = containerRef.current.scrollHeight;
+        const scrollDiff = newScrollHeight - prevScrollHeight.current;
+        containerRef.current.scrollTop = scrollDiff;
+      }
+    }
+    prevMessagesLength.current = messages.length;
+  }, [messages.length, autoScroll]);
+
+  // Infinite scroll - detect when user scrolls near top
   const handleScroll = () => {
     if (!containerRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+
+    // Track scroll position for maintaining position on load
+    prevScrollHeight.current = scrollHeight;
+
+    // Auto-scroll detection (near bottom)
     setAutoScroll(scrollHeight - scrollTop - clientHeight < 100);
+
+    // Load more when near top (within 200px)
+    if (scrollTop < 200 && hasMore && !isLoadingMore && onLoadMore) {
+      onLoadMore();
+    }
   };
 
   const groupedMessages = messages.reduce((groups, message) => {
@@ -633,12 +691,27 @@ export default function MessageList({
   }
 
   return (
-    <div 
+    <div
       ref={containerRef}
       onScroll={handleScroll}
       className="flex-1 overflow-y-auto bg-zinc-950/50 scrollbar-hide"
     >
       <div className="py-4">
+        {/* Loading more indicator at top */}
+        {isLoadingMore && (
+          <div className="flex items-center justify-center py-4">
+            <div className="flex items-center gap-2 px-4 py-2 bg-zinc-800/50 rounded-full border border-zinc-700/50">
+              <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
+              <span className="text-sm text-zinc-400">Loading older messages...</span>
+            </div>
+          </div>
+        )}
+
+        {/* Load more trigger at top */}
+        {hasMore && !isLoadingMore && (
+          <div ref={loadMoreTriggerRef} className="h-1" />
+        )}
+
         {Object.entries(groupedMessages).map(([date, dateMessages]) => (
           <div key={date}>
             {/* Date divider */}
@@ -675,6 +748,11 @@ export default function MessageList({
                   onSendReply={handleSendReply}
                   replies={threadReplies[message.id] || []}
                   repliesLoading={loadingReplies[message.id] || false}
+                  readReceipts={getMessageReaders?.(message.id) || []}
+                  readStatusText={getReadStatusText?.(message.id, message.sender_id)}
+                  onBookmark={onBookmark}
+                  onForward={onForward}
+                  isBookmarked={isBookmarked?.(message.id)}
                 />
               );
             })}

@@ -38,6 +38,7 @@ export interface TaskStep {
   dependsOn: string[];
   status: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
   result?: any;
+  resultMessage?: string; // Formatted message from action result for display
   error?: string;
   announcement: string;
   completionMessage: string;

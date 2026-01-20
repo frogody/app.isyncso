@@ -136,6 +136,7 @@ export async function executePlan(
     if (stepResult.success) {
       step.status = 'completed';
       step.result = stepResult.data;
+      step.resultMessage = stepResult.message; // Store formatted message for display
       results[step.id] = stepResult.data;
       plan.completedSteps++;
 
@@ -254,59 +255,6 @@ export async function executePlan(
 }
 
 // =============================================================================
-// Result Wrapper for Templates
-// =============================================================================
-
-/**
- * Wraps action results with useful template-accessible properties
- * Makes {{result.count}}, {{result.total}}, {{result.length}}, {{result.first.name}} etc. work
- */
-function wrapResultForTemplates(rawData: any, fullResult: any): any {
-  // If already an object with useful properties, enhance it
-  if (rawData && typeof rawData === 'object' && !Array.isArray(rawData)) {
-    const itemCount = rawData.count ?? 1;
-    return {
-      ...rawData,
-      // Add count/length/total for template compatibility
-      count: itemCount,
-      length: itemCount,
-      total: itemCount,
-      // Preserve message for templates
-      message: fullResult.message,
-    };
-  }
-
-  // If it's an array, wrap with useful properties
-  if (Array.isArray(rawData)) {
-    const len = rawData.length;
-    return {
-      items: rawData,
-      count: len,
-      length: len,  // Alias for count (templates may use {{result.length}})
-      total: len,
-      first: rawData[0] || null,
-      last: rawData[len - 1] || null,
-      // Also make array indexable directly: {{result[0].name}}
-      ...rawData.reduce((acc: any, item: any, idx: number) => {
-        acc[idx] = item;
-        return acc;
-      }, {}),
-      // Preserve message for templates
-      message: fullResult.message,
-    };
-  }
-
-  // Primitive value - wrap in object
-  return {
-    value: rawData,
-    count: rawData ? 1 : 0,
-    length: rawData ? 1 : 0,
-    total: rawData ? 1 : 0,
-    message: fullResult.message,
-  };
-}
-
-// =============================================================================
 // Step Execution
 // =============================================================================
 
@@ -348,12 +296,10 @@ async function executeStep(
     step.executionTimeMs = Date.now() - startTime;
 
     if (result.success) {
-      // Wrap result with useful template properties
-      const rawData = result.result || result;
-      const wrappedData = wrapResultForTemplates(rawData, result);
       return {
         success: true,
-        data: wrappedData,
+        data: result.result || result,
+        message: result.message, // Preserve the formatted message for display
       };
     } else {
       return {
@@ -386,56 +332,7 @@ function resolveInputs(step: TaskStep, previousResults: Record<string, any>): Re
   return resolved;
 }
 
-/**
- * Formats a value for display in user-facing messages
- * Handles arrays, objects, and primitives nicely
- */
-function formatTemplateValue(value: any): string {
-  if (value === null || value === undefined) return '';
-
-  // Format arrays nicely
-  if (Array.isArray(value)) {
-    if (value.length === 0) return 'none';
-
-    // Extract displayable names from objects
-    const items = value.map(v => {
-      if (typeof v === 'object' && v !== null) {
-        // Try common name fields in order of preference
-        return v.name || v.title || v.client_name || v.product_name ||
-               v.description || v.email || v.id || JSON.stringify(v);
-      }
-      return String(v);
-    });
-
-    // Format as "A, B, C" or "A, B, C, D, E, and 5 more"
-    if (items.length <= 5) {
-      return items.join(', ');
-    }
-    return `${items.slice(0, 5).join(', ')}, and ${items.length - 5} more`;
-  }
-
-  // Format objects by extracting key fields
-  if (typeof value === 'object') {
-    const name = value.name || value.title || value.client_name || value.product_name;
-    if (name) return name;
-
-    // For objects without obvious name, list key fields
-    const keys = Object.keys(value).slice(0, 3);
-    if (keys.length > 0) {
-      return keys.map(k => `${k}: ${value[k]}`).join(', ');
-    }
-    return JSON.stringify(value);
-  }
-
-  // Format numbers with locale
-  if (typeof value === 'number') {
-    return value.toLocaleString();
-  }
-
-  return String(value);
-}
-
-export function injectTemplateValues(
+function injectTemplateValues(
   template: string,
   results: Record<string, any>,
   currentStepId?: string
@@ -468,24 +365,11 @@ export function injectTemplateValues(
         if (arrayMatch) {
           value = value[arrayMatch[1]]?.[parseInt(arrayMatch[2])];
         } else {
-          // Try direct property access first
-          let nextValue = value[part];
-
-          // If property doesn't exist and we have 'items' array, use it
-          // This handles cases like {{result.products}} when data is wrapped with {items: [...]}
-          if (nextValue === undefined && value.items && Array.isArray(value.items)) {
-            // Check if this looks like a collection name (products, invoices, tasks, etc.)
-            if (/^(products?|invoices?|tasks?|expenses?|prospects?|items?|results?)$/i.test(part)) {
-              nextValue = value.items;
-            }
-          }
-
-          value = nextValue;
+          value = value[part];
         }
       }
 
-      // Use nice formatting for arrays and objects
-      return value !== undefined ? formatTemplateValue(value) : match;
+      return value !== undefined ? String(value) : match;
     } catch {
       return match;
     }

@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Send, Plus, Smile, Code, Bold, Italic, 
-  Link, List, X, Loader2, Paperclip
+import {
+  Send, Plus, Smile, Code, Bold, Italic,
+  Link, List, X, Loader2, Paperclip, VolumeX, Clock
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { db } from '@/api/supabaseClient';
@@ -20,27 +20,36 @@ const EMOJI_CATEGORIES = {
   'Objects': ['⭐', '🔥', '💡', '💯', '🎉', '🎊', '🎁', '🏆', '🚀', '💻', '📱', '📧', '📎', '✅', '❌', '❤️'],
 };
 
-export default function MessageInput({ 
-  channelName, 
+export default function MessageInput({
+  channelName,
   channelId,
-  onSend, 
+  onSend,
   disabled,
   placeholder,
   onTyping,
+  onStopTyping,
+  typingText,
+  typingUsers = [],
   replyingTo,
   onCancelReply,
   members = [],
   channels = [],
-  onEditLastMessage
+  onEditLastMessage,
+  // Moderation props
+  isMuted = false,
+  rateLimits = null,
+  checkRateLimit,
+  slowmodeSeconds = 0
 }) {
   const [message, setMessage] = useState('');
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [showFormatting, setShowFormatting] = useState(false);
   const [mentionedUsers, setMentionedUsers] = useState([]);
+  const [rateLimitCountdown, setRateLimitCountdown] = useState(0);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
-  
+
   const [autocomplete, setAutocomplete] = useState({
     show: false,
     type: null,
@@ -63,8 +72,36 @@ export default function MessageInput({
     }
   }, [message, channelId]);
 
+  // Rate limit countdown timer
+  useEffect(() => {
+    if (rateLimitCountdown > 0) {
+      const timer = setInterval(() => {
+        setRateLimitCountdown(prev => Math.max(0, prev - 1));
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [rateLimitCountdown]);
+
   const handleSend = async () => {
     if (!message.trim() && files.length === 0) return;
+
+    // Check if user is muted
+    if (isMuted) {
+      toast.error('You are muted in this channel');
+      return;
+    }
+
+    // Check rate limit
+    if (checkRateLimit) {
+      const rateCheck = await checkRateLimit();
+      if (!rateCheck.allowed) {
+        toast.error(rateCheck.message || 'Rate limit exceeded');
+        if (rateCheck.retry_after) {
+          setRateLimitCountdown(rateCheck.retry_after);
+        }
+        return;
+      }
+    }
     
     let fileUrl = null;
     let fileName = null;
@@ -98,7 +135,8 @@ export default function MessageInput({
     setFiles([]);
     setMentionedUsers([]);
     onCancelReply?.();
-    
+    onStopTyping?.();
+
     if (channelId) {
       localStorage.removeItem(`inbox_draft_${channelId}`);
     }
@@ -372,14 +410,14 @@ export default function MessageInput({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="px-6 pt-3 overflow-hidden"
+            className="px-3 sm:px-6 pt-3 overflow-hidden"
           >
-            <div className="flex items-center gap-3 p-3 bg-cyan-500/10 rounded-lg border border-cyan-500/30">
+            <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-cyan-500/10 rounded-lg border border-cyan-500/30">
               <div className="flex-1 min-w-0">
                 <span className="text-xs text-cyan-400 font-medium">Replying to {replyingTo.sender_name}</span>
                 <p className="text-xs text-zinc-400 truncate mt-0.5">{replyingTo.content}</p>
               </div>
-              <button 
+              <button
                 onClick={onCancelReply}
                 className="p-1 hover:bg-cyan-500/20 rounded transition-colors"
               >
@@ -397,7 +435,7 @@ export default function MessageInput({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="px-6 pt-3 overflow-hidden"
+            className="px-3 sm:px-6 pt-3 overflow-hidden"
           >
             <div className="flex items-center gap-3 p-3 bg-zinc-800/50 border border-zinc-700 rounded-lg">
               {files[0].type.startsWith('image/') ? (
@@ -426,17 +464,89 @@ export default function MessageInput({
         )}
       </AnimatePresence>
 
+      {/* Typing indicator */}
+      <AnimatePresence>
+        {typingText && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="px-3 sm:px-6 overflow-hidden"
+          >
+            <div className="flex items-center gap-2 py-2">
+              {typingUsers.length > 0 && typingUsers[0]?.avatar ? (
+                <img
+                  src={typingUsers[0].avatar}
+                  alt=""
+                  className="w-5 h-5 rounded-full"
+                />
+              ) : typingUsers.length > 0 ? (
+                <div className="w-5 h-5 rounded-full bg-gradient-to-br from-cyan-500 to-indigo-500 flex items-center justify-center text-[9px] font-bold text-white">
+                  {typingUsers[0]?.name?.charAt(0) || '?'}
+                </div>
+              ) : null}
+              <span className="text-xs text-zinc-400 flex items-center gap-1">
+                {typingText}
+                <span className="inline-flex gap-0.5">
+                  <span className="w-1 h-1 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-1 h-1 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-1 h-1 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </span>
+              </span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Muted indicator */}
+      <AnimatePresence>
+        {isMuted && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="px-3 sm:px-6 overflow-hidden"
+          >
+            <div className="flex items-center gap-2 py-2 px-3 bg-orange-500/10 border border-orange-500/30 rounded-lg">
+              <VolumeX className="w-4 h-4 text-orange-400 flex-shrink-0" />
+              <span className="text-sm text-orange-400">You are muted in this channel</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Slowmode / Rate limit indicator */}
+      <AnimatePresence>
+        {(slowmodeSeconds > 0 || rateLimitCountdown > 0) && !isMuted && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="px-3 sm:px-6 overflow-hidden"
+          >
+            <div className="flex items-center gap-2 py-2 px-3 bg-cyan-500/10 border border-cyan-500/30 rounded-lg">
+              <Clock className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+              <span className="text-sm text-cyan-400">
+                {rateLimitCountdown > 0
+                  ? `Wait ${rateLimitCountdown}s before sending another message`
+                  : `Slowmode enabled: ${slowmodeSeconds}s between messages`}
+              </span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Input area */}
-      <div className="p-4">
+      <div className="p-2 sm:p-4">
         <div className="relative bg-zinc-900/50 rounded-xl">
-          {/* Formatting toolbar */}
+          {/* Formatting toolbar - hidden on mobile */}
           <AnimatePresence>
             {showFormatting && (
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                className="flex items-center gap-0.5 px-2 py-2 border-b border-zinc-700/50"
+                className="hidden sm:flex items-center gap-0.5 px-2 py-2 border-b border-zinc-700/50"
               >
                 {[
                   { icon: Bold, action: 'bold', title: 'Bold (⌘B)' },
@@ -444,10 +554,10 @@ export default function MessageInput({
                   { icon: Code, action: 'code', title: 'Code' },
                   { icon: Link, action: 'link', title: 'Link (⌘K)' },
                 ].map((item, i) => (
-                  <button 
+                  <button
                     key={i}
-                    onClick={() => formatText(item.action)} 
-                    className="p-2 hover:bg-zinc-800 rounded-md transition-colors" 
+                    onClick={() => formatText(item.action)}
+                    className="p-2 hover:bg-zinc-800 rounded-md transition-colors"
                     title={item.title}
                   >
                     <item.icon className="w-4 h-4 text-zinc-400" />
@@ -462,10 +572,10 @@ export default function MessageInput({
           </AnimatePresence>
 
           {/* Text input */}
-          <div className="flex items-end gap-2 p-3">
+          <div className="flex items-end gap-1.5 sm:gap-2 p-2 sm:p-3">
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="p-2 hover:bg-zinc-800 rounded-lg transition-colors flex-shrink-0"
+              className="p-1.5 sm:p-2 hover:bg-zinc-800 rounded-lg transition-colors flex-shrink-0"
               title="Attach file (⌘U)"
             >
               <Plus className="w-5 h-5 text-zinc-400" />
@@ -491,7 +601,7 @@ export default function MessageInput({
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
                 placeholder={placeholder || `Message #${channelName || 'channel'}`}
-                disabled={disabled || uploading}
+                disabled={disabled || uploading || isMuted || rateLimitCountdown > 0}
                 rows={1}
                 className="inbox-textarea w-full resize-none text-sm max-h-32 min-h-[24px] py-1 leading-relaxed focus:outline-none focus:ring-0 placeholder:text-zinc-500"
                 style={{ 
@@ -520,12 +630,13 @@ export default function MessageInput({
               accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
             />
 
-            <div className="flex items-center gap-1 flex-shrink-0">
+            <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
+              {/* Formatting button - hidden on mobile */}
               <button
                 onClick={() => setShowFormatting(!showFormatting)}
-                className={`p-2 rounded-lg transition-all ${
-                  showFormatting 
-                    ? 'bg-cyan-500/20 text-cyan-400' 
+                className={`hidden sm:block p-2 rounded-lg transition-all ${
+                  showFormatting
+                    ? 'bg-cyan-500/20 text-cyan-400'
                     : 'hover:bg-zinc-800 text-zinc-400'
                 }`}
                 title="Formatting options"
@@ -535,11 +646,11 @@ export default function MessageInput({
 
               <Popover>
                 <PopoverTrigger asChild>
-                  <button className="p-2 hover:bg-zinc-800 rounded-lg transition-colors" title="Add emoji">
+                  <button className="p-1.5 sm:p-2 hover:bg-zinc-800 rounded-lg transition-colors" title="Add emoji">
                     <Smile className="w-5 h-5 text-zinc-400" />
                   </button>
                 </PopoverTrigger>
-                <PopoverContent className="bg-zinc-900 border-zinc-700 w-80 p-0" align="end">
+                <PopoverContent className="bg-zinc-900 border-zinc-700 w-72 sm:w-80 p-0" align="end">
                   <div className="max-h-72 overflow-y-auto p-3 scrollbar-hide">
                     {Object.entries(EMOJI_CATEGORIES).map(([category, emojis]) => (
                       <div key={category} className="mb-4">
@@ -549,7 +660,7 @@ export default function MessageInput({
                             <button
                               key={emoji}
                               onClick={() => insertEmoji(emoji)}
-                              className="p-2 hover:bg-zinc-800 rounded-lg text-xl transition-colors"
+                              className="p-1.5 sm:p-2 hover:bg-zinc-800 rounded-lg text-lg sm:text-xl transition-colors"
                             >
                               {emoji}
                             </button>
@@ -563,13 +674,13 @@ export default function MessageInput({
 
               <button
                 onClick={handleSend}
-                disabled={(!message.trim() && files.length === 0) || uploading}
-                className="p-2.5 bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-all shadow-md shadow-cyan-500/20 hover:shadow-lg hover:shadow-cyan-500/30"
+                disabled={(!message.trim() && files.length === 0) || uploading || isMuted || rateLimitCountdown > 0}
+                className="p-2 sm:p-2.5 bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-all shadow-md shadow-cyan-500/20 hover:shadow-lg hover:shadow-cyan-500/30"
               >
                 {uploading ? (
-                  <Loader2 className="w-5 h-5 text-white animate-spin" />
+                  <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 text-white animate-spin" />
                 ) : (
-                  <Send className="w-5 h-5 text-white" />
+                  <Send className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 )}
               </button>
             </div>

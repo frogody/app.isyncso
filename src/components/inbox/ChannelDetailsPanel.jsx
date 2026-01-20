@@ -1,16 +1,19 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { X, Info, Hash, Lock, Users, Calendar, Edit2, Trash2, Archive, Bell, BellOff } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Info, Hash, Lock, Users, Calendar, Edit2, Trash2, Archive, Bell, BellOff, Clock, Shield, Loader2, ChevronDown, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { useModeration } from './hooks/useModeration';
+import { useChannelRoles } from './hooks/useChannelRoles';
 
-export default function ChannelDetailsPanel({ 
-  channel, 
+export default function ChannelDetailsPanel({
+  channel,
   memberCount = 0,
   messageCount = 0,
   isOwner = false,
+  currentUserId,
   onClose,
   onUpdateChannel,
   onArchiveChannel,
@@ -21,6 +24,33 @@ export default function ChannelDetailsPanel({
   const [editName, setEditName] = useState(channel?.name || '');
   const [editDescription, setEditDescription] = useState(channel?.description || '');
   const [isMuted, setIsMuted] = useState(false);
+  const [showModerationSettings, setShowModerationSettings] = useState(false);
+
+  // Rate limit settings form state
+  const [messagesPerMinute, setMessagesPerMinute] = useState(30);
+  const [messagesPerHour, setMessagesPerHour] = useState(200);
+  const [slowmodeSeconds, setSlowmodeSeconds] = useState(0);
+
+  // Moderation hooks
+  const { rateLimits, updateRateLimits, loading: moderationLoading } = useModeration(channel?.id, currentUserId);
+  const { isAdmin } = useChannelRoles(channel?.id, currentUserId);
+
+  // Sync rate limits to form when loaded
+  useEffect(() => {
+    if (rateLimits) {
+      setMessagesPerMinute(rateLimits.messages_per_minute || 30);
+      setMessagesPerHour(rateLimits.messages_per_hour || 200);
+      setSlowmodeSeconds(rateLimits.slowmode_seconds || 0);
+    }
+  }, [rateLimits]);
+
+  const handleSaveRateLimits = async () => {
+    await updateRateLimits({
+      messagesPerMinute: parseInt(messagesPerMinute) || 30,
+      messagesPerHour: parseInt(messagesPerHour) || 200,
+      slowmodeSeconds: slowmodeSeconds ? parseInt(slowmodeSeconds) : null
+    });
+  };
 
   const handleSave = async () => {
     if (editName.trim()) {
@@ -164,7 +194,7 @@ export default function ChannelDetailsPanel({
               )}
 
               {isOwner && (
-                <button 
+                <button
                   onClick={() => onDeleteChannel?.(channel)}
                   className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-red-500/10 transition-colors text-left group"
                 >
@@ -178,6 +208,101 @@ export default function ChannelDetailsPanel({
             </>
           )}
         </div>
+
+        {/* Moderation Settings (Admin only) */}
+        {!isDM && isAdmin && (
+          <div className="p-4 border-t border-zinc-800">
+            <button
+              onClick={() => setShowModerationSettings(!showModerationSettings)}
+              className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-zinc-800/50 transition-colors text-left"
+            >
+              <Shield className="w-5 h-5 text-cyan-400" />
+              <div className="flex-1">
+                <div className="text-sm text-white font-medium">Moderation Settings</div>
+                <div className="text-xs text-zinc-500">Rate limits & slowmode</div>
+              </div>
+              {showModerationSettings ? (
+                <ChevronDown className="w-4 h-4 text-zinc-400" />
+              ) : (
+                <ChevronRight className="w-4 h-4 text-zinc-400" />
+              )}
+            </button>
+
+            <AnimatePresence>
+              {showModerationSettings && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="mt-3 space-y-4 bg-zinc-900/50 rounded-lg p-4">
+                    {/* Slowmode */}
+                    <div>
+                      <label className="text-xs text-zinc-400 mb-2 block flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5" />
+                        Slowmode (seconds between messages)
+                      </label>
+                      <div className="flex gap-2 flex-wrap">
+                        {[0, 5, 10, 30, 60, 120].map((sec) => (
+                          <button
+                            key={sec}
+                            onClick={() => setSlowmodeSeconds(sec)}
+                            className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
+                              slowmodeSeconds === sec
+                                ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400'
+                                : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-600'
+                            }`}
+                          >
+                            {sec === 0 ? 'Off' : `${sec}s`}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Messages per minute */}
+                    <div>
+                      <label className="text-xs text-zinc-400 mb-2 block">Messages per minute</label>
+                      <Input
+                        type="number"
+                        value={messagesPerMinute}
+                        onChange={(e) => setMessagesPerMinute(e.target.value)}
+                        min={1}
+                        max={100}
+                        className="bg-zinc-800 border-zinc-700 text-white h-9"
+                      />
+                    </div>
+
+                    {/* Messages per hour */}
+                    <div>
+                      <label className="text-xs text-zinc-400 mb-2 block">Messages per hour</label>
+                      <Input
+                        type="number"
+                        value={messagesPerHour}
+                        onChange={(e) => setMessagesPerHour(e.target.value)}
+                        min={1}
+                        max={1000}
+                        className="bg-zinc-800 border-zinc-700 text-white h-9"
+                      />
+                    </div>
+
+                    {/* Save button */}
+                    <Button
+                      onClick={handleSaveRateLimits}
+                      disabled={moderationLoading}
+                      className="w-full bg-cyan-600 hover:bg-cyan-500"
+                    >
+                      {moderationLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      ) : null}
+                      Save Settings
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
       </div>
     </motion.div>
   );
