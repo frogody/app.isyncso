@@ -254,31 +254,46 @@ export default function InboxPage() {
     createDefaultChannels();
   }, [channelsLoading, realtimeChannels.length, user, rtCreateChannel]);
 
-  // Mark channel as read when selected and initialize status
+  // Track which channels we've marked as read to avoid re-calling
+  const markedReadRef = useRef(new Set());
+
+  // Mark channel as read when selected (only once per channel selection)
   useEffect(() => {
     if (selectedChannel?.id && selectedChannel.type !== 'special') {
+      // Avoid marking the same channel repeatedly
+      if (markedReadRef.current.has(selectedChannel.id)) return;
+      markedReadRef.current.add(selectedChannel.id);
+
       // Initialize read status for this channel (creates record if none exists)
       initializeChannelStatus(selectedChannel.id);
       // Mark as read using database-backed function
-      const lastMessage = realtimeMessages[realtimeMessages.length - 1];
-      markChannelRead(selectedChannel.id, lastMessage?.id);
+      markChannelRead(selectedChannel.id, null);
     }
-  }, [selectedChannel?.id, selectedChannel?.type, markChannelRead, initializeChannelStatus, realtimeMessages]);
+  }, [selectedChannel?.id, selectedChannel?.type, markChannelRead, initializeChannelStatus]);
 
-  // Mark visible messages as read for read receipts
+  // Clear tracked read status when channel changes (allow marking read again if user comes back)
+  useEffect(() => {
+    // Reset tracked channels except current one
+    markedReadRef.current = new Set(selectedChannel?.id ? [selectedChannel.id] : []);
+  }, [selectedChannel?.id]);
+
+  // Mark visible messages as read for read receipts (debounced, only on channel change)
+  const lastMarkedMessagesRef = useRef(new Set());
   useEffect(() => {
     if (!selectedChannel?.id || selectedChannel.type === 'special' || !user?.id) return;
     if (realtimeMessages.length === 0) return;
 
-    // Get message IDs that aren't from the current user
+    // Get message IDs that aren't from the current user and haven't been marked yet
     const otherUserMessageIds = realtimeMessages
-      .filter(m => m.sender_id !== user.id)
+      .filter(m => m.sender_id !== user.id && !lastMarkedMessagesRef.current.has(m.id))
       .map(m => m.id);
 
     if (otherUserMessageIds.length > 0) {
+      // Add to tracked set before calling to avoid duplicate calls
+      otherUserMessageIds.forEach(id => lastMarkedMessagesRef.current.add(id));
       markMultipleAsRead(otherUserMessageIds);
     }
-  }, [selectedChannel?.id, selectedChannel?.type, user?.id, realtimeMessages, markMultipleAsRead]);
+  }, [selectedChannel?.id, selectedChannel?.type, user?.id, realtimeMessages.length, markMultipleAsRead]);
 
   // Load inline thread replies (uses realtime hook for side panel)
   const loadInlineReplies = useCallback(async (parentMessageId) => {
