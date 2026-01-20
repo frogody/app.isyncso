@@ -140,7 +140,7 @@ export function useRealtimeMessages(channelId, userId, options = {}) {
           filter: `channel_id=eq.${channelId}`,
         },
         (payload) => {
-          console.log('[Realtime] New message:', payload.new);
+          // New message received via realtime
           const newMessage = payload.new;
 
           // Only add top-level messages (not thread replies)
@@ -167,7 +167,6 @@ export function useRealtimeMessages(channelId, userId, options = {}) {
           filter: `channel_id=eq.${channelId}`,
         },
         (payload) => {
-          console.log('[Realtime] Message updated:', payload.new);
           setMessages(prev =>
             prev.map(m => m.id === payload.new.id ? payload.new : m)
           );
@@ -182,16 +181,13 @@ export function useRealtimeMessages(channelId, userId, options = {}) {
           filter: `channel_id=eq.${channelId}`,
         },
         (payload) => {
-          console.log('[Realtime] Message deleted:', payload.old);
           setMessages(prev => prev.filter(m => m.id !== payload.old.id));
         }
       )
       .subscribe((status) => {
-        console.log('[Realtime] Subscription status:', status);
         setIsConnected(status === 'SUBSCRIBED');
 
         if (status === 'CHANNEL_ERROR') {
-          console.error('[Realtime] Channel error - will retry');
           toast.error('Connection lost. Reconnecting...');
         }
       });
@@ -201,7 +197,6 @@ export function useRealtimeMessages(channelId, userId, options = {}) {
 
     // Cleanup on unmount or channel change
     return () => {
-      console.log('[Realtime] Cleaning up subscription for channel:', channelId);
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
       }

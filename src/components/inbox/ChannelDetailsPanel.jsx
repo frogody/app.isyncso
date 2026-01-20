@@ -34,7 +34,10 @@ export default function ChannelDetailsPanel({
   // Moderation hooks - pass null-safe channelId
   const channelId = channel?.id || null;
   const { rateLimits, updateRateLimits, loading: moderationLoading } = useModeration(channelId, currentUserId);
-  const { isAdmin } = useChannelRoles(channelId, currentUserId);
+  const { isAdmin, members: channelMembers, loading: membersLoading } = useChannelRoles(channelId, currentUserId);
+
+  // Use accurate member count from channel_members table, fallback to prop
+  const actualMemberCount = channelMembers?.length > 0 ? channelMembers.length : memberCount;
 
   // Sync rate limits to form when loaded
   useEffect(() => {
@@ -151,7 +154,9 @@ export default function ChannelDetailsPanel({
         <div className="p-4 border-b border-zinc-800 grid grid-cols-2 gap-4">
           <div className="text-center p-3 rounded-lg bg-zinc-900/50">
             <Users className="w-5 h-5 text-cyan-400 mx-auto mb-1" />
-            <div className="text-lg font-bold text-white">{memberCount}</div>
+            <div className="text-lg font-bold text-white">
+              {membersLoading ? '...' : actualMemberCount}
+            </div>
             <div className="text-xs text-zinc-500">Members</div>
           </div>
           <div className="text-center p-3 rounded-lg bg-zinc-900/50">

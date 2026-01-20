@@ -61,7 +61,6 @@ export function useRealtimeThreads(parentMessageId, userId) {
           filter: `thread_id=eq.${parentMessageId}`,
         },
         (payload) => {
-          console.log('[Realtime] New thread reply:', payload.new);
           setReplies(prev => {
             if (prev.some(r => r.id === payload.new.id)) return prev;
             return [...prev, payload.new];
@@ -77,7 +76,6 @@ export function useRealtimeThreads(parentMessageId, userId) {
           filter: `thread_id=eq.${parentMessageId}`,
         },
         (payload) => {
-          console.log('[Realtime] Thread reply updated:', payload.new);
           setReplies(prev =>
             prev.map(r => r.id === payload.new.id ? payload.new : r)
           );
@@ -92,12 +90,10 @@ export function useRealtimeThreads(parentMessageId, userId) {
           filter: `thread_id=eq.${parentMessageId}`,
         },
         (payload) => {
-          console.log('[Realtime] Thread reply deleted:', payload.old);
           setReplies(prev => prev.filter(r => r.id !== payload.old.id));
         }
       )
       .subscribe((status) => {
-        console.log('[Realtime] Thread subscription status:', status);
         setIsConnected(status === 'SUBSCRIBED');
       });
 

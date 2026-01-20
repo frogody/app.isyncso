@@ -62,7 +62,16 @@ export default function MessageInput({
   useEffect(() => {
     if (channelId) {
       const draft = localStorage.getItem(`inbox_draft_${channelId}`);
-      if (draft) setMessage(draft);
+      if (draft) {
+        // Clean up known pollution patterns from formatting buttons
+        const cleanDraft = draft
+          .replace(/\[\]\(url\)/g, '') // Empty link
+          .replace(/\*\*\*\*/g, '')     // Empty bold
+          .replace(/__/g, '')           // Empty italic
+          .replace(/``/g, '')           // Empty code
+          .trim();
+        setMessage(cleanDraft);
+      }
     }
   }, [channelId]);
 
@@ -389,11 +398,13 @@ export default function MessageInput({
     const selectedText = message.substring(start, end);
 
     let formattedText = '';
+    // Use placeholder text if nothing is selected
+    const text = selectedText || (format === 'link' ? 'link text' : 'text');
     switch (format) {
-      case 'bold': formattedText = `**${selectedText}**`; break;
-      case 'italic': formattedText = `_${selectedText}_`; break;
-      case 'code': formattedText = `\`${selectedText}\``; break;
-      case 'link': formattedText = `[${selectedText}](url)`; break;
+      case 'bold': formattedText = `**${text}**`; break;
+      case 'italic': formattedText = `_${text}_`; break;
+      case 'code': formattedText = `\`${text}\``; break;
+      case 'link': formattedText = `[${text}](url)`; break;
       default: return;
     }
 

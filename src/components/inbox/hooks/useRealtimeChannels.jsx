@@ -60,7 +60,6 @@ export function useRealtimeChannels(userId) {
           table: 'channels',
         },
         (payload) => {
-          console.log('[Realtime] New channel:', payload.new);
           const newChannel = payload.new;
 
           if (newChannel.is_archived) return;
@@ -90,7 +89,6 @@ export function useRealtimeChannels(userId) {
           table: 'channels',
         },
         (payload) => {
-          console.log('[Realtime] Channel updated:', payload.new);
           const updatedChannel = payload.new;
 
           // Handle archiving
@@ -119,20 +117,17 @@ export function useRealtimeChannels(userId) {
           table: 'channels',
         },
         (payload) => {
-          console.log('[Realtime] Channel deleted:', payload.old);
           setChannels(prev => prev.filter(c => c.id !== payload.old.id));
           setDirectMessages(prev => prev.filter(c => c.id !== payload.old.id));
         }
       )
       .subscribe((status) => {
-        console.log('[Realtime] Channels subscription status:', status);
         setIsConnected(status === 'SUBSCRIBED');
       });
 
     channelRef.current = channel;
 
     return () => {
-      console.log('[Realtime] Cleaning up channels subscription');
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
       }

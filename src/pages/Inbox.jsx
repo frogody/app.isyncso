@@ -178,8 +178,11 @@ export default function InboxPage() {
   // Mobile UI State
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Connection status
-  const isConnected = channelsConnected && messagesConnected && unreadConnected;
+  // Connection status - for special channels (mentions, saved, threads), don't require message subscription
+  const isSpecialChannel = selectedChannel?.type === 'special';
+  const isConnected = isSpecialChannel
+    ? (channelsConnected && unreadConnected)
+    : (channelsConnected && messagesConnected && unreadConnected);
 
   // Refs for anime.js animations
   const sidebarRef = useRef(null);

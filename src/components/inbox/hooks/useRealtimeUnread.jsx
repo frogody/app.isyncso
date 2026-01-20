@@ -150,9 +150,6 @@ export function useRealtimeUnread(userId) {
         }
       )
       .subscribe((status) => {
-        if (status === 'SUBSCRIBED' || status === 'CHANNEL_ERROR') {
-          console.log('[Realtime] Unread subscription:', status);
-        }
         setIsConnected(status === 'SUBSCRIBED');
       });
 

@@ -85,6 +85,8 @@ function MessageBubble({
   isBookmarked = false
 }) {
   const [showActions, setShowActions] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [emojiPopoverOpen, setEmojiPopoverOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(message.content);
   const [threadExpanded, setThreadExpanded] = useState(false);
@@ -224,7 +226,7 @@ function MessageBubble({
         message.is_pinned ? 'bg-zinc-800/30 border-l-2 border-zinc-600' : ''
       } ${isAgentMessage ? 'bg-cyan-950/10 border-l border-cyan-500/20' : ''}`}
       onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
+      onMouseLeave={() => !dropdownOpen && !emojiPopoverOpen && setShowActions(false)}
     >
       {/* Avatar */}
       <div className="flex-shrink-0">
@@ -454,7 +456,7 @@ function MessageBubble({
             className="absolute -top-3 right-6 flex items-center gap-0.5 bg-zinc-900 border border-zinc-700 rounded-lg p-0.5 shadow-2xl"
           >
             {/* Quick reactions */}
-            <Popover>
+            <Popover open={emojiPopoverOpen} onOpenChange={setEmojiPopoverOpen}>
               <PopoverTrigger asChild>
                 <button className="p-2 hover:bg-zinc-800 rounded-md transition-colors">
                   <Smile className="w-4 h-4 text-zinc-400" />
@@ -465,7 +467,10 @@ function MessageBubble({
                   {QUICK_REACTIONS.map(emoji => (
                     <button
                       key={emoji}
-                      onClick={() => handleReaction(emoji)}
+                      onClick={() => {
+                        handleReaction(emoji);
+                        setEmojiPopoverOpen(false);
+                      }}
                       className="p-2 hover:bg-zinc-800 rounded-md text-lg transition-colors"
                     >
                       {emoji}
@@ -483,7 +488,7 @@ function MessageBubble({
               <Reply className="w-4 h-4 text-zinc-400" />
             </button>
 
-            <DropdownMenu>
+            <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
               <DropdownMenuTrigger asChild>
                 <button className="p-2 hover:bg-zinc-800 rounded-md transition-colors">
                   <MoreHorizontal className="w-4 h-4 text-zinc-400" />
