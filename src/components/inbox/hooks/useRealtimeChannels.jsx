@@ -171,6 +171,8 @@ export function useRealtimeChannels(userId) {
         sender_name: 'System',
         content: `Channel created`,
         type: 'system',
+        topic: 'system', // Required NOT NULL field
+        extension: 'none', // Required NOT NULL field
       });
 
       toast.success(`Channel #${channelData.name} created`);

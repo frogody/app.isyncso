@@ -157,7 +157,13 @@ export default function ChannelDetailsPanel({
           <div className="text-center p-3 rounded-lg bg-zinc-900/50">
             <Calendar className="w-5 h-5 text-cyan-400 mx-auto mb-1" />
             <div className="text-sm font-medium text-white">
-              {channel?.created_date ? format(new Date(channel.created_date), 'MMM d, yyyy') : 'Unknown'}
+              {(() => {
+                try {
+                  return channel?.created_date ? format(new Date(channel.created_date), 'MMM d, yyyy') : 'Unknown';
+                } catch {
+                  return 'Unknown';
+                }
+              })()}
             </div>
             <div className="text-xs text-zinc-500">Created</div>
           </div>

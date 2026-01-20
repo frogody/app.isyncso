@@ -213,10 +213,15 @@ export function useRealtimeMessages(channelId, userId, options = {}) {
           sender_avatar: messageData.sender_avatar,
           content: messageData.content,
           type: messageData.type || 'text',
-          file_url: messageData.file_url || null,
-          file_name: messageData.file_name || null,
+          topic: messageData.topic || 'message', // Required NOT NULL field
+          extension: messageData.extension || 'none', // Required NOT NULL field
           thread_id: messageData.thread_id || null,
           mentions: messageData.mentions || [],
+          // Store file info in metadata if provided
+          metadata: messageData.file_url ? {
+            file_url: messageData.file_url,
+            file_name: messageData.file_name
+          } : {},
         })
         .select()
         .single();
