@@ -28,7 +28,8 @@ WHERE m.sender_id IS NOT NULL
 GROUP BY m.channel_id, m.sender_id
 ON CONFLICT (channel_id, user_id) DO NOTHING;
 
--- Step 3: Update check_rate_limit to be more robust (allow messaging even if user not in channel_members yet)
+-- Step 3: Fix check_rate_limit function - muted_users table has no 'muted' column
+-- Presence in the table itself indicates the user is muted
 CREATE OR REPLACE FUNCTION public.check_rate_limit(
     p_channel_id UUID,
     p_user_id UUID DEFAULT auth.uid()
@@ -39,20 +40,20 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-    v_limits RECORD;
+    v_messages_per_minute INTEGER := 30;
+    v_messages_per_hour INTEGER := 200;
+    v_slowmode_seconds INTEGER := 0;
     v_minute_count INTEGER;
     v_hour_count INTEGER;
     v_last_message TIMESTAMPTZ;
-    v_slowmode_seconds INTEGER;
-    v_is_muted BOOLEAN;
     v_muted_until TIMESTAMPTZ;
 BEGIN
-    -- Check if user is muted first
-    SELECT muted, muted_until INTO v_is_muted, v_muted_until
+    -- Check if user is muted (presence in muted_users table = muted)
+    SELECT muted_until INTO v_muted_until
     FROM public.muted_users
     WHERE channel_id = p_channel_id AND user_id = p_user_id;
 
-    IF v_is_muted THEN
+    IF FOUND THEN
         -- Check if mute has expired
         IF v_muted_until IS NOT NULL AND v_muted_until < NOW() THEN
             -- Mute expired, remove it
@@ -67,19 +68,14 @@ BEGIN
         END IF;
     END IF;
 
-    -- Get channel rate limits (or defaults)
+    -- Get channel rate limits (or use defaults)
     SELECT
-        COALESCE(messages_per_minute, 30) as messages_per_minute,
-        COALESCE(messages_per_hour, 200) as messages_per_hour,
-        COALESCE(slowmode_seconds, 0) as slowmode_seconds
-    INTO v_limits
+        COALESCE(messages_per_minute, 30),
+        COALESCE(messages_per_hour, 200),
+        COALESCE(slowmode_seconds, 0)
+    INTO v_messages_per_minute, v_messages_per_hour, v_slowmode_seconds
     FROM public.channel_rate_limits
     WHERE channel_id = p_channel_id;
-
-    -- Use defaults if no limits defined
-    IF NOT FOUND THEN
-        v_limits := ROW(30, 200, 0);
-    END IF;
 
     -- Count messages in last minute
     SELECT COUNT(*), MAX(created_date)
@@ -90,7 +86,7 @@ BEGIN
       AND created_date > NOW() - INTERVAL '1 minute';
 
     -- Check per-minute limit
-    IF v_minute_count >= v_limits.messages_per_minute THEN
+    IF v_minute_count >= v_messages_per_minute THEN
         RETURN jsonb_build_object(
             'allowed', false,
             'reason', 'rate_limit',
@@ -107,7 +103,7 @@ BEGIN
       AND created_date > NOW() - INTERVAL '1 hour';
 
     -- Check per-hour limit
-    IF v_hour_count >= v_limits.messages_per_hour THEN
+    IF v_hour_count >= v_messages_per_hour THEN
         RETURN jsonb_build_object(
             'allowed', false,
             'reason', 'rate_limit',
@@ -117,7 +113,6 @@ BEGIN
     END IF;
 
     -- Check slowmode
-    v_slowmode_seconds := v_limits.slowmode_seconds;
     IF v_slowmode_seconds > 0 AND v_last_message IS NOT NULL THEN
         DECLARE
             v_seconds_since_last INTEGER;
@@ -148,7 +143,7 @@ BEGIN
 END;
 $$;
 
--- Step 4: Create is_user_muted function if it doesn't exist
+-- Step 4: Fix is_user_muted function
 CREATE OR REPLACE FUNCTION public.is_user_muted(
     p_channel_id UUID,
     p_user_id UUID DEFAULT auth.uid()
@@ -209,13 +204,3 @@ $$;
 GRANT EXECUTE ON FUNCTION public.check_rate_limit TO authenticated;
 GRANT EXECUTE ON FUNCTION public.is_user_muted TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_channel_rate_limits TO authenticated;
-
--- Log the fix
-DO $$
-DECLARE
-    v_count INTEGER;
-BEGIN
-    SELECT COUNT(*) INTO v_count FROM public.channel_members;
-    RAISE NOTICE 'channel_members now has % rows', v_count;
-END;
-$$;

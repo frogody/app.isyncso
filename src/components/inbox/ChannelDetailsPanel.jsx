@@ -31,9 +31,10 @@ export default function ChannelDetailsPanel({
   const [messagesPerHour, setMessagesPerHour] = useState(200);
   const [slowmodeSeconds, setSlowmodeSeconds] = useState(0);
 
-  // Moderation hooks
-  const { rateLimits, updateRateLimits, loading: moderationLoading } = useModeration(channel?.id, currentUserId);
-  const { isAdmin } = useChannelRoles(channel?.id, currentUserId);
+  // Moderation hooks - pass null-safe channelId
+  const channelId = channel?.id || null;
+  const { rateLimits, updateRateLimits, loading: moderationLoading } = useModeration(channelId, currentUserId);
+  const { isAdmin } = useChannelRoles(channelId, currentUserId);
 
   // Sync rate limits to form when loaded
   useEffect(() => {
@@ -43,6 +44,11 @@ export default function ChannelDetailsPanel({
       setSlowmodeSeconds(rateLimits.slowmode_seconds || 0);
     }
   }, [rateLimits]);
+
+  // Guard: Don't render if channel is not available (after all hooks)
+  if (!channel) {
+    return null;
+  }
 
   const handleSaveRateLimits = async () => {
     await updateRateLimits({
