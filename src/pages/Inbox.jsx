@@ -579,7 +579,13 @@ export default function InboxPage() {
 
   // Animate sidebar on mount
   useEffect(() => {
-    if (channelsLoading || !sidebarRef.current || prefersReducedMotion()) return;
+    if (channelsLoading || !sidebarRef.current) return;
+
+    // If user prefers reduced motion, just set final state immediately
+    if (prefersReducedMotion()) {
+      sidebarRef.current.style.opacity = '1';
+      return;
+    }
 
     animate({
       targets: sidebarRef.current,
@@ -592,7 +598,13 @@ export default function InboxPage() {
 
   // Animate main content on mount and channel change
   useEffect(() => {
-    if (channelsLoading || !mainContentRef.current || prefersReducedMotion()) return;
+    if (channelsLoading || !mainContentRef.current) return;
+
+    // If user prefers reduced motion, just set final state immediately
+    if (prefersReducedMotion()) {
+      mainContentRef.current.style.opacity = '1';
+      return;
+    }
 
     animate({
       targets: mainContentRef.current,
@@ -942,7 +954,7 @@ export default function InboxPage() {
             channel={selectedChannel}
             memberCount={getChannelMembers().length}
             messageCount={messages.length}
-            isOwner={selectedChannel?.created_by === user?.email}
+            isOwner={selectedChannel?.user_id === user?.id}
             currentUserId={user?.id}
             onClose={() => setActivePanel(null)}
             onUpdateChannel={handleUpdateChannel}
