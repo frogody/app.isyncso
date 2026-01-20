@@ -6,14 +6,23 @@ import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/api/supabaseClient';
 import { toast } from 'sonner';
 
+// Helper to check if a string is a valid UUID
+const isValidUUID = (str) => {
+  if (!str || typeof str !== 'string') return false;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+};
+
 export function useChannelRoles(channelId, userId) {
+  // Skip all RPC calls for special channels (non-UUID ids like 'mentions', 'saved')
+  const isSpecialChannel = channelId && !isValidUUID(channelId);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState(null);
 
   // Load members with roles
   const loadMembers = useCallback(async () => {
-    if (!channelId) {
+    if (!channelId || isSpecialChannel) {
       setMembers([]);
       setLoading(false);
       return;
@@ -47,7 +56,7 @@ export function useChannelRoles(channelId, userId) {
 
   // Subscribe to realtime updates
   useEffect(() => {
-    if (!channelId) return;
+    if (!channelId || isSpecialChannel) return;
 
     const subscription = supabase
       .channel(`channel_members:${channelId}`)

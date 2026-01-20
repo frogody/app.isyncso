@@ -13,7 +13,16 @@ import { toast } from 'sonner';
 const PAGE_SIZE = 50;
 const INITIAL_PAGE_SIZE = 50;
 
+// Helper to check if a string is a valid UUID
+const isValidUUID = (str) => {
+  if (!str || typeof str !== 'string') return false;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+};
+
 export function useRealtimeMessages(channelId, userId, options = {}) {
+  // Skip all database calls for special channels (non-UUID ids like 'mentions', 'saved')
+  const isSpecialChannel = channelId && !isValidUUID(channelId);
   const { onNewMessage } = options;
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -26,7 +35,7 @@ export function useRealtimeMessages(channelId, userId, options = {}) {
 
   // Load initial messages (newest messages first, then reverse for display)
   const loadMessages = useCallback(async (limit = INITIAL_PAGE_SIZE) => {
-    if (!channelId) {
+    if (!channelId || isSpecialChannel) {
       setMessages([]);
       setHasMore(false);
       return;
@@ -65,7 +74,7 @@ export function useRealtimeMessages(channelId, userId, options = {}) {
 
   // Load older messages (pagination)
   const loadOlderMessages = useCallback(async () => {
-    if (!channelId || loadingMore || !hasMore || !oldestMessageRef.current) {
+    if (!channelId || isSpecialChannel || loadingMore || !hasMore || !oldestMessageRef.current) {
       return;
     }
 
@@ -107,7 +116,7 @@ export function useRealtimeMessages(channelId, userId, options = {}) {
 
   // Subscribe to real-time changes
   useEffect(() => {
-    if (!channelId) {
+    if (!channelId || isSpecialChannel) {
       setMessages([]);
       setHasMore(false);
       return;

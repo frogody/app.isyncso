@@ -839,7 +839,7 @@ export const integrations = {
       return functions.invoke('sendEmail', params);
     },
 
-    async UploadFile({ file, bucket = 'uploads' }) {
+    async UploadFile({ file, bucket = 'attachments' }) {
       const path = `${Date.now()}_${file.name}`;
       return storage.upload(bucket, path, file);
     },

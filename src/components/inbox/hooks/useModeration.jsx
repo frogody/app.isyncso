@@ -6,7 +6,16 @@ import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/api/supabaseClient';
 import { toast } from 'sonner';
 
+// Helper to check if a string is a valid UUID
+const isValidUUID = (str) => {
+  if (!str || typeof str !== 'string') return false;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+};
+
 export function useModeration(channelId, userId) {
+  // Skip all RPC calls for special channels (non-UUID ids like 'mentions', 'saved')
+  const isSpecialChannel = channelId && !isValidUUID(channelId);
   const [rateLimits, setRateLimits] = useState(null);
   const [mutedUsers, setMutedUsers] = useState([]);
   const [isMuted, setIsMuted] = useState(false);
@@ -14,7 +23,7 @@ export function useModeration(channelId, userId) {
 
   // Load channel rate limits
   const loadRateLimits = useCallback(async () => {
-    if (!channelId) return;
+    if (!channelId || isSpecialChannel) return;
 
     try {
       const { data, error } = await supabase.rpc('get_channel_rate_limits', {
@@ -36,7 +45,7 @@ export function useModeration(channelId, userId) {
 
   // Check if current user is muted
   const checkMuteStatus = useCallback(async () => {
-    if (!channelId || !userId) return;
+    if (!channelId || !userId || isSpecialChannel) return;
 
     try {
       const { data, error } = await supabase.rpc('is_user_muted', {
@@ -54,7 +63,7 @@ export function useModeration(channelId, userId) {
 
   // Load muted users (for moderators)
   const loadMutedUsers = useCallback(async () => {
-    if (!channelId) return;
+    if (!channelId || isSpecialChannel) return;
 
     try {
       const { data, error } = await supabase.rpc('get_muted_users', {
@@ -72,7 +81,7 @@ export function useModeration(channelId, userId) {
 
   // Check rate limit before sending message
   const checkRateLimit = useCallback(async () => {
-    if (!channelId || !userId) {
+    if (!channelId || !userId || isSpecialChannel) {
       return { allowed: true };
     }
 
@@ -272,7 +281,7 @@ export function useModeration(channelId, userId) {
 
   // Subscribe to mute changes
   useEffect(() => {
-    if (!channelId || !userId) return;
+    if (!channelId || !userId || isSpecialChannel) return;
 
     const subscription = supabase
       .channel(`muted_users:${channelId}`)
