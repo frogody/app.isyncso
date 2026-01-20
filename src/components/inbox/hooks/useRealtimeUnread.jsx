@@ -16,6 +16,11 @@ export function useRealtimeUnread(userId) {
   const [isConnected, setIsConnected] = useState(false);
   const channelRef = useRef(null);
 
+  // Throttle rapid realtime events to prevent flooding
+  const lastEventTimeRef = useRef(0);
+  const pendingUpdatesRef = useRef(new Map()); // channel_id -> latest payload
+  const throttleTimeoutRef = useRef(null);
+
   // Load initial unread counts
   const loadUnreadCounts = useCallback(async () => {
     if (!userId) {
@@ -58,6 +63,52 @@ export function useRealtimeUnread(userId) {
     }
   }, [userId]);
 
+  // Process batched updates (throttled)
+  const processPendingUpdates = useCallback(() => {
+    const updates = pendingUpdatesRef.current;
+    if (updates.size === 0) return;
+
+    // Apply all pending updates at once
+    setUnreadCounts(prev => {
+      const newCounts = { ...prev };
+      updates.forEach((payload, channelId) => {
+        if (payload.eventType === 'DELETE') {
+          delete newCounts[channelId];
+        } else {
+          const { unread_count } = payload.new;
+          if (unread_count > 0) {
+            newCounts[channelId] = unread_count;
+          } else {
+            delete newCounts[channelId];
+          }
+        }
+      });
+      const total = Object.values(newCounts).reduce((sum, count) => sum + count, 0);
+      setTotalUnread(total);
+      return newCounts;
+    });
+
+    setMentionChannels(prev => {
+      const newMentions = new Set(prev);
+      updates.forEach((payload, channelId) => {
+        if (payload.eventType === 'DELETE') {
+          newMentions.delete(channelId);
+        } else {
+          const { has_mentions, unread_count } = payload.new;
+          if (has_mentions && unread_count > 0) {
+            newMentions.add(channelId);
+          } else {
+            newMentions.delete(channelId);
+          }
+        }
+      });
+      return newMentions;
+    });
+
+    // Clear pending updates
+    pendingUpdatesRef.current = new Map();
+  }, []);
+
   // Subscribe to real-time updates
   useEffect(() => {
     if (!userId) return;
@@ -76,56 +127,32 @@ export function useRealtimeUnread(userId) {
           filter: `user_id=eq.${userId}`,
         },
         (payload) => {
-          console.log('[Realtime] Unread status changed:', payload);
+          const channelId = payload.new?.channel_id || payload.old?.channel_id;
+          if (!channelId) return;
 
-          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-            const { channel_id, unread_count, has_mentions } = payload.new;
+          // Store the update (overwrites previous update for same channel)
+          pendingUpdatesRef.current.set(channelId, payload);
 
-            setUnreadCounts(prev => {
-              const newCounts = { ...prev };
-              if (unread_count > 0) {
-                newCounts[channel_id] = unread_count;
-              } else {
-                delete newCounts[channel_id];
-              }
-              return newCounts;
-            });
-
-            setMentionChannels(prev => {
-              const newMentions = new Set(prev);
-              if (has_mentions && unread_count > 0) {
-                newMentions.add(channel_id);
-              } else {
-                newMentions.delete(channel_id);
-              }
-              return newMentions;
-            });
-
-            // Recalculate total
-            setUnreadCounts(prev => {
-              const total = Object.values(prev).reduce((sum, count) => sum + count, 0);
-              setTotalUnread(total);
-              return prev;
-            });
-          } else if (payload.eventType === 'DELETE') {
-            const { channel_id } = payload.old;
-
-            setUnreadCounts(prev => {
-              const newCounts = { ...prev };
-              delete newCounts[channel_id];
-              return newCounts;
-            });
-
-            setMentionChannels(prev => {
-              const newMentions = new Set(prev);
-              newMentions.delete(channel_id);
-              return newMentions;
-            });
+          // Throttle: only process every 150ms
+          const now = Date.now();
+          if (now - lastEventTimeRef.current > 150) {
+            // Process immediately if it's been a while
+            lastEventTimeRef.current = now;
+            processPendingUpdates();
+          } else if (!throttleTimeoutRef.current) {
+            // Schedule processing for later
+            throttleTimeoutRef.current = setTimeout(() => {
+              lastEventTimeRef.current = Date.now();
+              processPendingUpdates();
+              throttleTimeoutRef.current = null;
+            }, 150);
           }
         }
       )
       .subscribe((status) => {
-        console.log('[Realtime] Unread subscription status:', status);
+        if (status === 'SUBSCRIBED' || status === 'CHANNEL_ERROR') {
+          console.log('[Realtime] Unread subscription:', status);
+        }
         setIsConnected(status === 'SUBSCRIBED');
       });
 
@@ -135,8 +162,11 @@ export function useRealtimeUnread(userId) {
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
       }
+      if (throttleTimeoutRef.current) {
+        clearTimeout(throttleTimeoutRef.current);
+      }
     };
-  }, [userId, loadUnreadCounts]);
+  }, [userId, loadUnreadCounts, processPendingUpdates]);
 
   // Mark channel as read
   const markChannelRead = useCallback(async (channelId, lastMessageId = null) => {
