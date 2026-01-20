@@ -968,7 +968,7 @@ export default function InboxPage() {
           <ChannelDetailsPanel
             channel={selectedChannel}
             memberCount={getChannelMembers().length}
-            messageCount={messages.length}
+            messageCount={realtimeMessages.length}
             isOwner={selectedChannel?.user_id === user?.id}
             currentUserId={user?.id}
             onClose={() => setActivePanel(null)}

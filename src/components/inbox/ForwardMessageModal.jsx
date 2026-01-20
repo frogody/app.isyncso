@@ -54,9 +54,7 @@ export default function ForwardMessageModal({
           ? `${addComment}\n\n---\n**Forwarded message from ${message.sender_name}:**\n${message.content}`
           : `**Forwarded message from ${message.sender_name}:**\n${message.content}`,
         type: message.type === 'image' || message.type === 'file' ? message.type : 'text',
-        topic: 'forward', // Required NOT NULL field
-        extension: 'none', // Required NOT NULL field
-        metadata: message.metadata || {}, // Store file info in metadata
+        metadata: message.metadata || {},
         is_forwarded: true,
         original_message_id: message.id,
         forwarded_from_channel: message.channel_name || 'another channel',
