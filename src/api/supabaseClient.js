@@ -840,7 +840,9 @@ export const integrations = {
     },
 
     async UploadFile({ file, bucket = 'attachments' }) {
-      const path = `${Date.now()}_${file.name}`;
+      // Sanitize filename: replace spaces and special chars with underscores
+      const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const path = `${Date.now()}_${sanitizedName}`;
       return storage.upload(bucket, path, file);
     },
 
