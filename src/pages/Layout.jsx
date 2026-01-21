@@ -840,32 +840,38 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
         </nav>
 
       {/* Bottom Section */}
-      <div className="p-4 space-y-3 bg-gradient-to-t from-black via-black to-transparent">
+      <div className={`p-4 space-y-2 bg-gradient-to-t from-black via-black to-transparent ${isMobile ? 'pb-6' : ''}`}>
         {/* Credits / CTA */}
         {me ? (
-        <div className="relative group flex justify-center cursor-not-allowed opacity-70" title="Top up coming soon">
-            <div className="w-10 h-10 rounded-full border-2 border-cyan-400/30 flex items-center justify-center relative transition-colors">
-               <span className="text-[9px] font-bold text-cyan-400">{me.credits || 0}</span>
-            </div>
-        </div>
+        <Link
+          to="#"
+          className={`flex items-center ${isMobile ? 'justify-start gap-3 px-4' : 'justify-center'} min-h-[44px] p-3 rounded-xl transition-all duration-200 group text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10 cursor-not-allowed opacity-70`}
+          title="Top up coming soon"
+          onClick={(e) => e.preventDefault()}
+        >
+          <div className="w-8 h-8 rounded-full border-2 border-cyan-400/30 flex items-center justify-center flex-shrink-0">
+             <span className="text-[10px] font-bold text-cyan-400">{me.credits || 0}</span>
+          </div>
+          {isMobile && <span className="text-sm font-medium">Credits</span>}
+        </Link>
         ) : (
           <button
              onClick={handleLogin}
-             className="flex items-center justify-center w-10 h-10 rounded-full bg-cyan-600 hover:bg-cyan-500 text-white border-0 shadow-lg shadow-cyan-900/20 transition-all"
+             className={`flex items-center ${isMobile ? 'justify-start gap-3 px-4' : 'justify-center'} min-h-[44px] p-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white transition-all`}
           >
-             <LogIn size={16} />
+             <LogIn size={20} className="flex-shrink-0" />
+             {isMobile && <span className="text-sm font-medium">Log In</span>}
           </button>
         )}
 
         {/* Settings Icon */}
         <Link
           to={createPageUrl("Settings")}
-          className="relative group flex justify-center"
+          className={`flex items-center ${isMobile ? 'justify-start gap-3 px-4' : 'justify-center'} min-h-[44px] p-3 rounded-xl transition-all duration-200 group text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10`}
           aria-label="Settings"
         >
-          <div className="w-10 h-10 rounded-full border-2 border-white/10 flex items-center justify-center relative transition-all duration-200 hover:border-cyan-500/50 hover:bg-cyan-950/20 cursor-pointer">
-            <SettingsIcon className="w-5 h-5 text-gray-400 group-hover:text-cyan-400 transition-colors" />
-          </div>
+          <SettingsIcon className="w-5 h-5 flex-shrink-0 group-hover:text-cyan-400 transition-colors" />
+          {isMobile && <span className="text-sm font-medium">Settings</span>}
         </Link>
         </div>
     </div>
