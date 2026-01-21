@@ -409,18 +409,18 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
 
             {/* Not Found Mode - Show when no job posting was found */}
             {notFoundMode && (
-              <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl space-y-3">
+              <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl space-y-3">
                 <div className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-amber-400 mt-0.5 flex-shrink-0" />
+                  <AlertCircle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="text-amber-200 font-medium text-sm">No job posting found</p>
-                    <p className="text-amber-400/70 text-xs mt-1">{notFoundMessage}</p>
+                    <p className="text-red-200 font-medium text-sm">No job posting found</p>
+                    <p className="text-red-400/70 text-xs mt-1">{notFoundMessage}</p>
                   </div>
                 </div>
                 <Button
                   onClick={handleManualEntry}
                   variant="outline"
-                  className="w-full border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
+                  className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10"
                 >
                   <FileEdit className="w-4 h-4 mr-2" />
                   Enter Role Details Manually
@@ -503,7 +503,7 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
           >
             {/* Source Badge */}
             {parsedJob.source_url && (
-              <div className="flex items-center gap-2 text-green-400 text-sm">
+              <div className="flex items-center gap-2 text-red-400 text-sm">
                 <CheckCircle2 className="w-4 h-4" />
                 Found on {parsedJob.source_domain}
                 <a
@@ -538,7 +538,7 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
                   </Badge>
                 )}
                 {parsedJob.salary_range && (
-                  <Badge className="bg-green-600/20 text-green-400 border-green-500/30">
+                  <Badge className="bg-red-600/20 text-red-400 border-red-500/30">
                     <DollarSign className="w-3 h-3 mr-1" />
                     {parsedJob.salary_range}
                   </Badge>
@@ -554,7 +554,7 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
                   <ul className="text-sm text-white/70 space-y-1">
                     {parsedJob.requirements.slice(0, 5).map((req, i) => (
                       <li key={i} className="flex items-start gap-2">
-                        <Check className="w-3 h-3 text-green-400 mt-1 flex-shrink-0" />
+                        <Check className="w-3 h-3 text-red-400 mt-1 flex-shrink-0" />
                         {req}
                       </li>
                     ))}
@@ -621,7 +621,7 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
                   <div className="flex items-center gap-2">
                     <p className="text-white font-medium">{parsedJob.company}</p>
                     {activeClient && (
-                      <Badge className="bg-green-600/20 text-green-400 border-green-500/30 text-xs">
+                      <Badge className="bg-red-600/20 text-red-400 border-red-500/30 text-xs">
                         <CheckCircle2 className="w-3 h-3 mr-1" />
                         Client
                       </Badge>
@@ -639,7 +639,7 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
                 {parsedJob.salary_range && (
                   <div className="col-span-2">
                     <span className="text-xs text-white/40">Salary</span>
-                    <p className="text-green-400">{parsedJob.salary_range}</p>
+                    <p className="text-red-400">{parsedJob.salary_range}</p>
                   </div>
                 )}
               </div>
@@ -658,11 +658,11 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg flex items-center justify-between gap-3"
+                className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center justify-between gap-3"
               >
                 <div className="flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-amber-400" />
-                  <span className="text-sm text-amber-200">
+                  <Building2 className="w-4 h-4 text-red-400" />
+                  <span className="text-sm text-red-200">
                     <strong>{parsedJob.company}</strong> is not registered as a client
                   </span>
                 </div>
@@ -670,7 +670,7 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
                   size="sm"
                   onClick={handleAddAsClient}
                   disabled={isAddingClient}
-                  className="bg-amber-600 hover:bg-amber-500 text-white shrink-0"
+                  className="bg-red-600 hover:bg-red-500 text-white shrink-0"
                 >
                   {isAddingClient ? (
                     <Loader2 className="w-3 h-3 animate-spin" />
@@ -798,8 +798,8 @@ const itemVariants = {
 const StatusBadge = ({ status }) => {
   const styles = {
     active: { bg: "bg-red-500/20", text: "text-red-400", label: "Active" },
-    filled: { bg: "bg-red-500/20", text: "text-red-400", label: "Filled" },
-    on_hold: { bg: "bg-yellow-500/20", text: "text-yellow-400", label: "On Hold" },
+    filled: { bg: "bg-red-600/20", text: "text-red-400", label: "Filled" },
+    on_hold: { bg: "bg-red-800/30", text: "text-red-300", label: "On Hold" },
     cancelled: { bg: "bg-zinc-500/20", text: "text-zinc-400", label: "Cancelled" },
     draft: { bg: "bg-zinc-500/20", text: "text-zinc-400", label: "Draft" },
   };
@@ -818,7 +818,7 @@ const PriorityBadge = ({ priority }) => {
   const styles = {
     urgent: { bg: "bg-red-500/20", text: "text-red-400", label: "Urgent" },
     high: { bg: "bg-red-500/20", text: "text-red-400", label: "High" },
-    medium: { bg: "bg-yellow-500/20", text: "text-yellow-400", label: "Medium" },
+    medium: { bg: "bg-red-400/20", text: "text-red-300", label: "Medium" },
     low: { bg: "bg-zinc-500/20", text: "text-zinc-400", label: "Low" },
   };
 

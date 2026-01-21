@@ -38,13 +38,13 @@ import {
 import { toast } from 'sonner';
 import { QuickAddClientModal } from '@/components/talent';
 
-// Client Pipeline Stages
+// Client Pipeline Stages - all red shades
 const CLIENT_STAGES = [
   { id: 'lead', label: 'Lead', color: 'bg-zinc-500', textColor: 'text-zinc-400' },
-  { id: 'prospect', label: 'Prospect', color: 'bg-blue-500', textColor: 'text-blue-400' },
-  { id: 'active', label: 'Active', color: 'bg-green-500', textColor: 'text-green-400' },
-  { id: 'retained', label: 'Retained', color: 'bg-red-500', textColor: 'text-red-400' },
-  { id: 'dormant', label: 'Dormant', color: 'bg-orange-500', textColor: 'text-orange-400' },
+  { id: 'prospect', label: 'Prospect', color: 'bg-red-400', textColor: 'text-red-300' },
+  { id: 'active', label: 'Active', color: 'bg-red-500', textColor: 'text-red-400' },
+  { id: 'retained', label: 'Retained', color: 'bg-red-600', textColor: 'text-red-400' },
+  { id: 'dormant', label: 'Dormant', color: 'bg-red-800', textColor: 'text-red-500' },
 ];
 
 const emptyForm = {

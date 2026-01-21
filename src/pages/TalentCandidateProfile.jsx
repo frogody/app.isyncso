@@ -138,9 +138,9 @@ const InfoRow = ({ icon: Icon, label, value, link }) => {
 const UrgencyBadge = ({ level }) => {
   const config = {
     high: { bg: "bg-red-500/20", text: "text-red-400", label: "High Priority" },
-    medium: { bg: "bg-amber-500/20", text: "text-amber-400", label: "Medium Priority" },
-    low: { bg: "bg-green-500/20", text: "text-green-400", label: "Low Priority" },
-    response: { bg: "bg-amber-500/20", text: "text-amber-400", label: "Response Priority" },
+    medium: { bg: "bg-red-400/20", text: "text-red-300", label: "Medium Priority" },
+    low: { bg: "bg-zinc-500/20", text: "text-zinc-400", label: "Low Priority" },
+    response: { bg: "bg-red-400/20", text: "text-red-300", label: "Response Priority" },
   };
   const c = config[level?.toLowerCase()] || config.medium;
   return (
@@ -166,12 +166,12 @@ const SatisfactionBadge = ({ level }) => {
   let config;
   if (lowerLevel === "high") {
     // High switching = dissatisfied/open to move
-    config = { bg: "bg-green-500/20", text: "text-green-400", icon: Smile, label: "Open to Move" };
+    config = { bg: "bg-red-500/20", text: "text-red-400", icon: Smile, label: "Open to Move" };
   } else if (lowerLevel === "low") {
     // Low switching = satisfied/not looking
-    config = { bg: "bg-red-500/20", text: "text-red-400", icon: Frown, label: "Not Looking" };
+    config = { bg: "bg-zinc-500/20", text: "text-zinc-400", icon: Frown, label: "Not Looking" };
   } else {
-    config = { bg: "bg-amber-500/20", text: "text-amber-400", icon: Meh, label: "Considering" };
+    config = { bg: "bg-red-400/20", text: "text-red-300", icon: Meh, label: "Considering" };
   }
   const Icon = config.icon;
   return (
@@ -186,10 +186,10 @@ const SatisfactionBadge = ({ level }) => {
 const TimelineItem = ({ item, isLast }) => {
   const typeStyles = {
     outreach: { icon: Send, color: "text-red-400", bg: "bg-red-500/15" },
-    reply: { icon: MessageSquare, color: "text-green-400", bg: "bg-green-500/15" },
-    note: { icon: FileText, color: "text-blue-400", bg: "bg-blue-500/15" },
+    reply: { icon: MessageSquare, color: "text-red-300", bg: "bg-red-400/15" },
+    note: { icon: FileText, color: "text-red-400", bg: "bg-red-500/15" },
     status: { icon: History, color: "text-zinc-400", bg: "bg-zinc-500/15" },
-    import: { icon: FileDown, color: "text-purple-400", bg: "bg-purple-500/15" },
+    import: { icon: FileDown, color: "text-red-300", bg: "bg-red-400/15" },
   };
   const style = typeStyles[item.type] || typeStyles.status;
   const Icon = style.icon;
@@ -216,10 +216,10 @@ const TimelineItem = ({ item, isLast }) => {
 // Outreach Task Card
 const OutreachTaskCard = ({ task }) => {
   const statusStyles = {
-    pending: { color: "text-yellow-400", bg: "bg-yellow-500/15", label: "Pending" },
-    approved_ready: { color: "text-blue-400", bg: "bg-blue-500/15", label: "Ready" },
-    sent: { color: "text-green-400", bg: "bg-green-500/15", label: "Sent" },
-    completed: { color: "text-green-400", bg: "bg-green-500/15", label: "Completed" },
+    pending: { color: "text-red-300", bg: "bg-red-400/15", label: "Pending" },
+    approved_ready: { color: "text-red-400", bg: "bg-red-500/15", label: "Ready" },
+    sent: { color: "text-red-400", bg: "bg-red-500/15", label: "Sent" },
+    completed: { color: "text-red-500", bg: "bg-red-600/15", label: "Completed" },
     cancelled: { color: "text-zinc-400", bg: "bg-zinc-500/15", label: "Cancelled" },
   };
   const style = statusStyles[task.status] || statusStyles.pending;
@@ -602,7 +602,7 @@ export default function TalentCandidateProfile() {
                       variant="outline"
                       onClick={enrichContact}
                       disabled={enrichingContact}
-                      className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 px-6"
+                      className="border-red-500/30 text-red-400 hover:bg-red-500/10 px-6"
                     >
                       {enrichingContact ? (
                         <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -612,7 +612,7 @@ export default function TalentCandidateProfile() {
                       {enrichingContact ? "Enriching..." : "Enrich Contact"}
                     </Button>
                   ) : candidate.enriched_at ? (
-                    <div className="flex items-center gap-1.5 text-xs text-green-400 px-3 py-1.5 bg-green-500/10 rounded-lg border border-green-500/20">
+                    <div className="flex items-center gap-1.5 text-xs text-red-400 px-3 py-1.5 bg-red-500/10 rounded-lg border border-red-500/20">
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       Enriched {new Date(candidate.enriched_at).toLocaleDateString()}
                     </div>
@@ -633,7 +633,7 @@ export default function TalentCandidateProfile() {
               </div>
               <div>
                 <p className="text-xs text-white/40 mb-1">Salary Range</p>
-                <p className="text-lg font-semibold text-green-400">
+                <p className="text-lg font-semibold text-red-400">
                   {candidate.salary_range ? `$${Number(candidate.salary_range).toLocaleString()}` : "—"}
                 </p>
               </div>
@@ -710,10 +710,10 @@ export default function TalentCandidateProfile() {
 
                 {/* Career Metrics */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <StatCard label="Years at Company" value={candidate.years_at_company || 0} icon={Calendar} color="blue" />
-                  <StatCard label="Promotions" value={candidate.times_promoted || 0} icon={TrendingUp} color="green" />
-                  <StatCard label="Avg Promo Time" value={candidate.avg_promotion_threshold ? `${candidate.avg_promotion_threshold}y` : "—"} icon={Clock} color="amber" />
-                  <StatCard label="Company Changes" value={candidate.times_company_hopped || 0} icon={Briefcase} color="purple" />
+                  <StatCard label="Years at Company" value={candidate.years_at_company || 0} icon={Calendar} color="red" />
+                  <StatCard label="Promotions" value={candidate.times_promoted || 0} icon={TrendingUp} color="red" />
+                  <StatCard label="Avg Promo Time" value={candidate.avg_promotion_threshold ? `${candidate.avg_promotion_threshold}y` : "—"} icon={Clock} color="red" />
+                  <StatCard label="Company Changes" value={candidate.times_company_hopped || 0} icon={Briefcase} color="red" />
                 </div>
 
                 {/* Skills */}
@@ -829,11 +829,11 @@ export default function TalentCandidateProfile() {
               {candidate.recent_ma_news && (
                 <motion.div
                   variants={itemVariants}
-                  className="bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent rounded-xl border border-amber-500/20 p-4"
+                  className="bg-gradient-to-br from-red-500/10 via-red-500/5 to-transparent rounded-xl border border-red-500/20 p-4"
                 >
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="p-1.5 rounded-lg bg-amber-500/20">
-                      <FileText className="w-4 h-4 text-amber-400" />
+                    <div className="p-1.5 rounded-lg bg-red-500/20">
+                      <FileText className="w-4 h-4 text-red-400" />
                     </div>
                     <h3 className="font-semibold text-white text-sm">Recent M&A News</h3>
                   </div>
@@ -913,11 +913,11 @@ export default function TalentCandidateProfile() {
                           <div className="flex items-center gap-3">
                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold ${
                               index === 0
-                                ? "bg-gradient-to-br from-yellow-500 to-amber-600 text-white"
+                                ? "bg-gradient-to-br from-red-500 to-red-600 text-white"
                                 : index === 1
-                                ? "bg-gradient-to-br from-gray-300 to-gray-400 text-gray-800"
+                                ? "bg-gradient-to-br from-red-400 to-red-500 text-white"
                                 : index === 2
-                                ? "bg-gradient-to-br from-amber-600 to-amber-700 text-white"
+                                ? "bg-gradient-to-br from-red-600 to-red-700 text-white"
                                 : "bg-white/10 text-white/60"
                             }`}>
                               #{index + 1}
@@ -974,7 +974,7 @@ export default function TalentCandidateProfile() {
                                   key={i}
                                   className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white/[0.05] text-xs text-white/70"
                                 >
-                                  <CheckCircle2 className="w-3 h-3 text-green-400" />
+                                  <CheckCircle2 className="w-3 h-3 text-red-400" />
                                   {reason}
                                 </span>
                               ))}
@@ -993,7 +993,7 @@ export default function TalentCandidateProfile() {
                               <Badge
                                 className={`text-xs ${
                                   match.campaigns.status === "active"
-                                    ? "bg-green-500/20 text-green-400 border-green-500/30"
+                                    ? "bg-red-500/20 text-red-400 border-red-500/30"
                                     : "bg-zinc-500/20 text-zinc-400 border-zinc-500/30"
                                 }`}
                               >

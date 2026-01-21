@@ -107,7 +107,7 @@ const IntelligenceDistribution = ({ data }) => {
   const levels = [
     { key: "Critical", color: "bg-red-600", count: data.critical || 0 },
     { key: "High", color: "bg-red-500", count: data.high || 0 },
-    { key: "Medium", color: "bg-yellow-500", count: data.medium || 0 },
+    { key: "Medium", color: "bg-red-400", count: data.medium || 0 },
     { key: "Low", color: "bg-zinc-500", count: data.low || 0 },
   ];
 
@@ -287,7 +287,7 @@ const RecentActivity = ({ outreachTasks }) => {
       case "failed":
         return <XCircle className="w-4 h-4 text-red-400" />;
       default:
-        return <Clock className="w-4 h-4 text-yellow-400" />;
+        return <Clock className="w-4 h-4 text-red-300" />;
     }
   };
 

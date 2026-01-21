@@ -74,9 +74,9 @@ const itemVariants = {
 const StatusBadge = ({ status }) => {
   const styles = {
     active: { bg: "bg-red-500/20", text: "text-red-400", label: "Active" },
-    paused: { bg: "bg-yellow-500/20", text: "text-yellow-400", label: "Paused" },
+    paused: { bg: "bg-red-800/30", text: "text-red-300", label: "Paused" },
     draft: { bg: "bg-white/10", text: "text-white/60", label: "Draft" },
-    completed: { bg: "bg-red-500/20", text: "text-red-400", label: "Completed" },
+    completed: { bg: "bg-red-600/20", text: "text-red-400", label: "Completed" },
     archived: { bg: "bg-white/5", text: "text-white/40", label: "Archived" },
   };
 
@@ -93,7 +93,7 @@ const StatusBadge = ({ status }) => {
 const TypeBadge = ({ type }) => {
   const styles = {
     recruitment: { bg: "bg-red-500/20", text: "text-red-400", label: "Recruitment" },
-    growth: { bg: "bg-amber-500/20", text: "text-amber-400", label: "Growth" },
+    growth: { bg: "bg-red-400/20", text: "text-red-300", label: "Growth" },
   };
 
   const style = styles[type] || styles.recruitment;

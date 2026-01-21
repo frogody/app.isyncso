@@ -72,9 +72,9 @@ const CAMPAIGN_STATUSES = [
 const StatusBadge = ({ status }) => {
   const styles = {
     active: "bg-red-500/20 text-red-400",
-    paused: "bg-yellow-500/20 text-yellow-400",
+    paused: "bg-red-800/30 text-red-300",
     draft: "bg-zinc-500/20 text-zinc-400",
-    completed: "bg-red-500/20 text-red-400",
+    completed: "bg-red-600/20 text-red-400",
     archived: "bg-zinc-500/20 text-zinc-500",
   };
 
@@ -208,7 +208,7 @@ const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching }) =
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
                         match.match_score >= 70 ? "bg-red-500/20 text-red-400" :
-                        match.match_score >= 40 ? "bg-yellow-500/20 text-yellow-400" :
+                        match.match_score >= 40 ? "bg-red-400/20 text-red-300" :
                         "bg-zinc-700/50 text-zinc-400"
                       }`}>
                         {match.match_score || 0}
@@ -228,9 +228,9 @@ const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching }) =
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge className={`text-xs ${
-                        match.status === "contacted" || match.status === "sent" ? "bg-blue-500/20 text-blue-400" :
-                        match.status === "replied" ? "bg-green-500/20 text-green-400" :
-                        match.status === "scheduled" ? "bg-purple-500/20 text-purple-400" :
+                        match.status === "contacted" || match.status === "sent" ? "bg-red-500/20 text-red-400" :
+                        match.status === "replied" ? "bg-red-400/20 text-red-300" :
+                        match.status === "scheduled" ? "bg-red-600/20 text-red-400" :
                         "bg-zinc-700/50 text-zinc-400"
                       }`}>
                         {match.status || "matched"}
@@ -363,7 +363,7 @@ const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching }) =
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-zinc-500">Status</span>
-                <span className={`text-xs font-medium ${formData.auto_match_enabled ? "text-green-400" : "text-zinc-500"}`}>
+                <span className={`text-xs font-medium ${formData.auto_match_enabled ? "text-red-400" : "text-zinc-500"}`}>
                   {formData.auto_match_enabled ? "Enabled" : "Disabled"}
                 </span>
               </div>
@@ -710,11 +710,11 @@ const AnalyticsTab = ({ campaign }) => {
             <div>
               <div className="flex justify-between text-sm mb-1">
                 <span className="text-zinc-400">Medium Match (40-70%)</span>
-                <span className="text-yellow-400 font-medium">{metrics.scoreDistribution.medium}</span>
+                <span className="text-red-300 font-medium">{metrics.scoreDistribution.medium}</span>
               </div>
               <div className="h-3 bg-zinc-800 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-yellow-500"
+                  className="h-full bg-red-400"
                   style={{
                     width: `${(metrics.scoreDistribution.medium / Math.max(metrics.total, 1)) * 100}%`,
                   }}
@@ -1150,7 +1150,7 @@ export default function TalentCampaignDetail() {
                 <Button
                   variant="outline"
                   onClick={() => handleStatusChange("paused")}
-                  className="border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10"
+                  className="border-red-500/30 text-red-400 hover:bg-red-500/10"
                 >
                   <Pause className="w-4 h-4 mr-2" />
                   Pause
