@@ -462,14 +462,14 @@ const COLOR_CLASSES = {
 // Header offset constant for secondary sidebar alignment - adjusted for smaller avatar bulge
 const SECONDARY_SIDEBAR_HEADER_OFFSET = 'pt-[70px]';
 
-// Secondary Sidebar Component
+// Secondary Sidebar Component - Now shows on iPad (md:) instead of just desktop (lg:)
 function SecondarySidebar({ config, location }) {
   if (!config) return null;
 
   const colors = COLOR_CLASSES[config.color] || COLOR_CLASSES.cyan;
-  
+
   return (
-    <div className="hidden lg:flex flex-col w-[80px] bg-black border-r border-white/5 relative z-0 animate-in slide-in-from-left duration-300 overflow-hidden">
+    <div className="hidden md:flex flex-col w-[72px] lg:w-[80px] bg-black border-r border-white/5 relative z-0 animate-in slide-in-from-left duration-300 overflow-hidden">
       {/* Header */}
       <div className={`px-4 py-4 flex items-center justify-center ${SECONDARY_SIDEBAR_HEADER_OFFSET} relative z-10`}>
         <h3 className={`text-[10px] font-bold uppercase tracking-widest ${colors.text}`}>
@@ -478,36 +478,36 @@ function SecondarySidebar({ config, location }) {
       </div>
       
       <TooltipProvider delayDuration={200}>
-        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-2 scrollbar-hide">
+        <nav className="flex-1 overflow-y-auto py-3 lg:py-4 px-2 lg:px-3 space-y-1.5 lg:space-y-2 scrollbar-hide">
           {config.items.map((item) => {
             const isActive = location.pathname === item.path;
             const Icon = item.icon;
-            
+
             return (
               <Tooltip key={item.label}>
                 <TooltipTrigger asChild>
                   <Link
                     to={item.path}
                     className={`
-                      relative flex items-center justify-center w-full h-12 rounded-xl transition-all duration-200 group
-                      ${isActive 
-                        ? `${colors.text} ${colors.bg}` 
-                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                      relative flex items-center justify-center w-full h-11 lg:h-12 rounded-xl transition-all duration-200 group active:scale-[0.98]
+                      ${isActive
+                        ? `${colors.text} ${colors.bg}`
+                        : 'text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
                       }
                     `}
                   >
-                    <Icon className={`w-5 h-5 transition-colors ${isActive ? colors.text : 'group-hover:text-white'}`} />
+                    <Icon className={`w-4.5 h-4.5 lg:w-5 lg:h-5 transition-colors ${isActive ? colors.text : 'group-hover:text-white'}`} />
                     {item.badge > 0 && (
-                      <span className={`absolute top-1 right-1 text-[9px] px-1.5 py-0.5 rounded-full font-bold ${colors.bg} ${colors.text} border ${colors.border}`}>
+                      <span className={`absolute top-0.5 right-0.5 lg:top-1 lg:right-1 text-[8px] lg:text-[9px] px-1 lg:px-1.5 py-0.5 rounded-full font-bold ${colors.bg} ${colors.text} border ${colors.border}`}>
                         {item.badge}
                       </span>
                     )}
                     {isActive && (
-                      <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 ${colors.borderSolid} rounded-r-full ${colors.glow}`} />
+                      <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 lg:h-6 ${colors.borderSolid} rounded-r-full ${colors.glow}`} />
                     )}
                   </Link>
                 </TooltipTrigger>
-                <TooltipContent side="right" className="bg-gray-900 border-gray-700 text-white">
+                <TooltipContent side="right" className="bg-gray-900 border-gray-700 text-white hidden lg:block">
                   <p>{item.label}</p>
                 </TooltipContent>
               </Tooltip>
@@ -515,6 +515,51 @@ function SecondarySidebar({ config, location }) {
           })}
         </nav>
       </TooltipProvider>
+    </div>
+  );
+}
+
+// Mobile Secondary Navigation Component
+function MobileSecondaryNav({ config, location }) {
+  if (!config) return null;
+
+  const colors = COLOR_CLASSES[config.color] || COLOR_CLASSES.cyan;
+
+  return (
+    <div className="border-t border-white/5 mt-2 pt-3">
+      <div className="px-3 mb-2">
+        <span className={`text-[10px] font-bold uppercase tracking-widest ${colors.text}`}>
+          {config.title}
+        </span>
+      </div>
+      <div className="space-y-0.5 px-1">
+        {config.items.map((item) => {
+          const isActive = location.pathname === item.path;
+          const Icon = item.icon;
+
+          return (
+            <Link
+              key={item.label}
+              to={item.path}
+              className={`
+                flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 active:scale-[0.98]
+                ${isActive
+                  ? `${colors.text} ${colors.bg}`
+                  : 'text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
+                }
+              `}
+            >
+              <Icon className={`w-4 h-4 ${isActive ? colors.text : ''}`} />
+              <span className="text-sm font-medium">{item.label}</span>
+              {item.badge > 0 && (
+                <span className={`ml-auto text-[10px] px-1.5 py-0.5 rounded-full font-medium ${colors.bg} ${colors.text} border ${colors.border}`}>
+                  {item.badge}
+                </span>
+              )}
+            </Link>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -684,7 +729,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
                                 key={item.title}
                                 to={item.url}
                                 onClick={triggerActivity}
-                                className={`flex items-center justify-center min-h-[44px] p-3 rounded-xl transition-all duration-200 group relative active:scale-[0.98]
+                                className={`flex items-center ${isMobile ? 'justify-start gap-3 px-4' : 'justify-center'} min-h-[44px] p-3 rounded-xl transition-all duration-200 group relative active:scale-[0.98]
                                   ${isActive
                                     ? 'text-cyan-400 bg-cyan-950/30'
                                     : 'text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
@@ -693,6 +738,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
                                 title={item.title}
                               >
                                 <item.icon isActive={isActive} className={`w-5 h-5 flex-shrink-0 transition-colors ${isActive ? 'text-cyan-400' : 'group-hover:text-white'}`} />
+                                {isMobile && <span className="text-sm font-medium">{item.title}</span>}
                                 {isActive && (
                                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-cyan-500 rounded-l-full shadow-[0_0_10px_rgba(6,182,212,0.5)]" />
                                 )}
@@ -733,7 +779,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
                 key={item.title}
                 to={item.url}
                 onClick={triggerActivity}
-                className={`flex items-center justify-center min-h-[44px] p-3 rounded-xl transition-all duration-200 group relative active:scale-[0.98]
+                className={`flex items-center ${isMobile ? 'justify-start gap-3 px-4' : 'justify-center'} min-h-[44px] p-3 rounded-xl transition-all duration-200 group relative active:scale-[0.98]
                   ${isActive
                     ? `${colors.text} ${colors.bg}`
                     : 'text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
@@ -744,6 +790,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
                 <item.icon isActive={isActive} className={`w-5 h-5 flex-shrink-0 transition-colors ${
                   isActive ? colors.text : 'group-hover:text-white'
                 }`} />
+                {isMobile && <span className="text-sm font-medium">{item.title}</span>}
                 {isActive && (
                   <div className={`absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-l-full ${colors.solid} ${colors.glow}`} />
                 )}
@@ -763,7 +810,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
                   key={item.title}
                   to={item.url}
                   onClick={triggerActivity}
-                  className={`flex items-center justify-center min-h-[44px] p-3 rounded-xl transition-all duration-200 group relative active:scale-[0.98]
+                  className={`flex items-center ${isMobile ? 'justify-start gap-3 px-4' : 'justify-center'} min-h-[44px] p-3 rounded-xl transition-all duration-200 group relative active:scale-[0.98]
                     ${isActive
                       ? 'text-purple-400 bg-purple-950/30'
                       : 'text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
@@ -772,6 +819,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
                   title={item.title}
                 >
                   <item.icon className={`w-5 h-5 flex-shrink-0 transition-colors ${isActive ? 'text-purple-400' : 'group-hover:text-white'}`} />
+                  {isMobile && <span className="text-sm font-medium">{item.title}</span>}
                 </Link>
               );
             })}
@@ -783,6 +831,11 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
           <div className="mt-4 flex justify-center">
             <FloatingAgentTrigger agentType={secondaryNavConfig.agent} />
           </div>
+        )}
+
+        {/* Mobile Secondary Navigation - shows context nav in mobile sheet */}
+        {isMobile && secondaryNavConfig && (
+          <MobileSecondaryNav config={secondaryNavConfig} location={location} />
         )}
         </nav>
 
@@ -1187,8 +1240,8 @@ export default function Layout({ children, currentPageName }) {
           `}</style>
 
         <div className="flex h-screen">
-          {/* Desktop/Tablet Sidebar - Wider for avatar */}
-          <div className="hidden md:flex flex-col sidebar-shell w-[80px] overflow-visible relative z-20">
+          {/* Desktop/Tablet Sidebar - Responsive width */}
+          <div className="hidden md:flex flex-col sidebar-shell w-[72px] lg:w-[80px] overflow-visible relative z-20">
             <SidebarContent
               currentPageName={currentPageName}
               secondaryNavConfig={secondaryNavConfig}
@@ -1204,27 +1257,31 @@ export default function Layout({ children, currentPageName }) {
 
           {/* Mobile Header - Only on phones (below 768px) */}
           <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-md border-b border-gray-800 pt-safe">
-            <div className="flex items-center justify-between px-4 h-14 sm:h-16">
+            <div className="flex items-center justify-between px-3 sm:px-4 h-14 sm:h-16">
               <div className="flex items-center">
-                <img
-                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/db-prod/public/68ebfb48566133bc1cface8c/3bee25c45_logoisyncso1.png"
-                  alt="ISYNCSO"
-                  className="h-7 sm:h-8 w-auto object-contain"
-                />
+                <span className="text-lg font-bold bg-gradient-to-r from-cyan-400 to-cyan-300 bg-clip-text text-transparent">
+                  iSyncSo
+                </span>
               </div>
+              {/* Show current section badge on mobile */}
+              {secondaryNavConfig && (
+                <div className={`px-2.5 py-1 rounded-lg text-xs font-medium ${COLOR_CLASSES[secondaryNavConfig.color]?.bg || 'bg-cyan-500/10'} ${COLOR_CLASSES[secondaryNavConfig.color]?.text || 'text-cyan-400'}`}>
+                  {secondaryNavConfig.title}
+                </div>
+              )}
               <Sheet>
                 <SheetTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="text-gray-300 touch-target flex items-center justify-center hover:bg-white/10 active:bg-white/20 transition-colors"
+                    className="text-gray-300 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-white/10 active:bg-white/20 transition-colors rounded-xl"
                     aria-label="Open menu"
                   >
                     <Menu className="w-6 h-6" />
                     <span className="sr-only">Open menu</span>
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-[300px] sm:w-[320px] p-0 border-gray-800 bg-black pt-safe pb-safe">
+                <SheetContent side="left" className="w-[85vw] max-w-[320px] p-0 border-gray-800 bg-black pt-safe pb-safe overflow-y-auto">
                   <SidebarContent
                     currentPageName={currentPageName}
                     isMobile={true}
