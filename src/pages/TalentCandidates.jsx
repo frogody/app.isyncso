@@ -284,7 +284,7 @@ export default function TalentCandidates() {
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState("grid");
+  const [viewMode, setViewMode] = useState("table");
   const [filters, setFilters] = useState({
     intelligenceLevel: "",
     approach: "",
