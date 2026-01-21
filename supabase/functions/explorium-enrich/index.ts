@@ -40,16 +40,22 @@ serve(async (req) => {
 
     // Match prospect by LinkedIn, email, or name+company
     // Updated to use new Explorium API endpoints (/v1/prospects/ instead of /v1/contacts/)
+    // Field names per docs: linkedin (not linkedin_url), email, full_name, company_name
     async function matchProspect(params: { linkedin?: string; email?: string; full_name?: string; company_name?: string; company_domain?: string }) {
-      const prospectToMatch: Record<string, string | null> = {
-        email: params.email || null,
-        linkedin_url: params.linkedin || null,
-        full_name: params.full_name || null,
-        company_name: params.company_name || null,
-        company_domain: params.company_domain || null,
-      };
+      // Only include fields with actual values (API doesn't like null values)
+      const prospectToMatch: Record<string, string> = {};
+      if (params.linkedin) prospectToMatch.linkedin = params.linkedin;
+      if (params.email) prospectToMatch.email = params.email;
+      if (params.full_name) prospectToMatch.full_name = params.full_name;
+      if (params.company_name) prospectToMatch.company_name = params.company_name;
 
-      console.log("Matching prospect:", prospectToMatch);
+      console.log("Matching prospect with params:", JSON.stringify(prospectToMatch));
+
+      const requestBody = {
+        prospects_to_match: [prospectToMatch],
+        request_context: {},
+      };
+      console.log("Explorium request body:", JSON.stringify(requestBody));
 
       const response = await fetch(`${EXPLORIUM_API_BASE}/prospects/match`, {
         method: "POST",
@@ -57,9 +63,7 @@ serve(async (req) => {
           "API_KEY": EXPLORIUM_API_KEY,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          prospects_to_match: [prospectToMatch],
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
