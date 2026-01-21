@@ -430,12 +430,12 @@ export default function CRMContactProfile() {
     .slice(0, 2);
 
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: User },
-    { id: 'skills', label: 'Skills & Career', icon: Award },
-    { id: 'company', label: 'Company', icon: Building },
-    { id: 'techstack', label: 'Tech Stack', icon: Cpu },
-    { id: 'funding', label: 'Funding', icon: DollarSign },
-    { id: 'social', label: 'Social', icon: Share2 },
+    { id: 'overview', label: 'Overview', mobileLabel: 'Overview', icon: User },
+    { id: 'skills', label: 'Skills & Career', mobileLabel: 'Skills', icon: Award },
+    { id: 'company', label: 'Company', mobileLabel: 'Company', icon: Building },
+    { id: 'techstack', label: 'Tech Stack', mobileLabel: 'Tech', icon: Cpu },
+    { id: 'funding', label: 'Funding', mobileLabel: 'Funding', icon: DollarSign },
+    { id: 'social', label: 'Social', mobileLabel: 'Social', icon: Share2 },
   ];
 
   const formatDate = (date) => {
@@ -630,21 +630,22 @@ export default function CRMContactProfile() {
 
         {/* Tab Navigation - Scrollable on mobile */}
         <motion.div variants={itemVariants} className="-mx-3 px-3 sm:mx-0 sm:px-0">
-          <div className="flex gap-1 p-1 bg-white/[0.03] border border-white/[0.06] rounded-xl sm:rounded-2xl overflow-x-auto scrollbar-hide">
+          <div className="flex gap-1 p-1.5 bg-white/[0.03] border border-white/[0.06] rounded-xl sm:rounded-2xl overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => {
               const IconComponent = tab.icon;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex-shrink-0 sm:flex-1 min-w-[90px] sm:min-w-[100px] px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all flex items-center justify-center gap-1.5 sm:gap-2 active:scale-[0.98] ${
+                  className={`flex-shrink-0 sm:flex-1 px-4 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all flex items-center justify-center gap-1.5 sm:gap-2 active:scale-[0.98] ${
                     activeTab === tab.id
                       ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/20'
                       : 'text-white/50 hover:text-white hover:bg-white/[0.04] active:bg-white/[0.08]'
                   }`}
                 >
-                  <IconComponent className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span className="whitespace-nowrap">{tab.label}</span>
+                  <IconComponent className="w-4 h-4" />
+                  <span className="whitespace-nowrap sm:hidden">{tab.mobileLabel}</span>
+                  <span className="whitespace-nowrap hidden sm:inline">{tab.label}</span>
                 </button>
               );
             })}
