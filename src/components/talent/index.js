@@ -12,6 +12,7 @@ export { IntelligenceReport } from './IntelligenceReport';
 export { default as AddCandidateModal } from './AddCandidateModal';
 export { default as EditCandidateModal } from './EditCandidateModal';
 export { default as CandidateImportModal } from './CandidateImportModal';
+export { default as QuickAddClientModal } from './QuickAddClientModal';
 
 // Campaign Components
 export { default as CandidateMatchingPanel } from './CandidateMatchingPanel';

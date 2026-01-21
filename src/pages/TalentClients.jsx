@@ -10,7 +10,7 @@ import { createPageUrl } from "@/utils";
 import {
   Plus, Building2, User, DollarSign, Mail, Phone, ExternalLink, Trash2,
   Search, Edit2, Eye, Loader2, MoreHorizontal, MapPin, Globe, Briefcase,
-  Users, TrendingUp, Calendar, Filter, X, Grid3X3, List, ArrowUpDown
+  Users, TrendingUp, Calendar, Filter, X, Grid3X3, List, ArrowUpDown, Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +36,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from 'sonner';
+import { QuickAddClientModal } from '@/components/talent';
 
 // Client Pipeline Stages
 const CLIENT_STAGES = [
@@ -228,6 +229,7 @@ export default function TalentClients() {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showQuickAddModal, setShowQuickAddModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
   const [viewMode, setViewMode] = useState('table'); // 'table' or 'grid'
   const [formData, setFormData] = useState(emptyForm);
@@ -489,13 +491,23 @@ export default function TalentClients() {
             subtitle={`${stats.total} clients · ${stats.activeClients} active`}
             color="red"
             actions={
-              <Button
-                onClick={openNewModal}
-                className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Client
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={() => setShowQuickAddModal(true)}
+                  variant="outline"
+                  className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Quick Add
+                </Button>
+                <Button
+                  onClick={openNewModal}
+                  className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Client
+                </Button>
+              </div>
             }
           />
         </div>
@@ -897,6 +909,13 @@ export default function TalentClients() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Quick Add Modal */}
+        <QuickAddClientModal
+          isOpen={showQuickAddModal}
+          onClose={() => setShowQuickAddModal(false)}
+          onSuccess={loadData}
+        />
       </div>
     </div>
   );
