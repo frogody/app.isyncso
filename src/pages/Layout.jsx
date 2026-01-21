@@ -729,7 +729,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
                                 key={item.title}
                                 to={item.url}
                                 onClick={triggerActivity}
-                                className={`flex items-center justify-center min-h-[44px] p-3 rounded-xl transition-all duration-200 group relative active:scale-[0.98]
+                                className={`flex items-center ${isMobile ? 'justify-start gap-3 px-4' : 'justify-center'} min-h-[44px] p-3 rounded-xl transition-all duration-200 group relative active:scale-[0.98]
                                   ${isActive
                                     ? 'text-cyan-400 bg-cyan-950/30'
                                     : 'text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
@@ -738,6 +738,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
                                 title={item.title}
                               >
                                 <item.icon isActive={isActive} className={`w-5 h-5 flex-shrink-0 transition-colors ${isActive ? 'text-cyan-400' : 'group-hover:text-white'}`} />
+                                {isMobile && <span className="text-sm font-medium">{item.title}</span>}
                                 {isActive && (
                                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-cyan-500 rounded-l-full shadow-[0_0_10px_rgba(6,182,212,0.5)]" />
                                 )}
@@ -778,7 +779,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
                 key={item.title}
                 to={item.url}
                 onClick={triggerActivity}
-                className={`flex items-center justify-center min-h-[44px] p-3 rounded-xl transition-all duration-200 group relative active:scale-[0.98]
+                className={`flex items-center ${isMobile ? 'justify-start gap-3 px-4' : 'justify-center'} min-h-[44px] p-3 rounded-xl transition-all duration-200 group relative active:scale-[0.98]
                   ${isActive
                     ? `${colors.text} ${colors.bg}`
                     : 'text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
@@ -789,6 +790,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
                 <item.icon isActive={isActive} className={`w-5 h-5 flex-shrink-0 transition-colors ${
                   isActive ? colors.text : 'group-hover:text-white'
                 }`} />
+                {isMobile && <span className="text-sm font-medium">{item.title}</span>}
                 {isActive && (
                   <div className={`absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-l-full ${colors.solid} ${colors.glow}`} />
                 )}
@@ -808,7 +810,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
                   key={item.title}
                   to={item.url}
                   onClick={triggerActivity}
-                  className={`flex items-center justify-center min-h-[44px] p-3 rounded-xl transition-all duration-200 group relative active:scale-[0.98]
+                  className={`flex items-center ${isMobile ? 'justify-start gap-3 px-4' : 'justify-center'} min-h-[44px] p-3 rounded-xl transition-all duration-200 group relative active:scale-[0.98]
                     ${isActive
                       ? 'text-purple-400 bg-purple-950/30'
                       : 'text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
@@ -817,6 +819,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
                   title={item.title}
                 >
                   <item.icon className={`w-5 h-5 flex-shrink-0 transition-colors ${isActive ? 'text-purple-400' : 'group-hover:text-white'}`} />
+                  {isMobile && <span className="text-sm font-medium">{item.title}</span>}
                 </Link>
               );
             })}
@@ -1256,11 +1259,9 @@ export default function Layout({ children, currentPageName }) {
           <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-md border-b border-gray-800 pt-safe">
             <div className="flex items-center justify-between px-3 sm:px-4 h-14 sm:h-16">
               <div className="flex items-center">
-                <img
-                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/db-prod/public/68ebfb48566133bc1cface8c/3bee25c45_logoisyncso1.png"
-                  alt="ISYNCSO"
-                  className="h-6 sm:h-8 w-auto object-contain"
-                />
+                <span className="text-lg font-bold bg-gradient-to-r from-cyan-400 to-cyan-300 bg-clip-text text-transparent">
+                  iSyncSo
+                </span>
               </div>
               {/* Show current section badge on mobile */}
               {secondaryNavConfig && (

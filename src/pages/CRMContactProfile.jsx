@@ -547,28 +547,28 @@ export default function CRMContactProfile() {
               </div>
             </div>
 
-            {/* Actions - Stack on mobile */}
-            <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
+            {/* Actions - Horizontal scroll on mobile */}
+            <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0 sm:overflow-visible pb-2 sm:pb-0">
               <Button
                 variant="outline"
                 onClick={handleReEnrich}
                 disabled={reEnriching}
-                className="border-zinc-700 text-white hover:bg-zinc-800 h-10 sm:h-10 flex-1 sm:flex-none text-sm"
+                className="border-zinc-700 text-white hover:bg-zinc-800 h-10 flex-shrink-0 text-sm px-3 sm:px-4"
               >
                 {reEnriching ? (
-                  <Loader2 className="w-4 h-4 sm:mr-2 animate-spin" />
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 ) : (
-                  <RefreshCw className="w-4 h-4 sm:mr-2" />
+                  <RefreshCw className="w-4 h-4 mr-2" />
                 )}
-                <span className="hidden sm:inline">Re-enrich</span>
+                Re-enrich
               </Button>
-              <Button variant="outline" className="border-zinc-700 text-white hover:bg-zinc-800 h-10 sm:h-10 flex-1 sm:flex-none text-sm">
-                <MessageSquare className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Message</span>
+              <Button variant="outline" className="border-zinc-700 text-white hover:bg-zinc-800 h-10 flex-shrink-0 text-sm px-3 sm:px-4">
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Message
               </Button>
-              <Button className="bg-cyan-600 hover:bg-cyan-700 h-10 sm:h-10 flex-1 sm:flex-none text-sm">
-                <Mail className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Send Email</span>
+              <Button className="bg-cyan-600 hover:bg-cyan-700 h-10 flex-shrink-0 text-sm px-3 sm:px-4">
+                <Mail className="w-4 h-4 mr-2" />
+                Send Email
               </Button>
             </div>
           </div>
