@@ -180,6 +180,11 @@ export function QuickAddContactModal({ isOpen, onClose, onSuccess, targetTable =
           company_hq_location: enrichedData.company_hq_location,
           company_description: enrichedData.company_description,
           company_logo_url: enrichedData.company_logo_url,
+          company_naics: enrichedData.company_naics,
+          company_naics_description: enrichedData.company_naics_description,
+          company_sic_code: enrichedData.company_sic_code,
+          company_sic_code_description: enrichedData.company_sic_code_description,
+          company_locations_distribution: enrichedData.company_locations_distribution || [],
 
           // Technology stack
           company_tech_stack: enrichedData.company_tech_stack || [],

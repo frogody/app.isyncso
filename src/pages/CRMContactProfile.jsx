@@ -356,6 +356,13 @@ export default function CRMContactProfile() {
           company_is_ipo: enrichedData.company_is_ipo ?? contact.company_is_ipo,
           company_ticker: enrichedData.company_ticker || contact.company_ticker,
 
+          // Additional firmographic fields
+          company_naics: enrichedData.company_naics || contact.company_naics,
+          company_naics_description: enrichedData.company_naics_description || contact.company_naics_description,
+          company_sic_code: enrichedData.company_sic_code || contact.company_sic_code,
+          company_sic_code_description: enrichedData.company_sic_code_description || contact.company_sic_code_description,
+          company_locations_distribution: enrichedData.company_locations_distribution?.length ? enrichedData.company_locations_distribution : contact.company_locations_distribution,
+
           // Social
           social_profiles: Object.keys(enrichedData.social_profiles || {}).length ? enrichedData.social_profiles : contact.social_profiles,
           social_activity: Object.keys(enrichedData.social_activity || {}).length ? enrichedData.social_activity : contact.social_activity,
@@ -767,8 +774,56 @@ export default function CRMContactProfile() {
 
               {/* Sidebar */}
               <div className="space-y-6">
-                {/* Enrichment Status */}
+                {/* Enrichment Status with Quality Score */}
                 <SectionCard icon={Sparkles} title="Enrichment Data">
+                  {/* Quality Score */}
+                  {(() => {
+                    // Calculate enrichment quality score
+                    const dataPoints = [
+                      contact.email,
+                      contact.mobile_phone || contact.phone,
+                      contact.linkedin_url,
+                      contact.job_title,
+                      contact.company,
+                      contact.location_city || contact.location_country,
+                      contact.skills?.length > 0,
+                      contact.work_history?.length > 0,
+                      contact.education?.length > 0,
+                      contact.company_industry,
+                      contact.company_size || contact.company_employee_count,
+                      contact.company_revenue,
+                      contact.company_description,
+                      contact.company_logo_url,
+                    ].filter(Boolean).length;
+                    const totalPoints = 14;
+                    const score = Math.round((dataPoints / totalPoints) * 100);
+                    const scoreColor = score >= 80 ? 'green' : score >= 50 ? 'yellow' : 'red';
+
+                    return (
+                      <div className="mb-4 p-4 bg-gradient-to-r from-white/[0.02] to-white/[0.04] rounded-xl border border-white/[0.06]">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-sm text-white/50">Data Quality Score</p>
+                          <Badge className={`bg-${scoreColor}-500/20 text-${scoreColor}-400 border-${scoreColor}-500/30`}>
+                            {score}%
+                          </Badge>
+                        </div>
+                        <div className="w-full bg-white/[0.06] rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full transition-all bg-gradient-to-r ${
+                              score >= 80 ? 'from-green-500 to-green-400' :
+                              score >= 50 ? 'from-yellow-500 to-yellow-400' :
+                              'from-red-500 to-red-400'
+                            }`}
+                            style={{ width: `${score}%` }}
+                          />
+                        </div>
+                        <p className="text-xs text-white/40 mt-2">
+                          {dataPoints} of {totalPoints} data points enriched
+                        </p>
+                      </div>
+                    );
+                  })()}
+
                   <div className="space-y-1">
                     <InfoRow icon={Clock} label="Last Enriched" value={formatDate(contact.enriched_at)} />
                     <InfoRow icon={Target} label="Source" value={contact.enrichment_source} />
@@ -1091,6 +1146,61 @@ export default function CRMContactProfile() {
                       <ExpandableText text={contact.company_description} maxLength={500} />
                     </SectionCard>
                   )}
+
+                  {/* Industry Classification & Locations */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Industry Classification */}
+                    {(contact.company_naics || contact.company_sic_code) && (
+                      <SectionCard icon={Briefcase} title="Industry Classification">
+                        <div className="space-y-4">
+                          {contact.company_naics && (
+                            <div className="p-4 bg-white/[0.02] rounded-xl border border-white/[0.04]">
+                              <div className="flex items-center justify-between mb-2">
+                                <p className="text-sm text-white/50">NAICS Code</p>
+                                <Badge className="bg-cyan-500/10 border-cyan-500/30 text-cyan-400">
+                                  {contact.company_naics}
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-white">{contact.company_naics_description || 'N/A'}</p>
+                            </div>
+                          )}
+                          {contact.company_sic_code && (
+                            <div className="p-4 bg-white/[0.02] rounded-xl border border-white/[0.04]">
+                              <div className="flex items-center justify-between mb-2">
+                                <p className="text-sm text-white/50">SIC Code</p>
+                                <Badge className="bg-purple-500/10 border-purple-500/30 text-purple-400">
+                                  {contact.company_sic_code}
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-white">{contact.company_sic_code_description || 'N/A'}</p>
+                            </div>
+                          )}
+                        </div>
+                      </SectionCard>
+                    )}
+
+                    {/* Global Presence */}
+                    {contact.company_locations_distribution && contact.company_locations_distribution.length > 0 && (
+                      <SectionCard icon={Globe} title="Global Presence">
+                        <div className="space-y-3">
+                          {contact.company_locations_distribution.map((loc, i) => (
+                            <div
+                              key={i}
+                              className="flex items-center justify-between p-3 bg-white/[0.02] rounded-xl border border-white/[0.04]"
+                            >
+                              <div className="flex items-center gap-3">
+                                <MapPin className="w-4 h-4 text-white/40" />
+                                <p className="text-sm text-white uppercase">{loc.country}</p>
+                              </div>
+                              <Badge variant="outline" className="bg-white/[0.04] border-white/[0.08] text-white/70">
+                                {loc.locations} {loc.locations === 1 ? 'location' : 'locations'}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      </SectionCard>
+                    )}
+                  </div>
                 </>
               ) : (
                 <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-12 text-center">

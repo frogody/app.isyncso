@@ -350,8 +350,29 @@ serve(async (req) => {
             // 5a: Firmographics (basic company info)
             try {
               const bizEnrich = await enrichBusiness(businessId);
-              companyData = bizEnrich.data?.[0]?.data || bizEnrich.data?.[0] || bizEnrich || {};
-              companyData.business_id = businessId;
+              // Firmographics response is { data: {...}, entity_id: ..., response_context: {...} }
+              // NOT an array like other endpoints
+              const rawFirmographics = bizEnrich.data || bizEnrich || {};
+              companyData = {
+                business_id: businessId,
+                // Map API fields to our normalized field names
+                name: rawFirmographics.name,
+                domain: rawFirmographics.website?.replace(/^https?:\/\//, '').replace(/\/$/, ''),
+                linkedin: rawFirmographics.linkedin_profile,
+                industry: rawFirmographics.linkedin_industry_category,
+                size_range: rawFirmographics.number_of_employees_range,
+                employee_count: null, // API returns range, not exact count
+                revenue_range: rawFirmographics.yearly_revenue_range,
+                hq_location: [rawFirmographics.city_name, rawFirmographics.region_name, rawFirmographics.country_name].filter(Boolean).join(', ') || rawFirmographics.country_name,
+                description: rawFirmographics.business_description,
+                logo_url: rawFirmographics.business_logo,
+                naics: rawFirmographics.naics,
+                naics_description: rawFirmographics.naics_description,
+                sic_code: rawFirmographics.sic_code,
+                sic_code_description: rawFirmographics.sic_code_description,
+                ticker: rawFirmographics.ticker,
+                locations_distribution: rawFirmographics.locations_distribution,
+              };
               rawEnrichment.firmographics = bizEnrich;
             } catch (e: any) {
               console.warn("Firmographics enrichment failed:", e.message);
@@ -465,18 +486,23 @@ serve(async (req) => {
         location_region: profile.region_name || profile.region || profile.state || profile.location_region,
         location_country: profile.country_name || profile.country || profile.location_country,
 
-        // Company basic info
-        company: profile.company_name || companyName,
-        company_domain: profile.company_website || companyData.domain || companyDomain,
-        company_linkedin: profile.company_linkedin || companyData.linkedin,
+        // Company basic info (from firmographics enrichment)
+        company: companyData.name || profile.company_name || companyName,
+        company_domain: companyData.domain || profile.company_website?.replace(/^https?:\/\//, '').replace(/\/$/, '') || companyDomain,
+        company_linkedin: companyData.linkedin || profile.company_linkedin,
         company_industry: companyData.industry || profile.industry,
-        company_size: companyData.size_range || companyData.company_size || profile.company_size,
+        company_size: companyData.size_range || profile.company_size,
         company_employee_count: companyData.employee_count || profile.company_employee_count,
-        company_revenue: companyData.revenue_range || companyData.revenue,
-        company_founded_year: companyData.founded_year || companyData.year_founded,
-        company_hq_location: companyData.hq_location || companyData.headquarters,
-        company_description: companyData.description || companyData.company_description,
-        company_logo_url: companyData.logo_url || companyData.logo,
+        company_revenue: companyData.revenue_range,
+        company_founded_year: companyData.founded_year,
+        company_hq_location: companyData.hq_location,
+        company_description: companyData.description,
+        company_logo_url: companyData.logo_url,
+        company_naics: companyData.naics,
+        company_naics_description: companyData.naics_description,
+        company_sic_code: companyData.sic_code,
+        company_sic_code_description: companyData.sic_code_description,
+        company_locations_distribution: companyData.locations_distribution,
 
         // Technology stack (from technographics enrichment)
         company_tech_stack: [...new Set(techStack)], // Deduplicated array
