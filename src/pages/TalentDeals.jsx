@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import anime from '@/lib/anime-wrapper';
 const animate = anime;
@@ -74,16 +73,19 @@ function DealCard({ deal, onEdit, onDelete, stageConfig, index, clients, candida
   return (
     <Draggable draggableId={deal.id} index={index}>
       {(provided, snapshot) => (
-        <motion.div
+        <div
           ref={provided.innerRef}
           {...provided.draggableProps}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ delay: index * 0.03 }}
-          className={`group relative bg-zinc-900/60 backdrop-blur-sm rounded-xl border transition-all duration-200 ${
+          style={{
+            ...provided.draggableProps.style,
+            // Ensure smooth transform during drag
+            transition: snapshot.isDragging
+              ? provided.draggableProps.style?.transition
+              : 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease',
+          }}
+          className={`group relative bg-zinc-900/60 backdrop-blur-sm rounded-xl border ${
             snapshot.isDragging
-              ? `shadow-2xl shadow-red-500/10 border-red-500/30 scale-[1.02]`
+              ? `shadow-2xl shadow-red-500/20 border-red-500/50 z-50`
               : `border-zinc-800/60 hover:border-zinc-700/60`
           }`}
         >
@@ -182,7 +184,7 @@ function DealCard({ deal, onEdit, onDelete, stageConfig, index, clients, candida
               )}
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
     </Draggable>
   );
@@ -247,26 +249,24 @@ function StageColumn({ stage, deals, onEdit, onDelete, onAddDeal, clients, candi
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className={`space-y-3 min-h-[300px] rounded-xl p-2 transition-all duration-200 ${
+            className={`space-y-3 min-h-[300px] rounded-xl p-2 transition-colors duration-200 ${
               snapshot.isDraggingOver
-                ? `bg-gradient-to-b from-red-500/3 to-transparent border-2 border-dashed border-red-500/30`
+                ? `bg-red-500/5 border-2 border-dashed border-red-500/40`
                 : 'border-2 border-transparent'
             }`}
           >
-            <AnimatePresence>
-              {deals.map((deal, index) => (
-                <DealCard
-                  key={deal.id}
-                  deal={deal}
-                  onEdit={onEdit}
-                  onDelete={onDelete}
-                  stageConfig={stage}
-                  index={index}
-                  clients={clients}
-                  candidates={candidates}
-                />
-              ))}
-            </AnimatePresence>
+            {deals.map((deal, index) => (
+              <DealCard
+                key={deal.id}
+                deal={deal}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                stageConfig={stage}
+                index={index}
+                clients={clients}
+                candidates={candidates}
+              />
+            ))}
             {provided.placeholder}
 
             {deals.length === 0 && !snapshot.isDraggingOver && (
@@ -366,38 +366,62 @@ export default function TalentDeals() {
   };
 
   const handleDragEnd = async (result) => {
-    if (!result.destination) return;
-    const dealId = result.draggableId;
-    const newStage = result.destination.droppableId;
+    const { destination, source, draggableId } = result;
 
-    // Optimistic update
-    setDeals(prev => prev.map(d => d.id === dealId ? { ...d, stage: newStage, updated_at: new Date().toISOString() } : d));
+    // Dropped outside a valid droppable
+    if (!destination) return;
 
-    try {
-      const stageConfig = STAGES.find(s => s.id === newStage);
-      const updateData = {
-        stage: newStage,
-        probability: stageConfig?.probability || 50,
-        updated_at: new Date().toISOString()
-      };
+    // Dropped in the same position
+    if (destination.droppableId === source.droppableId && destination.index === source.index) {
+      return;
+    }
 
-      // If moving to confirmed, set closed_at
-      if (newStage === 'confirmed') {
-        updateData.closed_at = new Date().toISOString();
-        updateData.confirmed_date = new Date().toISOString();
+    const dealId = draggableId;
+    const newStage = destination.droppableId;
+    const sourceStage = source.droppableId;
+
+    // Get deals in the destination column for position calculation
+    const destDeals = deals.filter(d => d.stage === newStage);
+
+    // Optimistic update for immediate UI feedback
+    setDeals(prev => {
+      const updated = prev.map(d => {
+        if (d.id === dealId) {
+          return { ...d, stage: newStage, updated_at: new Date().toISOString() };
+        }
+        return d;
+      });
+      return updated;
+    });
+
+    // Only update database if stage actually changed
+    if (newStage !== sourceStage) {
+      try {
+        const stageConfig = STAGES.find(s => s.id === newStage);
+        const updateData = {
+          stage: newStage,
+          probability: stageConfig?.probability || 50,
+          updated_at: new Date().toISOString()
+        };
+
+        // If moving to confirmed, set closed_at
+        if (newStage === 'confirmed') {
+          updateData.closed_at = new Date().toISOString();
+          updateData.confirmed_date = new Date().toISOString();
+        }
+
+        const { error } = await supabase
+          .from('talent_deals')
+          .update(updateData)
+          .eq('id', dealId);
+
+        if (error) throw error;
+        toast.success(`Deal moved to ${STAGES.find(s => s.id === newStage)?.label}`);
+      } catch (error) {
+        console.error('Failed to update:', error);
+        toast.error('Failed to update deal stage');
+        loadData(); // Reload on error
       }
-
-      const { error } = await supabase
-        .from('talent_deals')
-        .update(updateData)
-        .eq('id', dealId);
-
-      if (error) throw error;
-      toast.success(`Deal moved to ${STAGES.find(s => s.id === newStage)?.label}`);
-    } catch (error) {
-      console.error('Failed to update:', error);
-      toast.error('Failed to update deal stage');
-      loadData(); // Reload on error
     }
   };
 
