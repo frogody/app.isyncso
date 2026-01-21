@@ -730,7 +730,7 @@ function PagesContent() {
 
                 <Route path="/TalentProjects" element={<TalentProjects />} />
 
-                <Route path="/TalentAnalytics" element={<TalentAnalytics />} />
+                <Route path="/TalentAnalytics" element={<Navigate to="/TalentDashboard" replace />} />
 
                 {/* 404 catch-all route */}
                 <Route path="*" element={

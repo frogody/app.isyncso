@@ -261,7 +261,6 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
         { label: 'Candidates', path: createPageUrl('TalentCandidates'), icon: Users },
         { label: 'Campaigns', path: createPageUrl('TalentCampaigns'), icon: Megaphone },
         { label: 'Projects', path: createPageUrl('TalentProjects'), icon: Briefcase },
-        { label: 'Analytics', path: createPageUrl('TalentAnalytics'), icon: BarChart3 },
       ]
     };
   }
