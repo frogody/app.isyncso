@@ -84,22 +84,30 @@ serve(async (req) => {
       const response = await fetch(`${EXPLORIUM_API_BASE}/prospects/profiles/enrich`, {
         method: "POST",
         headers: {
-          "api_key": EXPLORIUM_API_KEY,
-          "accept": "application/json",
-          "content-type": "application/json",
+          "API_KEY": EXPLORIUM_API_KEY,
+          "Accept": "application/json",
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          prospect_ids: [prospectId],
+          prospect_id: prospectId,
         }),
       });
 
+      const responseText = await response.text();
+      console.log("Profile enrich response status:", response.status);
+      console.log("Profile enrich response body:", responseText);
+
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Profile enrich error:", response.status, errorText);
-        throw new Error(`Profile enrichment failed: ${response.status} - ${errorText}`);
+        console.error("Profile enrich error:", response.status, responseText);
+        throw new Error(`Profile enrichment failed: ${response.status} - ${responseText}`);
       }
 
-      return response.json();
+      try {
+        return JSON.parse(responseText);
+      } catch {
+        console.error("Failed to parse profile response as JSON:", responseText);
+        return {};
+      }
     }
 
     // Enrich prospect contact info (emails, phones)
@@ -109,22 +117,30 @@ serve(async (req) => {
       const response = await fetch(`${EXPLORIUM_API_BASE}/prospects/contacts_information/enrich`, {
         method: "POST",
         headers: {
-          "api_key": EXPLORIUM_API_KEY,
-          "accept": "application/json",
-          "content-type": "application/json",
+          "API_KEY": EXPLORIUM_API_KEY,
+          "Accept": "application/json",
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          prospect_ids: [prospectId],
+          prospect_id: prospectId,
         }),
       });
 
+      const responseText = await response.text();
+      console.log("Contacts enrich response status:", response.status);
+      console.log("Contacts enrich response body:", responseText);
+
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Contact info enrich error:", response.status, errorText);
-        throw new Error(`Contact info enrichment failed: ${response.status} - ${errorText}`);
+        console.error("Contact info enrich error:", response.status, responseText);
+        throw new Error(`Contact info enrichment failed: ${response.status} - ${responseText}`);
       }
 
-      return response.json();
+      try {
+        return JSON.parse(responseText);
+      } catch {
+        console.error("Failed to parse contacts response as JSON:", responseText);
+        return {};
+      }
     }
 
     // Match business by name or domain
@@ -162,12 +178,12 @@ serve(async (req) => {
       const response = await fetch(`${EXPLORIUM_API_BASE}/businesses/firmographics/enrich`, {
         method: "POST",
         headers: {
-          "api_key": EXPLORIUM_API_KEY,
-          "accept": "application/json",
-          "content-type": "application/json",
+          "API_KEY": EXPLORIUM_API_KEY,
+          "Accept": "application/json",
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          business_ids: [businessId],
+          business_id: businessId,
         }),
       });
 
@@ -192,18 +208,26 @@ serve(async (req) => {
       let profileData: Record<string, any> = {};
       try {
         const profileEnrich = await enrichProspectProfile(prospectId);
-        profileData = profileEnrich.data?.[0] || profileEnrich[0] || {};
-      } catch (e) {
-        console.warn("Profile enrichment failed:", e);
+        // API returns { data: {...}, entity_id: "..." } - data is an object, not an array
+        profileData = profileEnrich.data || {};
+      } catch (e: any) {
+        console.warn("Profile enrichment failed:", e.message);
       }
 
       // Step 3: Enrich prospect contacts (emails, phones)
       let contactData: Record<string, any> = {};
       try {
         const contactEnrich = await enrichProspectContacts(prospectId);
-        contactData = contactEnrich.data?.[0] || contactEnrich[0] || {};
-      } catch (e) {
-        console.warn("Contact enrichment failed:", e);
+        // API returns { data: {...}, entity_id: "..." } - data is an object, not an array
+        // Extract email from emails array if present
+        const rawData = contactEnrich.data || {};
+        contactData = {
+          ...rawData,
+          email: rawData.professions_email || rawData.emails?.[0]?.address,
+          phone: rawData.phone_numbers?.[0] || rawData.mobile_phone,
+        };
+      } catch (e: any) {
+        console.warn("Contact enrichment failed:", e.message);
       }
 
       // Merge profile and contact data
@@ -239,7 +263,7 @@ serve(async (req) => {
         // Contact
         first_name: profile.first_name || nameParts[0] || "",
         last_name: profile.last_name || nameParts.slice(1).join(" ") || "",
-        email: profile.email || profile.professional_email || profile.work_email,
+        email: profile.email || profile.professions_email || profile.professional_email || profile.work_email,
         personal_email: profile.personal_email,
         phone: profile.phone || profile.work_phone || profile.office_phone,
         mobile_phone: profile.mobile_phone || profile.cell_phone,
@@ -247,23 +271,24 @@ serve(async (req) => {
 
         // Professional
         job_title: profile.job_title || profile.title || profile.current_title,
-        job_department: profile.department || profile.job_department,
-        job_seniority_level: profile.seniority || profile.job_seniority_level,
+        job_department: profile.department || profile.job_department || profile.job_department_main,
+        job_seniority_level: profile.seniority || profile.job_seniority_level || profile.job_level_main,
         skills: profile.skills || [],
         interests: profile.interests || [],
         education: profile.education || [],
         work_history: profile.experience || profile.work_history || [],
         age_group: profile.age_group,
+        gender: profile.gender,
 
         // Location
         location_city: profile.city || profile.location_city,
-        location_region: profile.region || profile.state || profile.location_region,
-        location_country: profile.country || profile.location_country,
+        location_region: profile.region_name || profile.region || profile.state || profile.location_region,
+        location_country: profile.country_name || profile.country || profile.location_country,
 
-        // Company
-        company: companyName,
-        company_domain: companyData.domain || companyDomain,
-        company_linkedin: companyData.linkedin || profile.company_linkedin,
+        // Company (from profile data first, then fallback to business enrichment)
+        company: profile.company_name || companyName,
+        company_domain: profile.company_website || companyData.domain || companyDomain,
+        company_linkedin: profile.company_linkedin || companyData.linkedin,
         company_industry: companyData.industry || profile.industry,
         company_size: companyData.size_range || companyData.company_size || profile.company_size,
         company_employee_count: companyData.employee_count || profile.company_employee_count,

@@ -87,7 +87,7 @@ export function QuickAddContactModal({ isOpen, onClose, onSuccess, targetTable =
 
       if (targetTable === 'contacts') {
         const { error: insertError } = await supabase.from('contacts').insert({
-          organization_id: user.organization_id,
+          organization_id: user.organization_id || user.company_id,
           first_name: enrichedData.first_name,
           last_name: enrichedData.last_name,
           email: enrichedData.email,
@@ -130,41 +130,21 @@ export function QuickAddContactModal({ isOpen, onClose, onSuccess, targetTable =
         if (insertError) throw insertError;
       } else if (targetTable === 'prospects') {
         const { error: insertError } = await supabase.from('prospects').insert({
-          organization_id: user.organization_id,
+          organization_id: user.organization_id || user.company_id,
+          owner_id: user.id,
           first_name: enrichedData.first_name,
           last_name: enrichedData.last_name,
           email: enrichedData.email,
           phone: enrichedData.phone,
-          mobile_phone: enrichedData.mobile_phone,
-          personal_email: enrichedData.personal_email,
           company: enrichedData.company,
-          title: enrichedData.job_title,
-          job_department: enrichedData.job_department,
-          job_seniority_level: enrichedData.job_seniority_level,
+          job_title: enrichedData.job_title,
           linkedin_url: enrichedData.linkedin_url,
-          skills: enrichedData.skills,
-          education: enrichedData.education,
-          work_history: enrichedData.work_history,
-          age_group: enrichedData.age_group,
-          interests: enrichedData.interests,
-          company_domain: enrichedData.company_domain,
-          company_linkedin: enrichedData.company_linkedin,
-          company_industry: enrichedData.company_industry,
+          location: [enrichedData.location_city, enrichedData.location_country].filter(Boolean).join(', '),
+          industry: enrichedData.company_industry,
           company_size: enrichedData.company_size,
-          company_employee_count: enrichedData.company_employee_count,
-          company_revenue: enrichedData.company_revenue,
-          company_founded_year: enrichedData.company_founded_year,
-          company_hq_location: enrichedData.company_hq_location,
-          company_description: enrichedData.company_description,
-          company_tech_stack: enrichedData.company_tech_stack,
-          company_funding_total: enrichedData.company_funding_total,
-          company_latest_funding: enrichedData.company_latest_funding,
-          enriched_at: enrichedData.enriched_at,
-          enrichment_source: enrichedData.enrichment_source,
-          explorium_prospect_id: enrichedData.explorium_prospect_id,
-          explorium_business_id: enrichedData.explorium_business_id,
-          status: 'new',
-          source: isLinkedIn ? 'LinkedIn Enrichment' : 'Email Enrichment',
+          stage: 'New Lead',
+          source: isLinkedIn ? 'LinkedIn' : 'Email',
+          contact_type: 'lead',
         });
 
         if (insertError) throw insertError;
@@ -199,7 +179,7 @@ export function QuickAddContactModal({ isOpen, onClose, onSuccess, targetTable =
       <DialogContent className="bg-slate-900 border-white/10 max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-white flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-red-400" />
+            <Sparkles className="h-5 w-5 text-cyan-400" />
             Quick Add with Enrichment
           </DialogTitle>
         </DialogHeader>
@@ -247,7 +227,7 @@ export function QuickAddContactModal({ isOpen, onClose, onSuccess, targetTable =
               <Button
                 onClick={handleEnrich}
                 disabled={!inputValue.trim() || (!isLinkedIn && !isEmail) || loading}
-                className="w-full h-12 bg-red-600 hover:bg-red-700"
+                className="w-full h-12 bg-cyan-600 hover:bg-cyan-700"
               >
                 <Sparkles className="w-4 h-4 mr-2" />
                 Enrich & Preview
@@ -266,11 +246,11 @@ export function QuickAddContactModal({ isOpen, onClose, onSuccess, targetTable =
             >
               <div className="relative w-20 h-20 mx-auto mb-6">
                 <motion.div
-                  className="absolute inset-0 rounded-full border-4 border-red-500/30"
+                  className="absolute inset-0 rounded-full border-4 border-cyan-500/30"
                   animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.2, 0.5] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 />
-                <div className="absolute inset-2 rounded-full bg-red-600 flex items-center justify-center">
+                <div className="absolute inset-2 rounded-full bg-cyan-600 flex items-center justify-center">
                   <Loader2 className="w-8 h-8 text-white animate-spin" />
                 </div>
               </div>
@@ -330,8 +310,8 @@ export function QuickAddContactModal({ isOpen, onClose, onSuccess, targetTable =
               <div className="bg-zinc-800/50 rounded-lg p-4 space-y-4 border border-zinc-700/50">
                 {/* Header */}
                 <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 bg-red-600/20 rounded-full flex items-center justify-center">
-                    <User className="h-6 w-6 text-red-400" />
+                  <div className="h-12 w-12 bg-cyan-600/20 rounded-full flex items-center justify-center">
+                    <User className="h-6 w-6 text-cyan-400" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-white">
@@ -419,7 +399,7 @@ export function QuickAddContactModal({ isOpen, onClose, onSuccess, targetTable =
                 <Button
                   onClick={handleSave}
                   disabled={loading}
-                  className="flex-[2] bg-red-600 hover:bg-red-700"
+                  className="flex-[2] bg-cyan-600 hover:bg-cyan-700"
                 >
                   {loading ? (
                     <>

@@ -1691,7 +1691,7 @@ export default function CRMContacts() {
         isOpen={showQuickAdd}
         onClose={() => setShowQuickAdd(false)}
         onSuccess={loadContacts}
-        targetTable="contacts"
+        targetTable="prospects"
       />
     </div>
   );
