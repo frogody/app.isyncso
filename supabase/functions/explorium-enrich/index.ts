@@ -173,7 +173,7 @@ serve(async (req) => {
 
     // Enrich business firmographics by business_id
     async function enrichBusiness(businessId: string) {
-      console.log("Enriching business:", businessId);
+      console.log("Enriching business firmographics:", businessId);
 
       const response = await fetch(`${EXPLORIUM_API_BASE}/businesses/firmographics/enrich`, {
         method: "POST",
@@ -196,45 +196,145 @@ serve(async (req) => {
       return response.json();
     }
 
-    // Full enrich flow
+    // Enrich business technographics (tech stack by category)
+    async function enrichBusinessTechnographics(businessId: string) {
+      console.log("Enriching business technographics:", businessId);
+
+      const response = await fetch(`${EXPLORIUM_API_BASE}/businesses/technographics/enrich`, {
+        method: "POST",
+        headers: {
+          "API_KEY": EXPLORIUM_API_KEY,
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          business_id: businessId,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Business technographics error:", response.status, errorText);
+        // Don't throw - return empty, this is optional enrichment
+        return { data: {} };
+      }
+
+      return response.json();
+    }
+
+    // Enrich business funding & acquisitions
+    async function enrichBusinessFunding(businessId: string) {
+      console.log("Enriching business funding:", businessId);
+
+      const response = await fetch(`${EXPLORIUM_API_BASE}/businesses/funding_and_acquisitions/enrich`, {
+        method: "POST",
+        headers: {
+          "API_KEY": EXPLORIUM_API_KEY,
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          business_id: businessId,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Business funding error:", response.status, errorText);
+        // Don't throw - return empty, this is optional enrichment
+        return { data: {} };
+      }
+
+      return response.json();
+    }
+
+    // Enrich prospect social media presence
+    async function enrichProspectSocial(prospectId: string) {
+      console.log("Enriching prospect social:", prospectId);
+
+      const response = await fetch(`${EXPLORIUM_API_BASE}/prospects/social_presence/enrich`, {
+        method: "POST",
+        headers: {
+          "API_KEY": EXPLORIUM_API_KEY,
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          prospect_id: prospectId,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Social presence error:", response.status, errorText);
+        // Don't throw - return empty, this is optional enrichment
+        return { data: {} };
+      }
+
+      return response.json();
+    }
+
+    // Full enrich flow - fetches ALL available data from Explorium
     async function fullEnrich(params: { linkedin?: string; email?: string; full_name?: string; company_name?: string }) {
+      // Store raw data for comprehensive enrichment_data blob
+      const rawEnrichment: Record<string, any> = {
+        timestamp: new Date().toISOString(),
+        source: "explorium",
+        params,
+      };
+
       // Step 1: Match prospect
       const prospectId = await matchProspect(params);
       if (!prospectId) {
         throw new Error("Could not find prospect in Explorium database. Try a different LinkedIn URL or email.");
       }
+      rawEnrichment.prospect_id = prospectId;
 
       // Step 2: Enrich prospect profile (skills, experience, education)
       let profileData: Record<string, any> = {};
       try {
         const profileEnrich = await enrichProspectProfile(prospectId);
-        // API returns { data: {...}, entity_id: "..." } - data is an object, not an array
         profileData = profileEnrich.data || {};
+        rawEnrichment.profile = profileEnrich;
       } catch (e: any) {
         console.warn("Profile enrichment failed:", e.message);
+        rawEnrichment.profile_error = e.message;
       }
 
       // Step 3: Enrich prospect contacts (emails, phones)
       let contactData: Record<string, any> = {};
       try {
         const contactEnrich = await enrichProspectContacts(prospectId);
-        // API returns { data: {...}, entity_id: "..." } - data is an object, not an array
-        // Extract email from emails array if present
         const rawData = contactEnrich.data || {};
         contactData = {
           ...rawData,
           email: rawData.professions_email || rawData.emails?.[0]?.address,
           phone: rawData.phone_numbers?.[0] || rawData.mobile_phone,
         };
+        rawEnrichment.contacts = contactEnrich;
       } catch (e: any) {
         console.warn("Contact enrichment failed:", e.message);
+        rawEnrichment.contacts_error = e.message;
       }
 
-      // Merge profile and contact data
-      const profile = { ...profileData, ...contactData };
+      // Step 4: Enrich prospect social presence
+      let socialData: Record<string, any> = {};
+      try {
+        const socialEnrich = await enrichProspectSocial(prospectId);
+        socialData = socialEnrich.data || {};
+        rawEnrichment.social = socialEnrich;
+      } catch (e: any) {
+        console.warn("Social enrichment failed:", e.message);
+        rawEnrichment.social_error = e.message;
+      }
 
-      // Step 3: Try to enrich company if we have company info
+      // Merge profile, contact, and social data
+      const profile = { ...profileData, ...contactData, ...socialData };
+
+      // Step 5: Try to enrich company if we have company info
       let companyData: Record<string, any> = {};
+      let techData: Record<string, any> = {};
+      let fundingData: Record<string, any> = {};
       const companyName = profile.company_name || profile.current_company || params.company_name;
       const companyDomain = profile.company_domain || profile.company_website;
 
@@ -245,12 +345,42 @@ serve(async (req) => {
             domain: companyDomain,
           });
           if (businessId) {
-            const bizEnrich = await enrichBusiness(businessId);
-            companyData = bizEnrich.data?.[0]?.data || bizEnrich.data?.[0] || bizEnrich || {};
-            companyData.business_id = businessId;
+            rawEnrichment.business_id = businessId;
+
+            // 5a: Firmographics (basic company info)
+            try {
+              const bizEnrich = await enrichBusiness(businessId);
+              companyData = bizEnrich.data?.[0]?.data || bizEnrich.data?.[0] || bizEnrich || {};
+              companyData.business_id = businessId;
+              rawEnrichment.firmographics = bizEnrich;
+            } catch (e: any) {
+              console.warn("Firmographics enrichment failed:", e.message);
+              rawEnrichment.firmographics_error = e.message;
+            }
+
+            // 5b: Technographics (tech stack by category)
+            try {
+              const techEnrich = await enrichBusinessTechnographics(businessId);
+              techData = techEnrich.data || {};
+              rawEnrichment.technographics = techEnrich;
+            } catch (e: any) {
+              console.warn("Technographics enrichment failed:", e.message);
+              rawEnrichment.technographics_error = e.message;
+            }
+
+            // 5c: Funding & Acquisitions
+            try {
+              const fundEnrich = await enrichBusinessFunding(businessId);
+              fundingData = fundEnrich.data || {};
+              rawEnrichment.funding = fundEnrich;
+            } catch (e: any) {
+              console.warn("Funding enrichment failed:", e.message);
+              rawEnrichment.funding_error = e.message;
+            }
           }
-        } catch (e) {
-          console.warn("Business enrichment failed:", e);
+        } catch (e: any) {
+          console.warn("Business match failed:", e.message);
+          rawEnrichment.business_match_error = e.message;
         }
       }
 
@@ -258,15 +388,64 @@ serve(async (req) => {
       const fullName = profile.full_name || profile.name || "";
       const nameParts = fullName.split(" ");
 
-      // Return normalized data
+      // Build tech stack array and categories object
+      const techStack: string[] = [];
+      const techCategories: Record<string, string[]> = {};
+      if (techData.technologies) {
+        // API might return technologies as array or categorized object
+        if (Array.isArray(techData.technologies)) {
+          techStack.push(...techData.technologies);
+        } else if (typeof techData.technologies === "object") {
+          for (const [category, techs] of Object.entries(techData.technologies)) {
+            if (Array.isArray(techs)) {
+              techCategories[category] = techs as string[];
+              techStack.push(...(techs as string[]));
+            }
+          }
+        }
+      }
+      // Also check for category-specific fields like crm_technologies, analytics_technologies, etc.
+      const techCategoryFields = [
+        "crm_technologies", "marketing_automation_technologies", "analytics_technologies",
+        "ecommerce_technologies", "cms_technologies", "email_technologies",
+        "hosting_technologies", "cdn_technologies", "payment_technologies",
+        "advertising_technologies", "customer_support_technologies", "hr_technologies",
+        "accounting_technologies", "project_management_technologies", "security_technologies",
+        "cloud_technologies", "database_technologies", "programming_languages",
+        "frameworks_technologies", "devops_technologies", "collaboration_technologies",
+        "video_conferencing_technologies", "social_media_technologies",
+      ];
+      for (const field of techCategoryFields) {
+        if (techData[field] && Array.isArray(techData[field])) {
+          const categoryName = field.replace("_technologies", "").replace(/_/g, " ");
+          techCategories[categoryName] = techData[field];
+          techStack.push(...techData[field]);
+        }
+      }
+
+      // Build funding information
+      const fundingRounds = fundingData.funding_rounds || fundingData.rounds || [];
+      const investors = fundingData.investors || [];
+      const lastFunding = fundingRounds.length > 0 ? fundingRounds[fundingRounds.length - 1] : null;
+
+      // Build social profiles object
+      const socialProfiles: Record<string, string> = {};
+      if (socialData.twitter || profile.twitter) socialProfiles.twitter = socialData.twitter || profile.twitter;
+      if (socialData.facebook || profile.facebook) socialProfiles.facebook = socialData.facebook || profile.facebook;
+      if (socialData.github || profile.github) socialProfiles.github = socialData.github || profile.github;
+      if (socialData.instagram || profile.instagram) socialProfiles.instagram = socialData.instagram || profile.instagram;
+
+      // Return normalized data with ALL fields
       return {
         // Contact
         first_name: profile.first_name || nameParts[0] || "",
         last_name: profile.last_name || nameParts.slice(1).join(" ") || "",
         email: profile.email || profile.professions_email || profile.professional_email || profile.work_email,
+        email_status: profile.email_status || profile.email_validity,
         personal_email: profile.personal_email,
         phone: profile.phone || profile.work_phone || profile.office_phone,
         mobile_phone: profile.mobile_phone || profile.cell_phone,
+        work_phone: profile.work_phone || profile.direct_phone,
         linkedin_url: params.linkedin || profile.linkedin_url || profile.linkedin,
 
         // Professional
@@ -277,6 +456,7 @@ serve(async (req) => {
         interests: profile.interests || [],
         education: profile.education || [],
         work_history: profile.experience || profile.work_history || [],
+        certifications: profile.certifications || [],
         age_group: profile.age_group,
         gender: profile.gender,
 
@@ -285,7 +465,7 @@ serve(async (req) => {
         location_region: profile.region_name || profile.region || profile.state || profile.location_region,
         location_country: profile.country_name || profile.country || profile.location_country,
 
-        // Company (from profile data first, then fallback to business enrichment)
+        // Company basic info
         company: profile.company_name || companyName,
         company_domain: profile.company_website || companyData.domain || companyDomain,
         company_linkedin: profile.company_linkedin || companyData.linkedin,
@@ -296,9 +476,29 @@ serve(async (req) => {
         company_founded_year: companyData.founded_year || companyData.year_founded,
         company_hq_location: companyData.hq_location || companyData.headquarters,
         company_description: companyData.description || companyData.company_description,
-        company_tech_stack: companyData.technologies || companyData.tech_stack || [],
-        company_funding_total: companyData.total_funding || companyData.funding_total,
-        company_latest_funding: companyData.latest_funding_round || companyData.latest_funding,
+        company_logo_url: companyData.logo_url || companyData.logo,
+
+        // Technology stack (from technographics enrichment)
+        company_tech_stack: [...new Set(techStack)], // Deduplicated array
+        company_tech_categories: techCategories,
+
+        // Funding & growth (from funding enrichment)
+        company_funding_total: fundingData.total_funding || fundingData.funding_total || companyData.total_funding,
+        company_funding_rounds: fundingRounds,
+        company_investors: investors,
+        company_last_funding: lastFunding,
+        company_is_ipo: fundingData.is_ipo || fundingData.is_public || false,
+        company_ticker: fundingData.ticker || fundingData.stock_symbol,
+
+        // Social media presence
+        social_profiles: socialProfiles,
+        social_activity: socialData.activity || {},
+
+        // Intent signals (if available)
+        intent_topics: profile.intent_topics || companyData.intent_topics || [],
+
+        // Full raw enrichment data for flexible display
+        enrichment_data: rawEnrichment,
 
         // Metadata
         enriched_at: new Date().toISOString(),

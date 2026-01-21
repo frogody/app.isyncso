@@ -129,35 +129,90 @@ export function QuickAddContactModal({ isOpen, onClose, onSuccess, targetTable =
 
         if (insertError) throw insertError;
       } else if (targetTable === 'prospects') {
-        // Use only columns that definitely exist in prospects table
+        // Save ALL enrichment data to prospects table (columns added in 20260121010000_full_enrichment_columns.sql)
         const { error: insertError } = await supabase.from('prospects').insert({
+          // Required org/owner fields
           organization_id: user.organization_id || user.company_id,
           owner_id: user.id,
+
           // Basic contact info
           first_name: enrichedData.first_name,
           last_name: enrichedData.last_name,
           email: enrichedData.email,
           phone: enrichedData.phone || enrichedData.mobile_phone,
+          mobile_phone: enrichedData.mobile_phone,
+          work_phone: enrichedData.work_phone,
+          personal_email: enrichedData.personal_email,
+          email_status: enrichedData.email_status,
           linkedin_url: enrichedData.linkedin_url,
-          // Location - combine into single field
+
+          // Location fields
           location: [enrichedData.location_city, enrichedData.location_region, enrichedData.location_country].filter(Boolean).join(', '),
+          location_city: enrichedData.location_city,
+          location_region: enrichedData.location_region,
+          location_country: enrichedData.location_country,
+
           // Professional info
           company: enrichedData.company,
           job_title: enrichedData.job_title,
+          job_department: enrichedData.job_department,
+          job_seniority_level: enrichedData.job_seniority_level,
+          age_group: enrichedData.age_group,
+          gender: enrichedData.gender,
+
+          // Skills, education, work history as JSONB
+          skills: enrichedData.skills || [],
+          interests: enrichedData.interests || [],
+          education: enrichedData.education || [],
+          work_history: enrichedData.work_history || [],
+          certifications: enrichedData.certifications || [],
+
           // Company info
           industry: enrichedData.company_industry,
           company_size: enrichedData.company_size,
           website: enrichedData.company_domain ? `https://${enrichedData.company_domain}` : null,
+          company_domain: enrichedData.company_domain,
+          company_linkedin: enrichedData.company_linkedin,
+          company_industry: enrichedData.company_industry,
+          company_employee_count: enrichedData.company_employee_count,
+          company_revenue: enrichedData.company_revenue,
+          company_founded_year: enrichedData.company_founded_year,
+          company_hq_location: enrichedData.company_hq_location,
+          company_description: enrichedData.company_description,
+          company_logo_url: enrichedData.company_logo_url,
+
+          // Technology stack
+          company_tech_stack: enrichedData.company_tech_stack || [],
+          company_tech_categories: enrichedData.company_tech_categories || {},
+
+          // Funding & growth
+          company_funding_total: enrichedData.company_funding_total,
+          company_funding_rounds: enrichedData.company_funding_rounds || [],
+          company_investors: enrichedData.company_investors || [],
+          company_last_funding: enrichedData.company_last_funding,
+          company_is_ipo: enrichedData.company_is_ipo || false,
+          company_ticker: enrichedData.company_ticker,
+
+          // Social media
+          social_profiles: enrichedData.social_profiles || {},
+          social_activity: enrichedData.social_activity || {},
+
+          // Intent signals
+          intent_topics: enrichedData.intent_topics || [],
+
+          // Full raw enrichment blob
+          enrichment_data: enrichedData.enrichment_data || {},
+
+          // Enrichment tracking
+          enriched_at: enrichedData.enriched_at,
+          enrichment_source: enrichedData.enrichment_source,
+          explorium_prospect_id: enrichedData.explorium_prospect_id,
+          explorium_business_id: enrichedData.explorium_business_id,
+
           // CRM fields
           stage: 'New Lead',
           source: isLinkedIn ? 'LinkedIn' : 'Email',
           contact_type: 'lead',
-          notes: [
-            enrichedData.job_department ? `Department: ${enrichedData.job_department}` : null,
-            enrichedData.job_seniority_level ? `Seniority: ${enrichedData.job_seniority_level}` : null,
-            enrichedData.skills?.length ? `Skills: ${enrichedData.skills.slice(0, 10).join(', ')}` : null,
-            enrichedData.company_description ? `Company: ${enrichedData.company_description.slice(0, 200)}` : null,
-          ].filter(Boolean).join('\n'),
         });
 
         if (insertError) throw insertError;
