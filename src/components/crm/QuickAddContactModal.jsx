@@ -131,6 +131,7 @@ export function QuickAddContactModal({ isOpen, onClose, onSuccess, targetTable =
       } else if (targetTable === 'prospects') {
         // Use only columns that definitely exist in prospects table
         const { error: insertError } = await supabase.from('prospects').insert({
+          organization_id: user.organization_id || user.company_id,
           owner_id: user.id,
           // Basic contact info
           first_name: enrichedData.first_name,
