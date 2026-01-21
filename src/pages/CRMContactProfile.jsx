@@ -82,27 +82,27 @@ const itemVariants = {
   },
 };
 
-// Stat Card Component
+// Stat Card Component - Responsive sizing
 const StatCard = ({ label, value, icon: Icon, color = 'cyan', subtext, trend }) => (
-  <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5 hover:bg-white/[0.05] transition-colors group">
-    <div className="flex items-start justify-between mb-3">
-      <div className={`p-2.5 rounded-xl bg-${color}-500/10`}>
-        <Icon className={`w-5 h-5 text-${color}-400`} />
+  <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl sm:rounded-2xl p-3 sm:p-5 hover:bg-white/[0.05] transition-colors group">
+    <div className="flex items-start justify-between mb-2 sm:mb-3">
+      <div className={`p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-${color}-500/10`}>
+        <Icon className={`w-4 h-4 sm:w-5 sm:h-5 text-${color}-400`} />
       </div>
       {trend && (
-        <div className={`flex items-center gap-1 text-xs ${trend > 0 ? 'text-green-400' : 'text-red-400'}`}>
+        <div className={`flex items-center gap-1 text-[10px] sm:text-xs ${trend > 0 ? 'text-green-400' : 'text-red-400'}`}>
           {trend > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
           {Math.abs(trend)}%
         </div>
       )}
     </div>
-    <p className="text-2xl font-bold text-white mb-1 group-hover:text-cyan-400 transition-colors">{value || '-'}</p>
-    <p className="text-sm text-white/50">{label}</p>
-    {subtext && <p className="text-xs text-white/30 mt-1">{subtext}</p>}
+    <p className="text-xl sm:text-2xl font-bold text-white mb-0.5 sm:mb-1 group-hover:text-cyan-400 transition-colors">{value || '-'}</p>
+    <p className="text-xs sm:text-sm text-white/50">{label}</p>
+    {subtext && <p className="text-[10px] sm:text-xs text-white/30 mt-0.5 sm:mt-1">{subtext}</p>}
   </div>
 );
 
-// Info Row Component
+// Info Row Component - Touch-friendly
 const InfoRow = ({ icon: Icon, label, value, link, copyable }) => {
   if (!value) return null;
 
@@ -112,46 +112,47 @@ const InfoRow = ({ icon: Icon, label, value, link, copyable }) => {
   };
 
   return (
-    <div className="flex items-center gap-3 py-3 border-b border-white/[0.04] last:border-0 group">
-      <div className="p-2 rounded-lg bg-white/[0.04]">
-        <Icon className="w-4 h-4 text-white/40" />
+    <div className="flex items-center gap-2 sm:gap-3 py-2.5 sm:py-3 border-b border-white/[0.04] last:border-0 group">
+      <div className="p-1.5 sm:p-2 rounded-lg bg-white/[0.04] flex-shrink-0">
+        <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/40" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-xs text-white/40">{label}</p>
+        <p className="text-[10px] sm:text-xs text-white/40">{label}</p>
         {link ? (
           <a
             href={link}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm text-cyan-400 hover:text-cyan-300 truncate flex items-center gap-1"
+            className="text-xs sm:text-sm text-cyan-400 hover:text-cyan-300 truncate flex items-center gap-1 active:scale-[0.98]"
           >
-            {value} <ExternalLink className="w-3 h-3" />
+            <span className="truncate">{value}</span>
+            <ExternalLink className="w-3 h-3 flex-shrink-0" />
           </a>
         ) : (
-          <p className="text-sm text-white truncate">{value}</p>
+          <p className="text-xs sm:text-sm text-white truncate">{value}</p>
         )}
       </div>
       {copyable && (
         <button
           onClick={handleCopy}
-          className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-white/[0.06] transition-all"
+          className="p-2 sm:p-1.5 rounded-lg sm:opacity-0 sm:group-hover:opacity-100 hover:bg-white/[0.06] active:bg-white/[0.1] transition-all flex-shrink-0"
         >
-          <Copy className="w-3.5 h-3.5 text-white/40 hover:text-white" />
+          <Copy className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-white/40 hover:text-white" />
         </button>
       )}
     </div>
   );
 };
 
-// Section Card Component
+// Section Card Component - Responsive padding
 const SectionCard = ({ icon: Icon, title, children, action, className = '' }) => (
-  <div className={`bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6 ${className}`}>
-    <div className="flex items-center justify-between mb-4">
-      <div className="flex items-center gap-3">
-        <div className="p-2.5 rounded-xl bg-cyan-500/10">
-          <Icon className="w-5 h-5 text-cyan-400" />
+  <div className={`bg-white/[0.03] border border-white/[0.06] rounded-xl sm:rounded-2xl p-4 sm:p-6 ${className}`}>
+    <div className="flex items-center justify-between mb-3 sm:mb-4 gap-2">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        <div className="p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-cyan-500/10 flex-shrink-0">
+          <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
         </div>
-        <h3 className="text-base font-semibold text-white">{title}</h3>
+        <h3 className="text-sm sm:text-base font-semibold text-white truncate">{title}</h3>
       </div>
       {action}
     </div>
@@ -481,167 +482,169 @@ export default function CRMContactProfile() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="w-full px-6 lg:px-8 py-6 space-y-6"
+        className="w-full px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6"
       >
         {/* Back Navigation */}
         <motion.div variants={itemVariants}>
           <Link
             to={createPageUrl('CRMContacts')}
-            className="inline-flex items-center gap-2 text-white/50 hover:text-white transition-colors"
+            className="inline-flex items-center gap-2 text-white/50 hover:text-white transition-colors min-h-[44px] active:scale-[0.98]"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Contacts
+            <span className="text-sm sm:text-base">Back to Contacts</span>
           </Link>
         </motion.div>
 
         {/* Hero Section */}
         <motion.div
           variants={itemVariants}
-          className="bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-white/[0.06] rounded-3xl p-8"
+          className="bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-white/[0.06] rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8"
         >
-          <div className="flex flex-col lg:flex-row lg:items-center gap-6">
+          <div className="flex flex-col lg:flex-row lg:items-start gap-4 sm:gap-6">
             {/* Avatar & Basic Info */}
-            <div className="flex items-center gap-5 flex-1">
-              <div className="relative">
-                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center text-3xl font-bold text-white shadow-lg shadow-cyan-500/20">
+            <div className="flex items-start gap-4 sm:gap-5 flex-1">
+              <div className="relative flex-shrink-0">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 rounded-xl sm:rounded-2xl bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center text-xl sm:text-2xl lg:text-3xl font-bold text-white shadow-lg shadow-cyan-500/20">
                   {initials}
                 </div>
                 {contact.enriched_at && (
-                  <div className="absolute -bottom-1 -right-1 p-1.5 bg-green-500 rounded-full border-2 border-black">
-                    <Sparkles className="w-3 h-3 text-white" />
+                  <div className="absolute -bottom-1 -right-1 p-1 sm:p-1.5 bg-green-500 rounded-full border-2 border-black">
+                    <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
                   </div>
                 )}
               </div>
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <h1 className="text-2xl font-bold text-white">{fullName}</h1>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
+                  <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-white truncate">{fullName}</h1>
                   {contact.email_status && <EmailStatusBadge status={contact.email_status} />}
                 </div>
-                <p className="text-white/60 text-lg mb-3">{contact.job_title || 'No title'}</p>
-                <div className="flex flex-wrap items-center gap-3">
+                <p className="text-white/60 text-sm sm:text-base lg:text-lg mb-2 sm:mb-3 truncate">{contact.job_title || 'No title'}</p>
+                <div className="flex flex-wrap items-center gap-2">
                   {contact.company && (
-                    <Badge className="bg-white/10 text-white/70 border-white/10">
+                    <Badge className="bg-white/10 text-white/70 border-white/10 text-xs sm:text-sm">
                       <Building className="w-3 h-3 mr-1" />
-                      {contact.company}
+                      <span className="truncate max-w-[120px] sm:max-w-none">{contact.company}</span>
                     </Badge>
                   )}
                   {contact.location && (
-                    <Badge className="bg-white/10 text-white/70 border-white/10">
+                    <Badge className="bg-white/10 text-white/70 border-white/10 text-xs sm:text-sm hidden sm:flex">
                       <MapPin className="w-3 h-3 mr-1" />
                       {contact.location}
                     </Badge>
                   )}
                   {contact.stage && (
-                    <Badge className={stageBadgeColor[contact.stage] || 'bg-white/10 text-white/70'}>
+                    <Badge className={`text-xs sm:text-sm ${stageBadgeColor[contact.stage] || 'bg-white/10 text-white/70'}`}>
                       {contact.stage}
                     </Badge>
                   )}
                   {contact.company_is_ipo && (
-                    <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                    <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs sm:text-sm hidden md:flex">
                       <TrendingUp className="w-3 h-3 mr-1" />
-                      Public Company
+                      Public
                     </Badge>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex items-center gap-3">
+            {/* Actions - Stack on mobile */}
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
               <Button
                 variant="outline"
                 onClick={handleReEnrich}
                 disabled={reEnriching}
-                className="border-zinc-700 text-white hover:bg-zinc-800"
+                className="border-zinc-700 text-white hover:bg-zinc-800 h-10 sm:h-10 flex-1 sm:flex-none text-sm"
               >
                 {reEnriching ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="w-4 h-4 sm:mr-2 animate-spin" />
                 ) : (
-                  <RefreshCw className="w-4 h-4 mr-2" />
+                  <RefreshCw className="w-4 h-4 sm:mr-2" />
                 )}
-                Re-enrich
+                <span className="hidden sm:inline">Re-enrich</span>
               </Button>
-              <Button variant="outline" className="border-zinc-700 text-white hover:bg-zinc-800">
-                <MessageSquare className="w-4 h-4 mr-2" />
-                Message
+              <Button variant="outline" className="border-zinc-700 text-white hover:bg-zinc-800 h-10 sm:h-10 flex-1 sm:flex-none text-sm">
+                <MessageSquare className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Message</span>
               </Button>
-              <Button className="bg-cyan-600 hover:bg-cyan-700">
-                <Mail className="w-4 h-4 mr-2" />
-                Send Email
+              <Button className="bg-cyan-600 hover:bg-cyan-700 h-10 sm:h-10 flex-1 sm:flex-none text-sm">
+                <Mail className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Send Email</span>
               </Button>
             </div>
           </div>
 
-          {/* Quick Stats Bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 gap-4 mt-8 pt-8 border-t border-white/[0.06]">
-            <div className="text-center">
-              <p className="text-sm text-white/40 mb-1">Contact Type</p>
-              <p className="text-lg font-semibold text-white capitalize">
-                {contact.contact_type || 'Lead'}
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-white/40 mb-1">Source</p>
-              <p className="text-lg font-semibold text-white">{contact.source || '-'}</p>
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-white/40 mb-1">Deal Value</p>
-              <p className="text-lg font-semibold text-white">
-                {contact.deal_value ? `$${Number(contact.deal_value).toLocaleString()}` : '-'}
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-white/40 mb-1">Seniority</p>
-              <p className="text-lg font-semibold text-white capitalize">
-                {contact.job_seniority_level || '-'}
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-white/40 mb-1">Department</p>
-              <p className="text-lg font-semibold text-white capitalize">
-                {contact.job_department || '-'}
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-white/40 mb-1">Gender</p>
-              <p className="text-lg font-semibold text-white capitalize">
-                {contact.gender || '-'}
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-white/40 mb-1">Age Group</p>
-              <p className="text-lg font-semibold text-white capitalize">
-                {contact.age_group || '-'}
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-white/40 mb-1">Enriched</p>
-              <p className="text-lg font-semibold text-white">{formatDate(contact.enriched_at)}</p>
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-white/40 mb-1">Added</p>
-              <p className="text-lg font-semibold text-white">{formatDate(contact.created_date)}</p>
+          {/* Quick Stats Bar - Horizontal scroll on mobile */}
+          <div className="mt-6 sm:mt-8 pt-4 sm:pt-8 border-t border-white/[0.06]">
+            <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:overflow-visible scrollbar-hide sm:grid sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9">
+              <div className="text-center min-w-[80px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
+                <p className="text-xs sm:text-sm text-white/40 mb-0.5 sm:mb-1">Contact Type</p>
+                <p className="text-sm sm:text-base lg:text-lg font-semibold text-white capitalize whitespace-nowrap">
+                  {contact.contact_type || 'Lead'}
+                </p>
+              </div>
+              <div className="text-center min-w-[80px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
+                <p className="text-xs sm:text-sm text-white/40 mb-0.5 sm:mb-1">Source</p>
+                <p className="text-sm sm:text-base lg:text-lg font-semibold text-white whitespace-nowrap">{contact.source || '-'}</p>
+              </div>
+              <div className="text-center min-w-[80px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
+                <p className="text-xs sm:text-sm text-white/40 mb-0.5 sm:mb-1">Deal Value</p>
+                <p className="text-sm sm:text-base lg:text-lg font-semibold text-white whitespace-nowrap">
+                  {contact.deal_value ? `$${Number(contact.deal_value).toLocaleString()}` : '-'}
+                </p>
+              </div>
+              <div className="text-center min-w-[80px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
+                <p className="text-xs sm:text-sm text-white/40 mb-0.5 sm:mb-1">Seniority</p>
+                <p className="text-sm sm:text-base lg:text-lg font-semibold text-white capitalize whitespace-nowrap">
+                  {contact.job_seniority_level || '-'}
+                </p>
+              </div>
+              <div className="text-center min-w-[80px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
+                <p className="text-xs sm:text-sm text-white/40 mb-0.5 sm:mb-1">Department</p>
+                <p className="text-sm sm:text-base lg:text-lg font-semibold text-white capitalize whitespace-nowrap">
+                  {contact.job_department || '-'}
+                </p>
+              </div>
+              <div className="text-center min-w-[80px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
+                <p className="text-xs sm:text-sm text-white/40 mb-0.5 sm:mb-1">Gender</p>
+                <p className="text-sm sm:text-base lg:text-lg font-semibold text-white capitalize whitespace-nowrap">
+                  {contact.gender || '-'}
+                </p>
+              </div>
+              <div className="text-center min-w-[80px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
+                <p className="text-xs sm:text-sm text-white/40 mb-0.5 sm:mb-1">Age Group</p>
+                <p className="text-sm sm:text-base lg:text-lg font-semibold text-white capitalize whitespace-nowrap">
+                  {contact.age_group || '-'}
+                </p>
+              </div>
+              <div className="text-center min-w-[80px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
+                <p className="text-xs sm:text-sm text-white/40 mb-0.5 sm:mb-1">Enriched</p>
+                <p className="text-sm sm:text-base lg:text-lg font-semibold text-white whitespace-nowrap">{formatDate(contact.enriched_at)}</p>
+              </div>
+              <div className="text-center min-w-[80px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
+                <p className="text-xs sm:text-sm text-white/40 mb-0.5 sm:mb-1">Added</p>
+                <p className="text-sm sm:text-base lg:text-lg font-semibold text-white whitespace-nowrap">{formatDate(contact.created_date)}</p>
+              </div>
             </div>
           </div>
         </motion.div>
 
-        {/* Tab Navigation */}
-        <motion.div variants={itemVariants}>
-          <div className="flex gap-1 p-1 bg-white/[0.03] border border-white/[0.06] rounded-2xl overflow-x-auto">
+        {/* Tab Navigation - Scrollable on mobile */}
+        <motion.div variants={itemVariants} className="-mx-3 px-3 sm:mx-0 sm:px-0">
+          <div className="flex gap-1 p-1 bg-white/[0.03] border border-white/[0.06] rounded-xl sm:rounded-2xl overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => {
               const IconComponent = tab.icon;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex-1 min-w-[120px] px-4 py-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                  className={`flex-shrink-0 sm:flex-1 min-w-[90px] sm:min-w-[100px] px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all flex items-center justify-center gap-1.5 sm:gap-2 active:scale-[0.98] ${
                     activeTab === tab.id
                       ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/20'
-                      : 'text-white/50 hover:text-white hover:bg-white/[0.04]'
+                      : 'text-white/50 hover:text-white hover:bg-white/[0.04] active:bg-white/[0.08]'
                   }`}
                 >
-                  <IconComponent className="w-4 h-4" />
-                  {tab.label}
+                  <IconComponent className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="whitespace-nowrap">{tab.label}</span>
                 </button>
               );
             })}
@@ -657,12 +660,12 @@ export default function CRMContactProfile() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+              className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6"
             >
               {/* Contact Information */}
-              <div className="lg:col-span-2 space-y-6">
+              <div className="lg:col-span-2 space-y-4 sm:space-y-6">
                 <SectionCard icon={User} title="Contact Information">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 sm:gap-x-8">
                     <div>
                       <InfoRow
                         icon={Mail}

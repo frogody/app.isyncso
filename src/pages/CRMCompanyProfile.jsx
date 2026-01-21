@@ -57,40 +57,41 @@ const itemVariants = {
   },
 };
 
-// Reusable components
+// Reusable components - Mobile responsive
 const StatCard = ({ label, value, icon: Icon, color = 'cyan', subtext }) => (
-  <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5 hover:bg-white/[0.05] transition-colors">
-    <div className="flex items-start justify-between mb-3">
-      <div className={`p-2.5 rounded-xl bg-${color}-500/10`}>
-        <Icon className={`w-5 h-5 text-${color}-400`} />
+  <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl sm:rounded-2xl p-3 sm:p-5 hover:bg-white/[0.05] transition-colors">
+    <div className="flex items-start justify-between mb-2 sm:mb-3">
+      <div className={`p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-${color}-500/10`}>
+        <Icon className={`w-4 h-4 sm:w-5 sm:h-5 text-${color}-400`} />
       </div>
     </div>
-    <p className="text-2xl font-bold text-white mb-1">{value || '-'}</p>
-    <p className="text-sm text-white/50">{label}</p>
-    {subtext && <p className="text-xs text-white/30 mt-1">{subtext}</p>}
+    <p className="text-xl sm:text-2xl font-bold text-white mb-0.5 sm:mb-1">{value || '-'}</p>
+    <p className="text-xs sm:text-sm text-white/50">{label}</p>
+    {subtext && <p className="text-[10px] sm:text-xs text-white/30 mt-0.5 sm:mt-1">{subtext}</p>}
   </div>
 );
 
 const InfoRow = ({ icon: Icon, label, value, link }) => {
   if (!value) return null;
   return (
-    <div className="flex items-center gap-3 py-3 border-b border-white/[0.04] last:border-0">
-      <div className="p-2 rounded-lg bg-white/[0.04]">
-        <Icon className="w-4 h-4 text-white/40" />
+    <div className="flex items-center gap-2 sm:gap-3 py-2.5 sm:py-3 border-b border-white/[0.04] last:border-0">
+      <div className="p-1.5 sm:p-2 rounded-lg bg-white/[0.04] flex-shrink-0">
+        <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/40" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-xs text-white/40">{label}</p>
+        <p className="text-[10px] sm:text-xs text-white/40">{label}</p>
         {link ? (
           <a
             href={link}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm text-cyan-400 hover:text-cyan-300 truncate flex items-center gap-1"
+            className="text-xs sm:text-sm text-cyan-400 hover:text-cyan-300 truncate flex items-center gap-1 active:scale-[0.98]"
           >
-            {value} <ExternalLink className="w-3 h-3" />
+            <span className="truncate">{value}</span>
+            <ExternalLink className="w-3 h-3 flex-shrink-0" />
           </a>
         ) : (
-          <p className="text-sm text-white truncate">{value}</p>
+          <p className="text-xs sm:text-sm text-white truncate">{value}</p>
         )}
       </div>
     </div>
@@ -98,13 +99,13 @@ const InfoRow = ({ icon: Icon, label, value, link }) => {
 };
 
 const SectionCard = ({ icon: Icon, title, children, action }) => (
-  <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6">
-    <div className="flex items-center justify-between mb-4">
-      <div className="flex items-center gap-3">
-        <div className="p-2.5 rounded-xl bg-cyan-500/10">
-          <Icon className="w-5 h-5 text-cyan-400" />
+  <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl sm:rounded-2xl p-4 sm:p-6">
+    <div className="flex items-center justify-between mb-3 sm:mb-4 gap-2">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        <div className="p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-cyan-500/10 flex-shrink-0">
+          <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
         </div>
-        <h3 className="text-base font-semibold text-white">{title}</h3>
+        <h3 className="text-sm sm:text-base font-semibold text-white truncate">{title}</h3>
       </div>
       {action}
     </div>
@@ -144,21 +145,21 @@ const ContactCard = ({ contact, onClick }) => {
   return (
     <div
       onClick={onClick}
-      className="flex items-center gap-4 p-4 bg-white/[0.02] rounded-xl border border-white/[0.04] hover:bg-white/[0.05] hover:border-cyan-500/30 transition-all cursor-pointer group"
+      className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white/[0.02] rounded-xl border border-white/[0.04] hover:bg-white/[0.05] hover:border-cyan-500/30 active:bg-white/[0.08] transition-all cursor-pointer group"
     >
-      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/20 flex items-center justify-center text-lg font-semibold text-cyan-400 border border-cyan-500/30">
+      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/20 flex items-center justify-center text-sm sm:text-lg font-semibold text-cyan-400 border border-cyan-500/30 flex-shrink-0">
         {initials}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-medium text-white truncate">{fullName}</p>
-        <p className="text-sm text-white/60 truncate">{contact.job_title || 'No title'}</p>
+        <p className="font-medium text-white truncate text-sm sm:text-base">{fullName}</p>
+        <p className="text-xs sm:text-sm text-white/60 truncate">{contact.job_title || 'No title'}</p>
         {contact.email && (
-          <p className="text-xs text-white/40 truncate">{contact.email}</p>
+          <p className="text-[10px] sm:text-xs text-white/40 truncate">{contact.email}</p>
         )}
       </div>
-      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex items-center gap-1.5 sm:gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
         <Badge
-          className={`text-xs ${
+          className={`text-[10px] sm:text-xs ${
             contact.stage === 'Won'
               ? 'bg-green-500/20 text-green-400'
               : contact.stage === 'Lost'
@@ -168,7 +169,7 @@ const ContactCard = ({ contact, onClick }) => {
         >
           {contact.stage || 'New'}
         </Badge>
-        <ChevronRight className="w-4 h-4 text-white/40" />
+        <ChevronRight className="w-4 h-4 text-white/40 hidden sm:block" />
       </div>
     </div>
   );
@@ -309,61 +310,61 @@ export default function CRMCompanyProfile() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="w-full px-6 lg:px-8 py-6 space-y-6"
+        className="w-full px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6"
       >
         {/* Back Navigation */}
         <motion.div variants={itemVariants}>
           <Link
             to={createPageUrl('CRMContacts')}
-            className="inline-flex items-center gap-2 text-white/50 hover:text-white transition-colors"
+            className="inline-flex items-center gap-2 text-white/50 hover:text-white transition-colors min-h-[44px] active:scale-[0.98]"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to CRM
+            <span className="text-sm sm:text-base">Back to CRM</span>
           </Link>
         </motion.div>
 
         {/* Hero Section */}
         <motion.div
           variants={itemVariants}
-          className="bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-white/[0.06] rounded-3xl p-8"
+          className="bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-white/[0.06] rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8"
         >
-          <div className="flex flex-col lg:flex-row lg:items-center gap-6">
+          <div className="flex flex-col lg:flex-row lg:items-start gap-4 sm:gap-6">
             {/* Logo & Basic Info */}
-            <div className="flex items-center gap-5 flex-1">
-              <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+            <div className="flex items-start gap-4 sm:gap-5 flex-1">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 rounded-xl sm:rounded-2xl bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 flex-shrink-0">
                 {company.logo_url ? (
                   <img
                     src={company.logo_url}
                     alt={company.name}
-                    className="w-full h-full object-cover rounded-2xl"
+                    className="w-full h-full object-cover rounded-xl sm:rounded-2xl"
                   />
                 ) : (
-                  <Building2 className="w-12 h-12 text-white" />
+                  <Building2 className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 text-white" />
                 )}
               </div>
-              <div>
-                <h1 className="text-2xl font-bold text-white mb-1">{company.name}</h1>
-                <p className="text-white/60 text-lg mb-3">{company.industry || 'No industry'}</p>
-                <div className="flex flex-wrap items-center gap-3">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-white mb-1 truncate">{company.name}</h1>
+                <p className="text-white/60 text-sm sm:text-base lg:text-lg mb-2 sm:mb-3">{company.industry || 'No industry'}</p>
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                   {company.domain && (
                     <a
                       href={`https://${company.domain}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-cyan-400 hover:text-cyan-300"
+                      className="inline-flex items-center gap-1 text-cyan-400 hover:text-cyan-300 text-sm active:scale-[0.98]"
                     >
-                      <Globe className="w-4 h-4" />
-                      {company.domain}
+                      <Globe className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <span className="truncate max-w-[150px] sm:max-w-none">{company.domain}</span>
                     </a>
                   )}
                   {company.hq_location && (
-                    <Badge className="bg-white/10 text-white/70 border-white/10">
+                    <Badge className="bg-white/10 text-white/70 border-white/10 text-xs sm:text-sm hidden sm:flex">
                       <MapPin className="w-3 h-3 mr-1" />
                       {company.hq_location}
                     </Badge>
                   )}
                   {company.stage && (
-                    <Badge className={stageBadgeColor[company.stage] || 'bg-white/10 text-white/70'}>
+                    <Badge className={`text-xs sm:text-sm ${stageBadgeColor[company.stage] || 'bg-white/10 text-white/70'}`}>
                       {company.stage}
                     </Badge>
                   )}
@@ -372,13 +373,13 @@ export default function CRMCompanyProfile() {
             </div>
 
             {/* Social Links */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               {company.linkedin_url && (
                 <a
                   href={company.linkedin_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] transition-colors"
+                  className="p-2.5 sm:p-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] active:bg-white/[0.12] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                 >
                   <Linkedin className="w-5 h-5 text-white/60" />
                 </a>
@@ -388,7 +389,7 @@ export default function CRMCompanyProfile() {
                   href={company.twitter_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] transition-colors"
+                  className="p-2.5 sm:p-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] active:bg-white/[0.12] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                 >
                   <Twitter className="w-5 h-5 text-white/60" />
                 </a>
@@ -398,7 +399,7 @@ export default function CRMCompanyProfile() {
                   href={company.facebook_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] transition-colors"
+                  className="p-2.5 sm:p-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] active:bg-white/[0.12] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                 >
                   <Facebook className="w-5 h-5 text-white/60" />
                 </a>
@@ -406,47 +407,49 @@ export default function CRMCompanyProfile() {
             </div>
           </div>
 
-          {/* Quick Stats Bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4 mt-8 pt-8 border-t border-white/[0.06]">
-            <div className="text-center">
-              <p className="text-sm text-white/40 mb-1">Employees</p>
-              <p className="text-lg font-semibold text-white">
-                {company.employee_count?.toLocaleString() || company.company_size || '-'}
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-white/40 mb-1">Revenue</p>
-              <p className="text-lg font-semibold text-white">{company.annual_revenue || company.revenue_range || '-'}</p>
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-white/40 mb-1">Founded</p>
-              <p className="text-lg font-semibold text-white">{company.founded_year || '-'}</p>
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-white/40 mb-1">Funding</p>
-              <p className="text-lg font-semibold text-white">{company.funding_total || '-'}</p>
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-white/40 mb-1">Contacts</p>
-              <p className="text-lg font-semibold text-white">{contactStats.total}</p>
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-white/40 mb-1">Deal Value</p>
-              <p className="text-lg font-semibold text-white">
-                {contactStats.totalValue ? `$${contactStats.totalValue.toLocaleString()}` : '-'}
-              </p>
+          {/* Quick Stats Bar - Scrollable on mobile */}
+          <div className="mt-6 sm:mt-8 pt-4 sm:pt-8 border-t border-white/[0.06]">
+            <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:overflow-visible scrollbar-hide sm:grid sm:grid-cols-3 md:grid-cols-6">
+              <div className="text-center min-w-[80px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
+                <p className="text-xs sm:text-sm text-white/40 mb-0.5 sm:mb-1">Employees</p>
+                <p className="text-sm sm:text-base lg:text-lg font-semibold text-white whitespace-nowrap">
+                  {company.employee_count?.toLocaleString() || company.company_size || '-'}
+                </p>
+              </div>
+              <div className="text-center min-w-[80px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
+                <p className="text-xs sm:text-sm text-white/40 mb-0.5 sm:mb-1">Revenue</p>
+                <p className="text-sm sm:text-base lg:text-lg font-semibold text-white whitespace-nowrap">{company.annual_revenue || company.revenue_range || '-'}</p>
+              </div>
+              <div className="text-center min-w-[80px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
+                <p className="text-xs sm:text-sm text-white/40 mb-0.5 sm:mb-1">Founded</p>
+                <p className="text-sm sm:text-base lg:text-lg font-semibold text-white whitespace-nowrap">{company.founded_year || '-'}</p>
+              </div>
+              <div className="text-center min-w-[80px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
+                <p className="text-xs sm:text-sm text-white/40 mb-0.5 sm:mb-1">Funding</p>
+                <p className="text-sm sm:text-base lg:text-lg font-semibold text-white whitespace-nowrap">{company.funding_total || '-'}</p>
+              </div>
+              <div className="text-center min-w-[80px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
+                <p className="text-xs sm:text-sm text-white/40 mb-0.5 sm:mb-1">Contacts</p>
+                <p className="text-sm sm:text-base lg:text-lg font-semibold text-white whitespace-nowrap">{contactStats.total}</p>
+              </div>
+              <div className="text-center min-w-[80px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
+                <p className="text-xs sm:text-sm text-white/40 mb-0.5 sm:mb-1">Deal Value</p>
+                <p className="text-sm sm:text-base lg:text-lg font-semibold text-white whitespace-nowrap">
+                  {contactStats.totalValue ? `$${contactStats.totalValue.toLocaleString()}` : '-'}
+                </p>
+              </div>
             </div>
           </div>
         </motion.div>
 
-        {/* Tab Navigation */}
-        <motion.div variants={itemVariants}>
-          <div className="flex gap-1 p-1 bg-white/[0.03] border border-white/[0.06] rounded-2xl">
+        {/* Tab Navigation - Scrollable on mobile */}
+        <motion.div variants={itemVariants} className="-mx-3 px-3 sm:mx-0 sm:px-0">
+          <div className="flex gap-1 p-1 bg-white/[0.03] border border-white/[0.06] rounded-xl sm:rounded-2xl overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 px-6 py-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                className={`flex-1 min-w-[90px] px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all flex items-center justify-center gap-2 active:scale-[0.98] ${
                   activeTab === tab.id
                     ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/20'
                     : 'text-white/50 hover:text-white hover:bg-white/[0.04]'

@@ -324,7 +324,7 @@ function PipelineColumn({ stage, contacts, onAddContact, onEdit, onDelete }) {
   const totalValue = contacts.reduce((sum, c) => sum + (parseFloat(c.deal_value) || 0), 0);
 
   return (
-    <div className="flex-shrink-0 w-72">
+    <div className="flex-shrink-0 w-[280px] sm:w-72 snap-start">
       {/* Column Header */}
       <div className="mb-3 px-1">
         <div className="flex items-center justify-between mb-1">
@@ -642,63 +642,63 @@ function CRMAnalytics({ contacts }) {
   }, [contacts]);
 
   return (
-    <div className="space-y-6 mb-8">
-      {/* Quick Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-4">
-          <div className="flex items-center justify-between mb-2">
-            <Users className="w-5 h-5 text-cyan-400/70" />
+    <div className="space-y-4 sm:space-y-6 mb-6 sm:mb-8">
+      {/* Quick Stats - 2x2 grid on mobile, 4 cols on desktop */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl sm:rounded-2xl p-3 sm:p-4">
+          <div className="flex items-center justify-between mb-1 sm:mb-2">
+            <Users className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400/70" />
           </div>
-          <div className="text-2xl font-bold text-white">{stats.totalContacts}</div>
-          <div className="text-xs text-zinc-500">Total Contacts</div>
+          <div className="text-xl sm:text-2xl font-bold text-white">{stats.totalContacts}</div>
+          <div className="text-[10px] sm:text-xs text-zinc-500">Total Contacts</div>
         </div>
 
-        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-4">
-          <div className="flex items-center justify-between mb-2">
-            <DollarSign className="w-5 h-5 text-cyan-400/70" />
+        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl sm:rounded-2xl p-3 sm:p-4">
+          <div className="flex items-center justify-between mb-1 sm:mb-2">
+            <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400/70" />
           </div>
-          <div className="text-2xl font-bold text-white">${(stats.totalValue / 1000).toFixed(0)}k</div>
-          <div className="text-xs text-zinc-500">Pipeline Value</div>
+          <div className="text-xl sm:text-2xl font-bold text-white">${(stats.totalValue / 1000).toFixed(0)}k</div>
+          <div className="text-[10px] sm:text-xs text-zinc-500">Pipeline Value</div>
         </div>
 
-        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-4">
-          <div className="flex items-center justify-between mb-2">
-            <Target className="w-5 h-5 text-cyan-400/70" />
+        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl sm:rounded-2xl p-3 sm:p-4">
+          <div className="flex items-center justify-between mb-1 sm:mb-2">
+            <Target className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400/70" />
           </div>
-          <div className="text-2xl font-bold text-white">{stats.conversionRate}%</div>
-          <div className="text-xs text-zinc-500">Win Rate</div>
+          <div className="text-xl sm:text-2xl font-bold text-white">{stats.conversionRate}%</div>
+          <div className="text-[10px] sm:text-xs text-zinc-500">Win Rate</div>
         </div>
 
-        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-4">
-          <div className="flex items-center justify-between mb-2">
-            <Zap className="w-5 h-5 text-cyan-400/70" />
+        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl sm:rounded-2xl p-3 sm:p-4">
+          <div className="flex items-center justify-between mb-1 sm:mb-2">
+            <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400/70" />
           </div>
-          <div className="text-2xl font-bold text-white">{stats.hotLeads}</div>
-          <div className="text-xs text-zinc-500">Hot Leads</div>
+          <div className="text-xl sm:text-2xl font-bold text-white">{stats.hotLeads}</div>
+          <div className="text-[10px] sm:text-xs text-zinc-500">Hot Leads</div>
         </div>
       </div>
 
       {/* Pipeline Funnel */}
-      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">Pipeline Overview</h3>
-        <div className="space-y-3">
+      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl sm:rounded-2xl p-4 sm:p-6">
+        <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4">Pipeline Overview</h3>
+        <div className="space-y-2 sm:space-y-3">
           {PIPELINE_STAGES.filter(s => s.id !== 'lost').map(stage => {
             const data = stats.byStage[stage.id];
             const percentage = stats.totalContacts > 0 ? (data.count / stats.totalContacts) * 100 : 0;
             return (
-              <div key={stage.id} className="flex items-center gap-4">
-                <div className="w-24 text-sm text-zinc-400">{stage.label}</div>
-                <div className="flex-1 bg-zinc-800 rounded-full h-6 relative overflow-hidden">
+              <div key={stage.id} className="flex items-center gap-2 sm:gap-4">
+                <div className="w-20 sm:w-24 text-xs sm:text-sm text-zinc-400 truncate">{stage.label}</div>
+                <div className="flex-1 bg-zinc-800 rounded-full h-5 sm:h-6 relative overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${percentage}%` }}
                     className={`h-full ${stage.color} rounded-full`}
                   />
-                  <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-white">
+                  <span className="absolute inset-0 flex items-center justify-center text-[10px] sm:text-xs font-medium text-white">
                     {data.count} ({percentage.toFixed(0)}%)
                   </span>
                 </div>
-                <div className="w-20 text-right text-sm text-zinc-400">
+                <div className="w-14 sm:w-20 text-right text-xs sm:text-sm text-zinc-400">
                   ${(data.value / 1000).toFixed(0)}k
                 </div>
               </div>
@@ -1159,74 +1159,89 @@ export default function CRMContacts() {
   const currentTypeLabel = CONTACT_TYPES.find(t => t.id === selectedContactType)?.label || 'Contacts';
 
   return (
-    <div className="max-w-full mx-auto p-4 sm:p-6">
+    <div className="max-w-full mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-white">{currentTypeLabel}</h1>
-          <p className="text-sm text-zinc-400">
-            {filteredContacts.length} {selectedContactType === 'all' ? 'contacts' : currentTypeLabel.toLowerCase()} in pipeline
-          </p>
-        </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            {/* View Mode Toggle */}
-            <div className="flex items-center bg-zinc-800/50 rounded-lg p-1">
-              <button
-                onClick={() => setViewMode("pipeline")}
-                className={`p-2 rounded text-sm ${viewMode === "pipeline" ? "bg-zinc-700 text-white" : "text-zinc-400"}`}
-                title="Pipeline View"
-              >
-                <Kanban className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setViewMode("grid")}
-                className={`p-2 rounded text-sm ${viewMode === "grid" ? "bg-zinc-700 text-white" : "text-zinc-400"}`}
-                title="Grid View"
-              >
-                <LayoutGrid className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setViewMode("table")}
-                className={`p-2 rounded text-sm ${viewMode === "table" ? "bg-zinc-700 text-white" : "text-zinc-400"}`}
-                title="Table View"
-              >
-                <Table2 className="w-4 h-4" />
-              </button>
-            </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowAnalytics(!showAnalytics)}
-              className={`border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700 ${showAnalytics ? "bg-cyan-500/15 text-cyan-400/80 border-cyan-500/30" : ""}`}
-            >
-              <BarChart3 className="w-4 h-4 mr-1" /> Analytics
-            </Button>
-
-            <Button variant="outline" size="sm" onClick={handleExport} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
-              <Download className="w-4 h-4 mr-1" /> Export
-            </Button>
-
-            <Button
-              variant="outline"
-              onClick={() => setShowQuickAdd(true)}
-              className="border-cyan-600/50 bg-cyan-600/10 text-cyan-400 hover:bg-cyan-600/20"
-            >
-              <Sparkles className="w-4 h-4 mr-1" /> Quick Add
-            </Button>
-
-            <Button onClick={() => {
-              setEditingContact(null);
-              // Pre-select contact_type if a type filter is active
-              const preselectedType = selectedContactType !== 'all' && selectedContactType !== 'supplier' ? selectedContactType : 'lead';
-              setFormData({ ...emptyContact, contact_type: preselectedType });
-              setShowModal(true);
-            }} className="bg-cyan-600/80 hover:bg-cyan-600 text-white">
-              <Plus className="w-4 h-4 mr-1" /> Add Contact
-            </Button>
+      <div className="flex flex-col gap-4 mb-4 sm:mb-6">
+        {/* Title Row */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-white">{currentTypeLabel}</h1>
+            <p className="text-xs sm:text-sm text-zinc-400">
+              {filteredContacts.length} {selectedContactType === 'all' ? 'contacts' : currentTypeLabel.toLowerCase()} in pipeline
+            </p>
           </div>
+          {/* Mobile: Primary action only */}
+          <Button onClick={() => {
+            setEditingContact(null);
+            const preselectedType = selectedContactType !== 'all' && selectedContactType !== 'supplier' ? selectedContactType : 'lead';
+            setFormData({ ...emptyContact, contact_type: preselectedType });
+            setShowModal(true);
+          }} className="bg-cyan-600/80 hover:bg-cyan-600 text-white sm:hidden min-h-[44px]">
+            <Plus className="w-5 h-5" />
+          </Button>
         </div>
+
+        {/* Actions Row - scrollable on mobile */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-3 px-3 sm:mx-0 sm:px-0 sm:overflow-visible scrollbar-hide">
+          {/* View Mode Toggle */}
+          <div className="flex items-center bg-zinc-800/50 rounded-lg p-1 flex-shrink-0">
+            <button
+              onClick={() => setViewMode("pipeline")}
+              className={`p-2 sm:p-2 rounded text-sm min-w-[40px] min-h-[40px] flex items-center justify-center ${viewMode === "pipeline" ? "bg-zinc-700 text-white" : "text-zinc-400"}`}
+              title="Pipeline View"
+            >
+              <Kanban className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`p-2 sm:p-2 rounded text-sm min-w-[40px] min-h-[40px] flex items-center justify-center ${viewMode === "grid" ? "bg-zinc-700 text-white" : "text-zinc-400"}`}
+              title="Grid View"
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode("table")}
+              className={`p-2 sm:p-2 rounded text-sm min-w-[40px] min-h-[40px] flex items-center justify-center ${viewMode === "table" ? "bg-zinc-700 text-white" : "text-zinc-400"}`}
+              title="Table View"
+            >
+              <Table2 className="w-4 h-4" />
+            </button>
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAnalytics(!showAnalytics)}
+            className={`border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700 flex-shrink-0 min-h-[40px] ${showAnalytics ? "bg-cyan-500/15 text-cyan-400/80 border-cyan-500/30" : ""}`}
+          >
+            <BarChart3 className="w-4 h-4 sm:mr-1" />
+            <span className="hidden sm:inline">Analytics</span>
+          </Button>
+
+          <Button variant="outline" size="sm" onClick={handleExport} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700 flex-shrink-0 min-h-[40px]">
+            <Download className="w-4 h-4 sm:mr-1" />
+            <span className="hidden sm:inline">Export</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={() => setShowQuickAdd(true)}
+            className="border-cyan-600/50 bg-cyan-600/10 text-cyan-400 hover:bg-cyan-600/20 flex-shrink-0 min-h-[40px]"
+          >
+            <Sparkles className="w-4 h-4 sm:mr-1" />
+            <span className="hidden sm:inline">Quick Add</span>
+          </Button>
+
+          <Button onClick={() => {
+            setEditingContact(null);
+            const preselectedType = selectedContactType !== 'all' && selectedContactType !== 'supplier' ? selectedContactType : 'lead';
+            setFormData({ ...emptyContact, contact_type: preselectedType });
+            setShowModal(true);
+          }} className="bg-cyan-600/80 hover:bg-cyan-600 text-white hidden sm:flex flex-shrink-0 min-h-[40px]">
+            <Plus className="w-4 h-4 mr-1" /> Add Contact
+          </Button>
+        </div>
+      </div>
 
         {/* Analytics Dashboard */}
         <AnimatePresence>
@@ -1242,66 +1257,72 @@ export default function CRMContacts() {
         </AnimatePresence>
 
         {/* Search & Filters */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
-          <div className="relative flex-1 max-w-md">
+        <div className="space-y-3 mb-4 sm:mb-6">
+          {/* Search bar - full width on mobile */}
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
             <Input
               placeholder="Search contacts..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-zinc-900 border-zinc-800"
+              className="pl-10 bg-zinc-900 border-zinc-800 h-11 sm:h-10"
             />
           </div>
-          <Select value={stageFilter} onValueChange={setStageFilter}>
-            <SelectTrigger className="w-full sm:w-40 bg-zinc-900 border-zinc-800">
-              <SelectValue placeholder="Stage" />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-800">
-              <SelectItem value="all">All Stages</SelectItem>
-              {PIPELINE_STAGES.map(s => <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={sourceFilter} onValueChange={setSourceFilter}>
-            <SelectTrigger className="w-full sm:w-40 bg-zinc-900 border-zinc-800">
-              <SelectValue placeholder="Source" />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-800">
-              <SelectItem value="all">All Sources</SelectItem>
-              {CONTACT_SOURCES.map(s => <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          {companies.length > 0 && (
-            <Select value={companyFilter} onValueChange={setCompanyFilter}>
-              <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800">
-                <Building className="w-4 h-4 mr-2 text-zinc-400" />
-                <SelectValue placeholder="Company" />
+
+          {/* Filters - horizontal scroll on mobile */}
+          <div className="flex gap-2 overflow-x-auto pb-2 -mx-3 px-3 sm:mx-0 sm:px-0 sm:overflow-visible sm:flex-wrap scrollbar-hide">
+            <Select value={stageFilter} onValueChange={setStageFilter}>
+              <SelectTrigger className="w-[130px] sm:w-40 bg-zinc-900 border-zinc-800 flex-shrink-0 h-10">
+                <SelectValue placeholder="Stage" />
               </SelectTrigger>
               <SelectContent className="bg-zinc-900 border-zinc-800">
-                <SelectItem value="all">All Companies</SelectItem>
-                {companies.map(c => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name}
-                  </SelectItem>
-                ))}
+                <SelectItem value="all">All Stages</SelectItem>
+                {PIPELINE_STAGES.map(s => <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>)}
               </SelectContent>
             </Select>
-          )}
+            <Select value={sourceFilter} onValueChange={setSourceFilter}>
+              <SelectTrigger className="w-[130px] sm:w-40 bg-zinc-900 border-zinc-800 flex-shrink-0 h-10">
+                <SelectValue placeholder="Source" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
+                <SelectItem value="all">All Sources</SelectItem>
+                {CONTACT_SOURCES.map(s => <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {companies.length > 0 && (
+              <Select value={companyFilter} onValueChange={setCompanyFilter}>
+                <SelectTrigger className="w-[140px] sm:w-48 bg-zinc-900 border-zinc-800 flex-shrink-0 h-10">
+                  <Building className="w-4 h-4 mr-2 text-zinc-400" />
+                  <SelectValue placeholder="Company" />
+                </SelectTrigger>
+                <SelectContent className="bg-zinc-900 border-zinc-800">
+                  <SelectItem value="all">All Companies</SelectItem>
+                  {companies.map(c => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
 
-          {/* Bulk Actions */}
-          {selectedContacts.length > 0 && (
-            <div className="flex items-center gap-2 ml-auto">
-              <span className="text-sm text-zinc-400">{selectedContacts.length} selected</span>
-              <Button variant="outline" size="sm" onClick={handleBulkDelete} className="text-zinc-400 border-zinc-600 hover:bg-zinc-800">
-                <Trash2 className="w-4 h-4 mr-1" /> Delete
-              </Button>
-            </div>
-          )}
+            {/* Bulk Actions */}
+            {selectedContacts.length > 0 && (
+              <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
+                <span className="text-xs sm:text-sm text-zinc-400 whitespace-nowrap">{selectedContacts.length} selected</span>
+                <Button variant="outline" size="sm" onClick={handleBulkDelete} className="text-zinc-400 border-zinc-600 hover:bg-zinc-800 h-10">
+                  <Trash2 className="w-4 h-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Delete</span>
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Content Views */}
         {viewMode === "pipeline" ? (
           <DragDropContext onDragEnd={handleDragEnd}>
-            <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+            <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 -mx-3 px-3 sm:-mx-4 sm:px-4 md:mx-0 md:px-0 snap-x snap-mandatory scrollbar-hide">
               {PIPELINE_STAGES.map(stage => (
                 <PipelineColumn
                   key={stage.id}
@@ -1315,7 +1336,7 @@ export default function CRMContacts() {
             </div>
           </DragDropContext>
         ) : viewMode === "grid" ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
             {filteredContacts.map(contact => (
               <ContactCard
                 key={contact.id}
@@ -1342,13 +1363,13 @@ export default function CRMContacts() {
             )}
           </div>
         ) : (
-          /* Table View */
-          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
+          /* Table View - Responsive with horizontal scroll */
+          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl sm:rounded-2xl overflow-hidden -mx-3 sm:mx-0">
+            <div className="overflow-x-auto scrollbar-hide">
+              <table className="w-full min-w-[700px]">
                 <thead>
                   <tr className="border-b border-zinc-800">
-                    <th className="p-3 text-left">
+                    <th className="p-2 sm:p-3 text-left sticky left-0 bg-zinc-900/95 z-10">
                       <Checkbox
                         checked={selectedContacts.length === filteredContacts.length && filteredContacts.length > 0}
                         onCheckedChange={(checked) => {
@@ -1356,21 +1377,21 @@ export default function CRMContacts() {
                         }}
                       />
                     </th>
-                    <th className="p-3 text-left text-xs font-medium text-zinc-500 uppercase">Contact</th>
-                    <th className="p-3 text-left text-xs font-medium text-zinc-500 uppercase">Company</th>
-                    <th className="p-3 text-left text-xs font-medium text-zinc-500 uppercase">Stage</th>
-                    <th className="p-3 text-left text-xs font-medium text-zinc-500 uppercase">Score</th>
-                    <th className="p-3 text-left text-xs font-medium text-zinc-500 uppercase">Deal Value</th>
-                    <th className="p-3 text-left text-xs font-medium text-zinc-500 uppercase">Source</th>
-                    <th className="p-3 text-left text-xs font-medium text-zinc-500 uppercase">Actions</th>
+                    <th className="p-2 sm:p-3 text-left text-xs font-medium text-zinc-500 uppercase whitespace-nowrap">Contact</th>
+                    <th className="p-2 sm:p-3 text-left text-xs font-medium text-zinc-500 uppercase whitespace-nowrap hidden sm:table-cell">Company</th>
+                    <th className="p-2 sm:p-3 text-left text-xs font-medium text-zinc-500 uppercase whitespace-nowrap">Stage</th>
+                    <th className="p-2 sm:p-3 text-left text-xs font-medium text-zinc-500 uppercase whitespace-nowrap hidden md:table-cell">Score</th>
+                    <th className="p-2 sm:p-3 text-left text-xs font-medium text-zinc-500 uppercase whitespace-nowrap">Value</th>
+                    <th className="p-2 sm:p-3 text-left text-xs font-medium text-zinc-500 uppercase whitespace-nowrap hidden lg:table-cell">Source</th>
+                    <th className="p-2 sm:p-3 text-left text-xs font-medium text-zinc-500 uppercase whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody ref={tableBodyRef}>
                   {filteredContacts.map(contact => {
                     const stageConfig = PIPELINE_STAGES.find(s => s.id === contact.stage) || PIPELINE_STAGES[0];
                     return (
-                      <tr key={contact.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors">
-                        <td className="p-3">
+                      <tr key={contact.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors active:bg-zinc-800/50">
+                        <td className="p-2 sm:p-3 sticky left-0 bg-zinc-900/95 z-10">
                           <Checkbox
                             checked={selectedContacts.includes(contact.id)}
                             onCheckedChange={(checked) => {
@@ -1380,54 +1401,56 @@ export default function CRMContacts() {
                             }}
                           />
                         </td>
-                        <td className="p-3">
-                          <div className="flex items-center gap-3 cursor-pointer" onClick={() => handleViewContact(contact)}>
-                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-500/15 to-cyan-400/10 flex items-center justify-center">
-                              <span className="text-cyan-400/80 text-sm font-medium">{contact.name?.charAt(0)?.toUpperCase()}</span>
+                        <td className="p-2 sm:p-3">
+                          <div className="flex items-center gap-2 sm:gap-3 cursor-pointer min-w-[150px]" onClick={() => handleViewContact(contact)}>
+                            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-cyan-500/15 to-cyan-400/10 flex items-center justify-center flex-shrink-0">
+                              <span className="text-cyan-400/80 text-xs sm:text-sm font-medium">{contact.name?.charAt(0)?.toUpperCase()}</span>
                             </div>
-                            <div>
-                              <div className="font-medium text-white hover:text-cyan-400 transition-colors">{contact.name}</div>
-                              <div className="text-xs text-zinc-500">{contact.email}</div>
+                            <div className="min-w-0">
+                              <div className="font-medium text-white hover:text-cyan-400 transition-colors text-sm truncate">{contact.name}</div>
+                              <div className="text-xs text-zinc-500 truncate">{contact.email}</div>
+                              {/* Show company on mobile */}
+                              <div className="text-xs text-zinc-600 truncate sm:hidden">{contact.company_name}</div>
                             </div>
                           </div>
                         </td>
-                        <td className="p-3">
-                          <div className="text-sm text-zinc-300">{contact.company_name || "-"}</div>
-                          {contact.job_title && <div className="text-xs text-zinc-500">{contact.job_title}</div>}
+                        <td className="p-2 sm:p-3 hidden sm:table-cell">
+                          <div className="text-sm text-zinc-300 truncate max-w-[150px]">{contact.company_name || "-"}</div>
+                          {contact.job_title && <div className="text-xs text-zinc-500 truncate max-w-[150px]">{contact.job_title}</div>}
                         </td>
-                        <td className="p-3">
-                          <Badge variant="outline" className={`${stageConfig.bgColor} ${stageConfig.textColor} ${stageConfig.borderColor}`}>
+                        <td className="p-2 sm:p-3">
+                          <Badge variant="outline" className={`${stageConfig.bgColor} ${stageConfig.textColor} ${stageConfig.borderColor} text-xs whitespace-nowrap`}>
                             {stageConfig.label}
                           </Badge>
                         </td>
-                        <td className="p-3">
+                        <td className="p-2 sm:p-3 hidden md:table-cell">
                           <LeadScoreIndicator score={contact.score || 50} />
                         </td>
-                        <td className="p-3">
-                          <span className="font-medium text-white">
+                        <td className="p-2 sm:p-3">
+                          <span className="font-medium text-white text-sm whitespace-nowrap">
                             {contact.deal_value ? `$${parseFloat(contact.deal_value).toLocaleString()}` : "-"}
                           </span>
                         </td>
-                        <td className="p-3">
-                          <span className="text-sm text-zinc-400 capitalize">{contact.source?.replace(/_/g, ' ') || "-"}</span>
+                        <td className="p-2 sm:p-3 hidden lg:table-cell">
+                          <span className="text-sm text-zinc-400 capitalize whitespace-nowrap">{contact.source?.replace(/_/g, ' ') || "-"}</span>
                         </td>
-                        <td className="p-3">
-                          <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(contact)}>
+                        <td className="p-2 sm:p-3">
+                          <div className="flex items-center gap-0.5 sm:gap-1">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-8 sm:w-8" onClick={() => handleEdit(contact)}>
                               <Edit2 className="w-4 h-4 text-zinc-400" />
                             </Button>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-8 sm:w-8">
                                   <MoreVertical className="w-4 h-4 text-zinc-400" />
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
-                                <DropdownMenuItem onClick={() => handleViewContact(contact)} className="text-zinc-300">
+                                <DropdownMenuItem onClick={() => handleViewContact(contact)} className="text-zinc-300 min-h-[44px]">
                                   <Eye className="w-4 h-4 mr-2" /> View
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator className="bg-zinc-800" />
-                                <DropdownMenuItem onClick={() => handleDelete(contact.id)} className="text-red-400">
+                                <DropdownMenuItem onClick={() => handleDelete(contact.id)} className="text-red-400 min-h-[44px]">
                                   <Trash2 className="w-4 h-4 mr-2" /> Delete
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
@@ -1454,9 +1477,9 @@ export default function CRMContacts() {
         deals={deals}
       />
 
-      {/* Add/Edit Modal */}
+      {/* Add/Edit Modal - Full screen on mobile */}
       <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent className="bg-zinc-900 border-zinc-800 max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="bg-zinc-900 border-zinc-800 w-[95vw] max-w-2xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto rounded-xl sm:rounded-2xl p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="text-white">{editingContact ? "Edit Contact" : "Add Contact"}</DialogTitle>
           </DialogHeader>
