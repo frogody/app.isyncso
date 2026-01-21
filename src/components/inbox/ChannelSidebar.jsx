@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Hash, Lock, Plus, ChevronDown, MessageSquare,
@@ -21,6 +21,187 @@ const STATUS_OPTIONS = [
   { id: 'dnd', label: 'Do Not Disturb', color: 'bg-rose-500', textColor: 'text-rose-400', icon: MinusCircle },
   { id: 'offline', label: 'Offline', color: 'bg-zinc-500', textColor: 'text-zinc-400', icon: Moon },
 ];
+
+// Section Header Component - moved outside to prevent recreation on each render
+const SectionHeader = memo(function SectionHeader({ title, count, expanded, onToggle, action }) {
+  return (
+    <div className="flex items-center justify-between px-2 py-1.5 mb-1">
+      <button
+        onClick={onToggle}
+        className="flex items-center gap-2 text-xs font-semibold text-zinc-500 hover:text-zinc-300 uppercase tracking-wider transition-colors"
+      >
+        <motion.div
+          animate={{ rotate: expanded ? 0 : -90 }}
+          transition={{ duration: 0.2 }}
+        >
+          <ChevronDown className="w-3.5 h-3.5" />
+        </motion.div>
+        {title}
+        <span className="text-cyan-500/70 font-normal">{count}</span>
+      </button>
+      {action && (
+        <button
+          onClick={action.onClick}
+          className="p-1 text-zinc-600 hover:text-cyan-400 hover:bg-zinc-800/50 rounded-lg transition-all"
+          title={action.title}
+        >
+          <action.icon className="w-4 h-4" />
+        </button>
+      )}
+    </div>
+  );
+});
+
+// Channel Item Component - moved outside and memoized to prevent flickering
+const ChannelItem = memo(function ChannelItem({
+  channel,
+  isDM = false,
+  isSelected,
+  unread,
+  isStarred,
+  isMuted,
+  onSelectChannel,
+  onToggleStar,
+  onToggleMute,
+  onArchiveChannel,
+  onDeleteChannel,
+  user
+}) {
+  const Icon = isDM ? MessageSquare : channel.type === 'private' ? Lock : Hash;
+
+  return (
+    <div
+      onClick={() => onSelectChannel(channel)}
+      className={`group relative flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer transition-all duration-200 ${
+        isSelected
+          ? 'bg-zinc-800/80 text-white'
+          : isMuted
+          ? 'text-zinc-600 hover:bg-zinc-800/30 hover:text-zinc-500'
+          : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'
+      }`}
+    >
+      {/* Selection Indicator */}
+      {isSelected && (
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-cyan-500/70 rounded-r-full" />
+      )}
+
+      {/* Avatar / Icon */}
+      {isDM ? (
+        <div className="relative flex-shrink-0">
+          <div className={`w-7 h-7 rounded-lg ${
+            isSelected
+              ? 'bg-zinc-700 border-zinc-600'
+              : 'bg-zinc-800 border-zinc-700'
+          } border flex items-center justify-center text-xs font-bold ${
+            isSelected ? 'text-zinc-200' : 'text-zinc-500'
+          }`}>
+            {channel.name?.charAt(0)?.toUpperCase()}
+          </div>
+          {/* Online indicator */}
+          <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-zinc-500 border-2 border-zinc-950" />
+        </div>
+      ) : (
+        <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${
+          isSelected
+            ? 'bg-zinc-700 border border-zinc-600'
+            : 'bg-zinc-800/80 border border-zinc-700/50'
+        }`}>
+          <Icon className={`w-4 h-4 ${
+            isSelected ? 'text-zinc-300' : 'text-zinc-500'
+          }`} />
+        </div>
+      )}
+
+      {/* Channel Name */}
+      <span className={`flex-1 text-sm truncate font-medium ${
+        unread > 0 && !isMuted ? 'text-white font-semibold' : ''
+      }`}>
+        {channel.name}
+      </span>
+
+      {/* Indicators */}
+      <div className="flex items-center gap-1.5 flex-shrink-0">
+        {/* Star */}
+        {isStarred && (
+          <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+        )}
+
+        {/* Muted */}
+        {isMuted && (
+          <BellOff className="w-3 h-3 text-zinc-600" />
+        )}
+
+        {/* Unread Badge */}
+        {unread > 0 && !isMuted && (
+          <span className="min-w-[18px] h-[18px] px-1.5 text-[10px] font-bold bg-cyan-600/80 text-white rounded-full flex items-center justify-center">
+            {unread > 99 ? '99+' : unread}
+          </span>
+        )}
+
+        {/* Context Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              onClick={(e) => e.stopPropagation()}
+              className="p-1 opacity-0 group-hover:opacity-100 hover:bg-zinc-700/50 rounded-lg transition-all"
+            >
+              <MoreHorizontal className="w-3.5 h-3.5" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="bg-zinc-900 border-zinc-700 min-w-[180px]" align="end">
+            <DropdownMenuItem
+              onClick={(e) => onToggleStar(channel.id, e)}
+              className="text-zinc-300 hover:text-white focus:text-white focus:bg-zinc-800"
+            >
+              {isStarred ? (
+                <>
+                  <StarOff className="w-4 h-4 mr-2" /> Unstar channel
+                </>
+              ) : (
+                <>
+                  <Star className="w-4 h-4 mr-2" /> Star channel
+                </>
+              )}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={(e) => onToggleMute(channel.id, e)}
+              className="text-zinc-300 hover:text-white focus:text-white focus:bg-zinc-800"
+            >
+              {isMuted ? (
+                <>
+                  <Bell className="w-4 h-4 mr-2" /> Unmute notifications
+                </>
+              ) : (
+                <>
+                  <BellOff className="w-4 h-4 mr-2" /> Mute notifications
+                </>
+              )}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator className="bg-zinc-700" />
+            {!isDM && (
+              <>
+                <DropdownMenuItem
+                  onClick={() => onArchiveChannel?.(channel)}
+                  className="text-zinc-300 hover:text-white focus:text-white focus:bg-zinc-800"
+                >
+                  <Archive className="w-4 h-4 mr-2" /> Archive channel
+                </DropdownMenuItem>
+                {channel.created_by === user?.email && (
+                  <DropdownMenuItem
+                    onClick={() => onDeleteChannel?.(channel)}
+                    className="text-red-400 hover:text-red-300 focus:text-red-300 focus:bg-red-950/30"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" /> Delete channel
+                  </DropdownMenuItem>
+                )}
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div>
+  );
+});
 
 export default function ChannelSidebar({
   channels,
@@ -89,17 +270,30 @@ export default function ChannelSidebar({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const publicChannels = channels.filter(c => c.type === 'public' && !c.is_archived);
-  const privateChannels = channels.filter(c => c.type === 'private' && !c.is_archived);
+  // Memoize filtered channels to prevent unnecessary re-renders
+  const publicChannels = useMemo(() =>
+    channels.filter(c => c.type === 'public' && !c.is_archived),
+    [channels]
+  );
 
-  const filteredPublicChannels = publicChannels.filter(c =>
-    c.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const privateChannels = useMemo(() =>
+    channels.filter(c => c.type === 'private' && !c.is_archived),
+    [channels]
   );
-  const filteredPrivateChannels = privateChannels.filter(c =>
-    c.name.toLowerCase().includes(searchTerm.toLowerCase())
+
+  const filteredPublicChannels = useMemo(() =>
+    publicChannels.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase())),
+    [publicChannels, searchTerm]
   );
-  const filteredDMs = directMessages.filter(dm =>
-    dm.name.toLowerCase().includes(searchTerm.toLowerCase())
+
+  const filteredPrivateChannels = useMemo(() =>
+    privateChannels.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase())),
+    [privateChannels, searchTerm]
+  );
+
+  const filteredDMs = useMemo(() =>
+    directMessages.filter(dm => dm.name.toLowerCase().includes(searchTerm.toLowerCase())),
+    [directMessages, searchTerm]
   );
 
   // Toggle star
@@ -128,189 +322,37 @@ export default function ChannelSidebar({
     });
   }, []);
 
-  // Get starred channels
-  const starredPublicChannels = filteredPublicChannels.filter(c => starredChannels.includes(c.id));
-  const starredDMs = filteredDMs.filter(c => starredChannels.includes(c.id));
+  // Get starred channels - memoized
+  const starredPublicChannels = useMemo(() =>
+    filteredPublicChannels.filter(c => starredChannels.includes(c.id)),
+    [filteredPublicChannels, starredChannels]
+  );
+
+  const starredDMs = useMemo(() =>
+    filteredDMs.filter(c => starredChannels.includes(c.id)),
+    [filteredDMs, starredChannels]
+  );
+
   const hasStarred = starredPublicChannels.length > 0 || starredDMs.length > 0;
 
-  // Channel Item Component
-  const ChannelItem = ({ channel, isDM = false }) => {
-    const isSelected = selectedChannel?.id === channel.id;
-    const unread = unreadCounts[channel.id] || 0;
-    const isStarred = starredChannels.includes(channel.id);
-    const isMuted = mutedChannels.includes(channel.id);
-    const Icon = isDM ? MessageSquare : channel.type === 'private' ? Lock : Hash;
-
-    return (
-      <motion.div
-        initial={{ opacity: 0, x: -10 }}
-        animate={{ opacity: 1, x: 0 }}
-        onClick={() => onSelectChannel(channel)}
-        className={`group relative flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer transition-all duration-200 ${
-          isSelected
-            ? 'bg-zinc-800/80 text-white'
-            : isMuted
-            ? 'text-zinc-600 hover:bg-zinc-800/30 hover:text-zinc-500'
-            : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'
-        }`}
-      >
-        {/* Selection Indicator */}
-        {isSelected && (
-          <motion.div
-            layoutId="activeChannel"
-            className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-cyan-500/70 rounded-r-full"
-          />
-        )}
-
-        {/* Avatar / Icon */}
-        {isDM ? (
-          <div className="relative flex-shrink-0">
-            <div className={`w-7 h-7 rounded-lg ${
-              isSelected
-                ? 'bg-zinc-700 border-zinc-600'
-                : 'bg-zinc-800 border-zinc-700'
-            } border flex items-center justify-center text-xs font-bold ${
-              isSelected ? 'text-zinc-200' : 'text-zinc-500'
-            }`}>
-              {channel.name?.charAt(0)?.toUpperCase()}
-            </div>
-            {/* Online indicator */}
-            <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-zinc-500 border-2 border-zinc-950" />
-          </div>
-        ) : (
-          <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${
-            isSelected
-              ? 'bg-zinc-700 border border-zinc-600'
-              : 'bg-zinc-800/80 border border-zinc-700/50'
-          }`}>
-            <Icon className={`w-4 h-4 ${
-              isSelected ? 'text-zinc-300' : 'text-zinc-500'
-            }`} />
-          </div>
-        )}
-
-        {/* Channel Name */}
-        <span className={`flex-1 text-sm truncate font-medium ${
-          unread > 0 && !isMuted ? 'text-white font-semibold' : ''
-        }`}>
-          {channel.name}
-        </span>
-
-        {/* Indicators */}
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          {/* Star */}
-          {isStarred && (
-            <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-          )}
-
-          {/* Muted */}
-          {isMuted && (
-            <BellOff className="w-3 h-3 text-zinc-600" />
-          )}
-
-          {/* Unread Badge */}
-          {unread > 0 && !isMuted && (
-            <motion.span
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              className="min-w-[18px] h-[18px] px-1.5 text-[10px] font-bold bg-cyan-600/80 text-white rounded-full flex items-center justify-center"
-            >
-              {unread > 99 ? '99+' : unread}
-            </motion.span>
-          )}
-
-          {/* Context Menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                onClick={(e) => e.stopPropagation()}
-                className="p-1 opacity-0 group-hover:opacity-100 hover:bg-zinc-700/50 rounded-lg transition-all"
-              >
-                <MoreHorizontal className="w-3.5 h-3.5" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="bg-zinc-900 border-zinc-700 min-w-[180px]" align="end">
-              <DropdownMenuItem
-                onClick={(e) => toggleStar(channel.id, e)}
-                className="text-zinc-300 hover:text-white focus:text-white focus:bg-zinc-800"
-              >
-                {isStarred ? (
-                  <>
-                    <StarOff className="w-4 h-4 mr-2" /> Unstar channel
-                  </>
-                ) : (
-                  <>
-                    <Star className="w-4 h-4 mr-2" /> Star channel
-                  </>
-                )}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={(e) => toggleMute(channel.id, e)}
-                className="text-zinc-300 hover:text-white focus:text-white focus:bg-zinc-800"
-              >
-                {isMuted ? (
-                  <>
-                    <Bell className="w-4 h-4 mr-2" /> Unmute notifications
-                  </>
-                ) : (
-                  <>
-                    <BellOff className="w-4 h-4 mr-2" /> Mute notifications
-                  </>
-                )}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-zinc-700" />
-              {!isDM && (
-                <>
-                  <DropdownMenuItem
-                    onClick={() => onArchiveChannel?.(channel)}
-                    className="text-zinc-300 hover:text-white focus:text-white focus:bg-zinc-800"
-                  >
-                    <Archive className="w-4 h-4 mr-2" /> Archive channel
-                  </DropdownMenuItem>
-                  {channel.created_by === user?.email && (
-                    <DropdownMenuItem
-                      onClick={() => onDeleteChannel?.(channel)}
-                      className="text-red-400 hover:text-red-300 focus:text-red-300 focus:bg-red-950/30"
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" /> Delete channel
-                    </DropdownMenuItem>
-                  )}
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </motion.div>
-    );
-  };
-
-  // Section Header Component
-  const SectionHeader = ({ title, count, expanded, onToggle, action }) => (
-    <div className="flex items-center justify-between px-2 py-1.5 mb-1">
-      <button
-        onClick={onToggle}
-        className="flex items-center gap-2 text-xs font-semibold text-zinc-500 hover:text-zinc-300 uppercase tracking-wider transition-colors"
-      >
-        <motion.div
-          animate={{ rotate: expanded ? 0 : -90 }}
-          transition={{ duration: 0.2 }}
-        >
-          <ChevronDown className="w-3.5 h-3.5" />
-        </motion.div>
-        {title}
-        <span className="text-cyan-500/70 font-normal">{count}</span>
-      </button>
-      {action && (
-        <button
-          onClick={action.onClick}
-          className="p-1 text-zinc-600 hover:text-cyan-400 hover:bg-zinc-800/50 rounded-lg transition-all"
-          title={action.title}
-        >
-          <action.icon className="w-4 h-4" />
-        </button>
-      )}
-    </div>
-  );
+  // Helper function to render a channel item with all required props
+  const renderChannelItem = useCallback((channel, isDM = false) => (
+    <ChannelItem
+      key={channel.id}
+      channel={channel}
+      isDM={isDM}
+      isSelected={selectedChannel?.id === channel.id}
+      unread={unreadCounts[channel.id] || 0}
+      isStarred={starredChannels.includes(channel.id)}
+      isMuted={mutedChannels.includes(channel.id)}
+      onSelectChannel={onSelectChannel}
+      onToggleStar={toggleStar}
+      onToggleMute={toggleMute}
+      onArchiveChannel={onArchiveChannel}
+      onDeleteChannel={onDeleteChannel}
+      user={user}
+    />
+  ), [selectedChannel?.id, unreadCounts, starredChannels, mutedChannels, onSelectChannel, toggleStar, toggleMute, onArchiveChannel, onDeleteChannel, user]);
 
   return (
     <div className="w-72 bg-gradient-to-b from-zinc-950 via-zinc-900 to-cyan-950/5 border-r border-zinc-800/50 flex flex-col h-full">
@@ -406,12 +448,8 @@ export default function ChannelSidebar({
               onToggle={() => {}}
             />
             <div className="space-y-0.5">
-              {starredPublicChannels.map(channel => (
-                <ChannelItem key={channel.id} channel={channel} />
-              ))}
-              {starredDMs.map(dm => (
-                <ChannelItem key={dm.id} channel={dm} isDM />
-              ))}
+              {starredPublicChannels.map(channel => renderChannelItem(channel, false))}
+              {starredDMs.map(dm => renderChannelItem(dm, true))}
             </div>
           </div>
         )}
@@ -438,14 +476,12 @@ export default function ChannelSidebar({
                 transition={{ duration: 0.2 }}
                 className="overflow-hidden space-y-0.5"
               >
-                {filteredPublicChannels.filter(c => !starredChannels.includes(c.id)).map(channel => (
-                  <ChannelItem key={channel.id} channel={channel} />
-                ))}
+                {filteredPublicChannels.filter(c => !starredChannels.includes(c.id)).map(channel =>
+                  renderChannelItem(channel, false)
+                )}
                 {filteredPrivateChannels.length > 0 && (
                   <div className="mt-2 pt-2 border-t border-zinc-800/50 space-y-0.5">
-                    {filteredPrivateChannels.map(channel => (
-                      <ChannelItem key={channel.id} channel={channel} />
-                    ))}
+                    {filteredPrivateChannels.map(channel => renderChannelItem(channel, false))}
                   </div>
                 )}
                 {filteredPublicChannels.length === 0 && filteredPrivateChannels.length === 0 && (
@@ -478,9 +514,9 @@ export default function ChannelSidebar({
                 transition={{ duration: 0.2 }}
                 className="overflow-hidden space-y-0.5"
               >
-                {filteredDMs.filter(c => !starredChannels.includes(c.id)).map(dm => (
-                  <ChannelItem key={dm.id} channel={dm} isDM />
-                ))}
+                {filteredDMs.filter(c => !starredChannels.includes(c.id)).map(dm =>
+                  renderChannelItem(dm, true)
+                )}
                 {filteredDMs.length === 0 && (
                   <p className="text-xs text-zinc-600 px-2.5 py-2">No conversations yet</p>
                 )}

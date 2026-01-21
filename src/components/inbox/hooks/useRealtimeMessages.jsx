@@ -219,11 +219,9 @@ export function useRealtimeMessages(channelId, userId, options = {}) {
           type: messageData.type || 'text',
           thread_id: messageData.thread_id || null,
           mentions: messageData.mentions || [],
-          // Store file info in metadata if provided
-          metadata: messageData.file_url ? {
-            file_url: messageData.file_url,
-            file_name: messageData.file_name
-          } : {},
+          // Store file info as top-level fields (matching database schema)
+          file_url: messageData.file_url || null,
+          file_name: messageData.file_name || null,
         })
         .select()
         .single();
