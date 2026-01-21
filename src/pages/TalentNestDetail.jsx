@@ -182,7 +182,7 @@ export default function TalentNestDetail() {
 
   if (loading || !nest) {
     return (
-      <div className="p-8 max-w-5xl mx-auto">
+      <div className="w-full px-6 lg:px-8 py-6">
         <Skeleton className="h-6 w-32 mb-8" />
         <Skeleton className="h-48 mb-6" />
         <Skeleton className="h-64" />
@@ -191,7 +191,7 @@ export default function TalentNestDetail() {
   }
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
+    <div className="w-full px-6 lg:px-8 py-6">
       {/* Back */}
       <button
         onClick={() => navigate(createPageUrl("TalentNests"))}

@@ -340,10 +340,10 @@ export default function TalentNests() {
 
   if (loading) {
     return (
-      <div className="p-8 max-w-6xl mx-auto">
+      <div className="w-full px-6 lg:px-8 py-6">
         <Skeleton className="h-10 w-48 mb-8" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          {[...Array(8)].map((_, i) => (
             <Skeleton key={i} className="h-40 rounded-xl" />
           ))}
         </div>
@@ -352,17 +352,17 @@ export default function TalentNests() {
   }
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
-      {/* Header - Simple and clean */}
-      <div className="mb-10">
-        <h1 className="text-3xl font-semibold text-white mb-2">Talent Nests</h1>
-        <p className="text-zinc-500">
-          Pre-built candidate datasets ready for your recruitment needs
+    <div className="w-full px-6 lg:px-8 py-6">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-semibold text-white mb-1">Talent Nests</h1>
+        <p className="text-zinc-500 text-sm">
+          Pre-built candidate datasets for your recruitment needs
         </p>
       </div>
 
-      {/* Search and Filters Bar - Minimal */}
-      <div className="flex items-center gap-4 mb-8">
+      {/* Search and Filters Bar */}
+      <div className="flex items-center gap-4 mb-6">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
           <Input
@@ -393,13 +393,13 @@ export default function TalentNests() {
         </Select>
       </div>
 
-      {/* Results count - Subtle */}
-      <p className="text-sm text-zinc-600 mb-6">
+      {/* Results count */}
+      <p className="text-sm text-zinc-500 mb-5">
         {filteredNests.length} nests available
       </p>
 
-      {/* Grid - Spacious, 3 columns max */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
         <AnimatePresence>
           {filteredNests.map((nest) => (
             <NestCard
