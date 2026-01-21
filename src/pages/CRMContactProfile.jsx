@@ -817,15 +817,19 @@ export default function CRMContactProfile() {
                 <SectionCard icon={Award} title={`Skills (${contact.skills?.length || 0})`}>
                   {contact.skills && contact.skills.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
-                      {contact.skills.map((skill, i) => (
-                        <Badge
-                          key={i}
-                          variant="outline"
-                          className="bg-cyan-500/10 border-cyan-500/30 text-cyan-400 px-3 py-1"
-                        >
-                          {skill}
-                        </Badge>
-                      ))}
+                      {contact.skills.map((skill, i) => {
+                        // Handle both string and object formats
+                        const skillName = typeof skill === 'object' ? (skill?.name || skill?.skill || JSON.stringify(skill)) : String(skill);
+                        return (
+                          <Badge
+                            key={i}
+                            variant="outline"
+                            className="bg-cyan-500/10 border-cyan-500/30 text-cyan-400 px-3 py-1"
+                          >
+                            {skillName}
+                          </Badge>
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="text-white/50 text-sm">No skills data available</p>
@@ -836,29 +840,36 @@ export default function CRMContactProfile() {
                 <SectionCard icon={History} title={`Work History (${contact.work_history?.length || 0})`}>
                   {contact.work_history && contact.work_history.length > 0 ? (
                     <div className="space-y-4">
-                      {contact.work_history.map((job, i) => (
-                        <div
-                          key={i}
-                          className="flex gap-4 p-4 bg-white/[0.02] rounded-xl border border-white/[0.04] hover:bg-white/[0.04] transition-colors"
-                        >
-                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/20 flex items-center justify-center border border-cyan-500/30 flex-shrink-0">
-                            <Briefcase className="w-6 h-6 text-cyan-400" />
+                      {contact.work_history.map((job, i) => {
+                        // Handle nested object structures from Explorium API
+                        const jobTitle = typeof job.title === 'object' ? job.title?.name : (job.title || job.job_title);
+                        const companyName = typeof job.company === 'object' ? job.company?.name : (job.company || job.company_name);
+                        const description = job.summary || job.description;
+
+                        return (
+                          <div
+                            key={i}
+                            className="flex gap-4 p-4 bg-white/[0.02] rounded-xl border border-white/[0.04] hover:bg-white/[0.04] transition-colors"
+                          >
+                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/20 flex items-center justify-center border border-cyan-500/30 flex-shrink-0">
+                              <Briefcase className="w-6 h-6 text-cyan-400" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-white">{jobTitle || 'Unknown Position'}</p>
+                              <p className="text-sm text-white/60">{companyName || 'Unknown Company'}</p>
+                              {(job.start_date || job.end_date) && (
+                                <p className="text-xs text-white/40 mt-1 flex items-center gap-1">
+                                  <Calendar className="w-3 h-3" />
+                                  {job.start_date} - {job.end_date || 'Present'}
+                                </p>
+                              )}
+                              {description && (
+                                <p className="text-sm text-white/50 mt-2 line-clamp-2">{description}</p>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-white">{job.title || job.job_title}</p>
-                            <p className="text-sm text-white/60">{job.company || job.company_name}</p>
-                            {(job.start_date || job.end_date) && (
-                              <p className="text-xs text-white/40 mt-1 flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                {job.start_date} - {job.end_date || 'Present'}
-                              </p>
-                            )}
-                            {job.description && (
-                              <p className="text-sm text-white/50 mt-2 line-clamp-2">{job.description}</p>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="text-white/50 text-sm">No work history data available</p>
@@ -871,21 +882,29 @@ export default function CRMContactProfile() {
                 <SectionCard icon={GraduationCap} title={`Education (${contact.education?.length || 0})`}>
                   {contact.education && contact.education.length > 0 ? (
                     <div className="space-y-4">
-                      {contact.education.map((edu, i) => (
-                        <div
-                          key={i}
-                          className="p-4 bg-white/[0.02] rounded-xl border border-white/[0.04]"
-                        >
-                          <p className="font-medium text-white">{edu.degree || edu.field_of_study}</p>
-                          <p className="text-sm text-white/60">{edu.school || edu.institution}</p>
-                          {edu.year && (
-                            <p className="text-xs text-white/40 mt-1 flex items-center gap-1">
-                              <Calendar className="w-3 h-3" />
-                              {edu.year}
-                            </p>
-                          )}
-                        </div>
-                      ))}
+                      {contact.education.map((edu, i) => {
+                        // Handle nested object structures from Explorium API
+                        const schoolName = typeof edu.school === 'object' ? edu.school?.name : (edu.school || edu.institution);
+                        const degreeName = Array.isArray(edu.degrees) ? edu.degrees.join(', ') : (edu.degree || edu.field_of_study);
+                        const majorName = Array.isArray(edu.majors) ? edu.majors.join(', ') : edu.major;
+                        const displayDegree = degreeName || majorName || 'Degree';
+
+                        return (
+                          <div
+                            key={i}
+                            className="p-4 bg-white/[0.02] rounded-xl border border-white/[0.04]"
+                          >
+                            <p className="font-medium text-white">{displayDegree}</p>
+                            <p className="text-sm text-white/60">{schoolName || 'Unknown Institution'}</p>
+                            {(edu.year || edu.end_date || edu.graduation_year) && (
+                              <p className="text-xs text-white/40 mt-1 flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                {edu.year || edu.end_date || edu.graduation_year}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="text-white/50 text-sm">No education data available</p>
@@ -896,20 +915,25 @@ export default function CRMContactProfile() {
                 <SectionCard icon={BadgeCheck} title={`Certifications (${contact.certifications?.length || 0})`}>
                   {contact.certifications && contact.certifications.length > 0 ? (
                     <div className="space-y-2">
-                      {contact.certifications.map((cert, i) => (
-                        <div
-                          key={i}
-                          className="flex items-center gap-3 p-3 bg-white/[0.02] rounded-xl border border-white/[0.04]"
-                        >
-                          <BadgeCheck className="w-5 h-5 text-green-400 flex-shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-white truncate">
-                              {typeof cert === 'string' ? cert : cert.name || cert.title}
-                            </p>
-                            {cert.issuer && <p className="text-xs text-white/50">{cert.issuer}</p>}
+                      {contact.certifications.map((cert, i) => {
+                        // Handle both string and object formats
+                        const certName = typeof cert === 'object' ? (cert?.name || cert?.title || JSON.stringify(cert)) : String(cert);
+                        const certIssuer = typeof cert === 'object' ? cert?.issuer : null;
+                        return (
+                          <div
+                            key={i}
+                            className="flex items-center gap-3 p-3 bg-white/[0.02] rounded-xl border border-white/[0.04]"
+                          >
+                            <BadgeCheck className="w-5 h-5 text-green-400 flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-white truncate">
+                                {certName}
+                              </p>
+                              {certIssuer && <p className="text-xs text-white/50">{certIssuer}</p>}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="text-white/50 text-sm">No certifications data available</p>
@@ -920,15 +944,19 @@ export default function CRMContactProfile() {
                 <SectionCard icon={Lightbulb} title={`Interests (${contact.interests?.length || 0})`}>
                   {contact.interests && contact.interests.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
-                      {contact.interests.map((interest, i) => (
-                        <Badge
-                          key={i}
-                          variant="outline"
-                          className="bg-purple-500/10 border-purple-500/30 text-purple-400"
-                        >
-                          {interest}
-                        </Badge>
-                      ))}
+                      {contact.interests.map((interest, i) => {
+                        // Handle both string and object formats
+                        const interestName = typeof interest === 'object' ? (interest?.name || interest?.interest || JSON.stringify(interest)) : String(interest);
+                        return (
+                          <Badge
+                            key={i}
+                            variant="outline"
+                            className="bg-purple-500/10 border-purple-500/30 text-purple-400"
+                          >
+                            {interestName}
+                          </Badge>
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="text-white/50 text-sm">No interests data available</p>
