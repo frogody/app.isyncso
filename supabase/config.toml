@@ -57,3 +57,12 @@ verify_jwt = false
 
 [functions.searchJobPosting]
 verify_jwt = false
+
+[functions.explorium-enrich]
+verify_jwt = false
+
+[functions.exploriumPeople]
+verify_jwt = false
+
+[functions.exploriumFirmographics]
+verify_jwt = false

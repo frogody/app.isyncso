@@ -38,9 +38,10 @@ serve(async (req) => {
     const body: EnrichRequest = await req.json();
     console.log("Explorium enrich request:", body.action);
 
-    // Match contact by LinkedIn, email, or name+company
-    async function matchContact(params: { linkedin?: string; email?: string; full_name?: string; company_name?: string; company_domain?: string }) {
-      const contactToMatch: Record<string, string | null> = {
+    // Match prospect by LinkedIn, email, or name+company
+    // Updated to use new Explorium API endpoints (/v1/prospects/ instead of /v1/contacts/)
+    async function matchProspect(params: { linkedin?: string; email?: string; full_name?: string; company_name?: string; company_domain?: string }) {
+      const prospectToMatch: Record<string, string | null> = {
         email: params.email || null,
         linkedin_url: params.linkedin || null,
         full_name: params.full_name || null,
@@ -48,35 +49,35 @@ serve(async (req) => {
         company_domain: params.company_domain || null,
       };
 
-      console.log("Matching contact:", contactToMatch);
+      console.log("Matching prospect:", prospectToMatch);
 
-      const response = await fetch(`${EXPLORIUM_API_BASE}/contacts/match`, {
+      const response = await fetch(`${EXPLORIUM_API_BASE}/prospects/match`, {
         method: "POST",
         headers: {
           "API_KEY": EXPLORIUM_API_KEY,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          contacts_to_match: [contactToMatch],
+          prospects_to_match: [prospectToMatch],
         }),
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("Contact match error:", response.status, errorText);
-        throw new Error(`Contact match failed: ${response.status} - ${errorText}`);
+        console.error("Prospect match error:", response.status, errorText);
+        throw new Error(`Prospect match failed: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
       console.log("Match response:", JSON.stringify(data));
-      return data.matched_contacts?.[0]?.contact_id || null;
+      return data.matched_prospects?.[0]?.prospect_id || null;
     }
 
-    // Enrich contact by contact_id
-    async function enrichContact(contactId: string) {
-      console.log("Enriching contact:", contactId);
+    // Enrich prospect profile (skills, experience, education)
+    async function enrichProspectProfile(prospectId: string) {
+      console.log("Enriching prospect profile:", prospectId);
 
-      const response = await fetch(`${EXPLORIUM_API_BASE}/contacts/enrich`, {
+      const response = await fetch(`${EXPLORIUM_API_BASE}/prospects/profiles/enrich`, {
         method: "POST",
         headers: {
           "api_key": EXPLORIUM_API_KEY,
@@ -84,19 +85,42 @@ serve(async (req) => {
           "content-type": "application/json",
         },
         body: JSON.stringify({
-          contact_ids: [contactId],
+          prospect_ids: [prospectId],
         }),
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("Contact enrich error:", response.status, errorText);
-        throw new Error(`Contact enrichment failed: ${response.status} - ${errorText}`);
+        console.error("Profile enrich error:", response.status, errorText);
+        throw new Error(`Profile enrichment failed: ${response.status} - ${errorText}`);
       }
 
-      const data = await response.json();
-      console.log("Enrich response received");
-      return data;
+      return response.json();
+    }
+
+    // Enrich prospect contact info (emails, phones)
+    async function enrichProspectContacts(prospectId: string) {
+      console.log("Enriching prospect contacts:", prospectId);
+
+      const response = await fetch(`${EXPLORIUM_API_BASE}/prospects/contacts_information/enrich`, {
+        method: "POST",
+        headers: {
+          "api_key": EXPLORIUM_API_KEY,
+          "accept": "application/json",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          prospect_ids: [prospectId],
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Contact info enrich error:", response.status, errorText);
+        throw new Error(`Contact info enrichment failed: ${response.status} - ${errorText}`);
+      }
+
+      return response.json();
     }
 
     // Match business by name or domain
@@ -127,11 +151,11 @@ serve(async (req) => {
       return data.matched_businesses?.[0]?.business_id || null;
     }
 
-    // Enrich business by business_id
+    // Enrich business firmographics by business_id
     async function enrichBusiness(businessId: string) {
       console.log("Enriching business:", businessId);
 
-      const response = await fetch(`${EXPLORIUM_API_BASE}/businesses/enrich`, {
+      const response = await fetch(`${EXPLORIUM_API_BASE}/businesses/firmographics/enrich`, {
         method: "POST",
         headers: {
           "api_key": EXPLORIUM_API_KEY,
@@ -139,7 +163,7 @@ serve(async (req) => {
           "content-type": "application/json",
         },
         body: JSON.stringify({
-          business_id: businessId,
+          business_ids: [businessId],
         }),
       });
 
@@ -154,18 +178,32 @@ serve(async (req) => {
 
     // Full enrich flow
     async function fullEnrich(params: { linkedin?: string; email?: string; full_name?: string; company_name?: string }) {
-      // Step 1: Match contact
-      const contactId = await matchContact(params);
-      if (!contactId) {
-        throw new Error("Could not find contact in Explorium database");
+      // Step 1: Match prospect
+      const prospectId = await matchProspect(params);
+      if (!prospectId) {
+        throw new Error("Could not find prospect in Explorium database. Try a different LinkedIn URL or email.");
       }
 
-      // Step 2: Enrich contact
-      const enrichData = await enrichContact(contactId);
-      const contactData = enrichData.data?.[0] || enrichData[0] || {};
+      // Step 2: Enrich prospect profile (skills, experience, education)
+      let profileData: Record<string, any> = {};
+      try {
+        const profileEnrich = await enrichProspectProfile(prospectId);
+        profileData = profileEnrich.data?.[0] || profileEnrich[0] || {};
+      } catch (e) {
+        console.warn("Profile enrichment failed:", e);
+      }
 
-      // Extract fields from enriched data
-      const profile = contactData;
+      // Step 3: Enrich prospect contacts (emails, phones)
+      let contactData: Record<string, any> = {};
+      try {
+        const contactEnrich = await enrichProspectContacts(prospectId);
+        contactData = contactEnrich.data?.[0] || contactEnrich[0] || {};
+      } catch (e) {
+        console.warn("Contact enrichment failed:", e);
+      }
+
+      // Merge profile and contact data
+      const profile = { ...profileData, ...contactData };
 
       // Step 3: Try to enrich company if we have company info
       let companyData: Record<string, any> = {};
@@ -236,7 +274,7 @@ serve(async (req) => {
         // Metadata
         enriched_at: new Date().toISOString(),
         enrichment_source: "explorium",
-        explorium_contact_id: contactId,
+        explorium_prospect_id: prospectId,
         explorium_business_id: companyData.business_id,
       };
     }
@@ -251,13 +289,20 @@ serve(async (req) => {
         result = await fullEnrich(body);
         break;
 
-      case "match_contact":
-        result = { contact_id: await matchContact(body) };
+      case "match_prospect":
+      case "match_contact": // Legacy support
+        result = { prospect_id: await matchProspect(body) };
         break;
 
-      case "enrich_contact":
-        if (!body.contact_id) throw new Error("contact_id required");
-        result = await enrichContact(body.contact_id);
+      case "enrich_profile":
+      case "enrich_contact": // Legacy support
+        if (!body.prospect_id && !body.contact_id) throw new Error("prospect_id required");
+        result = await enrichProspectProfile(body.prospect_id || body.contact_id);
+        break;
+
+      case "enrich_contacts":
+        if (!body.prospect_id) throw new Error("prospect_id required");
+        result = await enrichProspectContacts(body.prospect_id);
         break;
 
       case "match_business":
