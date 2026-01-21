@@ -573,7 +573,7 @@ export default function CRMContactProfile() {
           </div>
 
           {/* Quick Stats Bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4 mt-8 pt-8 border-t border-white/[0.06]">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 gap-4 mt-8 pt-8 border-t border-white/[0.06]">
             <div className="text-center">
               <p className="text-sm text-white/40 mb-1">Contact Type</p>
               <p className="text-lg font-semibold text-white capitalize">
@@ -600,6 +600,18 @@ export default function CRMContactProfile() {
               <p className="text-sm text-white/40 mb-1">Department</p>
               <p className="text-lg font-semibold text-white capitalize">
                 {contact.job_department || '-'}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-white/40 mb-1">Gender</p>
+              <p className="text-lg font-semibold text-white capitalize">
+                {contact.gender || '-'}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-white/40 mb-1">Age Group</p>
+              <p className="text-lg font-semibold text-white capitalize">
+                {contact.age_group || '-'}
               </p>
             </div>
             <div className="text-center">
