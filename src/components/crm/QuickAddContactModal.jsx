@@ -129,96 +129,34 @@ export function QuickAddContactModal({ isOpen, onClose, onSuccess, targetTable =
 
         if (insertError) throw insertError;
       } else if (targetTable === 'prospects') {
-        const orgId = user.organization_id || user.company_id;
-        let crmCompanyId = null;
-
-        // Auto-create or match company if we have company data
-        if (enrichedData.company || enrichedData.company_domain) {
-          try {
-            const { data: companyId, error: companyError } = await supabase.rpc(
-              'find_or_create_crm_company',
-              {
-                p_organization_id: orgId,
-                p_owner_id: user.id,
-                p_name: enrichedData.company,
-                p_domain: enrichedData.company_domain,
-                p_linkedin_url: enrichedData.company_linkedin,
-                p_industry: enrichedData.company_industry,
-                p_company_size: enrichedData.company_size,
-                p_employee_count: enrichedData.company_employee_count,
-                p_revenue: enrichedData.company_revenue,
-                p_founded_year: enrichedData.company_founded_year,
-                p_hq_location: enrichedData.company_hq_location,
-                p_description: enrichedData.company_description,
-                p_tech_stack: enrichedData.company_tech_stack,
-                p_funding_total: enrichedData.company_funding_total,
-                p_latest_funding: enrichedData.company_latest_funding,
-                p_explorium_business_id: enrichedData.explorium_business_id,
-                p_source: isLinkedIn ? 'LinkedIn' : 'Email',
-              }
-            );
-
-            if (companyError) {
-              console.warn('Company creation failed:', companyError);
-            } else {
-              crmCompanyId = companyId;
-            }
-          } catch (err) {
-            console.warn('Failed to auto-create company:', err);
-          }
-        }
-
-        // Save ALL enriched fields to prospects table with company link
+        // Use only columns that definitely exist in prospects table
         const { error: insertError } = await supabase.from('prospects').insert({
-          organization_id: orgId,
           owner_id: user.id,
-          crm_company_id: crmCompanyId,
           // Basic contact info
           first_name: enrichedData.first_name,
           last_name: enrichedData.last_name,
           email: enrichedData.email,
-          phone: enrichedData.phone,
-          mobile_phone: enrichedData.mobile_phone,
-          personal_email: enrichedData.personal_email,
+          phone: enrichedData.phone || enrichedData.mobile_phone,
           linkedin_url: enrichedData.linkedin_url,
-          // Location
-          location: [enrichedData.location_city, enrichedData.location_country].filter(Boolean).join(', '),
-          location_city: enrichedData.location_city,
-          location_region: enrichedData.location_region,
-          location_country: enrichedData.location_country,
+          // Location - combine into single field
+          location: [enrichedData.location_city, enrichedData.location_region, enrichedData.location_country].filter(Boolean).join(', '),
           // Professional info
           company: enrichedData.company,
           job_title: enrichedData.job_title,
-          job_department: enrichedData.job_department,
-          job_seniority_level: enrichedData.job_seniority_level,
-          skills: enrichedData.skills,
-          education: enrichedData.education,
-          work_history: enrichedData.work_history,
-          age_group: enrichedData.age_group,
-          interests: enrichedData.interests,
           // Company info
-          company_domain: enrichedData.company_domain,
-          company_linkedin: enrichedData.company_linkedin,
-          company_industry: enrichedData.company_industry,
-          company_size: enrichedData.company_size,
-          company_employee_count: enrichedData.company_employee_count,
-          company_revenue: enrichedData.company_revenue,
-          company_founded_year: enrichedData.company_founded_year,
-          company_hq_location: enrichedData.company_hq_location,
-          company_description: enrichedData.company_description,
-          company_tech_stack: enrichedData.company_tech_stack,
-          company_funding_total: enrichedData.company_funding_total,
-          company_latest_funding: enrichedData.company_latest_funding,
-          // Enrichment tracking
-          enriched_at: enrichedData.enriched_at,
-          enrichment_source: enrichedData.enrichment_source,
-          explorium_prospect_id: enrichedData.explorium_prospect_id,
-          explorium_business_id: enrichedData.explorium_business_id,
-          // CRM fields
           industry: enrichedData.company_industry,
+          company_size: enrichedData.company_size,
+          website: enrichedData.company_domain ? `https://${enrichedData.company_domain}` : null,
+          // CRM fields
           stage: 'New Lead',
           source: isLinkedIn ? 'LinkedIn' : 'Email',
           contact_type: 'lead',
+          notes: [
+            enrichedData.job_department ? `Department: ${enrichedData.job_department}` : null,
+            enrichedData.job_seniority_level ? `Seniority: ${enrichedData.job_seniority_level}` : null,
+            enrichedData.skills?.length ? `Skills: ${enrichedData.skills.slice(0, 10).join(', ')}` : null,
+            enrichedData.company_description ? `Company: ${enrichedData.company_description.slice(0, 200)}` : null,
+          ].filter(Boolean).join('\n'),
         });
 
         if (insertError) throw insertError;
