@@ -232,6 +232,10 @@ import TalentAnalytics from "./TalentAnalytics";
 
 import TalentClients from "./TalentClients";
 
+import TalentNests from "./TalentNests";
+
+import TalentNestDetail from "./TalentNestDetail";
+
 import { BrowserRouter as Router, Route, Routes, useLocation, Navigate } from 'react-router-dom';
 
 const PAGES = {
@@ -467,6 +471,10 @@ const PAGES = {
     TalentAnalytics: TalentAnalytics,
 
     TalentClients: TalentClients,
+
+    TalentNests: TalentNests,
+
+    TalentNestDetail: TalentNestDetail,
 
 }
 
@@ -731,6 +739,10 @@ function PagesContent() {
                 <Route path="/TalentProjects" element={<TalentProjects />} />
 
                 <Route path="/TalentAnalytics" element={<Navigate to="/TalentDashboard" replace />} />
+
+                <Route path="/TalentNests" element={<TalentNests />} />
+
+                <Route path="/TalentNestDetail" element={<TalentNestDetail />} />
 
                 {/* 404 catch-all route */}
                 <Route path="*" element={
