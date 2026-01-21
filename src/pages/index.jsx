@@ -29,6 +29,10 @@ import BackendStatus from "./BackendStatus";
 
 import CRMContacts from "./CRMContacts";
 
+import CRMCompanyProfile from "./CRMCompanyProfile";
+
+import CRMContactProfile from "./CRMContactProfile";
+
 import Certificates from "./Certificates";
 
 import CompanyDashboard from "./CompanyDashboard";
@@ -269,7 +273,11 @@ const PAGES = {
     BackendStatus: BackendStatus,
     
     CRMContacts: CRMContacts,
-    
+
+    CRMCompanyProfile: CRMCompanyProfile,
+
+    CRMContactProfile: CRMContactProfile,
+
     Certificates: Certificates,
     
     CompanyDashboard: CompanyDashboard,
@@ -534,7 +542,11 @@ function PagesContent() {
                 <Route path="/BackendStatus" element={<BackendStatus />} />
                 
                 <Route path="/CRMContacts" element={<CRMContacts />} />
-                
+
+                <Route path="/CRMCompanyProfile" element={<CRMCompanyProfile />} />
+
+                <Route path="/CRMContactProfile" element={<CRMContactProfile />} />
+
                 <Route path="/Certificates" element={<Certificates />} />
                 
                 <Route path="/CompanyDashboard" element={<CompanyDashboard />} />

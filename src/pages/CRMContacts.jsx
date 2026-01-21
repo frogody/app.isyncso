@@ -6,6 +6,7 @@ const animate = anime;
 const stagger = anime.stagger;
 import { db, supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
+import { createPageUrl } from "@/utils";
 import { prefersReducedMotion } from "@/lib/animations";
 
 // Contact type definitions
@@ -21,7 +22,7 @@ const CONTACT_TYPES = [
   { id: 'recruitment_client', label: 'Recruitment Clients' },
 ];
 import {
-  Plus, Search, Filter, Mail, Phone, Building2, MapPin, MoreVertical, X,
+  Plus, Search, Filter, Mail, Phone, Building, Building2, MapPin, MoreVertical, X,
   Download, Upload, Trash2, Tag, User, Calendar, MessageSquare, ExternalLink,
   ChevronDown, ChevronRight, Clock, Star, StarOff, FileText, Briefcase,
   TrendingUp, Activity, Edit2, CheckCircle2, XCircle, Users, Globe, Eye,
@@ -725,6 +726,8 @@ export default function CRMContacts() {
   const [searchQuery, setSearchQuery] = useState("");
   const [stageFilter, setStageFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
+  const [companyFilter, setCompanyFilter] = useState("all");
+  const [companies, setCompanies] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState(emptyContact);
   const [editingContact, setEditingContact] = useState(null);
@@ -786,6 +789,8 @@ export default function CRMContacts() {
         active_projects_count: p.active_projects_count || 0,
         total_placements: p.total_placements || 0,
         total_revenue_generated: p.total_revenue_generated || 0,
+        // Company linking
+        crm_company_id: p.crm_company_id,
       }));
       setContacts(contactList);
 
@@ -796,6 +801,16 @@ export default function CRMContacts() {
           .select('*')
           .eq('company_id', user.company_id);
         setSuppliers(supplierData || []);
+      }
+
+      // Load CRM companies for filtering
+      if (user?.organization_id) {
+        const { data: companyData } = await supabase
+          .from('crm_companies')
+          .select('id, name, domain')
+          .eq('organization_id', user.organization_id)
+          .order('name');
+        setCompanies(companyData || []);
       }
     } catch (error) {
       console.error("Failed to load contacts:", error);
@@ -858,9 +873,10 @@ export default function CRMContacts() {
       const matchesStage = stageFilter === "all" || c.stage === stageFilter;
       const matchesSource = sourceFilter === "all" || c.source === sourceFilter;
       const matchesType = selectedContactType === "all" || c.contact_type === selectedContactType;
-      return matchesSearch && matchesStage && matchesSource && matchesType;
+      const matchesCompany = companyFilter === "all" || c.crm_company_id === companyFilter;
+      return matchesSearch && matchesStage && matchesSource && matchesType && matchesCompany;
     });
-  }, [contacts, suppliers, searchQuery, stageFilter, sourceFilter, selectedContactType]);
+  }, [contacts, suppliers, searchQuery, stageFilter, sourceFilter, selectedContactType, companyFilter]);
 
   const contactsByStage = useMemo(() => {
     const grouped = {};
@@ -1079,9 +1095,8 @@ export default function CRMContacts() {
   };
 
   const handleViewContact = (contact) => {
-    setDetailContact(contact);
-    loadContactDetails(contact);
-    setShowDetailSheet(true);
+    // Navigate to full-page profile instead of sheet
+    navigate(createPageUrl('CRMContactProfile') + `?id=${contact.id}`);
   };
 
   const handleBulkDelete = async () => {
@@ -1255,6 +1270,22 @@ export default function CRMContacts() {
               {CONTACT_SOURCES.map(s => <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>)}
             </SelectContent>
           </Select>
+          {companies.length > 0 && (
+            <Select value={companyFilter} onValueChange={setCompanyFilter}>
+              <SelectTrigger className="w-full sm:w-48 bg-zinc-900 border-zinc-800">
+                <Building className="w-4 h-4 mr-2 text-zinc-400" />
+                <SelectValue placeholder="Company" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border-zinc-800">
+                <SelectItem value="all">All Companies</SelectItem>
+                {companies.map(c => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
 
           {/* Bulk Actions */}
           {selectedContacts.length > 0 && (
