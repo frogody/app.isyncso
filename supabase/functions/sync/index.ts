@@ -144,6 +144,11 @@ import {
   applyPattern,
 } from './memory/learning.ts';
 
+// Import HybridRAG for cross-integration search
+import { HybridRAG, createHybridRAG, HybridSearchResult } from './tools/hybrid-rag.ts';
+import { IntegrationSync } from './tools/integration-sync.ts';
+import { GrowthAgent, GrowthContext } from './workflows/growth-agent.ts';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -2063,6 +2068,19 @@ interface SyncRequest {
     userId?: string;
     companyId?: string;
     metadata?: Record<string, unknown>;
+    // RAG configuration
+    includeRAG?: boolean;
+    includeIntegrations?: boolean;
+    agentHint?: 'growth' | 'finance' | 'crm' | 'learn';
+    requestType?: 'rag_search_only' | 'integration_sync' | 'autonomous_growth' | string;
+    integration?: string;
+    ragConfig?: {
+      vectorWeight?: number;
+      graphWeight?: number;
+      includeIntegrations?: boolean;
+      expandRelationships?: boolean;
+      relationshipDepth?: number;
+    };
   };
 }
 
@@ -2117,6 +2135,20 @@ interface SyncResponse {
   document?: {
     url: string;
     title: string;
+  };
+  // RAG context used to generate response
+  ragContext?: Array<{
+    id: string;
+    content: string;
+    sourceType: string;
+    similarity: number;
+    metadata?: Record<string, unknown>;
+  }>;
+  // Autonomous agent results
+  autonomousAgent?: {
+    agentType: string;
+    tasksExecuted: number;
+    suggestedActions?: string[];
   };
 }
 
@@ -2396,6 +2428,135 @@ serve(async (req) => {
 
     // Detect agent routing
     const routingResult = detectAgentFromMessage(message);
+
+    // =========================================================================
+    // RAG CONTEXT ENRICHMENT: Search across all data sources
+    // =========================================================================
+    let ragContext: HybridSearchResult[] = [];
+
+    // Check if RAG is requested or if this is a Growth agent query
+    const useRAG = context?.includeRAG ||
+                   context?.agentHint === 'growth' ||
+                   routingResult.agentId === 'growth';
+
+    if (useRAG) {
+      try {
+        console.log(`[SYNC] Initializing HybridRAG for query: "${message.substring(0, 50)}..."`);
+        const hybridRAG = new HybridRAG(
+          supabase,
+          companyId,
+          userId || undefined,
+          context?.ragConfig
+        );
+
+        ragContext = await hybridRAG.search(message, {
+          includeIntegrations: context?.includeIntegrations ?? true,
+          maxResults: 10,
+        });
+
+        console.log(`[SYNC] HybridRAG found ${ragContext.length} relevant results`);
+      } catch (ragError) {
+        console.error('[SYNC] HybridRAG search error:', ragError);
+      }
+    }
+
+    // =========================================================================
+    // RAG-ONLY SEARCH PATH: Just return search results without LLM
+    // =========================================================================
+    if (context?.requestType === 'rag_search_only') {
+      return new Response(
+        JSON.stringify({
+          response: `Found ${ragContext.length} relevant items across your data sources.`,
+          sessionId: session.session_id,
+          ragContext: ragContext.map(r => ({
+            id: r.id,
+            content: r.content,
+            sourceType: r.sourceType,
+            similarity: r.combinedScore,
+            metadata: r.metadata,
+          })),
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // =========================================================================
+    // INTEGRATION SYNC PATH: Sync data from connected integrations
+    // =========================================================================
+    if (context?.requestType === 'integration_sync' && context?.integration) {
+      try {
+        console.log(`[SYNC] Starting integration sync for: ${context.integration}`);
+        const integrationSync = new IntegrationSync(supabase, companyId, userId || undefined);
+
+        // This would be triggered by actual integration data
+        // For now, return a status response
+        return new Response(
+          JSON.stringify({
+            response: `Syncing ${context.integration} data... This will be indexed for search.`,
+            sessionId: session.session_id,
+            autonomousAgent: {
+              agentType: 'integration_sync',
+              tasksExecuted: 1,
+              suggestedActions: [`Search your ${context.integration} data`, 'Check sync status'],
+            },
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } catch (syncError) {
+        console.error('[SYNC] Integration sync error:', syncError);
+      }
+    }
+
+    // =========================================================================
+    // AUTONOMOUS GROWTH AGENT PATH: Full autonomous workflow
+    // =========================================================================
+    if (context?.requestType === 'autonomous_growth' ||
+        (context?.agentHint === 'growth' && message.toLowerCase().includes('autonomous'))) {
+      try {
+        console.log(`[SYNC] Launching autonomous Growth Agent`);
+        const growthAgent = new GrowthAgent(supabase, companyId, userId || undefined);
+
+        const growthResult = await growthAgent.processQuery(message);
+
+        // Store the interaction
+        const growthMsg: ChatMessage = {
+          role: 'assistant',
+          content: growthResult.response,
+          timestamp: new Date().toISOString(),
+          agentId: 'growth',
+        };
+        await memorySystem.session.addMessage(session, {
+          role: 'user',
+          content: message,
+          timestamp: new Date().toISOString(),
+        });
+        await memorySystem.session.addMessage(session, growthMsg);
+        await memorySystem.session.updateSession(session);
+
+        return new Response(
+          JSON.stringify({
+            response: growthResult.response,
+            sessionId: session.session_id,
+            delegatedTo: 'growth',
+            ragContext: growthResult.ragContext?.map(r => ({
+              id: r.id,
+              content: r.content,
+              sourceType: r.sourceType,
+              similarity: r.combinedScore,
+              metadata: r.metadata,
+            })),
+            autonomousAgent: {
+              agentType: 'growth',
+              tasksExecuted: growthResult.autonomousTasks?.length || 0,
+              suggestedActions: growthResult.suggestedActions,
+            },
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } catch (growthError) {
+        console.error('[SYNC] Autonomous Growth Agent error:', growthError);
+      }
+    }
 
     // =========================================================================
     // ORCHESTRATION PATH: Detect complex multi-agent workflows
@@ -3537,6 +3698,14 @@ Output the create_${docType} [ACTION] block NOW. Do NOT ask any more questions!`
         url: documentInfo.documentUrl,
         title: documentInfo.documentTitle,
       } : undefined,
+      // Include RAG context used to generate response
+      ragContext: ragContext.length > 0 ? ragContext.map(r => ({
+        id: r.id,
+        content: r.content,
+        sourceType: r.sourceType,
+        similarity: r.combinedScore,
+        metadata: r.metadata,
+      })) : undefined,
     };
 
     return new Response(

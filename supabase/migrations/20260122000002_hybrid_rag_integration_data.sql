@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS public.sync_integration_data (
   external_id TEXT NOT NULL,       -- ID from the external system
   content TEXT NOT NULL,           -- Searchable content
   title TEXT,                      -- Title/subject
-  timestamp TIMESTAMPTZ,           -- Original timestamp from source
+  "timestamp" TIMESTAMPTZ,           -- Original timestamp from source
   embedding vector(1024),          -- Vector embedding for semantic search
   metadata JSONB DEFAULT '{}',     -- Additional data from source
   synced_at TIMESTAMPTZ DEFAULT NOW(),
@@ -80,7 +80,7 @@ RETURNS TABLE (
   external_id TEXT,
   content TEXT,
   title TEXT,
-  timestamp TIMESTAMPTZ,
+  "timestamp" TIMESTAMPTZ,
   metadata JSONB,
   synced_at TIMESTAMPTZ,
   similarity FLOAT

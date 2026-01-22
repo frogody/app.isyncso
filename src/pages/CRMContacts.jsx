@@ -747,6 +747,64 @@ export default function CRMContacts() {
   const tableBodyRef = useRef(null);
   const reducedMotion = prefersReducedMotion();
 
+  // RAG-powered cross-platform search
+  const [ragSearchResults, setRagSearchResults] = useState([]);
+  const [ragSearching, setRagSearching] = useState(false);
+  const [showRagResults, setShowRagResults] = useState(false);
+
+  // RAG search across all integrations (Gmail, Calendar, HubSpot, etc.)
+  const handleRagSearch = async () => {
+    if (!searchQuery.trim()) {
+      toast.error("Enter a search query first");
+      return;
+    }
+
+    setRagSearching(true);
+    setShowRagResults(true);
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            message: searchQuery,
+            context: {
+              userId: user?.id,
+              companyId: user?.company_id,
+              requestType: "rag_search_only",
+              includeIntegrations: true,
+              ragConfig: {
+                vectorWeight: 0.6,
+                graphWeight: 0.4,
+                includeIntegrations: true,
+              },
+            },
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setRagSearchResults(data.ragContext || []);
+        if (data.ragContext?.length === 0) {
+          toast.info("No results found across integrations");
+        } else {
+          toast.success(`Found ${data.ragContext?.length || 0} results across your data sources`);
+        }
+      }
+    } catch (err) {
+      console.error("RAG search error:", err);
+      toast.error("Search failed. Please try again.");
+    } finally {
+      setRagSearching(false);
+    }
+  };
+
   // Pagination state - 50 contacts per page for performance
   const PAGE_SIZE = 50;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -1304,16 +1362,79 @@ export default function CRMContacts() {
 
         {/* Search & Filters */}
         <div className="space-y-3 mb-4 sm:mb-6">
-          {/* Search bar - full width on mobile */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-            <Input
-              placeholder="Search contacts..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-zinc-900 border-zinc-800 h-11 sm:h-10"
-            />
+          {/* Search bar with RAG search - full width on mobile */}
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+              <Input
+                placeholder="Search contacts or ask about them..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && searchQuery.length > 3 && handleRagSearch()}
+                className="pl-10 bg-zinc-900 border-zinc-800 h-11 sm:h-10"
+              />
+            </div>
+            <Button
+              onClick={handleRagSearch}
+              disabled={ragSearching || !searchQuery.trim()}
+              className="bg-cyan-600 hover:bg-cyan-500 h-11 sm:h-10 px-4"
+            >
+              {ragSearching ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">Smart Search</span>
+                </>
+              )}
+            </Button>
           </div>
+
+          {/* RAG Search Results Panel */}
+          {showRagResults && ragSearchResults.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="p-4 rounded-xl bg-zinc-900/80 border border-cyan-500/30"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-medium text-white flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-cyan-400" />
+                  Cross-Platform Results ({ragSearchResults.length})
+                </h3>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setShowRagResults(false)}
+                  className="text-zinc-400 hover:text-white h-7"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[300px] overflow-y-auto">
+                {ragSearchResults.map((result, i) => (
+                  <div
+                    key={i}
+                    className="p-3 rounded-lg bg-zinc-800/50 border border-zinc-700/50 hover:border-cyan-500/30 transition-colors"
+                  >
+                    <div className="flex items-start gap-2">
+                      <Badge className="text-[10px] bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
+                        {result.sourceType}
+                      </Badge>
+                      <p className="text-sm text-zinc-300 line-clamp-2 flex-1">
+                        {result.content?.substring(0, 150)}...
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 mt-2 text-[10px] text-zinc-500">
+                      <span>{Math.round((result.similarity || 0) * 100)}% match</span>
+                      {result.metadata?.from && <span>From: {result.metadata.from}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
 
           {/* Filters - horizontal scroll on mobile */}
           <div className="flex gap-2 overflow-x-auto pb-2 -mx-3 px-3 sm:mx-0 sm:px-0 sm:overflow-visible sm:flex-wrap scrollbar-hide">
