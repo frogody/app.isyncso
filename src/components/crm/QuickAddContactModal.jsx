@@ -26,10 +26,13 @@ import {
 import { fullEnrichFromLinkedIn, fullEnrichFromEmail } from '@/lib/explorium-api';
 import { supabase } from '@/api/supabaseClient';
 import { useUser } from '@/components/context/UserContext';
+import { usePermissions } from '@/components/context/PermissionContext';
 import { toast } from 'sonner';
 
 export function QuickAddContactModal({ isOpen, onClose, onSuccess, targetTable = 'contacts' }) {
   const { user } = useUser();
+  const { hasPermission } = usePermissions();
+  const canCreate = hasPermission('users.create');
   const [inputValue, setInputValue] = useState('');
   const [inputType, setInputType] = useState('linkedin'); // 'linkedin' or 'email'
   const [loading, setLoading] = useState(false);
@@ -80,10 +83,31 @@ export function QuickAddContactModal({ isOpen, onClose, onSuccess, targetTable =
 
   const handleSave = async () => {
     if (!enrichedData) return;
+    if (!canCreate) {
+      toast.error("You don't have permission to create contacts");
+      return;
+    }
 
     setLoading(true);
     try {
       const fullName = `${enrichedData.first_name} ${enrichedData.last_name}`.trim();
+
+      // Check for duplicate email
+      if (enrichedData.email) {
+        const tableName = targetTable === 'contacts' ? 'contacts' : 'prospects';
+        const { data: existingContact, error: checkError } = await supabase
+          .from(tableName)
+          .select('id, first_name, last_name, email')
+          .eq('organization_id', user.organization_id || user.company_id)
+          .eq('email', enrichedData.email)
+          .maybeSingle();
+
+        if (existingContact) {
+          toast.error(`A contact with email ${enrichedData.email} already exists: ${existingContact.first_name || ''} ${existingContact.last_name || ''}`);
+          setLoading(false);
+          return;
+        }
+      }
 
       if (targetTable === 'contacts') {
         const { error: insertError } = await supabase.from('contacts').insert({

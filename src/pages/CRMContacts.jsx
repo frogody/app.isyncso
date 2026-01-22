@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import anime from '@/lib/anime-wrapper';
 const animate = anime;
 const stagger = anime.stagger;
 import { db, supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
+import { usePermissions } from "@/components/context/PermissionContext";
 import { createPageUrl } from "@/utils";
 import { prefersReducedMotion } from "@/lib/animations";
 
@@ -713,9 +714,15 @@ function CRMAnalytics({ contacts }) {
 // Main CRM Component
 export default function CRMContacts() {
   const { user } = useUser();
+  const { hasPermission } = usePermissions();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const selectedContactType = searchParams.get('type') || 'all';
+
+  // Permission checks
+  const canCreate = hasPermission('users.create');
+  const canEdit = hasPermission('users.edit');
+  const canDelete = hasPermission('users.delete');
 
   const [contacts, setContacts] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
@@ -739,6 +746,10 @@ export default function CRMContacts() {
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const tableBodyRef = useRef(null);
   const reducedMotion = prefersReducedMotion();
+
+  // Pagination state - 50 contacts per page for performance
+  const PAGE_SIZE = 50;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   useEffect(() => {
     if (user?.id) loadContacts();
@@ -887,6 +898,23 @@ export default function CRMContacts() {
     return grouped;
   }, [filteredContacts]);
 
+  // Paginated contacts for table/grid views (performance optimization)
+  const paginatedContacts = useMemo(() => {
+    return (filteredContacts || []).slice(0, visibleCount);
+  }, [filteredContacts, visibleCount]);
+
+  const hasMoreContacts = (filteredContacts?.length || 0) > visibleCount;
+  const remainingCount = Math.max(0, (filteredContacts?.length || 0) - visibleCount);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [searchQuery, stageFilter, sourceFilter, selectedContactType, companyFilter]);
+
+  const handleLoadMore = () => {
+    setVisibleCount(prev => prev + PAGE_SIZE);
+  };
+
   // Animate table rows on load (after filteredContacts is defined)
   useEffect(() => {
     if (tableBodyRef.current && viewMode === 'table' && !prefersReducedMotion()) {
@@ -930,6 +958,16 @@ export default function CRMContacts() {
 
     if (!user?.id) {
       toast.error("You must be logged in to create contacts");
+      return;
+    }
+
+    // Check permissions for create vs edit
+    if (editingContact && !canEdit) {
+      toast.error("You don't have permission to edit contacts");
+      return;
+    }
+    if (!editingContact && !canCreate) {
+      toast.error("You don't have permission to create contacts");
       return;
     }
 
@@ -1005,6 +1043,10 @@ export default function CRMContacts() {
   };
 
   const handleDelete = async (id) => {
+    if (!canDelete) {
+      toast.error("You don't have permission to delete contacts");
+      return;
+    }
     if (!confirm("Delete this contact?")) return;
     try {
       await db.entities.Prospect.delete(id);
@@ -1100,6 +1142,10 @@ export default function CRMContacts() {
   };
 
   const handleBulkDelete = async () => {
+    if (!canDelete) {
+      toast.error("You don't have permission to delete contacts");
+      return;
+    }
     if (!confirm(`Delete ${selectedContacts.length} contacts?`)) return;
     try {
       await Promise.all(selectedContacts.map(id => db.entities.Prospect.delete(id)));
@@ -1337,7 +1383,7 @@ export default function CRMContacts() {
           </DragDropContext>
         ) : viewMode === "grid" ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-            {filteredContacts.map(contact => (
+            {paginatedContacts.map(contact => (
               <ContactCard
                 key={contact.id}
                 contact={contact}
@@ -1346,7 +1392,7 @@ export default function CRMContacts() {
                 onToggleStar={handleToggleStar}
               />
             ))}
-            {filteredContacts.length === 0 && (
+            {paginatedContacts.length === 0 && (
               <div className="col-span-full text-center py-20">
                 <Users className="w-16 h-16 mx-auto mb-4 text-zinc-600" />
                 <h2 className="text-xl font-semibold text-zinc-300 mb-2">No contacts found</h2>
@@ -1361,6 +1407,17 @@ export default function CRMContacts() {
                 </Button>
               </div>
             )}
+            {hasMoreContacts && (
+              <div className="col-span-full flex justify-center py-4">
+                <Button
+                  variant="outline"
+                  onClick={handleLoadMore}
+                  className="border-zinc-700 text-white hover:bg-zinc-800"
+                >
+                  Load More ({remainingCount} remaining)
+                </Button>
+              </div>
+            )}
           </div>
         ) : (
           /* Table View - Responsive with horizontal scroll */
@@ -1371,9 +1428,9 @@ export default function CRMContacts() {
                   <tr className="border-b border-zinc-800">
                     <th className="p-2 sm:p-3 text-left sticky left-0 bg-zinc-900/95 z-10">
                       <Checkbox
-                        checked={selectedContacts.length === filteredContacts.length && filteredContacts.length > 0}
+                        checked={selectedContacts.length === paginatedContacts.length && paginatedContacts.length > 0}
                         onCheckedChange={(checked) => {
-                          setSelectedContacts(checked ? filteredContacts.map(c => c.id) : []);
+                          setSelectedContacts(checked ? paginatedContacts.map(c => c.id) : []);
                         }}
                       />
                     </th>
@@ -1387,7 +1444,7 @@ export default function CRMContacts() {
                   </tr>
                 </thead>
                 <tbody ref={tableBodyRef}>
-                  {filteredContacts.map(contact => {
+                  {paginatedContacts.map(contact => {
                     const stageConfig = PIPELINE_STAGES.find(s => s.id === contact.stage) || PIPELINE_STAGES[0];
                     return (
                       <tr key={contact.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors active:bg-zinc-800/50">
@@ -1415,7 +1472,17 @@ export default function CRMContacts() {
                           </div>
                         </td>
                         <td className="p-2 sm:p-3 hidden sm:table-cell">
-                          <div className="text-sm text-zinc-300 truncate max-w-[150px]">{contact.company_name || "-"}</div>
+                          {contact.crm_company_id ? (
+                            <Link
+                              to={createPageUrl('CRMCompanyProfile') + `?id=${contact.crm_company_id}`}
+                              className="text-sm text-cyan-400 hover:text-cyan-300 truncate max-w-[150px] block"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {contact.company_name || "-"}
+                            </Link>
+                          ) : (
+                            <div className="text-sm text-zinc-300 truncate max-w-[150px]">{contact.company_name || "-"}</div>
+                          )}
                           {contact.job_title && <div className="text-xs text-zinc-500 truncate max-w-[150px]">{contact.job_title}</div>}
                         </td>
                         <td className="p-2 sm:p-3">
@@ -1463,6 +1530,17 @@ export default function CRMContacts() {
                 </tbody>
               </table>
             </div>
+            {hasMoreContacts && (
+              <div className="flex justify-center p-4 border-t border-zinc-800/50">
+                <Button
+                  variant="outline"
+                  onClick={handleLoadMore}
+                  className="border-zinc-700 text-white hover:bg-zinc-800"
+                >
+                  Load More ({remainingCount} remaining)
+                </Button>
+              </div>
+            )}
           </div>
         )}
 

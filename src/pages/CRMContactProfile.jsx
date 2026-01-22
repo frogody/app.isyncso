@@ -3,7 +3,9 @@ import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/api/supabaseClient';
 import { useUser } from '@/components/context/UserContext';
+import { usePermissions } from '@/components/context/PermissionContext';
 import { createPageUrl } from '@/utils';
+import { isEnrichmentStale, isMissingEnrichmentData } from '@/constants/crm';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -245,15 +247,21 @@ const getSocialIcon = (platform) => {
 
 export default function CRMContactProfile() {
   const { user } = useUser();
+  const { hasPermission } = usePermissions();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const contactId = searchParams.get('id');
+
+  // Permission checks
+  const canEdit = hasPermission('users.edit');
+  const canDelete = hasPermission('users.delete');
 
   const [contact, setContact] = useState(null);
   const [company, setCompany] = useState(null);
   const [loading, setLoading] = useState(true);
   const [reEnriching, setReEnriching] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const [showReEnrichConfirm, setShowReEnrichConfirm] = useState(false);
 
   useEffect(() => {
     if (contactId && user?.organization_id) {
@@ -292,8 +300,13 @@ export default function CRMContactProfile() {
 
   const handleReEnrich = async () => {
     if (!contact) return;
+    if (!canEdit) {
+      toast.error("You don't have permission to update contacts");
+      return;
+    }
 
     setReEnriching(true);
+    setShowReEnrichConfirm(false);
     try {
       let enrichedData;
       if (contact.linkedin_url) {
@@ -502,6 +515,107 @@ export default function CRMContactProfile() {
           </Link>
         </motion.div>
 
+        {/* Stale Data Warning */}
+        {contact && (isEnrichmentStale(contact.enriched_at) || isMissingEnrichmentData(contact)) && (
+          <motion.div
+            variants={itemVariants}
+            className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-3"
+          >
+            <div className="flex items-center gap-3 flex-1">
+              <div className="p-2 bg-amber-500/20 rounded-lg">
+                <AlertCircle className="w-5 h-5 text-amber-400" />
+              </div>
+              <div>
+                <p className="text-amber-400 font-medium text-sm">
+                  {!contact.enriched_at ? 'Contact not enriched' :
+                   isMissingEnrichmentData(contact) ? 'Enrichment data may be incomplete' :
+                   'Enrichment data may be outdated'}
+                </p>
+                <p className="text-amber-400/60 text-xs mt-0.5">
+                  {contact.enriched_at
+                    ? `Last enriched ${formatDate(contact.enriched_at)}`
+                    : 'Click Re-enrich to get the latest company and contact data'}
+                </p>
+              </div>
+            </div>
+            {canEdit && (
+              <Button
+                size="sm"
+                onClick={() => setShowReEnrichConfirm(true)}
+                disabled={reEnriching}
+                className="bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 border border-amber-500/30"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${reEnriching ? 'animate-spin' : ''}`} />
+                Re-enrich Now
+              </Button>
+            )}
+          </motion.div>
+        )}
+
+        {/* Re-enrich Confirmation Dialog */}
+        <AnimatePresence>
+          {showReEnrichConfirm && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+              onClick={() => setShowReEnrichConfirm(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 max-w-md w-full"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2.5 bg-cyan-500/10 rounded-xl">
+                    <RefreshCw className="w-5 h-5 text-cyan-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-white">Re-enrich Contact</h3>
+                </div>
+                <p className="text-white/60 text-sm mb-4">
+                  This will fetch the latest data from Explorium and may overwrite some existing fields.
+                  The following may be updated:
+                </p>
+                <ul className="text-white/50 text-sm space-y-1 mb-6 pl-4 list-disc">
+                  <li>Contact details (phone, email status)</li>
+                  <li>Company information (size, revenue, description)</li>
+                  <li>Tech stack and categories</li>
+                  <li>Funding rounds and investors</li>
+                </ul>
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    className="flex-1 border-zinc-700"
+                    onClick={() => setShowReEnrichConfirm(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    className="flex-1 bg-cyan-600 hover:bg-cyan-700"
+                    onClick={handleReEnrich}
+                    disabled={reEnriching}
+                  >
+                    {reEnriching ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Re-enriching...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Confirm Re-enrich
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Hero Section */}
         <motion.div
           variants={itemVariants}
@@ -556,27 +670,34 @@ export default function CRMContactProfile() {
 
             {/* Actions - Horizontal scroll on mobile */}
             <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0 sm:overflow-visible pb-2 sm:pb-0">
-              <Button
-                variant="outline"
-                onClick={handleReEnrich}
-                disabled={reEnriching}
-                className="border-zinc-700 text-white hover:bg-zinc-800 h-10 flex-shrink-0 text-sm px-3 sm:px-4"
-              >
-                {reEnriching ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                )}
-                Re-enrich
-              </Button>
+              {canEdit && (
+                <Button
+                  variant="outline"
+                  onClick={() => setShowReEnrichConfirm(true)}
+                  disabled={reEnriching}
+                  className="border-zinc-700 text-white hover:bg-zinc-800 h-10 flex-shrink-0 text-sm px-3 sm:px-4"
+                >
+                  {reEnriching ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                  )}
+                  Re-enrich
+                </Button>
+              )}
               <Button variant="outline" className="border-zinc-700 text-white hover:bg-zinc-800 h-10 flex-shrink-0 text-sm px-3 sm:px-4">
                 <MessageSquare className="w-4 h-4 mr-2" />
                 Message
               </Button>
-              <Button className="bg-cyan-600 hover:bg-cyan-700 h-10 flex-shrink-0 text-sm px-3 sm:px-4">
-                <Mail className="w-4 h-4 mr-2" />
-                Send Email
-              </Button>
+              {contact.email && (
+                <Button
+                  className="bg-cyan-600 hover:bg-cyan-700 h-10 flex-shrink-0 text-sm px-3 sm:px-4"
+                  onClick={() => window.location.href = `mailto:${contact.email}`}
+                >
+                  <Mail className="w-4 h-4 mr-2" />
+                  Send Email
+                </Button>
+              )}
             </div>
           </div>
 

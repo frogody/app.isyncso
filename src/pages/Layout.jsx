@@ -148,6 +148,12 @@ const navigationItems = [
     icon: Inbox,
     permission: "inbox.view",
   },
+  {
+    title: "Settings",
+    url: createPageUrl("Settings"),
+    icon: SettingsIcon,
+    permission: null, // Always visible
+  },
 ];
 
 // Engine apps with permission requirements
@@ -864,15 +870,6 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
           </button>
         )}
 
-        {/* Settings Icon */}
-        <Link
-          to={createPageUrl("Settings")}
-          className={`flex items-center ${isMobile ? 'justify-start gap-3 px-4' : 'justify-center'} min-h-[44px] p-3 rounded-xl transition-all duration-200 group text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10`}
-          aria-label="Settings"
-        >
-          <SettingsIcon className="w-5 h-5 flex-shrink-0 group-hover:text-cyan-400 transition-colors" />
-          {isMobile && <span className="text-sm font-medium">Settings</span>}
-        </Link>
         </div>
     </div>
   );

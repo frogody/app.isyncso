@@ -574,7 +574,7 @@ function PagesContent() {
                 
                 <Route path="/Dashboard" element={<Dashboard />} />
                 
-                <Route path="/Deals" element={<Deals />} />
+                <Route path="/Deals" element={<Navigate to="/GrowthPipeline" replace />} />
                 
                 <Route path="/DocumentGenerator" element={<DocumentGenerator />} />
 

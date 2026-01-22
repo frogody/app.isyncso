@@ -12,6 +12,7 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/components/context/UserContext';
+import { usePermissions } from '@/components/context/PermissionContext';
 import { supabase } from '@/api/supabaseClient';
 
 import { FileUploader } from '@/components/import/FileUploader';
@@ -59,7 +60,34 @@ const CONTACT_TARGET_FIELDS = [
 
 export default function ContactsImport() {
   const { user } = useUser();
+  const { hasPermission } = usePermissions();
+  const canCreate = hasPermission('users.create');
   const navigate = useNavigate();
+
+  // If user doesn't have permission, show access denied
+  if (!canCreate) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-black to-zinc-900 flex items-center justify-center p-6">
+        <GlassCard className="max-w-md text-center">
+          <div className="p-2 bg-red-500/10 rounded-xl w-fit mx-auto mb-4">
+            <Upload className="w-8 h-8 text-red-400" />
+          </div>
+          <h2 className="text-xl font-semibold text-white mb-2">Access Denied</h2>
+          <p className="text-white/60 mb-6">
+            You don't have permission to import contacts. Please contact your administrator.
+          </p>
+          <Button
+            variant="outline"
+            className="border-zinc-700"
+            onClick={() => navigate('/crm-contacts')}
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Contacts
+          </Button>
+        </GlassCard>
+      </div>
+    );
+  }
 
   // Wizard state
   const [currentStep, setCurrentStep] = useState(0);
