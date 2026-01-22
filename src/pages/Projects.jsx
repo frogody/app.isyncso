@@ -41,6 +41,7 @@ import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import NotionEditor, { generateId as generateBlockId } from "@/components/shared/NotionEditor";
 
 const PROJECT_STATUSES = [
   { id: "planning", label: "Planning", color: "bg-zinc-600", textColor: "text-zinc-400", bgColor: "bg-zinc-500/10", borderColor: "border-zinc-500/30", icon: Target },
@@ -1078,6 +1079,35 @@ function ShareableProjectView({ project, tasks, isOwner, onAddUpdate, onDeleteUp
             )}
           </div>
         </div>
+
+        {/* Project Documentation (Page Content) */}
+        {project.page_content?.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.65 }}
+            className="rounded-2xl bg-zinc-800/40 border border-zinc-700/40 overflow-hidden mb-8"
+          >
+            <div className="p-5 border-b border-zinc-700/40">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 flex items-center justify-center border border-cyan-500/20">
+                  <FileText className="w-5 h-5 text-cyan-400" />
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold text-white">Documentation</h2>
+                  <p className="text-xs text-zinc-500">Project details and notes</p>
+                </div>
+              </div>
+            </div>
+            <div className="p-5">
+              <NotionEditor
+                blocks={project.page_content}
+                isEditing={false}
+                className="prose prose-invert prose-sm max-w-none"
+              />
+            </div>
+          </motion.div>
+        )}
 
         {/* Updates Section */}
         <motion.div
@@ -2470,15 +2500,38 @@ function ProjectDetailSheet({
             </Button>
           </div>
 
-          <Tabs defaultValue="tasks" className="w-full">
-            <TabsList className="bg-zinc-800/50 border border-zinc-700/50 mb-4 w-full grid grid-cols-6 p-1 rounded-xl">
+          <Tabs defaultValue="page" className="w-full">
+            <TabsList className="bg-zinc-800/50 border border-zinc-700/50 mb-4 w-full grid grid-cols-7 p-1 rounded-xl">
+              <TabsTrigger value="page" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-600 data-[state=active]:to-cyan-500 data-[state=active]:text-white rounded-lg text-zinc-400 text-xs">Page</TabsTrigger>
               <TabsTrigger value="tasks" className="data-[state=active]:bg-zinc-700 data-[state=active]:text-white rounded-lg text-zinc-400 text-xs">Tasks</TabsTrigger>
               <TabsTrigger value="files" className="data-[state=active]:bg-zinc-700 data-[state=active]:text-white rounded-lg text-zinc-400 text-xs">Files</TabsTrigger>
-              <TabsTrigger value="overview" className="data-[state=active]:bg-zinc-700 data-[state=active]:text-white rounded-lg text-zinc-400 text-xs">Overview</TabsTrigger>
+              <TabsTrigger value="overview" className="data-[state=active]:bg-zinc-700 data-[state=active]:text-white rounded-lg text-zinc-400 text-xs">Info</TabsTrigger>
               <TabsTrigger value="milestones" className="data-[state=active]:bg-zinc-700 data-[state=active]:text-white rounded-lg text-zinc-400 text-xs">Milestones</TabsTrigger>
               <TabsTrigger value="updates" className="data-[state=active]:bg-zinc-700 data-[state=active]:text-white rounded-lg text-zinc-400 text-xs">Updates</TabsTrigger>
-              <TabsTrigger value="share" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-600 data-[state=active]:to-cyan-500 data-[state=active]:text-white rounded-lg text-zinc-400 text-xs">Share</TabsTrigger>
+              <TabsTrigger value="share" className="data-[state=active]:bg-zinc-700 data-[state=active]:text-white rounded-lg text-zinc-400 text-xs">Share</TabsTrigger>
             </TabsList>
+
+            {/* Notion-like Page Content Tab */}
+            <TabsContent value="page" className="space-y-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2 text-xs text-zinc-500">
+                  <FileText className="w-4 h-4" />
+                  <span>Project documentation</span>
+                </div>
+                <div className="text-xs text-zinc-600">Type '/' for commands</div>
+              </div>
+              <div className="min-h-[300px] bg-zinc-800/20 rounded-xl p-4 border border-zinc-800/50">
+                <NotionEditor
+                  blocks={project.page_content || []}
+                  onChange={(newBlocks) => {
+                    onUpdateProject?.(project.id, { page_content: newBlocks });
+                  }}
+                  isEditing={true}
+                  placeholder="Start typing or press '/' for commands..."
+                  className="prose prose-invert prose-sm max-w-none"
+                />
+              </div>
+            </TabsContent>
 
             <TabsContent value="tasks">
               {/* Budget Progress */}
