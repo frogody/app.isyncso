@@ -65,6 +65,8 @@ export const INTEGRATION_CATALOG = [
     icon: 'microsoft-teams',
     color: '#5059C9',
     category: 'Communication',
+    popularTools: ['MICROSOFT_TEAMS_SEND_MESSAGE', 'MICROSOFT_TEAMS_CREATE_MEETING', 'MICROSOFT_TEAMS_LIST_CHATS', 'MICROSOFT_TEAMS_GET_CHAT_MESSAGES'],
+    triggers: ['MICROSOFT_TEAMS_NEW_MESSAGE'],
   },
   {
     slug: 'discord',
@@ -186,6 +188,16 @@ export const INTEGRATION_CATALOG = [
     color: '#4285F4',
     category: 'File Storage',
     popularTools: ['GOOGLEDRIVE_UPLOAD_FILE', 'GOOGLEDRIVE_LIST_FILES'],
+  },
+  {
+    slug: 'googlesheets',
+    name: 'Google Sheets',
+    description: 'Spreadsheet and data management',
+    icon: 'google-sheets',
+    color: '#0F9D58',
+    category: 'File Storage',
+    popularTools: ['GOOGLESHEETS_ADD_ROW', 'GOOGLESHEETS_GET_VALUES', 'GOOGLESHEETS_UPDATE_CELL', 'GOOGLESHEETS_CREATE_SPREADSHEET'],
+    triggers: ['GOOGLESHEETS_ROW_ADDED'],
   },
   {
     slug: 'dropbox',
@@ -538,6 +550,126 @@ export const ToolHelpers = {
         summary,
         issue_type: issueType,
         description,
+      },
+    }),
+  },
+
+  /**
+   * Google Sheets: Spreadsheet operations
+   */
+  googleSheets: {
+    createSpreadsheet: (title) => ({
+      toolSlug: 'GOOGLESHEETS_CREATE_SPREADSHEET',
+      arguments: { title },
+    }),
+
+    addRow: (spreadsheetId, values, sheetName = 'Sheet1') => ({
+      toolSlug: 'GOOGLESHEETS_ADD_ROW',
+      arguments: {
+        spreadsheet_id: spreadsheetId,
+        values,
+        sheet_name: sheetName,
+      },
+    }),
+
+    updateCell: (spreadsheetId, cell, value) => ({
+      toolSlug: 'GOOGLESHEETS_UPDATE_CELL',
+      arguments: {
+        spreadsheet_id: spreadsheetId,
+        cell,  // e.g., "A1" or "Sheet1!B2"
+        value,
+      },
+    }),
+
+    getValues: (spreadsheetId, range) => ({
+      toolSlug: 'GOOGLESHEETS_GET_VALUES',
+      arguments: {
+        spreadsheet_id: spreadsheetId,
+        range,  // e.g., "Sheet1!A1:D10"
+      },
+    }),
+
+    searchSpreadsheets: (query = '') => ({
+      toolSlug: 'GOOGLESHEETS_SEARCH_SPREADSHEETS',
+      arguments: { query },
+    }),
+
+    deleteRow: (spreadsheetId, rowIndex, sheetName = 'Sheet1') => ({
+      toolSlug: 'GOOGLESHEETS_DELETE_ROW',
+      arguments: {
+        spreadsheet_id: spreadsheetId,
+        row_index: rowIndex,
+        sheet_name: sheetName,
+      },
+    }),
+
+    getSheetNames: (spreadsheetId) => ({
+      toolSlug: 'GOOGLESHEETS_GET_SHEET_NAMES',
+      arguments: { spreadsheet_id: spreadsheetId },
+    }),
+  },
+
+  /**
+   * Microsoft Teams: Team collaboration
+   */
+  microsoftTeams: {
+    sendMessage: (chatIdOrChannelId, message, isChatId = true) => ({
+      toolSlug: 'MICROSOFT_TEAMS_SEND_MESSAGE',
+      arguments: {
+        [isChatId ? 'chat_id' : 'channel_id']: chatIdOrChannelId,
+        message,
+        content_type: 'text',
+      },
+    }),
+
+    createMeeting: (subject, startTime, endTime, attendees = []) => ({
+      toolSlug: 'MICROSOFT_TEAMS_CREATE_MEETING',
+      arguments: {
+        subject,
+        start_time: startTime,
+        end_time: endTime,
+        attendees,
+      },
+    }),
+
+    listChats: () => ({
+      toolSlug: 'MICROSOFT_TEAMS_LIST_CHATS',
+      arguments: {},
+    }),
+
+    getChatMessages: (chatId, limit = 20) => ({
+      toolSlug: 'MICROSOFT_TEAMS_GET_CHAT_MESSAGES',
+      arguments: {
+        chat_id: chatId,
+        limit,
+      },
+    }),
+
+    createTeam: (displayName, description = '', visibility = 'private') => ({
+      toolSlug: 'MICROSOFT_TEAMS_CREATE_TEAM',
+      arguments: {
+        display_name: displayName,
+        description,
+        visibility,
+      },
+    }),
+
+    addMember: (teamId, userEmail, role = 'member') => ({
+      toolSlug: 'MICROSOFT_TEAMS_ADD_MEMBER',
+      arguments: {
+        team_id: teamId,
+        user_email: userEmail,
+        role,
+      },
+    }),
+
+    createChannel: (teamId, displayName, description = '', membershipType = 'standard') => ({
+      toolSlug: 'MICROSOFT_TEAMS_CREATE_CHANNEL',
+      arguments: {
+        team_id: teamId,
+        display_name: displayName,
+        description,
+        membership_type: membershipType,
       },
     }),
   },

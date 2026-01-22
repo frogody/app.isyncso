@@ -36,6 +36,22 @@ export const COMPOSIO_INTEGRATIONS: Record<string, { name: string; actions: stri
     name: 'Google Drive',
     actions: ['GOOGLEDRIVE_LIST_FILES', 'GOOGLEDRIVE_UPLOAD_FILE', 'GOOGLEDRIVE_SEARCH_FILES'],
   },
+  googlesheets: {
+    name: 'Google Sheets',
+    actions: [
+      'GOOGLESHEETS_CREATE_SPREADSHEET', 'GOOGLESHEETS_ADD_ROW', 'GOOGLESHEETS_UPDATE_CELL',
+      'GOOGLESHEETS_GET_VALUES', 'GOOGLESHEETS_SEARCH_SPREADSHEETS', 'GOOGLESHEETS_DELETE_ROW',
+      'GOOGLESHEETS_BATCH_UPDATE', 'GOOGLESHEETS_CREATE_SHEET', 'GOOGLESHEETS_GET_SHEET_NAMES'
+    ],
+  },
+  microsoft_teams: {
+    name: 'Microsoft Teams',
+    actions: [
+      'MICROSOFT_TEAMS_SEND_MESSAGE', 'MICROSOFT_TEAMS_CREATE_MEETING', 'MICROSOFT_TEAMS_LIST_CHATS',
+      'MICROSOFT_TEAMS_GET_CHAT_MESSAGES', 'MICROSOFT_TEAMS_CREATE_TEAM', 'MICROSOFT_TEAMS_ADD_MEMBER',
+      'MICROSOFT_TEAMS_CREATE_CHANNEL', 'MICROSOFT_TEAMS_LIST_CHANNELS'
+    ],
+  },
   linkedin: {
     name: 'LinkedIn',
     actions: ['LINKEDIN_CREATE_POST', 'LINKEDIN_GET_PROFILE', 'LINKEDIN_SEND_MESSAGE'],
@@ -109,6 +125,30 @@ export const COMPOSIO_ACTIONS = [
   'composio_create_trello_card',
   'composio_create_asana_task',
   'composio_create_linear_issue',
+
+  // Google Sheets actions
+  'composio_create_spreadsheet',
+  'composio_add_sheet_row',
+  'composio_update_sheet_cell',
+  'composio_get_sheet_values',
+  'composio_search_spreadsheets',
+  'composio_delete_sheet_row',
+  'composio_get_sheet_names',
+  'sheets_add_row',
+  'sheets_get_data',
+  'sheets_update_cell',
+
+  // Microsoft Teams actions
+  'composio_send_teams_message',
+  'composio_create_teams_meeting',
+  'composio_list_teams_chats',
+  'composio_get_teams_messages',
+  'composio_create_team',
+  'composio_add_team_member',
+  'composio_create_teams_channel',
+  'teams_send_message',
+  'teams_create_meeting',
+  'teams_get_chats',
 
   // Generic Composio action
   'composio_execute_tool',
@@ -1585,6 +1625,570 @@ export async function executeComposioAction(
           `\`\`\`json\n{\n  "mcpServers": {\n    "${server.name}": {\n      "type": "http",\n      "url": "${mcpUrl}"\n    }\n  }\n}\n\`\`\`\n\n` +
           `Your connected tools (${server.toolkits?.join(', ')}) will be accessible through this MCP endpoint.`,
       };
+    }
+
+    // ========================================
+    // Google Sheets Actions
+    // ========================================
+    case 'composio_create_spreadsheet': {
+      const connId = await getConnectionForToolkit(ctx, 'googlesheets');
+      if (!connId) {
+        return {
+          success: false,
+          message: "Google Sheets is not connected. Please connect it first.",
+          link: '/Integrations',
+        };
+      }
+
+      const { title } = data as { title: string };
+      if (!title) {
+        return {
+          success: false,
+          message: "Please provide a title for the spreadsheet.",
+        };
+      }
+
+      const result = await executeComposioTool(connId, 'GOOGLESHEETS_CREATE_SPREADSHEET', {
+        title,
+      }, ctx.userId);
+
+      if (result.success) {
+        return {
+          success: true,
+          result: result.result,
+          message: `📊 Spreadsheet "${title}" created successfully!`,
+        };
+      }
+      return result;
+    }
+
+    case 'composio_add_sheet_row':
+    case 'sheets_add_row': {
+      const connId = await getConnectionForToolkit(ctx, 'googlesheets');
+      if (!connId) {
+        return {
+          success: false,
+          message: "Google Sheets is not connected. Please connect it first.",
+          link: '/Integrations',
+        };
+      }
+
+      const { spreadsheet_id, sheet_name, values, range } = data as {
+        spreadsheet_id: string;
+        sheet_name?: string;
+        values: any[];
+        range?: string;
+      };
+
+      if (!spreadsheet_id || !values) {
+        return {
+          success: false,
+          message: "Please provide: spreadsheet_id and values (array of values for the row).",
+        };
+      }
+
+      const result = await executeComposioTool(connId, 'GOOGLESHEETS_ADD_ROW', {
+        spreadsheetId: spreadsheet_id,
+        sheetName: sheet_name,
+        values,
+        range: range || `${sheet_name || 'Sheet1'}!A:Z`,
+      }, ctx.userId);
+
+      if (result.success) {
+        return {
+          success: true,
+          result: result.result,
+          message: `✅ Row added to spreadsheet!`,
+        };
+      }
+      return result;
+    }
+
+    case 'composio_update_sheet_cell':
+    case 'sheets_update_cell': {
+      const connId = await getConnectionForToolkit(ctx, 'googlesheets');
+      if (!connId) {
+        return {
+          success: false,
+          message: "Google Sheets is not connected. Please connect it first.",
+          link: '/Integrations',
+        };
+      }
+
+      const { spreadsheet_id, cell, value } = data as {
+        spreadsheet_id: string;
+        cell: string;  // e.g., "A1" or "Sheet1!B2"
+        value: any;
+      };
+
+      if (!spreadsheet_id || !cell || value === undefined) {
+        return {
+          success: false,
+          message: "Please provide: spreadsheet_id, cell (e.g., 'A1'), and value.",
+        };
+      }
+
+      const result = await executeComposioTool(connId, 'GOOGLESHEETS_UPDATE_CELL', {
+        spreadsheetId: spreadsheet_id,
+        range: cell,
+        value,
+      }, ctx.userId);
+
+      if (result.success) {
+        return {
+          success: true,
+          result: result.result,
+          message: `✅ Cell ${cell} updated!`,
+        };
+      }
+      return result;
+    }
+
+    case 'composio_get_sheet_values':
+    case 'sheets_get_data': {
+      const connId = await getConnectionForToolkit(ctx, 'googlesheets');
+      if (!connId) {
+        return {
+          success: false,
+          message: "Google Sheets is not connected. Please connect it first.",
+          link: '/Integrations',
+        };
+      }
+
+      const { spreadsheet_id, range } = data as {
+        spreadsheet_id: string;
+        range: string;  // e.g., "Sheet1!A1:D10"
+      };
+
+      if (!spreadsheet_id || !range) {
+        return {
+          success: false,
+          message: "Please provide: spreadsheet_id and range (e.g., 'Sheet1!A1:D10').",
+        };
+      }
+
+      const result = await executeComposioTool(connId, 'GOOGLESHEETS_GET_VALUES', {
+        spreadsheetId: spreadsheet_id,
+        range,
+      }, ctx.userId);
+
+      if (result.success && result.result) {
+        const resultData = result.result as Record<string, unknown>;
+        const values = resultData?.values || result.result;
+        return {
+          success: true,
+          result: values,
+          message: `📊 **Data from ${range}:**\n\n${Array.isArray(values) ? values.map((row: any) => row.join(' | ')).join('\n') : JSON.stringify(values, null, 2)}`,
+        };
+      }
+      return result;
+    }
+
+    case 'composio_search_spreadsheets': {
+      const connId = await getConnectionForToolkit(ctx, 'googlesheets');
+      if (!connId) {
+        return {
+          success: false,
+          message: "Google Sheets is not connected. Please connect it first.",
+          link: '/Integrations',
+        };
+      }
+
+      const { query } = data as { query: string };
+
+      const result = await executeComposioTool(connId, 'GOOGLESHEETS_SEARCH_SPREADSHEETS', {
+        query: query || '',
+      }, ctx.userId);
+
+      if (result.success && result.result) {
+        const files = Array.isArray(result.result) ? result.result : (result.result as any)?.files || [];
+        if (files.length === 0) {
+          return {
+            success: true,
+            result: [],
+            message: "📭 No spreadsheets found matching your query.",
+          };
+        }
+        const formatted = files.slice(0, 10).map((f: any, i: number) =>
+          `${i + 1}. **${f.name}**\n   ID: \`${f.id}\``
+        ).join('\n\n');
+        return {
+          success: true,
+          result: files,
+          message: `📊 **Found ${files.length} spreadsheet(s):**\n\n${formatted}`,
+        };
+      }
+      return result;
+    }
+
+    case 'composio_get_sheet_names': {
+      const connId = await getConnectionForToolkit(ctx, 'googlesheets');
+      if (!connId) {
+        return {
+          success: false,
+          message: "Google Sheets is not connected. Please connect it first.",
+          link: '/Integrations',
+        };
+      }
+
+      const { spreadsheet_id } = data as { spreadsheet_id: string };
+
+      if (!spreadsheet_id) {
+        return {
+          success: false,
+          message: "Please provide the spreadsheet_id.",
+        };
+      }
+
+      const result = await executeComposioTool(connId, 'GOOGLESHEETS_GET_SHEET_NAMES', {
+        spreadsheetId: spreadsheet_id,
+      }, ctx.userId);
+
+      if (result.success && result.result) {
+        const sheets = Array.isArray(result.result) ? result.result : (result.result as any)?.sheets || [];
+        return {
+          success: true,
+          result: sheets,
+          message: `📋 **Sheets in this spreadsheet:**\n${sheets.map((s: any, i: number) => `${i + 1}. ${typeof s === 'string' ? s : s.properties?.title || s.title || s}`).join('\n')}`,
+        };
+      }
+      return result;
+    }
+
+    case 'composio_delete_sheet_row': {
+      const connId = await getConnectionForToolkit(ctx, 'googlesheets');
+      if (!connId) {
+        return {
+          success: false,
+          message: "Google Sheets is not connected. Please connect it first.",
+          link: '/Integrations',
+        };
+      }
+
+      const { spreadsheet_id, sheet_name, row_index } = data as {
+        spreadsheet_id: string;
+        sheet_name?: string;
+        row_index: number;
+      };
+
+      if (!spreadsheet_id || row_index === undefined) {
+        return {
+          success: false,
+          message: "Please provide: spreadsheet_id and row_index (1-based).",
+        };
+      }
+
+      const result = await executeComposioTool(connId, 'GOOGLESHEETS_DELETE_ROW', {
+        spreadsheetId: spreadsheet_id,
+        sheetName: sheet_name || 'Sheet1',
+        rowIndex: row_index,
+      }, ctx.userId);
+
+      if (result.success) {
+        return {
+          success: true,
+          result: result.result,
+          message: `🗑️ Row ${row_index} deleted!`,
+        };
+      }
+      return result;
+    }
+
+    // ========================================
+    // Microsoft Teams Actions
+    // ========================================
+    case 'composio_send_teams_message':
+    case 'teams_send_message': {
+      const connId = await getConnectionForToolkit(ctx, 'microsoft_teams');
+      if (!connId) {
+        return {
+          success: false,
+          message: "Microsoft Teams is not connected. Please connect it first.",
+          link: '/Integrations',
+        };
+      }
+
+      const { chat_id, channel_id, message, content_type } = data as {
+        chat_id?: string;
+        channel_id?: string;
+        message: string;
+        content_type?: 'text' | 'html';
+      };
+
+      if (!message) {
+        return {
+          success: false,
+          message: "Please provide the message to send.",
+        };
+      }
+
+      if (!chat_id && !channel_id) {
+        return {
+          success: false,
+          message: "Please provide either a chat_id or channel_id to send the message to.",
+        };
+      }
+
+      const result = await executeComposioTool(connId, 'MICROSOFT_TEAMS_SEND_MESSAGE', {
+        chatId: chat_id,
+        channelId: channel_id,
+        content: message,
+        contentType: content_type || 'text',
+      }, ctx.userId);
+
+      if (result.success) {
+        return {
+          success: true,
+          result: result.result,
+          message: `💬 Message sent to Teams!`,
+        };
+      }
+      return result;
+    }
+
+    case 'composio_create_teams_meeting':
+    case 'teams_create_meeting': {
+      const connId = await getConnectionForToolkit(ctx, 'microsoft_teams');
+      if (!connId) {
+        return {
+          success: false,
+          message: "Microsoft Teams is not connected. Please connect it first.",
+          link: '/Integrations',
+        };
+      }
+
+      const { subject, start_time, end_time, attendees } = data as {
+        subject: string;
+        start_time: string;
+        end_time: string;
+        attendees?: string[];
+      };
+
+      if (!subject || !start_time || !end_time) {
+        return {
+          success: false,
+          message: "Please provide: subject, start_time, and end_time for the meeting.",
+        };
+      }
+
+      const result = await executeComposioTool(connId, 'MICROSOFT_TEAMS_CREATE_MEETING', {
+        subject,
+        startDateTime: start_time,
+        endDateTime: end_time,
+        attendees: attendees?.map(email => ({ emailAddress: { address: email } })),
+      }, ctx.userId);
+
+      if (result.success) {
+        const meetingData = result.result as Record<string, unknown>;
+        const joinUrl = meetingData?.joinWebUrl || meetingData?.onlineMeeting?.joinUrl;
+        return {
+          success: true,
+          result: result.result,
+          message: `📅 **Teams Meeting Created!**\n\n**Subject:** ${subject}\n**Time:** ${start_time} - ${end_time}${joinUrl ? `\n\n**Join URL:** ${joinUrl}` : ''}`,
+        };
+      }
+      return result;
+    }
+
+    case 'composio_list_teams_chats':
+    case 'teams_get_chats': {
+      const connId = await getConnectionForToolkit(ctx, 'microsoft_teams');
+      if (!connId) {
+        return {
+          success: false,
+          message: "Microsoft Teams is not connected. Please connect it first.",
+          link: '/Integrations',
+        };
+      }
+
+      const result = await executeComposioTool(connId, 'MICROSOFT_TEAMS_LIST_CHATS', {}, ctx.userId);
+
+      if (result.success && result.result) {
+        const chats = Array.isArray(result.result) ? result.result : (result.result as any)?.value || [];
+        if (chats.length === 0) {
+          return {
+            success: true,
+            result: [],
+            message: "📭 No Teams chats found.",
+          };
+        }
+        const formatted = chats.slice(0, 10).map((c: any, i: number) => {
+          const topic = c.topic || c.chatType || 'Chat';
+          return `${i + 1}. **${topic}**\n   ID: \`${c.id}\``;
+        }).join('\n\n');
+        return {
+          success: true,
+          result: chats,
+          message: `💬 **Your Teams Chats:**\n\n${formatted}`,
+        };
+      }
+      return result;
+    }
+
+    case 'composio_get_teams_messages': {
+      const connId = await getConnectionForToolkit(ctx, 'microsoft_teams');
+      if (!connId) {
+        return {
+          success: false,
+          message: "Microsoft Teams is not connected. Please connect it first.",
+          link: '/Integrations',
+        };
+      }
+
+      const { chat_id, limit } = data as { chat_id: string; limit?: number };
+
+      if (!chat_id) {
+        return {
+          success: false,
+          message: "Please provide the chat_id to get messages from.",
+        };
+      }
+
+      const result = await executeComposioTool(connId, 'MICROSOFT_TEAMS_GET_CHAT_MESSAGES', {
+        chatId: chat_id,
+        top: limit || 20,
+      }, ctx.userId);
+
+      if (result.success && result.result) {
+        const messages = Array.isArray(result.result) ? result.result : (result.result as any)?.value || [];
+        if (messages.length === 0) {
+          return {
+            success: true,
+            result: [],
+            message: "📭 No messages found in this chat.",
+          };
+        }
+        const formatted = messages.slice(0, 10).map((m: any, i: number) => {
+          const from = m.from?.user?.displayName || 'Unknown';
+          const content = (m.body?.content || '').replace(/<[^>]*>/g, '').substring(0, 100);
+          return `${i + 1}. **${from}:** ${content}${content.length >= 100 ? '...' : ''}`;
+        }).join('\n');
+        return {
+          success: true,
+          result: messages,
+          message: `💬 **Recent Messages:**\n\n${formatted}`,
+        };
+      }
+      return result;
+    }
+
+    case 'composio_create_team': {
+      const connId = await getConnectionForToolkit(ctx, 'microsoft_teams');
+      if (!connId) {
+        return {
+          success: false,
+          message: "Microsoft Teams is not connected. Please connect it first.",
+          link: '/Integrations',
+        };
+      }
+
+      const { display_name, description, visibility } = data as {
+        display_name: string;
+        description?: string;
+        visibility?: 'private' | 'public';
+      };
+
+      if (!display_name) {
+        return {
+          success: false,
+          message: "Please provide a display_name for the team.",
+        };
+      }
+
+      const result = await executeComposioTool(connId, 'MICROSOFT_TEAMS_CREATE_TEAM', {
+        displayName: display_name,
+        description,
+        visibility: visibility || 'private',
+      }, ctx.userId);
+
+      if (result.success) {
+        return {
+          success: true,
+          result: result.result,
+          message: `🏢 Team "${display_name}" created successfully!`,
+        };
+      }
+      return result;
+    }
+
+    case 'composio_add_team_member': {
+      const connId = await getConnectionForToolkit(ctx, 'microsoft_teams');
+      if (!connId) {
+        return {
+          success: false,
+          message: "Microsoft Teams is not connected. Please connect it first.",
+          link: '/Integrations',
+        };
+      }
+
+      const { team_id, user_email, role } = data as {
+        team_id: string;
+        user_email: string;
+        role?: 'member' | 'owner';
+      };
+
+      if (!team_id || !user_email) {
+        return {
+          success: false,
+          message: "Please provide: team_id and user_email.",
+        };
+      }
+
+      const result = await executeComposioTool(connId, 'MICROSOFT_TEAMS_ADD_MEMBER', {
+        teamId: team_id,
+        userPrincipalName: user_email,
+        roles: role === 'owner' ? ['owner'] : [],
+      }, ctx.userId);
+
+      if (result.success) {
+        return {
+          success: true,
+          result: result.result,
+          message: `👤 ${user_email} added to team!`,
+        };
+      }
+      return result;
+    }
+
+    case 'composio_create_teams_channel': {
+      const connId = await getConnectionForToolkit(ctx, 'microsoft_teams');
+      if (!connId) {
+        return {
+          success: false,
+          message: "Microsoft Teams is not connected. Please connect it first.",
+          link: '/Integrations',
+        };
+      }
+
+      const { team_id, display_name, description, membership_type } = data as {
+        team_id: string;
+        display_name: string;
+        description?: string;
+        membership_type?: 'standard' | 'private' | 'shared';
+      };
+
+      if (!team_id || !display_name) {
+        return {
+          success: false,
+          message: "Please provide: team_id and display_name for the channel.",
+        };
+      }
+
+      const result = await executeComposioTool(connId, 'MICROSOFT_TEAMS_CREATE_CHANNEL', {
+        teamId: team_id,
+        displayName: display_name,
+        description,
+        membershipType: membership_type || 'standard',
+      }, ctx.userId);
+
+      if (result.success) {
+        return {
+          success: true,
+          result: result.result,
+          message: `📢 Channel "${display_name}" created!`,
+        };
+      }
+      return result;
     }
 
     default:
