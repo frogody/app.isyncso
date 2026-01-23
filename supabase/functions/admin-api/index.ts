@@ -2133,6 +2133,144 @@ serve(async (req) => {
     }
 
     // =========================================================================
+    // Analytics & Insights Endpoints
+    // =========================================================================
+
+    // GET /analytics/overview - Get analytics overview with period comparison
+    if (path === "/analytics/overview" && method === "GET") {
+      const startDate = url.searchParams.get("start") || null;
+      const endDate = url.searchParams.get("end") || null;
+
+      const { data, error } = await supabaseAdmin.rpc("admin_get_analytics_overview", {
+        p_start_date: startDate,
+        p_end_date: endDate,
+      });
+
+      if (error) throw error;
+
+      await createAuditLog(userId!, adminEmail, "view", "analytics", null, null, { type: "overview", startDate, endDate }, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify(data),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /analytics/user-growth - Get user growth over time
+    if (path === "/analytics/user-growth" && method === "GET") {
+      const startDate = url.searchParams.get("start") || null;
+      const endDate = url.searchParams.get("end") || null;
+      const granularity = url.searchParams.get("granularity") || "day";
+
+      const { data, error } = await supabaseAdmin.rpc("admin_get_user_growth", {
+        p_start_date: startDate,
+        p_end_date: endDate,
+        p_granularity: granularity,
+      });
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /analytics/revenue - Get revenue analytics over time
+    if (path === "/analytics/revenue" && method === "GET") {
+      const startDate = url.searchParams.get("start") || null;
+      const endDate = url.searchParams.get("end") || null;
+      const granularity = url.searchParams.get("granularity") || "day";
+
+      const { data, error } = await supabaseAdmin.rpc("admin_get_revenue_analytics", {
+        p_start_date: startDate,
+        p_end_date: endDate,
+        p_granularity: granularity,
+      });
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /analytics/app-usage - Get app usage statistics
+    if (path === "/analytics/app-usage" && method === "GET") {
+      const startDate = url.searchParams.get("start") || null;
+      const endDate = url.searchParams.get("end") || null;
+
+      const { data, error } = await supabaseAdmin.rpc("admin_get_app_usage_stats", {
+        p_start_date: startDate,
+        p_end_date: endDate,
+      });
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /analytics/top-users - Get top users by activity
+    if (path === "/analytics/top-users" && method === "GET") {
+      const startDate = url.searchParams.get("start") || null;
+      const endDate = url.searchParams.get("end") || null;
+      const limit = parseInt(url.searchParams.get("limit") || "10");
+
+      const { data, error } = await supabaseAdmin.rpc("admin_get_top_users", {
+        p_start_date: startDate,
+        p_end_date: endDate,
+        p_limit: limit,
+      });
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /analytics/organizations - Get organization analytics
+    if (path === "/analytics/organizations" && method === "GET") {
+      const startDate = url.searchParams.get("start") || null;
+      const endDate = url.searchParams.get("end") || null;
+
+      const { data, error } = await supabaseAdmin.rpc("admin_get_organization_analytics", {
+        p_start_date: startDate,
+        p_end_date: endDate,
+      });
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /analytics/dau - Get daily active users trend
+    if (path === "/analytics/dau" && method === "GET") {
+      const startDate = url.searchParams.get("start") || null;
+      const endDate = url.searchParams.get("end") || null;
+
+      const { data, error } = await supabaseAdmin.rpc("admin_get_dau_trend", {
+        p_start_date: startDate,
+        p_end_date: endDate,
+      });
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // =========================================================================
     // Health Check
     // =========================================================================
 
