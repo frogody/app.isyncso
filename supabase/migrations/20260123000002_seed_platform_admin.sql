@@ -1,9 +1,19 @@
 -- ============================================================================
 -- Seed Platform Admin
--- Add initial super_admin user(s) to platform_admins table
+-- Add platform owners as super_admin
 -- ============================================================================
 
--- Add users with super_admin role as platform super_admins
+-- Platform Owners: Only David and Gody have super_admin access
+-- david@isyncso.com and gody@isyncso.com
+
+-- Clear any existing entries and add only the platform owners
+DELETE FROM public.platform_admins
+WHERE user_id NOT IN (
+  SELECT auth_id FROM public.users
+  WHERE email IN ('david@isyncso.com', 'gody@isyncso.com')
+);
+
+-- Add platform owners as super_admin
 INSERT INTO public.platform_admins (user_id, role, permissions, is_active)
 SELECT
   auth_id,
@@ -11,40 +21,24 @@ SELECT
   '["all"]'::jsonb,
   true
 FROM public.users
-WHERE role = 'super_admin'
+WHERE email IN ('david@isyncso.com', 'gody@isyncso.com')
   AND auth_id IS NOT NULL
-ON CONFLICT (user_id) DO NOTHING;
-
--- Add users with admin role as platform admins
-INSERT INTO public.platform_admins (user_id, role, permissions, is_active)
-SELECT
-  auth_id,
-  'admin',
-  '["settings.view", "settings.edit", "users.view", "audit.view"]'::jsonb,
-  true
-FROM public.users
-WHERE role = 'admin'
-  AND auth_id IS NOT NULL
-ON CONFLICT (user_id) DO NOTHING;
-
--- If no platform admins exist, add the first user as super_admin
-INSERT INTO public.platform_admins (user_id, role, permissions, is_active)
-SELECT
-  auth_id,
-  'super_admin',
-  '["all"]'::jsonb,
-  true
-FROM public.users
-WHERE auth_id IS NOT NULL
-ORDER BY created_at ASC
-LIMIT 1
-ON CONFLICT (user_id) DO NOTHING;
+ON CONFLICT (user_id) DO UPDATE SET
+  role = 'super_admin',
+  permissions = '["all"]'::jsonb,
+  is_active = true,
+  updated_at = NOW();
 
 -- Log the seeding
 DO $$
 DECLARE
   admin_count INTEGER;
+  admin_emails TEXT;
 BEGIN
-  SELECT COUNT(*) INTO admin_count FROM public.platform_admins;
-  RAISE NOTICE 'Platform admins seeded. Total count: %', admin_count;
+  SELECT COUNT(*), string_agg(u.email, ', ')
+  INTO admin_count, admin_emails
+  FROM public.platform_admins pa
+  JOIN public.users u ON u.auth_id = pa.user_id;
+
+  RAISE NOTICE 'Platform admins seeded. Count: %, Emails: %', admin_count, admin_emails;
 END $$;
