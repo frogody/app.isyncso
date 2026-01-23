@@ -277,7 +277,8 @@ function LicenseRow({ license, onEdit, onRevoke }) {
 }
 
 export default function AdminApps() {
-  const { adminUser, session } = useAdmin();
+  // useAdmin hook provides admin guard protection
+  useAdmin();
   const [activeTab, setActiveTab] = useState('apps');
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState(null);
@@ -325,26 +326,36 @@ export default function AdminApps() {
     notes: '',
   });
 
-  const apiHeaders = useMemo(() => ({
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${session?.access_token}`,
-  }), [session?.access_token]);
-
-  // Fetch data
+  // Fetch data on mount
   useEffect(() => {
     fetchData();
-  }, [session]);
+  }, []);
 
   async function fetchData() {
-    if (!session?.access_token) return;
-
     setIsLoading(true);
     try {
+      // Get fresh session directly from Supabase
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+
+      if (!currentSession?.access_token) {
+        console.error('[AdminApps] No session available');
+        toast.error('Authentication required');
+        setIsLoading(false);
+        return;
+      }
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentSession.access_token}`,
+      };
+
+      console.log('[AdminApps] Fetching data with headers:', { hasToken: !!currentSession.access_token });
+
       const [statsRes, appsRes, licensesRes, companiesRes] = await Promise.all([
-        fetch(`${ADMIN_API_URL}/apps/stats`, { headers: apiHeaders }),
-        fetch(`${ADMIN_API_URL}/apps`, { headers: apiHeaders }),
-        fetch(`${ADMIN_API_URL}/licenses`, { headers: apiHeaders }),
-        fetch(`${ADMIN_API_URL}/companies`, { headers: apiHeaders }),
+        fetch(`${ADMIN_API_URL}/apps/stats`, { headers }),
+        fetch(`${ADMIN_API_URL}/apps`, { headers }),
+        fetch(`${ADMIN_API_URL}/licenses`, { headers }),
+        fetch(`${ADMIN_API_URL}/companies`, { headers }),
       ]);
 
       if (statsRes.ok) {
@@ -393,12 +404,25 @@ export default function AdminApps() {
     });
   }, [licenses, searchTerm, selectedAppForLicenses]);
 
+  // Helper to get fresh auth headers
+  async function getAuthHeaders() {
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    if (!currentSession?.access_token) {
+      throw new Error('Authentication required');
+    }
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${currentSession.access_token}`,
+    };
+  }
+
   // Handle app save
   async function handleSaveApp() {
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch(`${ADMIN_API_URL}/apps`, {
         method: 'POST',
-        headers: apiHeaders,
+        headers,
         body: JSON.stringify(editingApp ? { ...appForm, id: editingApp.id } : appForm),
       });
 
@@ -423,9 +447,10 @@ export default function AdminApps() {
     if (!confirm(`Are you sure you want to delete "${app.name}"?`)) return;
 
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch(`${ADMIN_API_URL}/apps/${app.id}`, {
         method: 'DELETE',
-        headers: apiHeaders,
+        headers,
       });
 
       if (!response.ok) {
@@ -444,13 +469,14 @@ export default function AdminApps() {
   // Handle license save
   async function handleSaveLicense() {
     try {
+      const headers = await getAuthHeaders();
       const endpoint = editingLicense
         ? `${ADMIN_API_URL}/licenses/${editingLicense.id}`
         : `${ADMIN_API_URL}/licenses`;
 
       const response = await fetch(endpoint, {
         method: editingLicense ? 'PUT' : 'POST',
-        headers: apiHeaders,
+        headers,
         body: JSON.stringify(licenseForm),
       });
 
@@ -475,9 +501,10 @@ export default function AdminApps() {
     if (!confirm(`Are you sure you want to revoke this license for ${license.company_name}?`)) return;
 
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch(`${ADMIN_API_URL}/licenses/${license.id}`, {
         method: 'PUT',
-        headers: apiHeaders,
+        headers,
         body: JSON.stringify({ status: 'revoked' }),
       });
 
