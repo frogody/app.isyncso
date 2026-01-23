@@ -69,3 +69,6 @@ verify_jwt = false
 
 [functions.api-diagnostics]
 verify_jwt = false
+
+[functions.admin-api]
+verify_jwt = false
