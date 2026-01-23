@@ -256,6 +256,7 @@ import PlatformAdminIntegrations from "./admin/AdminIntegrations";
 import PlatformAdminBilling from "./admin/AdminBilling";
 import PlatformAdminContent from "./admin/AdminContent";
 import PlatformAdminSupport from "./admin/AdminSupport";
+import PlatformAdminAI from "./admin/AdminAI";
 
 // Providers needed for admin routes (since they don't use main Layout)
 import { UserProvider } from "@/components/context/UserContext";
@@ -548,6 +549,7 @@ function PagesContent() {
                             <Route path="billing" element={<PlatformAdminBilling />} />
                             <Route path="content" element={<PlatformAdminContent />} />
                             <Route path="support" element={<PlatformAdminSupport />} />
+                            <Route path="ai" element={<PlatformAdminAI />} />
                         </Route>
                     </Routes>
                 </PermissionProvider>

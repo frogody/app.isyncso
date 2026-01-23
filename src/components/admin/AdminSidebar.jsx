@@ -25,6 +25,7 @@ import {
   Server,
   FileText,
   Headphones,
+  Bot,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -39,6 +40,7 @@ const adminNavItems = [
   { divider: true },
   { title: 'Content', href: '/admin/content', icon: FileText },
   { title: 'Support', href: '/admin/support', icon: Headphones },
+  { title: 'AI & Automation', href: '/admin/ai', icon: Bot },
   { title: 'Billing', href: '/admin/billing', icon: CreditCard },
   { title: 'Integrations', href: '/admin/integrations', icon: Plug2 },
   { title: 'System', href: '/admin/system', icon: Server },

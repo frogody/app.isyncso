@@ -3544,6 +3544,314 @@ serve(async (req) => {
     }
 
     // =========================================================================
+    // AI & Automation Endpoints
+    // =========================================================================
+
+    // GET /ai/stats
+    if (path === "/ai/stats" && method === "GET") {
+      const { data, error } = await supabaseClient.rpc("admin_get_ai_stats");
+      if (error) {
+        return new Response(
+          JSON.stringify({ error: error.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      return new Response(
+        JSON.stringify(data),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /ai/models
+    if (path === "/ai/models" && method === "GET") {
+      const { data, error } = await supabaseClient.rpc("admin_get_ai_models");
+      if (error) {
+        return new Response(
+          JSON.stringify({ error: error.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // POST /ai/models
+    if (path === "/ai/models" && method === "POST") {
+      const body = await req.json();
+      const { data, error } = await supabaseClient.rpc("admin_upsert_ai_model", {
+        p_id: null,
+        p_data: body,
+      });
+      if (error) {
+        return new Response(
+          JSON.stringify({ error: error.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      return new Response(
+        JSON.stringify(data),
+        { status: 201, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // PUT /ai/models/:id
+    const aiModelMatch = path.match(/^\/ai\/models\/([^\/]+)$/);
+    if (aiModelMatch && method === "PUT") {
+      const modelId = aiModelMatch[1];
+      const body = await req.json();
+      const { data, error } = await supabaseClient.rpc("admin_upsert_ai_model", {
+        p_id: modelId,
+        p_data: body,
+      });
+      if (error) {
+        return new Response(
+          JSON.stringify({ error: error.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      return new Response(
+        JSON.stringify(data),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /ai/usage
+    if (path.startsWith("/ai/usage") && method === "GET") {
+      const days = parseInt(url.searchParams.get("days") || "30");
+      const modelId = url.searchParams.get("model_id") || null;
+      const orgId = url.searchParams.get("org_id") || null;
+      const { data, error } = await supabaseClient.rpc("admin_get_ai_usage", {
+        p_days: days,
+        p_model_id: modelId,
+        p_org_id: orgId,
+      });
+      if (error) {
+        return new Response(
+          JSON.stringify({ error: error.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      return new Response(
+        JSON.stringify(data),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /ai/prompts
+    if (path === "/ai/prompts" && method === "GET") {
+      const category = url.searchParams.get("category") || null;
+      const { data, error } = await supabaseClient.rpc("admin_get_ai_prompts", {
+        p_category: category,
+      });
+      if (error) {
+        return new Response(
+          JSON.stringify({ error: error.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // POST /ai/prompts
+    if (path === "/ai/prompts" && method === "POST") {
+      const body = await req.json();
+      const { data, error } = await supabaseClient.rpc("admin_upsert_ai_prompt", {
+        p_id: null,
+        p_data: body,
+      });
+      if (error) {
+        return new Response(
+          JSON.stringify({ error: error.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      return new Response(
+        JSON.stringify(data),
+        { status: 201, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // PUT /ai/prompts/:id
+    const aiPromptMatch = path.match(/^\/ai\/prompts\/([^\/]+)$/);
+    if (aiPromptMatch && method === "PUT") {
+      const promptId = aiPromptMatch[1];
+      const body = await req.json();
+      const { data, error } = await supabaseClient.rpc("admin_upsert_ai_prompt", {
+        p_id: promptId,
+        p_data: body,
+      });
+      if (error) {
+        return new Response(
+          JSON.stringify({ error: error.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      return new Response(
+        JSON.stringify(data),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // DELETE /ai/prompts/:id
+    if (aiPromptMatch && method === "DELETE") {
+      const promptId = aiPromptMatch[1];
+      const { data, error } = await supabaseClient.rpc("admin_delete_ai_prompt", {
+        p_id: promptId,
+      });
+      if (error) {
+        return new Response(
+          JSON.stringify({ error: error.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      return new Response(
+        JSON.stringify({ success: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /automation/workflows
+    if (path === "/automation/workflows" && method === "GET") {
+      const status = url.searchParams.get("status") || null;
+      const { data, error } = await supabaseClient.rpc("admin_get_workflows", {
+        p_status: status,
+      });
+      if (error) {
+        return new Response(
+          JSON.stringify({ error: error.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // POST /automation/workflows
+    if (path === "/automation/workflows" && method === "POST") {
+      const body = await req.json();
+      const { data, error } = await supabaseClient.rpc("admin_upsert_workflow", {
+        p_id: null,
+        p_data: body,
+      });
+      if (error) {
+        return new Response(
+          JSON.stringify({ error: error.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      return new Response(
+        JSON.stringify(data),
+        { status: 201, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // PUT /automation/workflows/:id
+    const workflowMatch = path.match(/^\/automation\/workflows\/([^\/]+)$/);
+    if (workflowMatch && method === "PUT") {
+      const workflowId = workflowMatch[1];
+      const body = await req.json();
+      const { data, error } = await supabaseClient.rpc("admin_upsert_workflow", {
+        p_id: workflowId,
+        p_data: body,
+      });
+      if (error) {
+        return new Response(
+          JSON.stringify({ error: error.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      return new Response(
+        JSON.stringify(data),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /automation/workflows/:id/runs
+    const workflowRunsMatch = path.match(/^\/automation\/workflows\/([^\/]+)\/runs$/);
+    if (workflowRunsMatch && method === "GET") {
+      const workflowId = workflowRunsMatch[1];
+      const limit = parseInt(url.searchParams.get("limit") || "50");
+      const { data, error } = await supabaseClient.rpc("admin_get_workflow_runs", {
+        p_workflow_id: workflowId,
+        p_limit: limit,
+      });
+      if (error) {
+        return new Response(
+          JSON.stringify({ error: error.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // POST /automation/workflows/:id/trigger
+    const workflowTriggerMatch = path.match(/^\/automation\/workflows\/([^\/]+)\/trigger$/);
+    if (workflowTriggerMatch && method === "POST") {
+      const workflowId = workflowTriggerMatch[1];
+      const body = await req.json().catch(() => ({}));
+      const { data, error } = await supabaseClient.rpc("admin_trigger_workflow", {
+        p_workflow_id: workflowId,
+        p_trigger_data: body,
+      });
+      if (error) {
+        return new Response(
+          JSON.stringify({ error: error.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      return new Response(
+        JSON.stringify(data),
+        { status: 201, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /automation/scheduled-tasks
+    if (path === "/automation/scheduled-tasks" && method === "GET") {
+      const { data, error } = await supabaseClient.rpc("admin_get_scheduled_tasks");
+      if (error) {
+        return new Response(
+          JSON.stringify({ error: error.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // PUT /automation/scheduled-tasks/:id
+    const taskMatch = path.match(/^\/automation\/scheduled-tasks\/([^\/]+)$/);
+    if (taskMatch && method === "PUT") {
+      const taskId = taskMatch[1];
+      const body = await req.json();
+      const { data, error } = await supabaseClient.rpc("admin_upsert_scheduled_task", {
+        p_id: taskId,
+        p_data: body,
+      });
+      if (error) {
+        return new Response(
+          JSON.stringify({ error: error.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      return new Response(
+        JSON.stringify(data),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // =========================================================================
     // Health Check
     // =========================================================================
 
