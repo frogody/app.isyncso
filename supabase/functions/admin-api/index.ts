@@ -878,6 +878,238 @@ serve(async (req) => {
     }
 
     // =========================================================================
+    // Organization Management Endpoints
+    // =========================================================================
+
+    // GET /organizations - List all organizations with pagination, search, and filters
+    if (path === "/organizations" && method === "GET") {
+      const page = parseInt(url.searchParams.get("page") || "1");
+      const limit = parseInt(url.searchParams.get("limit") || "20");
+      const search = url.searchParams.get("search");
+      const industry = url.searchParams.get("industry");
+      const status = url.searchParams.get("status");
+      const sortBy = url.searchParams.get("sort_by") || "created_date";
+      const sortOrder = url.searchParams.get("sort_order") || "desc";
+
+      const offset = (page - 1) * limit;
+
+      // Build the query
+      let query = supabaseAdmin
+        .from("admin_organizations_view")
+        .select("*", { count: "exact" });
+
+      // Apply filters
+      if (search) {
+        query = query.or(`name.ilike.%${search}%,domain.ilike.%${search}%`);
+      }
+      if (industry) {
+        query = query.eq("industry", industry);
+      }
+      if (status === "active") {
+        query = query.eq("is_active", true);
+      } else if (status === "inactive") {
+        query = query.eq("is_active", false);
+      }
+
+      // Apply sorting
+      const ascending = sortOrder === "asc";
+      query = query.order(sortBy, { ascending });
+
+      // Apply pagination
+      query = query.range(offset, offset + limit - 1);
+
+      const { data, error, count } = await query;
+
+      if (error) {
+        throw error;
+      }
+
+      await createAuditLog(userId!, adminEmail, "list", "organizations", null, null, { search, industry, page }, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify({
+          organizations: data || [],
+          pagination: {
+            total: count || 0,
+            page,
+            limit,
+            total_pages: Math.ceil((count || 0) / limit),
+            has_more: (count || 0) > offset + limit,
+          },
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /organization-stats - Get organization statistics for dashboard
+    if (path === "/organization-stats" && method === "GET") {
+      const [totalOrgs, newOrgs, withSub] = await Promise.all([
+        supabaseAdmin.from("companies").select("*", { count: "exact", head: true }),
+        supabaseAdmin.from("companies").select("*", { count: "exact", head: true }).gte("created_date", new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
+        supabaseAdmin.from("subscriptions").select("company_id", { count: "exact", head: true }).eq("status", "active"),
+      ]);
+
+      // Get active organizations (with users who logged in recently)
+      const { data: activeOrgsData } = await supabaseAdmin
+        .from("admin_organizations_view")
+        .select("id")
+        .eq("is_active", true);
+
+      // Get industry distribution
+      const { data: industryData } = await supabaseAdmin
+        .from("companies")
+        .select("industry");
+
+      const industryDistribution: Record<string, number> = {};
+      (industryData || []).forEach((c: { industry: string | null }) => {
+        const ind = c.industry || "Unknown";
+        industryDistribution[ind] = (industryDistribution[ind] || 0) + 1;
+      });
+
+      return new Response(
+        JSON.stringify({
+          stats: {
+            total_organizations: totalOrgs.count || 0,
+            active_organizations: activeOrgsData?.length || 0,
+            new_this_month: newOrgs.count || 0,
+            with_subscription: withSub.count || 0,
+            industry_distribution: industryDistribution,
+          },
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /organizations/:id - Get single organization details
+    if (path.match(/^\/organizations\/[a-f0-9-]+$/) && method === "GET") {
+      const orgId = path.split("/organizations/")[1];
+
+      const { data, error } = await supabaseAdmin
+        .from("admin_organizations_view")
+        .select("*")
+        .eq("id", orgId)
+        .single();
+
+      if (error) {
+        if (error.code === "PGRST116") {
+          return new Response(
+            JSON.stringify({ error: "Organization not found" }),
+            { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        throw error;
+      }
+
+      await createAuditLog(userId!, adminEmail, "view", "organizations", orgId, null, null, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify({ organization: data }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /organizations/:id/users - Get organization users
+    if (path.match(/^\/organizations\/[a-f0-9-]+\/users$/) && method === "GET") {
+      const orgId = path.split("/organizations/")[1].replace("/users", "");
+
+      const { data, error } = await supabaseAdmin
+        .from("users")
+        .select("id, auth_id, name, full_name, email, role, job_title, avatar_url, last_active_at, created_at")
+        .eq("company_id", orgId)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      // Add is_active flag
+      const usersWithStatus = (data || []).map((u: { last_active_at: string | null }) => ({
+        ...u,
+        is_active: u.last_active_at ? new Date(u.last_active_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) : false,
+      }));
+
+      return new Response(
+        JSON.stringify({ users: usersWithStatus }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // PUT /organizations/:id - Update organization
+    if (path.match(/^\/organizations\/[a-f0-9-]+$/) && method === "PUT") {
+      const orgId = path.split("/organizations/")[1];
+      const body = await req.json();
+
+      // Only super_admin and admin can update organizations
+      if (!["super_admin", "admin"].includes(adminUser?.role || "")) {
+        return new Response(
+          JSON.stringify({ error: "Insufficient permissions to update organizations" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Get old data for audit
+      const { data: oldOrg } = await supabaseAdmin
+        .from("companies")
+        .select("*")
+        .eq("id", orgId)
+        .single();
+
+      if (!oldOrg) {
+        return new Response(
+          JSON.stringify({ error: "Organization not found" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Allowed fields to update
+      const allowedFields = ["name", "domain", "industry", "size", "revenue", "description", "website", "linkedin_url", "location"];
+      const updates: Record<string, unknown> = {};
+
+      for (const field of allowedFields) {
+        if (body[field] !== undefined) {
+          updates[field] = body[field];
+        }
+      }
+
+      if (Object.keys(updates).length === 0) {
+        return new Response(
+          JSON.stringify({ error: "No valid fields to update" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      updates.updated_date = new Date().toISOString();
+
+      const { data, error } = await supabaseAdmin
+        .from("companies")
+        .update(updates)
+        .eq("id", orgId)
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      await createAuditLog(
+        userId!,
+        adminEmail,
+        "update",
+        "organizations",
+        orgId,
+        { name: oldOrg.name, industry: oldOrg.industry, size: oldOrg.size },
+        updates,
+        ipAddress,
+        userAgent
+      );
+
+      return new Response(
+        JSON.stringify({ organization: data, message: "Organization updated successfully" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // =========================================================================
     // Health Check
     // =========================================================================
 
