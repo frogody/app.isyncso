@@ -2448,6 +2448,256 @@ serve(async (req) => {
     }
 
     // =========================================================================
+    // Integrations Hub Endpoints
+    // =========================================================================
+
+    // GET /integrations/overview - Get integrations overview stats
+    if (path === "/integrations/overview" && method === "GET") {
+      const { data, error } = await supabaseAdmin.rpc("admin_get_integrations_overview");
+
+      if (error) throw error;
+
+      await createAuditLog(userId!, adminEmail, "view", "integrations", null, null, { type: "overview" }, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify(data),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /integrations/providers - List integration providers
+    if (path === "/integrations/providers" && method === "GET") {
+      const category = url.searchParams.get("category") || null;
+
+      const { data, error } = await supabaseAdmin.rpc("admin_get_integration_providers", {
+        p_category: category,
+      });
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // POST /integrations/providers - Create/update provider
+    if (path === "/integrations/providers" && method === "POST") {
+      const providerData = await req.json();
+
+      const { data, error } = await supabaseAdmin.rpc("admin_upsert_provider", {
+        p_data: providerData,
+      });
+
+      if (error) throw error;
+
+      await createAuditLog(
+        userId!,
+        adminEmail,
+        providerData.id ? "update" : "create",
+        "integration_provider",
+        data?.id,
+        providerData.name,
+        { category: providerData.category },
+        ipAddress,
+        userAgent
+      );
+
+      return new Response(
+        JSON.stringify(data),
+        { status: 201, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // PUT /integrations/providers/:id - Update provider
+    if (path.match(/^\/integrations\/providers\/[^/]+$/) && method === "PUT") {
+      const providerId = path.split("/")[3];
+      const providerData = await req.json();
+
+      const { data, error } = await supabaseAdmin.rpc("admin_upsert_provider", {
+        p_data: { ...providerData, id: providerId },
+      });
+
+      if (error) throw error;
+
+      await createAuditLog(userId!, adminEmail, "update", "integration_provider", providerId, providerData.name, { category: providerData.category }, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify(data),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // DELETE /integrations/providers/:id - Deactivate provider
+    if (path.match(/^\/integrations\/providers\/[^/]+$/) && method === "DELETE") {
+      const providerId = path.split("/")[3];
+
+      const { error } = await supabaseAdmin
+        .from("integration_providers")
+        .update({ is_active: false, updated_at: new Date().toISOString() })
+        .eq("id", providerId);
+
+      if (error) throw error;
+
+      await createAuditLog(userId!, adminEmail, "deactivate", "integration_provider", providerId, null, null, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify({ success: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /integrations/connections - List company integrations
+    if (path === "/integrations/connections" && method === "GET") {
+      const companyId = url.searchParams.get("company") || null;
+      const status = url.searchParams.get("status") || null;
+
+      const { data, error } = await supabaseAdmin.rpc("admin_get_company_integrations", {
+        p_company_id: companyId,
+        p_status: status,
+      });
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /integrations/connections/:id/logs - Get sync logs for an integration
+    if (path.match(/^\/integrations\/connections\/[^/]+\/logs$/) && method === "GET") {
+      const integrationId = path.split("/")[3];
+      const limit = parseInt(url.searchParams.get("limit") || "50");
+
+      const { data, error } = await supabaseAdmin.rpc("admin_get_sync_logs", {
+        p_integration_id: integrationId,
+        p_limit: limit,
+      });
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /integrations/webhooks - List webhooks
+    if (path === "/integrations/webhooks" && method === "GET") {
+      const companyId = url.searchParams.get("company") || null;
+
+      const { data, error } = await supabaseAdmin.rpc("admin_get_webhooks", {
+        p_company_id: companyId,
+      });
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /integrations/webhooks/:id/deliveries - Get webhook deliveries
+    if (path.match(/^\/integrations\/webhooks\/[^/]+\/deliveries$/) && method === "GET") {
+      const webhookId = path.split("/")[3];
+      const limit = parseInt(url.searchParams.get("limit") || "50");
+
+      const { data, error } = await supabaseAdmin.rpc("admin_get_webhook_deliveries", {
+        p_webhook_id: webhookId,
+        p_limit: limit,
+      });
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // POST /integrations/webhooks/:id/test - Test webhook
+    if (path.match(/^\/integrations\/webhooks\/[^/]+\/test$/) && method === "POST") {
+      const webhookId = path.split("/")[3];
+
+      // Get webhook details
+      const { data: webhook, error: fetchError } = await supabaseAdmin
+        .from("webhooks")
+        .select("*")
+        .eq("id", webhookId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Send test payload
+      const testPayload = {
+        event: "test.webhook",
+        timestamp: new Date().toISOString(),
+        data: { message: "This is a test webhook delivery from iSyncSO Admin" },
+      };
+
+      const startTime = Date.now();
+      let statusCode = 0;
+      let responseBody = "";
+
+      try {
+        const response = await fetch(webhook.url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(webhook.secret ? { "X-Webhook-Secret": webhook.secret } : {}),
+          },
+          body: JSON.stringify(testPayload),
+        });
+
+        statusCode = response.status;
+        responseBody = await response.text();
+      } catch (err) {
+        statusCode = 0;
+        responseBody = err instanceof Error ? err.message : "Connection failed";
+      }
+
+      const responseTime = Date.now() - startTime;
+
+      // Log the delivery
+      await supabaseAdmin.from("webhook_deliveries").insert({
+        webhook_id: webhookId,
+        event_type: "test.webhook",
+        payload: testPayload,
+        status_code: statusCode,
+        response_body: responseBody.substring(0, 1000),
+        response_time_ms: responseTime,
+        status: statusCode >= 200 && statusCode < 300 ? "success" : "failed",
+        attempts: 1,
+      });
+
+      // Update webhook stats
+      await supabaseAdmin
+        .from("webhooks")
+        .update({
+          total_deliveries: webhook.total_deliveries + 1,
+          successful_deliveries: statusCode >= 200 && statusCode < 300 ? webhook.successful_deliveries + 1 : webhook.successful_deliveries,
+          failed_deliveries: statusCode < 200 || statusCode >= 300 ? webhook.failed_deliveries + 1 : webhook.failed_deliveries,
+          last_delivery_at: new Date().toISOString(),
+          last_status_code: statusCode,
+        })
+        .eq("id", webhookId);
+
+      await createAuditLog(userId!, adminEmail, "test", "webhook", webhookId, webhook.name, { status_code: statusCode, response_time_ms: responseTime }, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify({
+          success: statusCode >= 200 && statusCode < 300,
+          status_code: statusCode,
+          response_time_ms: responseTime,
+          response_body: responseBody.substring(0, 500),
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // =========================================================================
     // Health Check
     // =========================================================================
 
