@@ -1721,6 +1721,418 @@ serve(async (req) => {
     }
 
     // =========================================================================
+    // App Store Management Endpoints
+    // =========================================================================
+
+    // GET /apps/stats - Get app store statistics
+    if (path === "/apps/stats" && method === "GET") {
+      const [totalApps, activeApps, activeLicenses, licensedCompanies, monthlyRevenue] = await Promise.all([
+        supabaseAdmin.from("platform_apps").select("*", { count: "exact", head: true }),
+        supabaseAdmin.from("platform_apps").select("*", { count: "exact", head: true }).eq("is_active", true),
+        supabaseAdmin.from("app_licenses").select("*", { count: "exact", head: true }).eq("status", "active"),
+        supabaseAdmin.from("app_licenses").select("company_id").eq("status", "active"),
+        supabaseAdmin.from("app_licenses").select("amount").eq("status", "active").eq("billing_cycle", "monthly"),
+      ]);
+
+      // Calculate unique licensed companies
+      const uniqueCompanies = new Set((licensedCompanies.data || []).map((l: { company_id: string }) => l.company_id));
+
+      // Calculate monthly revenue
+      const revenue = (monthlyRevenue.data || []).reduce((sum: number, l: { amount: number }) => sum + (l.amount || 0), 0);
+
+      return new Response(
+        JSON.stringify({
+          total_apps: totalApps.count || 0,
+          active_apps: activeApps.count || 0,
+          active_licenses: activeLicenses.count || 0,
+          licensed_companies: uniqueCompanies.size,
+          monthly_revenue: revenue,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /apps - List all platform apps
+    if (path === "/apps" && method === "GET") {
+      const category = url.searchParams.get("category");
+      const pricing = url.searchParams.get("pricing");
+      const status = url.searchParams.get("status");
+
+      let query = supabaseAdmin.from("platform_apps").select("*");
+
+      if (category) query = query.eq("category", category);
+      if (pricing) query = query.eq("pricing_type", pricing);
+      if (status === "active") query = query.eq("is_active", true);
+      if (status === "beta") query = query.eq("is_beta", true);
+      if (status === "inactive") query = query.eq("is_active", false);
+
+      const { data: apps, error } = await query.order("sort_order").order("name");
+
+      if (error) throw error;
+
+      // Get license counts for each app
+      const appIds = (apps || []).map((a: { id: string }) => a.id);
+      const { data: licenseCounts } = await supabaseAdmin
+        .from("app_licenses")
+        .select("app_id")
+        .in("app_id", appIds)
+        .eq("status", "active");
+
+      // Count licenses per app
+      const licenseCountMap: Record<string, number> = {};
+      (licenseCounts || []).forEach((l: { app_id: string }) => {
+        licenseCountMap[l.app_id] = (licenseCountMap[l.app_id] || 0) + 1;
+      });
+
+      // Get revenue per app
+      const { data: revenueData } = await supabaseAdmin
+        .from("app_licenses")
+        .select("app_id, amount")
+        .in("app_id", appIds)
+        .eq("status", "active");
+
+      const revenueMap: Record<string, number> = {};
+      (revenueData || []).forEach((l: { app_id: string; amount: number }) => {
+        revenueMap[l.app_id] = (revenueMap[l.app_id] || 0) + (l.amount || 0);
+      });
+
+      // Enrich apps with license counts and revenue
+      const enrichedApps = (apps || []).map((app: { id: string }) => ({
+        ...app,
+        active_licenses: licenseCountMap[app.id] || 0,
+        total_revenue: revenueMap[app.id] || 0,
+      }));
+
+      await createAuditLog(userId!, adminEmail, "list", "platform_apps", null, null, { category, pricing, status }, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify(enrichedApps),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /apps/:id - Get single app details
+    if (path.match(/^\/apps\/[a-f0-9-]+$/) && method === "GET") {
+      const appId = path.split("/apps/")[1];
+
+      const { data: app, error } = await supabaseAdmin
+        .from("platform_apps")
+        .select("*")
+        .eq("id", appId)
+        .single();
+
+      if (error) {
+        if (error.code === "PGRST116") {
+          return new Response(
+            JSON.stringify({ error: "App not found" }),
+            { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        throw error;
+      }
+
+      // Get license stats
+      const [activeLicenses, totalRevenue] = await Promise.all([
+        supabaseAdmin.from("app_licenses").select("*", { count: "exact", head: true }).eq("app_id", appId).eq("status", "active"),
+        supabaseAdmin.from("app_licenses").select("amount").eq("app_id", appId).eq("status", "active"),
+      ]);
+
+      const revenue = (totalRevenue.data || []).reduce((sum: number, l: { amount: number }) => sum + (l.amount || 0), 0);
+
+      await createAuditLog(userId!, adminEmail, "view", "platform_apps", appId, null, null, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify({
+          ...app,
+          active_licenses: activeLicenses.count || 0,
+          total_revenue: revenue,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // POST /apps - Create or update platform app
+    if (path === "/apps" && method === "POST") {
+      const body = await req.json();
+      const { id, name, slug, description, long_description, category, icon, pricing_model, base_price, status, is_core, route_path, required_permissions, dependencies, sort_order } = body;
+
+      if (!name || !slug) {
+        return new Response(
+          JSON.stringify({ error: "Name and slug are required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Map frontend fields to database schema
+      const appData: Record<string, unknown> = {
+        name,
+        slug,
+        description: description || null,
+        long_description: long_description || null,
+        category: category || "productivity",
+        icon: icon || null,
+        pricing_type: pricing_model || "free",
+        price_monthly: base_price || 0,
+        is_active: status !== "inactive" && status !== "deprecated",
+        is_beta: status === "beta",
+        is_new: false,
+        route_path: route_path || `/${slug}`,
+        required_permissions: required_permissions || [],
+        dependencies: dependencies || [],
+        sort_order: sort_order || 0,
+      };
+
+      let result;
+      if (id) {
+        // Update existing app
+        const { data: oldApp } = await supabaseAdmin.from("platform_apps").select("*").eq("id", id).single();
+
+        const { data, error } = await supabaseAdmin
+          .from("platform_apps")
+          .update({ ...appData, updated_at: new Date().toISOString() })
+          .eq("id", id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        result = data;
+
+        await createAuditLog(userId!, adminEmail, "update", "platform_apps", id, oldApp, data, ipAddress, userAgent);
+      } else {
+        // Create new app
+        const { data, error } = await supabaseAdmin
+          .from("platform_apps")
+          .insert(appData)
+          .select()
+          .single();
+
+        if (error) {
+          if (error.code === "23505") {
+            return new Response(
+              JSON.stringify({ error: "App slug already exists" }),
+              { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+          throw error;
+        }
+        result = data;
+
+        await createAuditLog(userId!, adminEmail, "create", "platform_apps", data.id, null, data, ipAddress, userAgent);
+      }
+
+      return new Response(
+        JSON.stringify(result),
+        { status: id ? 200 : 201, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // DELETE /apps/:id - Delete platform app
+    if (path.match(/^\/apps\/[a-f0-9-]+$/) && method === "DELETE") {
+      const appId = path.split("/apps/")[1];
+
+      // Only super_admin can delete apps
+      if (adminUser?.role !== "super_admin") {
+        return new Response(
+          JSON.stringify({ error: "Only super admins can delete apps" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Get app for audit
+      const { data: app } = await supabaseAdmin.from("platform_apps").select("*").eq("id", appId).single();
+
+      if (!app) {
+        return new Response(
+          JSON.stringify({ error: "App not found" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Check for active licenses
+      const { count: activeLicenses } = await supabaseAdmin
+        .from("app_licenses")
+        .select("*", { count: "exact", head: true })
+        .eq("app_id", appId)
+        .eq("status", "active");
+
+      if (activeLicenses && activeLicenses > 0) {
+        return new Response(
+          JSON.stringify({ error: `Cannot delete app with ${activeLicenses} active license(s). Revoke licenses first.` }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const { error } = await supabaseAdmin.from("platform_apps").delete().eq("id", appId);
+      if (error) throw error;
+
+      await createAuditLog(userId!, adminEmail, "delete", "platform_apps", appId, app, null, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify({ message: "App deleted successfully" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /licenses - List all licenses
+    if (path === "/licenses" && method === "GET") {
+      const appId = url.searchParams.get("app");
+      const companyId = url.searchParams.get("company");
+      const status = url.searchParams.get("status");
+
+      let query = supabaseAdmin.from("app_licenses").select("*");
+
+      if (appId) query = query.eq("app_id", appId);
+      if (companyId) query = query.eq("company_id", companyId);
+      if (status) query = query.eq("status", status);
+
+      const { data: licenses, error } = await query.order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      // Get app and company names
+      const appIds = [...new Set((licenses || []).map((l: { app_id: string }) => l.app_id))];
+      const companyIds = [...new Set((licenses || []).map((l: { company_id: string }) => l.company_id))];
+
+      const [{ data: apps }, { data: companies }] = await Promise.all([
+        supabaseAdmin.from("platform_apps").select("id, name, icon").in("id", appIds),
+        supabaseAdmin.from("companies").select("id, name").in("id", companyIds),
+      ]);
+
+      const appMap: Record<string, { name: string; icon: string }> = {};
+      (apps || []).forEach((a: { id: string; name: string; icon: string }) => {
+        appMap[a.id] = { name: a.name, icon: a.icon };
+      });
+
+      const companyMap: Record<string, string> = {};
+      (companies || []).forEach((c: { id: string; name: string }) => {
+        companyMap[c.id] = c.name;
+      });
+
+      // Enrich licenses
+      const enrichedLicenses = (licenses || []).map((license: { app_id: string; company_id: string }) => ({
+        ...license,
+        app_name: appMap[license.app_id]?.name || "Unknown",
+        app_icon: appMap[license.app_id]?.icon || null,
+        company_name: companyMap[license.company_id] || "Unknown",
+      }));
+
+      await createAuditLog(userId!, adminEmail, "list", "app_licenses", null, null, { appId, companyId, status }, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify(enrichedLicenses),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // POST /licenses - Grant a new license
+    if (path === "/licenses" && method === "POST") {
+      const body = await req.json();
+      const { app_id, company_id, license_type, expires_at, amount, billing_cycle, user_limit, notes } = body;
+
+      if (!app_id || !company_id) {
+        return new Response(
+          JSON.stringify({ error: "app_id and company_id are required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Check if license already exists
+      const { data: existing } = await supabaseAdmin
+        .from("app_licenses")
+        .select("id, status")
+        .eq("app_id", app_id)
+        .eq("company_id", company_id)
+        .eq("status", "active")
+        .single();
+
+      if (existing) {
+        return new Response(
+          JSON.stringify({ error: "An active license already exists for this app and company" }),
+          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Get user.id from auth_id
+      const { data: userData } = await supabaseAdmin.from("users").select("id").eq("auth_id", userId).single();
+
+      const { data, error } = await supabaseAdmin
+        .from("app_licenses")
+        .insert({
+          app_id,
+          company_id,
+          license_type: license_type || "subscription",
+          status: "active",
+          expires_at: expires_at || null,
+          amount: amount || 0,
+          billing_cycle: billing_cycle || "monthly",
+          user_limit: user_limit || null,
+          notes: notes || null,
+          granted_by: userData?.id || null,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      await createAuditLog(userId!, adminEmail, "create", "app_licenses", data.id, null, data, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify(data),
+        { status: 201, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // PUT /licenses/:id - Update a license
+    if (path.match(/^\/licenses\/[a-f0-9-]+$/) && method === "PUT") {
+      const licenseId = path.split("/licenses/")[1];
+      const body = await req.json();
+
+      // Get old data for audit
+      const { data: oldLicense } = await supabaseAdmin.from("app_licenses").select("*").eq("id", licenseId).single();
+
+      if (!oldLicense) {
+        return new Response(
+          JSON.stringify({ error: "License not found" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const allowedFields = ["status", "expires_at", "amount", "billing_cycle", "user_limit", "notes"];
+      const updates: Record<string, unknown> = {};
+
+      for (const field of allowedFields) {
+        if (body[field] !== undefined) {
+          updates[field] = body[field];
+        }
+      }
+
+      if (Object.keys(updates).length === 0) {
+        return new Response(
+          JSON.stringify({ error: "No valid fields to update" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      updates.updated_at = new Date().toISOString();
+
+      const { data, error } = await supabaseAdmin
+        .from("app_licenses")
+        .update(updates)
+        .eq("id", licenseId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      await createAuditLog(userId!, adminEmail, "update", "app_licenses", licenseId, oldLicense, data, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify(data),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // =========================================================================
     // Health Check
     // =========================================================================
 

@@ -249,6 +249,7 @@ import PlatformAdminAuditLogs from "./admin/AdminAuditLogs";
 import PlatformAdminUsers from "./admin/AdminUsers";
 import PlatformAdminOrganizations from "./admin/AdminOrganizations";
 import PlatformAdminMarketplace from "./admin/AdminMarketplace";
+import PlatformAdminApps from "./admin/AdminApps";
 
 // Providers needed for admin routes (since they don't use main Layout)
 import { UserProvider } from "@/components/context/UserContext";
@@ -534,7 +535,7 @@ function PagesContent() {
                             <Route path="users" element={<PlatformAdminUsers />} />
                             <Route path="organizations" element={<PlatformAdminOrganizations />} />
                             <Route path="marketplace" element={<PlatformAdminMarketplace />} />
-                            <Route path="apps" element={<PlatformAdminDashboard />} /> {/* Placeholder */}
+                            <Route path="apps" element={<PlatformAdminApps />} />
                             <Route path="analytics" element={<PlatformAdminDashboard />} /> {/* Placeholder */}
                         </Route>
                     </Routes>
