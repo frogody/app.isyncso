@@ -3286,6 +3286,264 @@ serve(async (req) => {
     }
 
     // =========================================================================
+    // Support & Moderation Endpoints
+    // =========================================================================
+
+    // GET /support/stats - Get support statistics
+    if (path === "/support/stats" && method === "GET") {
+      const { data, error } = await supabaseAdmin.rpc("admin_get_support_stats");
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /support/tickets - Get tickets
+    if (path === "/support/tickets" && method === "GET") {
+      const status = url.searchParams.get("status") || null;
+      const priority = url.searchParams.get("priority") || null;
+      const categoryId = url.searchParams.get("category") || null;
+      const assignedTo = url.searchParams.get("assigned_to") || null;
+      const search = url.searchParams.get("search") || null;
+      const limit = parseInt(url.searchParams.get("limit") || "50");
+      const offset = parseInt(url.searchParams.get("offset") || "0");
+
+      const { data, error } = await supabaseAdmin.rpc("admin_get_tickets", {
+        p_status: status,
+        p_priority: priority,
+        p_category_id: categoryId,
+        p_assigned_to: assignedTo,
+        p_search: search,
+        p_limit: limit,
+        p_offset: offset,
+      });
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || { items: [], total: 0 }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /support/tickets/:id - Get ticket detail
+    if (path.match(/^\/support\/tickets\/[^/]+$/) && method === "GET") {
+      const ticketId = path.split("/")[3];
+
+      const { data, error } = await supabaseAdmin.rpc("admin_get_ticket_detail", {
+        p_ticket_id: ticketId,
+      });
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // PUT /support/tickets/:id - Update ticket
+    if (path.match(/^\/support\/tickets\/[^/]+$/) && method === "PUT") {
+      const ticketId = path.split("/")[3];
+      const ticketData = await req.json();
+
+      const { data, error } = await supabaseAdmin.rpc("admin_update_ticket", {
+        p_ticket_id: ticketId,
+        p_data: ticketData,
+      });
+
+      if (error) throw error;
+
+      await createAuditLog(userId!, adminEmail, "update", "support_ticket", ticketId, null, { status: ticketData.status, priority: ticketData.priority }, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify(data),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // POST /support/tickets/:id/messages - Add ticket message
+    if (path.match(/^\/support\/tickets\/[^/]+\/messages$/) && method === "POST") {
+      const ticketId = path.split("/")[3];
+      const { message, is_internal } = await req.json();
+
+      const { data, error } = await supabaseAdmin.rpc("admin_add_ticket_message", {
+        p_ticket_id: ticketId,
+        p_user_id: userId,
+        p_message: message,
+        p_is_internal: is_internal || false,
+      });
+
+      if (error) throw error;
+
+      await createAuditLog(userId!, adminEmail, "reply", "support_ticket", ticketId, null, { is_internal }, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify(data),
+        { status: 201, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /support/categories - Get ticket categories
+    if (path === "/support/categories" && method === "GET") {
+      const { data, error } = await supabaseAdmin
+        .from("ticket_categories")
+        .select("*")
+        .eq("is_active", true)
+        .order("sort_order");
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /moderation/reports - Get moderation reports
+    if (path === "/moderation/reports" && method === "GET") {
+      const status = url.searchParams.get("status") || null;
+      const type = url.searchParams.get("type") || null;
+      const limit = parseInt(url.searchParams.get("limit") || "50");
+      const offset = parseInt(url.searchParams.get("offset") || "0");
+
+      const { data, error } = await supabaseAdmin.rpc("admin_get_moderation_reports", {
+        p_status: status,
+        p_type: type,
+        p_limit: limit,
+        p_offset: offset,
+      });
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || { items: [], total: 0 }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // PUT /moderation/reports/:id - Resolve moderation report
+    if (path.match(/^\/moderation\/reports\/[^/]+$/) && method === "PUT") {
+      const reportId = path.split("/")[3];
+      const { resolution, action_type, action_reason, action_expires_at } = await req.json();
+
+      const { data, error } = await supabaseAdmin.rpc("admin_resolve_report", {
+        p_report_id: reportId,
+        p_moderator_id: userId,
+        p_resolution: resolution,
+        p_action_type: action_type || null,
+        p_action_reason: action_reason || null,
+        p_action_expires_at: action_expires_at || null,
+      });
+
+      if (error) throw error;
+
+      await createAuditLog(userId!, adminEmail, "resolve", "moderation_report", reportId, null, { resolution, action_type }, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify(data),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /moderation/actions - Get moderation actions
+    if (path === "/moderation/actions" && method === "GET") {
+      const userId_param = url.searchParams.get("user_id") || null;
+
+      const { data, error } = await supabaseAdmin
+        .from("moderation_actions")
+        .select(`
+          *,
+          user:user_id(full_name, email),
+          moderator:moderator_id(full_name)
+        `)
+        .order("created_at", { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // POST /moderation/actions - Create moderation action
+    if (path === "/moderation/actions" && method === "POST") {
+      const actionData = await req.json();
+
+      const { data, error } = await supabaseAdmin
+        .from("moderation_actions")
+        .insert({
+          user_id: actionData.user_id,
+          action_type: actionData.action_type,
+          reason: actionData.reason,
+          moderator_id: userId,
+          expires_at: actionData.expires_at || null,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      await createAuditLog(userId!, adminEmail, "create", "moderation_action", data.id, null, { action_type: actionData.action_type, target_user: actionData.user_id }, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify(data),
+        { status: 201, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /moderation/user-flags/:userId - Get user flags
+    if (path.match(/^\/moderation\/user-flags\/[^/]+$/) && method === "GET") {
+      const targetUserId = path.split("/")[3];
+
+      const { data, error } = await supabaseAdmin.rpc("admin_get_user_flags", {
+        p_user_id: targetUserId,
+      });
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /moderation/user-flags - Get all user flags
+    if (path === "/moderation/user-flags" && method === "GET") {
+      const { data, error } = await supabaseAdmin.rpc("admin_get_user_flags", {
+        p_user_id: null,
+      });
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /support/canned-responses - Get canned responses
+    if (path === "/support/canned-responses" && method === "GET") {
+      const category = url.searchParams.get("category") || null;
+
+      const { data, error } = await supabaseAdmin.rpc("admin_get_canned_responses", {
+        p_category: category,
+      });
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // =========================================================================
     // Health Check
     // =========================================================================
 
