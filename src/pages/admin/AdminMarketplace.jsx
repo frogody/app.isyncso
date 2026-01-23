@@ -183,8 +183,8 @@ export default function AdminMarketplace() {
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState('desc');
 
@@ -261,8 +261,8 @@ export default function AdminMarketplace() {
         sort_order: sortOrder,
       });
       if (searchQuery) params.append('search', searchQuery);
-      if (categoryFilter) params.append('category', categoryFilter);
-      if (statusFilter) params.append('status', statusFilter);
+      if (categoryFilter && categoryFilter !== 'all') params.append('category', categoryFilter);
+      if (statusFilter && statusFilter !== 'all') params.append('status', statusFilter);
 
       const data = await adminApi(`/marketplace/products?${params}`);
       setProducts(data.products || []);
@@ -660,7 +660,7 @@ export default function AdminMarketplace() {
                     <SelectValue placeholder="All Categories" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Categories</SelectItem>
+                    <SelectItem value="all">All Categories</SelectItem>
                     {categories.map((cat) => (
                       <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                     ))}
@@ -671,7 +671,7 @@ export default function AdminMarketplace() {
                     <SelectValue placeholder="All Status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Status</SelectItem>
+                    <SelectItem value="all">All Status</SelectItem>
                     <SelectItem value="draft">Draft</SelectItem>
                     <SelectItem value="pending_review">Pending Review</SelectItem>
                     <SelectItem value="published">Published</SelectItem>
