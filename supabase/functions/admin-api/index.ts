@@ -2133,6 +2133,183 @@ serve(async (req) => {
     }
 
     // =========================================================================
+    // System Administration Endpoints
+    // =========================================================================
+
+    // GET /system/overview - Get system overview stats
+    if (path === "/system/overview" && method === "GET") {
+      const { data, error } = await supabaseAdmin.rpc("admin_get_system_overview");
+
+      if (error) throw error;
+
+      await createAuditLog(userId!, adminEmail, "view", "system", null, null, { type: "overview" }, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify(data),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /system/tables - Get database table statistics
+    if (path === "/system/tables" && method === "GET") {
+      const { data, error } = await supabaseAdmin.rpc("admin_get_table_stats");
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /system/errors - Get recent system errors
+    if (path === "/system/errors" && method === "GET") {
+      const limit = parseInt(url.searchParams.get("limit") || "50");
+      const includeResolved = url.searchParams.get("includeResolved") === "true";
+
+      const { data, error } = await supabaseAdmin.rpc("admin_get_recent_errors", {
+        p_limit: limit,
+        p_include_resolved: includeResolved,
+      });
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // PUT /system/errors/:id/resolve - Resolve an error
+    if (path.match(/^\/system\/errors\/[a-f0-9-]+\/resolve$/) && method === "PUT") {
+      const errorId = path.split("/")[3];
+
+      const { data, error } = await supabaseAdmin.rpc("admin_resolve_error", {
+        p_error_id: errorId,
+        p_admin_id: userId,
+      });
+
+      if (error) throw error;
+
+      await createAuditLog(userId!, adminEmail, "resolve", "system_errors", errorId, null, null, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify(data),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /system/jobs - Get background jobs
+    if (path === "/system/jobs" && method === "GET") {
+      const status = url.searchParams.get("status") || null;
+      const limit = parseInt(url.searchParams.get("limit") || "50");
+
+      const { data, error } = await supabaseAdmin.rpc("admin_get_background_jobs", {
+        p_status: status,
+        p_limit: limit,
+      });
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // POST /system/health-check - Record a health check
+    if (path === "/system/health-check" && method === "POST") {
+      const body = await request.json();
+
+      const { data, error } = await supabaseAdmin.rpc("admin_record_health_check", {
+        p_check_name: body.check_name,
+        p_check_type: body.check_type,
+        p_status: body.status,
+        p_response_time_ms: body.response_time_ms || null,
+        p_details: body.details || {},
+        p_error_message: body.error_message || null,
+      });
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data),
+        { status: 201, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /system/api-stats - Get API usage statistics
+    if (path === "/system/api-stats" && method === "GET") {
+      const { data, error } = await supabaseAdmin.rpc("admin_get_api_stats");
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // POST /system/run-health-checks - Run all health checks
+    if (path === "/system/run-health-checks" && method === "POST") {
+      const checks: Array<{ name: string; type: string; status: string; time?: number; error?: string }> = [];
+
+      // Check Database
+      const dbStart = Date.now();
+      try {
+        await supabaseAdmin.from("users").select("id", { count: "exact", head: true });
+        checks.push({ name: "Database", type: "database", status: "healthy", time: Date.now() - dbStart });
+      } catch (e) {
+        checks.push({ name: "Database", type: "database", status: "down", error: e instanceof Error ? e.message : "Unknown error" });
+      }
+
+      // Check Auth Service
+      const authStart = Date.now();
+      try {
+        const { data: authData } = await supabaseAdmin.auth.getSession();
+        checks.push({ name: "Authentication", type: "api", status: "healthy", time: Date.now() - authStart });
+      } catch (e) {
+        checks.push({ name: "Authentication", type: "api", status: "down", error: e instanceof Error ? e.message : "Unknown error" });
+      }
+
+      // Check Storage
+      const storageStart = Date.now();
+      try {
+        await supabaseAdmin.storage.listBuckets();
+        checks.push({ name: "Storage", type: "storage", status: "healthy", time: Date.now() - storageStart });
+      } catch (e) {
+        checks.push({ name: "Storage", type: "storage", status: "degraded", error: e instanceof Error ? e.message : "Unknown error" });
+      }
+
+      // Check Platform Apps table (app store)
+      const appsStart = Date.now();
+      try {
+        await supabaseAdmin.from("platform_apps").select("id", { count: "exact", head: true });
+        checks.push({ name: "App Store", type: "database", status: "healthy", time: Date.now() - appsStart });
+      } catch (e) {
+        checks.push({ name: "App Store", type: "database", status: "down", error: e instanceof Error ? e.message : "Unknown error" });
+      }
+
+      // Record all checks to database
+      for (const check of checks) {
+        await supabaseAdmin.rpc("admin_record_health_check", {
+          p_check_name: check.name,
+          p_check_type: check.type,
+          p_status: check.status,
+          p_response_time_ms: check.time || null,
+          p_error_message: check.error || null,
+        });
+      }
+
+      await createAuditLog(userId!, adminEmail, "run", "health_checks", null, null, { checks_count: checks.length }, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify({ checks, timestamp: new Date().toISOString() }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // =========================================================================
     // Analytics & Insights Endpoints
     // =========================================================================
 
