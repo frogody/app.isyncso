@@ -18,6 +18,21 @@
  * - DELETE /users/:id - Deactivate user
  * - GET /user-stats - Get user statistics
  * - GET /companies - List companies for filter dropdown
+ * - GET /organizations - List organizations with pagination, search, filters
+ * - GET /organizations/:id - Get organization details
+ * - GET /organizations/:id/users - Get organization users
+ * - PUT /organizations/:id - Update organization
+ * - GET /organization-stats - Get organization statistics
+ * - GET /marketplace/stats - Get marketplace statistics
+ * - GET /marketplace/categories - List data categories
+ * - POST /marketplace/categories - Create category
+ * - PUT /marketplace/categories/:id - Update category
+ * - GET /marketplace/products - List products with pagination, search, filters
+ * - GET /marketplace/products/:id - Get product details
+ * - POST /marketplace/products - Create product
+ * - PUT /marketplace/products/:id - Update product
+ * - DELETE /marketplace/products/:id - Delete product
+ * - GET /marketplace/products/:id/purchases - Get product purchases
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -1105,6 +1120,602 @@ serve(async (req) => {
 
       return new Response(
         JSON.stringify({ organization: data, message: "Organization updated successfully" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // =========================================================================
+    // Data Marketplace Endpoints
+    // =========================================================================
+
+    // GET /marketplace/stats - Get marketplace statistics
+    if (path === "/marketplace/stats" && method === "GET") {
+      const [totalProducts, publishedProducts, draftProducts, purchases, downloads, featured] = await Promise.all([
+        supabaseAdmin.from("data_products").select("*", { count: "exact", head: true }),
+        supabaseAdmin.from("data_products").select("*", { count: "exact", head: true }).eq("status", "published"),
+        supabaseAdmin.from("data_products").select("*", { count: "exact", head: true }).eq("status", "draft"),
+        supabaseAdmin.from("data_purchases").select("amount", { count: "exact" }).eq("payment_status", "completed"),
+        supabaseAdmin.from("data_products").select("download_count"),
+        supabaseAdmin.from("data_products").select("*", { count: "exact", head: true }).eq("is_featured", true),
+      ]);
+
+      // Calculate total revenue
+      const totalRevenue = (purchases.data || []).reduce((sum: number, p: { amount: number }) => sum + (p.amount || 0), 0);
+
+      // Calculate total downloads
+      const totalDownloads = (downloads.data || []).reduce((sum: number, p: { download_count: number }) => sum + (p.download_count || 0), 0);
+
+      // Get products by category
+      const { data: categoryData } = await supabaseAdmin
+        .from("data_categories")
+        .select("id, name");
+
+      const { data: productsByCategory } = await supabaseAdmin
+        .from("data_products")
+        .select("category_id");
+
+      const categoryCounts: Record<string, number> = {};
+      (productsByCategory || []).forEach((p: { category_id: string | null }) => {
+        if (p.category_id) {
+          categoryCounts[p.category_id] = (categoryCounts[p.category_id] || 0) + 1;
+        }
+      });
+
+      const productsByCategoryWithNames = (categoryData || []).map((c: { id: string; name: string }) => ({
+        category: c.name,
+        count: categoryCounts[c.id] || 0,
+      }));
+
+      // Get products by status
+      const { data: statusData } = await supabaseAdmin
+        .from("data_products")
+        .select("status");
+
+      const statusCounts: Record<string, number> = {};
+      (statusData || []).forEach((p: { status: string }) => {
+        statusCounts[p.status] = (statusCounts[p.status] || 0) + 1;
+      });
+
+      const productsByStatus = Object.entries(statusCounts).map(([status, count]) => ({ status, count }));
+
+      // Get recent purchases
+      const { data: recentPurchases } = await supabaseAdmin
+        .from("data_purchases")
+        .select("id, amount, purchased_at, product_id, user_id")
+        .eq("payment_status", "completed")
+        .order("purchased_at", { ascending: false })
+        .limit(5);
+
+      // Enrich with product and user names
+      const enrichedPurchases = await Promise.all(
+        (recentPurchases || []).map(async (p: { id: string; amount: number; purchased_at: string; product_id: string; user_id: string }) => {
+          const [{ data: product }, { data: user }] = await Promise.all([
+            supabaseAdmin.from("data_products").select("name").eq("id", p.product_id).single(),
+            supabaseAdmin.from("users").select("name").eq("id", p.user_id).single(),
+          ]);
+          return {
+            id: p.id,
+            product_name: product?.name || "Unknown",
+            user_name: user?.name || "Unknown",
+            amount: p.amount,
+            purchased_at: p.purchased_at,
+          };
+        })
+      );
+
+      return new Response(
+        JSON.stringify({
+          stats: {
+            total_products: totalProducts.count || 0,
+            published_products: publishedProducts.count || 0,
+            draft_products: draftProducts.count || 0,
+            total_purchases: purchases.count || 0,
+            total_revenue: totalRevenue,
+            total_downloads: totalDownloads,
+            featured_products: featured.count || 0,
+            products_by_category: productsByCategoryWithNames,
+            products_by_status: productsByStatus,
+            recent_purchases: enrichedPurchases,
+          },
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /marketplace/categories - Get all categories
+    if (path === "/marketplace/categories" && method === "GET") {
+      const { data: categories, error } = await supabaseAdmin
+        .from("data_categories")
+        .select("*")
+        .order("sort_order");
+
+      if (error) {
+        throw error;
+      }
+
+      // Get product counts for each category
+      const { data: products } = await supabaseAdmin
+        .from("data_products")
+        .select("category_id");
+
+      const categoryCounts: Record<string, number> = {};
+      (products || []).forEach((p: { category_id: string | null }) => {
+        if (p.category_id) {
+          categoryCounts[p.category_id] = (categoryCounts[p.category_id] || 0) + 1;
+        }
+      });
+
+      const categoriesWithCounts = (categories || []).map((c: { id: string }) => ({
+        ...c,
+        product_count: categoryCounts[c.id] || 0,
+      }));
+
+      return new Response(
+        JSON.stringify({ categories: categoriesWithCounts }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // POST /marketplace/categories - Create a new category
+    if (path === "/marketplace/categories" && method === "POST") {
+      const body = await req.json();
+      const { name, slug, description, icon, sort_order, is_active } = body;
+
+      if (!name || !slug) {
+        return new Response(
+          JSON.stringify({ error: "Name and slug are required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const { data, error } = await supabaseAdmin
+        .from("data_categories")
+        .insert({
+          name,
+          slug,
+          description,
+          icon,
+          sort_order: sort_order || 0,
+          is_active: is_active !== false,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        if (error.code === "23505") {
+          return new Response(
+            JSON.stringify({ error: "Category slug already exists" }),
+            { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        throw error;
+      }
+
+      await createAuditLog(userId!, adminEmail, "create", "data_categories", data.id, null, data, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify({ category: data, message: "Category created successfully" }),
+        { status: 201, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // PUT /marketplace/categories/:id - Update a category
+    if (path.match(/^\/marketplace\/categories\/[a-f0-9-]+$/) && method === "PUT") {
+      const categoryId = path.split("/marketplace/categories/")[1];
+      const body = await req.json();
+
+      const allowedFields = ["name", "slug", "description", "icon", "sort_order", "is_active"];
+      const updates: Record<string, unknown> = {};
+
+      for (const field of allowedFields) {
+        if (body[field] !== undefined) {
+          updates[field] = body[field];
+        }
+      }
+
+      if (Object.keys(updates).length === 0) {
+        return new Response(
+          JSON.stringify({ error: "No valid fields to update" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      updates.updated_at = new Date().toISOString();
+
+      const { data, error } = await supabaseAdmin
+        .from("data_categories")
+        .update(updates)
+        .eq("id", categoryId)
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      await createAuditLog(userId!, adminEmail, "update", "data_categories", categoryId, null, updates, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify({ category: data, message: "Category updated successfully" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /marketplace/products - List all products with pagination, search, filters
+    if (path === "/marketplace/products" && method === "GET") {
+      const page = parseInt(url.searchParams.get("page") || "1");
+      const limit = parseInt(url.searchParams.get("limit") || "20");
+      const search = url.searchParams.get("search");
+      const category = url.searchParams.get("category");
+      const status = url.searchParams.get("status");
+      const sortBy = url.searchParams.get("sort_by") || "created_at";
+      const sortOrder = url.searchParams.get("sort_order") || "desc";
+
+      const offset = (page - 1) * limit;
+
+      // Build the query
+      let query = supabaseAdmin
+        .from("data_products")
+        .select("*, data_categories(name, icon)", { count: "exact" });
+
+      // Apply filters
+      if (search) {
+        query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
+      }
+      if (category) {
+        query = query.eq("category_id", category);
+      }
+      if (status) {
+        query = query.eq("status", status);
+      }
+
+      // Apply sorting
+      const ascending = sortOrder === "asc";
+      query = query.order(sortBy, { ascending });
+
+      // Apply pagination
+      query = query.range(offset, offset + limit - 1);
+
+      const { data, error, count } = await query;
+
+      if (error) {
+        throw error;
+      }
+
+      // Get creator names
+      const products = await Promise.all(
+        (data || []).map(async (p: { created_by: string | null; data_categories: { name: string; icon: string } | null }) => {
+          let creatorName = null;
+          if (p.created_by) {
+            const { data: creator } = await supabaseAdmin
+              .from("users")
+              .select("name")
+              .eq("id", p.created_by)
+              .single();
+            creatorName = creator?.name;
+          }
+          return {
+            ...p,
+            category_name: p.data_categories?.name,
+            category_icon: p.data_categories?.icon,
+            created_by_name: creatorName,
+          };
+        })
+      );
+
+      await createAuditLog(userId!, adminEmail, "list", "data_products", null, null, { search, category, status, page }, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify({
+          products,
+          pagination: {
+            total: count || 0,
+            page,
+            limit,
+            total_pages: Math.ceil((count || 0) / limit),
+            has_more: (count || 0) > offset + limit,
+          },
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /marketplace/products/:id - Get single product details
+    if (path.match(/^\/marketplace\/products\/[a-f0-9-]+$/) && method === "GET") {
+      const productId = path.split("/marketplace/products/")[1];
+
+      const { data: product, error } = await supabaseAdmin
+        .from("data_products")
+        .select("*, data_categories(name, icon)")
+        .eq("id", productId)
+        .single();
+
+      if (error) {
+        if (error.code === "PGRST116") {
+          return new Response(
+            JSON.stringify({ error: "Product not found" }),
+            { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        throw error;
+      }
+
+      // Get creator info
+      let creatorInfo = null;
+      if (product.created_by) {
+        const { data: creator } = await supabaseAdmin
+          .from("users")
+          .select("id, name, email, avatar_url")
+          .eq("id", product.created_by)
+          .single();
+        creatorInfo = creator;
+      }
+
+      // Get recent purchases
+      const { data: purchases } = await supabaseAdmin
+        .from("data_purchases")
+        .select("id, amount, currency, payment_status, purchased_at, user_id, company_id")
+        .eq("product_id", productId)
+        .order("purchased_at", { ascending: false })
+        .limit(20);
+
+      // Enrich purchases with user/company info
+      const enrichedPurchases = await Promise.all(
+        (purchases || []).map(async (p: { id: string; amount: number; currency: string; payment_status: string; purchased_at: string; user_id: string; company_id: string | null }) => {
+          const [{ data: user }, { data: company }] = await Promise.all([
+            supabaseAdmin.from("users").select("name, email").eq("id", p.user_id).single(),
+            p.company_id ? supabaseAdmin.from("companies").select("name").eq("id", p.company_id).single() : Promise.resolve({ data: null }),
+          ]);
+          return {
+            ...p,
+            user_name: user?.name,
+            user_email: user?.email,
+            company_name: company?.name,
+          };
+        })
+      );
+
+      // Get download count from data_downloads table
+      const { count: downloadCount } = await supabaseAdmin
+        .from("data_downloads")
+        .select("*", { count: "exact", head: true })
+        .eq("product_id", productId);
+
+      await createAuditLog(userId!, adminEmail, "view", "data_products", productId, null, null, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify({
+          product: {
+            ...product,
+            category_name: product.data_categories?.name,
+            category_icon: product.data_categories?.icon,
+            created_by_info: creatorInfo,
+            recent_purchases: enrichedPurchases,
+            total_downloads: downloadCount || product.download_count || 0,
+          },
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // POST /marketplace/products - Create a new product
+    if (path === "/marketplace/products" && method === "POST") {
+      const body = await req.json();
+      const {
+        name, slug, description, long_description, category_id,
+        price_type, price, currency,
+        data_format, data_source, record_count, update_frequency,
+        sample_file_url, full_file_url, preview_image_url,
+        tags, features, status, is_featured
+      } = body;
+
+      if (!name || !slug) {
+        return new Response(
+          JSON.stringify({ error: "Name and slug are required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Get user.id from users table using auth_id
+      const { data: userData } = await supabaseAdmin
+        .from("users")
+        .select("id")
+        .eq("auth_id", userId)
+        .single();
+
+      const { data, error } = await supabaseAdmin
+        .from("data_products")
+        .insert({
+          name,
+          slug,
+          description,
+          long_description,
+          category_id,
+          price_type: price_type || "one_time",
+          price: price || 0,
+          currency: currency || "EUR",
+          data_format,
+          data_source,
+          record_count,
+          update_frequency,
+          sample_file_url,
+          full_file_url,
+          preview_image_url,
+          tags: tags || [],
+          features: features || [],
+          status: status || "draft",
+          is_featured: is_featured || false,
+          created_by: userData?.id,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        if (error.code === "23505") {
+          return new Response(
+            JSON.stringify({ error: "Product slug already exists" }),
+            { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        throw error;
+      }
+
+      await createAuditLog(userId!, adminEmail, "create", "data_products", data.id, null, { name, slug, price }, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify({ product: data, message: "Product created successfully" }),
+        { status: 201, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // PUT /marketplace/products/:id - Update a product
+    if (path.match(/^\/marketplace\/products\/[a-f0-9-]+$/) && method === "PUT") {
+      const productId = path.split("/marketplace/products/")[1];
+      const body = await req.json();
+
+      // Get old data for audit
+      const { data: oldProduct } = await supabaseAdmin
+        .from("data_products")
+        .select("*")
+        .eq("id", productId)
+        .single();
+
+      if (!oldProduct) {
+        return new Response(
+          JSON.stringify({ error: "Product not found" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const allowedFields = [
+        "name", "slug", "description", "long_description", "category_id",
+        "price_type", "price", "currency",
+        "data_format", "data_source", "record_count", "update_frequency",
+        "sample_file_url", "full_file_url", "preview_image_url",
+        "tags", "features", "status", "is_featured"
+      ];
+      const updates: Record<string, unknown> = {};
+
+      for (const field of allowedFields) {
+        if (body[field] !== undefined) {
+          updates[field] = body[field];
+        }
+      }
+
+      if (Object.keys(updates).length === 0) {
+        return new Response(
+          JSON.stringify({ error: "No valid fields to update" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      updates.updated_at = new Date().toISOString();
+
+      const { data, error } = await supabaseAdmin
+        .from("data_products")
+        .update(updates)
+        .eq("id", productId)
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      await createAuditLog(
+        userId!,
+        adminEmail,
+        "update",
+        "data_products",
+        productId,
+        { name: oldProduct.name, status: oldProduct.status, price: oldProduct.price },
+        updates,
+        ipAddress,
+        userAgent
+      );
+
+      return new Response(
+        JSON.stringify({ product: data, message: "Product updated successfully" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // DELETE /marketplace/products/:id - Delete a product
+    if (path.match(/^\/marketplace\/products\/[a-f0-9-]+$/) && method === "DELETE") {
+      const productId = path.split("/marketplace/products/")[1];
+
+      // Only super_admin can delete products
+      if (adminUser?.role !== "super_admin") {
+        return new Response(
+          JSON.stringify({ error: "Only super admins can delete products" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Get product for audit
+      const { data: product } = await supabaseAdmin
+        .from("data_products")
+        .select("name")
+        .eq("id", productId)
+        .single();
+
+      if (!product) {
+        return new Response(
+          JSON.stringify({ error: "Product not found" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const { error } = await supabaseAdmin
+        .from("data_products")
+        .delete()
+        .eq("id", productId);
+
+      if (error) {
+        throw error;
+      }
+
+      await createAuditLog(userId!, adminEmail, "delete", "data_products", productId, product, null, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify({ message: "Product deleted successfully" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /marketplace/products/:id/purchases - Get purchases for a product
+    if (path.match(/^\/marketplace\/products\/[a-f0-9-]+\/purchases$/) && method === "GET") {
+      const productId = path.split("/marketplace/products/")[1].replace("/purchases", "");
+
+      const { data: purchases, error } = await supabaseAdmin
+        .from("data_purchases")
+        .select("*")
+        .eq("product_id", productId)
+        .order("purchased_at", { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      // Enrich with user/company info
+      const enrichedPurchases = await Promise.all(
+        (purchases || []).map(async (p: { user_id: string; company_id: string | null }) => {
+          const [{ data: user }, { data: company }] = await Promise.all([
+            supabaseAdmin.from("users").select("name, email, avatar_url").eq("id", p.user_id).single(),
+            p.company_id ? supabaseAdmin.from("companies").select("name").eq("id", p.company_id).single() : Promise.resolve({ data: null }),
+          ]);
+          return {
+            ...p,
+            user_name: user?.name,
+            user_email: user?.email,
+            user_avatar: user?.avatar_url,
+            company_name: company?.name,
+          };
+        })
+      );
+
+      return new Response(
+        JSON.stringify({ purchases: enrichedPurchases }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
