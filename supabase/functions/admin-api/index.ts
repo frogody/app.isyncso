@@ -2800,6 +2800,26 @@ serve(async (req) => {
       );
     }
 
+    // PUT /billing/subscriptions/:id - Update subscription
+    if (path.match(/^\/billing\/subscriptions\/[^/]+$/) && method === "PUT") {
+      const subscriptionId = path.split("/")[3];
+      const subscriptionData = await req.json();
+
+      const { data, error } = await supabaseAdmin.rpc("admin_update_subscription", {
+        p_subscription_id: subscriptionId,
+        p_data: subscriptionData,
+      });
+
+      if (error) throw error;
+
+      await createAuditLog(userId!, adminEmail, "update", "subscription", subscriptionId, null, { status: subscriptionData.status, plan_id: subscriptionData.plan_id }, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify(data),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // GET /billing/invoices - Get invoices
     if (path === "/billing/invoices" && method === "GET") {
       const status = url.searchParams.get("status") || null;

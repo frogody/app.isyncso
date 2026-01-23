@@ -645,6 +645,46 @@ BEGIN
 END;
 $$;
 
+-- Update subscription
+CREATE OR REPLACE FUNCTION public.admin_update_subscription(
+  p_subscription_id UUID,
+  p_data JSONB
+)
+RETURNS JSON
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  UPDATE company_subscriptions SET
+    plan_id = COALESCE((p_data->>'plan_id')::UUID, plan_id),
+    status = COALESCE(p_data->>'status', status),
+    billing_cycle = COALESCE(p_data->>'billing_cycle', billing_cycle),
+    current_period_end = COALESCE((p_data->>'current_period_end')::TIMESTAMPTZ, current_period_end),
+    canceled_at = CASE
+      WHEN p_data->>'status' = 'canceled' AND canceled_at IS NULL THEN NOW()
+      ELSE canceled_at
+    END,
+    metadata = COALESCE(p_data->'metadata', metadata),
+    updated_at = NOW()
+  WHERE id = p_subscription_id;
+
+  RETURN (
+    SELECT row_to_json(t)
+    FROM (
+      SELECT
+        cs.*,
+        sp.name as plan_name,
+        c.name as company_name
+      FROM company_subscriptions cs
+      JOIN subscription_plans sp ON cs.plan_id = sp.id
+      JOIN companies c ON cs.company_id = c.id
+      WHERE cs.id = p_subscription_id
+    ) t
+  );
+END;
+$$;
+
 -- ============================================================================
 -- Grant execute permissions on functions
 -- ============================================================================
@@ -658,3 +698,4 @@ GRANT EXECUTE ON FUNCTION public.admin_get_payments(TEXT, UUID, INT) TO authenti
 GRANT EXECUTE ON FUNCTION public.admin_get_coupons(BOOLEAN) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_upsert_plan(JSONB) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_upsert_coupon(JSONB) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_update_subscription(UUID, JSONB) TO authenticated;

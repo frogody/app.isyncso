@@ -20,6 +20,9 @@ import {
   Shield,
   ChevronLeft,
   Crown,
+  CreditCard,
+  Plug2,
+  Server,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +34,10 @@ const adminNavItems = [
   { title: 'Marketplace', href: '/admin/marketplace', icon: Store },
   { title: 'Apps', href: '/admin/apps', icon: AppWindow },
   { title: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
+  { divider: true },
+  { title: 'Billing', href: '/admin/billing', icon: CreditCard },
+  { title: 'Integrations', href: '/admin/integrations', icon: Plug2 },
+  { title: 'System', href: '/admin/system', icon: Server },
   { divider: true },
   { title: 'Feature Flags', href: '/admin/feature-flags', icon: Flag },
   { title: 'Settings', href: '/admin/settings', icon: Settings },
