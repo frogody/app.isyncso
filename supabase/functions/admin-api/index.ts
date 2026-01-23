@@ -2933,6 +2933,359 @@ serve(async (req) => {
     }
 
     // =========================================================================
+    // Content Management Endpoints
+    // =========================================================================
+
+    // GET /content/stats - Get content statistics
+    if (path === "/content/stats" && method === "GET") {
+      const { data, error } = await supabaseAdmin.rpc("admin_get_content_stats");
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /content/pages - Get pages
+    if (path === "/content/pages" && method === "GET") {
+      const status = url.searchParams.get("status") || null;
+      const search = url.searchParams.get("search") || null;
+      const limit = parseInt(url.searchParams.get("limit") || "50");
+      const offset = parseInt(url.searchParams.get("offset") || "0");
+
+      const { data, error } = await supabaseAdmin.rpc("admin_get_pages", {
+        p_status: status,
+        p_search: search,
+        p_limit: limit,
+        p_offset: offset,
+      });
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || { items: [], total: 0 }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // POST /content/pages - Create page
+    if (path === "/content/pages" && method === "POST") {
+      const pageData = await req.json();
+
+      const { data, error } = await supabaseAdmin.rpc("admin_upsert_page", {
+        p_data: { ...pageData, author_id: userId },
+      });
+
+      if (error) throw error;
+
+      await createAuditLog(userId!, adminEmail, "create", "content_page", data?.id, pageData.title, { slug: pageData.slug }, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify(data),
+        { status: 201, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // PUT /content/pages/:id - Update page
+    if (path.match(/^\/content\/pages\/[^/]+$/) && method === "PUT") {
+      const pageId = path.split("/")[3];
+      const pageData = await req.json();
+
+      const { data, error } = await supabaseAdmin.rpc("admin_upsert_page", {
+        p_data: { ...pageData, id: pageId },
+      });
+
+      if (error) throw error;
+
+      await createAuditLog(userId!, adminEmail, "update", "content_page", pageId, pageData.title, null, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify(data),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // DELETE /content/pages/:id - Delete page
+    if (path.match(/^\/content\/pages\/[^/]+$/) && method === "DELETE") {
+      const pageId = path.split("/")[3];
+
+      const { error } = await supabaseAdmin
+        .from("content_pages")
+        .delete()
+        .eq("id", pageId);
+
+      if (error) throw error;
+
+      await createAuditLog(userId!, adminEmail, "delete", "content_page", pageId, null, null, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify({ success: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /content/posts - Get posts
+    if (path === "/content/posts" && method === "GET") {
+      const status = url.searchParams.get("status") || null;
+      const category = url.searchParams.get("category") || null;
+      const search = url.searchParams.get("search") || null;
+      const limit = parseInt(url.searchParams.get("limit") || "50");
+      const offset = parseInt(url.searchParams.get("offset") || "0");
+
+      const { data, error } = await supabaseAdmin.rpc("admin_get_posts", {
+        p_status: status,
+        p_category: category,
+        p_search: search,
+        p_limit: limit,
+        p_offset: offset,
+      });
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || { items: [], total: 0 }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // POST /content/posts - Create post
+    if (path === "/content/posts" && method === "POST") {
+      const postData = await req.json();
+
+      const { data, error } = await supabaseAdmin.rpc("admin_upsert_post", {
+        p_data: { ...postData, author_id: userId },
+      });
+
+      if (error) throw error;
+
+      await createAuditLog(userId!, adminEmail, "create", "content_post", data?.id, postData.title, { slug: postData.slug, category: postData.category }, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify(data),
+        { status: 201, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // PUT /content/posts/:id - Update post
+    if (path.match(/^\/content\/posts\/[^/]+$/) && method === "PUT") {
+      const postId = path.split("/")[3];
+      const postData = await req.json();
+
+      const { data, error } = await supabaseAdmin.rpc("admin_upsert_post", {
+        p_data: { ...postData, id: postId },
+      });
+
+      if (error) throw error;
+
+      await createAuditLog(userId!, adminEmail, "update", "content_post", postId, postData.title, null, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify(data),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // DELETE /content/posts/:id - Delete post
+    if (path.match(/^\/content\/posts\/[^/]+$/) && method === "DELETE") {
+      const postId = path.split("/")[3];
+
+      const { error } = await supabaseAdmin
+        .from("content_posts")
+        .delete()
+        .eq("id", postId);
+
+      if (error) throw error;
+
+      await createAuditLog(userId!, adminEmail, "delete", "content_post", postId, null, null, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify({ success: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /content/help-articles - Get help articles
+    if (path === "/content/help-articles" && method === "GET") {
+      const status = url.searchParams.get("status") || null;
+      const categoryId = url.searchParams.get("category") || null;
+      const search = url.searchParams.get("search") || null;
+      const limit = parseInt(url.searchParams.get("limit") || "50");
+      const offset = parseInt(url.searchParams.get("offset") || "0");
+
+      const { data, error } = await supabaseAdmin.rpc("admin_get_help_articles", {
+        p_status: status,
+        p_category_id: categoryId,
+        p_search: search,
+        p_limit: limit,
+        p_offset: offset,
+      });
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || { items: [], total: 0 }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // POST /content/help-articles - Create help article
+    if (path === "/content/help-articles" && method === "POST") {
+      const articleData = await req.json();
+
+      const { data, error } = await supabaseAdmin.rpc("admin_upsert_help_article", {
+        p_data: { ...articleData, author_id: userId },
+      });
+
+      if (error) throw error;
+
+      await createAuditLog(userId!, adminEmail, "create", "help_article", data?.id, articleData.title, { slug: articleData.slug }, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify(data),
+        { status: 201, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // PUT /content/help-articles/:id - Update help article
+    if (path.match(/^\/content\/help-articles\/[^/]+$/) && method === "PUT") {
+      const articleId = path.split("/")[3];
+      const articleData = await req.json();
+
+      const { data, error } = await supabaseAdmin.rpc("admin_upsert_help_article", {
+        p_data: { ...articleData, id: articleId },
+      });
+
+      if (error) throw error;
+
+      await createAuditLog(userId!, adminEmail, "update", "help_article", articleId, articleData.title, null, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify(data),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // DELETE /content/help-articles/:id - Delete help article
+    if (path.match(/^\/content\/help-articles\/[^/]+$/) && method === "DELETE") {
+      const articleId = path.split("/")[3];
+
+      const { error } = await supabaseAdmin
+        .from("help_articles")
+        .delete()
+        .eq("id", articleId);
+
+      if (error) throw error;
+
+      await createAuditLog(userId!, adminEmail, "delete", "help_article", articleId, null, null, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify({ success: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /content/announcements - Get announcements
+    if (path === "/content/announcements" && method === "GET") {
+      const activeOnly = url.searchParams.get("active") === "true";
+
+      const { data, error } = await supabaseAdmin.rpc("admin_get_announcements", {
+        p_active_only: activeOnly,
+      });
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // POST /content/announcements - Create announcement
+    if (path === "/content/announcements" && method === "POST") {
+      const announcementData = await req.json();
+
+      const { data, error } = await supabaseAdmin.rpc("admin_upsert_announcement", {
+        p_data: { ...announcementData, created_by: userId },
+      });
+
+      if (error) throw error;
+
+      await createAuditLog(userId!, adminEmail, "create", "announcement", data?.id, announcementData.title, { type: announcementData.type, target: announcementData.target_audience }, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify(data),
+        { status: 201, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // PUT /content/announcements/:id - Update announcement
+    if (path.match(/^\/content\/announcements\/[^/]+$/) && method === "PUT") {
+      const announcementId = path.split("/")[3];
+      const announcementData = await req.json();
+
+      const { data, error } = await supabaseAdmin.rpc("admin_upsert_announcement", {
+        p_data: { ...announcementData, id: announcementId },
+      });
+
+      if (error) throw error;
+
+      await createAuditLog(userId!, adminEmail, "update", "announcement", announcementId, announcementData.title, null, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify(data),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /content/email-templates - Get email templates
+    if (path === "/content/email-templates" && method === "GET") {
+      const { data, error } = await supabaseAdmin.rpc("admin_get_email_templates");
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // PUT /content/email-templates/:id - Update email template
+    if (path.match(/^\/content\/email-templates\/[^/]+$/) && method === "PUT") {
+      const templateId = path.split("/")[3];
+      const templateData = await req.json();
+
+      const { data, error } = await supabaseAdmin.rpc("admin_upsert_email_template", {
+        p_data: { ...templateData, id: templateId },
+      });
+
+      if (error) throw error;
+
+      await createAuditLog(userId!, adminEmail, "update", "email_template", templateId, templateData.name, null, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify(data),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /content/categories - Get content categories
+    if (path === "/content/categories" && method === "GET") {
+      const { data, error } = await supabaseAdmin
+        .from("content_categories")
+        .select("*")
+        .order("sort_order");
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // =========================================================================
     // Health Check
     // =========================================================================
 

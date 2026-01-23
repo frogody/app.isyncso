@@ -23,6 +23,7 @@ import {
   CreditCard,
   Plug2,
   Server,
+  FileText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -35,6 +36,7 @@ const adminNavItems = [
   { title: 'Apps', href: '/admin/apps', icon: AppWindow },
   { title: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
   { divider: true },
+  { title: 'Content', href: '/admin/content', icon: FileText },
   { title: 'Billing', href: '/admin/billing', icon: CreditCard },
   { title: 'Integrations', href: '/admin/integrations', icon: Plug2 },
   { title: 'System', href: '/admin/system', icon: Server },
