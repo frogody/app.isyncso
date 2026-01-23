@@ -2698,6 +2698,221 @@ serve(async (req) => {
     }
 
     // =========================================================================
+    // Billing & Revenue Endpoints
+    // =========================================================================
+
+    // GET /billing/overview - Get billing overview stats
+    if (path === "/billing/overview" && method === "GET") {
+      const { data, error } = await supabaseAdmin.rpc("admin_get_billing_overview");
+
+      if (error) throw error;
+
+      await createAuditLog(userId!, adminEmail, "view", "billing", null, null, { type: "overview" }, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify(data),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /billing/revenue-chart - Get revenue chart data
+    if (path === "/billing/revenue-chart" && method === "GET") {
+      const days = parseInt(url.searchParams.get("days") || "30");
+
+      const { data, error } = await supabaseAdmin.rpc("admin_get_revenue_chart", {
+        p_days: days,
+      });
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /billing/plans - Get subscription plans
+    if (path === "/billing/plans" && method === "GET") {
+      const { data, error } = await supabaseAdmin.rpc("admin_get_subscription_plans");
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // POST /billing/plans - Create/update plan
+    if (path === "/billing/plans" && method === "POST") {
+      const planData = await req.json();
+
+      const { data, error } = await supabaseAdmin.rpc("admin_upsert_plan", {
+        p_data: planData,
+      });
+
+      if (error) throw error;
+
+      await createAuditLog(userId!, adminEmail, planData.id ? "update" : "create", "subscription_plan", data?.id, planData.name, { price_monthly: planData.price_monthly }, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify(data),
+        { status: 201, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // PUT /billing/plans/:id - Update plan
+    if (path.match(/^\/billing\/plans\/[^/]+$/) && method === "PUT") {
+      const planId = path.split("/")[3];
+      const planData = await req.json();
+
+      const { data, error } = await supabaseAdmin.rpc("admin_upsert_plan", {
+        p_data: { ...planData, id: planId },
+      });
+
+      if (error) throw error;
+
+      await createAuditLog(userId!, adminEmail, "update", "subscription_plan", planId, planData.name, null, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify(data),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /billing/subscriptions - Get subscriptions
+    if (path === "/billing/subscriptions" && method === "GET") {
+      const status = url.searchParams.get("status") || null;
+      const planId = url.searchParams.get("plan") || null;
+      const limit = parseInt(url.searchParams.get("limit") || "50");
+
+      const { data, error } = await supabaseAdmin.rpc("admin_get_subscriptions", {
+        p_status: status,
+        p_plan_id: planId,
+        p_limit: limit,
+      });
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /billing/invoices - Get invoices
+    if (path === "/billing/invoices" && method === "GET") {
+      const status = url.searchParams.get("status") || null;
+      const companyId = url.searchParams.get("company") || null;
+      const limit = parseInt(url.searchParams.get("limit") || "50");
+
+      const { data, error } = await supabaseAdmin.rpc("admin_get_invoices", {
+        p_status: status,
+        p_company_id: companyId,
+        p_limit: limit,
+      });
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /billing/payments - Get payments
+    if (path === "/billing/payments" && method === "GET") {
+      const status = url.searchParams.get("status") || null;
+      const companyId = url.searchParams.get("company") || null;
+      const limit = parseInt(url.searchParams.get("limit") || "50");
+
+      const { data, error } = await supabaseAdmin.rpc("admin_get_payments", {
+        p_status: status,
+        p_company_id: companyId,
+        p_limit: limit,
+      });
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /billing/coupons - Get coupons
+    if (path === "/billing/coupons" && method === "GET") {
+      const activeOnly = url.searchParams.get("active") === "true";
+
+      const { data, error } = await supabaseAdmin.rpc("admin_get_coupons", {
+        p_active_only: activeOnly,
+      });
+
+      if (error) throw error;
+
+      return new Response(
+        JSON.stringify(data || []),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // POST /billing/coupons - Create/update coupon
+    if (path === "/billing/coupons" && method === "POST") {
+      const couponData = await req.json();
+
+      const { data, error } = await supabaseAdmin.rpc("admin_upsert_coupon", {
+        p_data: couponData,
+      });
+
+      if (error) throw error;
+
+      await createAuditLog(userId!, adminEmail, couponData.id ? "update" : "create", "coupon", data?.id, couponData.code || couponData.name, { discount_type: couponData.discount_type, discount_value: couponData.discount_value }, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify(data),
+        { status: 201, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // PUT /billing/coupons/:id - Update coupon
+    if (path.match(/^\/billing\/coupons\/[^/]+$/) && method === "PUT") {
+      const couponId = path.split("/")[3];
+      const couponData = await req.json();
+
+      const { data, error } = await supabaseAdmin.rpc("admin_upsert_coupon", {
+        p_data: { ...couponData, id: couponId },
+      });
+
+      if (error) throw error;
+
+      await createAuditLog(userId!, adminEmail, "update", "coupon", couponId, couponData.code, null, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify(data),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // DELETE /billing/coupons/:id - Deactivate coupon
+    if (path.match(/^\/billing\/coupons\/[^/]+$/) && method === "DELETE") {
+      const couponId = path.split("/")[3];
+
+      const { error } = await supabaseAdmin
+        .from("coupons")
+        .update({ is_active: false, updated_at: new Date().toISOString() })
+        .eq("id", couponId);
+
+      if (error) throw error;
+
+      await createAuditLog(userId!, adminEmail, "deactivate", "coupon", couponId, null, null, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify({ success: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // =========================================================================
     // Health Check
     // =========================================================================
 
