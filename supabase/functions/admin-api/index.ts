@@ -12,6 +12,12 @@
  * - GET /admins - List platform admins
  * - POST /admins - Add a new platform admin
  * - DELETE /admins/:id - Remove a platform admin
+ * - GET /users - List all users with pagination, search, filters
+ * - GET /users/:id - Get single user details
+ * - PUT /users/:id - Update user
+ * - DELETE /users/:id - Deactivate user
+ * - GET /user-stats - Get user statistics
+ * - GET /companies - List companies for filter dropdown
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -568,6 +574,305 @@ serve(async (req) => {
 
       return new Response(
         JSON.stringify({ message: "Platform admin removed successfully" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // =========================================================================
+    // User Management Endpoints
+    // =========================================================================
+
+    // GET /users - List all users with pagination, search, and filters
+    if (path === "/users" && method === "GET") {
+      const page = parseInt(url.searchParams.get("page") || "1");
+      const limit = parseInt(url.searchParams.get("limit") || "25");
+      const search = url.searchParams.get("search");
+      const role = url.searchParams.get("role");
+      const companyId = url.searchParams.get("company_id");
+      const isActive = url.searchParams.get("is_active");
+      const sortBy = url.searchParams.get("sort_by") || "created_at";
+      const sortOrder = url.searchParams.get("sort_order") || "desc";
+
+      const offset = (page - 1) * limit;
+
+      // Build the query
+      let query = supabaseAdmin
+        .from("admin_users_view")
+        .select("*", { count: "exact" });
+
+      // Apply filters
+      if (search) {
+        query = query.or(`email.ilike.%${search}%,name.ilike.%${search}%,full_name.ilike.%${search}%`);
+      }
+      if (role) {
+        query = query.eq("role", role);
+      }
+      if (companyId) {
+        query = query.eq("company_id", companyId);
+      }
+      if (isActive === "true") {
+        query = query.eq("is_active_recently", true);
+      } else if (isActive === "false") {
+        query = query.eq("is_active_recently", false);
+      }
+
+      // Apply sorting
+      const ascending = sortOrder === "asc";
+      query = query.order(sortBy, { ascending });
+
+      // Apply pagination
+      query = query.range(offset, offset + limit - 1);
+
+      const { data, error, count } = await query;
+
+      if (error) {
+        throw error;
+      }
+
+      await createAuditLog(userId!, adminEmail, "list", "users", null, null, { search, role, page }, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify({
+          users: data || [],
+          pagination: {
+            total: count || 0,
+            page,
+            limit,
+            total_pages: Math.ceil((count || 0) / limit),
+            has_more: (count || 0) > offset + limit,
+          },
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /user-stats - Get user statistics for dashboard
+    if (path === "/user-stats" && method === "GET") {
+      const [totalUsers, activeUsers, newUsers, adminUsers, roleStats] = await Promise.all([
+        supabaseAdmin.from("users").select("*", { count: "exact", head: true }),
+        supabaseAdmin.from("users").select("*", { count: "exact", head: true }).gt("last_active_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()),
+        supabaseAdmin.from("users").select("*", { count: "exact", head: true }).gte("created_at", new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
+        supabaseAdmin.from("platform_admins").select("*", { count: "exact", head: true }).eq("is_active", true),
+        supabaseAdmin.from("users").select("role"),
+      ]);
+
+      // Calculate role distribution
+      const roleDistribution: Record<string, number> = {};
+      (roleStats.data || []).forEach((u: { role: string | null }) => {
+        const r = u.role || "unknown";
+        roleDistribution[r] = (roleDistribution[r] || 0) + 1;
+      });
+
+      return new Response(
+        JSON.stringify({
+          stats: {
+            total_users: totalUsers.count || 0,
+            active_users_30d: activeUsers.count || 0,
+            new_users_month: newUsers.count || 0,
+            platform_admins: adminUsers.count || 0,
+            role_distribution: roleDistribution,
+          },
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /users/:id - Get single user details
+    if (path.match(/^\/users\/[a-f0-9-]+$/) && method === "GET") {
+      const userId_param = path.split("/users/")[1];
+
+      const { data, error } = await supabaseAdmin
+        .from("admin_users_view")
+        .select("*")
+        .or(`id.eq.${userId_param},auth_id.eq.${userId_param}`)
+        .single();
+
+      if (error) {
+        if (error.code === "PGRST116") {
+          return new Response(
+            JSON.stringify({ error: "User not found" }),
+            { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        throw error;
+      }
+
+      // Get additional user data
+      const [teamsData, rolesData] = await Promise.all([
+        supabaseAdmin.from("team_members").select("*, teams(*)").eq("user_id", data.auth_id),
+        supabaseAdmin.from("rbac_user_roles").select("*, rbac_roles(*)").eq("user_id", data.auth_id),
+      ]);
+
+      await createAuditLog(userId!, adminEmail, "view", "users", userId_param, null, null, ipAddress, userAgent);
+
+      return new Response(
+        JSON.stringify({
+          user: {
+            ...data,
+            team_memberships: teamsData.data || [],
+            rbac_roles: rolesData.data || [],
+          },
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // PUT /users/:id - Update user
+    if (path.match(/^\/users\/[a-f0-9-]+$/) && method === "PUT") {
+      const userId_param = path.split("/users/")[1];
+      const body = await req.json();
+
+      // Only super_admin and admin can update users
+      if (!["super_admin", "admin"].includes(adminUser?.role || "")) {
+        return new Response(
+          JSON.stringify({ error: "Insufficient permissions to update users" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Get old data for audit
+      const { data: oldUser } = await supabaseAdmin
+        .from("users")
+        .select("*")
+        .or(`id.eq.${userId_param},auth_id.eq.${userId_param}`)
+        .single();
+
+      if (!oldUser) {
+        return new Response(
+          JSON.stringify({ error: "User not found" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Allowed fields to update
+      const allowedFields = ["role", "job_title", "credits", "onboarding_completed", "full_name"];
+      const updates: Record<string, unknown> = {};
+
+      for (const field of allowedFields) {
+        if (body[field] !== undefined) {
+          updates[field] = body[field];
+        }
+      }
+
+      if (Object.keys(updates).length === 0) {
+        return new Response(
+          JSON.stringify({ error: "No valid fields to update" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      updates.updated_at = new Date().toISOString();
+
+      const { data, error } = await supabaseAdmin
+        .from("users")
+        .update(updates)
+        .eq("id", oldUser.id)
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      await createAuditLog(
+        userId!,
+        adminEmail,
+        "update",
+        "users",
+        userId_param,
+        { role: oldUser.role, job_title: oldUser.job_title, credits: oldUser.credits },
+        updates,
+        ipAddress,
+        userAgent
+      );
+
+      return new Response(
+        JSON.stringify({ user: data, message: "User updated successfully" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // DELETE /users/:id - Deactivate user (soft delete)
+    if (path.match(/^\/users\/[a-f0-9-]+$/) && method === "DELETE") {
+      // Only super_admin can deactivate users
+      if (adminUser?.role !== "super_admin") {
+        return new Response(
+          JSON.stringify({ error: "Only super admins can deactivate users" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const userId_param = path.split("/users/")[1];
+
+      // Get user data for audit
+      const { data: userToDeactivate } = await supabaseAdmin
+        .from("users")
+        .select("*")
+        .or(`id.eq.${userId_param},auth_id.eq.${userId_param}`)
+        .single();
+
+      if (!userToDeactivate) {
+        return new Response(
+          JSON.stringify({ error: "User not found" }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Prevent deactivating platform admins
+      const { data: isPlatformAdmin } = await supabaseAdmin
+        .from("platform_admins")
+        .select("id")
+        .eq("user_id", userToDeactivate.auth_id)
+        .single();
+
+      if (isPlatformAdmin) {
+        return new Response(
+          JSON.stringify({ error: "Cannot deactivate a platform admin. Remove admin status first." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Soft delete by setting a deactivated flag or role
+      const { error } = await supabaseAdmin
+        .from("users")
+        .update({ role: "deactivated", updated_at: new Date().toISOString() })
+        .eq("id", userToDeactivate.id);
+
+      if (error) {
+        throw error;
+      }
+
+      await createAuditLog(
+        userId!,
+        adminEmail,
+        "deactivate",
+        "users",
+        userId_param,
+        userToDeactivate,
+        { role: "deactivated" },
+        ipAddress,
+        userAgent
+      );
+
+      return new Response(
+        JSON.stringify({ message: "User deactivated successfully" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // GET /companies - List all companies for filter dropdown
+    if (path === "/companies" && method === "GET") {
+      const { data, error } = await supabaseAdmin
+        .from("companies")
+        .select("id, name, domain")
+        .order("name");
+
+      if (error) {
+        throw error;
+      }
+
+      return new Response(
+        JSON.stringify({ companies: data || [] }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
