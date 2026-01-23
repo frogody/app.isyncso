@@ -60,18 +60,25 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { supabase } from '@/api/supabaseClient';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// API helper
+// API helper - uses user's session token for authentication
 async function adminApi(endpoint, options = {}) {
+  // Get the current session to get the user's access token
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (!session?.access_token) {
+    throw new Error('Not authenticated. Please log in again.');
+  }
+
   const url = `${SUPABASE_URL}/functions/v1/admin-api${endpoint}`;
   const response = await fetch(url, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${ANON_KEY}`,
+      'Authorization': `Bearer ${session.access_token}`,
       ...options.headers,
     },
   });
