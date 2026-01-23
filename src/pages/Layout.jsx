@@ -154,6 +154,13 @@ const navigationItems = [
     icon: SettingsIcon,
     permission: null, // Always visible
   },
+  {
+    title: "Admin",
+    url: "/admin",
+    icon: Shield,
+    permission: "admin.access", // Platform admin access
+    isAdmin: true, // Special flag for admin link styling
+  },
 ];
 
 // Engine apps with permission requirements
@@ -651,10 +658,14 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
     return navigationItems.filter(item => {
       // No permission required - always show
       if (!item.permission) return true;
+      // Admin link - show for RBAC admins or users with admin.access
+      if (item.isAdmin) {
+        return isAdmin || hasPermission(item.permission);
+      }
       // Check permission
       return hasPermission(item.permission);
     });
-  }, [hasPermission, permLoading]);
+  }, [hasPermission, permLoading, isAdmin]);
 
   // Memoize engine items based on team app access AND permissions
   // Priority: Admin gets all apps, otherwise use team-based effectiveApps, fallback to enabledApps

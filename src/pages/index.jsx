@@ -240,6 +240,17 @@ import TalentNests from "./TalentNests";
 
 import TalentNestDetail from "./TalentNestDetail";
 
+// Admin Panel Pages
+import AdminLayout from "@/components/admin/AdminLayout";
+import PlatformAdminDashboard from "./admin/AdminDashboard";
+import PlatformAdminSettings from "./admin/AdminSettings";
+import PlatformAdminFeatureFlags from "./admin/AdminFeatureFlags";
+import PlatformAdminAuditLogs from "./admin/AdminAuditLogs";
+
+// Providers needed for admin routes (since they don't use main Layout)
+import { UserProvider } from "@/components/context/UserContext";
+import { PermissionProvider } from "@/components/context/PermissionContext";
+
 import { BrowserRouter as Router, Route, Routes, useLocation, Navigate } from 'react-router-dom';
 
 const PAGES = {
@@ -503,11 +514,36 @@ function _getCurrentPage(url) {
 function PagesContent() {
     const location = useLocation();
     const currentPage = _getCurrentPage(location.pathname);
-    
+    const isAdminRoute = location.pathname.startsWith('/admin');
+
+    // Admin routes use their own AdminLayout (no main Layout wrapper)
+    // Must wrap with UserProvider and PermissionProvider since they're outside Layout
+    if (isAdminRoute) {
+        return (
+            <UserProvider>
+                <PermissionProvider>
+                    <Routes>
+                        <Route path="/admin" element={<AdminLayout />}>
+                            <Route index element={<PlatformAdminDashboard />} />
+                            <Route path="settings" element={<PlatformAdminSettings />} />
+                            <Route path="feature-flags" element={<PlatformAdminFeatureFlags />} />
+                            <Route path="audit-logs" element={<PlatformAdminAuditLogs />} />
+                            <Route path="users" element={<PlatformAdminDashboard />} /> {/* Placeholder */}
+                            <Route path="organizations" element={<PlatformAdminDashboard />} /> {/* Placeholder */}
+                            <Route path="marketplace" element={<PlatformAdminDashboard />} /> {/* Placeholder */}
+                            <Route path="apps" element={<PlatformAdminDashboard />} /> {/* Placeholder */}
+                            <Route path="analytics" element={<PlatformAdminDashboard />} /> {/* Placeholder */}
+                        </Route>
+                    </Routes>
+                </PermissionProvider>
+            </UserProvider>
+        );
+    }
+
     return (
         <Layout currentPageName={currentPage}>
-            <Routes>            
-                
+            <Routes>
+
                     <Route path="/" element={<Dashboard />} />
                 
                 
