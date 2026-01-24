@@ -1028,7 +1028,7 @@ export default function AdminApps() {
                 <SelectContent className="bg-zinc-900 border-zinc-800">
                   {apps.map((app) => (
                     <SelectItem key={app.id} value={app.id}>
-                      {app.icon} {app.name}
+                      {app.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
