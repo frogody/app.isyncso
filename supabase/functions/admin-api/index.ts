@@ -3917,12 +3917,12 @@ serve(async (req) => {
           // Current month revenue from subscriptions
           supabaseAdmin.from("subscriptions").select("amount")
             .eq("status", "active")
-            .gte("created_at", currentMonthStart.toISOString()),
+            .gte("start_date", currentMonthStart.toISOString()),
           // Previous month revenue from subscriptions
           supabaseAdmin.from("subscriptions").select("amount")
             .eq("status", "active")
-            .gte("created_at", previousMonthStart.toISOString())
-            .lt("created_at", currentMonthStart.toISOString()),
+            .gte("start_date", previousMonthStart.toISOString())
+            .lt("start_date", currentMonthStart.toISOString()),
         ]);
 
         // Extract counts
