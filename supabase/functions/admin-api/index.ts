@@ -3863,6 +3863,139 @@ serve(async (req) => {
     }
 
     // =========================================================================
+    // Dashboard Stats Endpoint
+    // =========================================================================
+
+    if (path === "/dashboard/stats" && method === "GET") {
+      try {
+        // Calculate date ranges
+        const now = new Date();
+        const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0); // Last day of previous month
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
+
+        // Parallel queries for current stats
+        const [
+          totalUsersResult,
+          activeUsersResult,
+          previousActiveUsersResult,
+          totalOrganizationsResult,
+          currentMonthUsersResult,
+          previousMonthUsersResult,
+          currentMonthOrgsResult,
+          previousMonthOrgsResult,
+          currentMonthRevenueResult,
+          previousMonthRevenueResult,
+        ] = await Promise.all([
+          // Total users
+          supabaseAdmin.from("users").select("*", { count: "exact", head: true }),
+          // Active users (last 30 days)
+          supabaseAdmin.from("users").select("*", { count: "exact", head: true })
+            .gt("last_active_at", thirtyDaysAgo.toISOString()),
+          // Previous active users (30-60 days ago) for comparison
+          supabaseAdmin.from("users").select("*", { count: "exact", head: true })
+            .gt("last_active_at", sixtyDaysAgo.toISOString())
+            .lte("last_active_at", thirtyDaysAgo.toISOString()),
+          // Total organizations
+          supabaseAdmin.from("companies").select("*", { count: "exact", head: true }),
+          // Users created this month
+          supabaseAdmin.from("users").select("*", { count: "exact", head: true })
+            .gte("created_at", currentMonthStart.toISOString()),
+          // Users created last month
+          supabaseAdmin.from("users").select("*", { count: "exact", head: true })
+            .gte("created_at", previousMonthStart.toISOString())
+            .lt("created_at", currentMonthStart.toISOString()),
+          // Organizations created this month
+          supabaseAdmin.from("companies").select("*", { count: "exact", head: true })
+            .gte("created_date", currentMonthStart.toISOString()),
+          // Organizations created last month
+          supabaseAdmin.from("companies").select("*", { count: "exact", head: true })
+            .gte("created_date", previousMonthStart.toISOString())
+            .lt("created_date", currentMonthStart.toISOString()),
+          // Current month revenue from subscriptions
+          supabaseAdmin.from("subscriptions").select("amount")
+            .eq("status", "active")
+            .gte("created_at", currentMonthStart.toISOString()),
+          // Previous month revenue from subscriptions
+          supabaseAdmin.from("subscriptions").select("amount")
+            .eq("status", "active")
+            .gte("created_at", previousMonthStart.toISOString())
+            .lt("created_at", currentMonthStart.toISOString()),
+        ]);
+
+        // Extract counts
+        const totalUsers = totalUsersResult.count || 0;
+        const activeUsers = activeUsersResult.count || 0;
+        const previousActiveUsers = previousActiveUsersResult.count || 0;
+        const totalOrganizations = totalOrganizationsResult.count || 0;
+        const currentMonthUsers = currentMonthUsersResult.count || 0;
+        const previousMonthUsers = previousMonthUsersResult.count || 0;
+        const currentMonthOrgs = currentMonthOrgsResult.count || 0;
+        const previousMonthOrgs = previousMonthOrgsResult.count || 0;
+
+        // Calculate revenue
+        const currentMonthRevenue = (currentMonthRevenueResult.data || []).reduce(
+          (sum: number, s: { amount: number | null }) => sum + (s.amount || 0), 0
+        );
+        const previousMonthRevenue = (previousMonthRevenueResult.data || []).reduce(
+          (sum: number, s: { amount: number | null }) => sum + (s.amount || 0), 0
+        );
+
+        // Helper to calculate percentage change
+        const calculateChange = (current: number, previous: number): string => {
+          if (previous === 0) {
+            return current > 0 ? "+100%" : "+0%";
+          }
+          const change = ((current - previous) / previous) * 100;
+          const rounded = Math.round(change);
+          return change >= 0 ? `+${rounded}%` : `${rounded}%`;
+        };
+
+        // Calculate percentage changes
+        const usersChange = calculateChange(currentMonthUsers, previousMonthUsers);
+        const activeUsersChange = calculateChange(activeUsers, previousActiveUsers || activeUsers);
+        const organizationsChange = calculateChange(currentMonthOrgs, previousMonthOrgs);
+        const revenueChange = calculateChange(currentMonthRevenue, previousMonthRevenue);
+
+        return new Response(
+          JSON.stringify({
+            totalUsers,
+            activeUsers,
+            totalOrganizations,
+            monthlyRevenue: currentMonthRevenue,
+            changes: {
+              users: usersChange,
+              activeUsers: activeUsersChange,
+              organizations: organizationsChange,
+              revenue: revenueChange,
+            },
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } catch (error) {
+        console.error("[Admin API] Dashboard stats error:", error);
+        return new Response(
+          JSON.stringify({
+            error: "Failed to fetch dashboard stats",
+            totalUsers: 0,
+            activeUsers: 0,
+            totalOrganizations: 0,
+            monthlyRevenue: 0,
+            changes: {
+              users: "+0%",
+              activeUsers: "+0%",
+              organizations: "+0%",
+              revenue: "+0%",
+            },
+          }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    // =========================================================================
     // Stats Endpoint
     // =========================================================================
 
