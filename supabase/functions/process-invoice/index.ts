@@ -35,6 +35,11 @@ interface ExtractionResult {
   data?: InvoiceData;
   confidence: number;
   errors?: string[];
+  usage?: {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    total_tokens?: number;
+  };
 }
 
 const EXTRACTION_PROMPT = `You are an expert invoice data extraction system. Extract structured data from the invoice image.
@@ -172,7 +177,7 @@ async function extractFromText(groqApiKey: string, pdfText: string, retryCount =
     const confidence = data.confidence ?? 0.9; // Higher confidence for text extraction
     delete (data as any).confidence;
 
-    return { success: true, data, confidence };
+    return { success: true, data, confidence, usage: apiResponse.usage };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     console.error(`Extraction error (attempt ${retryCount + 1}):`, errorMessage);
@@ -387,6 +392,38 @@ async function processExpenseAsync(
       }
     }
     console.log(`[ASYNC] Extraction complete:`, { success: extraction.success, confidence: extraction.confidence });
+
+    // Track AI usage for admin dashboard
+    if (extraction.usage && companyId) {
+      try {
+        const promptTokens = extraction.usage.prompt_tokens || 0;
+        const completionTokens = extraction.usage.completion_tokens || 0;
+        // Groq pricing: llama-3.1-8b-instant - $0.05/$0.08 per 1M tokens
+        const cost = (promptTokens / 1000000 * 0.05) + (completionTokens / 1000000 * 0.08);
+
+        await supabase.from('ai_usage_logs').insert({
+          organization_id: companyId,
+          user_id: null, // Invoice processing is async, no direct user
+          model_id: null, // Will be looked up by model name
+          prompt_tokens: promptTokens,
+          completion_tokens: completionTokens,
+          total_tokens: extraction.usage.total_tokens || (promptTokens + completionTokens),
+          cost: cost,
+          request_type: 'invoice_processing',
+          endpoint: '/openai/v1/chat/completions',
+          metadata: {
+            model_name: 'llama-3.1-8b-instant',
+            provider: 'groq',
+            expense_id: expenseId,
+            extraction_success: extraction.success,
+            confidence: extraction.confidence,
+          },
+        });
+        console.log(`[ASYNC] AI usage logged: ${extraction.usage.total_tokens} tokens, $${cost.toFixed(6)}`);
+      } catch (logError) {
+        console.error('[ASYNC] Failed to log AI usage:', logError);
+      }
+    }
 
     if (!extraction.success || !extraction.data) {
       await supabase

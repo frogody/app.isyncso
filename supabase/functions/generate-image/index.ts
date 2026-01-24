@@ -346,19 +346,25 @@ serve(async (req) => {
     const megapixels = (width * height) / 1000000;
     const costUsd = megapixels * modelConfig.costPerMp;
 
-    // Track usage if company_id provided
+    // Track usage if company_id provided (using new ai_usage_logs table)
     if (company_id) {
       try {
-        await supabaseInsert('ai_usage_log', {
-          company_id,
+        await supabaseInsert('ai_usage_logs', {
+          organization_id: company_id,
           user_id: user_id || null,
-          model: modelConfig.id,
-          cost_usd: costUsd,
-          content_type: 'image',
+          model_id: null, // Will be looked up by admin dashboard using model name in metadata
+          prompt_tokens: 0,
+          completion_tokens: 0,
+          total_tokens: 0,
+          cost: costUsd,
+          request_type: 'image',
+          endpoint: '/v1/images/generations',
           metadata: {
+            model_name: modelConfig.id,
             model_key: selectedModelKey,
             use_case: use_case || null,
             dimensions: { width, height },
+            megapixels,
             has_reference_image: !!refImageUrl
           }
         });

@@ -81,6 +81,9 @@ import {
     IntelligenceResult
 } from './tools/intelligence-orchestrator.ts';
 
+// Import AI usage tracking utility
+import { logLLMUsage, calculateModelCost } from '../_shared/ai-usage.ts';
+
 import {
   detectOrchestrationWorkflow,
   extractWorkflowContext,
@@ -2678,15 +2681,19 @@ serve(async (req) => {
       await memorySystem.session.addMessage(orchestrationSession, orchestrationAssistantMsg);
       await memorySystem.session.updateSession(orchestrationSession);
 
-      // Log orchestration usage
+      // Log orchestration workflow execution (no direct tokens - tracked in sub-calls)
       if (context?.companyId) {
         try {
-          await supabase.from('ai_usage_log').insert({
-            company_id: context.companyId,
+          await supabase.from('ai_usage_logs').insert({
             user_id: context.userId || null,
-            model: 'orchestration',
-            cost_usd: 0,
-            content_type: 'orchestration',
+            organization_id: context.companyId,
+            model_id: null, // Orchestration is a workflow, not a specific model
+            prompt_tokens: 0,
+            completion_tokens: 0,
+            total_tokens: 0,
+            cost: 0,
+            request_type: 'completion',
+            endpoint: '/orchestration',
             metadata: {
               sessionId: orchestrationSession.session_id,
               workflowId: detectedWorkflow.id,
@@ -3310,6 +3317,31 @@ serve(async (req) => {
       const fallbackData = await fallbackResponse.json();
       const assistantMessageContent = fallbackData.choices?.[0]?.message?.content || 'I apologize, I encountered an issue processing your request.';
 
+      // Track token usage for fallback model
+      if (context?.companyId && fallbackData.usage) {
+        try {
+          await logLLMUsage(
+            supabase,
+            'meta-llama/Llama-3.3-70B-Instruct-Turbo-Free',
+            fallbackData.usage,
+            {
+              userId: context.userId,
+              companyId: context.companyId,
+              requestType: 'sync_agent',
+              endpoint: '/v1/chat/completions',
+              metadata: {
+                sessionId: session.session_id,
+                delegatedTo: routingResult.agentId,
+                fallback: true,
+                routing: { confidence: routingResult.confidence },
+              },
+            }
+          );
+        } catch (logError) {
+          console.warn('[SYNC] Failed to log fallback usage:', logError);
+        }
+      }
+
       // Store assistant message in persistent session
       const assistantMsg: ChatMessage = {
         role: 'assistant',
@@ -3606,29 +3638,33 @@ Output the create_${docType} [ACTION] block NOW. Do NOT ask any more questions!`
       await memorySystem.session.updateSession(session);
     }
 
-    // Log usage for tracking
-    if (context?.companyId) {
+    // Log usage for tracking (now tracks actual tokens and cost)
+    if (context?.companyId && data.usage) {
       try {
-        await supabase.from('ai_usage_log').insert({
-          company_id: context.companyId,
-          user_id: context.userId || null,
-          model: 'moonshotai/Kimi-K2-Instruct',
-          cost_usd: 0,
-          content_type: 'chat',
-          metadata: {
-            sessionId: session.session_id,
-            delegatedTo,
-            routing: {
-              confidence: routingResult.confidence,
-              matchedKeywords: routingResult.matchedKeywords,
+        await logLLMUsage(
+          supabase,
+          'moonshotai/Kimi-K2-Instruct',
+          data.usage,
+          {
+            userId: context.userId,
+            companyId: context.companyId,
+            requestType: 'sync_agent',
+            endpoint: '/v1/chat/completions',
+            metadata: {
+              sessionId: session.session_id,
+              delegatedTo,
+              routing: {
+                confidence: routingResult.confidence,
+                matchedKeywords: routingResult.matchedKeywords,
+              },
+              messageLength: message.length,
+              actionExecuted: executedActionType || null,
+              chainExecuted: chainResult ? chainResult.completed.map(c => c.action) : null,
+              insightsGenerated: proactiveInsights.length,
+              memoryContext: memoryContextStr ? 'injected' : 'none',
             },
-            messageLength: message.length,
-            actionExecuted: executedActionType || null,
-            chainExecuted: chainResult ? chainResult.completed.map(c => c.action) : null,
-            insightsGenerated: proactiveInsights.length,
-            memoryContext: memoryContextStr ? 'injected' : 'none',
-          },
-        });
+          }
+        );
       } catch (logError) {
         console.error('Failed to log usage:', logError);
       }
