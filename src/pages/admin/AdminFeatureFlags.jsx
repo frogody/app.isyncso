@@ -51,6 +51,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { getStatusColor } from '@/lib/adminTheme';
 
 function FeatureFlagCard({ flag, onEdit, onToggle, onDelete, disabled }) {
   return (
@@ -74,9 +75,7 @@ function FeatureFlagCard({ flag, onEdit, onToggle, onDelete, disabled }) {
                 <Badge
                   className={cn(
                     'text-xs',
-                    flag.is_enabled
-                      ? 'bg-green-500/20 text-green-400 border-green-500/30'
-                      : 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'
+                    getStatusColor(flag.is_enabled ? 'enabled' : 'disabled')
                   )}
                 >
                   {flag.is_enabled ? 'Enabled' : 'Disabled'}

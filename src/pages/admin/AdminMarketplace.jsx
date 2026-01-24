@@ -78,6 +78,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { createClient } from '@supabase/supabase-js';
+import { getStatusColor } from '@/lib/adminTheme';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -97,14 +98,7 @@ const CATEGORY_ICONS = {
   Package: Package,
 };
 
-// Status badge colors
-const STATUS_COLORS = {
-  draft: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
-  pending_review: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-  published: 'bg-green-500/20 text-green-400 border-green-500/30',
-  archived: 'bg-red-500/20 text-red-400 border-red-500/30',
-};
-
+// Status labels for display
 const STATUS_LABELS = {
   draft: 'Draft',
   pending_review: 'Pending Review',
@@ -769,7 +763,7 @@ export default function AdminMarketplace() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge className={`${STATUS_COLORS[product.status]} border`}>
+                            <Badge className={`${getStatusColor(product.status)} border`}>
                               {STATUS_LABELS[product.status] || product.status}
                             </Badge>
                           </TableCell>
@@ -1247,7 +1241,7 @@ export default function AdminMarketplace() {
             <div className="space-y-6 py-4">
               {/* Status Badge */}
               <div className="flex items-center gap-3">
-                <Badge className={`${STATUS_COLORS[selectedProduct.status]} border`}>
+                <Badge className={`${getStatusColor(selectedProduct.status)} border`}>
                   {STATUS_LABELS[selectedProduct.status]}
                 </Badge>
                 {selectedProduct.category_name && (

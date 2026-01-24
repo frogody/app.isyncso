@@ -61,6 +61,7 @@ import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { getStatusColor } from '@/lib/adminTheme';
 
 const ADMIN_API_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-api`;
 
@@ -304,17 +305,19 @@ export default function AdminSupport() {
   };
 
   const getStatusBadge = (status) => {
-    const styles = {
-      open: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-      in_progress: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-      waiting: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-      resolved: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-      closed: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
-      pending: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-      investigating: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-      dismissed: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
+    // Map support-specific statuses to standard status colors
+    const statusMap = {
+      open: 'active',
+      in_progress: 'processing',
+      waiting: 'warning',
+      resolved: 'success',
+      closed: 'inactive',
+      pending: 'pending',
+      investigating: 'beta',
+      dismissed: 'archived',
     };
-    return <Badge className={cn('text-xs', styles[status])}>{status.replace('_', ' ')}</Badge>;
+    const mappedStatus = statusMap[status] || status;
+    return <Badge className={cn('text-xs', getStatusColor(mappedStatus))}>{status.replace('_', ' ')}</Badge>;
   };
 
   const getPriorityBadge = (priority) => {

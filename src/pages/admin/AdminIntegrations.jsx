@@ -24,19 +24,20 @@ import {
   Key,
   Shield,
 } from 'lucide-react';
+import { getStatusColor, getCategoryColor } from '@/lib/adminTheme';
 
 const ADMIN_API_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-api`;
 
 const CATEGORIES = [
-  { value: 'crm', label: 'CRM', color: 'bg-blue-500/20 text-blue-400' },
-  { value: 'productivity', label: 'Productivity', color: 'bg-green-500/20 text-green-400' },
-  { value: 'communication', label: 'Communication', color: 'bg-purple-500/20 text-purple-400' },
-  { value: 'email', label: 'Email', color: 'bg-orange-500/20 text-orange-400' },
-  { value: 'payment', label: 'Payment', color: 'bg-emerald-500/20 text-emerald-400' },
-  { value: 'automation', label: 'Automation', color: 'bg-pink-500/20 text-pink-400' },
-  { value: 'ai', label: 'AI', color: 'bg-indigo-500/20 text-indigo-400' },
-  { value: 'analytics', label: 'Analytics', color: 'bg-cyan-500/20 text-cyan-400' },
-  { value: 'storage', label: 'Storage', color: 'bg-amber-500/20 text-amber-400' },
+  { value: 'crm', label: 'CRM' },
+  { value: 'productivity', label: 'Productivity' },
+  { value: 'communication', label: 'Communication' },
+  { value: 'email', label: 'Email' },
+  { value: 'payment', label: 'Payment' },
+  { value: 'automation', label: 'Automation' },
+  { value: 'ai', label: 'AI' },
+  { value: 'analytics', label: 'Analytics' },
+  { value: 'storage', label: 'Storage' },
 ];
 
 const AUTH_TYPES = [
@@ -47,17 +48,6 @@ const AUTH_TYPES = [
 ];
 
 function StatusBadge({ status }) {
-  const styles = {
-    connected: 'bg-green-500/20 text-green-400',
-    error: 'bg-red-500/20 text-red-400',
-    pending: 'bg-yellow-500/20 text-yellow-400',
-    disabled: 'bg-zinc-500/20 text-zinc-400',
-    success: 'bg-green-500/20 text-green-400',
-    failed: 'bg-red-500/20 text-red-400',
-    started: 'bg-blue-500/20 text-blue-400',
-    completed: 'bg-green-500/20 text-green-400',
-  };
-
   const icons = {
     connected: CheckCircle2,
     error: XCircle,
@@ -72,7 +62,7 @@ function StatusBadge({ status }) {
   const Icon = icons[status] || Clock;
 
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${styles[status] || 'bg-zinc-500/20 text-zinc-400'}`}>
+    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
       <Icon className="w-3 h-3" />
       {status}
     </span>
@@ -82,7 +72,7 @@ function StatusBadge({ status }) {
 function CategoryBadge({ category }) {
   const cat = CATEGORIES.find(c => c.value === category);
   return (
-    <span className={`px-2 py-1 rounded-full text-xs font-medium ${cat?.color || 'bg-zinc-500/20 text-zinc-400'}`}>
+    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(category)}`}>
       {cat?.label || category}
     </span>
   );

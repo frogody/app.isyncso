@@ -33,6 +33,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { getIcon } from '@/lib/iconMap';
+import { getStatusColor } from '@/lib/adminTheme';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -110,14 +111,6 @@ function StatCard({ title, value, change, icon: Icon, color, subtitle }) {
 
 // App Card Component
 function AppCard({ app, onEdit, onDelete, onViewLicenses }) {
-  const statusColors = {
-    active: 'bg-green-500/20 text-green-400 border-green-500/30',
-    beta: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-    coming_soon: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-    deprecated: 'bg-red-500/20 text-red-400 border-red-500/30',
-    inactive: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
-  };
-
   const pricingColors = {
     free: 'bg-green-500/20 text-green-400',
     freemium: 'bg-blue-500/20 text-blue-400',
@@ -179,7 +172,7 @@ function AppCard({ app, onEdit, onDelete, onViewLicenses }) {
       <p className="text-sm text-zinc-400 mb-4 line-clamp-2">{app.description}</p>
 
       <div className="flex flex-wrap gap-2 mb-4">
-        <Badge className={cn('text-xs', statusColors[getStatus()] || statusColors.active)}>
+        <Badge className={cn('text-xs', getStatusColor(getStatus()))}>
           {getStatus()?.replace('_', ' ')}
         </Badge>
         <Badge className={cn('text-xs', pricingColors[getPricingModel()] || pricingColors.free)}>

@@ -63,6 +63,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { getStatusColor } from '@/lib/adminTheme';
 
 const ADMIN_API_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-api`;
 
@@ -307,12 +308,7 @@ export default function AdminContent() {
   };
 
   const getStatusBadge = (status) => {
-    const styles = {
-      published: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-      draft: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-      archived: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
-    };
-    return <Badge className={cn('text-xs', styles[status])}>{status}</Badge>;
+    return <Badge className={cn('text-xs', getStatusColor(status))}>{status}</Badge>;
   };
 
   const getAnnouncementIcon = (type) => {
