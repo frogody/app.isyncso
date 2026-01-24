@@ -167,6 +167,19 @@ export function UserProvider({ children }) {
       }
 
       setLastRefresh(new Date().toISOString());
+
+      // Update last_active_at to track user activity
+      if (userData?.id) {
+        supabase
+          .from('users')
+          .update({ last_active_at: new Date().toISOString() })
+          .eq('id', userData.id)
+          .then(({ error: updateError }) => {
+            if (updateError) {
+              console.warn('[UserContext] Failed to update last_active_at:', updateError.message);
+            }
+          });
+      }
     } catch (err) {
       logError('UserContext:loadUserData', err);
       setError(err);
