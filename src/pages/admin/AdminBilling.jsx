@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/api/supabaseClient';
 import { toast } from 'sonner';
+import { getIconColor, getStatusColor, BUTTON_STYLES } from '@/lib/adminTheme';
 import {
   DollarSign,
   TrendingUp,
@@ -35,23 +36,6 @@ import {
 const ADMIN_API_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-api`;
 
 function StatusBadge({ status }) {
-  const styles = {
-    active: 'bg-green-500/20 text-green-400',
-    trialing: 'bg-blue-500/20 text-blue-400',
-    canceled: 'bg-zinc-500/20 text-zinc-400',
-    past_due: 'bg-red-500/20 text-red-400',
-    paused: 'bg-yellow-500/20 text-yellow-400',
-    expired: 'bg-zinc-500/20 text-zinc-400',
-    paid: 'bg-green-500/20 text-green-400',
-    pending: 'bg-yellow-500/20 text-yellow-400',
-    overdue: 'bg-red-500/20 text-red-400',
-    draft: 'bg-zinc-500/20 text-zinc-400',
-    refunded: 'bg-purple-500/20 text-purple-400',
-    succeeded: 'bg-green-500/20 text-green-400',
-    failed: 'bg-red-500/20 text-red-400',
-    processing: 'bg-blue-500/20 text-blue-400',
-  };
-
   const icons = {
     active: CheckCircle2,
     trialing: Clock,
@@ -68,7 +52,7 @@ function StatusBadge({ status }) {
   const Icon = icons[status] || Clock;
 
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${styles[status] || 'bg-zinc-500/20 text-zinc-400'}`}>
+    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
       <Icon className="w-3 h-3" />
       {status?.replace('_', ' ')}
     </span>
@@ -76,18 +60,10 @@ function StatusBadge({ status }) {
 }
 
 function StatCard({ title, value, icon: Icon, color = 'blue', subtitle, trend }) {
-  const colors = {
-    blue: 'bg-blue-500/20 text-blue-400',
-    green: 'bg-green-500/20 text-green-400',
-    red: 'bg-red-500/20 text-red-400',
-    yellow: 'bg-yellow-500/20 text-yellow-400',
-    purple: 'bg-purple-500/20 text-purple-400',
-  };
-
   return (
     <div className="bg-zinc-900/50 rounded-xl border border-zinc-800 p-6">
       <div className="flex items-center gap-4">
-        <div className={`p-3 rounded-lg ${colors[color]}`}>
+        <div className={`p-3 rounded-lg border ${getIconColor(color)}`}>
           <Icon className="w-6 h-6" />
         </div>
         <div className="flex-1">
@@ -292,7 +268,7 @@ function PlanModal({ plan, onClose, onSave }) {
             <button
               type="submit"
               disabled={saving}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              className={`px-4 py-2 rounded-lg transition-colors disabled:opacity-50 ${BUTTON_STYLES.primary}`}
             >
               {saving ? 'Saving...' : plan ? 'Update Plan' : 'Create Plan'}
             </button>
@@ -464,7 +440,7 @@ function CouponModal({ coupon, onClose, onSave }) {
             <button
               type="submit"
               disabled={saving}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              className={`px-4 py-2 rounded-lg transition-colors disabled:opacity-50 ${BUTTON_STYLES.primary}`}
             >
               {saving ? 'Saving...' : coupon ? 'Update Coupon' : 'Create Coupon'}
             </button>
@@ -790,7 +766,7 @@ export default function AdminBilling() {
                     setEditingPlan(null);
                     setShowPlanModal(true);
                   }}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${BUTTON_STYLES.primary}`}
                 >
                   <Plus className="w-4 h-4" />
                   Add Plan
@@ -979,7 +955,7 @@ export default function AdminBilling() {
                     setEditingCoupon(null);
                     setShowCouponModal(true);
                   }}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${BUTTON_STYLES.primary}`}
                 >
                   <Plus className="w-4 h-4" />
                   Add Coupon

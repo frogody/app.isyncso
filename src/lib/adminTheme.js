@@ -17,6 +17,8 @@ export const STATUS_COLORS = {
   success: 'bg-green-500/20 text-green-400 border-green-500/30',
   connected: 'bg-green-500/20 text-green-400 border-green-500/30',
   paid: 'bg-green-500/20 text-green-400 border-green-500/30',
+  healthy: 'bg-green-500/20 text-green-400 border-green-500/30',
+  succeeded: 'bg-green-500/20 text-green-400 border-green-500/30',
 
   // Pending/Draft states
   pending: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
@@ -24,6 +26,8 @@ export const STATUS_COLORS = {
   review: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
   processing: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
   awaiting: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+  degraded: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+  trialing: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
 
   // Inactive/Disabled states
   inactive: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
@@ -40,6 +44,9 @@ export const STATUS_COLORS = {
   revoked: 'bg-red-500/20 text-red-400 border-red-500/30',
   cancelled: 'bg-red-500/20 text-red-400 border-red-500/30',
   overdue: 'bg-red-500/20 text-red-400 border-red-500/30',
+  down: 'bg-red-500/20 text-red-400 border-red-500/30',
+  past_due: 'bg-red-500/20 text-red-400 border-red-500/30',
+  canceled: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
 
   // Warning states
   warning: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
@@ -52,6 +59,8 @@ export const STATUS_COLORS = {
   new: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
   premium: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
   core: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+  running: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+  refunded: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
 
   // Admin/Platform states
   platform_admin: 'bg-red-500/20 text-red-400 border-red-500/30',

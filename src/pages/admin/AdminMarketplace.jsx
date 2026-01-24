@@ -78,7 +78,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { createClient } from '@supabase/supabase-js';
-import { getStatusColor } from '@/lib/adminTheme';
+import { getStatusColor, BUTTON_STYLES } from '@/lib/adminTheme';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -504,7 +504,7 @@ export default function AdminMarketplace() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-white">Data Marketplace</h1>
-          <p className="text-gray-400 mt-1">Manage data products and categories</p>
+          <p className="text-zinc-400 mt-1">Manage data products and categories</p>
         </div>
         <div className="flex items-center gap-3">
           <Button
@@ -517,7 +517,7 @@ export default function AdminMarketplace() {
           </Button>
           <Button
             onClick={handleCreateProduct}
-            className="bg-blue-600 hover:bg-blue-700"
+            className={BUTTON_STYLES.primary}
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Product
@@ -546,11 +546,11 @@ export default function AdminMarketplace() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm">Total Products</p>
+                <p className="text-zinc-400 text-sm">Total Products</p>
                 <p className="text-2xl font-semibold text-white mt-1">
                   {stats?.total_products || 0}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-zinc-500 mt-1">
                   {stats?.published_products || 0} published
                 </p>
               </div>
@@ -565,11 +565,11 @@ export default function AdminMarketplace() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm">Total Revenue</p>
+                <p className="text-zinc-400 text-sm">Total Revenue</p>
                 <p className="text-2xl font-semibold text-white mt-1">
                   {formatCurrency(stats?.total_revenue || 0)}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-zinc-500 mt-1">
                   {stats?.total_purchases || 0} purchases
                 </p>
               </div>
@@ -584,11 +584,11 @@ export default function AdminMarketplace() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm">Total Downloads</p>
+                <p className="text-zinc-400 text-sm">Total Downloads</p>
                 <p className="text-2xl font-semibold text-white mt-1">
                   {stats?.total_downloads?.toLocaleString() || 0}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-zinc-500 mt-1">
                   Across all products
                 </p>
               </div>
@@ -603,11 +603,11 @@ export default function AdminMarketplace() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-400 text-sm">Featured Products</p>
+                <p className="text-zinc-400 text-sm">Featured Products</p>
                 <p className="text-2xl font-semibold text-white mt-1">
                   {stats?.featured_products || 0}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-zinc-500 mt-1">
                   {stats?.draft_products || 0} drafts
                 </p>
               </div>
@@ -640,7 +640,7 @@ export default function AdminMarketplace() {
               <form onSubmit={handleSearch} className="flex flex-wrap items-center gap-4">
                 <div className="flex-1 min-w-[200px]">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
                     <Input
                       placeholder="Search products..."
                       value={searchQuery}
@@ -688,7 +688,7 @@ export default function AdminMarketplace() {
                   <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
                 </div>
               ) : products.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+                <div className="flex flex-col items-center justify-center py-20 text-zinc-400">
                   <Package className="w-12 h-12 mb-4 opacity-50" />
                   <p>No products found</p>
                   <Button
@@ -703,12 +703,12 @@ export default function AdminMarketplace() {
                 <Table>
                   <TableHeader>
                     <TableRow className="border-white/10 hover:bg-transparent">
-                      <TableHead className="text-gray-400">Product</TableHead>
-                      <TableHead className="text-gray-400">Category</TableHead>
-                      <TableHead className="text-gray-400">Price</TableHead>
-                      <TableHead className="text-gray-400">Status</TableHead>
-                      <TableHead className="text-gray-400 text-center">Stats</TableHead>
-                      <TableHead className="text-gray-400 text-right">Actions</TableHead>
+                      <TableHead className="text-zinc-400">Product</TableHead>
+                      <TableHead className="text-zinc-400">Category</TableHead>
+                      <TableHead className="text-zinc-400">Price</TableHead>
+                      <TableHead className="text-zinc-400">Status</TableHead>
+                      <TableHead className="text-zinc-400 text-center">Stats</TableHead>
+                      <TableHead className="text-zinc-400 text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -726,7 +726,7 @@ export default function AdminMarketplace() {
                                     className="w-full h-full object-cover"
                                   />
                                 ) : (
-                                  <Database className="w-5 h-5 text-gray-400" />
+                                  <Database className="w-5 h-5 text-zinc-400" />
                                 )}
                               </div>
                               <div>
@@ -736,7 +736,7 @@ export default function AdminMarketplace() {
                                     <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
                                   )}
                                 </div>
-                                <p className="text-sm text-gray-400 truncate max-w-[300px]">
+                                <p className="text-sm text-zinc-400 truncate max-w-[300px]">
                                   {product.description || 'No description'}
                                 </p>
                               </div>
@@ -745,11 +745,11 @@ export default function AdminMarketplace() {
                           <TableCell>
                             {product.category_name ? (
                               <div className="flex items-center gap-2">
-                                <CategoryIcon className="w-4 h-4 text-gray-400" />
-                                <span className="text-gray-300">{product.category_name}</span>
+                                <CategoryIcon className="w-4 h-4 text-zinc-400" />
+                                <span className="text-zinc-300">{product.category_name}</span>
                               </div>
                             ) : (
-                              <span className="text-gray-500">Uncategorized</span>
+                              <span className="text-zinc-500">Uncategorized</span>
                             )}
                           </TableCell>
                           <TableCell>
@@ -757,7 +757,7 @@ export default function AdminMarketplace() {
                               <p className="text-white font-medium">
                                 {product.price_type === 'free' ? 'Free' : formatCurrency(product.price, product.currency)}
                               </p>
-                              <p className="text-xs text-gray-500">
+                              <p className="text-xs text-zinc-500">
                                 {PRICE_TYPE_LABELS[product.price_type] || product.price_type}
                               </p>
                             </div>
@@ -769,11 +769,11 @@ export default function AdminMarketplace() {
                           </TableCell>
                           <TableCell className="text-center">
                             <div className="flex items-center justify-center gap-4 text-sm">
-                              <span className="flex items-center gap-1 text-gray-400">
+                              <span className="flex items-center gap-1 text-zinc-400">
                                 <ShoppingCart className="w-3 h-3" />
                                 {product.purchase_count || 0}
                               </span>
-                              <span className="flex items-center gap-1 text-gray-400">
+                              <span className="flex items-center gap-1 text-zinc-400">
                                 <Download className="w-3 h-3" />
                                 {product.download_count || 0}
                               </span>
@@ -789,21 +789,21 @@ export default function AdminMarketplace() {
                               <DropdownMenuContent align="end" className="bg-[#1a1a2e] border-white/10">
                                 <DropdownMenuItem
                                   onClick={() => handleViewProduct(product)}
-                                  className="text-gray-300 focus:bg-white/10 focus:text-white"
+                                  className="text-zinc-300 focus:bg-white/10 focus:text-white"
                                 >
                                   <Eye className="w-4 h-4 mr-2" />
                                   View Details
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => handleEditProduct(product)}
-                                  className="text-gray-300 focus:bg-white/10 focus:text-white"
+                                  className="text-zinc-300 focus:bg-white/10 focus:text-white"
                                 >
                                   <Edit className="w-4 h-4 mr-2" />
                                   Edit
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => handleToggleFeatured(product)}
-                                  className="text-gray-300 focus:bg-white/10 focus:text-white"
+                                  className="text-zinc-300 focus:bg-white/10 focus:text-white"
                                 >
                                   <Star className={`w-4 h-4 mr-2 ${product.is_featured ? 'fill-yellow-400 text-yellow-400' : ''}`} />
                                   {product.is_featured ? 'Remove Featured' : 'Make Featured'}
@@ -851,7 +851,7 @@ export default function AdminMarketplace() {
               {/* Pagination */}
               {products.length > 0 && (
                 <div className="flex items-center justify-between p-4 border-t border-white/10">
-                  <p className="text-sm text-gray-400">
+                  <p className="text-sm text-zinc-400">
                     Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
                     {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} products
                   </p>
@@ -884,7 +884,7 @@ export default function AdminMarketplace() {
         {/* Categories Tab */}
         <TabsContent value="categories" className="space-y-4">
           <div className="flex justify-end">
-            <Button onClick={handleCreateCategory} className="bg-blue-600 hover:bg-blue-700">
+            <Button onClick={handleCreateCategory} className={BUTTON_STYLES.primary}>
               <Plus className="w-4 h-4 mr-2" />
               Add Category
             </Button>
@@ -893,7 +893,7 @@ export default function AdminMarketplace() {
           <Card className="bg-[#1a1a2e]/50 border-white/10">
             <CardContent className="p-0">
               {categories.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+                <div className="flex flex-col items-center justify-center py-20 text-zinc-400">
                   <Tag className="w-12 h-12 mb-4 opacity-50" />
                   <p>No categories found</p>
                 </div>
@@ -901,11 +901,11 @@ export default function AdminMarketplace() {
                 <Table>
                   <TableHeader>
                     <TableRow className="border-white/10 hover:bg-transparent">
-                      <TableHead className="text-gray-400">Category</TableHead>
-                      <TableHead className="text-gray-400">Description</TableHead>
-                      <TableHead className="text-gray-400 text-center">Products</TableHead>
-                      <TableHead className="text-gray-400 text-center">Status</TableHead>
-                      <TableHead className="text-gray-400 text-right">Actions</TableHead>
+                      <TableHead className="text-zinc-400">Category</TableHead>
+                      <TableHead className="text-zinc-400">Description</TableHead>
+                      <TableHead className="text-zinc-400 text-center">Products</TableHead>
+                      <TableHead className="text-zinc-400 text-center">Status</TableHead>
+                      <TableHead className="text-zinc-400 text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -920,12 +920,12 @@ export default function AdminMarketplace() {
                               </div>
                               <div>
                                 <p className="font-medium text-white">{category.name}</p>
-                                <p className="text-xs text-gray-500">{category.slug}</p>
+                                <p className="text-xs text-zinc-500">{category.slug}</p>
                               </div>
                             </div>
                           </TableCell>
                           <TableCell>
-                            <p className="text-gray-300 truncate max-w-[300px]">
+                            <p className="text-zinc-300 truncate max-w-[300px]">
                               {category.description || '-'}
                             </p>
                           </TableCell>
@@ -937,7 +937,7 @@ export default function AdminMarketplace() {
                           <TableCell className="text-center">
                             <Badge className={category.is_active
                               ? 'bg-green-500/20 text-green-400 border-green-500/30'
-                              : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+                              : 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'
                             }>
                               {category.is_active ? 'Active' : 'Inactive'}
                             </Badge>
@@ -975,7 +975,7 @@ export default function AdminMarketplace() {
           <div className="grid grid-cols-2 gap-4 py-4">
             {/* Basic Info */}
             <div className="col-span-2">
-              <h3 className="text-sm font-medium text-gray-400 mb-3">Basic Information</h3>
+              <h3 className="text-sm font-medium text-zinc-400 mb-3">Basic Information</h3>
             </div>
             <div className="space-y-2">
               <Label>Name *</Label>
@@ -1043,7 +1043,7 @@ export default function AdminMarketplace() {
 
             {/* Pricing */}
             <div className="col-span-2 pt-4">
-              <h3 className="text-sm font-medium text-gray-400 mb-3">Pricing</h3>
+              <h3 className="text-sm font-medium text-zinc-400 mb-3">Pricing</h3>
             </div>
             <div className="space-y-2">
               <Label>Price Type</Label>
@@ -1094,7 +1094,7 @@ export default function AdminMarketplace() {
 
             {/* Data Info */}
             <div className="col-span-2 pt-4">
-              <h3 className="text-sm font-medium text-gray-400 mb-3">Data Information</h3>
+              <h3 className="text-sm font-medium text-zinc-400 mb-3">Data Information</h3>
             </div>
             <div className="space-y-2">
               <Label>Data Format</Label>
@@ -1147,7 +1147,7 @@ export default function AdminMarketplace() {
 
             {/* Files */}
             <div className="col-span-2 pt-4">
-              <h3 className="text-sm font-medium text-gray-400 mb-3">Files & Media</h3>
+              <h3 className="text-sm font-medium text-zinc-400 mb-3">Files & Media</h3>
             </div>
             <div className="space-y-2">
               <Label>Preview Image URL</Label>
@@ -1179,7 +1179,7 @@ export default function AdminMarketplace() {
 
             {/* Status & Featured */}
             <div className="col-span-2 pt-4">
-              <h3 className="text-sm font-medium text-gray-400 mb-3">Publishing</h3>
+              <h3 className="text-sm font-medium text-zinc-400 mb-3">Publishing</h3>
             </div>
             <div className="space-y-2">
               <Label>Status</Label>
@@ -1218,7 +1218,7 @@ export default function AdminMarketplace() {
             <Button
               onClick={handleSaveProduct}
               disabled={isSaving || !productForm.name || !productForm.slug}
-              className="bg-blue-600 hover:bg-blue-700"
+              className={BUTTON_STYLES.primary}
             >
               {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {isEditing ? 'Save Changes' : 'Create Product'}
@@ -1254,8 +1254,8 @@ export default function AdminMarketplace() {
               {/* Description */}
               {selectedProduct.description && (
                 <div>
-                  <h4 className="text-sm font-medium text-gray-400 mb-2">Description</h4>
-                  <p className="text-gray-300">{selectedProduct.description}</p>
+                  <h4 className="text-sm font-medium text-zinc-400 mb-2">Description</h4>
+                  <p className="text-zinc-300">{selectedProduct.description}</p>
                 </div>
               )}
 
@@ -1263,23 +1263,23 @@ export default function AdminMarketplace() {
               <div className="grid grid-cols-2 gap-4">
                 <Card className="bg-white/5 border-white/10">
                   <CardContent className="p-4">
-                    <p className="text-sm text-gray-400">Price</p>
+                    <p className="text-sm text-zinc-400">Price</p>
                     <p className="text-xl font-semibold text-white mt-1">
                       {selectedProduct.price_type === 'free' ? 'Free' : formatCurrency(selectedProduct.price, selectedProduct.currency)}
                     </p>
-                    <p className="text-xs text-gray-500">{PRICE_TYPE_LABELS[selectedProduct.price_type]}</p>
+                    <p className="text-xs text-zinc-500">{PRICE_TYPE_LABELS[selectedProduct.price_type]}</p>
                   </CardContent>
                 </Card>
                 <Card className="bg-white/5 border-white/10">
                   <CardContent className="p-4">
-                    <p className="text-sm text-gray-400">Stats</p>
+                    <p className="text-sm text-zinc-400">Stats</p>
                     <div className="flex items-center gap-4 mt-2">
                       <span className="flex items-center gap-1 text-white">
-                        <ShoppingCart className="w-4 h-4 text-gray-400" />
+                        <ShoppingCart className="w-4 h-4 text-zinc-400" />
                         {selectedProduct.purchase_count || 0}
                       </span>
                       <span className="flex items-center gap-1 text-white">
-                        <Download className="w-4 h-4 text-gray-400" />
+                        <Download className="w-4 h-4 text-zinc-400" />
                         {selectedProduct.total_downloads || 0}
                       </span>
                     </div>
@@ -1289,29 +1289,29 @@ export default function AdminMarketplace() {
 
               {/* Data Info */}
               <div>
-                <h4 className="text-sm font-medium text-gray-400 mb-3">Data Information</h4>
+                <h4 className="text-sm font-medium text-zinc-400 mb-3">Data Information</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   {selectedProduct.data_format && (
                     <div>
-                      <p className="text-gray-500">Format</p>
+                      <p className="text-zinc-500">Format</p>
                       <p className="text-white">{selectedProduct.data_format}</p>
                     </div>
                   )}
                   {selectedProduct.record_count && (
                     <div>
-                      <p className="text-gray-500">Records</p>
+                      <p className="text-zinc-500">Records</p>
                       <p className="text-white">{selectedProduct.record_count.toLocaleString()}</p>
                     </div>
                   )}
                   {selectedProduct.update_frequency && (
                     <div>
-                      <p className="text-gray-500">Update Frequency</p>
+                      <p className="text-zinc-500">Update Frequency</p>
                       <p className="text-white capitalize">{selectedProduct.update_frequency.replace('_', ' ')}</p>
                     </div>
                   )}
                   {selectedProduct.data_source && (
                     <div>
-                      <p className="text-gray-500">Data Source</p>
+                      <p className="text-zinc-500">Data Source</p>
                       <p className="text-white">{selectedProduct.data_source}</p>
                     </div>
                   )}
@@ -1321,19 +1321,19 @@ export default function AdminMarketplace() {
               {/* Recent Purchases */}
               {selectedProduct.recent_purchases?.length > 0 && (
                 <div>
-                  <h4 className="text-sm font-medium text-gray-400 mb-3">Recent Purchases</h4>
+                  <h4 className="text-sm font-medium text-zinc-400 mb-3">Recent Purchases</h4>
                   <div className="space-y-2">
                     {selectedProduct.recent_purchases.map((purchase) => (
                       <div key={purchase.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
                         <div>
                           <p className="text-white text-sm">{purchase.user_name || purchase.user_email}</p>
                           {purchase.company_name && (
-                            <p className="text-xs text-gray-400">{purchase.company_name}</p>
+                            <p className="text-xs text-zinc-400">{purchase.company_name}</p>
                           )}
                         </div>
                         <div className="text-right">
                           <p className="text-white text-sm">{formatCurrency(purchase.amount, purchase.currency)}</p>
-                          <p className="text-xs text-gray-400">{formatDate(purchase.purchased_at)}</p>
+                          <p className="text-xs text-zinc-400">{formatDate(purchase.purchased_at)}</p>
                         </div>
                       </div>
                     ))}
@@ -1342,7 +1342,7 @@ export default function AdminMarketplace() {
               )}
 
               {/* Metadata */}
-              <div className="pt-4 border-t border-white/10 text-sm text-gray-500">
+              <div className="pt-4 border-t border-white/10 text-sm text-zinc-500">
                 <p>Created: {formatDate(selectedProduct.created_at)}</p>
                 {selectedProduct.created_by_info && (
                   <p>By: {selectedProduct.created_by_info.name || selectedProduct.created_by_info.email}</p>
@@ -1364,7 +1364,7 @@ export default function AdminMarketplace() {
                 setShowDetailModal(false);
                 handleEditProduct(selectedProduct);
               }}
-              className="bg-blue-600 hover:bg-blue-700"
+              className={BUTTON_STYLES.primary}
             >
               <Edit className="w-4 h-4 mr-2" />
               Edit Product
@@ -1464,7 +1464,7 @@ export default function AdminMarketplace() {
             <Button
               onClick={handleSaveCategory}
               disabled={isSaving || !categoryForm.name || !categoryForm.slug}
-              className="bg-blue-600 hover:bg-blue-700"
+              className={BUTTON_STYLES.primary}
             >
               {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {selectedCategory ? 'Save Changes' : 'Create Category'}
@@ -1481,10 +1481,10 @@ export default function AdminMarketplace() {
           </DialogHeader>
 
           <div className="py-4">
-            <p className="text-gray-300">
+            <p className="text-zinc-300">
               Are you sure you want to delete <span className="font-semibold text-white">{selectedProduct?.name}</span>?
             </p>
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="text-sm text-zinc-500 mt-2">
               This action cannot be undone. All purchases and downloads associated with this product will also be deleted.
             </p>
           </div>
@@ -1500,7 +1500,7 @@ export default function AdminMarketplace() {
             <Button
               onClick={handleDeleteProduct}
               disabled={isSaving}
-              className="bg-red-600 hover:bg-red-700"
+              className={BUTTON_STYLES.danger}
             >
               {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Delete Product

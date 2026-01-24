@@ -33,7 +33,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { getIcon } from '@/lib/iconMap';
-import { getStatusColor } from '@/lib/adminTheme';
+import { getStatusColor, getIconColor, BUTTON_STYLES } from '@/lib/adminTheme';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -71,15 +71,6 @@ const ADMIN_API_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-a
 
 // Stat Card Component
 function StatCard({ title, value, change, icon: Icon, color, subtitle }) {
-  const colorClasses = {
-    red: 'bg-red-500/20 text-red-400 border-red-500/30',
-    blue: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-    green: 'bg-green-500/20 text-green-400 border-green-500/30',
-    purple: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-    orange: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-    cyan: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
-  };
-
   return (
     <Card className="bg-zinc-900/50 border-zinc-800">
       <CardContent className="p-6">
@@ -98,7 +89,7 @@ function StatCard({ title, value, change, icon: Icon, color, subtitle }) {
           <div
             className={cn(
               'w-12 h-12 rounded-xl flex items-center justify-center border',
-              colorClasses[color]
+              getIconColor(color)
             )}
           >
             <Icon className="w-6 h-6" />
@@ -631,7 +622,7 @@ export default function AdminApps() {
               setEditingApp(null);
               setShowAppModal(true);
             }}
-            className="bg-red-600 hover:bg-red-700 text-white"
+            className={BUTTON_STYLES.primary}
           >
             <Plus className="w-4 h-4 mr-2" />
             Add App
@@ -788,7 +779,7 @@ export default function AdminApps() {
                     setEditingApp(null);
                     setShowAppModal(true);
                   }}
-                  className="bg-red-600 hover:bg-red-700 text-white"
+                  className={BUTTON_STYLES.primary}
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Add App
@@ -845,7 +836,7 @@ export default function AdminApps() {
                       setEditingLicense(null);
                       setShowLicenseModal(true);
                     }}
-                    className="bg-red-600 hover:bg-red-700 text-white"
+                    className={BUTTON_STYLES.primary}
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Grant License
@@ -1003,7 +994,7 @@ export default function AdminApps() {
             </Button>
             <Button
               onClick={handleSaveApp}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              className={BUTTON_STYLES.primary}
             >
               {editingApp ? 'Update App' : 'Create App'}
             </Button>
@@ -1176,7 +1167,7 @@ export default function AdminApps() {
             </Button>
             <Button
               onClick={handleSaveLicense}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              className={BUTTON_STYLES.primary}
             >
               {editingLicense ? 'Update License' : 'Grant License'}
             </Button>

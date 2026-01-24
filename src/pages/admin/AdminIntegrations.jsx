@@ -24,7 +24,7 @@ import {
   Key,
   Shield,
 } from 'lucide-react';
-import { getStatusColor, getCategoryColor } from '@/lib/adminTheme';
+import { getStatusColor, getCategoryColor, BUTTON_STYLES } from '@/lib/adminTheme';
 
 const ADMIN_API_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-api`;
 
@@ -285,7 +285,7 @@ function ProviderModal({ provider, onClose, onSave }) {
             <button
               type="submit"
               disabled={saving}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              className={`px-4 py-2 rounded-lg transition-colors disabled:opacity-50 ${BUTTON_STYLES.primary}`}
             >
               {saving ? 'Saving...' : provider ? 'Update Provider' : 'Create Provider'}
             </button>
@@ -726,7 +726,7 @@ export default function AdminIntegrations() {
                   setEditingProvider(null);
                   setShowProviderModal(true);
                 }}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${BUTTON_STYLES.primary}`}
               >
                 <Plus className="w-4 h-4" />
                 Add Provider

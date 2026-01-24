@@ -25,18 +25,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { getIconColor, getStatusColor, getRoleColor } from '@/lib/adminTheme';
 
 const ADMIN_API_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-api`;
 
 function StatCard({ title, value, change, changeType, icon: Icon, color }) {
-  const colorClasses = {
-    red: 'bg-red-500/20 text-red-400 border-red-500/30',
-    blue: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-    green: 'bg-green-500/20 text-green-400 border-green-500/30',
-    purple: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-    orange: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-  };
-
   return (
     <Card className="bg-zinc-900/50 border-zinc-800">
       <CardContent className="p-6">
@@ -66,7 +59,7 @@ function StatCard({ title, value, change, changeType, icon: Icon, color }) {
           <div
             className={cn(
               'w-12 h-12 rounded-xl flex items-center justify-center border',
-              colorClasses[color]
+              getIconColor(color)
             )}
           >
             <Icon className="w-6 h-6" />

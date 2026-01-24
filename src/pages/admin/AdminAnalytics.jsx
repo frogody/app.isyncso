@@ -38,6 +38,7 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
+import { getIconColor } from '@/lib/adminTheme';
 import { toast } from 'sonner';
 import {
   LineChart as RechartsLineChart,
@@ -94,15 +95,6 @@ function calcChange(current, previous) {
 
 // Stat Card Component
 function StatCard({ title, value, change, changeType, icon: Icon, color, subtitle }) {
-  const colorClasses = {
-    red: 'bg-red-500/20 text-red-400 border-red-500/30',
-    blue: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-    green: 'bg-green-500/20 text-green-400 border-green-500/30',
-    purple: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-    orange: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-    cyan: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
-  };
-
   const isPositive = changeType === 'increase';
 
   return (
@@ -130,7 +122,7 @@ function StatCard({ title, value, change, changeType, icon: Icon, color, subtitl
           <div
             className={cn(
               'w-12 h-12 rounded-xl flex items-center justify-center border',
-              colorClasses[color]
+              getIconColor(color)
             )}
           >
             <Icon className="w-6 h-6" />

@@ -389,8 +389,8 @@ export default function AdminSupport() {
         <Card className="bg-zinc-900/50 border-zinc-800">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                <Clock className="w-5 h-5 text-emerald-400" />
+              <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+                <Clock className="w-5 h-5 text-green-400" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-white">
@@ -777,7 +777,7 @@ export default function AdminSupport() {
                       <td className="p-4 text-sm text-zinc-400">{flag.flagged_by_name || 'System'}</td>
                       <td className="p-4">
                         {flag.resolved_at ? (
-                          <Badge className="bg-emerald-500/20 text-emerald-400 text-xs">Resolved</Badge>
+                          <Badge className="bg-green-500/20 text-green-400 text-xs">Resolved</Badge>
                         ) : (
                           <Badge className="bg-yellow-500/20 text-yellow-400 text-xs">Active</Badge>
                         )}
@@ -822,7 +822,7 @@ export default function AdminSupport() {
                     {response.variables?.length > 0 && (
                       <div className="flex flex-wrap gap-1">
                         {response.variables.map((v) => (
-                          <code key={v} className="text-[10px] bg-zinc-700 px-1.5 py-0.5 rounded text-emerald-400">
+                          <code key={v} className="text-[10px] bg-zinc-700 px-1.5 py-0.5 rounded text-green-400">
                             {`{{${v}}}`}
                           </code>
                         ))}

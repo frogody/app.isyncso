@@ -315,7 +315,7 @@ export default function AdminContent() {
     const icons = {
       info: <Info className="w-4 h-4 text-blue-400" />,
       warning: <AlertTriangle className="w-4 h-4 text-yellow-400" />,
-      success: <CheckCircle className="w-4 h-4 text-emerald-400" />,
+      success: <CheckCircle className="w-4 h-4 text-green-400" />,
       error: <AlertCircle className="w-4 h-4 text-red-400" />,
     };
     return icons[type] || icons.info;
@@ -382,8 +382,8 @@ export default function AdminContent() {
         <Card className="bg-zinc-900/50 border-zinc-800">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                <HelpCircle className="w-5 h-5 text-emerald-400" />
+              <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+                <HelpCircle className="w-5 h-5 text-green-400" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-white">{stats?.total_help_articles || 0}</p>
@@ -702,7 +702,7 @@ export default function AdminContent() {
                       <td className="p-4 text-sm text-zinc-400">{article.views || 0}</td>
                       <td className="p-4">
                         <div className="flex items-center gap-2 text-sm">
-                          <span className="text-emerald-400">{article.helpful_yes || 0}</span>
+                          <span className="text-green-400">{article.helpful_yes || 0}</span>
                           <span className="text-zinc-600">/</span>
                           <span className="text-red-400">{article.helpful_no || 0}</span>
                         </div>
@@ -800,7 +800,7 @@ export default function AdminContent() {
                           <Badge className={cn(
                             'text-xs',
                             isActive
-                              ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                              ? 'bg-green-500/20 text-green-400 border-green-500/30'
                               : 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'
                           )}>
                             {isActive ? 'Active' : 'Inactive'}
@@ -872,7 +872,7 @@ export default function AdminContent() {
                         <Badge className={cn(
                           'text-xs',
                           template.is_active
-                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                            ? 'bg-green-500/20 text-green-400 border-green-500/30'
                             : 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'
                         )}>
                           {template.is_active ? 'Active' : 'Inactive'}
@@ -1237,7 +1237,7 @@ function ContentEditorModal({ open, onClose, type, item, categories, onSave, sav
                 <Label className="text-zinc-400">Available Variables</Label>
                 <div className="flex flex-wrap gap-2 p-3 bg-zinc-800 rounded-lg">
                   {(formData.variables || []).map((v) => (
-                    <code key={v} className="text-xs bg-zinc-700 px-2 py-1 rounded text-emerald-400">
+                    <code key={v} className="text-xs bg-zinc-700 px-2 py-1 rounded text-green-400">
                       {`{{${v}}}`}
                     </code>
                   ))}

@@ -47,28 +47,28 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
+import { getIconColor, getStatusColor, BUTTON_STYLES } from '@/lib/adminTheme';
 import { toast } from 'sonner';
 
 const ADMIN_API_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-api`;
 
 // Status Badge Component
 function StatusBadge({ status }) {
-  const config = {
-    healthy: { bg: 'bg-green-500/20', color: 'text-green-400', border: 'border-green-500/30', icon: CheckCircle },
-    degraded: { bg: 'bg-yellow-500/20', color: 'text-yellow-400', border: 'border-yellow-500/30', icon: AlertTriangle },
-    down: { bg: 'bg-red-500/20', color: 'text-red-400', border: 'border-red-500/30', icon: XCircle },
-    pending: { bg: 'bg-blue-500/20', color: 'text-blue-400', border: 'border-blue-500/30', icon: Clock },
-    running: { bg: 'bg-cyan-500/20', color: 'text-cyan-400', border: 'border-cyan-500/30', icon: Play },
-    completed: { bg: 'bg-green-500/20', color: 'text-green-400', border: 'border-green-500/30', icon: CheckCircle },
-    failed: { bg: 'bg-red-500/20', color: 'text-red-400', border: 'border-red-500/30', icon: XCircle },
-    cancelled: { bg: 'bg-zinc-500/20', color: 'text-zinc-400', border: 'border-zinc-500/30', icon: Pause },
+  const icons = {
+    healthy: CheckCircle,
+    degraded: AlertTriangle,
+    down: XCircle,
+    pending: Clock,
+    running: Play,
+    completed: CheckCircle,
+    failed: XCircle,
+    cancelled: Pause,
   };
 
-  const c = config[status] || config.pending;
-  const Icon = c.icon;
+  const Icon = icons[status] || Clock;
 
   return (
-    <Badge className={cn('text-xs gap-1', c.bg, c.color, c.border)}>
+    <Badge className={cn('text-xs gap-1', getStatusColor(status))}>
       <Icon className="w-3 h-3" />
       {status}
     </Badge>
@@ -77,15 +77,6 @@ function StatusBadge({ status }) {
 
 // Stat Card Component
 function StatCard({ title, value, subtitle, icon: Icon, color, trend }) {
-  const colorClasses = {
-    red: 'bg-red-500/20 text-red-400 border-red-500/30',
-    blue: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-    green: 'bg-green-500/20 text-green-400 border-green-500/30',
-    purple: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-    orange: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-    cyan: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
-  };
-
   return (
     <Card className="bg-zinc-900/50 border-zinc-800">
       <CardContent className="p-6">
@@ -98,7 +89,7 @@ function StatCard({ title, value, subtitle, icon: Icon, color, trend }) {
           <div
             className={cn(
               'w-12 h-12 rounded-xl flex items-center justify-center border',
-              colorClasses[color]
+              getIconColor(color)
             )}
           >
             <Icon className="w-6 h-6" />
@@ -127,7 +118,7 @@ function HealthCheckCard({ checks, onRunChecks, isRunning }) {
           <Button
             onClick={onRunChecks}
             disabled={isRunning}
-            className="bg-green-600 hover:bg-green-700"
+            className={BUTTON_STYLES.primary}
           >
             <RefreshCw className={cn('w-4 h-4 mr-2', isRunning && 'animate-spin')} />
             Run Checks

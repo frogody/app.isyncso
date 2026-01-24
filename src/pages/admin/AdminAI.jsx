@@ -37,6 +37,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getIconColor, getStatusColor, BUTTON_STYLES } from '@/lib/adminTheme';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -339,8 +340,8 @@ export default function AdminAI() {
                       Today: {formatTokens(stats?.total_tokens_today)}
                     </p>
                   </div>
-                  <div className="w-12 h-12 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                    <Coins className="w-6 h-6 text-blue-400" />
+                  <div className={`w-12 h-12 rounded-lg border flex items-center justify-center ${getIconColor('blue')}`}>
+                    <Coins className="w-6 h-6" />
                   </div>
                 </div>
               </CardContent>
@@ -358,8 +359,8 @@ export default function AdminAI() {
                       Today: {formatCost(stats?.total_cost_today)}
                     </p>
                   </div>
-                  <div className="w-12 h-12 rounded-lg bg-green-500/20 flex items-center justify-center">
-                    <TrendingUp className="w-6 h-6 text-green-400" />
+                  <div className={`w-12 h-12 rounded-lg border flex items-center justify-center ${getIconColor('green')}`}>
+                    <TrendingUp className="w-6 h-6" />
                   </div>
                 </div>
               </CardContent>
@@ -377,8 +378,8 @@ export default function AdminAI() {
                       {stats?.total_models || 0} total configured
                     </p>
                   </div>
-                  <div className="w-12 h-12 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                    <Brain className="w-6 h-6 text-purple-400" />
+                  <div className={`w-12 h-12 rounded-lg border flex items-center justify-center ${getIconColor('purple')}`}>
+                    <Brain className="w-6 h-6" />
                   </div>
                 </div>
               </CardContent>
@@ -396,8 +397,8 @@ export default function AdminAI() {
                       {stats?.workflow_runs_today || 0} runs today
                     </p>
                   </div>
-                  <div className="w-12 h-12 rounded-lg bg-orange-500/20 flex items-center justify-center">
-                    <Workflow className="w-6 h-6 text-orange-400" />
+                  <div className={`w-12 h-12 rounded-lg border flex items-center justify-center ${getIconColor('orange')}`}>
+                    <Workflow className="w-6 h-6" />
                   </div>
                 </div>
               </CardContent>
@@ -435,7 +436,7 @@ export default function AdminAI() {
                 <h2 className="text-lg font-semibold text-white">Configured AI Models</h2>
                 <Button
                   onClick={() => { setSelectedItem(null); setShowModelModal(true); }}
-                  className="bg-purple-600 hover:bg-purple-700"
+                  className={BUTTON_STYLES.primary}
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Add Model
@@ -603,7 +604,7 @@ export default function AdminAI() {
                 <h2 className="text-lg font-semibold text-white">Prompt Templates</h2>
                 <Button
                   onClick={() => { setSelectedItem(null); setShowPromptModal(true); }}
-                  className="bg-purple-600 hover:bg-purple-700"
+                  className={BUTTON_STYLES.primary}
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Create Prompt
@@ -671,7 +672,7 @@ export default function AdminAI() {
                       <p className="text-zinc-400">No prompts created yet</p>
                       <Button
                         onClick={() => setShowPromptModal(true)}
-                        className="mt-4 bg-purple-600 hover:bg-purple-700"
+                        className={`mt-4 ${BUTTON_STYLES.primary}`}
                       >
                         Create First Prompt
                       </Button>
@@ -687,7 +688,7 @@ export default function AdminAI() {
                 <h2 className="text-lg font-semibold text-white">Automation Workflows</h2>
                 <Button
                   onClick={() => { setSelectedItem(null); setShowWorkflowModal(true); }}
-                  className="bg-purple-600 hover:bg-purple-700"
+                  className={BUTTON_STYLES.primary}
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Create Workflow
@@ -769,7 +770,7 @@ export default function AdminAI() {
                       <p className="text-zinc-400">No workflows created yet</p>
                       <Button
                         onClick={() => setShowWorkflowModal(true)}
-                        className="mt-4 bg-purple-600 hover:bg-purple-700"
+                        className={`mt-4 ${BUTTON_STYLES.primary}`}
                       >
                         Create First Workflow
                       </Button>
@@ -1063,7 +1064,7 @@ function ModelModal({ open, onClose, model, onSave }) {
             <Button type="button" variant="outline" onClick={onClose} className="border-zinc-700">
               Cancel
             </Button>
-            <Button type="submit" className="bg-purple-600 hover:bg-purple-700">
+            <Button type="submit" className={BUTTON_STYLES.primary}>
               {model ? 'Update' : 'Create'}
             </Button>
           </DialogFooter>
@@ -1254,7 +1255,7 @@ function PromptModal({ open, onClose, prompt, models, onSave }) {
             <Button type="button" variant="outline" onClick={onClose} className="border-zinc-700">
               Cancel
             </Button>
-            <Button type="submit" className="bg-purple-600 hover:bg-purple-700">
+            <Button type="submit" className={BUTTON_STYLES.primary}>
               {prompt ? 'Update' : 'Create'}
             </Button>
           </DialogFooter>
@@ -1371,7 +1372,7 @@ function WorkflowModal({ open, onClose, workflow, onSave }) {
             <Button type="button" variant="outline" onClick={onClose} className="border-zinc-700">
               Cancel
             </Button>
-            <Button type="submit" className="bg-purple-600 hover:bg-purple-700">
+            <Button type="submit" className={BUTTON_STYLES.primary}>
               {workflow ? 'Update' : 'Create'}
             </Button>
           </DialogFooter>
