@@ -59,6 +59,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { getRoleColor, getStatusColor, getIconColor } from '@/lib/adminTheme';
 import { toast } from 'sonner';
 import { supabase } from '@/api/supabaseClient';
 
@@ -93,14 +94,6 @@ async function adminApi(endpoint, options = {}) {
 
 // Stats Card Component
 function StatCard({ title, value, icon: Icon, color, isLoading }) {
-  const colorClasses = {
-    red: 'bg-red-500/20 text-red-400 border-red-500/30',
-    blue: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-    green: 'bg-green-500/20 text-green-400 border-green-500/30',
-    purple: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-    orange: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-  };
-
   return (
     <Card className="bg-zinc-900/50 border-zinc-800">
       <CardContent className="p-6">
@@ -116,7 +109,7 @@ function StatCard({ title, value, icon: Icon, color, isLoading }) {
           <div
             className={cn(
               'w-12 h-12 rounded-xl flex items-center justify-center border',
-              colorClasses[color]
+              getIconColor(color)
             )}
           >
             <Icon className="w-6 h-6" />
@@ -129,18 +122,8 @@ function StatCard({ title, value, icon: Icon, color, isLoading }) {
 
 // Role Badge Component
 function RoleBadge({ role }) {
-  const roleStyles = {
-    super_admin: 'bg-red-500/20 text-red-400 border-red-500/30',
-    admin: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-    manager: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-    user: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-    learner: 'bg-green-500/20 text-green-400 border-green-500/30',
-    viewer: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
-    deactivated: 'bg-red-500/20 text-red-600 border-red-500/30',
-  };
-
   return (
-    <Badge className={cn('text-xs', roleStyles[role] || roleStyles.user)}>
+    <Badge className={cn('text-xs', getRoleColor(role))}>
       {role?.replace('_', ' ') || 'User'}
     </Badge>
   );
@@ -150,7 +133,7 @@ function RoleBadge({ role }) {
 function StatusBadge({ isActive, isPlatformAdmin }) {
   if (isPlatformAdmin) {
     return (
-      <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-xs">
+      <Badge className={cn('text-xs', getStatusColor('platform_admin'))}>
         <Shield className="w-3 h-3 mr-1" />
         Platform Admin
       </Badge>
@@ -158,12 +141,12 @@ function StatusBadge({ isActive, isPlatformAdmin }) {
   }
 
   return isActive ? (
-    <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
+    <Badge className={cn('text-xs', getStatusColor('active'))}>
       <CheckCircle className="w-3 h-3 mr-1" />
       Active
     </Badge>
   ) : (
-    <Badge className="bg-zinc-500/20 text-zinc-400 border-zinc-500/30 text-xs">
+    <Badge className={cn('text-xs', getStatusColor('inactive'))}>
       <Clock className="w-3 h-3 mr-1" />
       Inactive
     </Badge>

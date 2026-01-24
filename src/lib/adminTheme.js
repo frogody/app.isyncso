@@ -52,6 +52,10 @@ export const STATUS_COLORS = {
   new: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
   premium: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
   core: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+
+  // Admin/Platform states
+  platform_admin: 'bg-red-500/20 text-red-400 border-red-500/30',
+  platformadmin: 'bg-red-500/20 text-red-400 border-red-500/30',
 };
 
 // =============================================================================
@@ -267,14 +271,15 @@ export function getRoleColor(role) {
 }
 
 /**
- * Get icon color object for a given color name
+ * Get icon color classes for a given color name
  * @param {string} colorName - The color name (red, blue, green, etc.)
- * @returns {object} Object with bg, text, border, and combined classes
+ * @returns {string} Combined Tailwind classes for the icon
  */
 export function getIconColor(colorName) {
-  if (!colorName) return ICON_COLORS.blue;
+  if (!colorName) return ICON_COLORS.blue.combined;
   const normalized = colorName.toLowerCase();
-  return ICON_COLORS[normalized] || ICON_COLORS.blue;
+  const colorObj = ICON_COLORS[normalized] || ICON_COLORS.blue;
+  return colorObj.combined;
 }
 
 /**
