@@ -28,15 +28,15 @@ import {
 const ADMIN_API_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-api`;
 
 const CATEGORIES = [
-  { value: 'crm', label: 'CRM', color: 'bg-blue-100 text-blue-800' },
-  { value: 'productivity', label: 'Productivity', color: 'bg-green-100 text-green-800' },
-  { value: 'communication', label: 'Communication', color: 'bg-purple-100 text-purple-800' },
-  { value: 'email', label: 'Email', color: 'bg-orange-100 text-orange-800' },
-  { value: 'payment', label: 'Payment', color: 'bg-emerald-100 text-emerald-800' },
-  { value: 'automation', label: 'Automation', color: 'bg-pink-100 text-pink-800' },
-  { value: 'ai', label: 'AI', color: 'bg-indigo-100 text-indigo-800' },
-  { value: 'analytics', label: 'Analytics', color: 'bg-cyan-100 text-cyan-800' },
-  { value: 'storage', label: 'Storage', color: 'bg-amber-100 text-amber-800' },
+  { value: 'crm', label: 'CRM', color: 'bg-blue-500/20 text-blue-400' },
+  { value: 'productivity', label: 'Productivity', color: 'bg-green-500/20 text-green-400' },
+  { value: 'communication', label: 'Communication', color: 'bg-purple-500/20 text-purple-400' },
+  { value: 'email', label: 'Email', color: 'bg-orange-500/20 text-orange-400' },
+  { value: 'payment', label: 'Payment', color: 'bg-emerald-500/20 text-emerald-400' },
+  { value: 'automation', label: 'Automation', color: 'bg-pink-500/20 text-pink-400' },
+  { value: 'ai', label: 'AI', color: 'bg-indigo-500/20 text-indigo-400' },
+  { value: 'analytics', label: 'Analytics', color: 'bg-cyan-500/20 text-cyan-400' },
+  { value: 'storage', label: 'Storage', color: 'bg-amber-500/20 text-amber-400' },
 ];
 
 const AUTH_TYPES = [
@@ -48,14 +48,14 @@ const AUTH_TYPES = [
 
 function StatusBadge({ status }) {
   const styles = {
-    connected: 'bg-green-100 text-green-800',
-    error: 'bg-red-100 text-red-800',
-    pending: 'bg-yellow-100 text-yellow-800',
-    disabled: 'bg-gray-100 text-gray-800',
-    success: 'bg-green-100 text-green-800',
-    failed: 'bg-red-100 text-red-800',
-    started: 'bg-blue-100 text-blue-800',
-    completed: 'bg-green-100 text-green-800',
+    connected: 'bg-green-500/20 text-green-400',
+    error: 'bg-red-500/20 text-red-400',
+    pending: 'bg-yellow-500/20 text-yellow-400',
+    disabled: 'bg-zinc-500/20 text-zinc-400',
+    success: 'bg-green-500/20 text-green-400',
+    failed: 'bg-red-500/20 text-red-400',
+    started: 'bg-blue-500/20 text-blue-400',
+    completed: 'bg-green-500/20 text-green-400',
   };
 
   const icons = {
@@ -72,7 +72,7 @@ function StatusBadge({ status }) {
   const Icon = icons[status] || Clock;
 
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${styles[status] || 'bg-gray-100 text-gray-800'}`}>
+    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${styles[status] || 'bg-zinc-500/20 text-zinc-400'}`}>
       <Icon className="w-3 h-3" />
       {status}
     </span>
@@ -82,7 +82,7 @@ function StatusBadge({ status }) {
 function CategoryBadge({ category }) {
   const cat = CATEGORIES.find(c => c.value === category);
   return (
-    <span className={`px-2 py-1 rounded-full text-xs font-medium ${cat?.color || 'bg-gray-100 text-gray-800'}`}>
+    <span className={`px-2 py-1 rounded-full text-xs font-medium ${cat?.color || 'bg-zinc-500/20 text-zinc-400'}`}>
       {cat?.label || category}
     </span>
   );
@@ -90,23 +90,23 @@ function CategoryBadge({ category }) {
 
 function StatCard({ title, value, icon: Icon, color = 'blue', subtitle }) {
   const colors = {
-    blue: 'bg-blue-50 text-blue-600',
-    green: 'bg-green-50 text-green-600',
-    red: 'bg-red-50 text-red-600',
-    yellow: 'bg-yellow-50 text-yellow-600',
-    purple: 'bg-purple-50 text-purple-600',
+    blue: 'bg-blue-500/20 text-blue-400',
+    green: 'bg-green-500/20 text-green-400',
+    red: 'bg-red-500/20 text-red-400',
+    yellow: 'bg-yellow-500/20 text-yellow-400',
+    purple: 'bg-purple-500/20 text-purple-400',
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6">
+    <div className="bg-zinc-900/50 rounded-xl border border-zinc-800 p-6">
       <div className="flex items-center gap-4">
         <div className={`p-3 rounded-lg ${colors[color]}`}>
           <Icon className="w-6 h-6" />
         </div>
         <div>
-          <p className="text-sm text-gray-500">{title}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
-          {subtitle && <p className="text-xs text-gray-400 mt-1">{subtitle}</p>}
+          <p className="text-sm text-zinc-400">{title}</p>
+          <p className="text-2xl font-bold text-white">{value}</p>
+          {subtitle && <p className="text-xs text-zinc-500 mt-1">{subtitle}</p>}
         </div>
       </div>
     </div>
@@ -151,9 +151,9 @@ function ProviderModal({ provider, onClose, onSave }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold">
+      <div className="bg-zinc-900 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-zinc-800">
+        <div className="p-6 border-b border-zinc-800">
+          <h2 className="text-xl font-semibold text-white">
             {provider ? 'Edit Provider' : 'Add Integration Provider'}
           </h2>
         </div>
@@ -161,22 +161,22 @@ function ProviderModal({ provider, onClose, onSave }) {
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+              <label className="block text-sm font-medium text-zinc-300 mb-1">Name *</label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Slug *</label>
+              <label className="block text-sm font-medium text-zinc-300 mb-1">Slug *</label>
               <input
                 type="text"
                 value={formData.slug}
                 onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
                 disabled={!!provider}
               />
@@ -184,22 +184,22 @@ function ProviderModal({ provider, onClose, onSave }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label className="block text-sm font-medium text-zinc-300 mb-1">Description</label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               rows={2}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+              <label className="block text-sm font-medium text-zinc-300 mb-1">Category *</label>
               <select
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 {CATEGORIES.map(cat => (
                   <option key={cat.value} value={cat.value}>{cat.label}</option>
@@ -207,11 +207,11 @@ function ProviderModal({ provider, onClose, onSave }) {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Auth Type *</label>
+              <label className="block text-sm font-medium text-zinc-300 mb-1">Auth Type *</label>
               <select
                 value={formData.auth_type}
                 onChange={(e) => setFormData({ ...formData, auth_type: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 {AUTH_TYPES.map(auth => (
                   <option key={auth.value} value={auth.value}>{auth.label}</option>
@@ -221,44 +221,44 @@ function ProviderModal({ provider, onClose, onSave }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Logo URL</label>
+            <label className="block text-sm font-medium text-zinc-300 mb-1">Logo URL</label>
             <input
               type="url"
               value={formData.logo_url}
               onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="https://logo.clearbit.com/example.com"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Website URL</label>
+              <label className="block text-sm font-medium text-zinc-300 mb-1">Website URL</label>
               <input
                 type="url"
                 value={formData.website_url}
                 onChange={(e) => setFormData({ ...formData, website_url: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Docs URL</label>
+              <label className="block text-sm font-medium text-zinc-300 mb-1">Docs URL</label>
               <input
                 type="url"
                 value={formData.docs_url}
                 onChange={(e) => setFormData({ ...formData, docs_url: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Features (comma-separated)</label>
+            <label className="block text-sm font-medium text-zinc-300 mb-1">Features (comma-separated)</label>
             <input
               type="text"
               value={formData.features}
               onChange={(e) => setFormData({ ...formData, features: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="contacts_sync, email_send, calendar_read"
             />
           </div>
@@ -269,26 +269,26 @@ function ProviderModal({ provider, onClose, onSave }) {
                 type="checkbox"
                 checked={formData.is_active}
                 onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                className="rounded border-gray-300"
+                className="rounded border-zinc-700 bg-zinc-800"
               />
-              <span className="text-sm text-gray-700">Active</span>
+              <span className="text-sm text-zinc-300">Active</span>
             </label>
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
                 checked={formData.is_beta}
                 onChange={(e) => setFormData({ ...formData, is_beta: e.target.checked })}
-                className="rounded border-gray-300"
+                className="rounded border-zinc-700 bg-zinc-800"
               />
-              <span className="text-sm text-gray-700">Beta</span>
+              <span className="text-sm text-zinc-300">Beta</span>
             </label>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+          <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              className="px-4 py-2 text-zinc-300 hover:bg-zinc-800 rounded-lg transition-colors"
             >
               Cancel
             </button>
@@ -334,13 +334,13 @@ function SyncLogsModal({ integration, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-3xl w-full max-h-[80vh] overflow-hidden">
-        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+      <div className="bg-zinc-900 rounded-xl max-w-3xl w-full max-h-[80vh] overflow-hidden border border-zinc-800">
+        <div className="p-6 border-b border-zinc-800 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold">Sync Logs</h2>
-            <p className="text-sm text-gray-500">{integration.provider_name} - {integration.company_name}</p>
+            <h2 className="text-xl font-semibold text-white">Sync Logs</h2>
+            <p className="text-sm text-zinc-400">{integration.provider_name} - {integration.company_name}</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+          <button onClick={onClose} className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400">
             <XCircle className="w-5 h-5" />
           </button>
         </div>
@@ -348,34 +348,34 @@ function SyncLogsModal({ integration, onClose }) {
         <div className="overflow-y-auto max-h-[60vh]">
           {loading ? (
             <div className="flex justify-center py-12">
-              <RefreshCw className="w-8 h-8 animate-spin text-gray-400" />
+              <RefreshCw className="w-8 h-8 animate-spin text-zinc-400" />
             </div>
           ) : logs.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">No sync logs found</div>
+            <div className="text-center py-12 text-zinc-400">No sync logs found</div>
           ) : (
             <table className="w-full">
-              <thead className="bg-gray-50 sticky top-0">
+              <thead className="bg-zinc-800/50 sticky top-0">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Records</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase">Type</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase">Records</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase">Duration</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase">Time</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-zinc-800">
                 {logs.map((log) => (
-                  <tr key={log.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm text-gray-900 capitalize">{log.sync_type}</td>
+                  <tr key={log.id} className="hover:bg-zinc-800/50">
+                    <td className="px-4 py-3 text-sm text-white capitalize">{log.sync_type}</td>
                     <td className="px-4 py-3"><StatusBadge status={log.status} /></td>
-                    <td className="px-4 py-3 text-sm text-gray-500">
+                    <td className="px-4 py-3 text-sm text-zinc-400">
                       {log.records_processed} processed
-                      {log.records_failed > 0 && <span className="text-red-600 ml-1">({log.records_failed} failed)</span>}
+                      {log.records_failed > 0 && <span className="text-red-400 ml-1">({log.records_failed} failed)</span>}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-500">
+                    <td className="px-4 py-3 text-sm text-zinc-400">
                       {log.duration_ms ? `${(log.duration_ms / 1000).toFixed(1)}s` : '-'}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-500">
+                    <td className="px-4 py-3 text-sm text-zinc-500">
                       {new Date(log.started_at).toLocaleString()}
                     </td>
                   </tr>
@@ -417,13 +417,13 @@ function DeliveriesModal({ webhook, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
-        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+      <div className="bg-zinc-900 rounded-xl max-w-4xl w-full max-h-[80vh] overflow-hidden border border-zinc-800">
+        <div className="p-6 border-b border-zinc-800 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold">Webhook Deliveries</h2>
-            <p className="text-sm text-gray-500">{webhook.name}</p>
+            <h2 className="text-xl font-semibold text-white">Webhook Deliveries</h2>
+            <p className="text-sm text-zinc-400">{webhook.name}</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+          <button onClick={onClose} className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400">
             <XCircle className="w-5 h-5" />
           </button>
         </div>
@@ -431,37 +431,37 @@ function DeliveriesModal({ webhook, onClose }) {
         <div className="overflow-y-auto max-h-[60vh]">
           {loading ? (
             <div className="flex justify-center py-12">
-              <RefreshCw className="w-8 h-8 animate-spin text-gray-400" />
+              <RefreshCw className="w-8 h-8 animate-spin text-zinc-400" />
             </div>
           ) : deliveries.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">No deliveries found</div>
+            <div className="text-center py-12 text-zinc-400">No deliveries found</div>
           ) : (
             <table className="w-full">
-              <thead className="bg-gray-50 sticky top-0">
+              <thead className="bg-zinc-800/50 sticky top-0">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Event</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Response</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase">Event</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase">Response</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase">Duration</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase">Time</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-zinc-800">
                 {deliveries.map((delivery) => (
-                  <tr key={delivery.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm text-gray-900">{delivery.event_type}</td>
+                  <tr key={delivery.id} className="hover:bg-zinc-800/50">
+                    <td className="px-4 py-3 text-sm text-white">{delivery.event_type}</td>
                     <td className="px-4 py-3"><StatusBadge status={delivery.status} /></td>
-                    <td className="px-4 py-3 text-sm text-gray-500">
+                    <td className="px-4 py-3 text-sm text-zinc-400">
                       {delivery.status_code ? (
-                        <span className={delivery.status_code >= 200 && delivery.status_code < 300 ? 'text-green-600' : 'text-red-600'}>
+                        <span className={delivery.status_code >= 200 && delivery.status_code < 300 ? 'text-green-400' : 'text-red-400'}>
                           {delivery.status_code}
                         </span>
                       ) : '-'}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-500">
+                    <td className="px-4 py-3 text-sm text-zinc-400">
                       {delivery.response_time_ms ? `${delivery.response_time_ms}ms` : '-'}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-500">
+                    <td className="px-4 py-3 text-sm text-zinc-500">
                       {new Date(delivery.created_at).toLocaleString()}
                     </td>
                   </tr>
@@ -610,7 +610,7 @@ export default function AdminIntegrations() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <RefreshCw className="w-8 h-8 animate-spin text-gray-400" />
+        <RefreshCw className="w-8 h-8 animate-spin text-zinc-400" />
       </div>
     );
   }
@@ -620,12 +620,12 @@ export default function AdminIntegrations() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Integrations Hub</h1>
-          <p className="text-gray-500 mt-1">Manage external API integrations and webhooks</p>
+          <h1 className="text-2xl font-bold text-white">Integrations Hub</h1>
+          <p className="text-zinc-400 mt-1">Manage external API integrations and webhooks</p>
         </div>
         <button
           onClick={() => fetchData()}
-          className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          className="flex items-center gap-2 px-4 py-2 text-zinc-300 hover:bg-zinc-800 rounded-lg transition-colors"
         >
           <RefreshCw className="w-4 h-4" />
           Refresh
@@ -665,8 +665,8 @@ export default function AdminIntegrations() {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-xl border border-gray-200">
-        <div className="border-b border-gray-200">
+      <div className="bg-zinc-900/50 rounded-xl border border-zinc-800">
+        <div className="border-b border-zinc-800">
           <nav className="flex gap-4 px-6" aria-label="Tabs">
             {[
               { id: 'providers', label: 'Providers', icon: Plug2 },
@@ -678,8 +678,8 @@ export default function AdminIntegrations() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 py-4 px-2 border-b-2 transition-colors ${
                   activeTab === tab.id
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    ? 'border-blue-500 text-blue-400'
+                    : 'border-transparent text-zinc-400 hover:text-zinc-300'
                 }`}
               >
                 <tab.icon className="w-4 h-4" />
@@ -693,13 +693,13 @@ export default function AdminIntegrations() {
           {/* Filters */}
           <div className="flex flex-wrap gap-4 mb-6">
             <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
               <input
                 type="text"
                 placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-10 pr-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
@@ -707,7 +707,7 @@ export default function AdminIntegrations() {
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">All Categories</option>
                 {CATEGORIES.map(cat => (
@@ -720,7 +720,7 @@ export default function AdminIntegrations() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">All Status</option>
                 <option value="connected">Connected</option>
@@ -750,37 +750,37 @@ export default function AdminIntegrations() {
               {filteredProviders.map((provider) => (
                 <div
                   key={provider.id}
-                  className="border border-gray-200 rounded-xl p-4 hover:border-gray-300 transition-colors"
+                  className="border border-zinc-700 rounded-xl p-4 bg-zinc-800/50 hover:bg-zinc-800 transition-colors"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden">
+                    <div className="w-12 h-12 rounded-lg bg-zinc-700 flex items-center justify-center overflow-hidden">
                       {provider.logo_url ? (
                         <img src={provider.logo_url} alt={provider.name} className="w-8 h-8 object-contain" />
                       ) : (
-                        <Plug2 className="w-6 h-6 text-gray-400" />
+                        <Plug2 className="w-6 h-6 text-zinc-400" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-gray-900 truncate">{provider.name}</h3>
+                        <h3 className="font-semibold text-white truncate">{provider.name}</h3>
                         {provider.is_beta && (
-                          <span className="px-1.5 py-0.5 bg-yellow-100 text-yellow-800 text-xs rounded">Beta</span>
+                          <span className="px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs rounded">Beta</span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-500 line-clamp-2 mt-1">{provider.description}</p>
+                      <p className="text-sm text-zinc-400 line-clamp-2 mt-1">{provider.description}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 mt-3">
                     <CategoryBadge category={provider.category} />
-                    <span className="text-xs text-gray-400 flex items-center gap-1">
+                    <span className="text-xs text-zinc-500 flex items-center gap-1">
                       {provider.auth_type === 'oauth2' ? <Shield className="w-3 h-3" /> : <Key className="w-3 h-3" />}
                       {AUTH_TYPES.find(a => a.value === provider.auth_type)?.label}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
-                    <span className="text-sm text-gray-500">
+                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-zinc-700">
+                    <span className="text-sm text-zinc-400">
                       {provider.connected_count || 0} connected
                     </span>
                     <div className="flex items-center gap-1">
@@ -789,7 +789,7 @@ export default function AdminIntegrations() {
                           href={provider.website_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded"
+                          className="p-1.5 text-zinc-400 hover:text-zinc-300 hover:bg-zinc-700 rounded"
                         >
                           <ExternalLink className="w-4 h-4" />
                         </a>
@@ -799,13 +799,13 @@ export default function AdminIntegrations() {
                           setEditingProvider(provider);
                           setShowProviderModal(true);
                         }}
-                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                        className="p-1.5 text-zinc-400 hover:text-blue-400 hover:bg-blue-500/20 rounded"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDeleteProvider(provider)}
-                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                        className="p-1.5 text-zinc-400 hover:text-red-400 hover:bg-red-500/20 rounded"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -815,7 +815,7 @@ export default function AdminIntegrations() {
               ))}
 
               {filteredProviders.length === 0 && (
-                <div className="col-span-full text-center py-12 text-gray-500">
+                <div className="col-span-full text-center py-12 text-zinc-400">
                   No providers found
                 </div>
               )}
@@ -827,52 +827,52 @@ export default function AdminIntegrations() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Provider</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Company</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Last Sync</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Connected By</th>
-                    <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase">Actions</th>
+                  <tr className="border-b border-zinc-800">
+                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Provider</th>
+                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Company</th>
+                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Status</th>
+                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Last Sync</th>
+                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Connected By</th>
+                    <th className="text-right py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-zinc-800">
                   {filteredConnections.map((connection) => (
-                    <tr key={connection.id} className="hover:bg-gray-50">
+                    <tr key={connection.id} className="hover:bg-zinc-800/50">
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded bg-gray-100 flex items-center justify-center">
+                          <div className="w-8 h-8 rounded bg-zinc-700 flex items-center justify-center">
                             {connection.provider_logo ? (
                               <img src={connection.provider_logo} alt="" className="w-5 h-5 object-contain" />
                             ) : (
-                              <Plug2 className="w-4 h-4 text-gray-400" />
+                              <Plug2 className="w-4 h-4 text-zinc-400" />
                             )}
                           </div>
                           <div>
-                            <p className="font-medium text-gray-900">{connection.provider_name}</p>
-                            <p className="text-xs text-gray-500">{connection.provider_category}</p>
+                            <p className="font-medium text-white">{connection.provider_name}</p>
+                            <p className="text-xs text-zinc-500">{connection.provider_category}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-sm text-gray-900">{connection.company_name}</td>
+                      <td className="py-3 px-4 text-sm text-white">{connection.company_name}</td>
                       <td className="py-3 px-4">
                         <StatusBadge status={connection.status} />
                         {connection.error_count > 0 && (
-                          <span className="text-xs text-red-600 ml-2">({connection.error_count} errors)</span>
+                          <span className="text-xs text-red-400 ml-2">({connection.error_count} errors)</span>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-sm text-gray-500">
+                      <td className="py-3 px-4 text-sm text-zinc-400">
                         {connection.last_sync_at
                           ? new Date(connection.last_sync_at).toLocaleString()
                           : 'Never'}
                       </td>
-                      <td className="py-3 px-4 text-sm text-gray-500">
+                      <td className="py-3 px-4 text-sm text-zinc-400">
                         {connection.connected_by_name || '-'}
                       </td>
                       <td className="py-3 px-4 text-right">
                         <button
                           onClick={() => setShowSyncLogs(connection)}
-                          className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                          className="p-1.5 text-zinc-400 hover:text-blue-400 hover:bg-blue-500/20 rounded"
                           title="View Sync Logs"
                         >
                           <Activity className="w-4 h-4" />
@@ -883,7 +883,7 @@ export default function AdminIntegrations() {
 
                   {filteredConnections.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="py-12 text-center text-gray-500">
+                      <td colSpan={6} className="py-12 text-center text-zinc-400">
                         No connections found
                       </td>
                     </tr>
@@ -898,39 +898,39 @@ export default function AdminIntegrations() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Name</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">URL</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Events</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Deliveries</th>
-                    <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase">Actions</th>
+                  <tr className="border-b border-zinc-800">
+                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Name</th>
+                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">URL</th>
+                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Events</th>
+                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Status</th>
+                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Deliveries</th>
+                    <th className="text-right py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-zinc-800">
                   {webhooks.map((webhook) => (
-                    <tr key={webhook.id} className="hover:bg-gray-50">
+                    <tr key={webhook.id} className="hover:bg-zinc-800/50">
                       <td className="py-3 px-4">
                         <div>
-                          <p className="font-medium text-gray-900">{webhook.name}</p>
-                          <p className="text-xs text-gray-500">{webhook.company_name || 'Platform'}</p>
+                          <p className="font-medium text-white">{webhook.name}</p>
+                          <p className="text-xs text-zinc-500">{webhook.company_name || 'Platform'}</p>
                         </div>
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
-                          <Globe className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm text-gray-600 truncate max-w-[200px]">{webhook.url}</span>
+                          <Globe className="w-4 h-4 text-zinc-500" />
+                          <span className="text-sm text-zinc-400 truncate max-w-[200px]">{webhook.url}</span>
                         </div>
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex flex-wrap gap-1">
                           {webhook.events?.slice(0, 2).map((event, i) => (
-                            <span key={i} className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">
+                            <span key={i} className="px-2 py-0.5 bg-zinc-700 text-zinc-300 text-xs rounded">
                               {event}
                             </span>
                           ))}
                           {webhook.events?.length > 2 && (
-                            <span className="text-xs text-gray-400">+{webhook.events.length - 2}</span>
+                            <span className="text-xs text-zinc-500">+{webhook.events.length - 2}</span>
                           )}
                         </div>
                       </td>
@@ -938,10 +938,10 @@ export default function AdminIntegrations() {
                         <StatusBadge status={webhook.is_active ? 'connected' : 'disabled'} />
                       </td>
                       <td className="py-3 px-4 text-sm">
-                        <span className="text-green-600">{webhook.successful_deliveries}</span>
+                        <span className="text-green-400">{webhook.successful_deliveries}</span>
                         {' / '}
-                        <span className="text-red-600">{webhook.failed_deliveries}</span>
-                        <span className="text-gray-400 text-xs ml-1">
+                        <span className="text-red-400">{webhook.failed_deliveries}</span>
+                        <span className="text-zinc-500 text-xs ml-1">
                           ({webhook.deliveries_24h || 0} today)
                         </span>
                       </td>
@@ -949,14 +949,14 @@ export default function AdminIntegrations() {
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => handleTestWebhook(webhook)}
-                            className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded"
+                            className="p-1.5 text-zinc-400 hover:text-green-400 hover:bg-green-500/20 rounded"
                             title="Test Webhook"
                           >
                             <Play className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => setShowDeliveries(webhook)}
-                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                            className="p-1.5 text-zinc-400 hover:text-blue-400 hover:bg-blue-500/20 rounded"
                             title="View Deliveries"
                           >
                             <Eye className="w-4 h-4" />
@@ -968,7 +968,7 @@ export default function AdminIntegrations() {
 
                   {webhooks.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="py-12 text-center text-gray-500">
+                      <td colSpan={6} className="py-12 text-center text-zinc-400">
                         No webhooks configured
                       </td>
                     </tr>

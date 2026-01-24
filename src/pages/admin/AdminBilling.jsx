@@ -36,20 +36,20 @@ const ADMIN_API_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-a
 
 function StatusBadge({ status }) {
   const styles = {
-    active: 'bg-green-100 text-green-800',
-    trialing: 'bg-blue-100 text-blue-800',
-    canceled: 'bg-gray-100 text-gray-800',
-    past_due: 'bg-red-100 text-red-800',
-    paused: 'bg-yellow-100 text-yellow-800',
-    expired: 'bg-gray-100 text-gray-800',
-    paid: 'bg-green-100 text-green-800',
-    pending: 'bg-yellow-100 text-yellow-800',
-    overdue: 'bg-red-100 text-red-800',
-    draft: 'bg-gray-100 text-gray-800',
-    refunded: 'bg-purple-100 text-purple-800',
-    succeeded: 'bg-green-100 text-green-800',
-    failed: 'bg-red-100 text-red-800',
-    processing: 'bg-blue-100 text-blue-800',
+    active: 'bg-green-500/20 text-green-400',
+    trialing: 'bg-blue-500/20 text-blue-400',
+    canceled: 'bg-zinc-500/20 text-zinc-400',
+    past_due: 'bg-red-500/20 text-red-400',
+    paused: 'bg-yellow-500/20 text-yellow-400',
+    expired: 'bg-zinc-500/20 text-zinc-400',
+    paid: 'bg-green-500/20 text-green-400',
+    pending: 'bg-yellow-500/20 text-yellow-400',
+    overdue: 'bg-red-500/20 text-red-400',
+    draft: 'bg-zinc-500/20 text-zinc-400',
+    refunded: 'bg-purple-500/20 text-purple-400',
+    succeeded: 'bg-green-500/20 text-green-400',
+    failed: 'bg-red-500/20 text-red-400',
+    processing: 'bg-blue-500/20 text-blue-400',
   };
 
   const icons = {
@@ -68,7 +68,7 @@ function StatusBadge({ status }) {
   const Icon = icons[status] || Clock;
 
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${styles[status] || 'bg-gray-100 text-gray-800'}`}>
+    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${styles[status] || 'bg-zinc-500/20 text-zinc-400'}`}>
       <Icon className="w-3 h-3" />
       {status?.replace('_', ' ')}
     </span>
@@ -77,26 +77,26 @@ function StatusBadge({ status }) {
 
 function StatCard({ title, value, icon: Icon, color = 'blue', subtitle, trend }) {
   const colors = {
-    blue: 'bg-blue-50 text-blue-600',
-    green: 'bg-green-50 text-green-600',
-    red: 'bg-red-50 text-red-600',
-    yellow: 'bg-yellow-50 text-yellow-600',
-    purple: 'bg-purple-50 text-purple-600',
+    blue: 'bg-blue-500/20 text-blue-400',
+    green: 'bg-green-500/20 text-green-400',
+    red: 'bg-red-500/20 text-red-400',
+    yellow: 'bg-yellow-500/20 text-yellow-400',
+    purple: 'bg-purple-500/20 text-purple-400',
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6">
+    <div className="bg-zinc-900/50 rounded-xl border border-zinc-800 p-6">
       <div className="flex items-center gap-4">
         <div className={`p-3 rounded-lg ${colors[color]}`}>
           <Icon className="w-6 h-6" />
         </div>
         <div className="flex-1">
-          <p className="text-sm text-gray-500">{title}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
-          {subtitle && <p className="text-xs text-gray-400 mt-1">{subtitle}</p>}
+          <p className="text-sm text-zinc-400">{title}</p>
+          <p className="text-2xl font-bold text-white">{value}</p>
+          {subtitle && <p className="text-xs text-zinc-500 mt-1">{subtitle}</p>}
         </div>
         {trend && (
-          <div className={`flex items-center gap-1 text-sm ${trend > 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <div className={`flex items-center gap-1 text-sm ${trend > 0 ? 'text-green-400' : 'text-red-400'}`}>
             <TrendingUp className={`w-4 h-4 ${trend < 0 ? 'rotate-180' : ''}`} />
             {Math.abs(trend)}%
           </div>
@@ -164,9 +164,9 @@ function PlanModal({ plan, onClose, onSave }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold">
+      <div className="bg-zinc-900 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-zinc-800">
+        <div className="p-6 border-b border-zinc-800">
+          <h2 className="text-xl font-semibold text-white">
             {plan ? 'Edit Plan' : 'Add Subscription Plan'}
           </h2>
         </div>
@@ -174,22 +174,22 @@ function PlanModal({ plan, onClose, onSave }) {
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+              <label className="block text-sm font-medium text-zinc-300 mb-1">Name *</label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Slug *</label>
+              <label className="block text-sm font-medium text-zinc-300 mb-1">Slug *</label>
               <input
                 type="text"
                 value={formData.slug}
                 onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
                 disabled={!!plan}
               />
@@ -197,64 +197,64 @@ function PlanModal({ plan, onClose, onSave }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label className="block text-sm font-medium text-zinc-300 mb-1">Description</label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               rows={2}
             />
           </div>
 
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Monthly Price ($)</label>
+              <label className="block text-sm font-medium text-zinc-300 mb-1">Monthly Price ($)</label>
               <input
                 type="number"
                 step="0.01"
                 value={formData.price_monthly}
                 onChange={(e) => setFormData({ ...formData, price_monthly: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Yearly Price ($)</label>
+              <label className="block text-sm font-medium text-zinc-300 mb-1">Yearly Price ($)</label>
               <input
                 type="number"
                 step="0.01"
                 value={formData.price_yearly}
                 onChange={(e) => setFormData({ ...formData, price_yearly: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Sort Order</label>
+              <label className="block text-sm font-medium text-zinc-300 mb-1">Sort Order</label>
               <input
                 type="number"
                 value={formData.sort_order}
                 onChange={(e) => setFormData({ ...formData, sort_order: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Features (JSON array)</label>
+            <label className="block text-sm font-medium text-zinc-300 mb-1">Features (JSON array)</label>
             <textarea
               value={formData.features}
               onChange={(e) => setFormData({ ...formData, features: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
               rows={4}
               placeholder='["Feature 1", "Feature 2"]'
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Limits (JSON object)</label>
+            <label className="block text-sm font-medium text-zinc-300 mb-1">Limits (JSON object)</label>
             <textarea
               value={formData.limits}
               onChange={(e) => setFormData({ ...formData, limits: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
               rows={3}
               placeholder='{"users": 10, "storage_gb": 50}'
             />
@@ -266,26 +266,26 @@ function PlanModal({ plan, onClose, onSave }) {
                 type="checkbox"
                 checked={formData.is_active}
                 onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                className="rounded border-gray-300"
+                className="rounded border-zinc-700 bg-zinc-800"
               />
-              <span className="text-sm text-gray-700">Active</span>
+              <span className="text-sm text-zinc-300">Active</span>
             </label>
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
                 checked={formData.is_featured}
                 onChange={(e) => setFormData({ ...formData, is_featured: e.target.checked })}
-                className="rounded border-gray-300"
+                className="rounded border-zinc-700 bg-zinc-800"
               />
-              <span className="text-sm text-gray-700">Featured</span>
+              <span className="text-sm text-zinc-300">Featured</span>
             </label>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+          <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              className="px-4 py-2 text-zinc-300 hover:bg-zinc-800 rounded-lg transition-colors"
             >
               Cancel
             </button>
@@ -341,9 +341,9 @@ function CouponModal({ coupon, onClose, onSave }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold">
+      <div className="bg-zinc-900 rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto border border-zinc-800">
+        <div className="p-6 border-b border-zinc-800">
+          <h2 className="text-xl font-semibold text-white">
             {coupon ? 'Edit Coupon' : 'Add Coupon'}
           </h2>
         </div>
@@ -351,52 +351,52 @@ function CouponModal({ coupon, onClose, onSave }) {
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Code *</label>
+              <label className="block text-sm font-medium text-zinc-300 mb-1">Code *</label>
               <input
                 type="text"
                 value={formData.code}
                 onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
                 disabled={!!coupon}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+              <label className="block text-sm font-medium text-zinc-300 mb-1">Name *</label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label className="block text-sm font-medium text-zinc-300 mb-1">Description</label>
             <input
               type="text"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Discount Type *</label>
+              <label className="block text-sm font-medium text-zinc-300 mb-1">Discount Type *</label>
               <select
                 value={formData.discount_type}
                 onChange={(e) => setFormData({ ...formData, discount_type: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="percentage">Percentage (%)</option>
                 <option value="fixed_amount">Fixed Amount ($)</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-zinc-300 mb-1">
                 Discount Value ({formData.discount_type === 'percentage' ? '%' : '$'}) *
               </label>
               <input
@@ -404,7 +404,7 @@ function CouponModal({ coupon, onClose, onSave }) {
                 step={formData.discount_type === 'percentage' ? '1' : '0.01'}
                 value={formData.discount_value}
                 onChange={(e) => setFormData({ ...formData, discount_value: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
@@ -412,21 +412,21 @@ function CouponModal({ coupon, onClose, onSave }) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Valid Until</label>
+              <label className="block text-sm font-medium text-zinc-300 mb-1">Valid Until</label>
               <input
                 type="date"
                 value={formData.valid_until}
                 onChange={(e) => setFormData({ ...formData, valid_until: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Max Uses</label>
+              <label className="block text-sm font-medium text-zinc-300 mb-1">Max Uses</label>
               <input
                 type="number"
                 value={formData.max_uses}
                 onChange={(e) => setFormData({ ...formData, max_uses: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Unlimited"
               />
             </div>
@@ -438,26 +438,26 @@ function CouponModal({ coupon, onClose, onSave }) {
                 type="checkbox"
                 checked={formData.is_active}
                 onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                className="rounded border-gray-300"
+                className="rounded border-zinc-700 bg-zinc-800"
               />
-              <span className="text-sm text-gray-700">Active</span>
+              <span className="text-sm text-zinc-300">Active</span>
             </label>
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
                 checked={formData.first_subscription_only}
                 onChange={(e) => setFormData({ ...formData, first_subscription_only: e.target.checked })}
-                className="rounded border-gray-300"
+                className="rounded border-zinc-700 bg-zinc-800"
               />
-              <span className="text-sm text-gray-700">First subscription only</span>
+              <span className="text-sm text-zinc-300">First subscription only</span>
             </label>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+          <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              className="px-4 py-2 text-zinc-300 hover:bg-zinc-800 rounded-lg transition-colors"
             >
               Cancel
             </button>
@@ -621,7 +621,7 @@ export default function AdminBilling() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <RefreshCw className="w-8 h-8 animate-spin text-gray-400" />
+        <RefreshCw className="w-8 h-8 animate-spin text-zinc-400" />
       </div>
     );
   }
@@ -631,12 +631,12 @@ export default function AdminBilling() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Billing & Revenue</h1>
-          <p className="text-gray-500 mt-1">Manage subscriptions, invoices, and revenue</p>
+          <h1 className="text-2xl font-bold text-white">Billing & Revenue</h1>
+          <p className="text-zinc-400 mt-1">Manage subscriptions, invoices, and revenue</p>
         </div>
         <button
           onClick={() => fetchData()}
-          className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          className="flex items-center gap-2 px-4 py-2 text-zinc-300 hover:bg-zinc-800 rounded-lg transition-colors"
         >
           <RefreshCw className="w-4 h-4" />
           Refresh
@@ -676,8 +676,8 @@ export default function AdminBilling() {
       </div>
 
       {/* Revenue Chart */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Revenue (Last 30 Days)</h2>
+      <div className="bg-zinc-900/50 rounded-xl border border-zinc-800 p-6">
+        <h2 className="text-lg font-semibold text-white mb-4">Revenue (Last 30 Days)</h2>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={revenueChart}>
@@ -700,8 +700,8 @@ export default function AdminBilling() {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-xl border border-gray-200">
-        <div className="border-b border-gray-200">
+      <div className="bg-zinc-900/50 rounded-xl border border-zinc-800">
+        <div className="border-b border-zinc-800">
           <nav className="flex gap-4 px-6" aria-label="Tabs">
             {[
               { id: 'plans', label: 'Plans', icon: Star },
@@ -719,8 +719,8 @@ export default function AdminBilling() {
                 }}
                 className={`flex items-center gap-2 py-4 px-2 border-b-2 transition-colors ${
                   activeTab === tab.id
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    ? 'border-blue-500 text-blue-400'
+                    : 'border-transparent text-zinc-400 hover:text-zinc-300'
                 }`}
               >
                 <tab.icon className="w-4 h-4" />
@@ -735,13 +735,13 @@ export default function AdminBilling() {
           {activeTab !== 'plans' && (
             <div className="flex flex-wrap gap-4 mb-6">
               <div className="relative flex-1 min-w-[200px]">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                 <input
                   type="text"
                   placeholder="Search..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-10 pr-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
 
@@ -749,7 +749,7 @@ export default function AdminBilling() {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">All Status</option>
                   {activeTab === 'subscriptions' && (
@@ -800,37 +800,37 @@ export default function AdminBilling() {
                 {plans.map((plan) => (
                   <div
                     key={plan.id}
-                    className={`border rounded-xl p-5 ${plan.is_featured ? 'border-blue-500 ring-2 ring-blue-100' : 'border-gray-200'}`}
+                    className={`border rounded-xl p-5 bg-zinc-800/50 ${plan.is_featured ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-zinc-700'}`}
                   >
                     {plan.is_featured && (
                       <div className="flex justify-center mb-2">
-                        <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+                        <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs font-medium rounded-full">
                           Most Popular
                         </span>
                       </div>
                     )}
-                    <h3 className="text-lg font-semibold text-center">{plan.name}</h3>
+                    <h3 className="text-lg font-semibold text-center text-white">{plan.name}</h3>
                     <div className="text-center mt-2">
-                      <span className="text-3xl font-bold">${plan.price_monthly}</span>
-                      <span className="text-gray-500">/mo</span>
+                      <span className="text-3xl font-bold text-white">${plan.price_monthly}</span>
+                      <span className="text-zinc-400">/mo</span>
                     </div>
-                    <p className="text-sm text-gray-500 text-center mt-1">
+                    <p className="text-sm text-zinc-400 text-center mt-1">
                       or ${plan.price_yearly}/year
                     </p>
-                    <p className="text-sm text-gray-600 text-center mt-3">{plan.description}</p>
+                    <p className="text-sm text-zinc-400 text-center mt-3">{plan.description}</p>
                     <ul className="mt-4 space-y-2">
                       {plan.features?.slice(0, 4).map((feature, i) => (
-                        <li key={i} className="flex items-center gap-2 text-sm text-gray-600">
-                          <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                        <li key={i} className="flex items-center gap-2 text-sm text-zinc-300">
+                          <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
                           {feature}
                         </li>
                       ))}
                       {plan.features?.length > 4 && (
-                        <li className="text-sm text-gray-400">+{plan.features.length - 4} more</li>
+                        <li className="text-sm text-zinc-500">+{plan.features.length - 4} more</li>
                       )}
                     </ul>
-                    <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
-                      <span className="text-sm text-gray-500">
+                    <div className="mt-4 pt-4 border-t border-zinc-700 flex items-center justify-between">
+                      <span className="text-sm text-zinc-400">
                         {plan.active_subscribers || 0} subscribers
                       </span>
                       <button
@@ -838,7 +838,7 @@ export default function AdminBilling() {
                           setEditingPlan(plan);
                           setShowPlanModal(true);
                         }}
-                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                        className="p-1.5 text-zinc-400 hover:text-blue-400 hover:bg-blue-500/20 rounded"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
@@ -854,33 +854,33 @@ export default function AdminBilling() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Company</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Plan</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Billing</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Period End</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Started</th>
+                  <tr className="border-b border-zinc-800">
+                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Company</th>
+                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Plan</th>
+                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Status</th>
+                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Billing</th>
+                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Period End</th>
+                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Started</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-zinc-800">
                   {filteredSubscriptions.map((sub) => (
-                    <tr key={sub.id} className="hover:bg-gray-50">
-                      <td className="py-3 px-4 font-medium text-gray-900">{sub.company_name}</td>
-                      <td className="py-3 px-4 text-sm text-gray-600">{sub.plan_name}</td>
+                    <tr key={sub.id} className="hover:bg-zinc-800/50">
+                      <td className="py-3 px-4 font-medium text-white">{sub.company_name}</td>
+                      <td className="py-3 px-4 text-sm text-zinc-400">{sub.plan_name}</td>
                       <td className="py-3 px-4"><StatusBadge status={sub.status} /></td>
-                      <td className="py-3 px-4 text-sm text-gray-600 capitalize">{sub.billing_cycle}</td>
-                      <td className="py-3 px-4 text-sm text-gray-500">
+                      <td className="py-3 px-4 text-sm text-zinc-400 capitalize">{sub.billing_cycle}</td>
+                      <td className="py-3 px-4 text-sm text-zinc-500">
                         {sub.current_period_end ? new Date(sub.current_period_end).toLocaleDateString() : '-'}
                       </td>
-                      <td className="py-3 px-4 text-sm text-gray-500">
+                      <td className="py-3 px-4 text-sm text-zinc-500">
                         {new Date(sub.started_at).toLocaleDateString()}
                       </td>
                     </tr>
                   ))}
                   {filteredSubscriptions.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="py-12 text-center text-gray-500">No subscriptions found</td>
+                      <td colSpan={6} className="py-12 text-center text-zinc-500">No subscriptions found</td>
                     </tr>
                   )}
                 </tbody>
@@ -893,33 +893,33 @@ export default function AdminBilling() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Invoice #</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Company</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Amount</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Due Date</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Created</th>
+                  <tr className="border-b border-zinc-800">
+                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Invoice #</th>
+                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Company</th>
+                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Amount</th>
+                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Status</th>
+                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Due Date</th>
+                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Created</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-zinc-800">
                   {filteredInvoices.map((invoice) => (
-                    <tr key={invoice.id} className="hover:bg-gray-50">
-                      <td className="py-3 px-4 font-medium text-gray-900">{invoice.invoice_number}</td>
-                      <td className="py-3 px-4 text-sm text-gray-600">{invoice.company_name}</td>
-                      <td className="py-3 px-4 text-sm font-medium text-gray-900">{formatCurrency(invoice.total, invoice.currency)}</td>
+                    <tr key={invoice.id} className="hover:bg-zinc-800/50">
+                      <td className="py-3 px-4 font-medium text-white">{invoice.invoice_number}</td>
+                      <td className="py-3 px-4 text-sm text-zinc-400">{invoice.company_name}</td>
+                      <td className="py-3 px-4 text-sm font-medium text-white">{formatCurrency(invoice.total, invoice.currency)}</td>
                       <td className="py-3 px-4"><StatusBadge status={invoice.status} /></td>
-                      <td className="py-3 px-4 text-sm text-gray-500">
+                      <td className="py-3 px-4 text-sm text-zinc-500">
                         {invoice.due_at ? new Date(invoice.due_at).toLocaleDateString() : '-'}
                       </td>
-                      <td className="py-3 px-4 text-sm text-gray-500">
+                      <td className="py-3 px-4 text-sm text-zinc-500">
                         {new Date(invoice.created_at).toLocaleDateString()}
                       </td>
                     </tr>
                   ))}
                   {filteredInvoices.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="py-12 text-center text-gray-500">No invoices found</td>
+                      <td colSpan={6} className="py-12 text-center text-zinc-500">No invoices found</td>
                     </tr>
                   )}
                 </tbody>
@@ -932,22 +932,22 @@ export default function AdminBilling() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Company</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Invoice</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Amount</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Method</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Date</th>
+                  <tr className="border-b border-zinc-800">
+                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Company</th>
+                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Invoice</th>
+                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Amount</th>
+                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Method</th>
+                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Status</th>
+                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Date</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-zinc-800">
                   {filteredPayments.map((payment) => (
-                    <tr key={payment.id} className="hover:bg-gray-50">
-                      <td className="py-3 px-4 font-medium text-gray-900">{payment.company_name}</td>
-                      <td className="py-3 px-4 text-sm text-gray-600">{payment.invoice_number || '-'}</td>
-                      <td className="py-3 px-4 text-sm font-medium text-gray-900">{formatCurrency(payment.amount, payment.currency)}</td>
-                      <td className="py-3 px-4 text-sm text-gray-600">
+                    <tr key={payment.id} className="hover:bg-zinc-800/50">
+                      <td className="py-3 px-4 font-medium text-white">{payment.company_name}</td>
+                      <td className="py-3 px-4 text-sm text-zinc-400">{payment.invoice_number || '-'}</td>
+                      <td className="py-3 px-4 text-sm font-medium text-white">{formatCurrency(payment.amount, payment.currency)}</td>
+                      <td className="py-3 px-4 text-sm text-zinc-400">
                         {payment.card_brand && payment.card_last4 ? (
                           <span className="capitalize">{payment.card_brand} ****{payment.card_last4}</span>
                         ) : (
@@ -955,14 +955,14 @@ export default function AdminBilling() {
                         )}
                       </td>
                       <td className="py-3 px-4"><StatusBadge status={payment.status} /></td>
-                      <td className="py-3 px-4 text-sm text-gray-500">
+                      <td className="py-3 px-4 text-sm text-zinc-500">
                         {new Date(payment.created_at).toLocaleDateString()}
                       </td>
                     </tr>
                   ))}
                   {filteredPayments.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="py-12 text-center text-gray-500">No payments found</td>
+                      <td colSpan={6} className="py-12 text-center text-zinc-500">No payments found</td>
                     </tr>
                   )}
                 </tbody>
@@ -988,24 +988,24 @@ export default function AdminBilling() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Code</th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Name</th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Discount</th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Usage</th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Valid Until</th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase">Status</th>
-                      <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    <tr className="border-b border-zinc-800">
+                      <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Code</th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Name</th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Discount</th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Usage</th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Valid Until</th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Status</th>
+                      <th className="text-right py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-zinc-800">
                     {coupons.map((coupon) => (
-                      <tr key={coupon.id} className="hover:bg-gray-50">
+                      <tr key={coupon.id} className="hover:bg-zinc-800/50">
                         <td className="py-3 px-4">
-                          <span className="px-2 py-1 bg-gray-100 rounded font-mono text-sm">{coupon.code}</span>
+                          <span className="px-2 py-1 bg-zinc-800 rounded font-mono text-sm text-white">{coupon.code}</span>
                         </td>
-                        <td className="py-3 px-4 text-sm text-gray-900">{coupon.name}</td>
-                        <td className="py-3 px-4 text-sm font-medium text-green-600">
+                        <td className="py-3 px-4 text-sm text-white">{coupon.name}</td>
+                        <td className="py-3 px-4 text-sm font-medium text-green-400">
                           {coupon.discount_type === 'percentage' ? (
                             <span className="flex items-center gap-1">
                               <Percent className="w-3 h-3" />
@@ -1015,10 +1015,10 @@ export default function AdminBilling() {
                             formatCurrency(coupon.discount_value)
                           )}
                         </td>
-                        <td className="py-3 px-4 text-sm text-gray-600">
+                        <td className="py-3 px-4 text-sm text-zinc-400">
                           {coupon.current_uses || 0}{coupon.max_uses ? ` / ${coupon.max_uses}` : ''}
                         </td>
-                        <td className="py-3 px-4 text-sm text-gray-500">
+                        <td className="py-3 px-4 text-sm text-zinc-500">
                           {coupon.valid_until ? new Date(coupon.valid_until).toLocaleDateString() : 'No expiry'}
                         </td>
                         <td className="py-3 px-4">
@@ -1031,13 +1031,13 @@ export default function AdminBilling() {
                                 setEditingCoupon(coupon);
                                 setShowCouponModal(true);
                               }}
-                              className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                              className="p-1.5 text-zinc-400 hover:text-blue-400 hover:bg-blue-500/20 rounded"
                             >
                               <Edit2 className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleDeleteCoupon(coupon)}
-                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                              className="p-1.5 text-zinc-400 hover:text-red-400 hover:bg-red-500/20 rounded"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -1047,7 +1047,7 @@ export default function AdminBilling() {
                     ))}
                     {coupons.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="py-12 text-center text-gray-500">No coupons found</td>
+                        <td colSpan={7} className="py-12 text-center text-zinc-500">No coupons found</td>
                       </tr>
                     )}
                   </tbody>

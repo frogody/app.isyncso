@@ -2,6 +2,99 @@
 
 This file contains critical development rules and patterns that must be followed when building features for the iSyncSO application.
 
+---
+
+## 🔴 CRITICAL: Collaborative Development Workflow (Cowork + Claude Code)
+
+**This workflow is MANDATORY and must be preserved after conversation compacting.**
+
+### How We Work
+
+1. **Cowork Mode (Gody's desktop)** - Acts as the architect, tester, and QA lead
+2. **Claude Code (Terminal)** - Acts as the implementation engineer executing code changes
+
+### Workflow Process
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ COWORK (Architect/Tester)                                       │
+│ ┌─────────────────────────────────────────────────────────────┐ │
+│ │ 1. Analyze requirements and create phased plan              │ │
+│ │ 2. Generate Claude Code prompts for each phase              │ │
+│ │ 3. Gody pastes prompt into terminal → Claude Code executes  │ │
+│ │ 4. Gody pastes Claude Code's reply back to Cowork           │ │
+│ │ 5. Cowork tests changes (UX + code quality)                 │ │
+│ │ 6. Approve or request fixes → repeat                        │ │
+│ └─────────────────────────────────────────────────────────────┘ │
+│                           ↓                                     │
+│                    ┌──────────────┐                             │
+│                    │ Claude Code  │                             │
+│                    │  (Terminal)  │                             │
+│                    └──────────────┘                             │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Cowork Responsibilities
+
+- **Planning**: Break tasks into phased implementation plans
+- **Prompt Generation**: Create clear, actionable prompts for Claude Code
+- **UX Testing**: Navigate the frontend as a user to verify changes
+- **Code Review**: Review implementation for production-readiness
+- **Quality Assurance**: Ensure changes are complete and correct
+
+### Claude Code Prompt Format
+
+When generating prompts for Claude Code, use this format:
+
+```
+## Task: [Brief description]
+
+### Context
+[Relevant file paths, current state, dependencies]
+
+### Requirements
+1. [Specific change 1]
+2. [Specific change 2]
+...
+
+### Files to Modify
+- `path/to/file1.jsx` - [what to change]
+- `path/to/file2.jsx` - [what to change]
+
+### Verification
+After changes, confirm:
+- [ ] [Verification step 1]
+- [ ] [Verification step 2]
+```
+
+### Testing Protocol
+
+After each Claude Code implementation:
+
+1. **Visual Check**: Navigate to the affected page(s) in browser
+2. **Console Check**: Look for errors in browser console
+3. **Functionality Check**: Test the specific feature changed
+4. **Regression Check**: Ensure related features still work
+5. **Code Quality**: Review the actual code changes for:
+   - Consistent styling patterns
+   - No hardcoded values
+   - Proper error handling
+   - Production-ready practices
+
+### Current Project: Admin Panel UI Fixes
+
+**Status**: In Progress (Jan 2026)
+
+**Issues Being Fixed**:
+1. ✅ Identified: Duplicate sidebar in AdminAI.jsx
+2. ✅ Identified: White theme on AdminBilling.jsx
+3. ✅ Identified: White theme on AdminIntegrations.jsx
+4. ✅ Identified: Global outline issue in index.css
+
+**Phased Plan**: See below in "Admin UI Fix Plan" section
+
+---
+
 ## Supabase MCP - ALWAYS USE FOR DATABASE OPERATIONS
 
 **CRITICAL: Always use the Supabase MCP for all database operations.** The MCP is configured and provides direct SQL execution capabilities.

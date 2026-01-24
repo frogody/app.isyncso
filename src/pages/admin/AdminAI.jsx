@@ -6,7 +6,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAdmin } from '@/components/admin/AdminGuard';
-import AdminSidebar from '@/components/admin/AdminSidebar';
 import { supabase } from '@/api/supabaseClient';
 import { toast } from 'sonner';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -302,11 +301,8 @@ export default function AdminAI() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex">
-      <AdminSidebar />
-
-      <div className="flex-1 overflow-auto">
-        <div className="p-8">
+    <>
+      <div className="p-8">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
@@ -843,7 +839,6 @@ export default function AdminAI() {
               </div>
             </TabsContent>
           </Tabs>
-        </div>
       </div>
 
       {/* Model Modal */}
@@ -878,7 +873,7 @@ export default function AdminAI() {
         workflow={selectedItem}
         runs={workflowRuns}
       />
-    </div>
+    </>
   );
 }
 
