@@ -39,6 +39,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { getIconColor } from '@/lib/adminTheme';
+import { getIcon } from '@/lib/iconMap';
 import { toast } from 'sonner';
 import {
   LineChart as RechartsLineChart,
@@ -429,7 +430,12 @@ function AppPerformanceTable({ apps }) {
             >
               <td className="p-4">
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">{app.icon || '📦'}</span>
+                  <div className="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center">
+                    {(() => {
+                      const IconComponent = getIcon(app.icon);
+                      return <IconComponent className="w-5 h-5 text-zinc-400" />;
+                    })()}
+                  </div>
                   <div>
                     <p className="text-white font-medium">{app.name}</p>
                     <p className="text-sm text-zinc-500">{app.slug}</p>
