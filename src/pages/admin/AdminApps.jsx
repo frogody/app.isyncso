@@ -32,6 +32,7 @@ import {
   Star,
   ChevronDown,
 } from 'lucide-react';
+import { getIcon } from '@/lib/iconMap';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -133,6 +134,8 @@ function AppCard({ app, onEdit, onDelete, onViewLicenses }) {
 
   const getPricingModel = () => app.pricing_type || app.pricing_model || 'free';
 
+  const AppIcon = getIcon(app.icon, Package);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -141,8 +144,8 @@ function AppCard({ app, onEdit, onDelete, onViewLicenses }) {
     >
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500/20 to-orange-500/20 flex items-center justify-center text-2xl">
-            {app.icon || '📦'}
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500/20 to-orange-500/20 flex items-center justify-center">
+            <AppIcon className="w-6 h-6 text-white" />
           </div>
           <div>
             <h3 className="text-lg font-semibold text-white">{app.name}</h3>
@@ -217,6 +220,7 @@ function LicenseRow({ license, onEdit, onRevoke }) {
 
   const config = statusConfig[license.status] || statusConfig.pending;
   const StatusIcon = config.icon;
+  const LicenseAppIcon = getIcon(license.app_icon, Package);
 
   return (
     <motion.tr
@@ -226,8 +230,8 @@ function LicenseRow({ license, onEdit, onRevoke }) {
     >
       <td className="p-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center text-lg">
-            {license.app_icon || '📦'}
+          <div className="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center">
+            <LicenseAppIcon className="w-5 h-5 text-zinc-300" />
           </div>
           <div>
             <p className="font-medium text-white">{license.app_name}</p>
