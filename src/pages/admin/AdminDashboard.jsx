@@ -26,6 +26,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
+const ADMIN_API_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-api`;
+
 function StatCard({ title, value, change, changeType, icon: Icon, color }) {
   const colorClasses = {
     red: 'bg-red-500/20 text-red-400 border-red-500/30',
@@ -184,6 +186,12 @@ export default function AdminDashboard() {
     monthlyRevenue: 0,
     activeUsers: 0,
   });
+  const [changes, setChanges] = useState({
+    users: '+0%',
+    activeUsers: '+0%',
+    organizations: '+0%',
+    revenue: '+0%',
+  });
   const [activities, setActivities] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -194,10 +202,23 @@ export default function AdminDashboard() {
   const fetchDashboardData = async () => {
     setIsLoading(true);
     try {
-      // Fetch stats
-      const [usersResult, orgsResult, activitiesResult] = await Promise.all([
-        supabase.from('users').select('id', { count: 'exact', head: true }),
-        supabase.from('companies').select('id', { count: 'exact', head: true }),
+      // Get fresh session for auth
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        console.error('[AdminDashboard] No session available');
+        setIsLoading(false);
+        return;
+      }
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      };
+
+      // Fetch dashboard stats and activities in parallel
+      const [statsResponse, activitiesResult] = await Promise.all([
+        fetch(`${ADMIN_API_URL}/dashboard/stats`, { headers }),
         supabase
           .from('admin_audit_logs')
           .select('*')
@@ -205,12 +226,23 @@ export default function AdminDashboard() {
           .limit(10),
       ]);
 
-      setStats({
-        totalUsers: usersResult.count || 0,
-        totalOrganizations: orgsResult.count || 0,
-        monthlyRevenue: 0, // Would come from billing system
-        activeUsers: Math.floor((usersResult.count || 0) * 0.7), // Placeholder
-      });
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json();
+        setStats({
+          totalUsers: statsData.totalUsers || 0,
+          totalOrganizations: statsData.totalOrganizations || 0,
+          monthlyRevenue: statsData.monthlyRevenue || 0,
+          activeUsers: statsData.activeUsers || 0,
+        });
+        setChanges(statsData.changes || {
+          users: '+0%',
+          activeUsers: '+0%',
+          organizations: '+0%',
+          revenue: '+0%',
+        });
+      } else {
+        console.error('[AdminDashboard] Failed to fetch stats:', await statsResponse.text());
+      }
 
       setActivities(activitiesResult.data || []);
     } catch (error) {
@@ -218,6 +250,12 @@ export default function AdminDashboard() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Helper to determine if change is positive or negative
+  const getChangeType = (changeStr) => {
+    if (!changeStr) return 'increase';
+    return changeStr.startsWith('-') ? 'decrease' : 'increase';
   };
 
   return (
@@ -247,32 +285,32 @@ export default function AdminDashboard() {
         <StatCard
           title="Total Users"
           value={stats.totalUsers.toLocaleString()}
-          change="+12%"
-          changeType="increase"
+          change={changes.users}
+          changeType={getChangeType(changes.users)}
           icon={Users}
           color="blue"
         />
         <StatCard
           title="Organizations"
           value={stats.totalOrganizations.toLocaleString()}
-          change="+8%"
-          changeType="increase"
+          change={changes.organizations}
+          changeType={getChangeType(changes.organizations)}
           icon={Building2}
           color="purple"
         />
         <StatCard
           title="Active Users"
           value={stats.activeUsers.toLocaleString()}
-          change="+5%"
-          changeType="increase"
+          change={changes.activeUsers}
+          changeType={getChangeType(changes.activeUsers)}
           icon={Activity}
           color="green"
         />
         <StatCard
           title="Monthly Revenue"
           value={`$${stats.monthlyRevenue.toLocaleString()}`}
-          change="+18%"
-          changeType="increase"
+          change={changes.revenue}
+          changeType={getChangeType(changes.revenue)}
           icon={DollarSign}
           color="orange"
         />
