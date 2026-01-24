@@ -125,5 +125,16 @@ export const ICON_MAP = {
 };
 
 export function getIcon(iconName, fallback = null) {
-  return ICON_MAP[iconName] || fallback;
+  // Handle null/undefined
+  if (!iconName) return fallback;
+
+  // Handle if iconName is already a component (not a string)
+  if (typeof iconName !== 'string') return fallback;
+
+  // Trim whitespace and try exact match
+  const trimmed = iconName.trim();
+  if (ICON_MAP[trimmed]) return ICON_MAP[trimmed];
+
+  // Return fallback if not found
+  return fallback;
 }
