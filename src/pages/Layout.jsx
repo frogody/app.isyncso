@@ -187,6 +187,14 @@ const ENGINE_ITEMS_CONFIG = {
     permission: "courses.view", // Learning features
     matchPatterns: ["/learn", "/course", "/lesson", "/certificate", "/skill", "/leaderboard"],
   },
+  talent: {
+    title: "Talent",
+    url: createPageUrl("TalentDashboard"),
+    icon: UserPlus,
+    id: 'talent',
+    permission: "talent.view",
+    matchPatterns: ["/talent"],
+  },
   sentinel: {
     title: "Sentinel",
     url: createPageUrl("SentinelDashboard"),
@@ -218,14 +226,6 @@ const ENGINE_ITEMS_CONFIG = {
     id: 'create',
     permission: null, // Always visible - content creation feature
     matchPatterns: ["/create"],
-  },
-  talent: {
-    title: "Talent",
-    url: createPageUrl("TalentDashboard"),
-    icon: UserPlus,
-    id: 'talent',
-    permission: "talent.view",
-    matchPatterns: ["/talent"],
   },
 };
 
@@ -524,9 +524,10 @@ const COLOR_CLASSES = {
   }
 };
 
-// Header offset constant for secondary sidebar alignment
-// Avatar (52px) + padding (pt-4 pb-3 ≈ 28px) = ~80px
-const SECONDARY_SIDEBAR_HEADER_OFFSET = 'pt-[80px]';
+// Secondary sidebar nav alignment constant
+// Aligns first nav item with where engine apps start in primary sidebar:
+// Avatar (80px) + nav padding (16px) + 5 core items (236px) + divider (17px) = 349px
+const SECONDARY_NAV_START_OFFSET = 'mt-[349px]';
 
 // Secondary Sidebar Component - Now shows on iPad (md:) instead of just desktop (lg:)
 function SecondarySidebar({ config, location }) {
@@ -536,15 +537,15 @@ function SecondarySidebar({ config, location }) {
 
   return (
     <div className="hidden md:flex flex-col w-[72px] lg:w-[80px] bg-black border-r border-white/5 relative z-0 animate-in slide-in-from-left duration-300 overflow-hidden">
-      {/* Header */}
-      <div className={`px-4 py-4 flex items-center justify-center ${SECONDARY_SIDEBAR_HEADER_OFFSET} relative z-10`}>
+      {/* Header - positioned at top like avatar area */}
+      <div className="absolute top-0 left-0 right-0 pt-4 pb-2 flex items-center justify-center z-10">
         <h3 className={`text-[10px] font-bold uppercase tracking-widest ${colors.text}`}>
           {config.title}
         </h3>
       </div>
-      
+
       <TooltipProvider delayDuration={200}>
-        <nav className="flex-1 overflow-y-auto py-3 lg:py-4 px-2 lg:px-3 space-y-1.5 lg:space-y-2 scrollbar-hide">
+        <nav className={`flex-1 overflow-y-auto ${SECONDARY_NAV_START_OFFSET} px-2 lg:px-3 space-y-1 scrollbar-hide`}>
           {config.items.map((item) => {
             // Parse URLs for proper comparison
             const itemUrl = new URL(item.path, 'http://localhost');
