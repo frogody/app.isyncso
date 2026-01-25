@@ -32,14 +32,14 @@ function StatBox({ icon: Icon, label, value, color = 'cyan' }) {
   };
 
   return (
-    <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl border border-zinc-800/60 p-5">
+    <div className="bg-zinc-900/50 backdrop-blur-sm rounded-xl border border-zinc-800/60 p-3">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-zinc-500 text-sm">{label}</p>
-          <p className="text-2xl font-bold text-zinc-100 mt-1">{value}</p>
+          <p className="text-zinc-500 text-xs">{label}</p>
+          <p className="text-lg font-bold text-zinc-100 mt-0.5">{value}</p>
         </div>
-        <div className={`w-12 h-12 rounded-xl ${colorClasses[color]} border flex items-center justify-center`}>
-          <Icon className="w-6 h-6" />
+        <div className={`w-8 h-8 rounded-lg ${colorClasses[color]} border flex items-center justify-center`}>
+          <Icon className="w-4 h-4" />
         </div>
       </div>
     </div>
@@ -212,22 +212,22 @@ export default function Learn() {
   
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-6">
-        <div className="space-y-6">
-          <Skeleton className="h-28 w-full bg-zinc-800 rounded-2xl" />
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[1,2,3,4].map(i => <Skeleton key={i} className="h-24 bg-zinc-800 rounded-xl" />)}
+      <div className="min-h-screen bg-black p-4">
+        <div className="space-y-4">
+          <Skeleton className="h-20 w-full bg-zinc-800 rounded-xl" />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {[1,2,3,4].map(i => <Skeleton key={i} className="h-16 bg-zinc-800 rounded-xl" />)}
           </div>
-          <Skeleton className="h-96 w-full bg-zinc-800 rounded-2xl" />
+          <Skeleton className="h-80 w-full bg-zinc-800 rounded-xl" />
         </div>
       </div>
     );
   }
 
   const renderDashboard = () => (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Stats Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
           <StatBox icon={BookOpen} label="Courses Available" value={libraryCourses.length} color="cyan" />
         </motion.div>
@@ -242,14 +242,14 @@ export default function Learn() {
         </motion.div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         {/* Main Content */}
-        <div className="xl:col-span-2 space-y-6">
+        <div className="xl:col-span-2 space-y-4">
           {/* Continue Learning */}
-          <GlassCard glow="cyan" className="p-6">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-xl font-semibold text-white flex items-center gap-2">
-                <PlayCircle className="w-5 h-5 text-cyan-400" />
+          <GlassCard glow="cyan" className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-semibold text-white flex items-center gap-2">
+                <PlayCircle className="w-4 h-4 text-cyan-400" />
                 Continue Learning
               </h2>
               {myCourses.length > 0 && (
@@ -257,29 +257,30 @@ export default function Learn() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setActiveSection("my-courses")}
-                  className="text-cyan-400 hover:text-cyan-300"
+                  className="text-cyan-400 hover:text-cyan-300 text-xs h-7"
                 >
-                  View All <ArrowRight className="w-4 h-4 ml-1" />
+                  View All <ArrowRight className="w-3 h-3 ml-1" />
                 </Button>
               )}
             </div>
-            
+
             {inProgressCoursesList.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 flex items-center justify-center mx-auto mb-4">
-                  <BookOpen className="w-8 h-8 text-cyan-400" />
+              <div className="text-center py-8">
+                <div className="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center mx-auto mb-3">
+                  <BookOpen className="w-5 h-5 text-cyan-400" />
                 </div>
-                <h4 className="text-white font-medium mb-2">No courses in progress</h4>
-                <p className="text-zinc-400 text-sm mb-4">Browse the library to find your next course</p>
+                <h4 className="text-white font-medium text-sm mb-1.5">No courses in progress</h4>
+                <p className="text-zinc-400 text-xs mb-3">Browse the library to find your next course</p>
                 <Button
+                  size="sm"
                   onClick={() => setActiveSection("library")}
-                  className="bg-cyan-500 hover:bg-cyan-400 text-white"
+                  className="bg-cyan-500 hover:bg-cyan-400 text-white h-8 text-xs"
                 >
                   Browse Library
                 </Button>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {inProgressCoursesList.map(course => {
                   const progress = userProgress.find(p => p.course_id === course.id);
                   return <ContinueCourseCard key={course.id} course={course} progress={progress} />;
@@ -289,29 +290,29 @@ export default function Learn() {
           </GlassCard>
 
           {/* Recommended Courses */}
-          <GlassCard glow="cyan" className="p-6">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-xl font-semibold text-white flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-cyan-400" />
+          <GlassCard glow="cyan" className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-semibold text-white flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-cyan-400" />
                 Recommended for You
               </h2>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setActiveSection("library")}
-                className="text-cyan-400 hover:text-cyan-300"
+                className="text-cyan-400 hover:text-cyan-300 text-xs h-7"
               >
-                Browse All <ArrowRight className="w-4 h-4 ml-1" />
+                Browse All <ArrowRight className="w-3 h-3 ml-1" />
               </Button>
             </div>
-            
+
             {recommendedCourses.length === 0 ? (
-              <div className="text-center py-12">
-                <Award className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
-                <p className="text-zinc-400">You've explored all available courses!</p>
+              <div className="text-center py-8">
+                <Award className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
+                <p className="text-zinc-400 text-xs">You've explored all available courses!</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {recommendedCourses.map(course => (
                   <RecommendedCourseCard key={course.id} course={course} />
                 ))}
@@ -321,31 +322,31 @@ export default function Learn() {
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Progress Ring */}
-          <GlassCard glow="cyan" className="p-6">
-            <h2 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
-              <Target className="w-5 h-5 text-cyan-400" />
+          <GlassCard glow="cyan" className="p-4">
+            <h2 className="text-sm font-semibold text-white flex items-center gap-2 mb-3">
+              <Target className="w-4 h-4 text-cyan-400" />
               Your Progress
             </h2>
-            
-            <div className="text-center mb-6">
+
+            <div className="text-center mb-4">
               <div className="relative inline-flex items-center justify-center">
-                <svg className="w-32 h-32 transform -rotate-90">
-                  <circle className="text-zinc-800" strokeWidth="8" stroke="currentColor" fill="transparent" r="56" cx="64" cy="64" />
+                <svg className="w-24 h-24 transform -rotate-90">
+                  <circle className="text-zinc-800" strokeWidth="6" stroke="currentColor" fill="transparent" r="42" cx="48" cy="48" />
                   <circle
                     className="text-cyan-500"
-                    strokeWidth="8"
+                    strokeWidth="6"
                     strokeLinecap="round"
                     stroke="currentColor"
                     fill="transparent"
-                    r="56"
-                    cx="64"
-                    cy="64"
-                    strokeDasharray={`${stats.avgProgress * 3.52} 352`}
+                    r="42"
+                    cx="48"
+                    cy="48"
+                    strokeDasharray={`${stats.avgProgress * 2.64} 264`}
                   />
                 </svg>
-                <span className="absolute text-2xl font-bold text-white">{stats.avgProgress}%</span>
+                <span className="absolute text-lg font-bold text-white">{stats.avgProgress}%</span>
               </div>
               <p className="text-sm text-zinc-400 mt-2">Average Completion</p>
             </div>

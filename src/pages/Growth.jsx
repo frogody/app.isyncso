@@ -181,13 +181,13 @@ export default function Growth() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <Skeleton className="h-24 w-full bg-zinc-800 rounded-2xl" />
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[1,2,3,4].map(i => <Skeleton key={i} className="h-32 bg-zinc-800 rounded-2xl" />)}
+      <div className="min-h-screen bg-black p-4">
+        <div className="max-w-7xl mx-auto space-y-4">
+          <Skeleton className="h-16 w-full bg-zinc-800 rounded-xl" />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {[1,2,3,4].map(i => <Skeleton key={i} className="h-20 bg-zinc-800 rounded-xl" />)}
           </div>
-          <Skeleton className="h-80 bg-zinc-800 rounded-2xl" />
+          <Skeleton className="h-64 bg-zinc-800 rounded-xl" />
         </div>
       </div>
     );
@@ -200,7 +200,7 @@ export default function Growth() {
         <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-indigo-400/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
       </div>
 
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
         <PageHeader
           icon={TrendingUp}
           title="Growth Dashboard"
@@ -225,25 +225,25 @@ export default function Growth() {
         />
 
         {/* Quick Prospect Search */}
-        <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
-          <form onSubmit={handleQuickSearch} className="flex gap-3">
+        <div className="p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+          <form onSubmit={handleQuickSearch} className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" />
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Quick search: e.g., 'VP Sales at SaaS companies in Europe'"
-                className="pl-10 bg-zinc-800/50 border-zinc-700/60 text-white focus:border-indigo-500/40"
+                className="pl-8 h-8 text-xs bg-zinc-800/50 border-zinc-700/60 text-white focus:border-indigo-500/40"
               />
             </div>
-            <Button type="submit" className="bg-indigo-600/80 hover:bg-indigo-600 text-white font-medium">
+            <Button type="submit" size="sm" className="bg-indigo-600/80 hover:bg-indigo-600 text-white font-medium h-8 text-xs">
               Find Prospects
             </Button>
           </form>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <StatCard icon={DollarSign} label="Pipeline Value" value={`€${totalPipeline.toLocaleString()}`} color="indigo" delay={0} />
           <StatCard icon={Users} label="Total Prospects" value={totalProspects} color="indigo" delay={0.1} />
           <StatCard icon={Target} label="Won Revenue" value={`€${wonValue.toLocaleString()}`} color="indigo" delay={0.2} />
@@ -251,7 +251,7 @@ export default function Growth() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
             { icon: Target, label: 'Pipeline', desc: `${opportunities.length} deals`, path: 'GrowthPipeline' },
             { icon: Users, label: 'Prospects', desc: `${prospectLists.length} lists`, path: 'GrowthProspects' },
@@ -265,10 +265,10 @@ export default function Growth() {
               transition={{ delay: 0.4 + i * 0.05 }}
             >
               <Link to={createPageUrl(action.path)}>
-                <div className="p-5 text-center cursor-pointer rounded-2xl bg-zinc-900/50 border border-zinc-800/60 hover:border-indigo-500/30 transition-all">
-                  <action.icon className="w-8 h-8 text-indigo-400/70 mx-auto mb-2" />
-                  <h3 className="font-semibold text-white">{action.label}</h3>
-                  <p className="text-xs text-zinc-500">{action.desc}</p>
+                <div className="p-3 text-center cursor-pointer rounded-xl bg-zinc-900/50 border border-zinc-800/60 hover:border-indigo-500/30 transition-all">
+                  <action.icon className="w-5 h-5 text-indigo-400/70 mx-auto mb-1.5" />
+                  <h3 className="font-semibold text-white text-sm">{action.label}</h3>
+                  <p className="text-[10px] text-zinc-500">{action.desc}</p>
                 </div>
               </Link>
             </motion.div>
@@ -276,15 +276,15 @@ export default function Growth() {
         </div>
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Revenue Chart */}
           <div className="lg:col-span-2">
-            <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-indigo-400/70" />
+            <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+              <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-indigo-400/70" />
                 Pipeline Over Time
               </h3>
-              <div className="h-64">
+              <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={revenueData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
@@ -303,22 +303,22 @@ export default function Growth() {
           </div>
 
           {/* Conversion Funnel */}
-          <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <Zap className="w-5 h-5 text-indigo-400/70" />
+          <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+            <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+              <Zap className="w-4 h-4 text-indigo-400/70" />
               Conversion Funnel
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {(() => {
                 // Real data from campaigns and opportunities - synced with CRM stages
                 const leadsCount = campaigns.reduce((sum, c) => sum + (c.total_contacts || 0), 0);
                 const qualifiedCount = campaigns.reduce((sum, c) => sum + (c.meetings_booked || 0), 0);
                 const proposalCount = opportunities.filter(o => o.stage === 'proposal').length;
                 const closedWonCount = opportunities.filter(o => o.stage === 'won').length;
-                
+
                 // Calculate widths based on max value
                 const maxValue = Math.max(leadsCount, qualifiedCount, proposalCount, closedWonCount, 1);
-                
+
                 return [
                   { label: 'Leads', value: leadsCount, width: Math.max((leadsCount / maxValue) * 100, 10), color: 'bg-indigo-500/60' },
                   { label: 'Qualified', value: qualifiedCount, width: Math.max((qualifiedCount / maxValue) * 100, 10), color: 'bg-indigo-500/70' },
@@ -331,12 +331,12 @@ export default function Growth() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.5 + i * 0.05 }}
-                  className="flex items-center gap-3"
+                  className="flex items-center gap-2"
                 >
-                  <span className="text-sm text-zinc-400 w-20">{stage.label}</span>
-                  <div className="flex-1 h-6 bg-zinc-800 rounded-lg overflow-hidden">
-                    <div className={`h-full ${stage.color} rounded-lg flex items-center justify-end pr-2`} style={{ width: `${stage.width}%` }}>
-                      <span className="text-xs font-bold text-white">{stage.value}</span>
+                  <span className="text-xs text-zinc-400 w-16">{stage.label}</span>
+                  <div className="flex-1 h-5 bg-zinc-800 rounded-md overflow-hidden">
+                    <div className={`h-full ${stage.color} rounded-md flex items-center justify-end pr-2`} style={{ width: `${stage.width}%` }}>
+                      <span className="text-[10px] font-bold text-white">{stage.value}</span>
                     </div>
                   </div>
                 </motion.div>
@@ -346,18 +346,18 @@ export default function Growth() {
         </div>
 
         {/* Clay Campaign Builder - Headliner Feature */}
-        <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+        <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
           <ClayCampaignBuilder />
         </div>
 
         {/* Analytics Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-indigo-400/70" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+            <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-indigo-400/70" />
               Deals by Stage
             </h3>
-            <div className="h-64">
+            <div className="h-52">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={stageData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
@@ -372,31 +372,31 @@ export default function Growth() {
             </div>
           </div>
 
-          <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-indigo-400/70" />
+          <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+            <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-indigo-400/70" />
               Win/Loss Analysis
             </h3>
-            <div className="grid grid-cols-3 gap-4 text-center py-6">
+            <div className="grid grid-cols-3 gap-3 text-center py-4">
               <div>
-                <p className="text-4xl font-bold text-indigo-400/70">{wonDeals.length}</p>
-                <p className="text-zinc-500 text-sm mt-1">Won</p>
+                <p className="text-2xl font-bold text-indigo-400/70">{wonDeals.length}</p>
+                <p className="text-zinc-500 text-xs mt-0.5">Won</p>
               </div>
               <div>
-                <p className="text-4xl font-bold text-zinc-600">{lostDeals.length}</p>
-                <p className="text-zinc-500 text-sm mt-1">Lost</p>
+                <p className="text-2xl font-bold text-zinc-600">{lostDeals.length}</p>
+                <p className="text-zinc-500 text-xs mt-0.5">Lost</p>
               </div>
               <div>
-                <p className="text-4xl font-bold text-indigo-400/80">{winRate}%</p>
-                <p className="text-zinc-500 text-sm mt-1">Win Rate</p>
+                <p className="text-2xl font-bold text-indigo-400/80">{winRate}%</p>
+                <p className="text-zinc-500 text-xs mt-0.5">Win Rate</p>
               </div>
             </div>
-            <div className="mt-4">
-              <div className="flex h-4 rounded-full overflow-hidden">
+            <div className="mt-3">
+              <div className="flex h-3 rounded-full overflow-hidden">
                 <div className="bg-indigo-500/60" style={{ width: `${winRate}%` }} />
                 <div className="bg-zinc-800" style={{ width: `${100 - winRate}%` }} />
               </div>
-              <div className="flex justify-between mt-2 text-xs text-zinc-500">
+              <div className="flex justify-between mt-1.5 text-[10px] text-zinc-500">
                 <span>Won: €{wonValue.toLocaleString()}</span>
                 <span>Lost: €{lostDeals.reduce((s, o) => s + (o.deal_value || 0), 0).toLocaleString()}</span>
               </div>
@@ -406,25 +406,25 @@ export default function Growth() {
 
         {/* Source Breakdown */}
         {pieData.length > 0 && (
-          <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
-            <h3 className="text-lg font-semibold text-white mb-4">Deals by Source</h3>
-            <div className="flex flex-col md:flex-row items-center gap-8">
-              <div className="h-48 w-48">
+          <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+            <h3 className="text-sm font-semibold text-white mb-3">Deals by Source</h3>
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              <div className="h-40 w-40">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie data={pieData} dataKey="value" cx="50%" cy="50%" innerRadius={40} outerRadius={70}>
+                    <Pie data={pieData} dataKey="value" cx="50%" cy="50%" innerRadius={32} outerRadius={56}>
                       {pieData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
                     </Pie>
                     <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '8px' }} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <div className="flex-1 grid grid-cols-2 gap-3">
+              <div className="flex-1 grid grid-cols-2 gap-2">
                 {pieData.map((item, i) => (
                   <div key={i} className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.fill }} />
-                    <span className="text-zinc-300 text-sm">{item.name}</span>
-                    <span className="text-zinc-500 text-sm ml-auto">{item.value}</span>
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.fill }} />
+                    <span className="text-zinc-300 text-xs">{item.name}</span>
+                    <span className="text-zinc-500 text-xs ml-auto">{item.value}</span>
                   </div>
                 ))}
               </div>
@@ -433,48 +433,48 @@ export default function Growth() {
         )}
 
         {/* Bottom Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Top Deals */}
-          <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <DollarSign className="w-5 h-5 text-indigo-400/70" />
+          <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                <DollarSign className="w-4 h-4 text-indigo-400/70" />
                 Top Deals
               </h3>
-              <Link to={createPageUrl('GrowthPipeline')} className="text-indigo-400/80 text-sm hover:text-indigo-300 flex items-center gap-1">
-                View All <ArrowRight className="w-4 h-4" />
+              <Link to={createPageUrl('GrowthPipeline')} className="text-indigo-400/80 text-xs hover:text-indigo-300 flex items-center gap-1">
+                View All <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
 
             {opportunities.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {opportunities.slice(0, 4).map((opp, i) => (
                   <motion.div
                     key={opp.id}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: i * 0.05 }}
-                    className="flex items-center justify-between p-3 rounded-xl bg-zinc-800/30 hover:bg-zinc-800/50 transition-colors border border-zinc-700/30"
+                    className="flex items-center justify-between p-2 rounded-lg bg-zinc-800/30 hover:bg-zinc-800/50 transition-colors border border-zinc-700/30"
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-white truncate">{opp.company_name}</p>
-                      <div className="flex items-center gap-2 mt-1 text-sm text-zinc-500">
-                        {opp.contact_name && <span className="flex items-center gap-1"><Users className="w-3 h-3" />{opp.contact_name}</span>}
+                      <p className="font-medium text-white text-xs truncate">{opp.company_name}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-zinc-500">
+                        {opp.contact_name && <span className="flex items-center gap-1"><Users className="w-2.5 h-2.5" />{opp.contact_name}</span>}
                       </div>
                     </div>
-                    <div className="text-right ml-4">
-                      <p className="text-indigo-400/80 font-bold">€{(opp.deal_value || 0).toLocaleString()}</p>
-                      <Badge className={stageBadges[opp.stage] || 'bg-zinc-700/60'}>{opp.stage}</Badge>
+                    <div className="text-right ml-3">
+                      <p className="text-indigo-400/80 font-bold text-xs">€{(opp.deal_value || 0).toLocaleString()}</p>
+                      <Badge size="xs" className={stageBadges[opp.stage] || 'bg-zinc-700/60'}>{opp.stage}</Badge>
                     </div>
                   </motion.div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8">
-                <Target className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
-                <p className="text-zinc-400">No deals yet</p>
+              <div className="text-center py-6">
+                <Target className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
+                <p className="text-zinc-400 text-xs">No deals yet</p>
                 <Link to={createPageUrl('GrowthPipeline')}>
-                  <Button variant="outline" size="sm" className="mt-3 border-indigo-500/30 text-indigo-400/80 hover:text-indigo-300">
+                  <Button variant="outline" size="sm" className="mt-2 h-7 text-xs border-indigo-500/30 text-indigo-400/80 hover:text-indigo-300">
                     Add Opportunity
                   </Button>
                 </Link>
@@ -483,45 +483,45 @@ export default function Growth() {
           </div>
 
           {/* Recent Prospect Lists */}
-          <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <Users className="w-5 h-5 text-indigo-400/70" />
+          <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                <Users className="w-4 h-4 text-indigo-400/70" />
                 Prospect Lists
               </h3>
-              <Link to={createPageUrl('GrowthProspects')} className="text-indigo-400/80 text-sm hover:text-indigo-300 flex items-center gap-1">
-                View All <ArrowRight className="w-4 h-4" />
+              <Link to={createPageUrl('GrowthProspects')} className="text-indigo-400/80 text-xs hover:text-indigo-300 flex items-center gap-1">
+                View All <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
 
             {prospectLists.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {prospectLists.slice(0, 4).map((list, i) => (
                   <motion.div
                     key={list.id}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: i * 0.05 }}
-                    className="flex items-center justify-between p-3 rounded-xl bg-zinc-800/30 hover:bg-zinc-800/50 transition-colors cursor-pointer border border-zinc-700/30"
+                    className="flex items-center justify-between p-2 rounded-lg bg-zinc-800/30 hover:bg-zinc-800/50 transition-colors cursor-pointer border border-zinc-700/30"
                     onClick={() => window.location.href = createPageUrl(`GrowthProspects?list=${list.id}`)}
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-white truncate">{list.name}</p>
-                      <p className="text-sm text-zinc-500">{list.prospect_count || 0} prospects</p>
+                      <p className="font-medium text-white text-xs truncate">{list.name}</p>
+                      <p className="text-[10px] text-zinc-500">{list.prospect_count || 0} prospects</p>
                     </div>
-                    <Badge className="bg-indigo-500/20 text-indigo-400/80 border-indigo-500/30">
+                    <Badge size="xs" className="bg-indigo-500/20 text-indigo-400/80 border-indigo-500/30">
                       {list.status || 'active'}
                     </Badge>
                   </motion.div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8">
-                <Users className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
-                <p className="text-zinc-500 mb-4">No prospect lists yet</p>
+              <div className="text-center py-6">
+                <Users className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
+                <p className="text-zinc-500 text-xs mb-3">No prospect lists yet</p>
                 <Link to={createPageUrl('GrowthResearch')}>
-                  <Button className="bg-indigo-600/80 hover:bg-indigo-600 text-white font-medium">
-                    <Search className="w-4 h-4 mr-2" />
+                  <Button size="sm" className="bg-indigo-600/80 hover:bg-indigo-600 text-white font-medium h-7 text-xs">
+                    <Search className="w-3 h-3 mr-1.5" />
                     Start Research
                   </Button>
                 </Link>
@@ -530,43 +530,43 @@ export default function Growth() {
           </div>
 
           {/* Signals */}
-          <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <Bell className="w-5 h-5 text-indigo-400/70" />
+          <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                <Bell className="w-4 h-4 text-indigo-400/70" />
                 Signals
               </h3>
-              <Link to={createPageUrl('GrowthSignals')} className="text-indigo-400/80 text-sm hover:text-indigo-300 flex items-center gap-1">
-                View All <ArrowRight className="w-4 h-4" />
+              <Link to={createPageUrl('GrowthSignals')} className="text-indigo-400/80 text-xs hover:text-indigo-300 flex items-center gap-1">
+                View All <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
 
             {signals.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {signals.slice(0, 4).map((signal, i) => (
                   <motion.div
                     key={signal.id}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: i * 0.05 }}
-                    className="flex items-center justify-between p-3 rounded-xl bg-zinc-800/30 hover:bg-zinc-800/50 transition-colors cursor-pointer border border-zinc-700/30"
+                    className="flex items-center justify-between p-2 rounded-lg bg-zinc-800/30 hover:bg-zinc-800/50 transition-colors cursor-pointer border border-zinc-700/30"
                     onClick={() => window.location.href = createPageUrl('GrowthSignals')}
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-white truncate">{signal.company_name}</p>
-                      <p className="text-sm text-zinc-500 truncate">{signal.headline}</p>
+                      <p className="font-medium text-white text-xs truncate">{signal.company_name}</p>
+                      <p className="text-[10px] text-zinc-500 truncate">{signal.headline}</p>
                     </div>
-                    <Badge className={signal.relevance_score >= 80 ? 'bg-red-500/20 text-red-400/80 border-red-500/30' : 'bg-indigo-500/20 text-indigo-400/80 border-indigo-500/30'}>
+                    <Badge size="xs" className={signal.relevance_score >= 80 ? 'bg-red-500/20 text-red-400/80 border-red-500/30' : 'bg-indigo-500/20 text-indigo-400/80 border-indigo-500/30'}>
                       {signal.signal_type}
                     </Badge>
                   </motion.div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8">
-                <Bell className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
-                <p className="text-zinc-500 mb-4">No signals yet</p>
-                <p className="text-xs text-zinc-600">Signals appear as we detect opportunities</p>
+              <div className="text-center py-6">
+                <Bell className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
+                <p className="text-zinc-500 text-xs mb-2">No signals yet</p>
+                <p className="text-[10px] text-zinc-600">Signals appear as we detect opportunities</p>
               </div>
             )}
           </div>
