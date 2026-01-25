@@ -15,7 +15,7 @@ interface MappedRow {
 
 interface DuplicateCheckResult {
   existingId: string | null;
-  matchType: 'email' | 'linkedin' | 'name' | null;
+  matchType: 'email' | 'linkedin' | null;
   inCurrentNest: boolean;
 }
 
@@ -32,44 +32,69 @@ async function checkIfInNest(supabase: any, candidateId: string, nestId: string)
   return !!data;
 }
 
-// Find existing candidate by email, linkedin, or name
+// Normalize LinkedIn URL for consistent matching
+function normalizeLinkedInUrl(url: string): string {
+  if (!url) return '';
+  let normalized = url.toLowerCase().trim();
+  // Remove trailing slashes
+  normalized = normalized.replace(/\/+$/, '');
+  // Extract the profile path (handle various formats)
+  const match = normalized.match(/linkedin\.com\/in\/([^\/\?]+)/);
+  if (match) {
+    return `linkedin.com/in/${match[1]}`;
+  }
+  return normalized;
+}
+
+// Find existing candidate by LinkedIn (primary) or email (secondary)
 // IMPORTANT: Only searches platform-owned candidates (organization_id IS NULL)
 // and prioritizes candidates already linked to the current nest
+// NOTE: Name matching is NOT used as it's unreliable for deduplication
 async function findExistingCandidate(
   supabase: any,
   row: MappedRow,
   nestId: string
 ): Promise<DuplicateCheckResult> {
+  const linkedin = row.linkedin_profile?.toString().trim();
   const email = row.email?.toString().toLowerCase().trim();
-  const linkedin = row.linkedin_profile?.toString().toLowerCase().trim();
-  const firstName = row.first_name?.toString().toLowerCase().trim();
-  const lastName = row.last_name?.toString().toLowerCase().trim();
 
   // Helper to find candidate, preferring ones already in the current nest
   async function findWithNestPriority(
     query: any,
-    matchType: 'email' | 'linkedin' | 'name'
+    matchType: 'email' | 'linkedin'
   ): Promise<DuplicateCheckResult | null> {
-    // First, try to find one that's already in this nest (platform-owned only)
-    const { data: inNestCandidates } = await query
+    const { data: candidates } = await query
       .is('organization_id', null) // Only platform-owned
-      .limit(10); // Get multiple to check
+      .limit(10);
 
-    if (inNestCandidates && inNestCandidates.length > 0) {
+    if (candidates && candidates.length > 0) {
       // Check each candidate to see if it's already in this nest
-      for (const candidate of inNestCandidates) {
+      for (const candidate of candidates) {
         const inNest = await checkIfInNest(supabase, candidate.id, nestId);
         if (inNest) {
           return { existingId: candidate.id, matchType, inCurrentNest: true };
         }
       }
       // None in nest, return the first platform-owned one
-      return { existingId: inNestCandidates[0].id, matchType, inCurrentNest: false };
+      return { existingId: candidates[0].id, matchType, inCurrentNest: false };
     }
     return null;
   }
 
-  // Priority 1: Email match (most reliable)
+  // Priority 1: LinkedIn profile match (most reliable unique identifier)
+  if (linkedin) {
+    const normalizedLinkedin = normalizeLinkedInUrl(linkedin);
+    if (normalizedLinkedin) {
+      // Use contains match for flexibility with URL variations
+      const result = await findWithNestPriority(
+        supabase.from('candidates').select('id').ilike('linkedin_profile', `%${normalizedLinkedin}%`),
+        'linkedin'
+      );
+      if (result) return result;
+    }
+  }
+
+  // Priority 2: Email match (secondary identifier)
   if (email) {
     const result = await findWithNestPriority(
       supabase.from('candidates').select('id').ilike('email', email),
@@ -78,24 +103,7 @@ async function findExistingCandidate(
     if (result) return result;
   }
 
-  // Priority 2: LinkedIn profile match
-  if (linkedin) {
-    const result = await findWithNestPriority(
-      supabase.from('candidates').select('id').ilike('linkedin_profile', linkedin),
-      'linkedin'
-    );
-    if (result) return result;
-  }
-
-  // Priority 3: Name match (least reliable, only if both names present)
-  if (firstName && lastName) {
-    const result = await findWithNestPriority(
-      supabase.from('candidates').select('id').ilike('first_name', firstName).ilike('last_name', lastName),
-      'name'
-    );
-    if (result) return result;
-  }
-
+  // No name matching - names are not unique identifiers
   return { existingId: null, matchType: null, inCurrentNest: false };
 }
 
