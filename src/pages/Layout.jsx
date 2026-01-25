@@ -578,8 +578,11 @@ function calculateSecondaryNavOffset(config) {
 
 // Submenu Flyout Component - Floating panel that appears on click/hover
 function SubmenuFlyout({ config, openSubmenu, onClose, onEnter, location }) {
+  // Get submenu identifier (agent for engine apps, title for core items like CRM/Products)
+  const submenuId = config?.agent || config?.title?.toLowerCase();
+
   // Only show if config exists and this submenu is open
-  if (!config || !config.agent || openSubmenu !== config.agent) return null;
+  if (!config || !submenuId || openSubmenu !== submenuId) return null;
 
   const colors = COLOR_CLASSES[config.color] || COLOR_CLASSES.cyan;
 
@@ -915,29 +918,93 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
         {/* Core Navigation - filtered by permissions */}
         <div className="space-y-1">
           {filteredNavItems.map((item) => {
-                            const isActive = isNavItemActive(item, location.pathname);
+            const isActive = isNavItemActive(item, location.pathname);
+            // Check if this item has a secondary nav (CRM, Products)
+            const hasSecondaryNav = item.matchPatterns && (item.title === 'CRM' || item.title === 'Products');
+            const submenuId = item.title.toLowerCase();
 
-                            return (
-                              <Link
-                                key={item.title}
-                                to={item.url}
-                                onClick={triggerActivity}
-                                className={`flex items-center ${isMobile ? 'justify-start gap-3 px-4' : 'justify-center'} min-h-[44px] p-3 rounded-xl transition-all duration-200 group relative active:scale-[0.98]
-                                  ${isActive
-                                    ? 'text-cyan-400 bg-cyan-950/30'
-                                    : 'text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
-                                  }
-                                `}
-                                title={item.title}
-                              >
-                                <item.icon isActive={isActive} className={`w-5 h-5 flex-shrink-0 transition-colors ${isActive ? 'text-cyan-400' : 'group-hover:text-white'}`} />
-                                {isMobile && <span className="text-sm font-medium">{item.title}</span>}
-                                {isActive && (
-                                   <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-cyan-500 rounded-l-full shadow-[0_0_10px_rgba(6,182,212,0.5)]" />
-                                )}
-                              </Link>
-                            );
-                          })}
+            // Mobile: always use Link
+            if (isMobile) {
+              return (
+                <Link
+                  key={item.title}
+                  to={item.url}
+                  onClick={triggerActivity}
+                  className={`flex items-center justify-start gap-3 px-4 min-h-[44px] p-3 rounded-xl transition-all duration-200 group relative active:scale-[0.98]
+                    ${isActive
+                      ? 'text-cyan-400 bg-cyan-950/30'
+                      : 'text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
+                    }
+                  `}
+                  title={item.title}
+                >
+                  <item.icon isActive={isActive} className={`w-5 h-5 flex-shrink-0 transition-colors ${isActive ? 'text-cyan-400' : 'group-hover:text-white'}`} />
+                  <span className="text-sm font-medium">{item.title}</span>
+                  {isActive && (
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-cyan-500 rounded-l-full shadow-[0_0_10px_rgba(6,182,212,0.5)]" />
+                  )}
+                </Link>
+              );
+            }
+
+            // Desktop: items with secondary nav use button for submenu
+            if (hasSecondaryNav) {
+              return (
+                <button
+                  key={item.title}
+                  onClick={() => {
+                    triggerActivity();
+                    setOpenSubmenu?.(submenuId);
+                    if (!isActive) {
+                      navigate(item.url);
+                    }
+                  }}
+                  onMouseEnter={() => {
+                    if (isActive) {
+                      onSubmenuEnter?.();
+                      setOpenSubmenu?.(submenuId);
+                    }
+                  }}
+                  onMouseLeave={() => {
+                    onSubmenuClose?.();
+                  }}
+                  className={`flex items-center justify-center min-h-[44px] p-3 rounded-xl transition-all duration-200 group relative active:scale-[0.98] w-full
+                    ${isActive
+                      ? 'text-cyan-400 bg-cyan-950/30'
+                      : 'text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
+                    }
+                  `}
+                  title={item.title}
+                >
+                  <item.icon isActive={isActive} className={`w-5 h-5 flex-shrink-0 transition-colors ${isActive ? 'text-cyan-400' : 'group-hover:text-white'}`} />
+                  {isActive && (
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-cyan-500 rounded-l-full shadow-[0_0_10px_rgba(6,182,212,0.5)]" />
+                  )}
+                </button>
+              );
+            }
+
+            // Desktop: items without secondary nav use Link
+            return (
+              <Link
+                key={item.title}
+                to={item.url}
+                onClick={triggerActivity}
+                className={`flex items-center justify-center min-h-[44px] p-3 rounded-xl transition-all duration-200 group relative active:scale-[0.98]
+                  ${isActive
+                    ? 'text-cyan-400 bg-cyan-950/30'
+                    : 'text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
+                  }
+                `}
+                title={item.title}
+              >
+                <item.icon isActive={isActive} className={`w-5 h-5 flex-shrink-0 transition-colors ${isActive ? 'text-cyan-400' : 'group-hover:text-white'}`} />
+                {isActive && (
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-cyan-500 rounded-l-full shadow-[0_0_10px_rgba(6,182,212,0.5)]" />
+                )}
+              </Link>
+            );
+          })}
         </div>
 
         <div className="h-px bg-white/5 mx-2 my-2" />
