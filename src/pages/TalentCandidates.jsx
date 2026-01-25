@@ -220,57 +220,56 @@ const CandidateRow = ({ candidate, isSelected, onToggle, onClick, onEdit }) => {
       whileHover={{ backgroundColor: "rgba(255,255,255,0.05)" }}
       className="cursor-pointer border-b border-white/5 last:border-0"
     >
-      <td className="py-4 px-4">
+      <td className="py-2 px-3">
         <Checkbox
           checked={isSelected}
           onCheckedChange={() => onToggle(candidate.id)}
           className="border-zinc-600"
         />
       </td>
-      <td className="py-4 px-4" onClick={onClick}>
-        <div className="flex items-center gap-3">
-          <CandidateAvatar name={`${candidate.first_name} ${candidate.last_name}`} image={candidate.profile_image_url} />
-          <div>
-            <p className="font-medium text-white">{`${candidate.first_name} ${candidate.last_name}`}</p>
-            <p className="text-sm text-white/60">{candidate.email}</p>
+      <td className="py-2 px-3" onClick={onClick}>
+        <div className="flex items-center gap-2">
+          <CandidateAvatar name={`${candidate.first_name} ${candidate.last_name}`} image={candidate.profile_image_url} size="sm" />
+          <div className="min-w-0">
+            <p className="font-medium text-white text-sm truncate">{`${candidate.first_name} ${candidate.last_name}`}</p>
           </div>
         </div>
       </td>
-      <td className="py-4 px-4" onClick={onClick}>
-        <p className="text-white/80">{candidate.job_title || "—"}</p>
-        <p className="text-sm text-white/60">{candidate.company_name || "—"}</p>
+      <td className="py-2 px-3" onClick={onClick}>
+        <p className="text-white/80 text-sm truncate">{candidate.job_title || "—"}</p>
+        <p className="text-xs text-white/50 truncate">{candidate.company_name || "—"}</p>
       </td>
-      <td className="py-4 px-4" onClick={onClick}>
-        <div className="flex items-center gap-3">
+      <td className="py-2 px-3" onClick={onClick}>
+        <div className="flex items-center gap-2">
           <IntelligenceGauge score={candidate.intelligence_score || 0} size="sm" />
           <IntelligenceLevelBadge level={candidate.intelligence_level || "Low"} />
         </div>
       </td>
-      <td className="py-4 px-4" onClick={onClick}>
+      <td className="py-2 px-3" onClick={onClick}>
         <ApproachBadge approach={candidate.recommended_approach || "nurture"} />
       </td>
-      <td className="py-4 px-4 text-white/60" onClick={onClick}>
-        {candidate.location || "—"}
+      <td className="py-2 px-3 text-white/60 text-sm" onClick={onClick}>
+        {candidate.person_home_location || "—"}
       </td>
-      <td className="py-4 px-4">
-        <div className="flex items-center gap-2">
+      <td className="py-2 px-3">
+        <div className="flex items-center gap-1">
           <button
             onClick={(e) => {
               e.stopPropagation();
               onClick();
             }}
-            className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/60 hover:text-white"
+            className="p-1 rounded hover:bg-white/10 transition-colors text-white/60 hover:text-white"
           >
-            <Eye className="w-4 h-4" />
+            <Eye className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
               onEdit(candidate);
             }}
-            className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/60 hover:text-white"
+            className="p-1 rounded hover:bg-white/10 transition-colors text-white/60 hover:text-white"
           >
-            <Edit className="w-4 h-4" />
+            <Edit className="w-3.5 h-3.5" />
           </button>
         </div>
       </td>
@@ -721,7 +720,7 @@ export default function TalentCandidates() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-white/10">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-white/60 w-10">
+                  <th className="text-left py-2 px-3 text-xs font-medium text-white/50 w-10">
                     <Checkbox
                       checked={selectedIds.size === paginatedCandidates.length && paginatedCandidates.length > 0}
                       onCheckedChange={(checked) => {
@@ -731,12 +730,12 @@ export default function TalentCandidates() {
                       className="border-zinc-600"
                     />
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-white/60">Candidate</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-white/60">Position</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-white/60">Intelligence</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-white/60">Approach</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-white/60">Location</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-white/60">Actions</th>
+                  <th className="text-left py-2 px-3 text-xs font-medium text-white/50">Candidate</th>
+                  <th className="text-left py-2 px-3 text-xs font-medium text-white/50">Position</th>
+                  <th className="text-left py-2 px-3 text-xs font-medium text-white/50">Intelligence</th>
+                  <th className="text-left py-2 px-3 text-xs font-medium text-white/50">Approach</th>
+                  <th className="text-left py-2 px-3 text-xs font-medium text-white/50">Location</th>
+                  <th className="text-left py-2 px-3 text-xs font-medium text-white/50 w-16">Actions</th>
                 </tr>
               </thead>
               <motion.tbody variants={containerVariants} initial="hidden" animate="visible">
