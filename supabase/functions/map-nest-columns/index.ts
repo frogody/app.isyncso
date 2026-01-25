@@ -54,6 +54,7 @@ const NEST_TARGET_FIELDS = {
     { id: 'job_satisfaction_analysis', label: 'Job Satisfaction Analysis', description: 'Detailed job satisfaction analysis', patterns: ['job satisfaction analysis', 'satisfaction analysis', 'reasoning - job satisfaction', 'reasoning job satisfaction'] },
     { id: 'avg_promotion_threshold', label: 'Avg Promotion Time', description: 'Average years between promotions', patterns: ['average threshold towards promotion', 'avg promotion threshold', 'promotion threshold', 'avg promo time'] },
     { id: 'outreach_urgency_reasoning', label: 'Outreach Urgency Reasoning', description: 'Reasoning for outreach urgency level', patterns: ['reasoning outreach urgency', 'outreach urgency reasoning', 'urgency reasoning'] },
+    { id: 'recent_ma_news', label: 'Recent M&A News', description: 'Recent merger/acquisition news about the company', patterns: ['recent m&a news', 'ma news', 'merger news', 'acquisition news', 'm&a'] },
   ],
   prospects: [
     { id: 'first_name', label: 'First Name', description: 'Person\'s first name', patterns: ['first_name', 'fname', 'first'] },
@@ -95,9 +96,16 @@ function buildPromptForNestType(nestType: string, columnInfo: string): string {
   const typeSpecificContext = {
     candidates: `You are mapping recruitment/talent candidate data. This data will be displayed on candidate profile pages.
 
+=== CRITICAL: LINKEDIN COLUMNS ===
+There are TWO different LinkedIn columns - DO NOT CONFUSE THEM:
+1. "linkedin_profile" or "linkedIn_profile" (lowercase/mixed case with underscore) = This is the PERSON's LinkedIn profile URL → MUST map to: linkedin_profile
+2. "Company LinkedIn" (two words, capital letters) = This is the COMPANY's LinkedIn page → MUST map to: company_linkedin
+
+NEVER skip "linkedin_profile" - it contains the candidate's personal LinkedIn URL!
+
 === MANDATORY MAPPINGS (NEVER SKIP THESE) ===
 These column names MUST ALWAYS be mapped to the corresponding target field:
-- "linkedin_profile" or "linkedIn_profile" → linkedin_profile (PERSON's LinkedIn!)
+- "linkedin_profile" or "linkedIn_profile" → linkedin_profile (PERSON's LinkedIn profile!)
 - "first_Name" or "first_name" → first_name
 - "last_name" → last_name
 - "Job_Title" or "job_title" → job_title
@@ -136,14 +144,10 @@ These analysis columns should be mapped to display on candidate profiles:
 - "Reasoning - Job Satisfaction" → job_satisfaction_analysis (alternative)
 - "Average Threshold Towards Promotion In Years" → avg_promotion_threshold
 - "Reasoning Outreach Urgency" → outreach_urgency_reasoning
-
-=== LINKEDIN DISTINCTION (CRITICAL!) ===
-- "linkedin_profile" or "linkedIn_profile" = PERSON's profile → linkedin_profile
-- "Company LinkedIn" = COMPANY's page → company_linkedin
+- "Recent M&A News" → recent_ma_news (company news displayed on profile!)
 
 === SKIP ONLY THESE ===
-Only skip columns that are duplicates or not useful:
-- "Recent M&A News" (news articles - stored separately)
+Only skip columns that are truly duplicates or not useful:
 - "Salary Intelligence" (use Salary_Range instead)
 - "Job Changes & Promotions" (descriptive text, redundant with times_promoted/times_company_hopped)`,
 

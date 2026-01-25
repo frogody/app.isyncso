@@ -88,6 +88,7 @@ const NEST_TARGET_FIELDS = {
     { id: 'job_satisfaction_analysis', label: 'Job Satisfaction Analysis', required: false, description: 'Detailed satisfaction analysis' },
     { id: 'avg_promotion_threshold', label: 'Avg Promotion Time', required: false, description: 'Average years between promotions' },
     { id: 'outreach_urgency_reasoning', label: 'Outreach Urgency Reasoning', required: false, description: 'Reasoning for urgency level' },
+    { id: 'recent_ma_news', label: 'Recent M&A News', required: false, description: 'Recent merger/acquisition news' },
   ],
   prospects: [
     { id: 'first_name', label: 'First Name', required: false, description: 'Person\'s first name' },
