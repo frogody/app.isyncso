@@ -592,7 +592,7 @@ export default function FinanceExpenses() {
                           </DropdownMenu>
                         </div>
                       </div>
-                    </motion.div>
+                    </div>
                   );
                 })}
               </div>
