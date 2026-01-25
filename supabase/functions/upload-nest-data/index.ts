@@ -76,15 +76,24 @@ async function createCandidate(supabase: any, row: MappedRow): Promise<string | 
       // Enrichment data (field names match TalentCandidateProfile.jsx)
       times_promoted: row.times_promoted ? parseInt(row.times_promoted.toString()) : null,
       times_company_hopped: row.times_company_hopped ? parseInt(row.times_company_hopped.toString()) : null,
-      years_at_company: row.years_at_company ? parseFloat(row.years_at_company.toString()) : null,
+      years_at_company: row.years_at_company ? parseFloat(row.years_at_company.toString().replace(/[^0-9.]/g, '')) : null,
       job_satisfaction: row.job_satisfaction || null,
       estimated_age_range: row.estimated_age_range || null,
       market_position: row.market_position || null,
       employee_growth_rate: row.employee_growth_rate ? parseFloat(row.employee_growth_rate.toString()) : null,
       recruitment_urgency: row.recruitment_urgency || null,
 
+      // Analysis/Report fields (displayed on profile)
+      experience_report: row.experience_report || null,
+      experience_analysis: row.experience_analysis || null,
+      job_satisfaction_analysis: row.job_satisfaction_analysis || null,
+      avg_promotion_threshold: row.avg_promotion_threshold ? parseFloat(row.avg_promotion_threshold.toString()) : null,
+      outreach_urgency_reasoning: row.outreach_urgency_reasoning || null,
+      recent_ma_news: row.recent_ma_news || null,
+
       // Meta
       source: 'nest_upload',
+      imported_at: new Date().toISOString(),
       organization_id: null, // Platform-owned
     })
     .select('id')
