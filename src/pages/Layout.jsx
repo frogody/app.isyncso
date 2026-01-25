@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { db } from "@/api/supabaseClient";
@@ -576,9 +576,10 @@ function calculateSecondaryNavOffset(config) {
   return baseOffset + engineItemsOffset + ALIGNMENT_ADJUST;
 }
 
-// Secondary Sidebar Component - Now shows on iPad (md:) instead of just desktop (lg:)
-function SecondarySidebar({ config, location }) {
-  if (!config) return null;
+// Submenu Flyout Component - Floating panel that appears on click/hover
+function SubmenuFlyout({ config, openSubmenu, onClose, onEnter, location }) {
+  // Only show if config exists and this submenu is open
+  if (!config || !config.agent || openSubmenu !== config.agent) return null;
 
   const colors = COLOR_CLASSES[config.color] || COLOR_CLASSES.cyan;
 
@@ -586,20 +587,22 @@ function SecondarySidebar({ config, location }) {
   const navOffset = calculateSecondaryNavOffset(config);
 
   return (
-    <div className="hidden md:flex flex-col w-[72px] lg:w-[80px] bg-black border-r border-white/5 relative z-0 animate-in slide-in-from-left duration-300 overflow-hidden">
-      {/* Header - positioned at top like avatar area */}
-      <div className="absolute top-0 left-0 right-0 pt-4 pb-2 flex items-center justify-center z-10">
+    <div
+      className="absolute left-[72px] lg:left-[80px] bg-black/95 backdrop-blur-sm border border-white/10 rounded-2xl p-3 shadow-2xl z-50 animate-in fade-in slide-in-from-left-2 duration-200 hidden md:block"
+      style={{ top: `${navOffset}px` }}
+      onMouseEnter={onEnter}
+      onMouseLeave={onClose}
+    >
+      {/* Title */}
+      <div className="px-2 pb-2 mb-2 border-b border-white/5">
         <h3 className={`text-[10px] font-bold uppercase tracking-widest ${colors.text}`}>
           {config.title}
         </h3>
       </div>
 
+      {/* Nav items */}
       <TooltipProvider delayDuration={200}>
-        <nav className="flex-1 overflow-y-auto px-2 lg:px-3 scrollbar-hide">
-          {/* Spacer div to align first item with active primary nav item */}
-          <div style={{ height: `${navOffset}px`, flexShrink: 0 }} aria-hidden="true" />
-
-          <div className="space-y-1">
+        <nav className="space-y-1">
           {config.items.map((item) => {
             // Parse URLs for proper comparison
             const itemUrl = new URL(item.path, 'http://localhost');
@@ -634,7 +637,7 @@ function SecondarySidebar({ config, location }) {
                   <Link
                     to={item.path}
                     className={`
-                      relative flex items-center justify-center w-full h-11 rounded-xl transition-all duration-200 group active:scale-[0.98]
+                      relative flex items-center justify-center w-full h-11 w-11 rounded-xl transition-all duration-200 group active:scale-[0.98]
                       ${isActive
                         ? `${colors.text} ${colors.bg}`
                         : 'text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
@@ -643,7 +646,7 @@ function SecondarySidebar({ config, location }) {
                   >
                     <Icon className={`w-5 h-5 transition-colors ${isActive ? colors.text : 'group-hover:text-white'}`} />
                     {item.badge > 0 && (
-                      <span className={`absolute top-0.5 right-0.5 lg:top-1 lg:right-1 text-[8px] lg:text-[9px] px-1 lg:px-1.5 py-0.5 rounded-full font-bold ${colors.bg} ${colors.text} border ${colors.border}`}>
+                      <span className={`absolute top-0.5 right-0.5 text-[8px] px-1 py-0.5 rounded-full font-bold ${colors.bg} ${colors.text} border ${colors.border}`}>
                         {item.badge}
                       </span>
                     )}
@@ -652,13 +655,12 @@ function SecondarySidebar({ config, location }) {
                     )}
                   </Link>
                 </TooltipTrigger>
-                <TooltipContent side="right" className="bg-gray-900 border-gray-700 text-white hidden lg:block">
+                <TooltipContent side="right" className="bg-gray-900 border-gray-700 text-white">
                   <p>{item.label}</p>
                 </TooltipContent>
               </Tooltip>
             );
           })}
-          </div>
         </nav>
       </TooltipProvider>
     </div>
@@ -735,7 +737,7 @@ function MobileSecondaryNav({ config, location }) {
 }
 
 // Reusable Sidebar Content - must be rendered inside PermissionProvider
-function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig, enabledApps, onOpenAppsManager, onOpenFloatingChat, onOpenVoiceMode }) {
+function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig, enabledApps, onOpenAppsManager, onOpenFloatingChat, onOpenVoiceMode, openSubmenu, setOpenSubmenu, onSubmenuClose, onSubmenuEnter }) {
     const location = useLocation();
     const navigate = useNavigate();
   const [me, setMe] = React.useState(null);
@@ -964,12 +966,56 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
             };
             const colors = getEngineColors();
 
+            // Mobile: use Link for navigation, Desktop: use button for submenu control
+            if (isMobile) {
+              return (
+                <Link
+                  key={item.title}
+                  to={item.url}
+                  onClick={triggerActivity}
+                  className={`flex items-center justify-start gap-3 px-4 min-h-[44px] p-3 rounded-xl transition-all duration-200 group relative active:scale-[0.98]
+                    ${isActive
+                      ? `${colors.text} ${colors.bg}`
+                      : 'text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
+                    }
+                  `}
+                  title={item.title}
+                >
+                  <item.icon isActive={isActive} className={`w-5 h-5 flex-shrink-0 transition-colors ${
+                    isActive ? colors.text : 'group-hover:text-white'
+                  }`} />
+                  <span className="text-sm font-medium">{item.title}</span>
+                  {isActive && (
+                    <div className={`absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-l-full ${colors.solid} ${colors.glow}`} />
+                  )}
+                </Link>
+              );
+            }
+
+            // Desktop: button with submenu flyout behavior
             return (
-              <Link
+              <button
                 key={item.title}
-                to={item.url}
-                onClick={triggerActivity}
-                className={`flex items-center ${isMobile ? 'justify-start gap-3 px-4' : 'justify-center'} min-h-[44px] p-3 rounded-xl transition-all duration-200 group relative active:scale-[0.98]
+                onClick={() => {
+                  triggerActivity();
+                  // Always open submenu on click
+                  setOpenSubmenu?.(item.id);
+                  // Navigate if not already on this engine
+                  if (!isActive) {
+                    navigate(item.url);
+                  }
+                }}
+                onMouseEnter={() => {
+                  // Only show submenu on hover if already active
+                  if (isActive) {
+                    onSubmenuEnter?.();
+                    setOpenSubmenu?.(item.id);
+                  }
+                }}
+                onMouseLeave={() => {
+                  onSubmenuClose?.();
+                }}
+                className={`flex items-center justify-center min-h-[44px] p-3 rounded-xl transition-all duration-200 group relative active:scale-[0.98] w-full
                   ${isActive
                     ? `${colors.text} ${colors.bg}`
                     : 'text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
@@ -980,11 +1026,10 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
                 <item.icon isActive={isActive} className={`w-5 h-5 flex-shrink-0 transition-colors ${
                   isActive ? colors.text : 'group-hover:text-white'
                 }`} />
-                {isMobile && <span className="text-sm font-medium">{item.title}</span>}
                 {isActive && (
                   <div className={`absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-l-full ${colors.solid} ${colors.glow}`} />
                 )}
-              </Link>
+              </button>
             );
           })}
           </div>
@@ -1137,7 +1182,24 @@ export default function Layout({ children, currentPageName }) {
     setIsVoiceModeOpen(false);
     setIsFloatingChatOpen(true);
   }, []);
-  
+
+  // Submenu flyout state
+  const [openSubmenu, setOpenSubmenu] = useState(null); // engine id or null
+  const closeTimeoutRef = useRef(null);
+
+  const handleSubmenuClose = useCallback(() => {
+    closeTimeoutRef.current = setTimeout(() => {
+      setOpenSubmenu(null);
+    }, 150); // Small delay for mouse movement
+  }, []);
+
+  const handleSubmenuEnter = useCallback(() => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+  }, []);
+
 
   // Load user app config
   const loadUserAppConfig = React.useCallback(async () => {
@@ -1466,7 +1528,7 @@ export default function Layout({ children, currentPageName }) {
           `}</style>
 
         <div className="flex h-screen">
-          {/* Desktop/Tablet Sidebar - Responsive width */}
+          {/* Desktop/Tablet Sidebar with Flyout Submenu */}
           <div className="hidden md:flex flex-col sidebar-shell w-[72px] lg:w-[80px] overflow-visible relative z-20">
             <SidebarContent
               currentPageName={currentPageName}
@@ -1475,11 +1537,20 @@ export default function Layout({ children, currentPageName }) {
               onOpenAppsManager={() => setAppsManagerOpen(true)}
               onOpenFloatingChat={handleOpenFloatingChat}
               onOpenVoiceMode={handleOpenVoiceMode}
+              openSubmenu={openSubmenu}
+              setOpenSubmenu={setOpenSubmenu}
+              onSubmenuClose={handleSubmenuClose}
+              onSubmenuEnter={handleSubmenuEnter}
+            />
+            {/* Submenu Flyout - positioned absolutely relative to sidebar */}
+            <SubmenuFlyout
+              config={secondaryNavConfig}
+              openSubmenu={openSubmenu}
+              onClose={handleSubmenuClose}
+              onEnter={handleSubmenuEnter}
+              location={location}
             />
           </div>
-
-          {/* Secondary Sidebar */}
-          <SecondarySidebar config={secondaryNavConfig} location={location} />
 
           {/* Mobile Header - Only on phones (below 768px) */}
           <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-md border-b border-gray-800 pt-safe">
