@@ -301,6 +301,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       color: 'sage',
       agent: 'sentinel',
       items: [
+        { label: 'Dashboard', path: createPageUrl('SentinelDashboard'), icon: LayoutDashboard },
         { label: 'AI Systems', path: createPageUrl('AISystemInventory'), icon: Cpu, badge: stats.systems },
         { label: 'Roadmap', path: createPageUrl('ComplianceRoadmap'), icon: Map, badge: stats.tasks },
         { label: 'Documents', path: createPageUrl('DocumentGenerator'), icon: FileText },
@@ -335,6 +336,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       color: 'indigo',
       agent: 'growth',
       items: [
+        { label: 'Dashboard', path: createPageUrl('Growth'), icon: LayoutDashboard },
         { label: 'Pipeline', path: createPageUrl('GrowthPipeline'), icon: Kanban },
         { label: 'Prospects', path: createPageUrl('GrowthProspects'), icon: Users },
         { label: 'Campaigns', path: createPageUrl('GrowthCampaigns'), icon: Megaphone },
@@ -350,7 +352,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       color: 'amber',
       agent: 'finance',
       items: [
-        { label: 'Overview', path: createPageUrl('FinanceOverview'), icon: PieChart },
+        { label: 'Dashboard', path: createPageUrl('FinanceOverview'), icon: LayoutDashboard },
         { label: 'Invoices', path: createPageUrl('FinanceInvoices'), icon: Receipt },
         { label: 'Proposals', path: createPageUrl('FinanceProposals'), icon: FileText },
         { label: 'Business Expenses', path: createPageUrl('FinanceExpenses'), icon: DollarSign },
@@ -397,7 +399,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       color: 'orange',
       agent: 'raise',
       items: [
-        { label: 'Overview', path: createPageUrl('Raise'), icon: TrendingUp },
+        { label: 'Dashboard', path: createPageUrl('Raise'), icon: LayoutDashboard },
         { label: 'Investors', path: createPageUrl('RaiseInvestors'), icon: Building2 },
         { label: 'Pitch Decks', path: createPageUrl('RaisePitchDecks'), icon: Presentation },
         { label: 'Data Room', path: createPageUrl('RaiseDataRoom'), icon: FolderKey },
@@ -414,6 +416,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       color: 'cyan',
       agent: 'learn',
       items: [
+        { label: 'Dashboard', path: createPageUrl('LearnDashboard'), icon: LayoutDashboard },
         { label: 'My Courses', path: createPageUrl('Learn'), icon: BookOpen },
         { label: 'Skills', path: createPageUrl('SkillMap'), icon: Target, badge: stats.skills },
         { label: 'Course Builder', path: createPageUrl('ManageCourses'), icon: Library },
@@ -446,6 +449,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       color: 'rose',
       agent: 'create',
       items: [
+        { label: 'Dashboard', path: createPageUrl('Create'), icon: LayoutDashboard },
         { label: 'Branding', path: createPageUrl('CreateBranding'), icon: Palette },
         { label: 'Images', path: createPageUrl('CreateImages'), icon: Image },
         { label: 'Videos', path: createPageUrl('CreateVideos'), icon: Video },
@@ -531,6 +535,7 @@ const SIDEBAR_CONSTANTS = {
   CORE_ITEM_HEIGHT: 44,    // min-h-[44px]
   ITEM_GAP: 4,             // space-y-1
   DIVIDER_HEIGHT: 17,      // h-px + my-2 (1px + 8px + 8px)
+  ALIGNMENT_ADJUST: -24,   // Fine-tune adjustment to align items perfectly
 };
 
 // Core nav item indices (Dashboard, CRM, Projects, Products, Inbox)
@@ -541,7 +546,7 @@ const CORE_NAV_INDICES = {
 
 // Calculate offset for secondary sidebar based on config
 function calculateSecondaryNavOffset(config) {
-  const { AVATAR_SECTION, NAV_PADDING, CORE_ITEM_HEIGHT, ITEM_GAP, DIVIDER_HEIGHT } = SIDEBAR_CONSTANTS;
+  const { AVATAR_SECTION, NAV_PADDING, CORE_ITEM_HEIGHT, ITEM_GAP, DIVIDER_HEIGHT, ALIGNMENT_ADJUST } = SIDEBAR_CONSTANTS;
 
   // Check if this is a core nav item (CRM, Products) or an engine app
   const configTitle = config?.title?.toLowerCase();
@@ -549,8 +554,8 @@ function calculateSecondaryNavOffset(config) {
 
   if (coreNavIndex !== undefined) {
     // Core nav item: align with that position
-    // Offset = avatar + nav padding + items above
-    return AVATAR_SECTION + NAV_PADDING + (coreNavIndex * (CORE_ITEM_HEIGHT + ITEM_GAP));
+    // Offset = avatar + nav padding + items above + adjustment
+    return AVATAR_SECTION + NAV_PADDING + (coreNavIndex * (CORE_ITEM_HEIGHT + ITEM_GAP)) + ALIGNMENT_ADJUST;
   }
 
   // Engine app: calculate based on engine index
@@ -565,10 +570,10 @@ function calculateSecondaryNavOffset(config) {
   const coreItemsTotal = (CORE_ITEMS_COUNT * CORE_ITEM_HEIGHT) + ((CORE_ITEMS_COUNT - 1) * ITEM_GAP);
   const baseOffset = AVATAR_SECTION + NAV_PADDING + coreItemsTotal + DIVIDER_HEIGHT;
 
-  // Add offset for engine items before the active one
+  // Add offset for engine items before the active one + alignment adjustment
   const engineItemsOffset = Math.max(0, engineIndex) * (CORE_ITEM_HEIGHT + ITEM_GAP);
 
-  return baseOffset + engineItemsOffset;
+  return baseOffset + engineItemsOffset + ALIGNMENT_ADJUST;
 }
 
 // Secondary Sidebar Component - Now shows on iPad (md:) instead of just desktop (lg:)
