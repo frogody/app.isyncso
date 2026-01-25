@@ -501,14 +501,14 @@ export default function GrowthPipeline() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-6">
-        <div className="space-y-6">
-          <Skeleton className="h-28 w-full bg-zinc-800 rounded-2xl" />
-          <div className="grid grid-cols-4 gap-4">
-            {[1,2,3,4].map(i => <Skeleton key={i} className="h-24 bg-zinc-800 rounded-xl" />)}
+      <div className="min-h-screen bg-black p-4">
+        <div className="space-y-4">
+          <Skeleton className="h-20 w-full bg-zinc-800 rounded-xl" />
+          <div className="grid grid-cols-4 gap-3">
+            {[1,2,3,4].map(i => <Skeleton key={i} className="h-16 bg-zinc-800 rounded-xl" />)}
           </div>
-          <div className="flex gap-4 overflow-x-auto">
-            {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-[500px] w-80 flex-shrink-0 bg-zinc-800 rounded-2xl" />)}
+          <div className="flex gap-3 overflow-x-auto">
+            {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-[500px] w-72 flex-shrink-0 bg-zinc-800 rounded-xl" />)}
           </div>
         </div>
       </div>
@@ -523,7 +523,7 @@ export default function GrowthPipeline() {
         <div className="absolute bottom-20 right-1/4 w-[400px] h-[400px] bg-violet-500/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <div ref={headerRef} style={{ opacity: 0 }}>
           <PageHeader
@@ -544,52 +544,52 @@ export default function GrowthPipeline() {
         </div>
 
         {/* Stats Row */}
-        <div ref={statsGridRef} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="stat-card p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+        <div ref={statsGridRef} className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="stat-card p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-sm">Total Pipeline</p>
-                <p className="stat-number text-2xl font-bold text-white mt-1" data-value={stats.totalPipeline} data-prefix="€">€0</p>
+                <p className="text-zinc-500 text-xs">Total Pipeline</p>
+                <p className="stat-number text-lg font-bold text-white mt-0.5" data-value={stats.totalPipeline} data-prefix="€">€0</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-indigo-400/70" />
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
+                <DollarSign className="w-4 h-4 text-indigo-400/70" />
               </div>
             </div>
           </div>
 
-          <div className="stat-card p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className="stat-card p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-sm">Weighted Value</p>
-                <p className="stat-number text-2xl font-bold text-white mt-1" data-value={Math.round(stats.weightedPipeline)} data-prefix="€">€0</p>
+                <p className="text-zinc-500 text-xs">Weighted Value</p>
+                <p className="stat-number text-lg font-bold text-white mt-0.5" data-value={Math.round(stats.weightedPipeline)} data-prefix="€">€0</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-indigo-400/70" />
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
+                <TrendingUp className="w-4 h-4 text-indigo-400/70" />
               </div>
             </div>
           </div>
 
-          <div className="stat-card p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className="stat-card p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-sm">Won This Period</p>
-                <p className="stat-number text-2xl font-bold text-white mt-1" data-value={stats.wonValue} data-prefix="€">€0</p>
-                <p className="text-xs text-indigo-400/70 mt-0.5">{stats.wonDeals} deals closed</p>
+                <p className="text-zinc-500 text-xs">Won This Period</p>
+                <p className="stat-number text-lg font-bold text-white mt-0.5" data-value={stats.wonValue} data-prefix="€">€0</p>
+                <p className="text-[10px] text-indigo-400/70">{stats.wonDeals} deals closed</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center">
-                <CheckCircle2 className="w-6 h-6 text-indigo-400/70" />
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
+                <CheckCircle2 className="w-4 h-4 text-indigo-400/70" />
               </div>
             </div>
           </div>
 
-          <div className="stat-card p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className="stat-card p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-sm">Avg Deal Size</p>
-                <p className="stat-number text-2xl font-bold text-white mt-1" data-value={Math.round(stats.avgDealSize)} data-prefix="€">€0</p>
+                <p className="text-zinc-500 text-xs">Avg Deal Size</p>
+                <p className="stat-number text-lg font-bold text-white mt-0.5" data-value={Math.round(stats.avgDealSize)} data-prefix="€">€0</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-indigo-500/15 flex items-center justify-center">
-                <Target className="w-6 h-6 text-indigo-400/60" />
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/15 flex items-center justify-center">
+                <Target className="w-4 h-4 text-indigo-400/60" />
               </div>
             </div>
           </div>
@@ -612,7 +612,7 @@ export default function GrowthPipeline() {
           </div>
         ) : (
           <DragDropContext onDragEnd={handleDragEnd}>
-            <div ref={pipelineRef} className="flex gap-4 overflow-x-auto pb-6 -mx-6 px-6">
+            <div ref={pipelineRef} className="flex gap-3 overflow-x-auto pb-4 -mx-4 px-4">
               {STAGES.map((stage) => (
                 <div key={stage.id} className="pipeline-column">
                   <StageColumn
