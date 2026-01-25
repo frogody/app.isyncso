@@ -286,7 +286,9 @@ export function NestUploadWizard({
         updated: result.updated_count || 0,
         linked: result.linked_count || 0,
         failed: result.error_count || 0,
-        total: validation.validRows.length
+        total: validation.validRows.length,
+        errors: result.errors || [], // Capture error details
+        itemCount: result.item_count || 0
       });
 
       // Build descriptive toast message
@@ -542,16 +544,44 @@ export function NestUploadWizard({
               </div>
             )}
 
-            {importResults && (importResults.updated > 0 || importResults.linked > 0) && (
+            {/* Summary info */}
+            {importResults && (importResults.updated > 0 || importResults.linked > 0 || importResults.itemCount > 0) && (
               <div className="p-3 rounded-lg bg-zinc-800/50 border border-white/5">
-                <p className="text-xs text-zinc-400">
+                <p className="text-xs text-zinc-400 space-y-1">
                   {importResults.updated > 0 && (
                     <span className="block">• <span className="text-blue-400">{importResults.updated}</span> existing candidates in this nest were updated with new data</span>
                   )}
                   {importResults.linked > 0 && (
                     <span className="block">• <span className="text-purple-400">{importResults.linked}</span> existing candidates from other nests were linked to this nest</span>
                   )}
+                  {importResults.itemCount > 0 && (
+                    <span className="block mt-2 text-zinc-500">Total items in nest: <span className="text-white">{importResults.itemCount}</span></span>
+                  )}
                 </p>
+              </div>
+            )}
+
+            {/* Error details */}
+            {importResults?.errors?.length > 0 && (
+              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertCircle className="w-4 h-4 text-red-400" />
+                  <span className="text-sm font-medium text-red-400">
+                    {importResults.failed} row{importResults.failed !== 1 ? 's' : ''} failed to import
+                  </span>
+                </div>
+                <div className="max-h-32 overflow-y-auto space-y-1">
+                  {importResults.errors.map((error, i) => (
+                    <p key={i} className="text-xs text-red-300/80 font-mono">
+                      {error}
+                    </p>
+                  ))}
+                </div>
+                {importResults.failed > importResults.errors.length && (
+                  <p className="text-xs text-zinc-500 mt-2">
+                    ...and {importResults.failed - importResults.errors.length} more errors
+                  </p>
+                )}
               </div>
             )}
 
