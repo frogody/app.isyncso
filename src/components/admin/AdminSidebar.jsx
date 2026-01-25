@@ -26,6 +26,7 @@ import {
   FileText,
   Headphones,
   Bot,
+  Package,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -35,6 +36,7 @@ const adminNavItems = [
   { title: 'Users', href: '/admin/users', icon: Users },
   { title: 'Organizations', href: '/admin/organizations', icon: Building2 },
   { title: 'Marketplace', href: '/admin/marketplace', icon: Store },
+  { title: 'Nests', href: '/admin/nests', icon: Package },
   { title: 'Apps', href: '/admin/apps', icon: AppWindow },
   { title: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
   { divider: true },

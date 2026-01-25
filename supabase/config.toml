@@ -72,3 +72,12 @@ verify_jwt = false
 
 [functions.admin-api]
 verify_jwt = false
+
+[functions.upload-nest-data]
+verify_jwt = false
+
+[functions.purchase-nest]
+verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false

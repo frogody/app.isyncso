@@ -111,6 +111,11 @@ import LearnDashboard from "./LearnDashboard";
 
 import LessonViewer from "./LessonViewer";
 
+// Marketplace pages
+import NestsMarketplace from "./marketplace/NestsMarketplace";
+import NestDetail from "./marketplace/NestDetail";
+import PurchasedNests from "./marketplace/PurchasedNests";
+
 import ManageCourses from "./ManageCourses";
 
 import ManagerDashboard from "./ManagerDashboard";
@@ -249,6 +254,7 @@ import PlatformAdminAuditLogs from "./admin/AdminAuditLogs";
 import PlatformAdminUsers from "./admin/AdminUsers";
 import PlatformAdminOrganizations from "./admin/AdminOrganizations";
 import PlatformAdminMarketplace from "./admin/AdminMarketplace";
+import PlatformAdminNests from "./admin/AdminNests";
 import PlatformAdminApps from "./admin/AdminApps";
 import PlatformAdminAnalytics from "./admin/AdminAnalytics";
 import PlatformAdminSystem from "./admin/AdminSystem";
@@ -542,6 +548,7 @@ function PagesContent() {
                             <Route path="users" element={<PlatformAdminUsers />} />
                             <Route path="organizations" element={<PlatformAdminOrganizations />} />
                             <Route path="marketplace" element={<PlatformAdminMarketplace />} />
+                            <Route path="nests" element={<PlatformAdminNests />} />
                             <Route path="apps" element={<PlatformAdminApps />} />
                             <Route path="analytics" element={<PlatformAdminAnalytics />} />
                             <Route path="system" element={<PlatformAdminSystem />} />
@@ -678,6 +685,11 @@ function PagesContent() {
                 <Route path="/LearnDashboard" element={<LearnDashboard />} />
                 
                 <Route path="/LessonViewer" element={<LessonViewer />} />
+
+                {/* Marketplace Routes */}
+                <Route path="/marketplace/nests" element={<NestsMarketplace />} />
+                <Route path="/marketplace/nests/purchased" element={<PurchasedNests />} />
+                <Route path="/marketplace/nests/:nestId" element={<NestDetail />} />
                 
                 <Route path="/ManageCourses" element={<ManageCourses />} />
                 
