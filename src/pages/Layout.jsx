@@ -209,7 +209,7 @@ const ENGINE_ITEMS_CONFIG = {
     icon: TrendingUp,
     id: 'raise',
     permission: "finance.view", // Fundraising is finance-related
-    matchPattern: "/raise",
+    matchPatterns: ["/raise"],
   },
   create: {
     title: "Create",
@@ -217,7 +217,7 @@ const ENGINE_ITEMS_CONFIG = {
     icon: Palette,
     id: 'create',
     permission: null, // Always visible - content creation feature
-    matchPattern: "/create",
+    matchPatterns: ["/create"],
   },
   talent: {
     title: "Talent",
@@ -225,7 +225,7 @@ const ENGINE_ITEMS_CONFIG = {
     icon: UserPlus,
     id: 'talent',
     permission: "talent.view",
-    matchPattern: "/talent",
+    matchPatterns: ["/talent"],
   },
 };
 
@@ -248,19 +248,22 @@ function isNavItemActive(item, pathname) {
     return lowerPath === '/dashboard' || lowerPath === '/';
   }
 
-  // For other items, check if pathname starts with the base URL
-  // This is strict: /admin matches /admin and /admin/users, but not /administrator
-  if (lowerPath === baseUrl || lowerPath.startsWith(baseUrl + '/') || lowerPath.startsWith(baseUrl + '?')) {
+  // For other items, check if pathname matches the base URL exactly or as prefix
+  if (lowerPath === baseUrl || lowerPath.startsWith(baseUrl + '/')) {
     return true;
   }
 
-  // Use matchPatterns array if defined (for related pages that don't share URL prefix)
-  if (item.matchPatterns) {
-    return item.matchPatterns.some(pattern => {
+  // Get patterns to check (support both singular matchPattern and plural matchPatterns)
+  const patterns = item.matchPatterns || (item.matchPattern ? [item.matchPattern] : []);
+
+  if (patterns.length > 0) {
+    return patterns.some(pattern => {
       const lowerPattern = pattern.toLowerCase();
-      // Match if path starts with pattern (e.g., /crm matches /crmcontacts)
-      return lowerPath.startsWith(lowerPattern) ||
-             lowerPath.startsWith(lowerPattern.replace('/', ''));
+      // Strict matching: pattern must match as a path segment
+      // /crm matches /crmcontacts (starts with /crm)
+      // /crm matches /crm/profile (starts with /crm/)
+      // /crm does NOT match /microscopy (no leading slash match)
+      return lowerPath.startsWith(lowerPattern);
     });
   }
 
@@ -272,8 +275,8 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
   // Convert to lowercase for case-insensitive matching
   const path = pathname.toLowerCase();
 
-  // CRM routes
-  if (path.includes('crm') || path.includes('contacts-import')) {
+  // CRM routes - use startsWith for stricter matching
+  if (path.startsWith('/crm') || path.startsWith('/contacts-import')) {
     return {
       title: 'CRM',
       color: 'cyan',
@@ -292,21 +295,21 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
   }
 
   // SENTINEL routes
-      if (path.includes('sentinel') || path.includes('aisystem') || path.includes('compliance') || path.includes('document') || path.includes('riskassessment')) {
-        return {
-          title: 'SENTINEL',
-          color: 'sage',
-          agent: 'sentinel',
-          items: [
-            { label: 'AI Systems', path: createPageUrl('AISystemInventory'), icon: Cpu, badge: stats.systems },
-            { label: 'Roadmap', path: createPageUrl('ComplianceRoadmap'), icon: Map, badge: stats.tasks },
-            { label: 'Documents', path: createPageUrl('DocumentGenerator'), icon: FileText },
-          ]
-        };
-      }
+  if (path.startsWith('/sentinel') || path.startsWith('/aisystem') || path.startsWith('/compliance') || path.startsWith('/document') || path.startsWith('/riskassessment')) {
+    return {
+      title: 'SENTINEL',
+      color: 'sage',
+      agent: 'sentinel',
+      items: [
+        { label: 'AI Systems', path: createPageUrl('AISystemInventory'), icon: Cpu, badge: stats.systems },
+        { label: 'Roadmap', path: createPageUrl('ComplianceRoadmap'), icon: Map, badge: stats.tasks },
+        { label: 'Documents', path: createPageUrl('DocumentGenerator'), icon: FileText },
+      ]
+    };
+  }
 
-  // TALENT routes - recruitment and candidate intelligence (must be before GROWTH to prevent 'talentdeals' matching 'deals')
-  if (path.includes('talent')) {
+  // TALENT routes (must be before GROWTH to prevent /talentdeals matching /deals)
+  if (path.startsWith('/talent')) {
     return {
       title: 'TALENT',
       color: 'red',
@@ -323,23 +326,25 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
     };
   }
 
-  // GROWTH routes (merged with CIDE)
-          if (path.includes('growth') || path.includes('sequences') || path.includes('deals') || path.includes('leads') || path.includes('insights') || path.includes('prospect') || path.includes('research') || path.includes('pipeline')) {
-            return {
-              title: 'GROWTH',
-              color: 'indigo',
-              agent: 'growth',
-              items: [
-                { label: 'Pipeline', path: createPageUrl('GrowthPipeline'), icon: Kanban },
-                { label: 'Prospects', path: createPageUrl('GrowthProspects'), icon: Users },
-                { label: 'Campaigns', path: createPageUrl('GrowthCampaigns'), icon: Megaphone },
-                { label: 'Signals', path: createPageUrl('GrowthSignals'), icon: Radio },
-              ]
-            };
-          }
+  // GROWTH routes
+  if (path.startsWith('/growth') || path.startsWith('/sequences') || path.startsWith('/deals') ||
+      path.startsWith('/leads') || path.startsWith('/insights') || path.startsWith('/prospect') ||
+      path.startsWith('/research') || path.startsWith('/pipeline')) {
+    return {
+      title: 'GROWTH',
+      color: 'indigo',
+      agent: 'growth',
+      items: [
+        { label: 'Pipeline', path: createPageUrl('GrowthPipeline'), icon: Kanban },
+        { label: 'Prospects', path: createPageUrl('GrowthProspects'), icon: Users },
+        { label: 'Campaigns', path: createPageUrl('GrowthCampaigns'), icon: Megaphone },
+        { label: 'Signals', path: createPageUrl('GrowthSignals'), icon: Radio },
+      ]
+    };
+  }
 
   // FINANCE routes
-  if (path.includes('finance') || path.includes('proposal')) {
+  if (path.startsWith('/finance') || path.startsWith('/proposal')) {
     return {
       title: 'FINANCE',
       color: 'amber',
@@ -355,7 +360,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
   }
 
   // PRODUCTS routes
-  if (path.includes('products') || path.includes('productdetail') || path.includes('inventory')) {
+  if (path.startsWith('/products') || path.startsWith('/productdetail') || path.startsWith('/inventory') || path.startsWith('/stockpurchases')) {
     const { digitalEnabled = true, physicalEnabled = true } = productsSettings;
 
     // Build items list based on settings
@@ -386,7 +391,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
   }
 
   // RAISE routes
-  if (path.includes('raise')) {
+  if (path.startsWith('/raise')) {
     return {
       title: 'RAISE',
       color: 'orange',
@@ -401,8 +406,9 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
     };
   }
 
-  // LEARN routes (includes course building tools)
-  if (path.includes('learn') || path.includes('course') || path.includes('lesson') || path.includes('certificate') || path.includes('skill') || path.includes('leaderboard') || path.includes('learndashboard')) {
+  // LEARN routes
+  if (path.startsWith('/learn') || path.startsWith('/course') || path.startsWith('/lesson') ||
+      path.startsWith('/certificate') || path.startsWith('/skill') || path.startsWith('/leaderboard')) {
     return {
       title: 'LEARN',
       color: 'cyan',
@@ -416,8 +422,10 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
     };
   }
 
-  // SYNC routes - core feature, uses cyan like other main features
-  if (path.includes('sync') || path.includes('aiassistant') || path.includes('actions') || path.includes('activity') || path.includes('desktop') || path.includes('agents') || path.includes('agentdetail') || path.includes('integration') || path.includes('dailyjournal')) {
+  // SYNC routes
+  if (path.startsWith('/sync') || path.startsWith('/aiassistant') || path.startsWith('/actions') ||
+      path.startsWith('/activity') || path.startsWith('/desktop') || path.startsWith('/agents') ||
+      path.startsWith('/agentdetail') || path.startsWith('/integration') || path.startsWith('/dailyjournal')) {
     return {
       title: 'SYNC',
       color: 'cyan',
@@ -431,8 +439,8 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
     };
   }
 
-  // CREATE routes - content creation hub
-  if (path.includes('create')) {
+  // CREATE routes
+  if (path.startsWith('/create')) {
     return {
       title: 'CREATE',
       color: 'rose',
@@ -516,8 +524,9 @@ const COLOR_CLASSES = {
   }
 };
 
-// Header offset constant for secondary sidebar alignment - adjusted for smaller avatar bulge
-const SECONDARY_SIDEBAR_HEADER_OFFSET = 'pt-[70px]';
+// Header offset constant for secondary sidebar alignment
+// Avatar (52px) + padding (pt-4 pb-3 ≈ 28px) = ~80px
+const SECONDARY_SIDEBAR_HEADER_OFFSET = 'pt-[80px]';
 
 // Secondary Sidebar Component - Now shows on iPad (md:) instead of just desktop (lg:)
 function SecondarySidebar({ config, location }) {
@@ -537,21 +546,31 @@ function SecondarySidebar({ config, location }) {
       <TooltipProvider delayDuration={200}>
         <nav className="flex-1 overflow-y-auto py-3 lg:py-4 px-2 lg:px-3 space-y-1.5 lg:space-y-2 scrollbar-hide">
           {config.items.map((item) => {
-            // Check if item path has query params
-            const hasQueryParams = item.path.includes('?');
-            const currentFullPath = (location.pathname + location.search).toLowerCase();
-            const itemPathLower = item.path.toLowerCase();
+            // Parse URLs for proper comparison
+            const itemUrl = new URL(item.path, 'http://localhost');
+            const currentUrl = new URL(location.pathname + location.search, 'http://localhost');
 
-            let isActive;
-            if (hasQueryParams) {
-              // For items with query params, require exact match including query string
-              isActive = currentFullPath === itemPathLower || currentFullPath.startsWith(itemPathLower + '&');
+            let isActive = false;
+
+            // Check pathname match first
+            if (currentUrl.pathname.toLowerCase() === itemUrl.pathname.toLowerCase()) {
+              // If item has a 'type' query param, it must match
+              const itemType = itemUrl.searchParams.get('type');
+              const currentType = currentUrl.searchParams.get('type');
+
+              if (itemType) {
+                // Item specifies a type, must match exactly
+                isActive = itemType === currentType;
+              } else {
+                // No specific type required, pathname match is enough
+                isActive = true;
+              }
             } else {
-              // For items without query params, use path-based matching
-              const basePath = item.path.toLowerCase();
-              const currentPath = location.pathname.toLowerCase();
-              isActive = currentPath === basePath || currentPath.startsWith(basePath + '/');
+              // Check if current path starts with item path (for nested routes)
+              const basePath = itemUrl.pathname.toLowerCase();
+              isActive = currentUrl.pathname.toLowerCase().startsWith(basePath + '/');
             }
+
             const Icon = item.icon;
 
             return (
@@ -560,21 +579,21 @@ function SecondarySidebar({ config, location }) {
                   <Link
                     to={item.path}
                     className={`
-                      relative flex items-center justify-center w-full h-11 lg:h-12 rounded-xl transition-all duration-200 group active:scale-[0.98]
+                      relative flex items-center justify-center w-full h-11 rounded-xl transition-all duration-200 group active:scale-[0.98]
                       ${isActive
                         ? `${colors.text} ${colors.bg}`
                         : 'text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
                       }
                     `}
                   >
-                    <Icon className={`w-4.5 h-4.5 lg:w-5 lg:h-5 transition-colors ${isActive ? colors.text : 'group-hover:text-white'}`} />
+                    <Icon className={`w-5 h-5 transition-colors ${isActive ? colors.text : 'group-hover:text-white'}`} />
                     {item.badge > 0 && (
                       <span className={`absolute top-0.5 right-0.5 lg:top-1 lg:right-1 text-[8px] lg:text-[9px] px-1 lg:px-1.5 py-0.5 rounded-full font-bold ${colors.bg} ${colors.text} border ${colors.border}`}>
                         {item.badge}
                       </span>
                     )}
                     {isActive && (
-                      <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 lg:h-6 ${colors.borderSolid} rounded-r-full ${colors.glow}`} />
+                      <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 ${colors.borderSolid} rounded-r-full ${colors.glow}`} />
                     )}
                   </Link>
                 </TooltipTrigger>
@@ -605,21 +624,31 @@ function MobileSecondaryNav({ config, location }) {
       </div>
       <div className="space-y-0.5 px-1">
         {config.items.map((item) => {
-          // Check if item path has query params
-          const hasQueryParams = item.path.includes('?');
-          const currentFullPath = (location.pathname + location.search).toLowerCase();
-          const itemPathLower = item.path.toLowerCase();
+          // Parse URLs for proper comparison
+          const itemUrl = new URL(item.path, 'http://localhost');
+          const currentUrl = new URL(location.pathname + location.search, 'http://localhost');
 
-          let isActive;
-          if (hasQueryParams) {
-            // For items with query params, require exact match including query string
-            isActive = currentFullPath === itemPathLower || currentFullPath.startsWith(itemPathLower + '&');
+          let isActive = false;
+
+          // Check pathname match first
+          if (currentUrl.pathname.toLowerCase() === itemUrl.pathname.toLowerCase()) {
+            // If item has a 'type' query param, it must match
+            const itemType = itemUrl.searchParams.get('type');
+            const currentType = currentUrl.searchParams.get('type');
+
+            if (itemType) {
+              // Item specifies a type, must match exactly
+              isActive = itemType === currentType;
+            } else {
+              // No specific type required, pathname match is enough
+              isActive = true;
+            }
           } else {
-            // For items without query params, use path-based matching
-            const basePath = item.path.toLowerCase();
-            const currentPath = location.pathname.toLowerCase();
-            isActive = currentPath === basePath || currentPath.startsWith(basePath + '/');
+            // Check if current path starts with item path (for nested routes)
+            const basePath = itemUrl.pathname.toLowerCase();
+            isActive = currentUrl.pathname.toLowerCase().startsWith(basePath + '/');
           }
+
           const Icon = item.icon;
 
           return (
