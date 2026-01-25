@@ -524,16 +524,61 @@ const COLOR_CLASSES = {
   }
 };
 
-// Secondary sidebar nav alignment constant
-// Aligns first nav item with where engine apps start in primary sidebar:
-// Avatar (80px) + nav padding (16px) + 5 core items (236px) + divider (17px) = 349px
-const SECONDARY_NAV_START_OFFSET = 'mt-[349px]';
+// Sidebar alignment constants
+const SIDEBAR_CONSTANTS = {
+  AVATAR_SECTION: 80,      // pt-4 (16px) + avatar (52px) + pb-3 (12px)
+  NAV_PADDING: 16,         // py-4 top padding
+  CORE_ITEM_HEIGHT: 44,    // min-h-[44px]
+  ITEM_GAP: 4,             // space-y-1
+  DIVIDER_HEIGHT: 17,      // h-px + my-2 (1px + 8px + 8px)
+};
+
+// Core nav item indices (Dashboard, CRM, Projects, Products, Inbox)
+const CORE_NAV_INDICES = {
+  crm: 1,       // CRM is 2nd in core nav
+  products: 3,  // Products is 4th in core nav
+};
+
+// Calculate offset for secondary sidebar based on config
+function calculateSecondaryNavOffset(config) {
+  const { AVATAR_SECTION, NAV_PADDING, CORE_ITEM_HEIGHT, ITEM_GAP, DIVIDER_HEIGHT } = SIDEBAR_CONSTANTS;
+
+  // Check if this is a core nav item (CRM, Products) or an engine app
+  const configTitle = config?.title?.toLowerCase();
+  const coreNavIndex = CORE_NAV_INDICES[configTitle];
+
+  if (coreNavIndex !== undefined) {
+    // Core nav item: align with that position
+    // Offset = avatar + nav padding + items above
+    return AVATAR_SECTION + NAV_PADDING + (coreNavIndex * (CORE_ITEM_HEIGHT + ITEM_GAP));
+  }
+
+  // Engine app: calculate based on engine index
+  const agentId = config?.agent;
+  const engineOrder = Object.keys(ENGINE_ITEMS_CONFIG);
+  const engineIndex = agentId ? engineOrder.indexOf(agentId) : 0;
+
+  // Count visible core items (5: Dashboard, CRM, Projects, Products, Inbox)
+  const CORE_ITEMS_COUNT = 5;
+
+  // Base offset: avatar + nav padding + core items (with gaps) + divider
+  const coreItemsTotal = (CORE_ITEMS_COUNT * CORE_ITEM_HEIGHT) + ((CORE_ITEMS_COUNT - 1) * ITEM_GAP);
+  const baseOffset = AVATAR_SECTION + NAV_PADDING + coreItemsTotal + DIVIDER_HEIGHT;
+
+  // Add offset for engine items before the active one
+  const engineItemsOffset = Math.max(0, engineIndex) * (CORE_ITEM_HEIGHT + ITEM_GAP);
+
+  return baseOffset + engineItemsOffset;
+}
 
 // Secondary Sidebar Component - Now shows on iPad (md:) instead of just desktop (lg:)
 function SecondarySidebar({ config, location }) {
   if (!config) return null;
 
   const colors = COLOR_CLASSES[config.color] || COLOR_CLASSES.cyan;
+
+  // Calculate dynamic offset to align with the active primary nav item
+  const navOffset = calculateSecondaryNavOffset(config);
 
   return (
     <div className="hidden md:flex flex-col w-[72px] lg:w-[80px] bg-black border-r border-white/5 relative z-0 animate-in slide-in-from-left duration-300 overflow-hidden">
@@ -545,7 +590,10 @@ function SecondarySidebar({ config, location }) {
       </div>
 
       <TooltipProvider delayDuration={200}>
-        <nav className={`flex-1 overflow-y-auto ${SECONDARY_NAV_START_OFFSET} px-2 lg:px-3 space-y-1 scrollbar-hide`}>
+        <nav
+          className="flex-1 overflow-y-auto px-2 lg:px-3 space-y-1 scrollbar-hide"
+          style={{ paddingTop: `${navOffset}px` }}
+        >
           {config.items.map((item) => {
             // Parse URLs for proper comparison
             const itemUrl = new URL(item.path, 'http://localhost');
