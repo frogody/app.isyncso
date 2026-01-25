@@ -129,6 +129,7 @@ const navigationItems = [
     url: createPageUrl("CRMContacts") + "?type=lead",
     icon: Contact,
     permission: "users.view", // Basic permission
+    matchPatterns: ["/crm", "/contacts-import"], // For active state matching
   },
   {
     title: "Projects",
@@ -141,6 +142,7 @@ const navigationItems = [
     url: createPageUrl("Products"),
     icon: Package,
     permission: null, // Always visible - core feature
+    matchPatterns: ["/product", "/inventory", "/stockpurchases"], // Matches /products, /productdetail, /inventory*, etc.
   },
   {
     title: "Inbox",
@@ -148,11 +150,16 @@ const navigationItems = [
     icon: Inbox,
     permission: "inbox.view",
   },
+];
+
+// Bottom navigation items (Settings, Admin)
+const bottomNavItems = [
   {
     title: "Settings",
     url: createPageUrl("Settings"),
     icon: SettingsIcon,
     permission: null, // Always visible
+    matchPattern: "/settings",
   },
   {
     title: "Admin",
@@ -160,6 +167,7 @@ const navigationItems = [
     icon: Shield,
     permission: "admin.access", // Platform admin access
     isAdmin: true, // Special flag for admin link styling
+    matchPattern: "/admin",
   },
 ];
 
@@ -171,6 +179,7 @@ const ENGINE_ITEMS_CONFIG = {
     icon: Rocket,
     id: 'growth',
     permission: "analytics.view", // Growth analytics
+    matchPatterns: ["/growth", "/sequences", "/deals", "/leads", "/insights", "/prospect", "/research", "/pipeline"],
   },
   learn: {
     title: "Learn",
@@ -178,6 +187,7 @@ const ENGINE_ITEMS_CONFIG = {
     icon: GraduationCap,
     id: 'learn',
     permission: "courses.view", // Learning features
+    matchPatterns: ["/learn", "/course", "/lesson", "/certificate", "/skill", "/leaderboard"],
   },
   sentinel: {
     title: "Sentinel",
@@ -185,6 +195,7 @@ const ENGINE_ITEMS_CONFIG = {
     icon: Shield,
     id: 'sentinel',
     permission: "admin.access", // Admin/compliance feature
+    matchPatterns: ["/sentinel", "/aisystem", "/compliance", "/document", "/riskassessment"],
   },
   finance: {
     title: "Finance",
@@ -192,6 +203,7 @@ const ENGINE_ITEMS_CONFIG = {
     icon: DollarSign,
     id: 'finance',
     permission: "finance.view",
+    matchPatterns: ["/finance", "/proposal"],
   },
   raise: {
     title: "Raise",
@@ -199,6 +211,7 @@ const ENGINE_ITEMS_CONFIG = {
     icon: TrendingUp,
     id: 'raise',
     permission: "finance.view", // Fundraising is finance-related
+    matchPattern: "/raise",
   },
   create: {
     title: "Create",
@@ -206,6 +219,7 @@ const ENGINE_ITEMS_CONFIG = {
     icon: Palette,
     id: 'create',
     permission: null, // Always visible - content creation feature
+    matchPattern: "/create",
   },
   talent: {
     title: "Talent",
@@ -213,6 +227,7 @@ const ENGINE_ITEMS_CONFIG = {
     icon: UserPlus,
     id: 'talent',
     permission: "talent.view",
+    matchPattern: "/talent",
   },
 };
 
@@ -222,6 +237,34 @@ const adminItems = [];
 
 // Products settings key for localStorage
 const PRODUCTS_SETTINGS_KEY = 'isyncso_products_settings';
+
+// Helper function to check if a navigation item is active
+function isNavItemActive(item, pathname) {
+  const lowerPath = pathname.toLowerCase();
+
+  // Use matchPatterns array if defined (for multiple patterns)
+  if (item.matchPatterns) {
+    return item.matchPatterns.some(pattern =>
+      lowerPath.includes(pattern.toLowerCase())
+    );
+  }
+
+  // Use matchPattern if defined (for broader matching)
+  if (item.matchPattern) {
+    return lowerPath.includes(item.matchPattern.toLowerCase());
+  }
+
+  // Otherwise, extract base path from url (remove query params)
+  const baseUrl = item.url.split('?')[0].toLowerCase();
+
+  // For exact pages like Dashboard, use exact match
+  if (baseUrl === '/dashboard') {
+    return lowerPath === '/dashboard' || lowerPath === '/';
+  }
+
+  // For other items, check if pathname starts with or contains the base URL
+  return lowerPath.startsWith(baseUrl) || lowerPath.includes(baseUrl.replace('/', ''));
+}
 
 // Get secondary nav config based on current route
 function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
@@ -493,7 +536,11 @@ function SecondarySidebar({ config, location }) {
       <TooltipProvider delayDuration={200}>
         <nav className="flex-1 overflow-y-auto py-3 lg:py-4 px-2 lg:px-3 space-y-1.5 lg:space-y-2 scrollbar-hide">
           {config.items.map((item) => {
-            const isActive = location.pathname === item.path;
+            // Use startsWith for better matching of nested routes, but also check query params
+            const basePath = item.path.split('?')[0].toLowerCase();
+            const currentPath = location.pathname.toLowerCase();
+            const isActive = currentPath === basePath || currentPath.startsWith(basePath + '/') ||
+              (location.pathname + location.search).toLowerCase() === item.path.toLowerCase();
             const Icon = item.icon;
 
             return (
@@ -547,7 +594,11 @@ function MobileSecondaryNav({ config, location }) {
       </div>
       <div className="space-y-0.5 px-1">
         {config.items.map((item) => {
-          const isActive = location.pathname === item.path;
+          // Use startsWith for better matching of nested routes, but also check query params
+          const basePath = item.path.split('?')[0].toLowerCase();
+          const currentPath = location.pathname.toLowerCase();
+          const isActive = currentPath === basePath || currentPath.startsWith(basePath + '/') ||
+            (location.pathname + location.search).toLowerCase() === item.path.toLowerCase();
           const Icon = item.icon;
 
           return (
@@ -667,6 +718,20 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
     });
   }, [hasPermission, permLoading, isAdmin]);
 
+  // Memoize filtered bottom nav items (Settings, Admin)
+  const filteredBottomNavItems = useMemo(() => {
+    if (permLoading) {
+      return bottomNavItems.filter(item => !item.permission);
+    }
+    return bottomNavItems.filter(item => {
+      if (!item.permission) return true;
+      if (item.isAdmin) {
+        return isAdmin || hasPermission(item.permission);
+      }
+      return hasPermission(item.permission);
+    });
+  }, [hasPermission, permLoading, isAdmin]);
+
   // Memoize engine items based on team app access AND permissions
   // Priority: Admin gets all apps, otherwise use team-based effectiveApps, fallback to enabledApps
   const engineItems = useMemo(() => {
@@ -739,7 +804,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
         {/* Core Navigation - filtered by permissions */}
         <div className="space-y-1">
           {filteredNavItems.map((item) => {
-                            const isActive = location.pathname === item.url;
+                            const isActive = isNavItemActive(item, location.pathname);
 
                             return (
                               <Link
@@ -769,7 +834,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
         {/* Engine Apps - Dynamic based on user config - Mobile optimized */}
         <div className="space-y-1">
           {engineItems.map((item) => {
-            const isActive = location.pathname === item.url;
+            const isActive = isNavItemActive(item, location.pathname);
             const isLearn = item.id === "learn";
             const isSentinel = item.id === "sentinel";
             const isGrowth = item.id === "growth";
@@ -857,7 +922,46 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
         </nav>
 
       {/* Bottom Section */}
-      <div className={`p-4 space-y-2 bg-gradient-to-t from-black via-black to-transparent ${isMobile ? 'pb-6' : ''}`}>
+      <div className={`p-4 space-y-1 bg-gradient-to-t from-black via-black to-transparent ${isMobile ? 'pb-6' : ''}`}>
+        {/* Settings and Admin - at the bottom */}
+        {filteredBottomNavItems.map((item) => {
+          const isActive = isNavItemActive(item, location.pathname);
+          const isAdminItem = item.isAdmin;
+
+          return (
+            <Link
+              key={item.title}
+              to={item.url}
+              onClick={triggerActivity}
+              className={`flex items-center ${isMobile ? 'justify-start gap-3 px-4' : 'justify-center'} min-h-[44px] p-3 rounded-xl transition-all duration-200 group relative active:scale-[0.98]
+                ${isActive
+                  ? isAdminItem
+                    ? 'text-purple-400 bg-purple-950/30'
+                    : 'text-cyan-400 bg-cyan-950/30'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
+                }
+              `}
+              title={item.title}
+            >
+              <item.icon className={`w-5 h-5 flex-shrink-0 transition-colors ${
+                isActive
+                  ? isAdminItem ? 'text-purple-400' : 'text-cyan-400'
+                  : 'group-hover:text-white'
+              }`} />
+              {isMobile && <span className="text-sm font-medium">{item.title}</span>}
+              {isActive && (
+                <div className={`absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-l-full ${
+                  isAdminItem
+                    ? 'bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]'
+                    : 'bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.5)]'
+                }`} />
+              )}
+            </Link>
+          );
+        })}
+
+        <div className="h-px bg-white/5 mx-2 my-1" />
+
         {/* Credits / CTA */}
         {me ? (
         <Link
