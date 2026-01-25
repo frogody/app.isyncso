@@ -167,7 +167,7 @@ function ConfidenceIndicator({ confidence }) {
   return (
     <div className="flex items-center gap-2">
       <Progress value={percent} className={`w-24 h-2 ${color}`} />
-      <span className={`text-sm font-medium ${textColor}`}>{percent}%</span>
+      <span className={`text-xs font-medium ${textColor}`}>{percent}%</span>
     </div>
   );
 }
@@ -249,7 +249,7 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject, onCheckDup
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="space-y-4 py-4">
           {/* Confidence score */}
           <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-900/50 border border-white/10">
             <div className="flex items-center gap-2">
@@ -283,7 +283,7 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject, onCheckDup
           )}
 
           {/* Extracted data */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <Label className="text-zinc-400">Leverancier</Label>
               <p className="text-white font-medium">
@@ -497,16 +497,16 @@ function ExpenseCard({ expense, onReview, onRetry }) {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`p-4 rounded-xl bg-zinc-900/50 border transition-all ${
+      className={`p-3 rounded-lg bg-zinc-900/50 border transition-all ${
         needsReview
           ? "border-yellow-500/30 hover:border-yellow-500/50"
           : "border-white/5 hover:border-cyan-500/30"
       }`}
     >
       <div className="flex items-start justify-between">
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-2">
           <div className={`p-2 rounded-lg ${status.bg} ${status.border}`}>
-            <Receipt className={`w-5 h-5 ${status.text}`} />
+            <Receipt className={`w-4 h-4 ${status.text}`} />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -530,7 +530,7 @@ function ExpenseCard({ expense, onReview, onRetry }) {
         </div>
 
         <div className="text-right">
-          <p className="text-lg font-semibold text-white">
+          <p className="text-sm font-semibold text-white">
             € {expense.total?.toFixed(2) || "0.00"}
           </p>
           {expense.ai_confidence !== undefined && (
@@ -540,8 +540,8 @@ function ExpenseCard({ expense, onReview, onRetry }) {
       </div>
 
       {/* Details row */}
-      <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between">
-        <div className="flex items-center gap-4 text-sm text-zinc-500">
+      <div className="mt-2 pt-2 border-t border-white/5 flex items-center justify-between">
+        <div className="flex items-center gap-3 text-xs text-zinc-500">
           {expense.invoice_date && (
             <span className="flex items-center gap-1">
               <Calendar className="w-4 h-4" />
@@ -622,22 +622,22 @@ function ReviewQueueBanner({ count, onClick }) {
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mb-6 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/30 cursor-pointer hover:bg-yellow-500/20 transition-colors"
+      className="mb-4 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30 cursor-pointer hover:bg-yellow-500/20 transition-colors"
       onClick={onClick}
     >
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <AlertTriangle className="w-6 h-6 text-yellow-400" />
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="w-5 h-5 text-yellow-400" />
           <div>
             <h3 className="font-medium text-yellow-400">
               {count} invoice{count > 1 ? "s" : ""} awaiting review
             </h3>
-            <p className="text-sm text-yellow-400/70">
+            <p className="text-xs text-yellow-400/70">
               AI extraction had &lt;{Math.round(MIN_CONFIDENCE * 100)}% confidence
             </p>
           </div>
         </div>
-        <ChevronRight className="w-5 h-5 text-yellow-400" />
+        <ChevronRight className="w-4 h-4 text-yellow-400" />
       </div>
     </motion.div>
   );
@@ -902,9 +902,9 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
                     <FileText className="w-16 h-16 text-cyan-400" />
                   </div>
                 )}
-                <div className="mt-4 text-center">
-                  <p className="text-white font-medium truncate">{selectedFile.name}</p>
-                  <p className="text-sm text-zinc-400">
+                <div className="mt-3 text-center">
+                  <p className="text-white font-medium truncate text-sm">{selectedFile.name}</p>
+                  <p className="text-xs text-zinc-400">
                     {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                   </p>
                   <Button
@@ -923,14 +923,14 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
                 </div>
               </div>
             ) : (
-              <div className="p-8 text-center">
-                <div className="w-16 h-16 mx-auto rounded-full bg-cyan-500/10 flex items-center justify-center mb-4">
-                  <FileUp className="w-8 h-8 text-cyan-400" />
+              <div className="p-6 text-center">
+                <div className="w-12 h-12 mx-auto rounded-full bg-cyan-500/10 flex items-center justify-center mb-3">
+                  <FileUp className="w-6 h-6 text-cyan-400" />
                 </div>
-                <p className="text-white font-medium">
+                <p className="text-white font-medium text-sm">
                   Sleep een bestand hierheen of klik om te selecteren
                 </p>
-                <p className="text-sm text-zinc-400 mt-1">
+                <p className="text-xs text-zinc-400 mt-1">
                   JPG, PNG, WebP of PDF (max 50MB)
                 </p>
               </div>
@@ -953,10 +953,10 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
           {/* Info box */}
           <div className="p-3 rounded-lg bg-zinc-900/50 border border-white/10">
             <div className="flex items-start gap-2">
-              <Sparkles className="w-4 h-4 text-cyan-400 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-zinc-400">
+              <Sparkles className="w-3 h-3 text-cyan-400 mt-0.5 flex-shrink-0" />
+              <div className="text-xs text-zinc-400">
                 <p>AI zal automatisch extracten:</p>
-                <ul className="mt-1 space-y-0.5 text-zinc-500">
+                <ul className="mt-1 space-y-0.5 text-zinc-500 text-[10px]">
                   <li>• Leveranciersgegevens</li>
                   <li>• Invoice Number en datum</li>
                   <li>• Amounts and VAT</li>
@@ -1270,7 +1270,7 @@ export default function StockPurchases() {
           <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-cyan-950/10 rounded-full blur-3xl" />
         </div>
 
-        <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+        <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
           <div ref={headerRef} style={{ opacity: 0 }}>
             <PageHeader
               title="Stock Purchases"
@@ -1296,7 +1296,7 @@ export default function StockPurchases() {
           />
 
           {/* Stats */}
-          <div ref={statsRef} className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6" style={{ opacity: 0 }}>
+          <div ref={statsRef} className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6" style={{ opacity: 0 }}>
             <StatCard
               icon={Receipt}
               label="Total facturen"
@@ -1324,8 +1324,8 @@ export default function StockPurchases() {
           </div>
 
           {/* Filters */}
-          <GlassCard className="p-4 mb-6">
-            <div className="flex flex-col md:flex-row gap-4">
+          <GlassCard className="p-3 mb-6">
+            <div className="flex flex-col md:flex-row gap-3">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                 <Input
@@ -1347,9 +1347,9 @@ export default function StockPurchases() {
 
           {/* Expense list */}
           {isLoading ? (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-32 rounded-xl" />
+                <Skeleton key={i} className="h-24 rounded-lg" />
               ))}
             </div>
           ) : filteredExpenses.length === 0 ? (
@@ -1365,7 +1365,7 @@ export default function StockPurchases() {
               </p>
             </GlassCard>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {filteredExpenses.map((expense) => (
                 <ExpenseCard
                   key={expense.id}

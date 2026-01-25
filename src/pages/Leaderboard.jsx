@@ -77,7 +77,7 @@ export default function Leaderboard() {
         <div className="absolute top-20 right-1/4 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl animate-pulse" />
       </div>
 
-      <div className="relative z-10 w-full max-w-5xl mx-auto px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full max-w-5xl mx-auto px-4 lg:px-6 py-4 space-y-4">
         <PageHeader
           icon={Trophy}
           title="Leaderboard"
@@ -102,7 +102,7 @@ export default function Leaderboard() {
 
         {/* Podium */}
         {top3.length >= 3 && (
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-3">
             {/* 2nd Place */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -110,12 +110,12 @@ export default function Leaderboard() {
               transition={{ delay: 0.1 }}
               className="pt-8"
             >
-              <GlassCard className="p-4 text-center">
-                <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-zinc-300 to-zinc-500 flex items-center justify-center text-3xl mb-3 border-4 border-zinc-400/50">
+              <GlassCard className="p-3 text-center">
+                <div className="w-12 h-12 mx-auto rounded-full bg-gradient-to-br from-zinc-300 to-zinc-500 flex items-center justify-center text-2xl mb-2 border-4 border-zinc-400/50">
                   🥈
                 </div>
-                <h3 className="font-semibold text-white truncate">{top3[1].user_name}</h3>
-                <Badge className="bg-zinc-500/20 text-zinc-300 border-zinc-500/30 mt-2">
+                <h3 className="font-semibold text-white truncate text-sm">{top3[1].user_name}</h3>
+                <Badge className="bg-zinc-500/20 text-zinc-300 border-zinc-500/30 mt-1 text-xs">
                   {top3[1].points} XP
                 </Badge>
               </GlassCard>
@@ -126,14 +126,14 @@ export default function Leaderboard() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <GlassCard className="p-4 text-center border-yellow-500/30">
-                <Crown className="w-6 h-6 text-yellow-400 mx-auto mb-2" />
-                <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center text-4xl mb-3 border-4 border-yellow-500/50 shadow-lg shadow-yellow-500/20">
+              <GlassCard className="p-3 text-center border-yellow-500/30">
+                <Crown className="w-4 h-4 text-yellow-400 mx-auto mb-2" />
+                <div className="w-14 h-14 mx-auto rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center text-3xl mb-2 border-4 border-yellow-500/50 shadow-lg shadow-yellow-500/20">
                   🥇
                 </div>
-                <h3 className="font-bold text-white truncate">{top3[0].user_name}</h3>
-                <p className="text-xs text-zinc-400">{top3[0].level_title}</p>
-                <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30 mt-2">
+                <h3 className="font-bold text-white truncate text-sm">{top3[0].user_name}</h3>
+                <p className="text-[10px] text-zinc-400">{top3[0].level_title}</p>
+                <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30 mt-1 text-xs">
                   {top3[0].points} XP
                 </Badge>
               </GlassCard>
@@ -146,12 +146,12 @@ export default function Leaderboard() {
               transition={{ delay: 0.2 }}
               className="pt-8"
             >
-              <GlassCard className="p-4 text-center">
-                <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-amber-600 to-amber-800 flex items-center justify-center text-3xl mb-3 border-4 border-amber-600/50">
+              <GlassCard className="p-3 text-center">
+                <div className="w-12 h-12 mx-auto rounded-full bg-gradient-to-br from-amber-600 to-amber-800 flex items-center justify-center text-2xl mb-2 border-4 border-amber-600/50">
                   🥉
                 </div>
-                <h3 className="font-semibold text-white truncate">{top3[2].user_name}</h3>
-                <Badge className="bg-amber-600/20 text-amber-300 border-amber-600/30 mt-2">
+                <h3 className="font-semibold text-white truncate text-sm">{top3[2].user_name}</h3>
+                <Badge className="bg-amber-600/20 text-amber-300 border-amber-600/30 mt-1 text-xs">
                   {top3[2].points} XP
                 </Badge>
               </GlassCard>
@@ -160,8 +160,8 @@ export default function Leaderboard() {
         )}
 
         {/* Full Rankings */}
-        <GlassCard glow="cyan" className="p-6">
-          <div className="space-y-2">
+        <GlassCard glow="cyan" className="p-4">
+          <div className="space-y-1">
             <AnimatePresence>
               {leaderboard.slice(0, 10).map((entry, index) => {
                 const isCurrentUser = entry.user_id === user?.id;
@@ -173,27 +173,27 @@ export default function Leaderboard() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.03 }}
-                    className={`flex items-center gap-4 p-4 rounded-xl transition-all ${
-                      isCurrentUser 
-                        ? 'bg-cyan-500/20 border-2 border-cyan-500/40' 
+                    className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
+                      isCurrentUser
+                        ? 'bg-cyan-500/20 border-2 border-cyan-500/40'
                         : 'bg-zinc-800/50 border border-zinc-700/50 hover:bg-zinc-800'
                     }`}
                   >
                     {/* Rank */}
-                    <div className="w-10 text-center">
+                    <div className="w-8 text-center">
                       {badge ? (
-                        <span className="text-2xl">{badge.icon}</span>
+                        <span className="text-lg">{badge.icon}</span>
                       ) : (
-                        <span className="text-lg font-bold text-zinc-400">{index + 1}</span>
+                        <span className="text-xs font-bold text-zinc-400">{index + 1}</span>
                       )}
                     </div>
 
                     {/* Avatar */}
-                    <div className="w-12 h-12 rounded-full bg-zinc-700 overflow-hidden flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-zinc-700 overflow-hidden flex-shrink-0">
                       {entry.avatar ? (
                         <img src={entry.avatar} alt="" className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xl text-zinc-400 font-bold">
+                        <div className="w-full h-full flex items-center justify-center text-xs text-zinc-400 font-bold">
                           {entry.user_name[0].toUpperCase()}
                         </div>
                       )}
@@ -201,14 +201,14 @@ export default function Leaderboard() {
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-semibold text-white truncate">{entry.user_name}</h4>
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <h4 className="font-semibold text-white truncate text-sm">{entry.user_name}</h4>
                         {isCurrentUser && (
-                          <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 text-xs">You</Badge>
+                          <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 text-[10px]">You</Badge>
                         )}
                       </div>
-                      <p className="text-sm text-zinc-400 mb-2">{entry.level_title}</p>
-                      <div className="w-full bg-zinc-700 rounded-full h-1.5">
+                      <p className="text-xs text-zinc-400 mb-1">{entry.level_title}</p>
+                      <div className="w-full bg-zinc-700 rounded-full h-1">
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${getProgressWidth(entry.points)}%` }}
@@ -225,8 +225,8 @@ export default function Leaderboard() {
 
                     {/* Points */}
                     <div className="text-right">
-                      <div className="text-xl font-bold text-cyan-400">{entry.points}</div>
-                      <div className="text-xs text-zinc-500">XP</div>
+                      <div className="text-lg font-bold text-cyan-400">{entry.points}</div>
+                      <div className="text-[10px] text-zinc-500">XP</div>
                     </div>
                   </motion.div>
                 );
@@ -244,23 +244,23 @@ export default function Leaderboard() {
                   return (
                     <div
                       key={entry.user_id}
-                      className={`flex items-center gap-4 p-3 rounded-lg ${
+                      className={`flex items-center gap-3 p-2 rounded-lg ${
                         isCurrentUser ? 'bg-cyan-500/20 border border-cyan-500/40' : 'bg-zinc-800/30'
                       }`}
                     >
-                      <div className="w-8 text-center text-sm font-medium text-zinc-500">#{rank}</div>
-                      <div className="w-10 h-10 rounded-full bg-zinc-700 overflow-hidden">
-                        <div className="w-full h-full flex items-center justify-center text-sm text-zinc-400">
+                      <div className="w-8 text-center text-xs font-medium text-zinc-500">#{rank}</div>
+                      <div className="w-8 h-8 rounded-full bg-zinc-700 overflow-hidden">
+                        <div className="w-full h-full flex items-center justify-center text-xs text-zinc-400">
                           {entry.user_name[0].toUpperCase()}
                         </div>
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <h4 className="text-sm font-medium text-white">{entry.user_name}</h4>
-                          {isCurrentUser && <Badge className="bg-cyan-500/20 text-cyan-400 text-xs">You</Badge>}
+                          <h4 className="text-xs font-medium text-white">{entry.user_name}</h4>
+                          {isCurrentUser && <Badge className="bg-cyan-500/20 text-cyan-400 text-[10px]">You</Badge>}
                         </div>
                       </div>
-                      <div className="text-cyan-400 font-bold">{entry.points} XP</div>
+                      <div className="text-cyan-400 font-bold text-sm">{entry.points} XP</div>
                     </div>
                   );
                 })}
@@ -283,10 +283,10 @@ export default function Leaderboard() {
 
         {/* Empty State */}
         {leaderboard.length === 0 && (
-          <GlassCard className="p-12 text-center">
-            <Trophy className="w-16 h-16 text-cyan-400 mx-auto mb-4 opacity-50" />
-            <h3 className="text-xl font-bold text-white mb-2">No Rankings Yet</h3>
-            <p className="text-zinc-400">Complete lessons and courses to appear on the leaderboard!</p>
+          <GlassCard className="p-6 text-center">
+            <Trophy className="w-10 h-10 text-cyan-400 mx-auto mb-3 opacity-50" />
+            <h3 className="text-lg font-bold text-white mb-1">No Rankings Yet</h3>
+            <p className="text-xs text-zinc-400">Complete lessons and courses to appear on the leaderboard!</p>
           </GlassCard>
         )}
       </div>

@@ -128,7 +128,7 @@ export default function RaiseInvestors() {
         <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-amber-950/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
         <PageHeader
           title="Investor Pipeline"
           subtitle="Track and manage investor relationships"
@@ -146,7 +146,7 @@ export default function RaiseInvestors() {
         />
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
             { label: 'Total Investors', value: stats.total, icon: Users },
             { label: 'Interested', value: stats.interested, icon: Target },
@@ -154,14 +154,14 @@ export default function RaiseInvestors() {
             { label: 'Committed', value: stats.committed, icon: CheckCircle2 }
           ].map((stat, idx) => (
             <Card key={idx} className="bg-zinc-900/50 border-zinc-800">
-              <CardContent className="p-4">
+              <CardContent className="p-3">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
                     <stat.icon className="w-4 h-4 text-amber-400" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-white">{stat.value}</p>
-                    <p className="text-xs text-zinc-500">{stat.label}</p>
+                    <p className="text-lg font-bold text-white">{stat.value}</p>
+                    <p className="text-[10px] text-zinc-500">{stat.label}</p>
                   </div>
                 </div>
               </CardContent>
@@ -170,7 +170,7 @@ export default function RaiseInvestors() {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap gap-4">
+        <div className="flex flex-wrap gap-3">
           <div className="relative flex-1 min-w-[200px] max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
             <Input
@@ -218,34 +218,34 @@ export default function RaiseInvestors() {
                 </Button>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {filteredInvestors.map((investor) => (
                   <motion.div
                     key={investor.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition-colors"
+                    className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition-colors"
                   >
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
                       <div className="p-2 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
-                        <Building2 className="w-5 h-5 text-indigo-400" />
+                        <Building2 className="w-4 h-4 text-indigo-400" />
                       </div>
                       <div>
-                        <p className="font-medium text-white">{investor.name || 'Unknown'}</p>
-                        <p className="text-sm text-zinc-500">{investor.firm || 'Investment Firm'}</p>
+                        <p className="font-medium text-white text-sm">{investor.name || 'Unknown'}</p>
+                        <p className="text-xs text-zinc-500">{investor.firm || 'Investment Firm'}</p>
                         {investor.investment_focus && (
-                          <p className="text-xs text-zinc-600 mt-1">{investor.investment_focus}</p>
+                          <p className="text-[10px] text-zinc-600 mt-1">{investor.investment_focus}</p>
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
                       {investor.typical_check_size && (
-                        <span className="text-sm text-amber-400 flex items-center gap-1">
+                        <span className="text-xs text-amber-400 flex items-center gap-1">
                           <DollarSign className="w-3 h-3" />
                           {investor.typical_check_size}
                         </span>
                       )}
-                      <Badge variant="outline" className={`${getStatusBadge(investor.status)} border`}>
+                      <Badge variant="outline" className={`${getStatusBadge(investor.status)} border text-xs`}>
                         {investor.status?.replace('_', ' ')}
                       </Badge>
                       <div className="flex gap-1">
@@ -290,8 +290,8 @@ export default function RaiseInvestors() {
             <DialogHeader>
               <DialogTitle className="text-white">Add New Investor</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-3 py-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label className="text-zinc-400">Contact Name</Label>
                   <Input
@@ -311,7 +311,7 @@ export default function RaiseInvestors() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label className="text-zinc-400">Email</Label>
                   <Input
@@ -341,7 +341,7 @@ export default function RaiseInvestors() {
                   placeholder="B2B SaaS, AI/ML"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label className="text-zinc-400">Typical Check Size</Label>
                   <Input
@@ -379,7 +379,7 @@ export default function RaiseInvestors() {
                 />
               </div>
             </div>
-            <div className="flex justify-end gap-3">
+            <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} className="border-zinc-700">
                 Cancel
               </Button>

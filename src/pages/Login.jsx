@@ -175,8 +175,8 @@ export default function Login() {
       <Card className="w-full max-w-md bg-zinc-900/80 backdrop-blur-xl border-zinc-800 relative">
         <CardHeader className="text-center space-y-2">
           {/* Logo */}
-          <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center mb-4">
-            <span className="text-2xl font-bold text-white">iS</span>
+          <div className="mx-auto w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center mb-2">
+            <span className="text-lg font-bold text-white">iS</span>
           </div>
 
           <CardTitle className="text-2xl text-white">
@@ -190,18 +190,18 @@ export default function Login() {
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4">
           {/* Error/Success Messages */}
           {error && (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+            <div className="flex items-center gap-2 p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               {error}
             </div>
           )}
 
           {success && (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm">
-              <Mail className="w-4 h-4 flex-shrink-0" />
+            <div className="flex items-center gap-2 p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs">
+              <Mail className="w-3 h-3 flex-shrink-0" />
               {success}
             </div>
           )}

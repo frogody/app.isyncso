@@ -617,7 +617,7 @@ export default function CreateImages() {
         <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-pink-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
       </div>
 
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <PageHeader
           icon={Image}
@@ -626,16 +626,16 @@ export default function CreateImages() {
           color="rose"
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Left Panel - Controls */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Use Case Selector */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60"
+              className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60"
             >
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
+              <h3 className="text-base font-semibold text-white flex items-center gap-2 mb-3">
                 <Sparkles className="w-5 h-5 text-rose-400/70" />
                 What do you want to create?
               </h3>
@@ -654,15 +654,15 @@ export default function CreateImages() {
                     <button
                       key={useCase.id}
                       onClick={() => setSelectedUseCase(useCase.id)}
-                      className={`p-4 rounded-xl border text-left transition-all ${
+                      className={`p-3 rounded-xl border text-left transition-all ${
                         isSelected
                           ? colorClasses[useCase.color]
                           : `bg-zinc-800/30 border-zinc-700/30 text-zinc-400 ${colorClasses[useCase.color]}`
                       }`}
                     >
-                      <IconComponent className="w-5 h-5 mb-2" />
-                      <div className="text-sm font-medium">{useCase.name}</div>
-                      <div className="text-xs opacity-60 mt-1">{useCase.description}</div>
+                      <IconComponent className="w-4 h-4 mb-1.5" />
+                      <div className="text-xs font-medium">{useCase.name}</div>
+                      <div className="text-[10px] opacity-60 mt-0.5">{useCase.description}</div>
                       <div className="mt-2 flex items-center gap-2">
                         <Badge
                           variant="outline"
@@ -691,22 +691,22 @@ export default function CreateImages() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.05 }}
-              className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60"
+              className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60"
             >
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
+              <h3 className="text-base font-semibold text-white flex items-center gap-2 mb-3">
                 <Wand2 className="w-5 h-5 text-rose-400/70" />
                 {USE_CASES[selectedUseCase]?.requiresReferenceImage ? 'Describe the Scene (Optional)' : 'Prompt'}
               </h3>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div>
                   <Textarea
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     placeholder="Describe the image you want to generate..."
-                    className="min-h-[120px] bg-zinc-800/50 border-zinc-700/50 text-white placeholder:text-zinc-500 focus:border-rose-500/50 resize-none"
+                    className="min-h-[100px] bg-zinc-800/50 border-zinc-700/50 text-white placeholder:text-zinc-500 focus:border-rose-500/50 resize-none"
                     maxLength={1000}
                   />
-                  <div className="flex justify-between mt-2 text-xs text-zinc-500">
+                  <div className="flex justify-between mt-1.5 text-[10px] text-zinc-500">
                     <span>{prompt.length}/1000 characters</span>
                     {brandAssets && (
                       <label className="flex items-center gap-2 cursor-pointer hover:text-zinc-400 transition-colors">
@@ -725,7 +725,7 @@ export default function CreateImages() {
 
                 {/* Product Context Selector */}
                 <div>
-                  <Label className="text-zinc-400 mb-2 block text-sm">Product Context (Optional)</Label>
+                  <Label className="text-zinc-400 mb-2 block text-xs">Product Context (Optional)</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -749,13 +749,13 @@ export default function CreateImages() {
                         placeholder="Search products..."
                         value={productSearch}
                         onChange={(e) => setProductSearch(e.target.value)}
-                        className="w-full px-3 py-2 mb-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:border-rose-500/50"
+                        className="w-full px-3 py-1.5 mb-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-xs focus:outline-none focus:border-rose-500/50"
                       />
-                      <div className="max-h-60 overflow-y-auto space-y-1">
+                      <div className="max-h-60 overflow-y-auto space-y-0.5">
                         {selectedProduct && (
                           <button
                             onClick={() => handleProductSelect(null)}
-                            className="w-full text-left px-3 py-2 text-sm text-zinc-400 hover:bg-zinc-800 rounded-lg flex items-center gap-2"
+                            className="w-full text-left px-3 py-1.5 text-xs text-zinc-400 hover:bg-zinc-800 rounded-lg flex items-center gap-2"
                           >
                             <X className="w-3 h-3" />
                             Clear selection
@@ -765,7 +765,7 @@ export default function CreateImages() {
                           <button
                             key={product.id}
                             onClick={() => handleProductSelect(product)}
-                            className={`w-full text-left px-3 py-2 text-sm rounded-lg flex items-center justify-between transition-colors ${
+                            className={`w-full text-left px-3 py-1.5 text-xs rounded-lg flex items-center justify-between transition-colors ${
                               selectedProduct?.id === product.id
                                 ? 'bg-rose-500/20 text-rose-400'
                                 : 'text-white hover:bg-zinc-800'
@@ -784,7 +784,7 @@ export default function CreateImages() {
                           </button>
                         ))}
                         {filteredProducts.length === 0 && (
-                          <p className="text-zinc-500 text-sm text-center py-4">No products found</p>
+                          <p className="text-zinc-500 text-xs text-center py-3">No products found</p>
                         )}
                       </div>
                     </PopoverContent>
@@ -796,15 +796,15 @@ export default function CreateImages() {
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
-                      className="mt-4 space-y-3"
+                      className="mt-3 space-y-2"
                     >
                       {/* Product Preservation Notice */}
-                      <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
-                        <div className="flex items-start gap-3">
-                          <ShieldCheck className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                      <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+                        <div className="flex items-start gap-2">
+                          <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
                           <div>
-                            <p className="text-sm font-medium text-emerald-400">Product Preservation Mode</p>
-                            <p className="text-xs text-emerald-400/70 mt-1">
+                            <p className="text-xs font-medium text-emerald-400">Product Preservation Mode</p>
+                            <p className="text-[10px] text-emerald-400/70 mt-0.5">
                               The AI will keep your product exactly as shown in the reference images. Only the background, lighting, and environment will change.
                             </p>
                           </div>
@@ -813,17 +813,17 @@ export default function CreateImages() {
 
                       {/* Reference Images Grid */}
                       {loadingProductImages ? (
-                        <div className="flex items-center justify-center py-4">
-                          <Loader2 className="w-5 h-5 text-rose-400 animate-spin mr-2" />
-                          <span className="text-zinc-400 text-sm">Loading product images...</span>
+                        <div className="flex items-center justify-center py-3">
+                          <Loader2 className="w-4 h-4 text-rose-400 animate-spin mr-2" />
+                          <span className="text-zinc-400 text-xs">Loading product images...</span>
                         </div>
                       ) : productImages.length > 0 ? (
                         <div>
-                          <Label className="text-zinc-400 mb-2 block text-sm flex items-center gap-2">
-                            <ImageIcon className="w-4 h-4" />
+                          <Label className="text-zinc-400 mb-1.5 block text-xs flex items-center gap-2">
+                            <ImageIcon className="w-3.5 h-3.5" />
                             Select Reference Image ({productImages.length} available)
                           </Label>
-                          <div className="grid grid-cols-4 gap-2">
+                          <div className="grid grid-cols-4 gap-1.5">
                             {productImages.slice(0, 8).map((imageUrl, index) => (
                               <button
                                 key={index}
@@ -841,23 +841,23 @@ export default function CreateImages() {
                                 />
                                 {selectedReferenceImage === imageUrl && (
                                   <div className="absolute inset-0 bg-emerald-500/20 flex items-center justify-center">
-                                    <Check className="w-6 h-6 text-emerald-400" />
+                                    <Check className="w-4 h-4 text-emerald-400" />
                                   </div>
                                 )}
                               </button>
                             ))}
                           </div>
-                          <p className="text-xs text-zinc-500 mt-2">
+                          <p className="text-[10px] text-zinc-500 mt-1.5">
                             Click to select the image that best represents your product. This will be preserved exactly in the generated image.
                           </p>
                         </div>
                       ) : (
-                        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30">
-                          <div className="flex items-start gap-3">
-                            <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                        <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                          <div className="flex items-start gap-2">
+                            <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
                             <div>
-                              <p className="text-sm font-medium text-amber-400">No Reference Images</p>
-                              <p className="text-xs text-amber-400/70 mt-1">
+                              <p className="text-xs font-medium text-amber-400">No Reference Images</p>
+                              <p className="text-[10px] text-amber-400/70 mt-0.5">
                                 This product has no images. Add images in the Products page for best results. The AI will generate based on the product name and description only.
                               </p>
                             </div>
@@ -875,13 +875,13 @@ export default function CreateImages() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60"
+              className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60"
             >
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
+              <h3 className="text-base font-semibold text-white flex items-center gap-2 mb-3">
                 <Settings2 className="w-5 h-5 text-rose-400/70" />
                 Style & Settings
               </h3>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {/* Style Presets */}
                 <div>
                   <Label className="text-zinc-400 mb-3 block text-sm">Style</Label>

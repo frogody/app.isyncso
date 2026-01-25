@@ -77,13 +77,13 @@ export default function SentinelDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <Skeleton className="h-24 w-full bg-zinc-800 rounded-2xl" />
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[1,2,3,4].map(i => <Skeleton key={i} className="h-32 bg-zinc-800 rounded-2xl" />)}
+      <div className="min-h-screen bg-black p-4">
+        <div className="max-w-7xl mx-auto space-y-4">
+          <Skeleton className="h-20 w-full bg-zinc-800 rounded-xl" />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {[1,2,3,4].map(i => <Skeleton key={i} className="h-28 bg-zinc-800 rounded-xl" />)}
           </div>
-          <Skeleton className="h-64 bg-zinc-800 rounded-2xl" />
+          <Skeleton className="h-56 bg-zinc-800 rounded-xl" />
         </div>
       </div>
     );
@@ -97,7 +97,7 @@ export default function SentinelDashboard() {
           <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-[#6EE7B7]/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         </div>
 
-        <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+        <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
           {/* Header */}
           <PageHeader
             icon={Shield}
@@ -115,14 +115,14 @@ export default function SentinelDashboard() {
           />
 
           {/* Compliance Score & Stats */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Compliance Gauge */}
-            <div className="p-6 flex flex-col items-center justify-center rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+            <div className="p-4 flex flex-col items-center justify-center rounded-xl bg-zinc-900/50 border border-zinc-800/60">
               <ComplianceGauge score={complianceScore} />
             </div>
 
             {/* Quick Stats */}
-            <div className="lg:col-span-2 grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="lg:col-span-2 grid grid-cols-2 lg:grid-cols-4 gap-3">
               <StatCard icon={Shield} label="AI Systems" value={totalSystems} color="sage" delay={0} />
               <StatCard icon={AlertTriangle} label="High-Risk" value={byClassification['high-risk']} color="sage" delay={0.1} />
               <StatCard icon={CheckCircle} label="Compliant" value={byStatus.compliant} color="sage" delay={0.2} />
@@ -141,36 +141,36 @@ export default function SentinelDashboard() {
           </motion.div>
 
           {/* Classification Breakdown & Compliance Status */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
-                <Shield className="w-5 h-5 text-[#86EFAC]/70" />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+              <h3 className="text-base font-semibold text-white flex items-center gap-2 mb-3">
+                <Shield className="w-4 h-4 text-[#86EFAC]/70" />
                 Risk Classification
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {Object.entries(byClassification).map(([classification, count], i) => (
                   <motion.div
                     key={classification}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.6 + i * 0.05 }}
-                    className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/30 border border-zinc-700/30"
+                    className="flex items-center justify-between p-2 rounded-lg bg-zinc-800/30 border border-zinc-700/30"
                   >
-                    <Badge className={`${classificationColors[classification]} border`}>
+                    <Badge className={`${classificationColors[classification]} border text-[10px]`}>
                       {classification.replace('-', ' ').toUpperCase()}
                     </Badge>
-                    <span className="text-lg font-bold text-white">{count}</span>
+                    <span className="text-sm font-bold text-white">{count}</span>
                   </motion.div>
                 ))}
               </div>
             </div>
 
-            <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
-                <FileText className="w-5 h-5 text-[#86EFAC]/70" />
+            <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+              <h3 className="text-base font-semibold text-white flex items-center gap-2 mb-3">
+                <FileText className="w-4 h-4 text-[#86EFAC]/70" />
                 Compliance Status
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {[
                   { key: 'not-started', label: 'Not Started', color: 'text-zinc-400' },
                   { key: 'in-progress', label: 'In Progress', color: 'text-yellow-400' },
@@ -182,10 +182,10 @@ export default function SentinelDashboard() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.6 + i * 0.05 }}
-                    className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/30 border border-zinc-700/30"
+                    className="flex items-center justify-between p-2 rounded-lg bg-zinc-800/30 border border-zinc-700/30"
                   >
-                    <span className={`font-medium ${status.color}`}>{status.label}</span>
-                    <span className="text-lg font-bold text-white">{byStatus[status.key]}</span>
+                    <span className={`text-sm font-medium ${status.color}`}>{status.label}</span>
+                    <span className="text-sm font-bold text-white">{byStatus[status.key]}</span>
                   </motion.div>
                 ))}
               </div>
@@ -194,14 +194,14 @@ export default function SentinelDashboard() {
 
           {/* Recent Systems */}
           {aiSystems.length > 0 && (
-            <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-white">Recent AI Systems</h3>
-                <Link to={createPageUrl("AISystemInventory")} className="text-[#86EFAC]/80 text-sm hover:text-[#6EE7B7] flex items-center gap-1">
-                  View All <ArrowRight className="w-4 h-4" />
+            <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-base font-semibold text-white">Recent AI Systems</h3>
+                <Link to={createPageUrl("AISystemInventory")} className="text-[#86EFAC]/80 text-xs hover:text-[#6EE7B7] flex items-center gap-1">
+                  View All <ArrowRight className="w-3 h-3" />
                 </Link>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {aiSystems.slice(0, 5).map((system, i) => (
                   <motion.div
                     key={system.id}
@@ -211,11 +211,11 @@ export default function SentinelDashboard() {
                   >
                     <Link
                       to={createPageUrl(`RiskAssessment?systemId=${system.id}`)}
-                      className="flex items-center justify-between p-4 rounded-xl bg-zinc-800/30 border border-zinc-700/30 hover:border-[#86EFAC]/30 transition-all group"
+                      className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/30 border border-zinc-700/30 hover:border-[#86EFAC]/30 transition-all group"
                     >
                       <div className="flex-1">
-                        <h4 className="font-semibold text-white mb-1 group-hover:text-[#86EFAC]/80 transition-colors">{system.name}</h4>
-                        <p className="text-sm text-zinc-500 line-clamp-1">{system.purpose}</p>
+                        <h4 className="text-sm font-semibold text-white mb-1 group-hover:text-[#86EFAC]/80 transition-colors">{system.name}</h4>
+                        <p className="text-xs text-zinc-500 line-clamp-1">{system.purpose}</p>
                       </div>
                       <Badge className={`${classificationColors[system.risk_classification]} border ml-4`}>
                         {system.risk_classification?.replace('-', ' ').toUpperCase() || 'UNCLASSIFIED'}
@@ -229,10 +229,10 @@ export default function SentinelDashboard() {
 
           {/* Empty State */}
           {aiSystems.length === 0 && (
-            <div className="p-12 text-center rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
-              <Shield className="w-16 h-16 text-[#86EFAC]/70 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-white mb-2">Welcome to SENTINEL</h3>
-              <p className="text-zinc-500 mb-6 max-w-md mx-auto">
+            <div className="p-8 text-center rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+              <Shield className="w-12 h-12 text-[#86EFAC]/70 mx-auto mb-3" />
+              <h3 className="text-lg font-bold text-white mb-2">Welcome to SENTINEL</h3>
+              <p className="text-zinc-500 mb-4 max-w-md mx-auto text-sm">
                 Track AI systems, assess risks, and generate compliance documentation for the EU AI Act.
               </p>
               <Link to={createPageUrl("AISystemInventory")}>

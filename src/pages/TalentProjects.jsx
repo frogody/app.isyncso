@@ -876,17 +876,17 @@ const RoleCard = ({ role, onEdit, onDelete }) => {
   return (
     <motion.div
       variants={itemVariants}
-      className="p-4 bg-zinc-800/30 rounded-lg border border-zinc-700/30 hover:border-red-500/20 transition-all"
+      className="p-3 bg-zinc-800/30 rounded-lg border border-zinc-700/30 hover:border-red-500/20 transition-all"
     >
-      <div className="flex items-start justify-between mb-3">
+      <div className="flex items-start justify-between mb-2">
         <div>
-          <h4 className="font-medium text-white">{role.title}</h4>
-          {role.notes && <p className="text-sm text-white/60">{role.notes}</p>}
+          <h4 className="font-medium text-white text-sm">{role.title}</h4>
+          {role.notes && <p className="text-xs text-white/60">{role.notes}</p>}
         </div>
         <StatusBadge status={displayStatus} />
       </div>
 
-      <div className="flex items-center gap-4 text-sm text-white/50 mb-3">
+      <div className="flex items-center gap-3 text-xs text-white/50 mb-2">
         {role.location_requirements && (
           <span className="flex items-center gap-1">
             <MapPin className="w-3.5 h-3.5" />
@@ -901,25 +901,25 @@ const RoleCard = ({ role, onEdit, onDelete }) => {
         )}
       </div>
 
-      <div className="flex items-center justify-between pt-3 border-t border-zinc-700/30">
-        <div className="flex items-center gap-2">
-          <Users className="w-4 h-4 text-red-400" />
-          <span className="text-sm text-white/70">
-            {role.candidates_matched || 0} candidates matched
+      <div className="flex items-center justify-between pt-2 border-t border-zinc-700/30">
+        <div className="flex items-center gap-1">
+          <Users className="w-3 h-3 text-red-400" />
+          <span className="text-xs text-white/70">
+            {role.candidates_matched || 0} matched
           </span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <button
             onClick={() => onEdit(role)}
-            className="p-1.5 rounded hover:bg-white/10 text-white/50 hover:text-white transition-colors"
+            className="p-1 rounded hover:bg-white/10 text-white/50 hover:text-white transition-colors"
           >
-            <Edit className="w-4 h-4" />
+            <Edit className="w-3 h-3" />
           </button>
           <button
             onClick={() => onDelete(role)}
-            className="p-1.5 rounded hover:bg-red-500/20 text-white/50 hover:text-red-400 transition-colors"
+            className="p-1 rounded hover:bg-red-500/20 text-white/50 hover:text-red-400 transition-colors"
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="w-3 h-3" />
           </button>
         </div>
       </div>
@@ -935,25 +935,25 @@ const ProjectCard = ({ project, roles, onEdit, onDelete, onViewRoles, onAddRole 
 
   return (
     <motion.div variants={itemVariants}>
-      <GlassCard className="p-6 hover:border-red-500/30 transition-all duration-300">
+      <GlassCard className="p-4 hover:border-red-500/30 transition-all duration-300">
         {/* Header */}
-        <div className="flex items-start justify-between mb-4">
+        <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-1">
               <StatusBadge status={project.status} />
               <PriorityBadge priority={project.priority} />
             </div>
-            <h3 className="text-lg font-semibold text-white">{project.title || project.name}</h3>
-            <p className="text-sm text-white/60 line-clamp-2 mt-1">{project.description}</p>
+            <h3 className="text-base font-semibold text-white">{project.title || project.name}</h3>
+            <p className="text-xs text-white/60 line-clamp-2 mt-0.5">{project.description}</p>
           </div>
           
           {/* Menu */}
           <div className="relative">
             <button
               onClick={() => setShowMenu(!showMenu)}
-              className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+              className="p-1 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-colors"
             >
-              <MoreHorizontal className="w-5 h-5" />
+              <MoreHorizontal className="w-4 h-4" />
             </button>
             
             <AnimatePresence>
@@ -1004,7 +1004,7 @@ const ProjectCard = ({ project, roles, onEdit, onDelete, onViewRoles, onAddRole 
         </div>
 
         {/* Client & Timeline */}
-        <div className="flex items-center gap-4 text-sm text-white/50 mb-4">
+        <div className="flex items-center gap-3 text-xs text-white/50 mb-3">
           {project.client_name && (
             <span className="flex items-center gap-1">
               <Building2 className="w-4 h-4" />
@@ -1020,39 +1020,39 @@ const ProjectCard = ({ project, roles, onEdit, onDelete, onViewRoles, onAddRole 
         </div>
 
         {/* Progress */}
-        <div className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg mb-4">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between p-2 bg-zinc-800/50 rounded-lg mb-3">
+          <div className="flex items-center gap-2">
             <ProgressRing filled={filledRoles} total={projectRoles.length} />
             <div>
-              <p className="text-sm font-medium text-white">Roles Progress</p>
-              <p className="text-xs text-white/50">{filledRoles} of {projectRoles.length} filled</p>
+              <p className="text-xs font-medium text-white">Roles Progress</p>
+              <p className="text-[10px] text-white/50">{filledRoles} of {projectRoles.length} filled</p>
             </div>
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => onViewRoles(project)}
-            className="text-red-400 hover:text-red-300"
+            className="text-red-400 hover:text-red-300 text-xs"
           >
             View Roles
-            <ChevronRight className="w-4 h-4 ml-1" />
+            <ChevronRight className="w-3 h-3 ml-1" />
           </Button>
         </div>
 
         {/* Roles Preview */}
         {projectRoles.length > 0 && (
-          <div className="space-y-2">
+          <div className="space-y-1">
             {projectRoles.slice(0, 3).map((role) => (
               <div
                 key={role.id}
-                className="flex items-center justify-between p-2 bg-zinc-800/30 rounded"
+                className="flex items-center justify-between p-1.5 bg-zinc-800/30 rounded text-xs"
               >
-                <span className="text-sm text-white/80">{role.title}</span>
+                <span className="text-white/80">{role.title}</span>
                 <StatusBadge status={role.status} />
               </div>
             ))}
             {projectRoles.length > 3 && (
-              <p className="text-xs text-white/40 text-center pt-1">
+              <p className="text-[10px] text-white/40 text-center pt-0.5">
                 +{projectRoles.length - 3} more roles
               </p>
             )}
@@ -1488,33 +1488,33 @@ const RolesPanel = ({ project, roles, onClose, onEditRole, onDeleteRole, onAddRo
           className="fixed right-0 top-0 h-full w-[450px] bg-slate-900 border-l border-white/10 shadow-2xl z-50 overflow-y-auto"
         >
           <div className="p-6">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-xl font-semibold text-white">{project.title || project.name}</h2>
-                <p className="text-sm text-white/60">Roles & Positions</p>
+                <h2 className="text-lg font-semibold text-white">{project.title || project.name}</h2>
+                <p className="text-xs text-white/60">Roles & Positions</p>
               </div>
               <button
                 onClick={onClose}
-                className="p-2 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+                className="p-1 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-colors"
               >
-                <XCircle className="w-5 h-5" />
+                <XCircle className="w-4 h-4" />
               </button>
             </div>
 
             <Button
               onClick={() => onAddRole(project)}
-              className="w-full mb-6 bg-red-600 hover:bg-red-700"
+              className="w-full mb-4 bg-red-600 hover:bg-red-700 text-sm"
             >
-              <Plus className="w-4 h-4 mr-2" />
+              <Plus className="w-3 h-3 mr-2" />
               Add Role
             </Button>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               {projectRoles.length === 0 ? (
-                <div className="text-center py-8 text-white/40">
-                  <Briefcase className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p>No roles yet</p>
-                  <p className="text-sm mt-1">Add roles to this project</p>
+                <div className="text-center py-6 text-white/40">
+                  <Briefcase className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-xs">No roles yet</p>
+                  <p className="text-[10px] mt-1">Add roles to this project</p>
                 </div>
               ) : (
                 projectRoles.map((role) => (
@@ -1837,16 +1837,16 @@ export default function TalentProjects() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black relative">
-        <div className="relative z-10 w-full px-6 lg:px-8 py-6">
-          <Skeleton className="h-10 w-64 mb-8" />
-          <div className="grid grid-cols-4 gap-4 mb-8">
+        <div className="relative z-10 w-full px-4 lg:px-6 py-4">
+          <Skeleton className="h-8 w-56 mb-6" />
+          <div className="grid grid-cols-4 gap-3 mb-6">
             {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-32" />
+              <Skeleton key={i} className="h-24" />
             ))}
           </div>
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 gap-4">
             {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-64" />
+              <Skeleton key={i} className="h-48" />
             ))}
           </div>
         </div>
@@ -1856,7 +1856,7 @@ export default function TalentProjects() {
 
   return (
     <div className="min-h-screen bg-black relative">
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
         <PageHeader
           title="Recruitment Projects"
           subtitle="Manage hiring projects and open roles"
@@ -1890,7 +1890,7 @@ export default function TalentProjects() {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8"
+          className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6"
         >
           <motion.div variants={itemVariants}>
             <StatCard
@@ -1927,7 +1927,7 @@ export default function TalentProjects() {
         </motion.div>
 
         {/* Enhanced Filters */}
-        <div className="space-y-3">
+        <div className="space-y-2">
           {/* Quick Filter Chips - Click to filter by client */}
           {clients.length > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
@@ -1960,7 +1960,7 @@ export default function TalentProjects() {
           )}
 
           {/* Main Filters Row */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
               <Input
@@ -1998,18 +1998,18 @@ export default function TalentProjects() {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 md:grid-cols-2 gap-6"
+          className="grid grid-cols-1 md:grid-cols-2 gap-4"
         >
           {filteredProjects.length === 0 ? (
-            <div className="col-span-2 text-center py-16">
-              <Briefcase className="w-16 h-16 mx-auto mb-4 text-white/20" />
-              <h3 className="text-xl font-medium text-white/60 mb-2">No projects found</h3>
-              <p className="text-white/40 mb-6">
+            <div className="col-span-2 text-center py-12">
+              <Briefcase className="w-12 h-12 mx-auto mb-3 text-white/20" />
+              <h3 className="text-lg font-medium text-white/60 mb-1">No projects found</h3>
+              <p className="text-xs text-white/40 mb-4">
                 {searchQuery || statusFilter !== "all" || clientFilter !== "all"
                   ? "Try adjusting your filters"
                   : "Get started by adding your first role"}
               </p>
-              <div className="flex items-center justify-center gap-3">
+              <div className="flex items-center justify-center gap-2">
                 <Button
                   onClick={() => setQuickAddModalOpen(true)}
                   className="bg-red-600 hover:bg-red-700"

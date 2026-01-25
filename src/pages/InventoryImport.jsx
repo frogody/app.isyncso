@@ -669,13 +669,13 @@ export default function InventoryImport() {
         <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-cyan-950/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 max-w-6xl mx-auto px-6 py-6 space-y-8">
+      <div className="relative z-10 max-w-6xl mx-auto px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <div ref={headerRef} className="flex items-center justify-between" style={{ opacity: 0 }}>
           <div>
             <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
-                <FileSpreadsheet className="w-5 h-5 text-cyan-400" />
+              <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
+                <FileSpreadsheet className="w-4 h-4 text-cyan-400" />
               </div>
               Import Inventory
             </h1>
@@ -703,7 +703,7 @@ export default function InventoryImport() {
                 <div className="step-card flex flex-col items-center gap-2">
                   <div
                     className={cn(
-                      "w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all",
+                      "w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all",
                       isActive
                         ? "bg-cyan-500/20 border-cyan-500 text-cyan-400"
                         : isCompleted
@@ -712,13 +712,13 @@ export default function InventoryImport() {
                     )}
                   >
                     {isCompleted ? (
-                      <CheckCircle className="w-5 h-5" />
+                      <CheckCircle className="w-4 h-4" />
                     ) : (
-                      <Icon className="w-5 h-5" />
+                      <Icon className="w-4 h-4" />
                     )}
                   </div>
                   <span className={cn(
-                    "text-xs font-medium",
+                    "text-[10px] font-medium",
                     isActive ? "text-cyan-400" : isCompleted ? "text-green-400" : "text-zinc-500"
                   )}>
                     {step.title}
@@ -727,7 +727,7 @@ export default function InventoryImport() {
 
                 {index < STEPS.length - 1 && (
                   <div className={cn(
-                    "flex-1 h-0.5 mx-4",
+                    "flex-1 h-0.5 mx-3",
                     index < currentStep ? "bg-green-500" : "bg-zinc-800"
                   )} />
                 )}
@@ -737,7 +737,7 @@ export default function InventoryImport() {
         </div>
 
         {/* Step Content */}
-        <GlassCard className="p-6">
+        <GlassCard className="p-4">
           <motion.div
             key={currentStep}
             initial={{ opacity: 0, x: 20 }}
@@ -746,10 +746,10 @@ export default function InventoryImport() {
           >
             {/* Step 0: Upload */}
             {currentStep === 0 && (
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <div>
-                  <h2 className="text-xl font-semibold text-white">{STEPS[0].title}</h2>
-                  <p className="text-sm text-zinc-500 mt-1">{STEPS[0].description}</p>
+                  <h2 className="text-lg font-semibold text-white">{STEPS[0].title}</h2>
+                  <p className="text-xs text-zinc-500 mt-1">{STEPS[0].description}</p>
                 </div>
                 <FileUploader onFileProcessed={handleFileProcessed} />
               </div>
@@ -757,11 +757,11 @@ export default function InventoryImport() {
 
             {/* Step 1: Map Columns */}
             {currentStep === 1 && fileData && (
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-xl font-semibold text-white">{STEPS[1].title}</h2>
-                    <p className="text-sm text-zinc-500 mt-1">
+                    <h2 className="text-lg font-semibold text-white">{STEPS[1].title}</h2>
+                    <p className="text-xs text-zinc-500 mt-1">
                       {fileData.totalRows} rows found in "{fileData.fileName}"
                     </p>
                   </div>
@@ -779,10 +779,10 @@ export default function InventoryImport() {
 
             {/* Step 2: Validate */}
             {currentStep === 2 && fileData && (
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <div>
-                  <h2 className="text-xl font-semibold text-white">{STEPS[2].title}</h2>
-                  <p className="text-sm text-zinc-500 mt-1">{STEPS[2].description}</p>
+                  <h2 className="text-lg font-semibold text-white">{STEPS[2].title}</h2>
+                  <p className="text-xs text-zinc-500 mt-1">{STEPS[2].description}</p>
                 </div>
                 <ValidationPreview
                   sourceColumns={fileData.headers}
@@ -795,10 +795,10 @@ export default function InventoryImport() {
 
             {/* Step 3: Import */}
             {currentStep === 3 && (
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <div>
-                  <h2 className="text-xl font-semibold text-white">{STEPS[3].title}</h2>
-                  <p className="text-sm text-zinc-500 mt-1">{STEPS[3].description}</p>
+                  <h2 className="text-lg font-semibold text-white">{STEPS[3].title}</h2>
+                  <p className="text-xs text-zinc-500 mt-1">{STEPS[3].description}</p>
                 </div>
                 <ImportProgress
                   isImporting={isImporting}
@@ -812,22 +812,22 @@ export default function InventoryImport() {
 
             {/* Step 4: Enrich */}
             {currentStep === 4 && importResults && (
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <div>
-                  <h2 className="text-xl font-semibold text-white">{STEPS[4].title}</h2>
-                  <p className="text-sm text-zinc-500 mt-1">{STEPS[4].description}</p>
+                  <h2 className="text-lg font-semibold text-white">{STEPS[4].title}</h2>
+                  <p className="text-xs text-zinc-500 mt-1">{STEPS[4].description}</p>
                 </div>
 
-                <div className="text-center py-12">
-                  <div className="w-20 h-20 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center mx-auto mb-6">
-                    <CheckCircle className="w-10 h-10 text-green-400" />
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle className="w-8 h-8 text-green-400" />
                   </div>
 
-                  <h3 className="text-2xl font-bold text-white mb-2">
+                  <h3 className="text-xl font-bold text-white mb-2">
                     Import Complete!
                   </h3>
 
-                  <p className="text-zinc-400 mb-4">
+                  <p className="text-xs text-zinc-400 mb-4">
                     {importResults.created} products created, {importResults.updated} updated
                     {importResults.suppliersCreated > 0 && (
                       <span className="block mt-1 text-cyan-400">
@@ -836,33 +836,34 @@ export default function InventoryImport() {
                     )}
                   </p>
 
-                  <div className="flex flex-wrap justify-center gap-3 mb-6">
+                  <div className="flex flex-wrap justify-center gap-3 mb-4">
                     {importResults.toEnrich > 0 && (
-                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400">
-                        <Sparkles className="w-4 h-4" />
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs bg-purple-500/10 border border-purple-500/20 text-purple-400">
+                        <Sparkles className="w-3 h-3" />
                         <span>{importResults.toEnrich} products queued for AI enrichment</span>
                       </div>
                     )}
                     {importResults.suppliersCreated > 0 && (
-                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
-                        <Building2 className="w-4 h-4" />
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+                        <Building2 className="w-3 h-3" />
                         <span>{importResults.suppliersCreated} suppliers queued for AI enrichment</span>
                       </div>
                     )}
                   </div>
 
-                  <div className="flex items-center justify-center gap-4">
+                  <div className="flex items-center justify-center gap-3">
                     <Button
                       variant="outline"
                       onClick={resetWizard}
+                      className="text-xs"
                     >
                       Import More Products
                     </Button>
                     <Button
                       onClick={() => window.location.href = '/productsphysical'}
-                      className="bg-cyan-500 hover:bg-cyan-600 text-white"
+                      className="bg-cyan-500 hover:bg-cyan-600 text-white text-xs"
                     >
-                      <Package className="w-4 h-4 mr-2" />
+                      <Package className="w-3 h-3 mr-2" />
                       View Products
                     </Button>
                   </div>

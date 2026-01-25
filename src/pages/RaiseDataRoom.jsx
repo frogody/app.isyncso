@@ -91,7 +91,7 @@ export default function RaiseDataRoom() {
         <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-amber-950/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
         <PageHeader
           title="Data Room"
           subtitle="Secure document sharing for due diligence"
@@ -109,7 +109,7 @@ export default function RaiseDataRoom() {
         />
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
             { label: 'Total Rooms', value: dataRooms.length, icon: Folder },
             { label: 'Active', value: dataRooms.filter(r => r.is_active).length, icon: Unlock },
@@ -117,14 +117,14 @@ export default function RaiseDataRoom() {
             { label: 'Total Viewers', value: dataRooms.reduce((sum, r) => sum + (r.viewer_count || 0), 0), icon: Users }
           ].map((stat, idx) => (
             <Card key={idx} className="bg-zinc-900/50 border-zinc-800">
-              <CardContent className="p-4">
+              <CardContent className="p-3">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
                     <stat.icon className="w-4 h-4 text-amber-400" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-white">{stat.value}</p>
-                    <p className="text-xs text-zinc-500">{stat.label}</p>
+                    <p className="text-lg font-bold text-white">{stat.value}</p>
+                    <p className="text-[10px] text-zinc-500">{stat.label}</p>
                   </div>
                 </div>
               </CardContent>
@@ -170,11 +170,11 @@ export default function RaiseDataRoom() {
                     key={room.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition-colors"
+                    className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition-colors"
                   >
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
                       <div className="p-2 bg-amber-500/10 rounded-lg border border-amber-500/20">
-                        <Briefcase className="w-5 h-5 text-amber-400" />
+                        <Briefcase className="w-4 h-4 text-amber-400" />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
@@ -198,7 +198,7 @@ export default function RaiseDataRoom() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
                       <Badge variant="outline" className={room.is_active
                         ? 'bg-green-500/10 text-green-400 border-green-500/30'
                         : 'bg-zinc-500/10 text-zinc-400 border-zinc-500/30'
@@ -240,7 +240,7 @@ export default function RaiseDataRoom() {
             <DialogHeader>
               <DialogTitle className="text-white">Create Data Room</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            <div className="space-y-3 py-3">
               <div>
                 <Label className="text-zinc-400">Name</Label>
                 <Input
@@ -273,10 +273,10 @@ export default function RaiseDataRoom() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/50 border border-zinc-700">
+              <div className="flex items-center justify-between p-2 rounded-lg bg-zinc-800/50 border border-zinc-700">
                 <div>
-                  <p className="text-sm text-zinc-300">Require NDA</p>
-                  <p className="text-xs text-zinc-500">Viewers must sign NDA before access</p>
+                  <p className="text-xs text-zinc-300">Require NDA</p>
+                  <p className="text-[10px] text-zinc-500">Viewers must sign NDA before access</p>
                 </div>
                 <Switch
                   checked={newRoom.requires_nda}
@@ -284,7 +284,7 @@ export default function RaiseDataRoom() {
                 />
               </div>
             </div>
-            <div className="flex justify-end gap-3">
+            <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} className="border-zinc-700">
                 Cancel
               </Button>

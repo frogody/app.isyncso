@@ -58,27 +58,27 @@ const NestCard = ({ nest, onClick }) => {
     >
       <div
         onClick={onClick}
-        className="group p-6 rounded-xl bg-zinc-900/40 border border-zinc-800/50 hover:border-zinc-700/50 cursor-pointer transition-all duration-300"
+        className="group p-4 rounded-lg bg-zinc-900/40 border border-zinc-800/50 hover:border-zinc-700/50 cursor-pointer transition-all duration-300"
       >
         {/* Title */}
-        <h3 className="text-lg font-medium text-white mb-2">
+        <h3 className="text-base font-medium text-white mb-2">
           {nest.name}
         </h3>
 
         {/* Description */}
-        <p className="text-sm text-zinc-500 mb-6 line-clamp-2">
+        <p className="text-xs text-zinc-500 mb-4 line-clamp-2">
           {nest.description || `${nest.nest_type} dataset`}
         </p>
 
         {/* Bottom row */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <span className="text-xl font-semibold text-white">€{price.toFixed(0)}</span>
-            <span className="text-sm text-zinc-500">
+          <div className="flex items-center gap-3">
+            <span className="text-lg font-semibold text-white">€{price.toFixed(0)}</span>
+            <span className="text-xs text-zinc-500">
               {itemCount.toLocaleString()} profiles
             </span>
           </div>
-          <ArrowRight className="w-5 h-5 text-zinc-600 group-hover:text-red-400 transition-colors" />
+          <ArrowRight className="w-4 h-4 text-zinc-600 group-hover:text-red-400 transition-colors" />
         </div>
       </div>
     </motion.div>
@@ -244,11 +244,11 @@ export default function TalentNests() {
 
   if (loading) {
     return (
-      <div className="w-full px-6 lg:px-8 py-6">
-        <Skeleton className="h-10 w-48 mb-8" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+      <div className="w-full px-4 lg:px-6 py-4">
+        <Skeleton className="h-8 w-48 mb-4" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {[...Array(8)].map((_, i) => (
-            <Skeleton key={i} className="h-40 rounded-xl" />
+            <Skeleton key={i} className="h-36 rounded-lg" />
           ))}
         </div>
       </div>
@@ -256,24 +256,24 @@ export default function TalentNests() {
   }
 
   return (
-    <div className="w-full px-6 lg:px-8 py-6">
+    <div className="w-full px-4 lg:px-6 py-4 space-y-4">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-white mb-1">Talent Nests</h1>
-        <p className="text-zinc-500 text-sm">
+      <div>
+        <h1 className="text-xl font-semibold text-white mb-1">Talent Nests</h1>
+        <p className="text-zinc-500 text-xs">
           Pre-built candidate datasets for your recruitment needs
         </p>
       </div>
 
       {/* Search and Filters Bar */}
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex items-center gap-3">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
           <Input
             placeholder="Search nests..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-11 h-11 bg-zinc-900/50 border-zinc-800 focus:border-zinc-700 text-white placeholder:text-zinc-600"
+            className="pl-11 h-9 bg-zinc-900/50 border-zinc-800 focus:border-zinc-700 text-white placeholder:text-zinc-600"
           />
         </div>
 
@@ -285,7 +285,7 @@ export default function TalentNests() {
         />
 
         <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-44 h-11 bg-zinc-900/50 border-zinc-800">
+          <SelectTrigger className="w-40 h-9 bg-zinc-900/50 border-zinc-800">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -298,12 +298,12 @@ export default function TalentNests() {
       </div>
 
       {/* Results count */}
-      <p className="text-sm text-zinc-500 mb-5">
+      <p className="text-xs text-zinc-500">
         {filteredNests.length} nests available
       </p>
 
       {/* Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
         <AnimatePresence>
           {filteredNests.map((nest) => (
             <NestCard

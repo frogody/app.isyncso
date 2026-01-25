@@ -10,14 +10,14 @@ export default function Support() {
   const [view, setView] = useState('home');
 
   return (
-    <div className="min-h-screen bg-black p-6">
+    <div className="min-h-screen bg-black px-4 lg:px-6 py-4">
       <div className="max-w-7xl mx-auto">
         {view === 'home' && <SupportHome setView={setView} />}
         {view === 'ticket' && <SubmitTicket onBack={() => setView('home')} />}
         {view === 'features' && <FeatureList onBack={() => setView('home')} />}
         {view === 'knowledge' && <KnowledgeBase onBack={() => setView('home')} />}
-        
-        {view === 'ticket_list' && <TicketList onBack={() => setView('home')} onCreateNew={() => setView('ticket')} />} 
+
+        {view === 'ticket_list' && <TicketList onBack={() => setView('home')} onCreateNew={() => setView('ticket')} />}
       </div>
     </div>
   );

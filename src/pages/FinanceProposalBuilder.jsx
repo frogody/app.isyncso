@@ -313,12 +313,12 @@ export default function FinanceProposalBuilder() {
 
   if (loading || permLoading) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="p-4 lg:p-6 py-4 space-y-4">
         <div className="flex justify-between items-center">
           <Skeleton className="h-10 w-48 bg-zinc-800" />
           <Skeleton className="h-10 w-32 bg-zinc-800" />
         </div>
-        <div className="grid grid-cols-3 gap-6">
+        <div className="grid grid-cols-3 gap-3">
           <Skeleton className="h-[600px] col-span-2 bg-zinc-800" />
           <Skeleton className="h-[600px] bg-zinc-800" />
         </div>
@@ -327,10 +327,10 @@ export default function FinanceProposalBuilder() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="px-4 lg:px-6 py-4 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <Button
             variant="ghost"
             onClick={() => navigate(createPageUrl('FinanceProposals'))}
@@ -379,13 +379,13 @@ export default function FinanceProposalBuilder() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-3 gap-4">
         {/* Main Editor */}
-        <div className="col-span-2 space-y-6">
+        <div className="col-span-2 space-y-4">
           <Card className="bg-zinc-900/50 border-zinc-800">
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="bg-zinc-800 mb-6">
+                <TabsList className="bg-zinc-800 mb-4">
                   <TabsTrigger value="details" className="data-[state=active]:bg-amber-500">
                     Details
                   </TabsTrigger>
@@ -401,7 +401,7 @@ export default function FinanceProposalBuilder() {
                 </TabsList>
 
                 {/* Details Tab */}
-                <TabsContent value="details" className="space-y-6">
+                <TabsContent value="details" className="space-y-4">
                   {/* Title */}
                   <div>
                     <Label className="text-zinc-300">Proposal Title *</Label>
@@ -431,7 +431,7 @@ export default function FinanceProposalBuilder() {
                   </div>
 
                   {/* Client Info */}
-                  <div className="grid grid-cols-2 gap-4 p-4 bg-zinc-800/50 rounded-lg">
+                  <div className="grid grid-cols-2 gap-3 p-3 bg-zinc-800/50 rounded-lg">
                     <div className="col-span-2 flex items-center gap-2 text-zinc-400 text-sm mb-2">
                       <Building2 className="w-4 h-4" />
                       Client Information
@@ -477,7 +477,7 @@ export default function FinanceProposalBuilder() {
                 </TabsContent>
 
                 {/* Content Tab */}
-                <TabsContent value="content" className="space-y-6">
+                <TabsContent value="content" className="space-y-4">
                   {/* Introduction */}
                   <div>
                     <Label className="text-zinc-300">Introduction</Label>
@@ -524,7 +524,7 @@ export default function FinanceProposalBuilder() {
                         </p>
                       </div>
                     ) : (
-                      <div className="space-y-4">
+                      <div className="space-y-3">
                         {proposal.sections.map((section, idx) => (
                           <Collapsible key={section.id} defaultOpen>
                             <div className="border border-zinc-700 rounded-lg overflow-hidden">
@@ -551,7 +551,7 @@ export default function FinanceProposalBuilder() {
                                 </div>
                               </CollapsibleTrigger>
                               <CollapsibleContent>
-                                <div className="p-4 space-y-3 bg-zinc-900/50">
+                                <div className="p-3 space-y-3 bg-zinc-900/50">
                                   <Input
                                     value={section.title}
                                     onChange={(e) => handleUpdateSection(idx, { title: e.target.value })}
@@ -586,7 +586,7 @@ export default function FinanceProposalBuilder() {
                 </TabsContent>
 
                 {/* Pricing Tab */}
-                <TabsContent value="pricing" className="space-y-6">
+                <TabsContent value="pricing" className="space-y-4">
                   {/* Line Items */}
                   <div>
                     <div className="flex items-center justify-between mb-3">
@@ -618,7 +618,7 @@ export default function FinanceProposalBuilder() {
                         {proposal.line_items.map((item, idx) => (
                           <div
                             key={idx}
-                            className="flex items-center gap-3 p-3 rounded-lg bg-zinc-800/50 border border-white/5"
+                            className="flex items-center gap-2 p-3 rounded-lg bg-zinc-800/50 border border-white/5"
                           >
                             <div className="w-8 h-8 rounded flex items-center justify-center bg-zinc-700/50">
                               {item.is_subscription ? (
@@ -662,7 +662,7 @@ export default function FinanceProposalBuilder() {
                   </div>
 
                   {/* Discount & Tax */}
-                  <div className="grid grid-cols-2 gap-4 p-4 bg-zinc-800/50 rounded-lg">
+                  <div className="grid grid-cols-2 gap-3 p-3 bg-zinc-800/50 rounded-lg">
                     <div>
                       <Label className="text-zinc-400 text-sm">Discount</Label>
                       <div className="flex gap-2 mt-1">
@@ -701,8 +701,8 @@ export default function FinanceProposalBuilder() {
                 </TabsContent>
 
                 {/* Settings Tab */}
-                <TabsContent value="settings" className="space-y-6">
-                  <div className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg">
+                <TabsContent value="settings" className="space-y-4">
+                  <div className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg">
                     <div>
                       <p className="text-white font-medium">Require Signature</p>
                       <p className="text-sm text-zinc-400">Client must sign to accept the proposal</p>

@@ -28,8 +28,8 @@ export function GlassCard({
   const sizeClasses = {
     xs: 'p-2 rounded-lg',
     sm: 'p-3 rounded-xl',
-    md: 'p-4 rounded-2xl',
-    lg: 'p-6 rounded-2xl',
+    md: 'p-4 rounded-xl',
+    lg: 'p-6 rounded-xl',
   };
 
   const baseClasses = cn(
@@ -94,28 +94,28 @@ export function StatCard({
       card: 'p-3',
       iconContainer: 'w-8 h-8 rounded-lg',
       icon: 'w-4 h-4',
-      value: 'text-xl',
-      label: 'text-xs',
+      value: 'text-lg',
+      label: 'text-[10px]',
       change: 'text-xs px-1.5 py-0.5',
       mb: 'mb-2',
     },
     md: {
-      card: 'p-4',
-      iconContainer: 'w-10 h-10 rounded-lg',
-      icon: 'w-5 h-5',
-      value: 'text-2xl',
+      card: 'p-3',
+      iconContainer: 'w-8 h-8 rounded-lg',
+      icon: 'w-4 h-4',
+      value: 'text-lg',
       label: 'text-xs',
       change: 'text-xs px-1.5 py-0.5',
-      mb: 'mb-3',
+      mb: 'mb-2',
     },
     lg: {
-      card: 'p-6',
-      iconContainer: 'w-12 h-12 rounded-xl',
-      icon: 'w-6 h-6',
-      value: 'text-3xl',
-      label: 'text-sm',
+      card: 'p-4',
+      iconContainer: 'w-8 h-8 rounded-xl',
+      icon: 'w-4 h-4',
+      value: 'text-lg',
+      label: 'text-xs',
       change: 'text-sm px-2 py-1',
-      mb: 'mb-4',
+      mb: 'mb-3',
     },
   };
 

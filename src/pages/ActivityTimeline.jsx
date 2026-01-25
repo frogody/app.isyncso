@@ -89,15 +89,15 @@ export default function ActivityTimeline() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
+      <div className="min-h-screen bg-black px-4 lg:px-6 py-4">
+        <div className="max-w-7xl mx-auto space-y-4">
           <Skeleton className="h-12 w-64 bg-gray-800" />
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             {Array(4).fill(0).map((_, i) => (
               <Skeleton key={i} className="h-24 bg-gray-800" />
             ))}
           </div>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {Array(5).fill(0).map((_, i) => (
               <Skeleton key={i} className="h-48 bg-gray-800" />
             ))}
@@ -108,8 +108,8 @@ export default function ActivityTimeline() {
   }
 
   return (
-    <div className="min-h-screen bg-black p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-black px-4 lg:px-6 py-4">
+      <div className="max-w-7xl mx-auto space-y-4">
         {/* Header */}
         <div>
           <h1 className="text-4xl font-bold text-white mb-2">Activity Timeline</h1>
@@ -117,64 +117,64 @@ export default function ActivityTimeline() {
         </div>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="glass-card border-0 p-6 bg-gradient-to-br from-blue-500/20 to-blue-600/20 border-blue-500/30">
-            <div className="flex items-center justify-between mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <Card className="glass-card border-0 p-4 bg-gradient-to-br from-blue-500/20 to-blue-600/20 border-blue-500/30">
+            <div className="flex items-center justify-between mb-3">
               <Activity className="w-8 h-8 text-blue-400" />
-              <div className="text-3xl font-bold text-white">{stats.totalSessions}</div>
+              <div className="text-lg font-bold text-white">{stats.totalSessions}</div>
             </div>
             <div>
               <h3 className="font-semibold text-white mb-1">Total Sessions</h3>
-              <p className="text-sm text-gray-400">Tracked activities</p>
+              <p className="text-xs text-gray-400">Tracked activities</p>
             </div>
           </Card>
 
-          <Card className="glass-card border-0 p-6 bg-gradient-to-br from-green-500/20 to-green-600/20 border-green-500/30">
-            <div className="flex items-center justify-between mb-4">
+          <Card className="glass-card border-0 p-4 bg-gradient-to-br from-green-500/20 to-green-600/20 border-green-500/30">
+            <div className="flex items-center justify-between mb-3">
               <Clock className="w-8 h-8 text-green-400" />
-              <div className="text-3xl font-bold text-white">
+              <div className="text-lg font-bold text-white">
                 {Math.round(stats.totalMinutes / 60)}h
               </div>
             </div>
             <div>
               <h3 className="font-semibold text-white mb-1">Total Time</h3>
-              <p className="text-sm text-gray-400">Active learning</p>
+              <p className="text-xs text-gray-400">Active learning</p>
             </div>
           </Card>
 
-          <Card className="glass-card border-0 p-6 bg-gradient-to-br from-purple-500/20 to-purple-600/20 border-purple-500/30">
-            <div className="flex items-center justify-between mb-4">
+          <Card className="glass-card border-0 p-4 bg-gradient-to-br from-purple-500/20 to-purple-600/20 border-purple-500/30">
+            <div className="flex items-center justify-between mb-3">
               <TrendingUp className="w-8 h-8 text-purple-400" />
-              <div className="text-3xl font-bold text-white">{stats.avgProductivity}%</div>
+              <div className="text-lg font-bold text-white">{stats.avgProductivity}%</div>
             </div>
             <div>
               <h3 className="font-semibold text-white mb-1">Avg Productivity</h3>
-              <p className="text-sm text-gray-400">Overall score</p>
+              <p className="text-xs text-gray-400">Overall score</p>
             </div>
           </Card>
 
-          <Card className="glass-card border-0 p-6 bg-gradient-to-br from-amber-500/20 to-amber-600/20 border-amber-500/30">
-            <div className="flex items-center justify-between mb-4">
+          <Card className="glass-card border-0 p-4 bg-gradient-to-br from-amber-500/20 to-amber-600/20 border-amber-500/30">
+            <div className="flex items-center justify-between mb-3">
               <Zap className="w-8 h-8 text-amber-400" />
-              <div className="text-3xl font-bold text-white">{stats.avgFocus}%</div>
+              <div className="text-lg font-bold text-white">{stats.avgFocus}%</div>
             </div>
             <div>
               <h3 className="font-semibold text-white mb-1">Avg Focus</h3>
-              <p className="text-sm text-gray-400">Concentration level</p>
+              <p className="text-xs text-gray-400">Concentration level</p>
             </div>
           </Card>
         </div>
 
         {/* Activity Timeline */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           {activities.length === 0 ? (
-            <Card className="glass-card border-0 p-12">
+            <Card className="glass-card border-0 p-8">
               <div className="text-center">
-                <Activity className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-white mb-2">
+                <Activity className="w-12 h-12 text-gray-500 mx-auto mb-3" />
+                <h3 className="text-lg font-semibold text-white mb-2">
                   No Activities Yet
                 </h3>
-                <p className="text-gray-400 mb-4">
+                <p className="text-gray-400 mb-3">
                   Install and run the LearningTracker app to start tracking your activities
                 </p>
               </div>
@@ -182,70 +182,70 @@ export default function ActivityTimeline() {
           ) : (
             activities.map((activity, index) => (
               <Card key={activity.id} className="glass-card border-0">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
+                      <div className="flex items-center gap-2 mb-2">
                         <Badge className={getActivityTypeColor(activity.primary_activity_type)}>
                           {activity.primary_activity_type || 'General'}
                         </Badge>
-                        <span className="text-gray-400 text-sm">
+                        <span className="text-gray-400 text-xs">
                           {new Date(activity.session_start).toLocaleString()}
                         </span>
                       </div>
-                      
+
                       {activity.application_name && (
-                        <h3 className="text-xl font-semibold text-white mb-1">
+                        <h3 className="text-lg font-semibold text-white mb-1">
                           {activity.application_name}
                         </h3>
                       )}
-                      
+
                       {activity.window_title && (
-                        <p className="text-gray-300 mb-3">{activity.window_title}</p>
+                        <p className="text-gray-300 mb-2 text-sm">{activity.window_title}</p>
                       )}
                     </div>
-                    
+
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-white">
+                      <div className="text-lg font-bold text-white">
                         {formatDuration(activity.total_active_minutes || 0)}
                       </div>
-                      <div className="text-sm text-gray-400">Duration</div>
+                      <div className="text-xs text-gray-400">Duration</div>
                     </div>
                   </div>
 
                   {/* Scores */}
-                  <div className="grid grid-cols-3 gap-4 mb-4">
-                    <div className="text-center p-3 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                      <div className="text-lg font-bold text-purple-400">
+                  <div className="grid grid-cols-3 gap-3 mb-3">
+                    <div className="text-center p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                      <div className="text-sm font-bold text-purple-400">
                         {Math.round((activity.productivity_score || 0) * 100)}%
                       </div>
-                      <div className="text-xs text-gray-400">Productivity</div>
+                      <div className="text-[10px] text-gray-400">Productivity</div>
                     </div>
-                    <div className="text-center p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                      <div className="text-lg font-bold text-amber-400">
+                    <div className="text-center p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                      <div className="text-sm font-bold text-amber-400">
                         {Math.round((activity.focus_score || 0) * 100)}%
                       </div>
-                      <div className="text-xs text-gray-400">Focus</div>
+                      <div className="text-[10px] text-gray-400">Focus</div>
                     </div>
-                    <div className="text-center p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                      <div className="text-lg font-bold text-blue-400">
+                    <div className="text-center p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                      <div className="text-sm font-bold text-blue-400">
                         {activity.context_switches_count || 0}
                       </div>
-                      <div className="text-xs text-gray-400">Switches</div>
+                      <div className="text-[10px] text-gray-400">Switches</div>
                     </div>
                   </div>
 
                   {/* Workflow Summary */}
                   {activity.workflow_summary && (
-                    <div className="space-y-3 pt-4 border-t border-gray-700">
+                    <div className="space-y-2 pt-3 border-t border-gray-700">
                       {activity.workflow_summary.languages_used && activity.workflow_summary.languages_used.length > 0 && (
-                        <div className="flex items-start gap-3">
-                          <Code className="w-4 h-4 text-emerald-400 mt-1 flex-shrink-0" />
+                        <div className="flex items-start gap-2">
+                          <Code className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
                           <div className="flex-1">
-                            <p className="text-sm text-gray-400 mb-1">Languages:</p>
-                            <div className="flex flex-wrap gap-2">
+                            <p className="text-xs text-gray-400 mb-1">Languages:</p>
+                            <div className="flex flex-wrap gap-1">
                               {activity.workflow_summary.languages_used.map((lang, i) => (
-                                <Badge key={i} className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                                <Badge key={i} className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs py-0 px-2">
                                   {lang}
                                 </Badge>
                               ))}
@@ -253,15 +253,15 @@ export default function ActivityTimeline() {
                           </div>
                         </div>
                       )}
-                      
+
                       {activity.workflow_summary.frameworks && activity.workflow_summary.frameworks.length > 0 && (
-                        <div className="flex items-start gap-3">
-                          <Layers className="w-4 h-4 text-blue-400 mt-1 flex-shrink-0" />
+                        <div className="flex items-start gap-2">
+                          <Layers className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
                           <div className="flex-1">
-                            <p className="text-sm text-gray-400 mb-1">Frameworks:</p>
-                            <div className="flex flex-wrap gap-2">
+                            <p className="text-xs text-gray-400 mb-1">Frameworks:</p>
+                            <div className="flex flex-wrap gap-1">
                               {activity.workflow_summary.frameworks.map((fw, i) => (
-                                <Badge key={i} className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+                                <Badge key={i} className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs py-0 px-2">
                                   {fw}
                                 </Badge>
                               ))}
@@ -269,15 +269,15 @@ export default function ActivityTimeline() {
                           </div>
                         </div>
                       )}
-                      
+
                       {activity.workflow_summary.tools_used && activity.workflow_summary.tools_used.length > 0 && (
-                        <div className="flex items-start gap-3">
-                          <Wrench className="w-4 h-4 text-purple-400 mt-1 flex-shrink-0" />
+                        <div className="flex items-start gap-2">
+                          <Wrench className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" />
                           <div className="flex-1">
-                            <p className="text-sm text-gray-400 mb-1">Tools:</p>
-                            <div className="flex flex-wrap gap-2">
+                            <p className="text-xs text-gray-400 mb-1">Tools:</p>
+                            <div className="flex flex-wrap gap-1">
                               {activity.workflow_summary.tools_used.map((tool, i) => (
-                                <Badge key={i} className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+                                <Badge key={i} className="bg-purple-500/20 text-purple-400 border-purple-500/30 text-xs py-0 px-2">
                                   {tool}
                                 </Badge>
                               ))}

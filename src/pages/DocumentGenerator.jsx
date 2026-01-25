@@ -47,9 +47,9 @@ function SystemSelectionCard({ system, isSelected, onClick, index }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
       onClick={onClick}
-      className={`relative bg-zinc-900/60 backdrop-blur-sm rounded-xl border p-5 cursor-pointer transition-all duration-200 ${
-        isSelected 
-          ? 'border-[#86EFAC]/30' 
+      className={`relative bg-zinc-900/60 backdrop-blur-sm rounded-lg border p-3 cursor-pointer transition-all duration-200 ${
+        isSelected
+          ? 'border-[#86EFAC]/30'
           : 'border-zinc-800/60 hover:border-zinc-700/60'
       }`}
     >
@@ -70,14 +70,14 @@ function SystemSelectionCard({ system, isSelected, onClick, index }) {
               </Badge>
             )}
           </div>
-          <h3 className="text-lg font-semibold text-white mb-1">{system.name}</h3>
-          <p className="text-sm text-zinc-400 line-clamp-2">{system.purpose}</p>
+          <h3 className="text-base font-semibold text-white mb-1">{system.name}</h3>
+          <p className="text-xs text-zinc-400 line-clamp-2">{system.purpose}</p>
         </div>
-        
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ml-4 ${
+
+        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ml-4 ${
           isSelected ? 'bg-[#86EFAC]/20' : 'bg-zinc-800'
         }`}>
-          <Cpu className={`w-5 h-5 ${isSelected ? 'text-[#86EFAC]' : 'text-zinc-500'}`} />
+          <Cpu className={`w-4 h-4 ${isSelected ? 'text-[#86EFAC]' : 'text-zinc-500'}`} />
         </div>
       </div>
     </motion.div>
@@ -94,16 +94,16 @@ function DocTypeCard({ docType, onClick, index }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.1 + index * 0.1 }}
       onClick={onClick}
-      className="group relative bg-zinc-900/60 backdrop-blur-sm rounded-xl border border-zinc-800/60 hover:border-[#86EFAC]/30 p-6 cursor-pointer transition-all duration-200"
+      className="group relative bg-zinc-900/60 backdrop-blur-sm rounded-lg border border-zinc-800/60 hover:border-[#86EFAC]/30 p-4 cursor-pointer transition-all duration-200"
     >
-      <div className="flex items-start gap-4 mb-4">
-        <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${
+      <div className="flex items-start gap-3 mb-3">
+        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
           isGreen ? 'bg-[#86EFAC]/20' : 'bg-[#86EFAC]/15'
         }`}>
-          <Icon className={`w-7 h-7 ${isGreen ? 'text-[#86EFAC]/80' : 'text-[#86EFAC]/70'}`} />
+          <Icon className={`w-5 h-5 ${isGreen ? 'text-[#86EFAC]/80' : 'text-[#86EFAC]/70'}`} />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-white mb-1 group-hover:text-[#86EFAC]/80 transition-colors">
+          <h3 className="text-base font-semibold text-white mb-1 group-hover:text-[#86EFAC]/80 transition-colors">
             {docType.title}
           </h3>
           <Badge className="bg-zinc-800 text-zinc-400 border-zinc-700 border">
@@ -112,18 +112,18 @@ function DocTypeCard({ docType, onClick, index }) {
         </div>
       </div>
 
-      <p className="text-sm text-zinc-500 mb-4">{docType.description}</p>
+      <p className="text-xs text-zinc-500 mb-3">{docType.description}</p>
 
-      <div className="grid grid-cols-2 gap-2 mb-4">
+      <div className="grid grid-cols-2 gap-2 mb-3">
         {docType.features.map((feature, i) => (
-          <div key={i} className="flex items-center gap-2 text-xs text-zinc-600">
+          <div key={i} className="flex items-center gap-2 text-[10px] text-zinc-600">
             <ChevronRight className={`w-3 h-3 ${isGreen ? 'text-[#86EFAC]' : 'text-violet-400'}`} />
             {feature}
           </div>
         ))}
       </div>
 
-      <div className="flex items-center justify-between pt-4 border-t border-zinc-800/50">
+      <div className="flex items-center justify-between pt-3 border-t border-zinc-800/50">
         {docType.aiPowered ? (
           <span className="flex items-center gap-1.5 text-xs text-[#86EFAC]/80">
             <Sparkles className="w-3 h-3" />
@@ -193,11 +193,11 @@ export default function DocumentGenerator() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-6">
-        <div className="space-y-6">
-          <Skeleton className="h-28 w-full bg-zinc-800 rounded-2xl" />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[1,2,3,4].map(i => <Skeleton key={i} className="h-40 bg-zinc-800 rounded-2xl" />)}
+      <div className="min-h-screen bg-black p-4">
+        <div className="space-y-4">
+          <Skeleton className="h-20 w-full bg-zinc-800 rounded-xl" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {[1,2,3,4].map(i => <Skeleton key={i} className="h-32 bg-zinc-800 rounded-xl" />)}
           </div>
         </div>
       </div>
@@ -237,21 +237,21 @@ export default function DocumentGenerator() {
           <div className="absolute top-20 left-1/4 w-[500px] h-[500px] bg-[#86EFAC]/5 rounded-full blur-3xl" />
         </div>
 
-        <div className="relative z-10 w-full max-w-5xl mx-auto px-6 lg:px-8 py-6 space-y-6">
+        <div className="relative z-10 w-full max-w-5xl mx-auto px-4 lg:px-6 py-4 space-y-4">
           <Button onClick={handleBack} variant="outline" className="border-zinc-700/60 text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Change System
           </Button>
 
           {/* Selected System Card */}
-          <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-[#86EFAC]/20 flex items-center justify-center">
-                <Cpu className="w-6 h-6 text-[#86EFAC]" />
+          <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-[#86EFAC]/20 flex items-center justify-center">
+                <Cpu className="w-4 h-4 text-[#86EFAC]" />
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-white">{selectedSystem.name}</h3>
-                <p className="text-sm text-zinc-500">{selectedSystem.purpose}</p>
+                <h3 className="text-base font-semibold text-white">{selectedSystem.name}</h3>
+                <p className="text-xs text-zinc-500">{selectedSystem.purpose}</p>
               </div>
               <Badge className="bg-[#86EFAC]/20 text-[#86EFAC]/80 border-[#86EFAC]/30 border">
                 HIGH-RISK
@@ -260,8 +260,8 @@ export default function DocumentGenerator() {
           </div>
 
           <div>
-            <h2 className="text-xl font-semibold text-white mb-4">Select Document Type</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <h2 className="text-lg font-semibold text-white mb-3">Select Document Type</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {DOC_TYPES.map((dt, i) => (
                 <DocTypeCard 
                   key={dt.id} 
@@ -285,7 +285,7 @@ export default function DocumentGenerator() {
         <div className="absolute bottom-20 right-1/4 w-[400px] h-[400px] bg-[#6EE7B7]/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
         <PageHeader
           icon={FileText}
           title="Document Generator"
@@ -302,58 +302,58 @@ export default function DocumentGenerator() {
         />
 
         {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-sm">High-Risk Systems</p>
-                <p className="text-2xl font-bold text-white mt-1">{aiSystems.length}</p>
+                <p className="text-zinc-500 text-xs">High-Risk Systems</p>
+                <p className="text-lg font-bold text-white mt-1">{aiSystems.length}</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-[#86EFAC]/20 flex items-center justify-center">
-                <Cpu className="w-6 h-6 text-[#86EFAC]/70" />
+              <div className="w-8 h-8 rounded-lg bg-[#86EFAC]/20 flex items-center justify-center">
+                <Cpu className="w-4 h-4 text-[#86EFAC]/70" />
               </div>
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className="p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-sm">Docs Required</p>
-                <p className="text-2xl font-bold text-white mt-1">{aiSystems.length * 2}</p>
+                <p className="text-zinc-500 text-xs">Docs Required</p>
+                <p className="text-lg font-bold text-white mt-1">{aiSystems.length * 2}</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-[#86EFAC]/15 flex items-center justify-center">
-                <FileText className="w-6 h-6 text-[#86EFAC]/60" />
+              <div className="w-8 h-8 rounded-lg bg-[#86EFAC]/15 flex items-center justify-center">
+                <FileText className="w-4 h-4 text-[#86EFAC]/60" />
               </div>
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className="p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-sm">AI-Powered</p>
-                <p className="text-2xl font-bold text-white mt-1">Yes</p>
+                <p className="text-zinc-500 text-xs">AI-Powered</p>
+                <p className="text-lg font-bold text-white mt-1">Yes</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-[#86EFAC]/15 flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-[#86EFAC]/60" />
+              <div className="w-8 h-8 rounded-lg bg-[#86EFAC]/15 flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-[#86EFAC]/60" />
               </div>
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className="p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-sm">Compliance</p>
-                <p className="text-2xl font-bold text-white mt-1">Annex IV</p>
+                <p className="text-zinc-500 text-xs">Compliance</p>
+                <p className="text-lg font-bold text-white mt-1">Annex IV</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-[#86EFAC]/15 flex items-center justify-center">
-                <Shield className="w-6 h-6 text-[#86EFAC]/60" />
+              <div className="w-8 h-8 rounded-lg bg-[#86EFAC]/15 flex items-center justify-center">
+                <Shield className="w-4 h-4 text-[#86EFAC]/60" />
               </div>
             </div>
           </div>
         </div>
 
         {aiSystems.length === 0 ? (
-          <div className="p-16 text-center rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className="p-12 text-center rounded-xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#86EFAC]/20 to-[#6EE7B7]/20 flex items-center justify-center mx-auto mb-6">
               <FileText className="w-10 h-10 text-[#86EFAC]/70" />
             </div>
@@ -383,8 +383,8 @@ export default function DocumentGenerator() {
             </div>
 
             <div>
-              <h2 className="text-xl font-semibold text-white mb-4">Select AI System</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <h2 className="text-lg font-semibold text-white mb-3">Select AI System</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {filteredSystems.map((system, i) => (
                   <SystemSelectionCard
                     key={system.id}

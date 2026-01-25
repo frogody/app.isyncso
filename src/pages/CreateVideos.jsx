@@ -292,7 +292,7 @@ export default function CreateVideos() {
         <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-pink-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
       </div>
 
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
         <PageHeader
           title="AI Video Generation"
           subtitle="Generate videos with AI, enhanced with your brand and product context"
@@ -300,21 +300,21 @@ export default function CreateVideos() {
           color="rose"
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Left Panel - Controls */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="space-y-6"
+            className="space-y-4"
           >
             {/* Prompt Input */}
-            <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6">
-              <div className="flex items-center gap-2 mb-4">
+            <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
                 <Wand2 className="w-5 h-5 text-rose-400" />
                 <h3 className="text-white font-semibold">Prompt</h3>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div>
                   <Textarea
                     value={prompt}
@@ -412,12 +412,12 @@ export default function CreateVideos() {
             </div>
 
             {/* Style & Settings */}
-            <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6">
-              <div className="flex items-center gap-2 mb-4">
+            <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
                 <Settings2 className="w-5 h-5 text-rose-400" />
                 <h3 className="text-white font-semibold">Style & Settings</h3>
               </div>
-              <div className="space-y-5">
+              <div className="space-y-4">
                 {/* Style Presets */}
                 <div>
                   <Label className="text-zinc-300 mb-3 block">Style</Label>
@@ -428,14 +428,14 @@ export default function CreateVideos() {
                         <button
                           key={style.id}
                           onClick={() => setSelectedStyle(style.id)}
-                          className={`p-3 rounded-xl border text-center transition-all ${
+                          className={`p-2 rounded-xl border text-center transition-all ${
                             selectedStyle === style.id
                               ? 'bg-rose-500/20 border-rose-500/50 text-rose-400'
                               : 'bg-zinc-900/50 border-zinc-700 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800/50'
                           }`}
                         >
-                          <IconComponent className="w-5 h-5 mx-auto mb-1" />
-                          <div className="text-xs">{style.label}</div>
+                          <IconComponent className="w-4 h-4 mx-auto mb-1" />
+                          <div className="text-[10px]">{style.label}</div>
                         </button>
                       );
                     })}
@@ -475,15 +475,15 @@ export default function CreateVideos() {
                         <button
                           key={ratio.id}
                           onClick={() => setAspectRatio(ratio.id)}
-                          className={`p-3 rounded-xl border text-center transition-all ${
+                          className={`p-2 rounded-xl border text-center transition-all ${
                             aspectRatio === ratio.id
                               ? 'bg-rose-500/20 border-rose-500/50 text-rose-400'
                               : 'bg-zinc-900/50 border-zinc-700 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800/50'
                           }`}
                         >
-                          <IconComponent className="w-5 h-5 mx-auto mb-1" />
-                          <div className="text-xs">{ratio.label}</div>
-                          <div className="text-[10px] text-zinc-500">{ratio.sublabel}</div>
+                          <IconComponent className="w-4 h-4 mx-auto mb-1" />
+                          <div className="text-[10px]">{ratio.label}</div>
+                          <div className="text-[9px] text-zinc-500">{ratio.sublabel}</div>
                         </button>
                       );
                     })}
@@ -534,11 +534,11 @@ export default function CreateVideos() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="space-y-6"
+            className="space-y-4"
           >
             {/* Video Preview */}
-            <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6">
-              <div className="flex items-center justify-between mb-4">
+            <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <Video className="w-5 h-5 text-rose-400" />
                   <h3 className="text-white font-semibold">Preview</h3>
@@ -610,9 +610,9 @@ export default function CreateVideos() {
 
               {/* Enhanced Prompt Display */}
               {generatedVideo?.enhanced_prompt && (
-                <div className="mt-4 p-3 bg-zinc-800/50 rounded-xl border border-zinc-700/50">
-                  <Label className="text-zinc-500 text-xs mb-1 block">Enhanced Prompt Used:</Label>
-                  <p className="text-zinc-300 text-sm">{generatedVideo.enhanced_prompt}</p>
+                <div className="mt-3 p-2 bg-zinc-800/50 rounded-xl border border-zinc-700/50">
+                  <Label className="text-zinc-500 text-[10px] mb-1 block">Enhanced Prompt Used:</Label>
+                  <p className="text-zinc-300 text-xs">{generatedVideo.enhanced_prompt}</p>
                 </div>
               )}
             </div>
@@ -622,13 +622,13 @@ export default function CreateVideos() {
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
-                className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6"
+                className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4"
               >
-                <div className="flex items-center gap-2 mb-4">
+                <div className="flex items-center gap-2 mb-3">
                   <History className="w-5 h-5 text-rose-400" />
                   <h3 className="text-white font-semibold">Recent Generations</h3>
                 </div>
-                <div className="grid grid-cols-2 gap-3 max-h-[400px] overflow-y-auto">
+                <div className="grid grid-cols-2 gap-2 max-h-[400px] overflow-y-auto">
                   {generationHistory.map(item => (
                     <div
                       key={item.id}
@@ -724,9 +724,9 @@ export default function CreateVideos() {
                   </Badge>
                 </div>
                 {previewVideo.generation_config?.prompt && (
-                  <div className="p-3 bg-zinc-800/50 rounded-xl border border-zinc-700/50">
-                    <Label className="text-zinc-500 text-xs mb-1 block">Prompt:</Label>
-                    <p className="text-zinc-300 text-sm">{previewVideo.generation_config.prompt}</p>
+                  <div className="p-2 bg-zinc-800/50 rounded-xl border border-zinc-700/50">
+                    <Label className="text-zinc-500 text-[10px] mb-1 block">Prompt:</Label>
+                    <p className="text-zinc-300 text-xs">{previewVideo.generation_config.prompt}</p>
                   </div>
                 )}
                 <div className="flex gap-2">

@@ -29,10 +29,10 @@ export default function Leads() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-zinc-950 px-4 lg:px-6 py-4">
+      <div className="max-w-7xl mx-auto space-y-4">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white mb-1">Lead Scoring</h1>
             <p className="text-zinc-400 text-sm">Prioritize your best prospects</p>
@@ -46,9 +46,9 @@ export default function Leads() {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           {/* Lead Cards */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="lg:col-span-2 space-y-3">
             {mockLeads.map((lead, i) => (
               <motion.div
                 key={lead.id}
@@ -56,22 +56,22 @@ export default function Leads() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
                 onClick={() => setSelectedLead(lead)}
-                className={`bg-zinc-900/50 border rounded-xl p-6 cursor-pointer transition-colors ${
+                className={`bg-zinc-900/50 border rounded-lg p-4 cursor-pointer transition-colors ${
                   selectedLead?.id === lead.id ? 'border-orange-500' : 'border-zinc-800 hover:border-zinc-700'
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-16 h-16 rounded-full flex items-center justify-center ${getScoreColor(lead.score)}`}>
-                      <span className="text-2xl font-bold">{lead.score}</span>
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${getScoreColor(lead.score)}`}>
+                      <span className="text-lg font-bold">{lead.score}</span>
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-white">{lead.name}</h3>
-                      <p className="text-sm text-zinc-400">{lead.company}</p>
-                      <p className="text-xs text-zinc-500">{lead.email}</p>
+                      <h3 className="text-base font-semibold text-white">{lead.name}</h3>
+                      <p className="text-xs text-zinc-400">{lead.company}</p>
+                      <p className="text-[10px] text-zinc-500">{lead.email}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                       lead.status === 'hot' ? 'bg-red-500/20 text-red-400' :
                       lead.status === 'warm' ? 'bg-orange-500/20 text-orange-400' :
@@ -84,18 +84,18 @@ export default function Leads() {
                 </div>
 
                 {/* Mini Breakdown */}
-                <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-zinc-800">
+                <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-zinc-800">
                   <div className="text-center">
-                    <div className="text-lg font-bold text-orange-400">{lead.breakdown.engagement}</div>
-                    <div className="text-xs text-zinc-500">Engagement</div>
+                    <div className="text-base font-bold text-orange-400">{lead.breakdown.engagement}</div>
+                    <div className="text-[10px] text-zinc-500">Engagement</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-lg font-bold text-orange-400">{lead.breakdown.fit}</div>
-                    <div className="text-xs text-zinc-500">Fit</div>
+                    <div className="text-base font-bold text-orange-400">{lead.breakdown.fit}</div>
+                    <div className="text-[10px] text-zinc-500">Fit</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-lg font-bold text-orange-400">{lead.breakdown.intent}</div>
-                    <div className="text-xs text-zinc-500">Intent</div>
+                    <div className="text-base font-bold text-orange-400">{lead.breakdown.intent}</div>
+                    <div className="text-[10px] text-zinc-500">Intent</div>
                   </div>
                 </div>
               </motion.div>
@@ -103,28 +103,28 @@ export default function Leads() {
           </div>
 
           {/* Detail Panel / Config */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Score Breakdown */}
             {selectedLead && !showConfig && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6"
+                className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4"
               >
-                <h3 className="text-lg font-semibold text-white mb-4">Score Breakdown</h3>
-                <div className="text-center mb-6">
-                  <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto ${getScoreColor(selectedLead.score)}`}>
-                    <span className="text-4xl font-bold">{selectedLead.score}</span>
+                <h3 className="text-base font-semibold text-white mb-3">Score Breakdown</h3>
+                <div className="text-center mb-4">
+                  <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto ${getScoreColor(selectedLead.score)}`}>
+                    <span className="text-2xl font-bold">{selectedLead.score}</span>
                   </div>
-                  <p className="text-sm text-zinc-400 mt-2">{selectedLead.name}</p>
+                  <p className="text-xs text-zinc-400 mt-2">{selectedLead.name}</p>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {Object.entries(selectedLead.breakdown).map(([key, value]) => (
                     <div key={key}>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-zinc-400 capitalize">{key}</span>
-                        <span className="text-sm text-orange-400 font-medium">{value} pts</span>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs text-zinc-400 capitalize">{key}</span>
+                        <span className="text-xs text-orange-400 font-medium">{value} pts</span>
                       </div>
                       <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
                         <motion.div
@@ -138,16 +138,16 @@ export default function Leads() {
                   ))}
                 </div>
 
-                <div className="mt-6 space-y-2">
-                  <button 
+                <div className="mt-4 space-y-2">
+                  <button
                     onClick={() => toast.success(`Opening email to ${selectedLead.email}`)}
-                    className="w-full py-2 bg-cyan-500 hover:bg-cyan-600 rounded-lg text-sm font-medium transition-colors"
+                    className="w-full py-2 bg-cyan-500 hover:bg-cyan-600 rounded-lg text-xs font-medium transition-colors"
                   >
                     Send Outreach
                   </button>
-                  <button 
+                  <button
                     onClick={() => toast.info('Detailed profile view coming soon')}
-                    className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-sm font-medium transition-colors"
+                    className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-xs font-medium transition-colors"
                   >
                     View Profile
                   </button>
@@ -160,23 +160,23 @@ export default function Leads() {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6"
+                className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4"
               >
-                <h3 className="text-lg font-semibold text-white mb-4">Scoring Rules</h3>
-                <div className="space-y-3">
+                <h3 className="text-base font-semibold text-white mb-3">Scoring Rules</h3>
+                <div className="space-y-2">
                   {scoringRules.map((rule, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg">
+                    <div key={i} className="flex items-center justify-between p-2 bg-zinc-800/50 rounded-lg">
                       <div>
-                        <div className="text-sm text-white">{rule.rule}</div>
-                        <div className="text-xs text-zinc-500">{rule.category}</div>
+                        <div className="text-xs text-white">{rule.rule}</div>
+                        <div className="text-[10px] text-zinc-500">{rule.category}</div>
                       </div>
-                      <span className="text-sm font-medium text-orange-400">+{rule.points}</span>
+                      <span className="text-xs font-medium text-orange-400">+{rule.points}</span>
                     </div>
                   ))}
                 </div>
-                <button 
+                <button
                   onClick={() => toast.info('Add scoring rule functionality coming soon')}
-                  className="w-full mt-4 py-2 border border-dashed border-zinc-700 rounded-lg text-sm text-zinc-500 hover:border-cyan-500 hover:text-cyan-400 transition-colors flex items-center justify-center gap-2"
+                  className="w-full mt-3 py-2 border border-dashed border-zinc-700 rounded-lg text-xs text-zinc-500 hover:border-cyan-500 hover:text-cyan-400 transition-colors flex items-center justify-center gap-2"
                 >
                   <Plus className="w-4 h-4" />
                   Add Rule

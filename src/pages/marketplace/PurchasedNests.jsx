@@ -126,7 +126,7 @@ export default function PurchasedNests() {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-black p-6 space-y-6">
+      <div className="min-h-screen bg-black px-4 lg:px-6 py-4 space-y-4">
         {/* Back Button */}
         <Button
           variant="ghost"
@@ -146,44 +146,44 @@ export default function PurchasedNests() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <Card className="bg-zinc-900/50 border-white/5">
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-cyan-500/20 rounded-lg">
-                  <Package className="w-5 h-5 text-cyan-400" />
+                  <Package className="w-4 h-4 text-cyan-400" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-white">{purchases.length}</p>
-                  <p className="text-sm text-zinc-500">Nests Owned</p>
+                  <p className="text-lg font-bold text-white">{purchases.length}</p>
+                  <p className="text-xs text-zinc-500">Nests Owned</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card className="bg-zinc-900/50 border-white/5">
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-green-500/20 rounded-lg">
-                  <Users className="w-5 h-5 text-green-400" />
+                  <Users className="w-4 h-4 text-green-400" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-white">{totalItems}</p>
-                  <p className="text-sm text-zinc-500">Total Items</p>
+                  <p className="text-lg font-bold text-white">{totalItems}</p>
+                  <p className="text-xs text-zinc-500">Total Items</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card className="bg-zinc-900/50 border-white/5">
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-purple-500/20 rounded-lg">
-                  <CheckCircle className="w-5 h-5 text-purple-400" />
+                  <CheckCircle className="w-4 h-4 text-purple-400" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-white">{formatCurrency(totalSpent)}</p>
-                  <p className="text-sm text-zinc-500">Total Invested</p>
+                  <p className="text-lg font-bold text-white">{formatCurrency(totalSpent)}</p>
+                  <p className="text-xs text-zinc-500">Total Invested</p>
                 </div>
               </div>
             </CardContent>
@@ -235,12 +235,12 @@ export default function PurchasedNests() {
                       <TableRow key={purchase.id} className="border-white/10 hover:bg-white/5">
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${config.color}`}>
-                              <Icon className="w-5 h-5" />
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${config.color}`}>
+                              <Icon className="w-4 h-4" />
                             </div>
                             <div>
                               <p className="font-medium text-white">{nest.name}</p>
-                              <p className="text-sm text-zinc-500 truncate max-w-[200px]">
+                              <p className="text-xs text-zinc-500 truncate max-w-[200px]">
                                 {nest.description || 'No description'}
                               </p>
                             </div>

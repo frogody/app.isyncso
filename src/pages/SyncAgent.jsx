@@ -337,8 +337,8 @@ function DocumentCard({ url, title }) {
       style={{ opacity: 0 }}
     >
       <div className="flex items-start gap-3">
-        <div className="shrink-0 w-10 h-10 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
-          <FileText className="w-5 h-5 text-cyan-400" />
+        <div className="shrink-0 w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
+          <FileText className="w-4 h-4 text-cyan-400" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-sm font-medium text-white truncate">{title}</div>
@@ -447,7 +447,7 @@ function AgentChannelMessage({ message, isLatest, highlightBorders }) {
     <div
       ref={messageRef}
       className={cn(
-        "flex items-start gap-3 py-3 px-4 rounded-2xl max-w-[85%] transition-all duration-300",
+        "flex items-start gap-3 py-3 px-4 rounded-xl max-w-[85%] transition-all duration-300",
         isSyncMessage
           ? "mr-auto bg-gradient-to-br from-zinc-800/70 to-zinc-800/40 border border-zinc-700/30"
           : "ml-auto flex-row-reverse bg-gradient-to-bl from-zinc-700/50 to-zinc-700/30 border border-zinc-600/30",
@@ -1610,7 +1610,7 @@ function Bubble({ role, text, ts, index, document, highlightBorders }) {
     <div ref={bubbleRef} className={cn('flex', isUser ? 'justify-end' : 'justify-start')} style={{ opacity: 0 }}>
       <div
         className={cn(
-          'max-w-[78%] rounded-2xl border px-4 py-3 text-sm leading-relaxed shadow-sm transition-all duration-300',
+          'max-w-[78%] rounded-xl border px-4 py-3 text-sm leading-relaxed shadow-sm transition-all duration-300',
           isUser
             ? 'border-cyan-500/20 bg-cyan-600/20 text-white'
             : 'border-white/10 bg-black/40 text-white/90',
@@ -2040,12 +2040,12 @@ export default function SyncAgent() {
       </div>
 
       {/* Layout - fills remaining height, minimal top padding to align with buttons */}
-      <div className="flex-1 min-h-0 mx-auto w-full max-w-[1600px] grid grid-cols-1 gap-6 px-6 pb-4 lg:grid-cols-[480px_1fr]">
+      <div className="flex-1 min-h-0 mx-auto w-full max-w-[1600px] grid grid-cols-1 gap-3 px-4 lg:px-6 pb-4 lg:grid-cols-[480px_1fr]">
         {/* Left: Container with Avatar + Agent Messages */}
         <div
           data-animate
           className={cn(
-            "flex flex-col rounded-2xl border bg-zinc-900/30 overflow-hidden transition-all duration-300",
+            "flex flex-col rounded-xl border bg-zinc-900/30 overflow-hidden transition-all duration-300",
             highlightBorders
               ? "border-cyan-400/70 shadow-[0_0_30px_rgba(34,211,238,0.5)]"
               : "border-zinc-700/50"
@@ -2074,12 +2074,12 @@ export default function SyncAgent() {
               {messages.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center px-4">
                   <div className="relative mb-6">
-                    <div className="absolute inset-0 bg-cyan-500/20 rounded-2xl blur-2xl scale-150" />
-                    <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 border border-cyan-500/30 flex items-center justify-center shadow-lg shadow-cyan-500/10">
+                    <div className="absolute inset-0 bg-cyan-500/20 rounded-xl blur-2xl scale-150" />
+                    <div className="relative w-14 h-14 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 border border-cyan-500/30 flex items-center justify-center shadow-lg shadow-cyan-500/10">
                       <Sparkles className="w-10 h-10 text-cyan-400" />
                     </div>
                   </div>
-                  <h4 className="text-xl font-semibold bg-gradient-to-r from-white to-zinc-300 bg-clip-text text-transparent mb-2">How can I help you?</h4>
+                  <h4 className="text-lg font-semibold bg-gradient-to-r from-white to-zinc-300 bg-clip-text text-transparent mb-2">How can I help you?</h4>
                   <p className="text-sm text-zinc-500 mb-8 max-w-sm">
                     I can help with invoices, prospects, compliance, learning, and more.
                   </p>
@@ -2107,7 +2107,7 @@ export default function SyncAgent() {
                   {isSending && (
                     <div className="flex justify-start">
                       <div className={cn(
-                        "rounded-2xl bg-gradient-to-br from-zinc-800/60 to-zinc-900/60 border px-5 py-4 text-sm backdrop-blur-sm transition-all duration-300",
+                        "rounded-xl bg-gradient-to-br from-zinc-800/60 to-zinc-900/60 border px-4 py-3 text-sm backdrop-blur-sm transition-all duration-300",
                         highlightBorders
                           ? "border-cyan-400/70 shadow-[0_0_20px_rgba(34,211,238,0.4)]"
                           : "border-zinc-700/50"

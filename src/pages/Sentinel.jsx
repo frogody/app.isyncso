@@ -71,10 +71,10 @@ export default function SentinelChat() {
 
   if (userLoading) {
     return (
-      <div className="min-h-screen bg-black p-6">
-        <div className="max-w-4xl mx-auto space-y-6">
-          <Skeleton className="h-24 w-full bg-zinc-800 rounded-2xl" />
-          <Skeleton className="h-[600px] bg-zinc-800 rounded-2xl" />
+      <div className="min-h-screen bg-black p-4">
+        <div className="max-w-4xl mx-auto space-y-4">
+          <Skeleton className="h-24 w-full bg-zinc-800 rounded-xl" />
+          <Skeleton className="h-[600px] bg-zinc-800 rounded-xl" />
         </div>
       </div>
     );
@@ -86,7 +86,7 @@ export default function SentinelChat() {
         <div className="absolute top-20 right-1/3 w-96 h-96 bg-[#86EFAC]/5 rounded-full blur-3xl animate-pulse" />
       </div>
 
-      <div className="relative z-10 w-full max-w-5xl mx-auto px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full max-w-5xl mx-auto px-4 lg:px-6 py-4 space-y-4">
         <PageHeader
           icon={Shield}
           title="Ask SENTINEL"

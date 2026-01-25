@@ -139,7 +139,7 @@ export default function CompanyProfile() {
         <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-cyan-500/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6 max-w-7xl mx-auto">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4 max-w-7xl mx-auto">
         {/* Back Button */}
         <Link to={createPageUrl('GrowthProspects')} className="inline-flex items-center text-zinc-400 hover:text-white transition-colors">
           <ChevronLeft className="w-4 h-4 mr-1" />
@@ -148,14 +148,14 @@ export default function CompanyProfile() {
 
         {/* Header Card */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <GlassCard glow="indigo" className="p-6">
-            <div className="flex flex-col md:flex-row items-start gap-6">
+          <GlassCard glow="indigo" className="p-4">
+            <div className="flex flex-col md:flex-row items-start gap-4">
               {/* Logo */}
-              <div className="w-24 h-24 rounded-2xl bg-zinc-800 border border-zinc-700 flex items-center justify-center overflow-hidden flex-shrink-0">
+              <div className="w-20 h-20 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center overflow-hidden flex-shrink-0">
                 {firmographics.business_logo ? (
                   <img src={firmographics.business_logo} alt={company.name} className="w-full h-full object-cover" />
                 ) : (
-                  <Building2 className="w-12 h-12 text-zinc-600" />
+                  <Building2 className="w-8 h-8 text-zinc-600" />
                 )}
               </div>
 

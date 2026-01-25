@@ -41,7 +41,7 @@ export default function SystemWorkflow() {
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-cyan-500/5 to-blue-600/5 rounded-full blur-3xl animate-pulse"></div>
       </div>
 
-      <div className="max-w-5xl mx-auto p-6 space-y-8 relative z-10">
+      <div className="max-w-5xl mx-auto px-4 lg:px-6 py-4 space-y-4 relative z-10">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -58,7 +58,7 @@ export default function SystemWorkflow() {
 
         {/* Progress Steps */}
         <Card className="glass-card border-0 border-[#86EFAC]/20">
-          <CardContent className="p-6">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               {WORKFLOW_STEPS.map((step, index) => {
                 const isActive = currentStep === step.id;
@@ -68,24 +68,24 @@ export default function SystemWorkflow() {
                 return (
                   <React.Fragment key={step.id}>
                     <div className="flex flex-col items-center flex-1">
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all ${
-                        isActive 
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${
+                        isActive
                           ? 'bg-[#86EFAC]/30 border-[#86EFAC] text-[#86EFAC]'
                           : isCompleted
                           ? 'bg-[#86EFAC]/20 border-[#86EFAC] text-[#86EFAC]'
                           : 'bg-gray-800 border-gray-700 text-gray-600'
                       }`}>
                         {isCompleted ? (
-                          <CheckCircle className="w-6 h-6" />
+                          <CheckCircle className="w-4 h-4" />
                         ) : (
                           <span className="text-lg font-bold">{step.id}</span>
                         )}
                       </div>
                       <div className="mt-3 text-center">
-                        <h3 className={`font-semibold text-sm ${isActive ? 'text-[#86EFAC]' : 'text-white'}`}>
+                        <h3 className={`font-semibold text-xs ${isActive ? 'text-[#86EFAC]' : 'text-white'}`}>
                           {step.title}
                         </h3>
-                        <p className="text-xs text-gray-500 mt-1">{step.description}</p>
+                        <p className="text-[10px] text-gray-500 mt-1">{step.description}</p>
                       </div>
                     </div>
                     {index < WORKFLOW_STEPS.length - 1 && (
@@ -116,14 +116,14 @@ export default function SystemWorkflow() {
 
         {currentStep === 3 && registeredSystem && (
           <Card className="glass-card border-0 border-[#86EFAC]/20">
-            <CardContent className="p-8 space-y-6">
+            <CardContent className="p-4 space-y-4">
               <div className="text-center">
                 <CheckCircle className="w-16 h-16 text-[#86EFAC] mx-auto mb-4" />
-                <h2 className="text-2xl font-bold text-white mb-2">System Classified!</h2>
+                <h2 className="text-lg font-bold text-white mb-2">System Classified!</h2>
                 <p className="text-gray-400">Ready to generate compliance documentation</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <Link to={createPageUrl("DocumentGenerator")}>
                   <Button className="w-full bg-[#86EFAC] hover:bg-[#6EE7B7] text-black h-14">
                     <Sparkles className="w-5 h-5 mr-2" />

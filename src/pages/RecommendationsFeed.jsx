@@ -109,8 +109,8 @@ export default function RecommendationsFeed() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-6">
-        <div className="max-w-5xl mx-auto space-y-6">
+      <div className="min-h-screen bg-black p-4">
+        <div className="max-w-5xl mx-auto space-y-4">
           <Skeleton className="h-12 w-64 bg-gray-800" />
           {Array(5).fill(0).map((_, i) => (
             <Skeleton key={i} className="h-32 bg-gray-800" />
@@ -121,8 +121,8 @@ export default function RecommendationsFeed() {
   }
 
   return (
-    <div className="min-h-screen bg-black p-6">
-      <div className="max-w-5xl mx-auto space-y-8">
+    <div className="min-h-screen bg-black px-4 lg:px-6 py-4 space-y-4">
+      <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div>
           <h1 className="text-4xl font-bold text-white mb-2">Course Recommendations</h1>
@@ -130,10 +130,11 @@ export default function RecommendationsFeed() {
         </div>
 
         {/* Filters */}
-        <Card className="glass-card border-0 p-6">
-          <div className="flex flex-col md:flex-row gap-4">
+        <div className="space-y-4">
+        <Card className="glass-card border-0 p-4">
+          <div className="flex flex-col md:flex-row gap-3">
             <div className="flex-1">
-              <label className="text-sm text-gray-400 mb-2 block">Priority</label>
+              <label className="text-xs text-gray-400 mb-2 block">Priority</label>
               <div className="flex gap-2">
                 <button
                   onClick={() => setFilterPriority('all')}
@@ -178,7 +179,7 @@ export default function RecommendationsFeed() {
               </div>
             </div>
             <div className="flex-1">
-              <label className="text-sm text-gray-400 mb-2 block">Status</label>
+              <label className="text-xs text-gray-400 mb-2 block">Status</label>
               <div className="flex gap-2">
                 <button
                   onClick={() => setFilterStatus('all')}
@@ -214,13 +215,14 @@ export default function RecommendationsFeed() {
             </div>
           </div>
         </Card>
+        </div>
 
         {/* Recommendations Feed */}
         <div className="space-y-4">
           {filteredRecommendations.length === 0 ? (
-            <Card className="glass-card border-0 p-12">
-              <div className="text-center space-y-4">
-                <Sparkles className="w-16 h-16 text-gray-500 mx-auto" />
+            <Card className="glass-card border-0 p-8">
+              <div className="text-center space-y-3">
+                <Sparkles className="w-12 h-12 text-gray-500 mx-auto" />
                 <h3 className="text-xl font-semibold text-white">No Recommendations</h3>
                 <p className="text-gray-400">
                   We'll recommend courses based on your learning activity
@@ -230,12 +232,12 @@ export default function RecommendationsFeed() {
           ) : (
             filteredRecommendations.map((rec) => (
               <Card key={rec.id} className="glass-card border-0 hover-glow transition-all">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between gap-4">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-                          <BookOpen className="w-6 h-6 text-emerald-400" />
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                          <BookOpen className="w-4 h-4 text-emerald-400" />
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
@@ -257,12 +259,12 @@ export default function RecommendationsFeed() {
                       </div>
 
                       {rec.course_description && (
-                        <p className="text-sm text-gray-400 mb-4">
+                        <p className="text-sm text-gray-400 mb-3">
                           {rec.course_description.substring(0, 150)}...
                         </p>
                       )}
 
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
                         <Link to={createPageUrl(`CourseDetail?id=${rec.course_id}`)}>
                           <Button
                             size="sm"

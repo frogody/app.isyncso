@@ -682,9 +682,9 @@ export default function Onboarding() {
           <div className="absolute top-0 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl" />
           <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
         </div>
-        <div className="flex flex-col items-center gap-4">
+        <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
-          <p className="text-zinc-400 text-sm">Loading...</p>
+          <p className="text-zinc-400 text-[10px]">Loading...</p>
         </div>
       </div>
     );

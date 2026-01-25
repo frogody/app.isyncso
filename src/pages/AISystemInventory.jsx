@@ -100,12 +100,12 @@ function SystemCard({ system, onEdit, onDelete, onAssess, index }) {
         {/* Top gradient bar */}
         <div className={`absolute top-0 left-0 right-0 h-1 rounded-t-xl bg-gradient-to-r ${config.gradient} opacity-60`} />
 
-        <div className="p-5">
+        <div className="p-4">
           {/* Header */}
-          <div className="flex items-start justify-between gap-3 mb-4">
+          <div className="flex items-start justify-between gap-3 mb-3">
             <div className="flex items-start gap-3">
-              <div className={`w-12 h-12 rounded-xl ${config.color} border flex items-center justify-center flex-shrink-0`}>
-                <Icon className="w-6 h-6" />
+              <div className={`w-8 h-8 rounded-xl ${config.color} border flex items-center justify-center flex-shrink-0`}>
+                <Icon className="w-4 h-4" />
               </div>
               <div className="min-w-0">
                 <h3 className="font-semibold text-white truncate group-hover:text-[#86EFAC]/80 transition-colors cursor-pointer" onClick={() => onEdit(system)}>
@@ -139,11 +139,11 @@ function SystemCard({ system, onEdit, onDelete, onAssess, index }) {
           </div>
 
           {/* Purpose */}
-          <p className="text-sm text-zinc-500 line-clamp-2 mb-4">{system.purpose || 'No purpose defined'}</p>
+          <p className="text-xs text-zinc-500 line-clamp-2 mb-3">{system.purpose || 'No purpose defined'}</p>
 
           {/* Compliance Status */}
-          <div className="mb-4">
-            <div className="flex items-center justify-between text-xs mb-1.5">
+          <div className="mb-3">
+            <div className="flex items-center justify-between text-[10px] mb-1.5">
               <span className={`font-medium ${statusConfig.color}`}>{statusConfig.label}</span>
               <span className="text-zinc-500">{statusConfig.progress}%</span>
             </div>
@@ -151,8 +151,8 @@ function SystemCard({ system, onEdit, onDelete, onAssess, index }) {
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between pt-3 border-t border-zinc-800/50">
-            <div className="flex items-center gap-3 text-xs text-zinc-500">
+          <div className="flex items-center justify-between pt-2 border-t border-zinc-800/50">
+            <div className="flex items-center gap-2 text-[10px] text-zinc-500">
               <span className="flex items-center gap-1">
                 <Clock className="w-3 h-3" />
                 {daysRegistered}d ago
@@ -260,14 +260,14 @@ export default function AISystemInventory() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-6">
-        <div className="space-y-6">
-          <Skeleton className="h-28 w-full bg-zinc-800 rounded-2xl" />
-          <div className="grid grid-cols-4 gap-4">
+      <div className="min-h-screen bg-black p-4">
+        <div className="space-y-4">
+          <Skeleton className="h-28 w-full bg-zinc-800 rounded-xl" />
+          <div className="grid grid-cols-4 gap-3">
             {[1,2,3,4].map(i => <Skeleton key={i} className="h-24 bg-zinc-800 rounded-xl" />)}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1,2,3,4,5,6].map(i => <Skeleton key={i} className="h-52 bg-zinc-800 rounded-2xl" />)}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {[1,2,3,4,5,6].map(i => <Skeleton key={i} className="h-52 bg-zinc-800 rounded-xl" />)}
           </div>
         </div>
       </div>
@@ -282,7 +282,7 @@ export default function AISystemInventory() {
         <div className="absolute bottom-20 right-1/4 w-[400px] h-[400px] bg-[#6EE7B7]/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <PageHeader
           icon={Cpu}
@@ -290,8 +290,8 @@ export default function AISystemInventory() {
           subtitle={`${stats.total} systems registered · ${stats.highRisk} high-risk`}
           color="sage"
           actions={
-            <Button 
-              onClick={() => { setEditingSystem(null); setShowModal(true); }} 
+            <Button
+              onClick={() => { setEditingSystem(null); setShowModal(true); }}
               className="bg-[#86EFAC]/10 hover:bg-[#86EFAC]/20 text-[#86EFAC] border border-[#86EFAC]/30"
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -301,60 +301,60 @@ export default function AISystemInventory() {
         />
 
         {/* Stats Row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-sm">Total Systems</p>
-                <p className="text-2xl font-bold text-white mt-1">{stats.total}</p>
+                <p className="text-zinc-500 text-xs">Total Systems</p>
+                <p className="text-lg font-bold text-white mt-1">{stats.total}</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-[#86EFAC]/20 flex items-center justify-center">
-                <Cpu className="w-6 h-6 text-[#86EFAC]/70" />
+              <div className="w-8 h-8 rounded-xl bg-[#86EFAC]/20 flex items-center justify-center">
+                <Cpu className="w-4 h-4 text-[#86EFAC]/70" />
               </div>
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-sm">High-Risk</p>
-                <p className="text-2xl font-bold text-white mt-1">{stats.highRisk}</p>
-                <p className="text-xs text-[#86EFAC]/80 mt-0.5">Requires documentation</p>
+                <p className="text-zinc-500 text-xs">High-Risk</p>
+                <p className="text-lg font-bold text-white mt-1">{stats.highRisk}</p>
+                <p className="text-[10px] text-[#86EFAC]/80 mt-0.5">Requires documentation</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-[#86EFAC]/20 flex items-center justify-center">
-                <AlertTriangle className="w-6 h-6 text-[#86EFAC]/70" />
+              <div className="w-8 h-8 rounded-xl bg-[#86EFAC]/20 flex items-center justify-center">
+                <AlertTriangle className="w-4 h-4 text-[#86EFAC]/70" />
               </div>
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-sm">Compliant</p>
-                <p className="text-2xl font-bold text-white mt-1">{stats.compliant}</p>
-                <p className="text-xs text-emerald-400/80 mt-0.5">{stats.total > 0 ? Math.round((stats.compliant / stats.total) * 100) : 0}% of total</p>
+                <p className="text-zinc-500 text-xs">Compliant</p>
+                <p className="text-lg font-bold text-white mt-1">{stats.compliant}</p>
+                <p className="text-[10px] text-emerald-400/80 mt-0.5">{stats.total > 0 ? Math.round((stats.compliant / stats.total) * 100) : 0}% of total</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-[#86EFAC]/15 flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-[#86EFAC]/60" />
+              <div className="w-8 h-8 rounded-xl bg-[#86EFAC]/15 flex items-center justify-center">
+                <CheckCircle className="w-4 h-4 text-[#86EFAC]/60" />
               </div>
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-sm">Needs Assessment</p>
-                <p className="text-2xl font-bold text-white mt-1">{stats.unclassified}</p>
+                <p className="text-zinc-500 text-xs">Needs Assessment</p>
+                <p className="text-lg font-bold text-white mt-1">{stats.unclassified}</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-zinc-500/20 flex items-center justify-center">
-                <Target className="w-6 h-6 text-zinc-400/70" />
+              <div className="w-8 h-8 rounded-xl bg-zinc-500/20 flex items-center justify-center">
+                <Target className="w-4 h-4 text-zinc-400/70" />
               </div>
             </div>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center gap-3">
           <div className="flex-1 relative w-full lg:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
             <Input
@@ -365,8 +365,8 @@ export default function AISystemInventory() {
               className="pl-10 bg-zinc-900/60 border-zinc-800/60 text-white focus:border-[#86EFAC]/40"
             />
           </div>
-          
-          <div className="flex items-center gap-3 flex-wrap">
+
+          <div className="flex items-center gap-2 flex-wrap">
             <Select value={filterClassification} onValueChange={setFilterClassification}>
               <SelectTrigger className="w-44 bg-zinc-900/60 border-zinc-800/60 text-white">
                 <Shield className="w-4 h-4 mr-2 text-zinc-400" />
@@ -402,7 +402,7 @@ export default function AISystemInventory() {
         {/* Systems Grid */}
         {filteredSystems.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               <AnimatePresence>
                 {pagination.items.map((system, i) => (
                   <SystemCard
@@ -418,12 +418,12 @@ export default function AISystemInventory() {
             </div>
 
             {pagination.totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-6">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={pagination.prevPage} 
-                  disabled={!pagination.hasPrev} 
+              <div className="flex items-center justify-center gap-2 mt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={pagination.prevPage}
+                  disabled={!pagination.hasPrev}
                   className="border-zinc-700 text-zinc-300"
                 >
                   Previous
@@ -431,11 +431,11 @@ export default function AISystemInventory() {
                 <span className="text-sm text-zinc-400 px-4">
                   Page {pagination.currentPage} of {pagination.totalPages}
                 </span>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={pagination.nextPage} 
-                  disabled={!pagination.hasNext} 
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={pagination.nextPage}
+                  disabled={!pagination.hasNext}
                   className="border-zinc-700 text-zinc-300"
                 >
                   Next
@@ -444,23 +444,23 @@ export default function AISystemInventory() {
             )}
           </>
         ) : (
-          <div className="p-16 text-center rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#86EFAC]/20 to-[#6EE7B7]/20 flex items-center justify-center mx-auto mb-6">
-              <Cpu className="w-10 h-10 text-[#86EFAC]" />
+          <div className="p-12 text-center rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-[#86EFAC]/20 to-[#6EE7B7]/20 flex items-center justify-center mx-auto mb-4">
+              <Cpu className="w-8 h-8 text-[#86EFAC]" />
             </div>
-            <h3 className="text-2xl font-bold text-white mb-3">
-              {searchTerm || filterClassification !== "all" || filterStatus !== "all" 
-                ? "No Systems Found" 
+            <h3 className="text-lg font-bold text-white mb-2">
+              {searchTerm || filterClassification !== "all" || filterStatus !== "all"
+                ? "No Systems Found"
                 : "Register Your First AI System"}
             </h3>
-            <p className="text-zinc-400 mb-8 max-w-md mx-auto">
+            <p className="text-zinc-400 mb-6 max-w-md mx-auto text-sm">
               {searchTerm || filterClassification !== "all" || filterStatus !== "all"
                 ? "Try adjusting your search or filters to see more results."
                 : "Start tracking AI systems for EU AI Act compliance. Register systems, assess risks, and generate documentation."}
             </p>
             {!searchTerm && filterClassification === "all" && filterStatus === "all" && (
-              <Button 
-                onClick={() => { setEditingSystem(null); setShowModal(true); }} 
+              <Button
+                onClick={() => { setEditingSystem(null); setShowModal(true); }}
                 className="bg-[#86EFAC]/10 hover:bg-[#86EFAC]/20 text-[#86EFAC]/80 border border-[#86EFAC]/30 hover:text-[#86EFAC] font-medium px-6"
               >
                 <Plus className="w-4 h-4 mr-2" />

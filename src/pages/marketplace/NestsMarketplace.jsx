@@ -74,11 +74,11 @@ function NestCard({ nest, isPurchased, onViewDetails }) {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="group p-5 rounded-xl bg-zinc-900/50 border border-white/5 hover:border-cyan-500/30 transition-all cursor-pointer"
+      className="group p-4 rounded-lg bg-zinc-900/50 border border-white/5 hover:border-cyan-500/30 transition-all cursor-pointer"
       onClick={() => onViewDetails(nest)}
     >
       {/* Thumbnail or Icon */}
-      <div className="w-full h-32 rounded-lg bg-gradient-to-br from-zinc-800 to-zinc-900 border border-white/5 flex items-center justify-center mb-4 overflow-hidden">
+      <div className="w-full h-24 rounded-lg bg-gradient-to-br from-zinc-800 to-zinc-900 border border-white/5 flex items-center justify-center mb-3 overflow-hidden">
         {nest.thumbnail_url ? (
           <img
             src={nest.thumbnail_url}
@@ -86,25 +86,25 @@ function NestCard({ nest, isPurchased, onViewDetails }) {
             className="w-full h-full object-cover"
           />
         ) : (
-          <Icon className={`w-12 h-12 ${config.color.split(' ')[0]}`} />
+          <Icon className={`w-8 h-8 ${config.color.split(' ')[0]}`} />
         )}
       </div>
 
       {/* Content */}
-      <div className="space-y-3">
+      <div className="space-y-2">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-medium text-white group-hover:text-cyan-400 transition-colors">
+          <h3 className="font-medium text-white group-hover:text-cyan-400 transition-colors text-sm">
             {nest.name}
           </h3>
           {isPurchased && (
-            <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
+            <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-[10px]">
               <CheckCircle className="w-3 h-3 mr-1" />
               Owned
             </Badge>
           )}
         </div>
 
-        <p className="text-sm text-zinc-500 line-clamp-2">
+        <p className="text-xs text-zinc-500 line-clamp-2">
           {nest.description || 'No description available'}
         </p>
 
@@ -115,7 +115,7 @@ function NestCard({ nest, isPurchased, onViewDetails }) {
               {nest.item_count || 0} items
             </Badge>
           </div>
-          <span className="font-semibold text-white">
+          <span className="font-semibold text-white text-sm">
             {nest.price > 0 ? formatCurrency(nest.price, nest.currency) : 'Free'}
           </span>
         </div>
@@ -198,7 +198,7 @@ export default function NestsMarketplace() {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-black p-6 space-y-6">
+      <div className="min-h-screen bg-black px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -220,58 +220,58 @@ export default function NestsMarketplace() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <Card className="bg-zinc-900/50 border-white/5">
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-cyan-500/20 rounded-lg">
-                  <Package className="w-5 h-5 text-cyan-400" />
+                  <Package className="w-4 h-4 text-cyan-400" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-white">{stats.total}</p>
-                  <p className="text-sm text-zinc-500">Available Nests</p>
+                  <p className="text-lg font-bold text-white">{stats.total}</p>
+                  <p className="text-xs text-zinc-500">Available Nests</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card className="bg-zinc-900/50 border-white/5">
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-500/20 rounded-lg">
-                  <Users className="w-5 h-5 text-blue-400" />
+                  <Users className="w-4 h-4 text-blue-400" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-white">{stats.candidates}</p>
-                  <p className="text-sm text-zinc-500">Candidate Nests</p>
+                  <p className="text-lg font-bold text-white">{stats.candidates}</p>
+                  <p className="text-xs text-zinc-500">Candidate Nests</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card className="bg-zinc-900/50 border-white/5">
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-green-500/20 rounded-lg">
-                  <Briefcase className="w-5 h-5 text-green-400" />
+                  <Briefcase className="w-4 h-4 text-green-400" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-white">{stats.prospects}</p>
-                  <p className="text-sm text-zinc-500">Prospect Nests</p>
+                  <p className="text-lg font-bold text-white">{stats.prospects}</p>
+                  <p className="text-xs text-zinc-500">Prospect Nests</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card className="bg-zinc-900/50 border-white/5">
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-purple-500/20 rounded-lg">
-                  <Building2 className="w-5 h-5 text-purple-400" />
+                  <Building2 className="w-4 h-4 text-purple-400" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-white">{stats.investors}</p>
-                  <p className="text-sm text-zinc-500">Investor Nests</p>
+                  <p className="text-lg font-bold text-white">{stats.investors}</p>
+                  <p className="text-xs text-zinc-500">Investor Nests</p>
                 </div>
               </div>
             </CardContent>
@@ -279,7 +279,7 @@ export default function NestsMarketplace() {
         </div>
 
         {/* Tabs & Search */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="bg-zinc-900/50 border border-white/5">
               <TabsTrigger value="all" className="data-[state=active]:bg-white/10">
@@ -323,7 +323,7 @@ export default function NestsMarketplace() {
             <p className="text-sm text-zinc-500 mt-1">Check back later for new datasets</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {nests.map((nest) => (
               <NestCard
                 key={nest.id}

@@ -43,19 +43,19 @@ export default function Insights() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 p-6">
+    <div className="min-h-screen bg-zinc-950 px-4 lg:px-6 py-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-4">
           <h1 className="text-2xl font-bold text-white mb-1 flex items-center gap-2">
             <Sparkles className="w-6 h-6 text-orange-400" />
             AI Insights
           </h1>
-          <p className="text-zinc-400 text-sm">Intelligent recommendations powered by AI</p>
+          <p className="text-zinc-400 text-xs">Intelligent recommendations powered by AI</p>
         </div>
 
         {/* Insight Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
           {mockInsights.map((insight, i) => {
             const Icon = insight.icon;
             const colorClasses = {
@@ -71,47 +71,47 @@ export default function Insights() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
                 onClick={() => toast.info(`View details for: ${insight.title}`)}
-                className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 hover:border-cyan-500/50 transition-colors cursor-pointer"
+                className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4 hover:border-cyan-500/50 transition-colors cursor-pointer"
               >
-                <div className={`w-10 h-10 rounded-lg ${colorClasses[insight.color]} flex items-center justify-center mb-4`}>
-                  <Icon className="w-5 h-5" />
+                <div className={`w-8 h-8 rounded-lg ${colorClasses[insight.color]} flex items-center justify-center mb-3`}>
+                  <Icon className="w-4 h-4" />
                 </div>
-                <div className="text-2xl font-bold text-white mb-1">{insight.value}</div>
-                <div className="text-sm font-medium text-white mb-1">{insight.title}</div>
-                <div className="text-xs text-zinc-500">{insight.description}</div>
+                <div className="text-lg font-bold text-white mb-1">{insight.value}</div>
+                <div className="text-xs font-medium text-white mb-1">{insight.title}</div>
+                <div className="text-[10px] text-zinc-500">{insight.description}</div>
               </motion.div>
             );
           })}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Predictions */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <div className="lg:col-span-2 space-y-4">
+            <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+              <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
                 <Target className="w-5 h-5 text-orange-400" />
                 Deal Predictions
               </h3>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {mockPredictions.map((pred, i) => (
                   <motion.div
                     key={i}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.1 }}
-                    className="p-4 bg-zinc-800/50 border border-zinc-700 rounded-lg hover:border-orange-500/30 transition-colors"
+                    className="p-3 bg-zinc-800/50 border border-zinc-700 rounded-lg hover:border-orange-500/30 transition-colors"
                   >
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between mb-2">
                       <div>
-                        <h4 className="text-white font-medium">{pred.deal}</h4>
-                        <p className="text-sm text-orange-400">${pred.value.toLocaleString()}</p>
+                        <h4 className="text-white font-medium text-sm">{pred.deal}</h4>
+                        <p className="text-xs text-orange-400">${pred.value.toLocaleString()}</p>
                       </div>
                       <div className="text-right">
-                        <div className="text-2xl font-bold text-white">{pred.probability}%</div>
-                        <div className="text-xs text-zinc-500">win rate</div>
+                        <div className="text-lg font-bold text-white">{pred.probability}%</div>
+                        <div className="text-[10px] text-zinc-500">win rate</div>
                       </div>
                     </div>
-                    <div className="h-2 bg-zinc-700 rounded-full overflow-hidden mb-3">
+                    <div className="h-2 bg-zinc-700 rounded-full overflow-hidden mb-2">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${pred.probability}%` }}
@@ -119,7 +119,7 @@ export default function Insights() {
                         className="h-full bg-orange-500"
                       />
                     </div>
-                    <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2 text-zinc-400">
                         <Lightbulb className="w-4 h-4 text-yellow-400" />
                         {pred.action}
@@ -132,8 +132,8 @@ export default function Insights() {
             </div>
 
             {/* Recommendations */}
-            <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+              <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
                 <ThumbsUp className="w-5 h-5 text-orange-400" />
                 Recommended Actions
               </h3>
@@ -145,18 +145,18 @@ export default function Insights() {
                     animate={{ opacity: 1 }}
                     transition={{ delay: i * 0.1 }}
                     onClick={() => toast.info(`Action: ${rec.title}`)}
-                    className="flex items-center justify-between p-4 bg-zinc-800/50 border border-zinc-700 rounded-lg hover:border-cyan-500/30 transition-colors cursor-pointer group"
+                    className="flex items-center justify-between p-3 bg-zinc-800/50 border border-zinc-700 rounded-lg hover:border-cyan-500/30 transition-colors cursor-pointer group"
                   >
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <h4 className="text-white font-medium">{rec.title}</h4>
+                        <h4 className="text-white font-medium text-sm">{rec.title}</h4>
                         <span className={`px-2 py-0.5 rounded text-xs ${
                           rec.priority === 'high' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'
                         }`}>
                           {rec.priority}
                         </span>
                       </div>
-                      <p className="text-sm text-zinc-400">{rec.reason}</p>
+                      <p className="text-xs text-zinc-400">{rec.reason}</p>
                     </div>
                     <ArrowRight className="w-5 h-5 text-zinc-600 group-hover:text-orange-400 transition-colors" />
                   </motion.div>
@@ -166,15 +166,15 @@ export default function Insights() {
           </div>
 
           {/* AI Chat */}
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl flex flex-col h-[600px]">
-            <div className="p-4 border-b border-zinc-800">
+          <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg flex flex-col h-[600px]">
+            <div className="p-3 border-b border-zinc-800">
               <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-orange-400" />
                 AI Assistant
               </h3>
             </div>
-            
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+
+            <div className="flex-1 overflow-y-auto p-3 space-y-3">
               {messages.map((msg, i) => (
                 <motion.div
                   key={i}
@@ -188,8 +188,8 @@ export default function Insights() {
                     </div>
                   )}
                   <div className={`max-w-[80%] rounded-lg p-3 ${
-                    msg.role === 'user' 
-                      ? 'bg-orange-500/20 border border-orange-500/30' 
+                    msg.role === 'user'
+                      ? 'bg-orange-500/20 border border-orange-500/30'
                       : 'bg-zinc-800/50'
                   }`}>
                     <p className="text-sm text-white whitespace-pre-wrap">{msg.content}</p>
@@ -198,7 +198,7 @@ export default function Insights() {
               ))}
             </div>
 
-            <div className="p-4 border-t border-zinc-800">
+            <div className="p-3 border-t border-zinc-800">
               <div className="flex gap-2">
                 <input
                   type="text"

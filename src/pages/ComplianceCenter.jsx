@@ -82,17 +82,17 @@ export default function ComplianceCenter() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-6">
-        <div className="max-w-6xl mx-auto space-y-6">
-          {Array(3).fill(0).map((_,i) => <div key={i} className="h-24 bg-gray-800/40 rounded-xl animate-pulse" />)}
+      <div className="min-h-screen bg-black px-4 lg:px-6 py-4">
+        <div className="max-w-6xl mx-auto space-y-4">
+          {Array(3).fill(0).map((_,i) => <div key={i} className="h-24 bg-gray-800/40 rounded-lg animate-pulse" />)}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black p-6">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div className="min-h-screen bg-black px-4 lg:px-6 py-4">
+      <div className="max-w-6xl mx-auto space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-white">Compliance Center</h1>
@@ -102,7 +102,7 @@ export default function ComplianceCenter() {
 
         {/* Create requirement */}
         <Card className="glass-card border-0">
-          <CardContent className="p-6 space-y-3">
+          <CardContent className="p-4 space-y-3">
             <div className="flex items-center gap-2">
               <Plus className="w-5 h-5 text-emerald-400" />
               <h3 className="text-white font-semibold">New Requirement</h3>
@@ -135,9 +135,9 @@ export default function ComplianceCenter() {
         </Card>
 
         {/* Requirements list */}
-        <div className="grid grid-cols-1 gap-6">
+        <div className="grid grid-cols-1 gap-3">
           {requirements.length === 0 ? (
-            <Card className="glass-card border-0 p-6"><div className="text-gray-400">No compliance requirements yet.</div></Card>
+            <Card className="glass-card border-0 p-4"><div className="text-gray-400">No compliance requirements yet.</div></Card>
           ) : requirements.map(req => {
             const status = requirementStatus(req);
             const course = courses.find(c => c.id === req.course_id);
@@ -145,7 +145,7 @@ export default function ComplianceCenter() {
             const overdue = req.deadline && new Date(req.deadline) < new Date();
             return (
               <Card key={req.id} className="glass-card border-0">
-                <CardContent className="p-6 space-y-2">
+                <CardContent className="p-4 space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Shield className="w-5 h-5 text-emerald-400" />

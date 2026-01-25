@@ -82,8 +82,8 @@ export default function SkillFrameworks() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-6">
-        <div className="max-w-6xl mx-auto space-y-6">
+      <div className="min-h-screen bg-black px-4 lg:px-6 py-4">
+        <div className="max-w-6xl mx-auto space-y-4">
           {Array(3).fill(0).map((_,i) => <div key={i} className="h-24 bg-gray-800/40 rounded-xl animate-pulse" />)}
         </div>
       </div>
@@ -91,8 +91,8 @@ export default function SkillFrameworks() {
   }
 
   return (
-    <div className="min-h-screen bg-black p-6">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div className="min-h-screen bg-black px-4 lg:px-6 py-4">
+      <div className="max-w-6xl mx-auto space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-white">Skills & Paths</h1>
@@ -102,7 +102,7 @@ export default function SkillFrameworks() {
 
         {/* Create Skill */}
         <Card className="glass-card border-0">
-          <CardContent className="p-6 space-y-4">
+          <CardContent className="p-4 space-y-4">
             <div className="flex items-center gap-2">
               <Plus className="w-5 h-5 text-emerald-400" />
               <h3 className="text-white font-semibold">Create Skill</h3>
@@ -119,16 +119,16 @@ export default function SkillFrameworks() {
         </Card>
 
         {/* Skills grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {skills.length === 0 ? (
-            <Card className="glass-card border-0 p-6">
+            <Card className="glass-card border-0 p-4">
               <div className="text-gray-400">No skills yet. Create your first skill above.</div>
             </Card>
           ) : skills.map(skill => {
             const prog = skillProgress(skill);
             return (
               <Card key={skill.id} className="glass-card border-0">
-                <CardContent className="p-6 space-y-3">
+                <CardContent className="p-4 space-y-3">
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-center gap-2">

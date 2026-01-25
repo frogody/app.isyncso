@@ -12,7 +12,7 @@ import { Plug } from 'lucide-react';
 export default function ComposioIntegrations() {
   return (
     <PermissionGuard permission="integrations.view" showMessage>
-      <div className="container mx-auto px-4 py-6 max-w-7xl">
+      <div className="container mx-auto px-4 lg:px-6 py-4 max-w-7xl space-y-4">
         <PageHeader
           title="Third-Party Integrations"
           subtitle="Connect your favorite tools to SYNC for seamless automation"
@@ -20,7 +20,7 @@ export default function ComposioIntegrations() {
           color="purple"
         />
 
-        <div className="mt-6">
+        <div>
           <ConnectionManager />
         </div>
       </div>

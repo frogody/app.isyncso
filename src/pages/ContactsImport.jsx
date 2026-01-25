@@ -355,11 +355,11 @@ export default function ContactsImport() {
     switch (currentStep) {
       case 0: // Upload
         return (
-          <GlassCard className="p-6">
-            <div className="text-center mb-6">
-              <FileSpreadsheet className="w-12 h-12 mx-auto mb-4 text-cyan-400" />
-              <h2 className="text-xl font-semibold text-white mb-2">Upload Contacts File</h2>
-              <p className="text-zinc-400 text-sm">
+          <GlassCard className="p-4">
+            <div className="text-center mb-4">
+              <FileSpreadsheet className="w-8 h-8 mx-auto mb-3 text-cyan-400" />
+              <h2 className="text-lg font-semibold text-white mb-2">Upload Contacts File</h2>
+              <p className="text-zinc-400 text-xs">
                 Upload a CSV or Excel file containing your contacts
               </p>
             </div>
@@ -368,8 +368,8 @@ export default function ContactsImport() {
               isProcessing={false}
             />
             {fileData && (
-              <div className="mt-4 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
-                <p className="text-green-400 text-sm">
+              <div className="mt-3 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                <p className="text-green-400 text-xs">
                   Found {fileData.totalRows} contacts with {fileData.headers.length} columns
                 </p>
               </div>
@@ -379,16 +379,16 @@ export default function ContactsImport() {
 
       case 1: // Type Selection
         return (
-          <GlassCard className="p-6">
-            <div className="text-center mb-6">
-              <Users className="w-12 h-12 mx-auto mb-4 text-cyan-400" />
-              <h2 className="text-xl font-semibold text-white mb-2">Select Contact Type</h2>
-              <p className="text-zinc-400 text-sm">
+          <GlassCard className="p-4">
+            <div className="text-center mb-4">
+              <Users className="w-8 h-8 mx-auto mb-3 text-cyan-400" />
+              <h2 className="text-lg font-semibold text-white mb-2">Select Contact Type</h2>
+              <p className="text-zinc-400 text-xs">
                 What type of contacts are you importing?
               </p>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {CONTACT_TYPES.map((type) => {
                 const Icon = type.icon;
                 const isSelected = selectedContactType === type.id;
@@ -399,23 +399,23 @@ export default function ContactsImport() {
                     whileTap={{ scale: 0.98 }}
                     onClick={() => setSelectedContactType(type.id)}
                     className={cn(
-                      "p-4 rounded-xl border-2 text-left transition-all",
+                      "p-3 rounded-lg border-2 text-left transition-all",
                       isSelected
                         ? "border-cyan-500 bg-cyan-500/10"
                         : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
                     )}
                   >
                     <Icon className={cn(
-                      "w-8 h-8 mb-3",
+                      "w-5 h-5 mb-2",
                       isSelected ? "text-cyan-400" : "text-zinc-400"
                     )} />
                     <h3 className={cn(
-                      "font-medium mb-1",
+                      "font-medium mb-1 text-sm",
                       isSelected ? "text-white" : "text-zinc-300"
                     )}>
                       {type.label}
                     </h3>
-                    <p className="text-xs text-zinc-500">{type.description}</p>
+                    <p className="text-[10px] text-zinc-500">{type.description}</p>
                   </motion.button>
                 );
               })}
@@ -425,16 +425,16 @@ export default function ContactsImport() {
 
       case 2: // Map Columns
         return (
-          <GlassCard className="p-6">
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold text-white mb-2">Map Columns</h2>
-              <p className="text-zinc-400 text-sm">
+          <GlassCard className="p-4">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold text-white mb-2">Map Columns</h2>
+              <p className="text-zinc-400 text-xs">
                 Match your spreadsheet columns to contact fields
               </p>
               {aiConfidence > 0 && (
                 <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-cyan-500/10 border border-cyan-500/30 rounded-full">
-                  <Sparkles className="w-4 h-4 text-cyan-400" />
-                  <span className="text-xs text-cyan-400">
+                  <Sparkles className="w-3 h-3 text-cyan-400" />
+                  <span className="text-[10px] text-cyan-400">
                     AI suggested mappings ({Math.round(aiConfidence * 100)}% confidence)
                   </span>
                 </div>
@@ -455,55 +455,55 @@ export default function ContactsImport() {
       case 3: // Validate
         const previewData = validateData();
         return (
-          <GlassCard className="p-6">
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold text-white mb-2">Review Data</h2>
-              <p className="text-zinc-400 text-sm">
+          <GlassCard className="p-4">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold text-white mb-2">Review Data</h2>
+              <p className="text-zinc-400 text-xs">
                 Review the data before importing ({previewData?.validRows?.length || 0} valid contacts found)
               </p>
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
-                <div className="text-2xl font-bold text-green-400">{previewData?.validRows?.length || 0}</div>
-                <div className="text-xs text-zinc-400">Valid contacts</div>
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                <div className="text-lg font-bold text-green-400">{previewData?.validRows?.length || 0}</div>
+                <div className="text-[10px] text-zinc-400">Valid contacts</div>
               </div>
-              <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
-                <div className="text-2xl font-bold text-red-400">{previewData?.invalidRows?.length || 0}</div>
-                <div className="text-xs text-zinc-400">Invalid rows</div>
+              <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                <div className="text-lg font-bold text-red-400">{previewData?.invalidRows?.length || 0}</div>
+                <div className="text-[10px] text-zinc-400">Invalid rows</div>
               </div>
             </div>
 
             {/* Preview Table */}
             {previewData?.validRows?.length > 0 && (
-              <div className="rounded-xl border border-white/10 overflow-hidden">
+              <div className="rounded-lg border border-white/10 overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="bg-zinc-900/50 border-b border-white/10">
-                        <th className="px-4 py-3 text-left text-sm font-medium text-zinc-400">Name</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-zinc-400">Email</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-zinc-400">Company</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-zinc-400">Phone</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-zinc-400">Name</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-zinc-400">Email</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-zinc-400">Company</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-zinc-400">Phone</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
                       {previewData.validRows.slice(0, 10).map((row, idx) => (
                         <tr key={idx} className="hover:bg-white/5">
-                          <td className="px-4 py-3 text-white">
+                          <td className="px-3 py-2 text-white text-sm">
                             {row.data.first_name || row.data.full_name || '-'} {row.data.last_name || ''}
                           </td>
-                          <td className="px-4 py-3 text-zinc-400">{row.data.email || '-'}</td>
-                          <td className="px-4 py-3 text-zinc-400">{row.data.company || '-'}</td>
-                          <td className="px-4 py-3 text-zinc-400">{row.data.phone || '-'}</td>
+                          <td className="px-3 py-2 text-zinc-400 text-sm">{row.data.email || '-'}</td>
+                          <td className="px-3 py-2 text-zinc-400 text-sm">{row.data.company || '-'}</td>
+                          <td className="px-3 py-2 text-zinc-400 text-sm">{row.data.phone || '-'}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
                 {previewData.validRows.length > 10 && (
-                  <div className="p-3 text-center text-sm text-zinc-500 border-t border-white/10">
+                  <div className="p-2 text-center text-xs text-zinc-500 border-t border-white/10">
                     Showing first 10 of {previewData.validRows.length} contacts
                   </div>
                 )}
@@ -512,11 +512,11 @@ export default function ContactsImport() {
 
             {/* Errors */}
             {previewData?.invalidRows?.length > 0 && (
-              <div className="mt-4">
-                <h4 className="text-sm font-medium text-red-400 mb-2">Rows with errors:</h4>
-                <div className="space-y-2 max-h-40 overflow-y-auto">
+              <div className="mt-3">
+                <h4 className="text-xs font-medium text-red-400 mb-2">Rows with errors:</h4>
+                <div className="space-y-1 max-h-40 overflow-y-auto">
                   {previewData.invalidRows.slice(0, 5).map((item, idx) => (
-                    <div key={idx} className="p-2 bg-red-500/10 border border-red-500/20 rounded text-sm">
+                    <div key={idx} className="p-2 bg-red-500/10 border border-red-500/20 rounded text-xs">
                       <span className="text-red-400">Row {item.index + 2}:</span>
                       <span className="text-zinc-400 ml-2">{item.errors.join(', ')}</span>
                     </div>
@@ -529,38 +529,38 @@ export default function ContactsImport() {
 
       case 4: // Import
         return (
-          <GlassCard className="p-6">
+          <GlassCard className="p-4">
             <div className="text-center">
               {isImporting ? (
                 <>
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-full border-4 border-cyan-500/30 border-t-cyan-500 animate-spin" />
-                  <h2 className="text-xl font-semibold text-white mb-2">Importing Contacts...</h2>
-                  <p className="text-zinc-400 text-sm mb-4">
+                  <div className="w-12 h-12 mx-auto mb-3 rounded-full border-3 border-cyan-500/30 border-t-cyan-500 animate-spin" />
+                  <h2 className="text-lg font-semibold text-white mb-2">Importing Contacts...</h2>
+                  <p className="text-zinc-400 text-xs mb-3">
                     {importProgress.current} of {importProgress.total} contacts
                   </p>
-                  <div className="w-full bg-zinc-800 rounded-full h-2">
+                  <div className="w-full bg-zinc-800 rounded-full h-1.5">
                     <div
-                      className="bg-cyan-500 h-2 rounded-full transition-all"
+                      className="bg-cyan-500 h-1.5 rounded-full transition-all"
                       style={{ width: `${(importProgress.current / importProgress.total) * 100}%` }}
                     />
                   </div>
                 </>
               ) : importResults ? (
                 <>
-                  <CheckCircle className="w-16 h-16 mx-auto mb-4 text-green-400" />
-                  <h2 className="text-xl font-semibold text-white mb-2">Import Complete!</h2>
-                  <div className="grid grid-cols-3 gap-4 my-6">
-                    <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
-                      <div className="text-2xl font-bold text-green-400">{importResults.created}</div>
-                      <div className="text-xs text-zinc-400">Created</div>
+                  <CheckCircle className="w-12 h-12 mx-auto mb-3 text-green-400" />
+                  <h2 className="text-lg font-semibold text-white mb-2">Import Complete!</h2>
+                  <div className="grid grid-cols-3 gap-3 my-4">
+                    <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                      <div className="text-lg font-bold text-green-400">{importResults.created}</div>
+                      <div className="text-[10px] text-zinc-400">Created</div>
                     </div>
-                    <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-                      <div className="text-2xl font-bold text-amber-400">{importResults.duplicates}</div>
-                      <div className="text-xs text-zinc-400">Duplicates</div>
+                    <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                      <div className="text-lg font-bold text-amber-400">{importResults.duplicates}</div>
+                      <div className="text-[10px] text-zinc-400">Duplicates</div>
                     </div>
-                    <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
-                      <div className="text-2xl font-bold text-red-400">{importResults.failed}</div>
-                      <div className="text-xs text-zinc-400">Failed</div>
+                    <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                      <div className="text-lg font-bold text-red-400">{importResults.failed}</div>
+                      <div className="text-[10px] text-zinc-400">Failed</div>
                     </div>
                   </div>
                   <Button onClick={goToCRM} className="bg-cyan-600 hover:bg-cyan-500">
@@ -570,9 +570,9 @@ export default function ContactsImport() {
                 </>
               ) : (
                 <>
-                  <Download className="w-16 h-16 mx-auto mb-4 text-cyan-400" />
-                  <h2 className="text-xl font-semibold text-white mb-2">Ready to Import</h2>
-                  <p className="text-zinc-400 text-sm mb-6">
+                  <Download className="w-12 h-12 mx-auto mb-3 text-cyan-400" />
+                  <h2 className="text-lg font-semibold text-white mb-2">Ready to Import</h2>
+                  <p className="text-zinc-400 text-xs mb-4">
                     {validationResult?.validCount || 0} contacts will be imported as {
                       CONTACT_TYPES.find(t => t.id === selectedContactType)?.label || 'contacts'
                     }
@@ -623,10 +623,10 @@ export default function ContactsImport() {
   };
 
   return (
-    <div className="min-h-screen bg-black p-4 sm:p-6">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-black px-4 lg:px-6 py-4">
+      <div className="max-w-4xl mx-auto space-y-4">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
+        <div className="flex items-center gap-3 mb-6">
           <Button
             variant="ghost"
             size="icon"
@@ -642,7 +642,7 @@ export default function ContactsImport() {
         </div>
 
         {/* Progress Steps */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           {STEPS.map((step, index) => {
             const Icon = step.icon;
             const isActive = index === currentStep;
@@ -689,7 +689,7 @@ export default function ContactsImport() {
         </motion.div>
 
         {/* Navigation Buttons */}
-        <div className="flex justify-between mt-6">
+        <div className="flex justify-between mt-4 gap-3">
           <Button
             variant="outline"
             onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}

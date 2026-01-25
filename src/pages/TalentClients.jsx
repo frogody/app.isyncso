@@ -78,9 +78,9 @@ function ClientCard({ client, onEdit, onDelete, onView }) {
       {/* Top gradient bar */}
       <div className={`absolute top-0 left-0 right-0 h-1 ${stage.color} opacity-60`} />
 
-      <div className="p-5">
+      <div className="p-4">
         {/* Header */}
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0" onClick={() => onView(client)}>
             <h4 className="font-semibold text-white truncate cursor-pointer hover:text-red-400/80 transition-colors">
               {client.company || 'Unnamed Company'}
@@ -115,7 +115,7 @@ function ClientCard({ client, onEdit, onDelete, onView }) {
         </div>
 
         {/* Contact info */}
-        <div className="mt-4 space-y-2">
+        <div className="mt-3 space-y-1">
           {client.email && (
             <a href={`mailto:${client.email}`} className="flex items-center gap-2 text-xs text-zinc-400 hover:text-red-400 transition-colors">
               <Mail className="w-3 h-3" />
@@ -137,7 +137,7 @@ function ClientCard({ client, onEdit, onDelete, onView }) {
         </div>
 
         {/* Footer */}
-        <div className="mt-4 pt-3 border-t border-zinc-800/50 flex items-center justify-between">
+        <div className="mt-3 pt-2 border-t border-zinc-800/50 flex items-center justify-between">
           <Badge className={`text-[10px] px-2 py-0.5 h-5 ${stage.color}/20 ${stage.textColor} border-0`}>
             {stage.label}
           </Badge>
@@ -464,12 +464,12 @@ export default function TalentClients() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black relative">
-        <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
-          <Skeleton className="h-28 w-full bg-zinc-800 rounded-2xl" />
-          <div className="grid grid-cols-4 gap-4">
-            {[1,2,3,4].map(i => <Skeleton key={i} className="h-24 bg-zinc-800 rounded-xl" />)}
+        <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
+          <Skeleton className="h-24 w-full bg-zinc-800 rounded-xl" />
+          <div className="grid grid-cols-4 gap-3">
+            {[1,2,3,4].map(i => <Skeleton key={i} className="h-20 bg-zinc-800 rounded-lg" />)}
           </div>
-          <Skeleton className="h-[400px] w-full bg-zinc-800 rounded-2xl" />
+          <Skeleton className="h-[300px] w-full bg-zinc-800 rounded-xl" />
         </div>
       </div>
     );
@@ -514,10 +514,10 @@ export default function TalentClients() {
 
         {/* Stats Row */}
         <div ref={statsGridRef} className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-          <div className="stat-card p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className="stat-card p-3 rounded-lg bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-xs">Total Clients</p>
+                <p className="text-zinc-500 text-[10px]">Total Clients</p>
                 <p className="text-lg font-bold text-white">{stats.total}</p>
               </div>
               <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
@@ -527,10 +527,10 @@ export default function TalentClients() {
           </div>
 
           {CLIENT_STAGES.slice(0, 4).map(stage => (
-            <div key={stage.id} className="stat-card p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+            <div key={stage.id} className="stat-card p-3 rounded-lg bg-zinc-900/50 border border-zinc-800/60">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-zinc-500 text-xs">{stage.label}</p>
+                  <p className="text-zinc-500 text-[10px]">{stage.label}</p>
                   <p className="text-lg font-bold text-white">{stats.byStage[stage.id] || 0}</p>
                 </div>
                 <div className={`w-8 h-8 rounded-lg ${stage.color}/20 flex items-center justify-center`}>
@@ -542,7 +542,7 @@ export default function TalentClients() {
         </div>
 
         {/* Filters and View Toggle */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <div className="flex items-center gap-2 flex-1 w-full sm:w-auto">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
@@ -581,7 +581,7 @@ export default function TalentClients() {
             </Select>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <Button
               variant={viewMode === 'table' ? 'default' : 'ghost'}
               size="icon"
@@ -603,14 +603,14 @@ export default function TalentClients() {
 
         {/* Content */}
         {filteredClients.length === 0 ? (
-          <div className="p-16 text-center rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-red-500/20 to-red-600/20 flex items-center justify-center mx-auto mb-6">
-              <Building2 className="w-10 h-10 text-red-400" />
+          <div className="p-12 text-center rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-red-500/20 to-red-600/20 flex items-center justify-center mx-auto mb-4">
+              <Building2 className="w-8 h-8 text-red-400" />
             </div>
-            <h3 className="text-2xl font-bold text-white mb-3">
+            <h3 className="text-xl font-bold text-white mb-2">
               {clients.length === 0 ? 'Add Your First Client' : 'No Clients Found'}
             </h3>
-            <p className="text-zinc-400 mb-8 max-w-md mx-auto">
+            <p className="text-zinc-400 mb-6 max-w-md mx-auto text-sm">
               {clients.length === 0
                 ? 'Track your recruitment clients and their fee agreements. Add your first client to get started.'
                 : 'Try adjusting your search or filter criteria.'}
@@ -623,7 +623,7 @@ export default function TalentClients() {
             )}
           </div>
         ) : viewMode === 'table' ? (
-          <div className="rounded-2xl bg-zinc-900/50 border border-zinc-800/60 overflow-hidden">
+          <div className="rounded-xl bg-zinc-900/50 border border-zinc-800/60 overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow className="border-zinc-800/50 hover:bg-transparent">
@@ -652,7 +652,7 @@ export default function TalentClients() {
             </Table>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             <AnimatePresence>
               {filteredClients.map((client) => (
                 <ClientCard
@@ -671,22 +671,22 @@ export default function TalentClients() {
         <Dialog open={showModal} onOpenChange={setShowModal}>
           <DialogContent className="bg-zinc-900 border-zinc-800 max-w-xl p-0 overflow-hidden">
             <div className="px-6 py-4 border-b border-zinc-800 bg-gradient-to-r from-red-500/10 to-red-600/10">
-              <DialogTitle className="text-lg font-semibold text-white flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
-                  <Building2 className="w-5 h-5 text-red-400" />
+              <DialogTitle className="text-base font-semibold text-white flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
+                  <Building2 className="w-4 h-4 text-red-400" />
                 </div>
                 {selectedClient ? 'Edit Client' : 'New Recruitment Client'}
               </DialogTitle>
             </div>
 
-            <div className="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
+            <div className="px-6 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
               {/* Company Info */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 text-sm font-medium text-red-400">
-                  <Building2 className="w-4 h-4" />
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-xs font-medium text-red-400">
+                  <Building2 className="w-3 h-3" />
                   Company Information
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   <div className="col-span-2">
                     <label className="text-zinc-400 text-sm mb-1.5 block">Company Name</label>
                     <Input
@@ -737,12 +737,12 @@ export default function TalentClients() {
               </div>
 
               {/* Contact Person */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 text-sm font-medium text-red-400">
-                  <User className="w-4 h-4" />
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-xs font-medium text-red-400">
+                  <User className="w-3 h-3" />
                   Contact Person
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-zinc-400 text-sm mb-1.5 block">First Name</label>
                     <Input
@@ -817,9 +817,9 @@ export default function TalentClients() {
               </div>
 
               {/* Location */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 text-sm font-medium text-red-400">
-                  <MapPin className="w-4 h-4" />
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-xs font-medium text-red-400">
+                  <MapPin className="w-3 h-3" />
                   Location
                 </div>
                 <div>
@@ -837,12 +837,12 @@ export default function TalentClients() {
               </div>
 
               {/* Fee Structure */}
-              <div className="p-4 rounded-xl bg-red-500/5 border border-red-500/20 space-y-4">
-                <div className="flex items-center gap-2 text-sm font-medium text-red-400">
-                  <DollarSign className="w-4 h-4" />
+              <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/20 space-y-3">
+                <div className="flex items-center gap-2 text-xs font-medium text-red-400">
+                  <DollarSign className="w-3 h-3" />
                   Default Fee Structure
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-zinc-400 text-sm mb-1.5 block">Fee Percentage</label>
                     <div className="relative">

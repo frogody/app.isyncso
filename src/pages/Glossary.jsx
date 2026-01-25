@@ -155,10 +155,10 @@ export default function Glossary() {
 
   return (
     <div className="min-h-screen bg-black">
-      <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <div className="w-full max-w-5xl mx-auto px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
             <BookOpen className="w-8 h-8 text-cyan-400" />
             <h1 className="text-3xl font-bold text-white">Glossary</h1>
           </div>
@@ -169,7 +169,7 @@ export default function Glossary() {
 
         {/* Search & Filter */}
         <Card className="glass-card border-0">
-          <CardContent className="p-4 space-y-4">
+          <CardContent className="p-3 space-y-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
               <Input
@@ -198,15 +198,15 @@ export default function Glossary() {
         </Card>
 
         {/* Terms List */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           {filteredTerms.map((term, index) => (
             <Card key={index} id={term.term.toLowerCase().replace(/\s+/g, '-')} className="glass-card border-0">
-              <CardContent className="p-6 space-y-3">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-center gap-3">
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-2">
                     <span className="text-3xl">{term.icon}</span>
                     <div>
-                      <h3 className="text-xl font-bold text-white">{term.term}</h3>
+                      <h3 className="text-lg font-bold text-white">{term.term}</h3>
                       <div className="flex items-center gap-2 mt-1">
                         {getCategoryIcon(term.category)}
                         <span className="text-xs text-gray-500">{term.category}</span>
@@ -218,15 +218,15 @@ export default function Glossary() {
                 <p className="text-gray-300 leading-relaxed">{term.definition}</p>
 
                 {term.examples && (
-                  <div className="bg-gray-800/30 border border-gray-700 rounded-lg p-3">
-                    <p className="text-xs font-semibold text-gray-400 mb-1">Examples:</p>
-                    <p className="text-sm text-gray-400">{term.examples}</p>
+                  <div className="bg-gray-800/30 border border-gray-700 rounded-lg p-2">
+                    <p className="text-[10px] font-semibold text-gray-400 mb-1">Examples:</p>
+                    <p className="text-xs text-gray-400">{term.examples}</p>
                   </div>
                 )}
 
                 {term.relatedTerms && term.relatedTerms.length > 0 && (
                   <div>
-                    <p className="text-xs font-semibold text-gray-500 mb-2">Related terms:</p>
+                    <p className="text-[10px] font-semibold text-gray-500 mb-2">Related terms:</p>
                     <div className="flex flex-wrap gap-2">
                       {term.relatedTerms.map((related, i) => (
                         <a

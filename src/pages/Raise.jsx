@@ -460,7 +460,7 @@ export default function Raise() {
         <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-amber-950/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <PageHeader
           icon={Rocket}
@@ -468,7 +468,7 @@ export default function Raise() {
           subtitle="Fundraising toolkit & investor management"
           color="amber"
           actions={
-            <div className="flex gap-3">
+            <div className="flex gap-2">
               <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800" onClick={handleExport}>
                 <Download className="w-4 h-4 mr-2" />
                 Export
@@ -483,8 +483,8 @@ export default function Raise() {
 
       {/* Progress Bar for Active Campaign */}
       {activeCampaign && (
-        <Card className="bg-gradient-to-r from-amber-950/50 to-amber-950/50 border-amber-500/20 mb-8">
-          <CardContent className="p-6">
+        <Card className="bg-gradient-to-r from-amber-950/50 to-amber-950/50 border-amber-500/20 mb-6">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-semibold text-white">{activeCampaign.name}</h3>
@@ -509,7 +509,7 @@ export default function Raise() {
       )}
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         {metrics.map((metric, index) => (
           <motion.div
             key={metric.title}
@@ -518,16 +518,16 @@ export default function Raise() {
             transition={{ delay: index * 0.1 }}
           >
             <Card className="bg-zinc-900/50 border-zinc-800">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`p-3 rounded-xl ${getColorClasses(metric.color)}`}>
-                    <metric.icon className="w-5 h-5" />
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className={`p-2 rounded-lg ${getColorClasses(metric.color)}`}>
+                    <metric.icon className="w-4 h-4" />
                   </div>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-white">{metric.value}</p>
-                  <p className="text-sm text-zinc-500">{metric.title}</p>
-                  <p className="text-xs text-zinc-600 mt-1">{metric.subtitle}</p>
+                  <p className="text-lg font-bold text-white">{metric.value}</p>
+                  <p className="text-xs text-zinc-500">{metric.title}</p>
+                  <p className="text-[10px] text-zinc-600 mt-1">{metric.subtitle}</p>
                 </div>
               </CardContent>
             </Card>
@@ -536,7 +536,7 @@ export default function Raise() {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="bg-zinc-900 border border-zinc-800">
           <TabsTrigger value="overview" className="data-[state=active]:bg-zinc-800">
             <BarChart3 className="w-4 h-4 mr-2" />
@@ -557,7 +557,7 @@ export default function Raise() {
         </TabsList>
 
         <TabsContent value="overview">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Investor Pipeline */}
             <Card className="bg-zinc-900/50 border-zinc-800">
               <CardHeader>
@@ -565,7 +565,7 @@ export default function Raise() {
                 <CardDescription>Breakdown by stage</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {[
                     { stage: 'Contacted', count: investors.filter(i => i.status === 'contacted').length, color: 'zinc' },
                     { stage: 'Interested', count: investors.filter(i => i.status === 'interested').length, color: 'amber' },
@@ -574,11 +574,11 @@ export default function Raise() {
                     { stage: 'Committed', count: investors.filter(i => i.status === 'committed').length, color: 'amber' }
                   ].map((stage) => (
                     <div key={stage.stage} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
                         <div className={`w-3 h-3 rounded-full bg-${stage.color}-500`} />
-                        <span className="text-zinc-300">{stage.stage}</span>
+                        <span className="text-zinc-300 text-sm">{stage.stage}</span>
                       </div>
-                      <span className="text-white font-medium">{stage.count}</span>
+                      <span className="text-white font-medium text-sm">{stage.count}</span>
                     </div>
                   ))}
                 </div>
@@ -592,21 +592,21 @@ export default function Raise() {
                 <CardDescription>Latest investor interactions</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {investors.length === 0 ? (
-                    <div className="text-center py-8">
-                      <MessageSquare className="w-10 h-10 text-zinc-600 mx-auto mb-2" />
-                      <p className="text-zinc-500">No investor activity yet</p>
+                    <div className="text-center py-6">
+                      <MessageSquare className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
+                      <p className="text-zinc-500 text-sm">No investor activity yet</p>
                     </div>
                   ) : (
                     investors.slice(0, 5).map((investor) => (
-                      <div key={investor.id} className="flex items-start gap-3 p-3 bg-zinc-800/50 rounded-lg">
-                        <div className="p-2 bg-indigo-500/10 rounded-lg">
-                          <Building2 className="w-4 h-4 text-indigo-400" />
+                      <div key={investor.id} className="flex items-start gap-2 p-2 bg-zinc-800/50 rounded-lg">
+                        <div className="p-1.5 bg-indigo-500/10 rounded-lg">
+                          <Building2 className="w-3 h-3 text-indigo-400" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-white truncate">{investor.name || 'Unknown Investor'}</p>
-                          <p className="text-xs text-zinc-500">{investor.firm || 'Investment Firm'}</p>
+                          <p className="text-xs font-medium text-white truncate">{investor.name || 'Unknown Investor'}</p>
+                          <p className="text-[10px] text-zinc-500">{investor.firm || 'Investment Firm'}</p>
                         </div>
                         <Badge variant="outline" className={getStatusColor(investor.status)}>
                           {investor.status || 'new'}
@@ -621,50 +621,50 @@ export default function Raise() {
         </TabsContent>
 
         <TabsContent value="investors">
-          <div className="space-y-4">
+          <div className="space-y-3">
             {/* Header with View Toggle */}
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-semibold text-white">Investor Pipeline</h2>
-                <p className="text-zinc-500 text-sm">{investors.length} investors in pipeline</p>
+                <h2 className="text-lg font-semibold text-white">Investor Pipeline</h2>
+                <p className="text-zinc-500 text-xs">{investors.length} investors in pipeline</p>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="flex bg-zinc-900 rounded-lg border border-zinc-800 p-1">
+              <div className="flex items-center gap-2">
+                <div className="flex bg-zinc-900 rounded-lg border border-zinc-800 p-0.5">
                   <Button
                     size="sm"
                     variant={viewMode === 'kanban' ? 'secondary' : 'ghost'}
-                    className={viewMode === 'kanban' ? 'bg-zinc-800 text-white' : 'text-zinc-400'}
+                    className={viewMode === 'kanban' ? 'bg-zinc-800 text-white text-xs' : 'text-zinc-400 text-xs'}
                     onClick={() => setViewMode('kanban')}
                   >
-                    <BarChart3 className="w-4 h-4 mr-1" />
+                    <BarChart3 className="w-3 h-3 mr-1" />
                     Board
                   </Button>
                   <Button
                     size="sm"
                     variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-                    className={viewMode === 'list' ? 'bg-zinc-800 text-white' : 'text-zinc-400'}
+                    className={viewMode === 'list' ? 'bg-zinc-800 text-white text-xs' : 'text-zinc-400 text-xs'}
                     onClick={() => setViewMode('list')}
                   >
-                    <Users className="w-4 h-4 mr-1" />
+                    <Users className="w-3 h-3 mr-1" />
                     List
                   </Button>
                 </div>
-                <Button size="sm" className="bg-amber-500 hover:bg-amber-600">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Investor
+                <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-xs">
+                  <Plus className="w-3 h-3 mr-1" />
+                  Add
                 </Button>
               </div>
             </div>
 
             {investors.length === 0 ? (
               <Card className="bg-zinc-900/50 border-zinc-800">
-                <CardContent className="py-12">
+                <CardContent className="py-8">
                   <div className="text-center">
-                    <Users className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-white mb-2">No investors yet</h3>
-                    <p className="text-zinc-500 mb-4">Start building your investor pipeline</p>
-                    <Button className="bg-amber-500 hover:bg-amber-600">
-                      <Plus className="w-4 h-4 mr-2" />
+                    <Users className="w-8 h-8 text-zinc-600 mx-auto mb-3" />
+                    <h3 className="text-sm font-medium text-white mb-1">No investors yet</h3>
+                    <p className="text-zinc-500 text-xs mb-3">Start building your investor pipeline</p>
+                    <Button className="bg-amber-500 hover:bg-amber-600 text-xs">
+                      <Plus className="w-3 h-3 mr-1" />
                       Add First Investor
                     </Button>
                   </div>
@@ -673,7 +673,7 @@ export default function Raise() {
             ) : viewMode === 'kanban' ? (
               /* Kanban Board View */
               <DragDropContext onDragEnd={handleDragEnd}>
-                <div className="flex gap-4 overflow-x-auto pb-6">
+                <div className="flex gap-3 overflow-x-auto pb-4">
                   {INVESTOR_STAGES.map((stage) => (
                     <InvestorStageColumn
                       key={stage.id}
@@ -687,37 +687,37 @@ export default function Raise() {
             ) : (
               /* List View */
               <Card className="bg-zinc-900/50 border-zinc-800">
-                <CardContent className="p-4">
-                  <div className="space-y-3">
+                <CardContent className="p-3">
+                  <div className="space-y-2">
                     {investors.map((investor) => (
-                      <div key={investor.id} className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition-colors">
-                        <div className="flex items-center gap-4">
-                          <div className="p-2 bg-indigo-500/10 rounded-lg">
-                            <Building2 className="w-5 h-5 text-indigo-400" />
+                      <div key={investor.id} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition-colors">
+                        <div className="flex items-center gap-2">
+                          <div className="p-1.5 bg-indigo-500/10 rounded-lg">
+                            <Building2 className="w-4 h-4 text-indigo-400" />
                           </div>
                           <div>
-                            <p className="font-medium text-white">{investor.name || 'Unknown'}</p>
-                            <p className="text-sm text-zinc-500">{investor.firm || 'Investment Firm'}</p>
+                            <p className="text-sm font-medium text-white">{investor.name || 'Unknown'}</p>
+                            <p className="text-xs text-zinc-500">{investor.firm || 'Investment Firm'}</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
                           {investor.check_size && (
-                            <span className="text-sm text-zinc-400">
+                            <span className="text-xs text-zinc-400">
                               ${(investor.check_size / 1000).toFixed(0)}k - ${((investor.check_size_max || investor.check_size * 2) / 1000).toFixed(0)}k
                             </span>
                           )}
                           <Badge variant="outline" className={getStatusColor(investor.status)}>
                             {investor.status || 'new'}
                           </Badge>
-                          <div className="flex gap-2">
+                          <div className="flex gap-1">
                             {investor.email && (
-                              <Button size="icon" variant="ghost" className="h-8 w-8">
-                                <Mail className="w-4 h-4 text-zinc-400" />
+                              <Button size="icon" variant="ghost" className="h-6 w-6">
+                                <Mail className="w-3 h-3 text-zinc-400" />
                               </Button>
                             )}
                             {investor.linkedin && (
-                              <Button size="icon" variant="ghost" className="h-8 w-8">
-                                <ExternalLink className="w-4 h-4 text-zinc-400" />
+                              <Button size="icon" variant="ghost" className="h-6 w-6">
+                                <ExternalLink className="w-3 h-3 text-zinc-400" />
                               </Button>
                             )}
                           </div>
@@ -739,37 +739,37 @@ export default function Raise() {
                   <CardTitle className="text-white">Pitch Materials</CardTitle>
                   <CardDescription>Decks, one-pagers, and presentations</CardDescription>
                 </div>
-                <Button size="sm" className="bg-amber-500 hover:bg-amber-600">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Upload Material
+                <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-xs">
+                  <Plus className="w-3 h-3 mr-1" />
+                  Upload
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
               {pitchDecks.length === 0 ? (
-                <div className="text-center py-12">
-                  <FileText className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-white mb-2">No pitch materials</h3>
-                  <p className="text-zinc-500 mb-4">Upload your pitch deck and other materials</p>
-                  <Button className="bg-amber-500 hover:bg-amber-600">
-                    <Plus className="w-4 h-4 mr-2" />
+                <div className="text-center py-8">
+                  <FileText className="w-8 h-8 text-zinc-600 mx-auto mb-3" />
+                  <h3 className="text-sm font-medium text-white mb-1">No pitch materials</h3>
+                  <p className="text-zinc-500 text-xs mb-3">Upload your pitch deck and other materials</p>
+                  <Button className="bg-amber-500 hover:bg-amber-600 text-xs">
+                    <Plus className="w-3 h-3 mr-1" />
                     Upload Pitch Deck
                   </Button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {pitchDecks.map((deck) => (
-                    <div key={deck.id} className="p-4 bg-zinc-800/50 rounded-lg border border-zinc-700 hover:border-amber-500/50 transition-colors cursor-pointer">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="p-2 bg-amber-500/10 rounded-lg">
-                          <FileText className="w-5 h-5 text-amber-400" />
+                    <div key={deck.id} className="p-3 bg-zinc-800/50 rounded-lg border border-zinc-700 hover:border-amber-500/50 transition-colors cursor-pointer">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="p-1.5 bg-amber-500/10 rounded-lg">
+                          <FileText className="w-4 h-4 text-amber-400" />
                         </div>
-                        <Badge variant="outline" className="text-zinc-400">
+                        <Badge variant="outline" className="text-zinc-400 text-xs">
                           {deck.version || 'v1.0'}
                         </Badge>
                       </div>
-                      <h4 className="font-medium text-white mb-1">{deck.name || 'Pitch Deck'}</h4>
-                      <p className="text-sm text-zinc-500">{deck.description || 'Investment presentation'}</p>
+                      <h4 className="text-sm font-medium text-white mb-0.5">{deck.name || 'Pitch Deck'}</h4>
+                      <p className="text-xs text-zinc-500">{deck.description || 'Investment presentation'}</p>
                     </div>
                   ))}
                 </div>
@@ -786,40 +786,40 @@ export default function Raise() {
                   <CardTitle className="text-white">Data Rooms</CardTitle>
                   <CardDescription>Secure document sharing with investors</CardDescription>
                 </div>
-                <Button size="sm" className="bg-amber-500 hover:bg-amber-600">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Data Room
+                <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-xs">
+                  <Plus className="w-3 h-3 mr-1" />
+                  Create
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
               {dataRooms.length === 0 ? (
-                <div className="text-center py-12">
-                  <Briefcase className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-white mb-2">No data rooms</h3>
-                  <p className="text-zinc-500 mb-4">Create a secure data room for due diligence</p>
-                  <Button className="bg-amber-500 hover:bg-amber-600">
-                    <Plus className="w-4 h-4 mr-2" />
+                <div className="text-center py-8">
+                  <Briefcase className="w-8 h-8 text-zinc-600 mx-auto mb-3" />
+                  <h3 className="text-sm font-medium text-white mb-1">No data rooms</h3>
+                  <p className="text-zinc-500 text-xs mb-3">Create a secure data room for due diligence</p>
+                  <Button className="bg-amber-500 hover:bg-amber-600 text-xs">
+                    <Plus className="w-3 h-3 mr-1" />
                     Create Data Room
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {dataRooms.map((room) => (
-                    <div key={room.id} className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg">
-                      <div className="flex items-center gap-4">
-                        <div className="p-2 bg-amber-500/10 rounded-lg">
-                          <Briefcase className="w-5 h-5 text-amber-400" />
+                    <div key={room.id} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 bg-amber-500/10 rounded-lg">
+                          <Briefcase className="w-4 h-4 text-amber-400" />
                         </div>
                         <div>
-                          <p className="font-medium text-white">{room.name || 'Data Room'}</p>
-                          <p className="text-sm text-zinc-500">{room.documents_count || 0} documents</p>
+                          <p className="text-sm font-medium text-white">{room.name || 'Data Room'}</p>
+                          <p className="text-xs text-zinc-500">{room.documents_count || 0} documents</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <span className="text-sm text-zinc-400">{room.viewers || 0} viewers</span>
-                        <Button size="sm" variant="outline" className="border-zinc-700">
-                          <ExternalLink className="w-4 h-4 mr-2" />
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-zinc-400">{room.viewers || 0} viewers</span>
+                        <Button size="sm" variant="outline" className="border-zinc-700 text-xs h-7 px-2">
+                          <ExternalLink className="w-3 h-3 mr-1" />
                           Open
                         </Button>
                       </div>

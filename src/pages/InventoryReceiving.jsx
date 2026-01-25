@@ -219,9 +219,9 @@ function BarcodeScanner({ onScan, isActive }) {
       {scanMode === "camera" && (
         <div className="space-y-4">
           {cameraError ? (
-            <div className="p-6 border-2 border-dashed border-red-500/30 rounded-xl bg-red-500/5 text-center">
-              <CameraOff className="w-12 h-12 mx-auto text-red-400 mb-3" />
-              <p className="text-red-400 text-sm mb-4">{cameraError}</p>
+            <div className="p-4 border-2 border-dashed border-red-500/30 rounded-xl bg-red-500/5 text-center">
+              <CameraOff className="w-10 h-10 mx-auto text-red-400 mb-3" />
+              <p className="text-red-400 text-sm mb-3">{cameraError}</p>
               <Button
                 variant="outline"
                 size="sm"
@@ -301,8 +301,8 @@ function BarcodeScanner({ onScan, isActive }) {
                 className="w-48 h-1 bg-cyan-500 rounded-full"
               />
             </div>
-            <div className="p-8 border-2 border-dashed border-cyan-500/30 rounded-xl bg-cyan-500/5 text-center">
-              <Barcode className="w-16 h-16 mx-auto text-cyan-400 mb-4" />
+            <div className="p-6 border-2 border-dashed border-cyan-500/30 rounded-xl bg-cyan-500/5 text-center">
+              <Barcode className="w-12 h-12 mx-auto text-cyan-400 mb-3" />
               <p className="text-zinc-400 text-sm">
                 {hasCamera
                   ? "Typ EAN-code handmatig in of gebruik de camera"
@@ -370,9 +370,9 @@ function ScannedProductCard({ scanResult, onReceive, onCancel }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="p-6 rounded-xl bg-zinc-900/70 border border-cyan-500/30"
+      className="p-4 rounded-xl bg-zinc-900/70 border border-cyan-500/30"
     >
-      <div className="flex justify-between items-start mb-4">
+      <div className="flex justify-between items-start mb-3">
         <div>
           <h3 className="text-lg font-semibold text-white">
             {scanResult.product.name}
@@ -395,12 +395,12 @@ function ScannedProductCard({ scanResult, onReceive, onCancel }) {
 
       {/* Expected delivery info */}
       {scanResult.expectedDelivery ? (
-        <div className="mb-4 p-3 rounded-lg bg-green-500/10 border border-green-500/30">
+        <div className="mb-3 p-3 rounded-lg bg-green-500/10 border border-green-500/30">
           <div className="flex items-center gap-2 text-green-400">
             <CheckCircle2 className="w-4 h-4" />
             <span className="text-sm font-medium">Verwachte levering gevonden</span>
           </div>
-          <div className="mt-2 grid grid-cols-3 gap-4 text-sm">
+          <div className="mt-2 grid grid-cols-3 gap-3 text-sm">
             <div>
               <span className="text-zinc-500">Verwacht:</span>
               <span className="ml-2 text-white">{expectedQty}</span>
@@ -416,7 +416,7 @@ function ScannedProductCard({ scanResult, onReceive, onCancel }) {
           </div>
         </div>
       ) : (
-        <div className="mb-4 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+        <div className="mb-3 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
           <div className="flex items-center gap-2 text-yellow-400">
             <AlertCircle className="w-4 h-4" />
             <span className="text-sm font-medium">Geen verwachte levering</span>
@@ -429,7 +429,7 @@ function ScannedProductCard({ scanResult, onReceive, onCancel }) {
 
       {/* Current stock */}
       {scanResult.currentStock && (
-        <div className="mb-4 p-3 rounded-lg bg-zinc-800/50 border border-white/10">
+        <div className="mb-3 p-3 rounded-lg bg-zinc-800/50 border border-white/10">
           <span className="text-sm text-zinc-400">Huidige voorraad:</span>
           <span className="ml-2 text-white font-medium">
             {scanResult.currentStock.quantity_on_hand} stuks
@@ -443,7 +443,7 @@ function ScannedProductCard({ scanResult, onReceive, onCancel }) {
       )}
 
       {/* Quantity input */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         <div>
           <Label>Aantal ontvangen</Label>
           <div className="flex items-center gap-2 mt-1">
@@ -481,7 +481,7 @@ function ScannedProductCard({ scanResult, onReceive, onCancel }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           <div>
             <Label>Conditie</Label>
             <Select value={condition} onValueChange={setCondition}>
@@ -519,7 +519,7 @@ function ScannedProductCard({ scanResult, onReceive, onCancel }) {
           </div>
         )}
 
-        <div className="flex gap-2 pt-2">
+        <div className="flex gap-2 pt-1">
           <Button onClick={handleSubmit} className="flex-1 bg-cyan-600 hover:bg-cyan-700">
             <Check className="w-4 h-4 mr-2" />
             Ontvangen ({quantity})
@@ -540,18 +540,18 @@ function NotFoundCard({ ean, onClose }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="p-6 rounded-xl bg-zinc-900/70 border border-red-500/30"
+      className="p-4 rounded-xl bg-zinc-900/70 border border-red-500/30"
     >
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex items-center gap-3 mb-3">
         <div className="p-2 rounded-full bg-red-500/10">
-          <AlertTriangle className="w-6 h-6 text-red-400" />
+          <AlertTriangle className="w-5 h-5 text-red-400" />
         </div>
         <div>
           <h3 className="text-lg font-semibold text-white">Product niet gevonden</h3>
           <p className="text-sm text-zinc-400">EAN: {ean}</p>
         </div>
       </div>
-      <p className="text-sm text-zinc-400 mb-4">
+      <p className="text-sm text-zinc-400 mb-3">
         Dit product staat niet in het systeem. Voeg het eerst toe aan de producten.
       </p>
       <div className="flex gap-2">
@@ -629,18 +629,18 @@ function ReceiveSuccessCard({ productName, quantity, isPartial, remainingQty, on
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      className="p-6 rounded-xl bg-zinc-900/70 border border-green-500/30"
+      className="p-4 rounded-xl bg-zinc-900/70 border border-green-500/30"
     >
       <div className="text-center">
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: "spring", duration: 0.5 }}
-          className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center"
+          className="w-14 h-14 mx-auto mb-3 rounded-full bg-green-500/20 flex items-center justify-center"
         >
-          <CheckCircle2 className="w-8 h-8 text-green-400" />
+          <CheckCircle2 className="w-7 h-7 text-green-400" />
         </motion.div>
-        <h3 className="text-xl font-semibold text-white mb-2">
+        <h3 className="text-lg font-semibold text-white mb-2">
           Ontvangst bevestigd!
         </h3>
         <p className="text-zinc-400 mb-2">
@@ -837,7 +837,7 @@ export default function InventoryReceiving() {
           <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-cyan-950/10 rounded-full blur-3xl" />
         </div>
 
-        <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+        <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
           <div ref={headerRef} style={{ opacity: 0 }}>
             <PageHeader
               title="Ontvangst"
@@ -848,7 +848,7 @@ export default function InventoryReceiving() {
 
           <div>
           {/* Stats */}
-          <div ref={statsRef} className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6" style={{ opacity: 0 }}>
+          <div ref={statsRef} className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6" style={{ opacity: 0 }}>
             <StatCard
               icon={Boxes}
               label="Verwachte leveringen"
@@ -870,10 +870,10 @@ export default function InventoryReceiving() {
             />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Scanner section */}
-            <GlassCard className="p-6">
-              <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <GlassCard className="p-4">
+              <h2 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
                 <Scan className="w-5 h-5 text-cyan-400" />
                 Barcode Scanner
               </h2>
@@ -918,8 +918,8 @@ export default function InventoryReceiving() {
             </GlassCard>
 
             {/* Recent receiving */}
-            <GlassCard className="p-6">
-              <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <GlassCard className="p-4">
+              <h2 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
                 <Warehouse className="w-5 h-5 text-cyan-400" />
                 Recente ontvangsten
               </h2>
@@ -928,8 +928,8 @@ export default function InventoryReceiving() {
           </div>
 
           {/* Expected deliveries */}
-          <GlassCard className="p-6 mt-6">
-            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <GlassCard className="p-4 mt-4">
+            <h2 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
               <Package className="w-5 h-5 text-cyan-400" />
               Verwachte leveringen ({expectedDeliveries.length})
             </h2>

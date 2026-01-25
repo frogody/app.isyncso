@@ -147,10 +147,10 @@ export default function SkillsOverview() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
+      <div className="min-h-screen bg-black px-4 lg:px-6 py-4">
+        <div className="max-w-7xl mx-auto space-y-4">
           <Skeleton className="h-12 w-64 bg-gray-800" />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {Array(6).fill(0).map((_, i) => (
               <Skeleton key={i} className="h-48 bg-gray-800" />
             ))}
@@ -161,16 +161,16 @@ export default function SkillsOverview() {
   }
 
   return (
-    <div className="min-h-screen bg-black p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-black px-4 lg:px-6 py-4 space-y-4">
+      <div className="max-w-7xl mx-auto">
         <div>
           <h1 className="text-4xl font-bold text-white mb-2">Your Skills</h1>
           <p className="text-gray-400">Track your skill proficiency and progress</p>
         </div>
 
         {/* Filters */}
-        <Card className="glass-card border-0 p-6">
-          <div className="flex flex-col md:flex-row gap-4">
+        <Card className="glass-card border-0 p-4">
+          <div className="flex flex-col md:flex-row gap-3">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
               <Input
@@ -217,28 +217,28 @@ export default function SkillsOverview() {
 
         {/* Skills Grid */}
         {filteredSkills.length === 0 ? (
-          <Card className="glass-card border-0 p-12">
+          <Card className="glass-card border-0 p-8">
             <div className="text-center">
-              <Brain className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-white mb-2">
+              <Brain className="w-12 h-12 text-gray-500 mx-auto mb-3" />
+              <h3 className="text-lg font-semibold text-white mb-2">
                 No Skills Tracked Yet
               </h3>
-              <p className="text-gray-400">
+              <p className="text-gray-400 text-sm">
                 Start using the LearningTracker app to track your skills automatically
               </p>
             </div>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {filteredSkills.map((skill) => (
               <Card key={skill.skill_id} className="glass-card border-0 hover-glow">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-white mb-1">
+                      <h3 className="text-base font-semibold text-white mb-1">
                         {skill.skill_name}
                       </h3>
-                      <p className="text-sm text-gray-400 capitalize">
+                      <p className="text-xs text-gray-400 capitalize">
                         {skill.skill_category}
                       </p>
                     </div>
@@ -247,27 +247,27 @@ export default function SkillsOverview() {
                     </div>
                   </div>
 
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     <div>
-                      <div className="flex justify-between text-sm mb-2">
+                      <div className="flex justify-between text-xs mb-2">
                         <span className="text-gray-400">Proficiency</span>
                         <span className="text-white font-medium">
                           {Math.round(skill.current_proficiency * 100)}%
                         </span>
                       </div>
-                      <Progress 
-                        value={skill.current_proficiency * 100} 
+                      <Progress
+                        value={skill.current_proficiency * 100}
                         className="h-2"
                       />
                     </div>
 
-                    <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-1 text-gray-400">
-                        <Flame className="w-4 h-4" />
+                        <Flame className="w-3 h-3" />
                         <span>{skill.total_applications} uses</span>
                       </div>
                       <div className="flex items-center gap-1 text-gray-400">
-                        <Clock className="w-4 h-4" />
+                        <Clock className="w-3 h-3" />
                         <span>{skill.days_since_last_use}d ago</span>
                       </div>
                     </div>

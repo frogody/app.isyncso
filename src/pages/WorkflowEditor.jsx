@@ -119,8 +119,8 @@ export default function WorkflowEditor() {
   }
 
   return (
-    <div className="min-h-screen bg-black p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="min-h-screen bg-black px-4 lg:px-6 py-4">
+      <div className="max-w-6xl mx-auto space-y-4">
         <div className="flex items-center justify-between">
           <Button onClick={goBack} className="btn-outline">
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -133,7 +133,7 @@ export default function WorkflowEditor() {
         </div>
 
         <Card className="glass-card border-0">
-          <CardContent className="p-6">
+          <CardContent className="p-4">
             <WorkflowBuilder activity={activity} onSave={handleSave} />
           </CardContent>
         </Card>

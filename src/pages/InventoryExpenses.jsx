@@ -165,8 +165,8 @@ function ConfidenceIndicator({ confidence }) {
 
   return (
     <div className="flex items-center gap-2">
-      <Progress value={percent} className={`w-24 h-2 ${color}`} />
-      <span className={`text-sm font-medium ${textColor}`}>{percent}%</span>
+      <Progress value={percent} className={`w-20 h-2 ${color}`} />
+      <span className={`text-xs font-medium ${textColor}`}>{percent}%</span>
     </div>
   );
 }
@@ -220,12 +220,12 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject }) {
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="space-y-4 py-4">
           {/* Confidence score */}
           <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-900/50 border border-white/10">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-cyan-400" />
-              <span className="text-sm text-zinc-400">AI Betrouwbaarheid</span>
+              <Sparkles className="w-4 h-4 text-cyan-400" />
+              <span className="text-xs text-zinc-400">AI Betrouwbaarheid</span>
             </div>
             <ConfidenceIndicator confidence={expense.ai_confidence || 0} />
           </div>
@@ -233,18 +233,18 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject }) {
           {/* Original document */}
           {expense.original_file_url && (
             <div>
-              <Label className="text-zinc-400">Origineel document</Label>
+              <Label className="text-zinc-400 text-xs">Origineel document</Label>
               <div className="mt-2 rounded-lg border border-white/10 overflow-hidden">
                 <img
                   src={expense.original_file_url}
                   alt="Invoice"
-                  className="w-full max-h-64 object-contain bg-zinc-950"
+                  className="w-full max-h-48 object-contain bg-zinc-950"
                 />
               </div>
               <Button
                 variant="link"
                 size="sm"
-                className="mt-1 text-cyan-400"
+                className="mt-1 text-cyan-400 text-xs"
                 onClick={() => window.open(expense.original_file_url, "_blank")}
               >
                 <ExternalLink className="w-3 h-3 mr-1" />
@@ -254,30 +254,30 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject }) {
           )}
 
           {/* Extracted data */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="text-zinc-400">Leverancier</Label>
-              <p className="text-white font-medium">
+              <Label className="text-zinc-400 text-xs">Leverancier</Label>
+              <p className="text-white font-medium text-sm">
                 {extractedData.supplier_name || expense.suppliers?.name || "-"}
               </p>
             </div>
             <div>
-              <Label className="text-zinc-400">Invoice Number</Label>
-              <p className="text-white font-medium">
+              <Label className="text-zinc-400 text-xs">Invoice Number</Label>
+              <p className="text-white font-medium text-sm">
                 {expense.external_reference || "-"}
               </p>
             </div>
             <div>
-              <Label className="text-zinc-400">Invoice Date</Label>
-              <p className="text-white font-medium">
+              <Label className="text-zinc-400 text-xs">Invoice Date</Label>
+              <p className="text-white font-medium text-sm">
                 {expense.invoice_date
                   ? new Date(expense.invoice_date).toLocaleDateString("nl-NL")
                   : "-"}
               </p>
             </div>
             <div>
-              <Label className="text-zinc-400">Total</Label>
-              <p className="text-white font-medium text-lg">
+              <Label className="text-zinc-400 text-xs">Total</Label>
+              <p className="text-white font-medium text-base">
                 € {expense.total?.toFixed(2) || "0.00"}
               </p>
             </div>
@@ -286,35 +286,35 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject }) {
           {/* Line items */}
           {expense.expense_line_items && expense.expense_line_items.length > 0 && (
             <div>
-              <Label className="text-zinc-400 mb-2 block">Line Items</Label>
+              <Label className="text-zinc-400 mb-2 block text-xs">Line Items</Label>
               <div className="rounded-lg border border-white/10 overflow-hidden">
-                <table className="w-full text-sm">
+                <table className="w-full text-xs">
                   <thead className="bg-zinc-900/50">
-                    <tr className="text-left text-zinc-500">
-                      <th className="px-3 py-2">Omschrijving</th>
-                      <th className="px-3 py-2 text-right">Aantal</th>
-                      <th className="px-3 py-2 text-right">Price</th>
-                      <th className="px-3 py-2 text-right">Total</th>
+                    <tr className="text-left text-zinc-500 text-[10px]">
+                      <th className="px-2 py-1">Omschrijving</th>
+                      <th className="px-2 py-1 text-right">Aantal</th>
+                      <th className="px-2 py-1 text-right">Price</th>
+                      <th className="px-2 py-1 text-right">Total</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
                     {expense.expense_line_items.map((item) => (
                       <tr key={item.id}>
-                        <td className="px-3 py-2 text-white">
+                        <td className="px-2 py-1 text-white">
                           {item.description}
                           {item.ean && (
-                            <span className="ml-2 text-xs text-zinc-500">
+                            <span className="ml-2 text-[10px] text-zinc-500">
                               EAN: {item.ean}
                             </span>
                           )}
                         </td>
-                        <td className="px-3 py-2 text-right text-zinc-400">
+                        <td className="px-2 py-1 text-right text-zinc-400">
                           {item.quantity}
                         </td>
-                        <td className="px-3 py-2 text-right text-zinc-400">
+                        <td className="px-2 py-1 text-right text-zinc-400">
                           € {item.unit_price?.toFixed(2)}
                         </td>
-                        <td className="px-3 py-2 text-right text-white">
+                        <td className="px-2 py-1 text-right text-white">
                           € {item.line_total?.toFixed(2)}
                         </td>
                       </tr>
@@ -322,26 +322,26 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject }) {
                   </tbody>
                   <tfoot className="bg-zinc-900/30">
                     <tr>
-                      <td colSpan={3} className="px-3 py-2 text-right text-zinc-400">
+                      <td colSpan={3} className="px-2 py-1 text-right text-zinc-400">
                         Subtotaal
                       </td>
-                      <td className="px-3 py-2 text-right text-white">
+                      <td className="px-2 py-1 text-right text-white">
                         € {expense.subtotal?.toFixed(2)}
                       </td>
                     </tr>
                     <tr>
-                      <td colSpan={3} className="px-3 py-2 text-right text-zinc-400">
+                      <td colSpan={3} className="px-2 py-1 text-right text-zinc-400">
                         BTW ({expense.tax_percent || 21}%)
                       </td>
-                      <td className="px-3 py-2 text-right text-white">
+                      <td className="px-2 py-1 text-right text-white">
                         € {expense.tax_amount?.toFixed(2)}
                       </td>
                     </tr>
                     <tr className="font-medium">
-                      <td colSpan={3} className="px-3 py-2 text-right text-white">
+                      <td colSpan={3} className="px-2 py-1 text-right text-white">
                         Total
                       </td>
-                      <td className="px-3 py-2 text-right text-cyan-400">
+                      <td className="px-2 py-1 text-right text-cyan-400">
                         € {expense.total?.toFixed(2)}
                       </td>
                     </tr>
@@ -353,7 +353,7 @@ function ReviewModal({ expense, isOpen, onClose, onApprove, onReject }) {
 
           {/* Review notes */}
           <div>
-            <Label>Opmerkingen</Label>
+            <Label className="text-xs">Opmerkingen</Label>
             <Textarea
               placeholder="Eventuele opmerkingen bij de beoordeling..."
               value={notes}
@@ -418,40 +418,40 @@ function ExpenseCard({ expense, onReview, onRetry }) {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`p-4 rounded-xl bg-zinc-900/50 border transition-all ${
+      className={`p-3 rounded-lg bg-zinc-900/50 border transition-all ${
         needsReview
           ? "border-yellow-500/30 hover:border-yellow-500/50"
           : "border-white/5 hover:border-cyan-500/30"
       }`}
     >
       <div className="flex items-start justify-between">
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-2">
           <div className={`p-2 rounded-lg ${status.bg} ${status.border}`}>
-            <Receipt className={`w-5 h-5 ${status.text}`} />
+            <Receipt className={`w-4 h-4 ${status.text}`} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-medium text-white">
+              <h3 className="font-medium text-white text-sm">
                 {expense.expense_number || expense.external_reference || "Invoice"}
               </h3>
-              <Badge className={`${status.bg} ${status.text} ${status.border}`}>
+              <Badge className={`${status.bg} ${status.text} ${status.border} text-xs`}>
                 {expense.status.replace("_", " ")}
               </Badge>
               {needsReview && (
-                <Badge className="bg-yellow-500/10 text-yellow-400 border-yellow-500/30">
+                <Badge className="bg-yellow-500/10 text-yellow-400 border-yellow-500/30 text-xs">
                   <AlertTriangle className="w-3 h-3 mr-1" />
                   Review Required
                 </Badge>
               )}
             </div>
-            <p className="text-sm text-zinc-400 mt-1">
+            <p className="text-xs text-zinc-400 mt-1">
               {expense.suppliers?.name || "Unknown supplier"}
             </p>
           </div>
         </div>
 
         <div className="text-right">
-          <p className="text-lg font-semibold text-white">
+          <p className="text-sm font-semibold text-white">
             € {expense.total?.toFixed(2) || "0.00"}
           </p>
           {expense.ai_confidence !== undefined && (
@@ -461,8 +461,8 @@ function ExpenseCard({ expense, onReview, onRetry }) {
       </div>
 
       {/* Details row */}
-      <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between">
-        <div className="flex items-center gap-4 text-sm text-zinc-500">
+      <div className="mt-2 pt-2 border-t border-white/5 flex items-center justify-between">
+        <div className="flex items-center gap-3 text-xs text-zinc-500">
           {expense.invoice_date && (
             <span className="flex items-center gap-1">
               <Calendar className="w-4 h-4" />
@@ -543,22 +543,22 @@ function ReviewQueueBanner({ count, onClick }) {
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mb-6 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/30 cursor-pointer hover:bg-yellow-500/20 transition-colors"
+      className="mb-6 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30 cursor-pointer hover:bg-yellow-500/20 transition-colors"
       onClick={onClick}
     >
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <AlertTriangle className="w-6 h-6 text-yellow-400" />
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="w-5 h-5 text-yellow-400" />
           <div>
-            <h3 className="font-medium text-yellow-400">
+            <h3 className="font-medium text-yellow-400 text-sm">
               {count} invoice{count > 1 ? "s" : ""} awaiting review
             </h3>
-            <p className="text-sm text-yellow-400/70">
+            <p className="text-xs text-yellow-400/70">
               AI extraction had &lt;{Math.round(MIN_CONFIDENCE * 100)}% confidence
             </p>
           </div>
         </div>
-        <ChevronRight className="w-5 h-5 text-yellow-400" />
+        <ChevronRight className="w-4 h-4 text-yellow-400" />
       </div>
     </motion.div>
   );
@@ -785,7 +785,7 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-3 py-4">
           {/* Drop zone */}
           <div
             onClick={() => fileInputRef.current?.click()}
@@ -811,21 +811,21 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
             />
 
             {selectedFile ? (
-              <div className="p-6">
+              <div className="p-4">
                 {previewUrl ? (
                   <img
                     src={previewUrl}
                     alt="Preview"
-                    className="max-h-48 mx-auto rounded-lg object-contain"
+                    className="max-h-40 mx-auto rounded-lg object-contain"
                   />
                 ) : (
-                  <div className="flex items-center justify-center py-8">
-                    <FileText className="w-16 h-16 text-cyan-400" />
+                  <div className="flex items-center justify-center py-6">
+                    <FileText className="w-12 h-12 text-cyan-400" />
                   </div>
                 )}
-                <div className="mt-4 text-center">
-                  <p className="text-white font-medium truncate">{selectedFile.name}</p>
-                  <p className="text-sm text-zinc-400">
+                <div className="mt-3 text-center">
+                  <p className="text-white font-medium truncate text-sm">{selectedFile.name}</p>
+                  <p className="text-xs text-zinc-400">
                     {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                   </p>
                   <Button
@@ -844,14 +844,14 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
                 </div>
               </div>
             ) : (
-              <div className="p-8 text-center">
-                <div className="w-16 h-16 mx-auto rounded-full bg-cyan-500/10 flex items-center justify-center mb-4">
-                  <FileUp className="w-8 h-8 text-cyan-400" />
+              <div className="p-6 text-center">
+                <div className="w-12 h-12 mx-auto rounded-full bg-cyan-500/10 flex items-center justify-center mb-3">
+                  <FileUp className="w-6 h-6 text-cyan-400" />
                 </div>
-                <p className="text-white font-medium">
+                <p className="text-white font-medium text-sm">
                   Sleep een bestand hierheen of klik om te selecteren
                 </p>
-                <p className="text-sm text-zinc-400 mt-1">
+                <p className="text-xs text-zinc-400 mt-1">
                   JPG, PNG, WebP of PDF (max 50MB)
                 </p>
               </div>
@@ -860,8 +860,8 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
 
           {/* Upload progress */}
           {isUploading && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
+            <div className="space-y-1">
+              <div className="flex items-center justify-between text-xs">
                 <span className="text-zinc-400">
                   {uploadProgress < 90 ? "Uploaden..." : "Verwerken..."}
                 </span>
@@ -874,10 +874,10 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
           {/* Info box */}
           <div className="p-3 rounded-lg bg-zinc-900/50 border border-white/10">
             <div className="flex items-start gap-2">
-              <Sparkles className="w-4 h-4 text-cyan-400 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-zinc-400">
+              <Sparkles className="w-3 h-3 text-cyan-400 mt-0.5 flex-shrink-0" />
+              <div className="text-xs text-zinc-400">
                 <p>AI zal automatisch extracten:</p>
-                <ul className="mt-1 space-y-0.5 text-zinc-500">
+                <ul className="mt-1 space-y-0 text-zinc-500 text-[10px]">
                   <li>• Leveranciersgegevens</li>
                   <li>• Invoice Number en datum</li>
                   <li>• Amounts and VAT</li>
@@ -1122,7 +1122,7 @@ export default function InventoryExpenses() {
           <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-cyan-950/10 rounded-full blur-3xl" />
         </div>
 
-        <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+        <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
           <div ref={headerRef} style={{ opacity: 0 }}>
             <PageHeader
               title="Expenses"
@@ -1148,7 +1148,7 @@ export default function InventoryExpenses() {
           />
 
           {/* Stats */}
-          <div ref={statsRef} className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6" style={{ opacity: 0 }}>
+          <div ref={statsRef} className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6" style={{ opacity: 0 }}>
             <StatCard
               icon={Receipt}
               label="Total facturen"
@@ -1176,8 +1176,8 @@ export default function InventoryExpenses() {
           </div>
 
           {/* Filters */}
-          <GlassCard className="p-4 mb-6">
-            <div className="flex flex-col md:flex-row gap-4">
+          <GlassCard className="p-3 mb-6">
+            <div className="flex flex-col md:flex-row gap-3">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                 <Input
@@ -1199,25 +1199,25 @@ export default function InventoryExpenses() {
 
           {/* Expense list */}
           {isLoading ? (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-32 rounded-xl" />
+                <Skeleton key={i} className="h-24 rounded-lg" />
               ))}
             </div>
           ) : filteredExpenses.length === 0 ? (
-            <GlassCard className="p-12 text-center">
-              <Receipt className="w-16 h-16 mx-auto text-zinc-600 mb-4" />
-              <h3 className="text-lg font-medium text-white mb-2">
+            <GlassCard className="p-8 text-center">
+              <Receipt className="w-12 h-12 mx-auto text-zinc-600 mb-3" />
+              <h3 className="text-base font-medium text-white mb-2">
                 Geen facturen gevonden
               </h3>
-              <p className="text-zinc-500">
+              <p className="text-sm text-zinc-500">
                 {search
                   ? "Probeer een andere zoekopdracht"
                   : "Upload an invoice to get started"}
               </p>
             </GlassCard>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {filteredExpenses.map((expense) => (
                 <ExpenseCard
                   key={expense.id}

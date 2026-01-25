@@ -497,52 +497,52 @@ function FunctionCard({ func, index }) {
     <Card className="glass-card border-0">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
-              <Code className="w-5 h-5 text-cyan-400" />
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center">
+              <Code className="w-4 h-4 text-cyan-400" />
             </div>
             <div>
-              <CardTitle className="text-white text-lg">{func.name}</CardTitle>
-              <p className="text-sm text-gray-400 mt-1">{func.description}</p>
+              <CardTitle className="text-white text-base">{func.name}</CardTitle>
+              <p className="text-xs text-gray-400 mt-0.5">{func.description}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Badge className={func.required ? "bg-red-500/20 text-red-400" : "bg-gray-500/20 text-gray-400"}>
+            <Badge className={`text-xs ${func.required ? "bg-red-500/20 text-red-400" : "bg-gray-500/20 text-gray-400"}`}>
               {func.required ? "Required" : "Optional"}
             </Badge>
-            <Badge className="bg-blue-500/20 text-blue-400">
+            <Badge className="bg-blue-500/20 text-blue-400 text-xs">
               {func.method}
             </Badge>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3">
         <div className="relative">
-          <pre className="bg-black/50 border border-gray-700 rounded-lg p-4 text-xs text-gray-300 overflow-x-auto max-h-96">
+          <pre className="bg-black/50 border border-gray-700 rounded-xl p-3 text-xs text-gray-300 overflow-x-auto max-h-96">
             <code>{func.code}</code>
           </pre>
           <Button
             onClick={copyCode}
             size="sm"
-            className="absolute top-2 right-2 btn-primary"
+            className="absolute top-2 right-2 btn-primary text-xs h-7"
           >
             {copied ? (
               <>
-                <CheckCircle className="w-4 h-4 mr-1" />
+                <CheckCircle className="w-3 h-3 mr-1" />
                 Copied!
               </>
             ) : (
               <>
-                <Copy className="w-4 h-4 mr-1" />
+                <Copy className="w-3 h-3 mr-1" />
                 Copy Code
               </>
             )}
           </Button>
         </div>
 
-        <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
-          <p className="text-sm text-blue-300">
-            <strong>Setup:</strong> Dashboard → Settings → Backend Functions → Create Function → 
+        <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
+          <p className="text-xs text-blue-300">
+            <strong>Setup:</strong> Dashboard → Settings → Backend Functions → Create Function →
             Paste name "{func.name}", select {func.method}, paste code above
           </p>
         </div>
@@ -558,23 +558,23 @@ export default function BackendSetup() {
   const optionalFunctions = BACKEND_FUNCTIONS.filter(f => !f.required);
 
   return (
-    <div className="min-h-screen bg-black p-6">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div className="min-h-screen bg-black px-4 lg:px-6 py-4">
+      <div className="max-w-6xl mx-auto space-y-4">
         {/* Header */}
         <div>
-          <div className="flex items-center gap-3 mb-4">
-            <Server className="w-12 h-12 text-cyan-400" />
+          <div className="flex items-center gap-2 mb-3">
+            <Server className="w-8 h-8 text-cyan-400" />
             <div>
-              <h1 className="text-4xl font-bold text-white">Backend Functions Setup</h1>
-              <p className="text-xl text-gray-400">Configure Explorium API integration</p>
+              <h1 className="text-3xl font-bold text-white">Backend Functions Setup</h1>
+              <p className="text-base text-gray-400">Configure Explorium API integration</p>
             </div>
           </div>
 
-          <div className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20 flex items-start gap-3">
+          <div className="p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
               <p className="text-yellow-300 font-medium mb-2">Important Setup Steps:</p>
-              <ol className="text-sm text-yellow-200 space-y-1 list-decimal list-inside">
+              <ol className="text-xs text-yellow-200 space-y-1 list-decimal list-inside">
                 <li>Make sure EXPLORIUM_API_KEY is set in Dashboard → Settings → Environment Variables</li>
                 <li>Create each backend function below in Dashboard → Settings → Backend Functions</li>
                 <li>Test connectivity using the Backend Status page</li>
@@ -600,9 +600,9 @@ export default function BackendSetup() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="required" className="space-y-6 mt-6">
-            <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20">
-              <p className="text-red-300 text-sm">
+          <TabsContent value="required" className="space-y-4 mt-4">
+            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20">
+              <p className="text-red-300 text-xs">
                 <strong>These functions are required for the app to work properly.</strong> The onboarding flow and course personalization depend on these endpoints.
               </p>
             </div>
@@ -611,9 +611,9 @@ export default function BackendSetup() {
             ))}
           </TabsContent>
 
-          <TabsContent value="optional" className="space-y-6 mt-6">
-            <div className="p-4 rounded-lg bg-gray-500/10 border border-gray-500/20">
-              <p className="text-gray-300 text-sm">
+          <TabsContent value="optional" className="space-y-4 mt-4">
+            <div className="p-3 rounded-xl bg-gray-500/10 border border-gray-500/20">
+              <p className="text-gray-300 text-xs">
                 These functions add additional capabilities but are not required for core functionality.
               </p>
             </div>
@@ -622,22 +622,22 @@ export default function BackendSetup() {
             ))}
           </TabsContent>
 
-          <TabsContent value="guide" className="mt-6">
+          <TabsContent value="guide" className="mt-4">
             <Card className="glass-card border-0">
               <CardHeader>
                 <CardTitle className="text-white">Complete Setup Guide</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
-                      <span className="text-cyan-400 font-bold">1</span>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex items-start gap-2">
+                    <div className="w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
+                      <span className="text-cyan-400 font-bold text-xs">1</span>
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-white font-semibold mb-2">Set Environment Variable</h3>
-                      <p className="text-gray-400 mb-2">Navigate to Dashboard → Settings → Environment Variables</p>
-                      <div className="bg-black/50 border border-gray-700 rounded-lg p-3">
-                        <code className="text-sm text-cyan-400">
+                      <h3 className="text-white font-semibold mb-1 text-sm">Set Environment Variable</h3>
+                      <p className="text-gray-400 mb-2 text-xs">Navigate to Dashboard → Settings → Environment Variables</p>
+                      <div className="bg-black/50 border border-gray-700 rounded-lg p-2">
+                        <code className="text-xs text-cyan-400">
                           Variable: EXPLORIUM_API_KEY<br />
                           Value: [your-explorium-api-key]
                         </code>
@@ -645,15 +645,15 @@ export default function BackendSetup() {
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
-                      <span className="text-cyan-400 font-bold">2</span>
+                  <div className="flex items-start gap-2">
+                    <div className="w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
+                      <span className="text-cyan-400 font-bold text-xs">2</span>
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-white font-semibold mb-2">Create Backend Functions</h3>
-                      <p className="text-gray-400 mb-2">Go to Dashboard → Settings → Backend Functions</p>
-                      <p className="text-gray-400 mb-2">For each function above:</p>
-                      <ol className="text-sm text-gray-400 space-y-1 list-decimal list-inside ml-4">
+                      <h3 className="text-white font-semibold mb-1 text-sm">Create Backend Functions</h3>
+                      <p className="text-gray-400 mb-1 text-xs">Go to Dashboard → Settings → Backend Functions</p>
+                      <p className="text-gray-400 mb-1 text-xs">For each function above:</p>
+                      <ol className="text-xs text-gray-400 space-y-1 list-decimal list-inside ml-4">
                         <li>Click "Create New Function"</li>
                         <li>Enter the function name (e.g., "explorium/firmographics")</li>
                         <li>Select method (POST)</li>
@@ -663,33 +663,33 @@ export default function BackendSetup() {
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
-                      <span className="text-cyan-400 font-bold">3</span>
+                  <div className="flex items-start gap-2">
+                    <div className="w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
+                      <span className="text-cyan-400 font-bold text-xs">3</span>
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-white font-semibold mb-2">Test Connectivity</h3>
-                      <p className="text-gray-400 mb-3">After creating all functions, test them:</p>
-                      <Button className="btn-primary" onClick={() => window.location.href = "/pages/BackendStatus"}>
-                        <Activity className="w-4 h-4 mr-2" />
+                      <h3 className="text-white font-semibold mb-2 text-sm">Test Connectivity</h3>
+                      <p className="text-gray-400 mb-2 text-xs">After creating all functions, test them:</p>
+                      <Button className="btn-primary text-xs h-8" onClick={() => window.location.href = "/pages/BackendStatus"}>
+                        <Activity className="w-3 h-3 mr-1" />
                         Go to Backend Status Page
                       </Button>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
-                      <span className="text-cyan-400 font-bold">4</span>
+                  <div className="flex items-start gap-2">
+                    <div className="w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
+                      <span className="text-cyan-400 font-bold text-xs">4</span>
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-white font-semibold mb-2">Verify Onboarding</h3>
-                      <p className="text-gray-400">Once all required functions are green on the status page, the onboarding flow will work with full LinkedIn + company enrichment.</p>
+                      <h3 className="text-white font-semibold mb-1 text-sm">Verify Onboarding</h3>
+                      <p className="text-gray-400 text-xs">Once all required functions are green on the status page, the onboarding flow will work with full LinkedIn + company enrichment.</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-4 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
-                  <p className="text-cyan-300 text-sm">
+                <div className="p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
+                  <p className="text-cyan-300 text-xs">
                     <strong>Pro Tip:</strong> Keep the Backend Status page open in another tab while setting up functions so you can test immediately after creating each one.
                   </p>
                 </div>

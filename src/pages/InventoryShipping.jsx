@@ -271,12 +271,12 @@ function ShippingTaskCard({ task, onShip }) {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="p-4 rounded-xl bg-zinc-900/50 border border-white/5 hover:border-cyan-500/30 transition-all"
+      className="p-3 rounded-lg bg-zinc-900/50 border border-white/5 hover:border-cyan-500/30 transition-all"
     >
       <div className="flex items-start justify-between">
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-2">
           <div className={`p-2 rounded-lg ${status.bg} ${status.border}`}>
-            <StatusIcon className={`w-5 h-5 ${status.text}`} />
+            <StatusIcon className={`w-4 h-4 ${status.text}`} />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -341,7 +341,7 @@ function ShippingTaskCard({ task, onShip }) {
       </div>
 
       {/* Shipping details */}
-      <div className="mt-3 pt-3 border-t border-white/5 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+      <div className="mt-2 pt-2 border-t border-white/5 grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
         <div>
           <span className="text-zinc-500">Pakjes</span>
           <span className="ml-2 text-white">{task.package_count}</span>
@@ -381,17 +381,17 @@ function OverdueAlert({ count, onClick }) {
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 cursor-pointer hover:bg-red-500/20 transition-colors"
+      className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 cursor-pointer hover:bg-red-500/20 transition-colors"
       onClick={onClick}
     >
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <AlertTriangle className="w-6 h-6 text-red-400" />
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="w-5 h-5 text-red-400" />
           <div>
-            <h3 className="font-medium text-red-400">
+            <h3 className="font-medium text-red-400 text-sm">
               {count} levering{count > 1 ? "en" : ""} te laat
             </h3>
-            <p className="text-sm text-red-400/70">
+            <p className="text-xs text-red-400/70">
               Controleer de tracking status en neem actie
             </p>
           </div>
@@ -526,7 +526,7 @@ export default function InventoryShipping() {
           <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-cyan-950/10 rounded-full blur-3xl" />
         </div>
 
-        <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+        <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
           <div ref={headerRef} style={{ opacity: 0 }}>
             <PageHeader
               title="Verzendingen"
@@ -543,7 +543,7 @@ export default function InventoryShipping() {
           />
 
           {/* Stats */}
-          <div ref={statsRef} className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6" style={{ opacity: 0 }}>
+          <div ref={statsRef} className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4" style={{ opacity: 0 }}>
             <StatCard
               icon={Clock}
               label="Te verzenden"
@@ -571,8 +571,8 @@ export default function InventoryShipping() {
           </div>
 
           {/* Filters */}
-          <GlassCard className="p-4 mb-6">
-            <div className="flex flex-col md:flex-row gap-4">
+          <GlassCard className="p-3 mb-4">
+            <div className="flex flex-col md:flex-row gap-3">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                 <Input
@@ -595,25 +595,25 @@ export default function InventoryShipping() {
 
           {/* Task list */}
           {isLoading ? (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-32 rounded-xl" />
+                <Skeleton key={i} className="h-24 rounded-lg" />
               ))}
             </div>
           ) : filteredTasks.length === 0 ? (
-            <GlassCard className="p-12 text-center">
-              <Package className="w-16 h-16 mx-auto text-zinc-600 mb-4" />
-              <h3 className="text-lg font-medium text-white mb-2">
+            <GlassCard className="p-8 text-center">
+              <Package className="w-12 h-12 mx-auto text-zinc-600 mb-3" />
+              <h3 className="text-base font-medium text-white mb-1">
                 Geen verzendtaken gevonden
               </h3>
-              <p className="text-zinc-500">
+              <p className="text-xs text-zinc-500">
                 {search
                   ? "Probeer een andere zoekopdracht"
                   : "Er zijn momenteel geen verzendtaken"}
               </p>
             </GlassCard>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {filteredTasks.map((task) => (
                 <ShippingTaskCard
                   key={task.id}

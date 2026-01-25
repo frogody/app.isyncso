@@ -27,10 +27,10 @@ function LoadingSkeleton() {
   return (
     <div className="flex h-screen bg-black text-white">
       <div className="hidden lg:block w-72 border-r border-zinc-800">
-        <div className="p-5 space-y-4">
+        <div className="p-3 space-y-3">
           <Skeleton className="h-6 w-3/4 bg-zinc-800" />
           <Skeleton className="h-2 w-full bg-zinc-800" />
-          <div className="space-y-3 mt-6">
+          <div className="space-y-2 mt-4">
             {Array(8).fill(0).map((_, i) => (
               <Skeleton key={i} className="h-10 w-full bg-zinc-800" />
             ))}
@@ -39,11 +39,11 @@ function LoadingSkeleton() {
       </div>
       <div className="flex-1 flex flex-col">
         <Skeleton className="h-14 w-full bg-zinc-900" />
-        <div className="flex-1 p-8 space-y-6">
+        <div className="flex-1 p-4 space-y-4">
           <Skeleton className="h-8 w-2/3 bg-zinc-800" />
           <Skeleton className="h-4 w-full bg-zinc-800" />
           <Skeleton className="h-4 w-5/6 bg-zinc-800" />
-          <Skeleton className="h-64 w-full bg-zinc-800 mt-8" />
+          <Skeleton className="h-64 w-full bg-zinc-800 mt-6" />
         </div>
         <Skeleton className="h-16 w-full bg-zinc-900" />
       </div>
@@ -54,15 +54,15 @@ function LoadingSkeleton() {
 // Error State
 function ErrorState({ error }) {
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center text-white p-8">
+    <div className="min-h-screen bg-black flex items-center justify-center text-white p-4">
       <div className="max-w-md text-center">
-        <div className="w-20 h-20 rounded-2xl bg-zinc-800/50 border border-zinc-700/40 flex items-center justify-center mx-auto mb-6">
-          <AlertTriangle className="w-10 h-10 text-cyan-400/60" />
+        <div className="w-14 h-14 rounded-xl bg-zinc-800/50 border border-zinc-700/40 flex items-center justify-center mx-auto mb-4">
+          <AlertTriangle className="w-7 h-7 text-cyan-400/60" />
         </div>
-        <h2 className="text-2xl font-bold text-zinc-100 mb-3">Could not load lesson</h2>
-        <p className="text-zinc-500 mb-6">{error}</p>
+        <h2 className="text-lg font-bold text-zinc-100 mb-2">Could not load lesson</h2>
+        <p className="text-zinc-500 mb-4 text-sm">{error}</p>
         <Link to={createPageUrl("Learn")}>
-          <Button className="bg-cyan-600/80 hover:bg-cyan-600 text-white font-medium">
+          <Button className="bg-cyan-600/80 hover:bg-cyan-600 text-white font-medium text-sm">
             Back to Courses
           </Button>
         </Link>
@@ -332,9 +332,9 @@ export default function LessonViewer() {
             />
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-center px-4">
-              <BookOpen className="w-16 h-16 text-zinc-600 mb-4" />
-              <h2 className="text-xl font-bold">No lesson selected</h2>
-              <p className="text-zinc-400 text-sm">Select a lesson from the sidebar to begin.</p>
+              <BookOpen className="w-12 h-12 text-zinc-600 mb-3" />
+              <h2 className="text-lg font-bold">No lesson selected</h2>
+              <p className="text-zinc-400 text-xs">Select a lesson from the sidebar to begin.</p>
             </div>
           )}
         </div>

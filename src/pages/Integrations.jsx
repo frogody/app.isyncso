@@ -721,18 +721,18 @@ export default function Integrations() {
           <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-cyan-900/5 rounded-full blur-3xl" />
         </div>
 
-        <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+        <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
           {/* Header */}
-          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden rounded-2xl bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/60 p-6">
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden rounded-xl bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/60 p-4">
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
               <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full blur-3xl opacity-10 bg-cyan-600" />
               <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full blur-2xl opacity-10 bg-cyan-700" />
             </div>
 
             <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 border border-cyan-500/20 flex items-center justify-center">
-                  <Plug className="w-7 h-7 text-cyan-400" />
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 border border-cyan-500/20 flex items-center justify-center">
+                  <Plug className="w-4 h-4 text-cyan-400" />
                 </div>
                 <div>
                   <div className="flex items-center gap-3">
@@ -758,16 +758,16 @@ export default function Integrations() {
           </motion.div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
-              <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+              <div className="p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
                 <div className="flex items-center justify-between mb-3">
                   <div className="w-11 h-11 rounded-xl bg-zinc-800/80 border border-zinc-700/40 flex items-center justify-center">
                     <Plug className="w-5 h-5 text-cyan-400/70" />
                   </div>
                 </div>
-                <div className="text-2xl font-bold text-zinc-100">{composioConnectedCount}</div>
-                <div className="text-sm text-zinc-500">Third-Party Apps</div>
+                <div className="text-lg font-bold text-zinc-100">{composioConnectedCount}</div>
+                <div className="text-xs text-zinc-500">Third-Party Apps</div>
               </div>
             </motion.div>
 
@@ -779,8 +779,8 @@ export default function Integrations() {
                   </div>
                   {googleConnected && <Badge className="bg-emerald-950/40 text-emerald-300/80 border-emerald-800/30 text-xs">Active</Badge>}
                 </div>
-                <div className="text-2xl font-bold text-zinc-100">{googleConnected ? 'Yes' : 'No'}</div>
-                <div className="text-sm text-zinc-500">Google Workspace</div>
+                <div className="text-lg font-bold text-zinc-100">{googleConnected ? 'Yes' : 'No'}</div>
+                <div className="text-xs text-zinc-500">Google Workspace</div>
               </div>
             </motion.div>
 
@@ -792,8 +792,8 @@ export default function Integrations() {
                   </div>
                   {queuedActions.length > 0 && <Badge className="bg-orange-950/40 text-orange-300/80 border-orange-800/30 text-xs">Pending</Badge>}
                 </div>
-                <div className="text-2xl font-bold text-zinc-100">{queuedActions.length}</div>
-                <div className="text-sm text-zinc-500">Queued Actions</div>
+                <div className="text-lg font-bold text-zinc-100">{queuedActions.length}</div>
+                <div className="text-xs text-zinc-500">Queued Actions</div>
               </div>
             </motion.div>
 
@@ -805,8 +805,8 @@ export default function Integrations() {
                   </div>
                   <Badge className="bg-emerald-950/40 text-emerald-300/80 border-emerald-800/30 text-xs">{successRate}%</Badge>
                 </div>
-                <div className="text-2xl font-bold text-zinc-100">{successfulActions}</div>
-                <div className="text-sm text-zinc-500">Actions Completed</div>
+                <div className="text-lg font-bold text-zinc-100">{successfulActions}</div>
+                <div className="text-xs text-zinc-500">Actions Completed</div>
               </div>
             </motion.div>
           </div>
@@ -848,7 +848,7 @@ export default function Integrations() {
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-950/40 via-zinc-900/60 to-cyan-950/30 border border-emerald-800/30 p-6"
+                  className="relative overflow-hidden rounded-xl bg-gradient-to-br from-emerald-950/40 via-zinc-900/60 to-cyan-950/30 border border-emerald-800/30 p-4"
                 >
                   <div className="absolute inset-0 pointer-events-none">
                     <div className="absolute top-0 right-0 w-72 h-72 bg-emerald-500/5 rounded-full blur-3xl" />
@@ -856,9 +856,9 @@ export default function Integrations() {
                   </div>
 
                   <div className="relative z-10">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
-                        <CheckCircle className="w-6 h-6 text-emerald-400" />
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
+                        <CheckCircle className="w-4 h-4 text-emerald-400" />
                       </div>
                       <div>
                         <h3 className="text-xl font-bold text-white">Your Connected Apps</h3>
@@ -867,13 +867,13 @@ export default function Integrations() {
                     </div>
 
                     {/* Connected Apps Grid */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                       {/* SYNC Desktop App */}
                       {desktopConnected && (
                         <div className="group relative p-4 rounded-xl bg-zinc-900/60 border border-zinc-700/50 hover:border-emerald-500/40 transition-all cursor-pointer">
                           <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
-                            <Monitor className="w-6 h-6 text-white" />
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+                            <Monitor className="w-4 h-4 text-white" />
                           </div>
                           <h4 className="font-semibold text-white text-sm">SYNC Desktop</h4>
                           <p className="text-[11px] text-zinc-500 truncate">Activity tracking</p>
@@ -888,8 +888,8 @@ export default function Integrations() {
                       {googleConnected && (
                         <div className="group relative p-4 rounded-xl bg-zinc-900/60 border border-zinc-700/50 hover:border-emerald-500/40 transition-all cursor-pointer">
                           <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
-                            <Globe className="w-6 h-6 text-white" />
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+                            <Globe className="w-4 h-4 text-white" />
                           </div>
                           <h4 className="font-semibold text-white text-sm">Google</h4>
                           <p className="text-[11px] text-zinc-500 truncate">{googleUserInfo?.email?.split('@')[0]}</p>
@@ -911,10 +911,10 @@ export default function Integrations() {
                           >
                             <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                             <div
-                              className="w-12 h-12 rounded-xl flex items-center justify-center mb-3 group-hover:scale-105 transition-transform"
+                              className="w-8 h-8 rounded-lg flex items-center justify-center mb-2 group-hover:scale-105 transition-transform"
                               style={{ backgroundColor: integration.color + '25' }}
                             >
-                              <span className="text-lg font-bold" style={{ color: integration.color }}>
+                              <span className="text-sm font-bold" style={{ color: integration.color }}>
                                 {integration.name.substring(0, 2).toUpperCase()}
                               </span>
                             </div>
@@ -949,10 +949,10 @@ export default function Integrations() {
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="text-center py-16 rounded-2xl bg-zinc-900/40 border border-zinc-800/60"
+                  className="text-center py-12 rounded-xl bg-zinc-900/40 border border-zinc-800/60"
                 >
-                  <div className="w-20 h-20 rounded-2xl bg-zinc-800/60 flex items-center justify-center mx-auto mb-6">
-                    <Plug className="w-10 h-10 text-zinc-600" />
+                  <div className="w-12 h-12 rounded-lg bg-zinc-800/60 flex items-center justify-center mx-auto mb-4">
+                    <Plug className="w-6 h-6 text-zinc-600" />
                   </div>
                   <h3 className="text-xl font-semibold text-white mb-2">No Apps Connected Yet</h3>
                   <p className="text-zinc-500 mb-6 max-w-md mx-auto">
@@ -966,9 +966,9 @@ export default function Integrations() {
               )}
 
               {/* Two Column Layout */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* What You Can Do */}
-                <GlassCard hover={false} className="p-6">
+                <GlassCard hover={false} className="p-4">
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                     <Sparkles className="w-5 h-5 text-cyan-400" />
                     What You Can Do with SYNC
@@ -998,7 +998,7 @@ export default function Integrations() {
                 </GlassCard>
 
                 {/* Recent Activity */}
-                <GlassCard hover={false} className="p-6">
+                <GlassCard hover={false} className="p-4">
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                     <Activity className="w-5 h-5 text-orange-400" />
                     Recent Activity
@@ -1110,16 +1110,16 @@ export default function Integrations() {
             </TabsContent>
 
             {/* SYNC Desktop Tab */}
-            <TabsContent value="desktop" className="mt-6 space-y-6">
+            <TabsContent value="desktop" className="mt-4 space-y-4">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`p-6 rounded-2xl border transition-all ${desktopConnected ? "bg-emerald-500/5 border-emerald-500/30" : "bg-zinc-900/50 border-zinc-800"}`}
+                className={`p-4 rounded-xl border transition-all ${desktopConnected ? "bg-emerald-500/5 border-emerald-500/30" : "bg-zinc-900/50 border-zinc-800"}`}
               >
-                <div className="flex items-start justify-between mb-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center">
-                      <Monitor className="w-8 h-8 text-white" />
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center">
+                      <Monitor className="w-5 h-5 text-white" />
                     </div>
                     <div>
                       <div className="flex items-center gap-3">
@@ -1146,36 +1146,36 @@ export default function Integrations() {
                 </div>
 
                 {/* Features Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-                  <div className="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50">
-                    <Activity className="w-5 h-5 text-cyan-400 mb-2" />
-                    <h4 className="font-medium text-white text-sm">Activity Tracking</h4>
-                    <p className="text-xs text-zinc-500">Track app usage & focus</p>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+                  <div className="p-3 rounded-lg bg-zinc-800/50 border border-zinc-700/50">
+                    <Activity className="w-4 h-4 text-cyan-400 mb-1" />
+                    <h4 className="font-medium text-white text-xs">Activity Tracking</h4>
+                    <p className="text-[10px] text-zinc-500">Track app usage & focus</p>
                   </div>
                   <div className="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50">
-                    <Clock className="w-5 h-5 text-blue-400 mb-2" />
-                    <h4 className="font-medium text-white text-sm">Smart Context</h4>
-                    <p className="text-xs text-zinc-500">10-min rolling context</p>
+                    <Clock className="w-4 h-4 text-blue-400 mb-1" />
+                    <h4 className="font-medium text-white text-xs">Smart Context</h4>
+                    <p className="text-[10px] text-zinc-500">10-min rolling context</p>
                   </div>
                   <div className="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50">
-                    <FileText className="w-5 h-5 text-orange-400 mb-2" />
-                    <h4 className="font-medium text-white text-sm">Daily Journal</h4>
-                    <p className="text-xs text-zinc-500">Auto-generated summaries</p>
+                    <FileText className="w-4 h-4 text-orange-400 mb-1" />
+                    <h4 className="font-medium text-white text-xs">Daily Journal</h4>
+                    <p className="text-[10px] text-zinc-500">Auto-generated summaries</p>
                   </div>
                   <div className="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50">
-                    <RefreshCw className="w-5 h-5 text-cyan-400 mb-2" />
-                    <h4 className="font-medium text-white text-sm">Cloud Sync</h4>
-                    <p className="text-xs text-zinc-500">Sync with web app</p>
+                    <RefreshCw className="w-4 h-4 text-cyan-400 mb-1" />
+                    <h4 className="font-medium text-white text-xs">Cloud Sync</h4>
+                    <p className="text-[10px] text-zinc-500">Sync with web app</p>
                   </div>
                   <div className="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50">
-                    <Sparkles className="w-5 h-5 text-cyan-400 mb-2" />
-                    <h4 className="font-medium text-white text-sm">SYNC Assistant</h4>
-                    <p className="text-xs text-zinc-500">Always-on-top chat</p>
+                    <Sparkles className="w-4 h-4 text-cyan-400 mb-1" />
+                    <h4 className="font-medium text-white text-xs">SYNC Assistant</h4>
+                    <p className="text-[10px] text-zinc-500">Always-on-top chat</p>
                   </div>
                   <div className="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50">
-                    <Shield className="w-5 h-5 text-green-400 mb-2" />
-                    <h4 className="font-medium text-white text-sm">Privacy First</h4>
-                    <p className="text-xs text-zinc-500">Local-first, encrypted</p>
+                    <Shield className="w-4 h-4 text-green-400 mb-1" />
+                    <h4 className="font-medium text-white text-xs">Privacy First</h4>
+                    <p className="text-[10px] text-zinc-500">Local-first, encrypted</p>
                   </div>
                 </div>
 
@@ -1216,7 +1216,7 @@ export default function Integrations() {
 
               {/* Download/Setup Instructions */}
               {!desktopConnected && (
-                <GlassCard className="p-6">
+                <GlassCard className="p-4">
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                     <Laptop className="w-5 h-5 text-cyan-400" />
                     Get Started with SYNC Desktop
@@ -1255,7 +1255,7 @@ export default function Integrations() {
 
               {/* Connection Details */}
               {desktopConnected && (
-                <GlassCard className="p-6">
+                <GlassCard className="p-4">
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                     <CheckCircle className="w-5 h-5 text-emerald-400" />
                     Connection Details
@@ -1286,16 +1286,16 @@ export default function Integrations() {
             </TabsContent>
 
             {/* Google Workspace Tab */}
-            <TabsContent value="google" className="mt-6 space-y-6">
+            <TabsContent value="google" className="mt-4 space-y-4">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`p-6 rounded-2xl border transition-all ${googleConnected ? "bg-emerald-500/5 border-emerald-500/30" : "bg-zinc-900/50 border-zinc-800"}`}
+                className={`p-4 rounded-xl border transition-all ${googleConnected ? "bg-emerald-500/5 border-emerald-500/30" : "bg-zinc-900/50 border-zinc-800"}`}
               >
-                <div className="flex items-start justify-between mb-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center">
-                      <Globe className="w-8 h-8 text-white" />
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center">
+                      <Globe className="w-5 h-5 text-white" />
                     </div>
                     <div>
                       <div className="flex items-center gap-3">
@@ -1322,7 +1322,7 @@ export default function Integrations() {
                 </div>
 
                 {/* Features Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
                   <div className="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50">
                     <Mail className="w-5 h-5 text-red-400 mb-2" />
                     <h4 className="font-medium text-white text-sm">Gmail</h4>
@@ -1380,7 +1380,7 @@ export default function Integrations() {
 
               {/* Connection Details */}
               {googleConnected && googleTokens && (
-                <GlassCard className="p-6">
+                <GlassCard className="p-4">
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                     <CheckCircle className="w-5 h-5 text-emerald-400" />
                     Connection Details
@@ -1408,9 +1408,9 @@ export default function Integrations() {
             </TabsContent>
 
             {/* Actions Tab */}
-            <TabsContent value="actions" className="mt-6">
-              <Suspense fallback={<Skeleton className="h-96 bg-zinc-800 rounded-xl" />}>
-                <div className="flex items-center justify-between mb-6">
+            <TabsContent value="actions" className="mt-4">
+              <Suspense fallback={<Skeleton className="h-96 bg-zinc-800 rounded-lg" />}>
+                <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                     <Zap className="w-5 h-5 text-orange-400" />
                     Action Queue
@@ -1427,18 +1427,18 @@ export default function Integrations() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                   {/* Queued & In Progress */}
                   <div className="lg:col-span-2 space-y-4">
                     {logsLoading ? (
-                      <div className="space-y-3">
-                        {[1, 2, 3].map(i => <Skeleton key={i} className="h-32 bg-zinc-800 rounded-xl" />)}
+                      <div className="space-y-2">
+                        {[1, 2, 3].map(i => <Skeleton key={i} className="h-24 bg-zinc-800 rounded-lg" />)}
                       </div>
                     ) : [...inProgressActions, ...queuedActions].length === 0 ? (
-                      <GlassCard hover={false} className="p-12">
+                      <GlassCard hover={false} className="p-8">
                         <div className="text-center">
-                          <div className="w-16 h-16 rounded-2xl bg-zinc-800/50 flex items-center justify-center mx-auto mb-4">
-                            <ListTodo className="w-8 h-8 text-zinc-600" />
+                          <div className="w-10 h-10 rounded-lg bg-zinc-800/50 flex items-center justify-center mx-auto mb-3">
+                            <ListTodo className="w-5 h-5 text-zinc-600" />
                           </div>
                           <h4 className="text-lg font-semibold text-white mb-2">No Pending Actions</h4>
                           <p className="text-zinc-500 text-sm mb-6">Create an action to get started</p>
@@ -1485,10 +1485,10 @@ export default function Integrations() {
             </TabsContent>
 
             {/* History Tab */}
-            <TabsContent value="history" className="mt-6">
-              <Suspense fallback={<Skeleton className="h-96 bg-zinc-800 rounded-xl" />}>
-                <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
-                  <div className="flex items-center justify-between mb-6">
+            <TabsContent value="history" className="mt-4">
+              <Suspense fallback={<Skeleton className="h-96 bg-zinc-800 rounded-lg" />}>
+                <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+                  <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-zinc-800/80 border border-zinc-700/40 flex items-center justify-center">
                         <History className="w-5 h-5 text-cyan-400/70" />
@@ -1508,12 +1508,12 @@ export default function Integrations() {
             </TabsContent>
 
             {/* MCP Servers Tab */}
-            <TabsContent value="mcp" className="mt-6 space-y-6">
+            <TabsContent value="mcp" className="mt-4 space-y-4">
               {/* MCP Hero Section */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-cyan-950/40 via-zinc-900/60 to-blue-950/30 border border-cyan-800/30 p-6"
+                className="relative overflow-hidden rounded-xl bg-gradient-to-br from-cyan-950/40 via-zinc-900/60 to-blue-950/30 border border-cyan-800/30 p-4"
               >
                 <div className="absolute inset-0 pointer-events-none">
                   <div className="absolute top-0 right-0 w-72 h-72 bg-cyan-500/5 rounded-full blur-3xl" />
@@ -1521,10 +1521,10 @@ export default function Integrations() {
                 </div>
 
                 <div className="relative z-10">
-                  <div className="flex items-start justify-between mb-6">
-                    <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 rounded-2xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
-                        <Network className="w-7 h-7 text-cyan-400" />
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
+                        <Network className="w-4 h-4 text-cyan-400" />
                       </div>
                       <div>
                         <h2 className="text-2xl font-bold text-white">MCP Servers</h2>
@@ -1578,10 +1578,10 @@ export default function Integrations() {
                   <Loader2 className="w-8 h-8 animate-spin text-cyan-500" />
                 </div>
               ) : mcpServers.length === 0 ? (
-                <GlassCard hover={false} className="p-12">
+                <GlassCard hover={false} className="p-8">
                   <div className="text-center">
-                    <div className="w-16 h-16 rounded-2xl bg-zinc-800/50 flex items-center justify-center mx-auto mb-4">
-                      <Server className="w-8 h-8 text-zinc-600" />
+                    <div className="w-10 h-10 rounded-lg bg-zinc-800/50 flex items-center justify-center mx-auto mb-3">
+                      <Server className="w-5 h-5 text-zinc-600" />
                     </div>
                     <h4 className="text-lg font-semibold text-white mb-2">No MCP Servers Yet</h4>
                     <p className="text-zinc-500 text-sm mb-6 max-w-md mx-auto">
@@ -1597,13 +1597,13 @@ export default function Integrations() {
                   </div>
                 </GlassCard>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {mcpServers.map((server) => (
                     <motion.div
                       key={server.id}
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="p-5 rounded-2xl bg-zinc-900/60 border border-zinc-800/60 hover:border-cyan-500/30 transition-all"
+                      className="p-3 rounded-lg bg-zinc-900/60 border border-zinc-800/60 hover:border-cyan-500/30 transition-all"
                     >
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center gap-3">

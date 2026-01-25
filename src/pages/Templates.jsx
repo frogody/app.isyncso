@@ -85,13 +85,13 @@ export default function Templates() {
   });
 
   return (
-    <div className="min-h-screen bg-zinc-950 p-6">
+    <div className="min-h-screen bg-zinc-950 px-4 lg:px-6 py-4 space-y-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-white mb-1">Email Templates</h1>
-            <p className="text-zinc-400 text-sm">{templates.length} templates available</p>
+            <p className="text-zinc-400 text-xs">{templates.length} templates available</p>
           </div>
           <button
             onClick={() => handleOpenEditor(null)}
@@ -103,7 +103,7 @@ export default function Templates() {
         </div>
 
         {/* Search & Filter */}
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex items-center gap-3 mb-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
             <input
@@ -130,23 +130,23 @@ export default function Templates() {
         </div>
 
         {/* Template Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {filteredTemplates.map((template, i) => (
             <motion.div
               key={template.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
-              className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 hover:border-orange-500/50 transition-colors group"
+              className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 hover:border-orange-500/50 transition-colors group"
             >
-              <div className="flex items-start justify-between mb-4">
+              <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-orange-400" />
+                  <div className="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center">
+                    <FileText className="w-4 h-4 text-orange-400" />
                   </div>
                   <div>
                     <h3 className="text-sm font-medium text-white">{template.name}</h3>
-                    <p className="text-xs text-zinc-500">{template.category}</p>
+                    <p className="text-[10px] text-zinc-500">{template.category}</p>
                   </div>
                 </div>
                 <button 
@@ -157,31 +157,31 @@ export default function Templates() {
                 </button>
               </div>
 
-              <div className="mb-4">
-                <div className="text-xs text-zinc-500 mb-1">Subject</div>
+              <div className="mb-3">
+                <div className="text-[10px] text-zinc-500 mb-1">Subject</div>
                 <div className="text-sm text-zinc-300 truncate">{template.subject}</div>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-xs text-zinc-500">{template.uses} uses</span>
+                <span className="text-[10px] text-zinc-500">{template.uses} uses</span>
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={(e) => { e.stopPropagation(); setSelectedTemplate(template); setShowPreview(true); }}
-                    className="p-2 hover:bg-zinc-800 rounded-lg"
+                    className="p-1 hover:bg-zinc-800 rounded-lg"
                     title="Preview"
                   >
                     <Eye className="w-4 h-4 text-zinc-400" />
                   </button>
-                  <button 
+                  <button
                     onClick={(e) => handleCopy(e, template)}
-                    className="p-2 hover:bg-zinc-800 rounded-lg"
+                    className="p-1 hover:bg-zinc-800 rounded-lg"
                     title="Copy to clipboard"
                   >
                     <Copy className="w-4 h-4 text-zinc-400" />
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleOpenEditor(template); }}
-                    className="p-2 hover:bg-zinc-800 rounded-lg"
+                    className="p-1 hover:bg-zinc-800 rounded-lg"
                     title="Edit"
                   >
                     <Edit className="w-4 h-4 text-zinc-400" />
@@ -214,11 +214,11 @@ export default function Templates() {
                 <h3 className="text-lg font-semibold text-white">
                   {selectedTemplate ? 'Edit Template' : 'New Template'}
                 </h3>
-                <button onClick={() => { setShowEditor(false); setSelectedTemplate(null); }} className="p-2 hover:bg-zinc-800 rounded-lg">
+                <button onClick={() => { setShowEditor(false); setSelectedTemplate(null); }} className="p-1 hover:bg-zinc-800 rounded-lg">
                   <X className="w-4 h-4 text-zinc-400" />
                 </button>
               </div>
-              <div className="p-6 space-y-4">
+              <div className="p-4 space-y-4">
                 <input
                   type="text"
                   placeholder="Template Name"
@@ -292,25 +292,25 @@ export default function Templates() {
             >
               <div className="flex items-center justify-between p-4 border-b border-zinc-800">
                 <h3 className="text-lg font-semibold text-white">Preview</h3>
-                <button onClick={() => { setShowPreview(false); setSelectedTemplate(null); }} className="p-2 hover:bg-zinc-800 rounded-lg">
+                <button onClick={() => { setShowPreview(false); setSelectedTemplate(null); }} className="p-1 hover:bg-zinc-800 rounded-lg">
                   <X className="w-4 h-4 text-zinc-400" />
                 </button>
               </div>
-              <div className="p-6">
-                <div className="mb-4">
-                  <div className="text-xs text-zinc-500 mb-1">Subject</div>
+              <div className="p-4">
+                <div className="mb-3">
+                  <div className="text-[10px] text-zinc-500 mb-1">Subject</div>
                   <div className="text-white font-medium">{selectedTemplate.subject}</div>
                 </div>
-                <div className="bg-zinc-800/50 rounded-lg p-4">
+                <div className="bg-zinc-800/50 rounded-lg p-3">
                   <pre className="text-sm text-zinc-300 whitespace-pre-wrap font-sans">{selectedTemplate.preview}</pre>
                 </div>
-                <button 
+                <button
                   onClick={() => {
                     toast.success(`Using template: ${selectedTemplate.name}`);
                     setShowPreview(false);
                     setSelectedTemplate(null);
                   }}
-                  className="w-full mt-4 py-3 bg-cyan-500 hover:bg-cyan-600 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors"
+                  className="w-full mt-3 py-2 bg-cyan-500 hover:bg-cyan-600 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors text-sm"
                 >
                   <Mail className="w-4 h-4" />
                   Use Template
