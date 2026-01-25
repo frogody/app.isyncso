@@ -19,7 +19,6 @@ import {
   ArrowLeft,
   Users,
   MapPin,
-  Building2,
   Briefcase,
   Check,
   Loader2,
@@ -28,124 +27,22 @@ import {
   Target,
   MessageSquare,
   Brain,
-  Zap,
-  TrendingUp,
-  Clock,
-  Shield,
   BarChart3,
   Mail,
   Linkedin,
   Award,
-  Eye,
   Lock,
   ArrowRight,
-  ChevronRight,
-  Smile,
-  AlertTriangle,
-  Calendar,
   FileText,
   Rocket,
+  Zap,
+  TrendingUp,
+  Clock,
+  Building2,
+  Phone,
+  ExternalLink,
 } from "lucide-react";
 import { createPageUrl } from "@/utils";
-
-// Animation variants
-const fadeIn = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-};
-
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
-};
-
-// ============================================================================
-// ANONYMIZED PREVIEW CARD - Shows data structure without real info
-// ============================================================================
-const AnonymizedProfileCard = ({ index }) => {
-  const blurredNames = ["████████ ██████", "███████ ████████", "██████ █████████", "████████████ ███", "███████ ██████████"];
-  const roles = ["Senior Professional", "Lead Specialist", "Manager", "Director", "Consultant"];
-  const companies = ["Tech Company", "Enterprise Corp", "Growth Startup", "Global Firm", "Scale-up"];
-  const satisfactions = ["High", "Medium", "Low"];
-  const urgencies = ["High Priority", "Medium Priority", "Response Priority"];
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1 }}
-      className="relative p-5 rounded-2xl bg-gradient-to-br from-zinc-900/80 to-zinc-900/40 border border-white/[0.08] overflow-hidden group"
-    >
-      {/* Blur overlay */}
-      <div className="absolute inset-0 backdrop-blur-[2px] bg-gradient-to-t from-zinc-900/90 to-transparent z-10 flex items-end justify-center pb-4">
-        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20">
-          <Lock className="w-4 h-4 text-red-400" />
-          <span className="text-sm text-white/80">Purchase to unlock</span>
-        </div>
-      </div>
-
-      <div className="flex items-start gap-4">
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500/20 to-red-600/10 flex items-center justify-center border border-red-500/20">
-          <Users className="w-7 h-7 text-red-400" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-white font-medium blur-[3px]">{blurredNames[index % 5]}</p>
-          <p className="text-sm text-zinc-400 mt-0.5">{roles[index % 5]} at {companies[index % 5]}</p>
-          <div className="flex items-center gap-3 mt-3">
-            <span className={`text-xs px-2 py-1 rounded-full ${
-              satisfactions[index % 3] === "High" ? "bg-amber-500/20 text-amber-400" :
-              satisfactions[index % 3] === "Medium" ? "bg-blue-500/20 text-blue-400" :
-              "bg-green-500/20 text-green-400"
-            }`}>
-              {satisfactions[index % 3]} Satisfaction
-            </span>
-            <span className={`text-xs px-2 py-1 rounded-full ${
-              urgencies[index % 3] === "High Priority" ? "bg-red-500/20 text-red-400" :
-              "bg-zinc-500/20 text-zinc-400"
-            }`}>
-              {urgencies[index % 3]}
-            </span>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
-// ============================================================================
-// FEATURE CARD - Explains what buyers get
-// ============================================================================
-const FeatureCard = ({ icon: Icon, title, description, highlight }) => (
-  <motion.div
-    variants={fadeIn}
-    className={`p-6 rounded-2xl border transition-all ${
-      highlight
-        ? "bg-gradient-to-br from-red-500/10 to-red-600/5 border-red-500/20"
-        : "bg-white/[0.02] border-white/[0.06] hover:border-white/[0.1]"
-    }`}
-  >
-    <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${
-      highlight ? "bg-red-500/20" : "bg-white/[0.05]"
-    }`}>
-      <Icon className={`w-6 h-6 ${highlight ? "text-red-400" : "text-zinc-400"}`} />
-    </div>
-    <h3 className="text-lg font-semibold text-white mb-2">{title}</h3>
-    <p className="text-sm text-zinc-400 leading-relaxed">{description}</p>
-  </motion.div>
-);
-
-// ============================================================================
-// STAT PILL - Quick stat display
-// ============================================================================
-const StatPill = ({ icon: Icon, label, value }) => (
-  <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-    <Icon className="w-5 h-5 text-red-400" />
-    <div>
-      <p className="text-xs text-zinc-500">{label}</p>
-      <p className="text-sm font-medium text-white">{value}</p>
-    </div>
-  </div>
-);
 
 // ============================================================================
 // PURCHASE DIALOG
@@ -276,8 +173,13 @@ export default function TalentNestDetail() {
     return (
       <div className="w-full px-6 lg:px-8 py-6">
         <Skeleton className="h-6 w-32 mb-8" />
-        <Skeleton className="h-48 mb-6" />
-        <Skeleton className="h-64" />
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="lg:col-span-3">
+            <Skeleton className="h-48 mb-6" />
+            <Skeleton className="h-64" />
+          </div>
+          <Skeleton className="h-80" />
+        </div>
       </div>
     );
   }
@@ -304,334 +206,316 @@ export default function TalentNestDetail() {
   const nestType = nest.nest_type || 'candidates';
 
   return (
-    <div className="w-full px-6 lg:px-8 py-6 max-w-7xl mx-auto">
-      {/* Back */}
+    <div className="w-full px-6 lg:px-8 py-6">
+      {/* Back Button */}
       <button
         onClick={() => navigate(createPageUrl("TalentNests"))}
-        className="flex items-center gap-2 text-zinc-500 hover:text-white mb-8 transition-colors"
+        className="flex items-center gap-2 text-zinc-500 hover:text-white mb-6 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
         Back to Nests
       </button>
 
-      {/* Hero Section */}
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={staggerContainer}
-        className="mb-12"
-      >
-        <motion.div variants={fadeIn} className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8">
-          <div className="flex-1">
+      {/* Main Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Left Content - 3 columns */}
+        <div className="lg:col-span-3 space-y-8">
+          {/* Hero Section */}
+          <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.06]">
             <div className="flex items-center gap-3 mb-4">
-              <Badge className="bg-red-500/10 text-red-400 border-red-500/20">
+              <Badge className="bg-red-500/10 text-red-400 border-red-500/20 px-3 py-1">
                 {nestType === 'candidates' ? 'Talent Dataset' : nestType === 'prospects' ? 'Sales Dataset' : 'Investor Dataset'}
               </Badge>
-              <Badge variant="outline" className="border-zinc-700 text-zinc-400">
+              <Badge variant="outline" className="border-zinc-700 text-zinc-400 px-3 py-1">
                 <MapPin className="w-3 h-3 mr-1" />
                 Netherlands
               </Badge>
             </div>
-            <h1 className="text-4xl font-bold text-white mb-4">{nest.name}</h1>
-            <p className="text-lg text-zinc-400 leading-relaxed max-w-2xl">
+
+            <h1 className="text-3xl font-bold text-white mb-3">{nest.name}</h1>
+            <p className="text-zinc-400 leading-relaxed mb-6">
               {nest.description || `Pre-researched ${nestType} dataset with rich insights, ready for SYNC Intel auto-matching and personalized outreach.`}
             </p>
 
-            {/* Quick Stats */}
-            <div className="flex flex-wrap gap-3 mt-6">
-              <StatPill icon={Users} label="Profiles" value={itemCount.toLocaleString()} />
-              <StatPill icon={Brain} label="SYNC Intel" value="Enabled" />
-              <StatPill icon={Target} label="Auto-Match" value="Ready" />
+            {/* Key Stats */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+                <Users className="w-5 h-5 text-red-400 mb-2" />
+                <p className="text-2xl font-bold text-white">{itemCount.toLocaleString()}</p>
+                <p className="text-xs text-zinc-500">Total Profiles</p>
+              </div>
+              <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+                <Brain className="w-5 h-5 text-red-400 mb-2" />
+                <p className="text-2xl font-bold text-white">100%</p>
+                <p className="text-xs text-zinc-500">SYNC Analyzed</p>
+              </div>
+              <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+                <Target className="w-5 h-5 text-red-400 mb-2" />
+                <p className="text-2xl font-bold text-white">Ready</p>
+                <p className="text-xs text-zinc-500">Auto-Match</p>
+              </div>
+              <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+                <MessageSquare className="w-5 h-5 text-red-400 mb-2" />
+                <p className="text-2xl font-bold text-white">AI</p>
+                <p className="text-xs text-zinc-500">Outreach Ready</p>
+              </div>
             </div>
           </div>
 
-          {/* Purchase Card - Desktop */}
-          <div className="hidden lg:block w-80 flex-shrink-0">
-            <div className="sticky top-6 p-6 rounded-2xl bg-gradient-to-b from-zinc-900/80 to-zinc-900/40 border border-white/[0.08]">
-              <div className="text-center mb-6">
-                <p className="text-5xl font-bold text-white">€{price.toFixed(0)}</p>
-                <p className="text-zinc-500 text-sm mt-1">one-time payment</p>
+          {/* What's Included */}
+          <div>
+            <h2 className="text-xl font-semibold text-white mb-4">What's Included</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                { icon: Brain, title: "SYNC Intel Analysis", desc: "Every profile is analyzed for job satisfaction, recruitment urgency, career trajectory, and openness to opportunities." },
+                { icon: Target, title: "Auto-Match to Roles", desc: "Add your open positions and SYNC automatically matches and scores the most relevant candidates." },
+                { icon: MessageSquare, title: "Personalized Outreach", desc: "Generate highly personalized messages for each candidate based on their background and motivations." },
+                { icon: BarChart3, title: "Deep Insights", desc: "View job satisfaction scores, promotion history, company tenure, and recruitment urgency indicators." },
+                { icon: Mail, title: "Contact Details", desc: "Full contact information including email, phone, and LinkedIn profiles for direct outreach." },
+                { icon: FileText, title: "Export Anytime", desc: "Export candidate data to CSV or integrate directly with your ATS system." },
+              ].map((feature, i) => (
+                <div key={i} className="p-5 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.1] transition-colors">
+                  <feature.icon className="w-6 h-6 text-red-400 mb-3" />
+                  <h3 className="font-medium text-white mb-1">{feature.title}</h3>
+                  <p className="text-sm text-zinc-500 leading-relaxed">{feature.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Sample Profile Preview */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-white">Sample Profile Preview</h2>
+              <Badge variant="outline" className="border-zinc-700 text-zinc-500">
+                <Lock className="w-3 h-3 mr-1" />
+                Data anonymized
+              </Badge>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-gradient-to-br from-white/[0.03] to-white/[0.01] border border-white/[0.08]">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Profile Header & Stats */}
+                <div className="lg:col-span-2 space-y-5">
+                  {/* Header */}
+                  <div className="flex items-start gap-4">
+                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-red-500/20 to-red-600/10 flex items-center justify-center border border-red-500/20 flex-shrink-0">
+                      <Users className="w-7 h-7 text-red-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <div className="h-5 w-32 bg-zinc-700 rounded blur-[2px]" />
+                        <div className="h-5 w-24 bg-zinc-700 rounded blur-[2px]" />
+                      </div>
+                      <p className="text-zinc-400 mt-1">Senior Software Engineer at Tech Company</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="text-xs px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/20">
+                          Medium Satisfaction
+                        </span>
+                        <span className="text-xs px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/20">
+                          High Priority
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stats Grid */}
+                  <div className="grid grid-cols-4 gap-3">
+                    {[
+                      { label: "Years at Company", value: "2.5" },
+                      { label: "Promotions", value: "1" },
+                      { label: "Company Changes", value: "3" },
+                      { label: "Salary Range", value: "€75-90k", highlight: true },
+                    ].map((stat, i) => (
+                      <div key={i} className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.05]">
+                        <p className="text-xs text-zinc-500 mb-1">{stat.label}</p>
+                        <p className={`text-lg font-semibold ${stat.highlight ? 'text-red-400' : 'text-white'}`}>{stat.value}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Assessment */}
+                  <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Target className="w-4 h-4 text-red-400" />
+                      <span className="text-sm font-medium text-white">Recruitment Assessment</span>
+                    </div>
+                    <p className="text-sm text-zinc-400 leading-relaxed">
+                      This candidate shows signs of being open to new opportunities. They've been in their current role for 2.5 years without significant growth, and their LinkedIn activity suggests active market exploration. High priority for outreach.
+                    </p>
+                  </div>
+
+                  {/* Skills */}
+                  <div className="flex flex-wrap gap-2">
+                    {["Python", "React", "AWS", "PostgreSQL", "Docker", "Kubernetes", "TypeScript", "GraphQL"].map((skill, i) => (
+                      <span key={i} className="px-3 py-1.5 rounded-lg bg-white/[0.04] text-zinc-400 text-sm border border-white/[0.05]">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Right Column - Contact & Outreach */}
+                <div className="space-y-4">
+                  {/* Contact Info */}
+                  <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                    <p className="text-sm font-medium text-white mb-3">Contact Information</p>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <Mail className="w-4 h-4 text-zinc-500" />
+                        <div className="h-4 w-full bg-zinc-700 rounded blur-[3px]" />
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Phone className="w-4 h-4 text-zinc-500" />
+                        <div className="h-4 w-24 bg-zinc-700 rounded blur-[3px]" />
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Linkedin className="w-4 h-4 text-zinc-500" />
+                        <span className="text-sm text-red-400 blur-[2px]">linkedin.com/in/████████</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <MapPin className="w-4 h-4 text-zinc-500" />
+                        <span className="text-sm text-zinc-400">Amsterdam, NL</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* AI Outreach Preview */}
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-red-500/10 to-red-500/5 border border-red-500/20">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Sparkles className="w-4 h-4 text-red-400" />
+                      <span className="text-sm font-medium text-white">AI-Generated Outreach</span>
+                    </div>
+                    <p className="text-xs text-zinc-400 leading-relaxed italic">
+                      "Hi [Name], I noticed you've been building impressive data pipelines at Tech Company. We're scaling our engineering team and your experience with AWS and Python would be perfect for our Senior Engineer role..."
+                    </p>
+                  </div>
+
+                  {/* Lock Notice */}
+                  <div className="flex items-center justify-center gap-2 py-3">
+                    <Lock className="w-4 h-4 text-red-400" />
+                    <span className="text-sm text-zinc-500">Purchase to unlock full data</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* How It Works */}
+          <div>
+            <h2 className="text-xl font-semibold text-white mb-4">How It Works</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[
+                { step: 1, icon: CreditCard, title: "Purchase Nest", desc: "Get instant access to all profiles" },
+                { step: 2, icon: Briefcase, title: "Add Your Roles", desc: "Define your open positions" },
+                { step: 3, icon: Sparkles, title: "SYNC Matches", desc: "AI matches & scores candidates" },
+                { step: 4, icon: Rocket, title: "Reach Out", desc: "Send personalized messages" },
+              ].map((item, i) => (
+                <div key={i} className="relative p-5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                  <div className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-red-500 flex items-center justify-center text-white text-xs font-bold">
+                    {item.step}
+                  </div>
+                  <item.icon className="w-6 h-6 text-zinc-500 mb-3" />
+                  <h3 className="font-medium text-white mb-1">{item.title}</h3>
+                  <p className="text-sm text-zinc-500">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Sidebar - Purchase Card */}
+        <div className="lg:col-span-1">
+          <div className="sticky top-6 space-y-4">
+            {/* Price Card */}
+            <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.06]">
+              <div className="text-center mb-5">
+                <p className="text-4xl font-bold text-white">€{price.toFixed(0)}</p>
+                <p className="text-sm text-zinc-500 mt-1">one-time payment</p>
               </div>
 
-              <div className="space-y-3 mb-6 text-sm">
-                <div className="flex items-center gap-2 text-zinc-300">
-                  <Check className="w-4 h-4 text-red-400" />
-                  {itemCount.toLocaleString()} candidate profiles
-                </div>
-                <div className="flex items-center gap-2 text-zinc-300">
-                  <Check className="w-4 h-4 text-red-400" />
-                  SYNC Intel auto-matching
-                </div>
-                <div className="flex items-center gap-2 text-zinc-300">
-                  <Check className="w-4 h-4 text-red-400" />
-                  AI personalized outreach
-                </div>
-                <div className="flex items-center gap-2 text-zinc-300">
-                  <Check className="w-4 h-4 text-red-400" />
-                  Export to CSV
-                </div>
+              <div className="space-y-3 mb-5">
+                {[
+                  `${itemCount.toLocaleString()} candidate profiles`,
+                  "SYNC Intel auto-matching",
+                  "AI personalized outreach",
+                  "Full contact details",
+                  "Export to CSV",
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-2 text-sm text-zinc-400">
+                    <Check className="w-4 h-4 text-red-400 flex-shrink-0" />
+                    {item}
+                  </div>
+                ))}
               </div>
 
               <Button
                 onClick={() => setShowPurchaseDialog(true)}
-                className="w-full h-12 bg-red-500 hover:bg-red-600 text-white font-medium"
+                className="w-full h-11 bg-red-500 hover:bg-red-600 text-white font-medium"
               >
                 Purchase Nest
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
 
-              <p className="text-xs text-zinc-600 text-center mt-4">
+              <p className="text-xs text-zinc-600 text-center mt-3">
                 Instant access after purchase
               </p>
             </div>
-          </div>
-        </motion.div>
-      </motion.div>
 
-      {/* What You Get Section */}
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={staggerContainer}
-        className="mb-12"
-      >
-        <motion.h2 variants={fadeIn} className="text-2xl font-semibold text-white mb-6">
-          What's Included
-        </motion.h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <FeatureCard
-            icon={Brain}
-            title="SYNC Intel Research"
-            description="Every candidate is automatically analyzed by SYNC Intel to surface job satisfaction, recruitment urgency, career trajectory, and more."
-            highlight
-          />
-          <FeatureCard
-            icon={Target}
-            title="Auto-Match to Your Roles"
-            description="Add your open positions and SYNC automatically matches the most relevant candidates, scoring them by fit and likelihood to respond."
-          />
-          <FeatureCard
-            icon={MessageSquare}
-            title="Personalized Outreach"
-            description="Generate highly personalized outreach messages for each candidate based on their background, motivations, and your role requirements."
-          />
-          <FeatureCard
-            icon={BarChart3}
-            title="Deep Profile Insights"
-            description="View detailed analytics including job satisfaction scores, promotion history, company tenure, and recruitment urgency indicators."
-          />
-          <FeatureCard
-            icon={Mail}
-            title="Contact Information"
-            description="Full contact details including email, phone, and LinkedIn profiles to reach candidates directly through your preferred channel."
-          />
-          <FeatureCard
-            icon={FileText}
-            title="Export & Integrate"
-            description="Export your candidate data to CSV or integrate directly with your ATS. All data is yours to use as you need."
-          />
-        </div>
-      </motion.div>
-
-      {/* Preview Profiles Section */}
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={staggerContainer}
-        className="mb-12"
-      >
-        <motion.div variants={fadeIn} className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-semibold text-white">Profile Preview</h2>
-            <p className="text-zinc-500 mt-1">Sample of what each profile contains (data anonymized)</p>
-          </div>
-          <Badge variant="outline" className="border-zinc-700 text-zinc-400">
-            <Eye className="w-3 h-3 mr-1" />
-            Preview Only
-          </Badge>
-        </motion.div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[0, 1, 2, 3, 4, 5].map((i) => (
-            <AnonymizedProfileCard key={i} index={i} />
-          ))}
-        </div>
-      </motion.div>
-
-      {/* How It Works Section */}
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={staggerContainer}
-        className="mb-12"
-      >
-        <motion.h2 variants={fadeIn} className="text-2xl font-semibold text-white mb-6">
-          How It Works
-        </motion.h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {[
-            { step: 1, title: "Purchase Nest", description: "Get instant access to all candidate profiles in this dataset", icon: CreditCard },
-            { step: 2, title: "Add Your Roles", description: "Create your open positions with requirements and preferences", icon: Briefcase },
-            { step: 3, title: "SYNC Matches", description: "SYNC Intel automatically matches and scores candidates for each role", icon: Sparkles },
-            { step: 4, title: "Reach Out", description: "Send AI-generated personalized messages to top matches", icon: Rocket },
-          ].map((item, i) => (
-            <motion.div
-              key={i}
-              variants={fadeIn}
-              className="relative p-6 rounded-2xl bg-white/[0.02] border border-white/[0.06]"
-            >
-              <div className="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-red-500 flex items-center justify-center text-white font-bold text-sm">
-                {item.step}
-              </div>
-              <item.icon className="w-8 h-8 text-zinc-500 mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-2">{item.title}</h3>
-              <p className="text-sm text-zinc-400">{item.description}</p>
-              {i < 3 && (
-                <ChevronRight className="hidden md:block absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 text-zinc-700" />
-              )}
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Sample Profile Deep Dive */}
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={staggerContainer}
-        className="mb-12"
-      >
-        <motion.h2 variants={fadeIn} className="text-2xl font-semibold text-white mb-6">
-          What a Full Profile Looks Like
-        </motion.h2>
-
-        <motion.div
-          variants={fadeIn}
-          className="p-8 rounded-2xl bg-gradient-to-br from-white/[0.03] to-white/[0.01] border border-white/[0.08]"
-        >
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left - Profile Overview */}
-            <div className="lg:col-span-2 space-y-6">
-              <div className="flex items-start gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-500/20 to-red-600/10 flex items-center justify-center border border-red-500/20">
-                  <Users className="w-8 h-8 text-red-400" />
-                </div>
-                <div>
-                  <p className="text-xl font-semibold text-white">████████ ██████</p>
-                  <p className="text-zinc-400">Senior Software Engineer at Tech Company</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/20">Medium Satisfaction</Badge>
-                    <Badge className="bg-red-500/20 text-red-400 border-red-500/20">High Priority</Badge>
+            {/* Trust Badges */}
+            <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 text-sm">
+                  <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center">
+                    <Check className="w-4 h-4 text-green-400" />
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">Verified Data</p>
+                    <p className="text-xs text-zinc-500">Updated within 30 days</p>
                   </div>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                  <p className="text-xs text-zinc-500 mb-1">Years at Company</p>
-                  <p className="text-lg font-semibold text-white">2.5</p>
-                </div>
-                <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                  <p className="text-xs text-zinc-500 mb-1">Promotions</p>
-                  <p className="text-lg font-semibold text-white">1</p>
-                </div>
-                <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                  <p className="text-xs text-zinc-500 mb-1">Company Changes</p>
-                  <p className="text-lg font-semibold text-white">3</p>
-                </div>
-                <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                  <p className="text-xs text-zinc-500 mb-1">Salary Range</p>
-                  <p className="text-lg font-semibold text-red-400">€75-90k</p>
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                <h4 className="text-sm font-medium text-white mb-2 flex items-center gap-2">
-                  <Target className="w-4 h-4 text-red-400" />
-                  Recruitment Assessment
-                </h4>
-                <p className="text-sm text-zinc-400 leading-relaxed">
-                  This candidate shows signs of being open to new opportunities. They've been in their current role for 2.5 years without significant growth, and their LinkedIn activity suggests they're exploring the market. High priority for outreach.
-                </p>
-              </div>
-
-              <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                <h4 className="text-sm font-medium text-white mb-2 flex items-center gap-2">
-                  <Award className="w-4 h-4 text-red-400" />
-                  Skills
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {["Python", "React", "AWS", "PostgreSQL", "Docker", "Kubernetes"].map((skill, i) => (
-                    <span key={i} className="px-3 py-1.5 rounded-lg bg-white/[0.04] text-zinc-300 text-sm">
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Right - Contact & Actions */}
-            <div className="space-y-4">
-              <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                <h4 className="text-sm font-medium text-white mb-3">Contact Information</h4>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <Mail className="w-4 h-4 text-zinc-500" />
-                    <span className="text-sm text-zinc-400 blur-[4px]">████@████.com</span>
+                <div className="flex items-center gap-3 text-sm">
+                  <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                    <Zap className="w-4 h-4 text-blue-400" />
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Linkedin className="w-4 h-4 text-zinc-500" />
-                    <span className="text-sm text-red-400">linkedin.com/in/████</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <MapPin className="w-4 h-4 text-zinc-500" />
-                    <span className="text-sm text-zinc-400">Amsterdam, NL</span>
+                  <div>
+                    <p className="text-white font-medium">Instant Access</p>
+                    <p className="text-xs text-zinc-500">Available immediately</p>
                   </div>
                 </div>
-              </div>
-
-              <div className="p-4 rounded-xl bg-gradient-to-br from-red-500/10 to-red-600/5 border border-red-500/20">
-                <h4 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-red-400" />
-                  AI-Generated Outreach
-                </h4>
-                <p className="text-xs text-zinc-400 leading-relaxed">
-                  "Hi ████, I noticed you've been building impressive data pipelines at Tech Company. We're scaling our engineering team and I think your experience with AWS and Python would be a great fit for our Senior Engineer role..."
-                </p>
-              </div>
-
-              <div className="flex items-center justify-center py-4">
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20">
-                  <Lock className="w-4 h-4 text-red-400" />
-                  <span className="text-sm text-white/80">Purchase to unlock all data</span>
+                <div className="flex items-center gap-3 text-sm">
+                  <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                    <Brain className="w-4 h-4 text-purple-400" />
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">SYNC Intel</p>
+                    <p className="text-xs text-zinc-500">AI-powered insights</p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
 
       {/* Mobile Purchase CTA */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-zinc-900/95 backdrop-blur-lg border-t border-white/[0.08]">
-        <div className="flex items-center justify-between mb-3">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-zinc-900/95 backdrop-blur-lg border-t border-white/[0.08] z-50">
+        <div className="flex items-center justify-between">
           <div>
             <p className="text-2xl font-bold text-white">€{price.toFixed(0)}</p>
             <p className="text-xs text-zinc-500">{itemCount.toLocaleString()} profiles</p>
           </div>
           <Button
             onClick={() => setShowPurchaseDialog(true)}
-            className="bg-red-500 hover:bg-red-600 text-white"
+            className="bg-red-500 hover:bg-red-600 text-white px-6"
           >
             Purchase Nest
-            <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </div>
       </div>
 
       {/* Spacer for mobile fixed CTA */}
-      <div className="lg:hidden h-24" />
+      <div className="lg:hidden h-20" />
 
       <PurchaseDialog
         isOpen={showPurchaseDialog}
