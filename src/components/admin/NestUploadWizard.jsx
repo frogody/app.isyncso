@@ -81,6 +81,13 @@ const NEST_TARGET_FIELDS = {
     { id: 'market_position', label: 'Market Position', required: false, description: 'Market position analysis' },
     { id: 'employee_growth_rate', label: 'Employee Growth', required: false, description: 'Company growth rate' },
     { id: 'recruitment_urgency', label: 'Recruitment Urgency', required: false, description: 'Urgency level' },
+
+    // Analysis/Report fields (displayed on profile)
+    { id: 'experience_report', label: 'Experience Report', required: false, description: 'Career experience analysis' },
+    { id: 'experience_analysis', label: 'Experience Analysis', required: false, description: 'Professional experience analysis' },
+    { id: 'job_satisfaction_analysis', label: 'Job Satisfaction Analysis', required: false, description: 'Detailed satisfaction analysis' },
+    { id: 'avg_promotion_threshold', label: 'Avg Promotion Time', required: false, description: 'Average years between promotions' },
+    { id: 'outreach_urgency_reasoning', label: 'Outreach Urgency Reasoning', required: false, description: 'Reasoning for urgency level' },
   ],
   prospects: [
     { id: 'first_name', label: 'First Name', required: false, description: 'Person\'s first name' },

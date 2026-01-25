@@ -13,7 +13,7 @@ const NEST_TARGET_FIELDS = {
     { id: 'last_name', label: 'Last Name', description: 'Person\'s last name', patterns: ['last_name', 'lname', 'achternaam', 'surname', 'family name', 'family_name'] },
     { id: 'email', label: 'Email', description: 'Person\'s email address', patterns: ['email', 'e-mail', 'mail', 'personal email', 'work email'] },
     { id: 'phone', label: 'Phone', description: 'Phone number', patterns: ['phone', 'tel', 'telephone', 'mobile', 'telefoon', 'cell'] },
-    { id: 'linkedin_profile', label: 'LinkedIn Profile', description: 'Person\'s LinkedIn profile URL (NOT company LinkedIn)', patterns: ['linkedin_profile', 'person linkedin', 'personal linkedin', 'candidate linkedin', 'li_url', 'linkedin url'] },
+    { id: 'linkedin_profile', label: 'LinkedIn Profile', description: 'Person\'s LinkedIn profile URL (NOT company LinkedIn)', patterns: ['linkedin_profile', 'linkedIn_profile', 'person linkedin', 'personal linkedin', 'candidate linkedin', 'li_url', 'linkedin url'] },
     { id: 'profile_image_url', label: 'Profile Image', description: 'Profile photo URL', patterns: ['image', 'photo', 'avatar', 'profile_image', 'headshot', 'picture'] },
 
     // Person professional info
@@ -47,6 +47,13 @@ const NEST_TARGET_FIELDS = {
     { id: 'market_position', label: 'Market Position', description: 'Market position analysis', patterns: ['market_position', 'market position'] },
     { id: 'employee_growth_rate', label: 'Employee Growth', description: 'Company employee growth rate', patterns: ['employee growth', 'headcount growth', 'growth rate', 'percent employee growth'] },
     { id: 'recruitment_urgency', label: 'Recruitment Urgency', description: 'Urgency level for recruitment', patterns: ['recruitment urgency', 'urgency', 'outreach urgency'] },
+
+    // Analysis/Report fields (displayed on profile)
+    { id: 'experience_report', label: 'Experience Report', description: 'Career experience analysis report', patterns: ['experience report', 'experience_report', 'career report', 'experience analysis'] },
+    { id: 'experience_analysis', label: 'Experience Analysis', description: 'Accounting/professional experience analysis', patterns: ['accounting experience analysis', 'experience analysis', 'professional analysis'] },
+    { id: 'job_satisfaction_analysis', label: 'Job Satisfaction Analysis', description: 'Detailed job satisfaction analysis', patterns: ['job satisfaction analysis', 'satisfaction analysis', 'reasoning - job satisfaction', 'reasoning job satisfaction'] },
+    { id: 'avg_promotion_threshold', label: 'Avg Promotion Time', description: 'Average years between promotions', patterns: ['average threshold towards promotion', 'avg promotion threshold', 'promotion threshold', 'avg promo time'] },
+    { id: 'outreach_urgency_reasoning', label: 'Outreach Urgency Reasoning', description: 'Reasoning for outreach urgency level', patterns: ['reasoning outreach urgency', 'outreach urgency reasoning', 'urgency reasoning'] },
   ],
   prospects: [
     { id: 'first_name', label: 'First Name', description: 'Person\'s first name', patterns: ['first_name', 'fname', 'first'] },
@@ -121,17 +128,24 @@ These enrichment columns should ALSO be mapped (not skipped!):
 - "Find Company Headcount Growth" or "Percent Employee Growth" → employee_growth_rate
 - "Recruitment Urgency" → recruitment_urgency
 
+=== ANALYSIS/REPORT FIELDS (MAP THESE!) ===
+These analysis columns should be mapped to display on candidate profiles:
+- "Experience report" → experience_report
+- "Accounting Experience Analysis" → experience_analysis
+- "Job Satisfaction Analysis" → job_satisfaction_analysis
+- "Reasoning - Job Satisfaction" → job_satisfaction_analysis (alternative)
+- "Average Threshold Towards Promotion In Years" → avg_promotion_threshold
+- "Reasoning Outreach Urgency" → outreach_urgency_reasoning
+
 === LINKEDIN DISTINCTION (CRITICAL!) ===
-- "linkedin_profile" = PERSON's profile → linkedin_profile
+- "linkedin_profile" or "linkedIn_profile" = PERSON's profile → linkedin_profile
 - "Company LinkedIn" = COMPANY's page → company_linkedin
 
 === SKIP ONLY THESE ===
-Only skip columns with long-form text analysis or reasoning:
-- "Accounting Experience Analysis", "Experience report" (long text reports)
-- "Reasoning - Job Satisfaction", "Reasoning Outreach Urgency" (reasoning text)
-- "Recent M&A News" (news articles)
-- "Average Threshold Towards Promotion In Years" (derived metric)
-- "Job Satisfaction Analysis" (long analysis text, different from "Job Satisfaction")`,
+Only skip columns that are duplicates or not useful:
+- "Recent M&A News" (news articles - stored separately)
+- "Salary Intelligence" (use Salary_Range instead)
+- "Job Changes & Promotions" (descriptive text, redundant with times_promoted/times_company_hopped)`,
 
     prospects: `You are mapping sales/CRM prospect data. Prioritize:
 1. Name and contact fields
