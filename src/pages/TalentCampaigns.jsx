@@ -154,16 +154,16 @@ const CampaignCard = ({ campaign, onEdit, onToggle, onDelete, onDuplicate, onCli
 
   return (
     <motion.div variants={itemVariants}>
-      <GlassCard className="p-6 hover:border-red-500/30 transition-all duration-300">
+      <GlassCard className="p-4 hover:border-red-500/30 transition-all duration-300">
         {/* Header */}
-        <div className="flex items-start justify-between mb-4">
+        <div className="flex items-start justify-between mb-3">
           <div className="flex-1 cursor-pointer" onClick={onClick}>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-1.5 mb-1.5">
               <StatusBadge status={campaign.status} />
               <TypeBadge type={campaign.campaign_type} />
             </div>
-            <h3 className="text-lg font-semibold text-white">{campaign.name}</h3>
-            <p className="text-sm text-white/60 line-clamp-2 mt-1">{campaign.description}</p>
+            <h3 className="text-sm font-semibold text-white">{campaign.name}</h3>
+            <p className="text-xs text-white/60 line-clamp-2 mt-0.5">{campaign.description}</p>
           </div>
           
           {/* Menu */}
@@ -252,27 +252,27 @@ const CampaignCard = ({ campaign, onEdit, onToggle, onDelete, onDuplicate, onCli
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-4 mb-4">
+        <div className="grid grid-cols-4 gap-3 mb-3">
           <div className="text-center">
-            <p className="text-2xl font-bold text-white">{matchedCandidates.length}</p>
-            <p className="text-xs text-white/60">Candidates</p>
+            <p className="text-lg font-bold text-white">{matchedCandidates.length}</p>
+            <p className="text-[10px] text-white/60">Candidates</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-bold text-red-400">{sentCount}</p>
-            <p className="text-xs text-white/60">Sent</p>
+            <p className="text-lg font-bold text-red-400">{sentCount}</p>
+            <p className="text-[10px] text-white/60">Sent</p>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-bold text-red-400">{repliedCount}</p>
-            <p className="text-xs text-white/60">Replied</p>
+            <p className="text-lg font-bold text-red-400">{repliedCount}</p>
+            <p className="text-[10px] text-white/60">Replied</p>
           </div>
           <div className="flex items-center justify-center">
-            <ProgressRing progress={progress} />
+            <ProgressRing progress={progress} size={32} strokeWidth={2} />
           </div>
         </div>
 
         {/* Progress Bar */}
-        <div className="mb-4">
-          <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+        <div className="mb-3">
+          <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
             <motion.div
               className="h-full bg-gradient-to-r from-red-500 to-red-600"
               initial={{ width: 0 }}
@@ -283,17 +283,17 @@ const CampaignCard = ({ campaign, onEdit, onToggle, onDelete, onDuplicate, onCli
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-4 border-t border-white/10">
-          <div className="flex items-center gap-2 text-sm text-white/40">
-            <Calendar className="w-4 h-4" />
+        <div className="flex items-center justify-between pt-3 border-t border-white/10">
+          <div className="flex items-center gap-1.5 text-xs text-white/40">
+            <Calendar className="w-3 h-3" />
             <span>Created {new Date(campaign.created_date).toLocaleDateString()}</span>
           </div>
-          <button 
+          <button
             onClick={onClick}
-            className="flex items-center gap-1 text-sm text-red-400 hover:text-red-300 transition-colors"
+            className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 transition-colors"
           >
             View Details
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-3 h-3" />
           </button>
         </div>
       </GlassCard>
@@ -650,19 +650,19 @@ export default function TalentCampaigns() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black relative">
-        <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+        <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
           <div className="flex items-center justify-between">
-            <Skeleton className="h-10 w-64" />
-            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-8 w-28" />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-24 rounded-xl" />
+              <Skeleton key={i} className="h-16 rounded-xl" />
             ))}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-64 rounded-xl" />
+              <Skeleton key={i} className="h-48 rounded-xl" />
             ))}
           </div>
         </div>
@@ -672,7 +672,7 @@ export default function TalentCampaigns() {
 
   return (
     <div className="min-h-screen bg-black relative">
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
       <div className="flex items-center justify-between">
         <PageHeader
           title="Campaigns"
@@ -690,7 +690,7 @@ export default function TalentCampaigns() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard
           label={`Total Campaigns (${stats.active} active)`}
           value={stats.total}
@@ -718,8 +718,8 @@ export default function TalentCampaigns() {
       </div>
 
       {/* Filters */}
-      <GlassCard className="p-4">
-        <div className="flex flex-wrap items-center gap-4">
+      <GlassCard className="p-3">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="flex-1 min-w-[200px]">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
@@ -770,7 +770,7 @@ export default function TalentCampaigns() {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 md:grid-cols-2 gap-6"
+          className="grid grid-cols-1 md:grid-cols-2 gap-4"
         >
           {filteredCampaigns.map((campaign) => (
             <CampaignCard

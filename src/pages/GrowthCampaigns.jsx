@@ -67,19 +67,19 @@ function CampaignCard({ campaign, onEdit, onDelete, onStatusChange, onViewDetail
       className="group"
       >
       <div className="bg-zinc-900/60 backdrop-blur-sm rounded-xl border border-zinc-800/60 hover:border-zinc-700/60 transition-all overflow-hidden">
-        <div className={`h-1 bg-gradient-to-r ${typeConfig.color}`} />
-        
-        <div className="p-5">
-          <div className="flex items-start gap-4">
-            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${typeConfig.color} flex items-center justify-center flex-shrink-0`}>
-              <Icon className="w-6 h-6 text-white" />
+        <div className={`h-0.5 bg-gradient-to-r ${typeConfig.color}`} />
+
+        <div className="p-4">
+          <div className="flex items-start gap-3">
+            <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${typeConfig.color} flex items-center justify-center flex-shrink-0`}>
+              <Icon className="w-4 h-4 text-white" />
             </div>
 
             <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start justify-between gap-2">
                 <div>
-                  <h3 className="font-semibold text-white">{campaign.name}</h3>
-                  <p className="text-zinc-500 text-sm">{typeConfig.label} • {campaign.sequence_steps?.length || 0} steps</p>
+                  <h3 className="text-sm font-semibold text-white">{campaign.name}</h3>
+                  <p className="text-zinc-500 text-xs">{typeConfig.label} • {campaign.sequence_steps?.length || 0} steps</p>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -120,30 +120,30 @@ function CampaignCard({ campaign, onEdit, onDelete, onStatusChange, onViewDetail
               </div>
 
               {/* Stats */}
-              <div className="flex items-center gap-6 mt-4">
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-zinc-500" />
-                  <span className="text-white font-medium">{campaign.contacted || 0}</span>
-                  <span className="text-zinc-500 text-sm">/ {campaign.total_contacts || 0}</span>
+              <div className="flex items-center gap-4 mt-3">
+                <div className="flex items-center gap-1.5">
+                  <Users className="w-3 h-3 text-zinc-500" />
+                  <span className="text-white text-xs font-medium">{campaign.contacted || 0}</span>
+                  <span className="text-zinc-500 text-[10px]">/ {campaign.total_contacts || 0}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4 text-zinc-500" />
-                  <span className="text-white font-medium">{responseRate}%</span>
-                  <span className="text-zinc-500 text-sm">response</span>
+                <div className="flex items-center gap-1.5">
+                  <MessageSquare className="w-3 h-3 text-zinc-500" />
+                  <span className="text-white text-xs font-medium">{responseRate}%</span>
+                  <span className="text-zinc-500 text-[10px]">response</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-zinc-500" />
-                  <span className="text-white font-medium">{campaign.meetings_booked || 0}</span>
-                  <span className="text-zinc-500 text-sm">meetings</span>
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="w-3 h-3 text-zinc-500" />
+                  <span className="text-white text-xs font-medium">{campaign.meetings_booked || 0}</span>
+                  <span className="text-zinc-500 text-[10px]">meetings</span>
                 </div>
               </div>
 
-              <div className="mt-4">
-                <div className="flex items-center justify-between text-xs text-zinc-500 mb-1">
+              <div className="mt-3">
+                <div className="flex items-center justify-between text-[10px] text-zinc-500 mb-1">
                   <span>Progress</span>
                   <span>{progress}%</span>
                 </div>
-                <Progress value={progress} className="h-1.5 bg-zinc-800" />
+                <Progress value={progress} className="h-1 bg-zinc-800" />
               </div>
             </div>
           </div>
@@ -361,14 +361,14 @@ export default function GrowthCampaigns() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-6">
-        <div className="space-y-6">
-          <Skeleton className="h-28 w-full bg-zinc-800 rounded-2xl" />
-          <div className="grid grid-cols-4 gap-4">
-            {[1,2,3,4].map(i => <Skeleton key={i} className="h-24 bg-zinc-800 rounded-xl" />)}
+      <div className="min-h-screen bg-black p-4">
+        <div className="space-y-4">
+          <Skeleton className="h-20 w-full bg-zinc-800 rounded-xl" />
+          <div className="grid grid-cols-4 gap-3">
+            {[1,2,3,4].map(i => <Skeleton key={i} className="h-16 bg-zinc-800 rounded-xl" />)}
           </div>
-          <div className="space-y-4">
-            {[1,2,3].map(i => <Skeleton key={i} className="h-32 bg-zinc-800 rounded-2xl" />)}
+          <div className="space-y-3">
+            {[1,2,3].map(i => <Skeleton key={i} className="h-24 bg-zinc-800 rounded-xl" />)}
           </div>
         </div>
       </div>
@@ -382,7 +382,7 @@ export default function GrowthCampaigns() {
         <div className="absolute bottom-20 right-1/4 w-[400px] h-[400px] bg-violet-500/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
         <div ref={headerRef} style={{ opacity: 0 }}>
           <PageHeader
             icon={Send}
@@ -398,49 +398,49 @@ export default function GrowthCampaigns() {
         </div>
 
         {/* Stats */}
-        <div ref={statsGridRef} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="stat-card p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+        <div ref={statsGridRef} className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="stat-card p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-sm">Active</p>
-                <p className="stat-number text-2xl font-bold text-white mt-1" data-value={stats.active}>0</p>
+                <p className="text-zinc-500 text-xs">Active</p>
+                <p className="stat-number text-lg font-bold text-white mt-0.5" data-value={stats.active}>0</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center">
-                <Play className="w-6 h-6 text-indigo-400/70" />
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
+                <Play className="w-4 h-4 text-indigo-400/70" />
               </div>
             </div>
           </div>
-          <div className="stat-card p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className="stat-card p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-sm">Contacted</p>
-                <p className="stat-number text-2xl font-bold text-white mt-1" data-value={stats.totalContacted}>0</p>
-                <p className="text-xs text-indigo-400/80">{stats.avgResponseRate}% response</p>
+                <p className="text-zinc-500 text-xs">Contacted</p>
+                <p className="stat-number text-lg font-bold text-white mt-0.5" data-value={stats.totalContacted}>0</p>
+                <p className="text-[10px] text-indigo-400/80">{stats.avgResponseRate}% response</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center">
-                <Users className="w-6 h-6 text-indigo-400/70" />
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
+                <Users className="w-4 h-4 text-indigo-400/70" />
               </div>
             </div>
           </div>
-          <div className="stat-card p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className="stat-card p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-sm">Meetings</p>
-                <p className="stat-number text-2xl font-bold text-white mt-1" data-value={stats.totalMeetings}>0</p>
+                <p className="text-zinc-500 text-xs">Meetings</p>
+                <p className="stat-number text-lg font-bold text-white mt-0.5" data-value={stats.totalMeetings}>0</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-indigo-500/15 flex items-center justify-center">
-                <Calendar className="w-6 h-6 text-indigo-400/60" />
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/15 flex items-center justify-center">
+                <Calendar className="w-4 h-4 text-indigo-400/60" />
               </div>
             </div>
           </div>
-          <div className="stat-card p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className="stat-card p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-sm">Revenue</p>
-                <p className="stat-number text-2xl font-bold text-white mt-1" data-value={stats.totalRevenue} data-prefix="€">€0</p>
+                <p className="text-zinc-500 text-xs">Revenue</p>
+                <p className="stat-number text-lg font-bold text-white mt-0.5" data-value={stats.totalRevenue} data-prefix="€">€0</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-indigo-500/15 flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-indigo-400/60" />
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/15 flex items-center justify-center">
+                <TrendingUp className="w-4 h-4 text-indigo-400/60" />
               </div>
             </div>
           </div>
@@ -481,7 +481,7 @@ export default function GrowthCampaigns() {
             </Button>
           </div>
         ) : (
-          <div ref={campaignsGridRef} className="grid gap-4">
+          <div ref={campaignsGridRef} className="grid gap-3">
             <AnimatePresence>
               {filteredCampaigns.map((campaign) => (
                 <div key={campaign.id} className="campaign-card">

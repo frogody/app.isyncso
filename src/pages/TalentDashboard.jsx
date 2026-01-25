@@ -85,17 +85,17 @@ const TrendIndicator = ({ value, suffix = "%" }) => {
 const MetricCard = ({ title, value, subtitle, icon: Icon, color = "red", trend }) => {
   return (
     <motion.div variants={itemVariants}>
-      <GlassCard className="p-6 bg-gradient-to-br from-red-500/20 to-red-600/20 border-red-500/30">
-        <div className="flex items-start justify-between mb-4">
-          <div className="p-3 rounded-xl bg-black/20 text-red-400">
-            <Icon className="w-6 h-6" />
+      <GlassCard className="p-4 bg-gradient-to-br from-red-500/20 to-red-600/20 border-red-500/30">
+        <div className="flex items-start justify-between mb-2">
+          <div className="p-2 rounded-lg bg-black/20 text-red-400">
+            <Icon className="w-4 h-4" />
           </div>
           {trend !== undefined && <TrendIndicator value={trend} />}
         </div>
         <div>
-          <h3 className="text-3xl font-bold text-white mb-1">{value}</h3>
-          <p className="text-sm text-white/70 font-medium">{title}</p>
-          {subtitle && <p className="text-xs text-white/50 mt-1">{subtitle}</p>}
+          <h3 className="text-xl font-bold text-white mb-0.5">{value}</h3>
+          <p className="text-xs text-white/70 font-medium">{title}</p>
+          {subtitle && <p className="text-[10px] text-white/50 mt-0.5">{subtitle}</p>}
         </div>
       </GlassCard>
     </motion.div>
@@ -114,9 +114,9 @@ const IntelligenceDistribution = ({ data }) => {
   const total = levels.reduce((a, b) => a + b.count, 0);
 
   return (
-    <GlassCard className="p-6">
-      <h3 className="text-lg font-semibold text-white mb-4">Intelligence Distribution</h3>
-      <div className="flex items-center gap-1 h-8 rounded-lg overflow-hidden mb-4">
+    <GlassCard className="p-4">
+      <h3 className="text-sm font-semibold text-white mb-3">Intelligence Distribution</h3>
+      <div className="flex items-center gap-0.5 h-6 rounded-lg overflow-hidden mb-3">
         {levels.map((level) => {
           const width = total > 0 ? (level.count / total) * 100 : 25;
           return (
@@ -131,11 +131,11 @@ const IntelligenceDistribution = ({ data }) => {
           );
         })}
       </div>
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-4 gap-1.5">
         {levels.map((level) => (
           <div key={level.key} className="text-center">
-            <div className="text-lg font-bold text-white">{level.count}</div>
-            <div className="text-xs text-white/50">{level.key}</div>
+            <div className="text-sm font-bold text-white">{level.count}</div>
+            <div className="text-[10px] text-white/50">{level.key}</div>
           </div>
         ))}
       </div>
@@ -164,29 +164,29 @@ const PipelineStages = ({ candidates }) => {
   const maxCount = Math.max(...stages.map((s) => s.count), 1);
 
   return (
-    <GlassCard className="p-6">
-      <h3 className="text-lg font-semibold text-white mb-4">Pipeline Stages</h3>
-      <div className="space-y-3">
+    <GlassCard className="p-4">
+      <h3 className="text-sm font-semibold text-white mb-3">Pipeline Stages</h3>
+      <div className="space-y-2">
         {stages.map((stage, index) => {
           const percentage = total > 0 ? Math.round((stage.count / total) * 100) : 0;
           const barWidth = maxCount > 0 ? (stage.count / maxCount) * 100 : 0;
 
           return (
-            <div key={stage.name} className="flex items-center gap-3">
-              <div className="w-24 text-sm text-white/70">{stage.name}</div>
-              <div className="flex-1 h-6 bg-zinc-800/50 rounded overflow-hidden">
+            <div key={stage.name} className="flex items-center gap-2">
+              <div className="w-20 text-xs text-white/70">{stage.name}</div>
+              <div className="flex-1 h-5 bg-zinc-800/50 rounded overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${barWidth}%` }}
                   transition={{ duration: 0.8, delay: index * 0.1, ease: "easeOut" }}
-                  className="h-full bg-gradient-to-r from-red-500 to-red-600 rounded flex items-center justify-end px-2"
+                  className="h-full bg-gradient-to-r from-red-500 to-red-600 rounded flex items-center justify-end px-1.5"
                 >
                   {stage.count > 0 && (
-                    <span className="text-xs font-medium text-white">{stage.count}</span>
+                    <span className="text-[10px] font-medium text-white">{stage.count}</span>
                   )}
                 </motion.div>
               </div>
-              <div className="w-12 text-right text-sm text-white/50">{percentage}%</div>
+              <div className="w-10 text-right text-xs text-white/50">{percentage}%</div>
             </div>
           );
         })}
@@ -558,16 +558,16 @@ export default function TalentDashboard() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black relative">
-        <div className="relative z-10 w-full px-6 lg:px-8 py-6">
-          <Skeleton className="h-10 w-64 mb-8" />
-          <div className="grid grid-cols-4 gap-4 mb-8">
+        <div className="relative z-10 w-full px-4 lg:px-6 py-4">
+          <Skeleton className="h-8 w-48 mb-4" />
+          <div className="grid grid-cols-4 gap-3 mb-4">
             {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-40" />
+              <Skeleton key={i} className="h-24" />
             ))}
           </div>
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 gap-4">
             {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-80" />
+              <Skeleton key={i} className="h-60" />
             ))}
           </div>
         </div>
@@ -577,7 +577,7 @@ export default function TalentDashboard() {
 
   return (
     <div className="min-h-screen bg-black relative">
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
         <PageHeader
           title="Talent Dashboard"
           subtitle="Pipeline metrics and recruitment performance"
@@ -616,7 +616,7 @@ export default function TalentDashboard() {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3"
         >
           <MetricCard
             title="Total Candidates"
@@ -649,7 +649,7 @@ export default function TalentDashboard() {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 md:grid-cols-3 gap-4"
+          className="grid grid-cols-1 md:grid-cols-3 gap-3"
         >
           <MetricCard
             title="Active Projects"
@@ -676,7 +676,7 @@ export default function TalentDashboard() {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+          className="grid grid-cols-1 lg:grid-cols-2 gap-4"
         >
           <motion.div variants={itemVariants}>
             <PipelineStages candidates={candidates} />
@@ -691,7 +691,7 @@ export default function TalentDashboard() {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+          className="grid grid-cols-1 lg:grid-cols-3 gap-4"
         >
           <motion.div variants={itemVariants} className="lg:col-span-2">
             <CampaignPerformanceTable campaigns={campaigns} outreachTasks={outreachTasks} />

@@ -352,14 +352,14 @@ export default function GrowthSignals() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-6">
-        <div className="space-y-6">
-          <Skeleton className="h-28 w-full bg-zinc-800 rounded-2xl" />
-          <div className="grid grid-cols-4 gap-4">
-            {[1,2,3,4].map(i => <Skeleton key={i} className="h-24 bg-zinc-800 rounded-xl" />)}
+      <div className="min-h-screen bg-black p-4">
+        <div className="space-y-4">
+          <Skeleton className="h-20 w-full bg-zinc-800 rounded-xl" />
+          <div className="grid grid-cols-4 gap-3">
+            {[1,2,3,4].map(i => <Skeleton key={i} className="h-16 bg-zinc-800 rounded-xl" />)}
           </div>
-          <div className="space-y-4">
-            {[1,2,3].map(i => <Skeleton key={i} className="h-48 bg-zinc-800 rounded-2xl" />)}
+          <div className="space-y-3">
+            {[1,2,3].map(i => <Skeleton key={i} className="h-32 bg-zinc-800 rounded-xl" />)}
           </div>
         </div>
       </div>
@@ -374,7 +374,7 @@ export default function GrowthSignals() {
         <div className="absolute bottom-20 right-1/4 w-[400px] h-[400px] bg-violet-500/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <PageHeader
           icon={Bell}
@@ -389,60 +389,60 @@ export default function GrowthSignals() {
         />
 
         {/* Stats Row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-sm">Total Signals</p>
-                <p className="text-2xl font-bold text-white mt-1">{stats.total}</p>
+                <p className="text-zinc-500 text-xs">Total Signals</p>
+                <p className="text-lg font-bold text-white mt-0.5">{stats.total}</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center">
-                <Bell className="w-6 h-6 text-indigo-400/70" />
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
+                <Bell className="w-4 h-4 text-indigo-400/70" />
               </div>
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className="p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-sm">High Priority</p>
-                <p className="text-2xl font-bold text-white mt-1">{stats.highPriority}</p>
-                <p className="text-xs text-indigo-400/70 mt-0.5">Requires attention</p>
+                <p className="text-zinc-500 text-xs">High Priority</p>
+                <p className="text-lg font-bold text-white mt-0.5">{stats.highPriority}</p>
+                <p className="text-[10px] text-indigo-400/70">Requires attention</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center">
-                <AlertTriangle className="w-6 h-6 text-indigo-400/70" />
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
+                <AlertTriangle className="w-4 h-4 text-indigo-400/70" />
               </div>
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className="p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-sm">Actioned</p>
-                <p className="text-2xl font-bold text-white mt-1">{stats.actioned}</p>
-                <p className="text-xs text-indigo-400/70 mt-0.5">Opportunities created</p>
+                <p className="text-zinc-500 text-xs">Actioned</p>
+                <p className="text-lg font-bold text-white mt-0.5">{stats.actioned}</p>
+                <p className="text-[10px] text-indigo-400/70">Opportunities created</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-indigo-500/15 flex items-center justify-center">
-                <Check className="w-6 h-6 text-indigo-400/60" />
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/15 flex items-center justify-center">
+                <Check className="w-4 h-4 text-indigo-400/60" />
               </div>
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className="p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-sm">Avg Match Score</p>
-                <p className="text-2xl font-bold text-white mt-1">{stats.avgScore}%</p>
+                <p className="text-zinc-500 text-xs">Avg Match Score</p>
+                <p className="text-lg font-bold text-white mt-0.5">{stats.avgScore}%</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-indigo-500/15 flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-indigo-400/60" />
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/15 flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-indigo-400/60" />
               </div>
             </div>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center gap-3">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="bg-zinc-900/60 border border-zinc-800/60 p-1 rounded-xl">
               <TabsTrigger 
@@ -466,7 +466,7 @@ export default function GrowthSignals() {
             </TabsList>
           </Tabs>
 
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger className="w-40 bg-zinc-900/80 border-zinc-700 text-white">
                 <Filter className="w-4 h-4 mr-2 text-zinc-400" />
@@ -539,7 +539,7 @@ export default function GrowthSignals() {
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             <AnimatePresence>
               {filteredSignals.map((signal, i) => (
                 <SignalCard

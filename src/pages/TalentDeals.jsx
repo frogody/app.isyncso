@@ -592,13 +592,13 @@ export default function TalentDeals() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black relative">
-        <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
-          <Skeleton className="h-28 w-full bg-zinc-800 rounded-2xl" />
-          <div className="grid grid-cols-4 gap-4">
-            {[1,2,3,4].map(i => <Skeleton key={i} className="h-24 bg-zinc-800 rounded-xl" />)}
+        <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
+          <Skeleton className="h-20 w-full bg-zinc-800 rounded-xl" />
+          <div className="grid grid-cols-4 gap-3">
+            {[1,2,3,4].map(i => <Skeleton key={i} className="h-16 bg-zinc-800 rounded-xl" />)}
           </div>
-          <div className="flex gap-4 overflow-x-auto">
-            {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-[500px] w-72 flex-shrink-0 bg-zinc-800 rounded-2xl" />)}
+          <div className="flex gap-3 overflow-x-auto">
+            {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-[500px] w-72 flex-shrink-0 bg-zinc-800 rounded-xl" />)}
           </div>
         </div>
       </div>
@@ -613,7 +613,7 @@ export default function TalentDeals() {
         <div className="absolute bottom-20 right-1/4 w-[400px] h-[400px] bg-red-500/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
         <div ref={headerRef} style={{ opacity: 0 }}>
           <PageHeader
             icon={Handshake}
@@ -633,59 +633,59 @@ export default function TalentDeals() {
         </div>
 
         {/* Stats Row */}
-        <div ref={statsGridRef} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="stat-card p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+        <div ref={statsGridRef} className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="stat-card p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-sm">Pipeline Value</p>
-                <p className="text-2xl font-bold text-white mt-1">€{stats.totalPipeline.toLocaleString()}</p>
+                <p className="text-zinc-500 text-xs">Pipeline Value</p>
+                <p className="text-lg font-bold text-white mt-0.5">€{stats.totalPipeline.toLocaleString()}</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-red-400/70" />
+              <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
+                <DollarSign className="w-4 h-4 text-red-400/70" />
               </div>
             </div>
           </div>
 
-          <div className="stat-card p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className="stat-card p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-sm">Weighted Forecast</p>
-                <p className="text-2xl font-bold text-white mt-1">€{Math.round(stats.weightedPipeline).toLocaleString()}</p>
+                <p className="text-zinc-500 text-xs">Weighted Forecast</p>
+                <p className="text-lg font-bold text-white mt-0.5">€{Math.round(stats.weightedPipeline).toLocaleString()}</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-red-400/70" />
+              <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
+                <TrendingUp className="w-4 h-4 text-red-400/70" />
               </div>
             </div>
           </div>
 
-          <div className="stat-card p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className="stat-card p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-sm">Confirmed Revenue</p>
-                <p className="text-2xl font-bold text-white mt-1">€{stats.confirmedValue.toLocaleString()}</p>
-                <p className="text-xs text-red-400/70 mt-0.5">{stats.confirmedDeals} placements</p>
+                <p className="text-zinc-500 text-xs">Confirmed Revenue</p>
+                <p className="text-lg font-bold text-white mt-0.5">€{stats.confirmedValue.toLocaleString()}</p>
+                <p className="text-[10px] text-red-400/70">{stats.confirmedDeals} placements</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center">
-                <CheckCircle2 className="w-6 h-6 text-red-400/70" />
+              <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
+                <CheckCircle2 className="w-4 h-4 text-red-400/70" />
               </div>
             </div>
           </div>
 
-          <div className="stat-card p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className="stat-card p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-sm">Avg Deal Size</p>
-                <p className="text-2xl font-bold text-white mt-1">€{Math.round(stats.avgDealSize).toLocaleString()}</p>
+                <p className="text-zinc-500 text-xs">Avg Deal Size</p>
+                <p className="text-lg font-bold text-white mt-0.5">€{Math.round(stats.avgDealSize).toLocaleString()}</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-red-500/15 flex items-center justify-center">
-                <Target className="w-6 h-6 text-red-400/60" />
+              <div className="w-8 h-8 rounded-lg bg-red-500/15 flex items-center justify-center">
+                <Target className="w-4 h-4 text-red-400/60" />
               </div>
             </div>
           </div>
         </div>
 
         {/* Pipeline Board */}
-        <div className="mt-6">
+        <div className="mt-4">
         {deals.length === 0 ? (
           <div className="p-16 text-center rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-red-500/20 to-red-600/20 flex items-center justify-center mx-auto mb-6">
