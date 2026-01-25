@@ -173,7 +173,7 @@ export default function GrowthResearch() {
         <div className="absolute top-20 left-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl animate-pulse" />
       </div>
 
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
         <PageHeader
           icon={Search}
           title="Prospect Research"
@@ -227,41 +227,41 @@ export default function GrowthResearch() {
               className="space-y-6"
             >
               {/* Search Type Toggle */}
-              <GlassCard glow="indigo" className="p-6">
-                <h3 className="text-lg font-semibold text-white mb-4">What are you looking for?</h3>
-                <div className="flex gap-4">
+              <GlassCard glow="indigo" className="p-4">
+                <h3 className="text-base font-semibold text-white mb-3">What are you looking for?</h3>
+                <div className="flex gap-3">
                   <button
                     onClick={() => setSearchType('companies')}
-                    className={`flex-1 p-4 rounded-xl border-2 transition-all ${
+                    className={`flex-1 p-3 rounded-xl border-2 transition-all ${
                       searchType === 'companies'
                         ? 'bg-indigo-500/20 border-indigo-500 text-white'
                         : 'bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:border-zinc-600'
                     }`}
                   >
-                    <Building2 className="w-8 h-8 mx-auto mb-2" />
-                    <div className="font-medium">Companies</div>
-                    <div className="text-xs opacity-70">Find target accounts</div>
+                    <Building2 className="w-6 h-6 mx-auto mb-2" />
+                    <div className="font-medium text-sm">Companies</div>
+                    <div className="text-[10px] opacity-70">Find target accounts</div>
                   </button>
                   <button
                     onClick={() => setSearchType('people')}
-                    className={`flex-1 p-4 rounded-xl border-2 transition-all ${
+                    className={`flex-1 p-3 rounded-xl border-2 transition-all ${
                       searchType === 'people'
                         ? 'bg-indigo-500/20 border-indigo-500 text-white'
                         : 'bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:border-zinc-600'
                     }`}
                   >
-                    <Users className="w-8 h-8 mx-auto mb-2" />
-                    <div className="font-medium">People</div>
-                    <div className="text-xs opacity-70">Find decision makers</div>
+                    <Users className="w-6 h-6 mx-auto mb-2" />
+                    <div className="font-medium text-sm">People</div>
+                    <div className="text-[10px] opacity-70">Find decision makers</div>
                   </button>
                 </div>
               </GlassCard>
 
               {/* Main Search */}
-              <GlassCard glow="indigo" className="p-6">
-                <div className="space-y-4">
+              <GlassCard glow="indigo" className="p-4">
+                <div className="space-y-3">
                   <div>
-                    <label className="text-sm text-zinc-400 mb-2 block">Describe your ideal {searchType === 'companies' ? 'company' : 'prospect'}</label>
+                    <label className="text-xs text-zinc-400 mb-2 block">Describe your ideal {searchType === 'companies' ? 'company' : 'prospect'}</label>
                     <Textarea
                       value={filters.query}
                       onChange={(e) => handleFilterChange('query', e.target.value)}
@@ -288,10 +288,10 @@ export default function GrowthResearch() {
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-hidden"
+                        className="grid grid-cols-1 md:grid-cols-2 gap-3 overflow-hidden"
                       >
                         <div>
-                          <label className="text-sm text-zinc-400 mb-2 block flex items-center gap-2">
+                          <label className="text-xs text-zinc-400 mb-2 block flex items-center gap-2">
                             <Briefcase className="w-4 h-4" /> Industry
                           </label>
                           <Select value={filters.industry} onValueChange={(v) => handleFilterChange('industry', v)}>
@@ -307,7 +307,7 @@ export default function GrowthResearch() {
                         </div>
 
                         <div>
-                          <label className="text-sm text-zinc-400 mb-2 block flex items-center gap-2">
+                          <label className="text-xs text-zinc-400 mb-2 block flex items-center gap-2">
                             <Users className="w-4 h-4" /> Company Size
                           </label>
                           <Select value={filters.companySize} onValueChange={(v) => handleFilterChange('companySize', v)}>
@@ -323,7 +323,7 @@ export default function GrowthResearch() {
                         </div>
 
                         <div>
-                          <label className="text-sm text-zinc-400 mb-2 block flex items-center gap-2">
+                          <label className="text-xs text-zinc-400 mb-2 block flex items-center gap-2">
                             <MapPin className="w-4 h-4" /> Location
                           </label>
                           <Input
@@ -336,7 +336,7 @@ export default function GrowthResearch() {
 
                         {searchType === 'people' && (
                           <div>
-                            <label className="text-sm text-zinc-400 mb-2 block flex items-center gap-2">
+                            <label className="text-xs text-zinc-400 mb-2 block flex items-center gap-2">
                               <Briefcase className="w-4 h-4" /> Job Title
                             </label>
                             <Input
@@ -349,7 +349,7 @@ export default function GrowthResearch() {
                         )}
 
                         <div>
-                          <label className="text-sm text-zinc-400 mb-2 block flex items-center gap-2">
+                          <label className="text-xs text-zinc-400 mb-2 block flex items-center gap-2">
                             <Globe className="w-4 h-4" /> Tech Stack
                           </label>
                           <Input
@@ -361,7 +361,7 @@ export default function GrowthResearch() {
                         </div>
 
                         <div>
-                          <label className="text-sm text-zinc-400 mb-2 block flex items-center gap-2">
+                          <label className="text-xs text-zinc-400 mb-2 block flex items-center gap-2">
                             <DollarSign className="w-4 h-4" /> Revenue
                           </label>
                           <Input
@@ -404,7 +404,7 @@ export default function GrowthResearch() {
                 <Loader2 className="w-16 h-16 text-indigo-400 animate-spin mb-4" />
                 <div className="absolute inset-0 bg-indigo-500/20 blur-xl rounded-full" />
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">Searching Explorium Database...</h3>
+              <h3 className="text-lg font-semibold text-white mb-2">Searching Explorium Database...</h3>
               <p className="text-zinc-400 text-center max-w-md">
                 Querying real business and contact data. This may take a few seconds.
               </p>
@@ -422,15 +422,15 @@ export default function GrowthResearch() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="space-y-6"
+              className="space-y-4"
             >
-              <GlassCard glow="indigo" className="p-6">
-                <div className="flex items-center justify-between mb-4">
+              <GlassCard glow="indigo" className="p-4">
+                <div className="flex items-center justify-between mb-3">
                   <div>
-                    <h3 className="text-lg font-semibold text-white">
+                    <h3 className="text-base font-semibold text-white">
                       Found {results.length} {searchType === 'people' ? 'prospects' : 'companies'}
                     </h3>
-                    <p className="text-xs text-zinc-500 flex items-center gap-1 mt-1">
+                    <p className="text-[10px] text-zinc-500 flex items-center gap-1 mt-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                       Live data from Explorium
                     </p>
@@ -440,7 +440,7 @@ export default function GrowthResearch() {
                       checked={selectedResults.size === results.length && results.length > 0}
                       onCheckedChange={selectAll}
                     />
-                    <span className="text-sm text-zinc-400">Select All ({selectedResults.size})</span>
+                    <span className="text-xs text-zinc-400">Select All ({selectedResults.size})</span>
                   </div>
                 </div>
 
@@ -451,25 +451,25 @@ export default function GrowthResearch() {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.03 }}
-                      className={`p-4 rounded-xl border transition-all cursor-pointer ${
+                      className={`p-3 rounded-xl border transition-all cursor-pointer ${
                         selectedResults.has(result.id)
                           ? 'bg-indigo-500/10 border-indigo-500/30'
                           : 'bg-zinc-800/50 border-zinc-700/50 hover:border-zinc-600'
                       }`}
                       onClick={() => toggleSelect(result.id)}
                     >
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3">
                         <Checkbox checked={selectedResults.has(result.id)} />
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <h4 className="font-medium text-white">{result.name}</h4>
+                            <h4 className="font-medium text-white text-sm">{result.name}</h4>
                             {result.score && (
                               <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/30">
                                 {result.score}% match
                               </Badge>
                             )}
                           </div>
-                          <div className="flex flex-wrap items-center gap-3 mt-1 text-sm text-zinc-400">
+                          <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-zinc-400">
                             {result.company && result.company !== 'N/A' && <span>{result.company}</span>}
                             {result.title && result.title !== 'N/A' && <span>• {result.title}</span>}
                             {result.industry && result.industry !== 'N/A' && <span>• {result.industry}</span>}
@@ -479,29 +479,29 @@ export default function GrowthResearch() {
                           {(result.linkedin_url || result.website || result.email) && (
                             <div className="flex items-center gap-3 mt-2">
                               {result.linkedin_url && (
-                                <a 
-                                  href={result.linkedin_url} 
-                                  target="_blank" 
+                                <a
+                                  href={result.linkedin_url}
+                                  target="_blank"
                                   rel="noopener noreferrer"
                                   onClick={(e) => e.stopPropagation()}
-                                  className="text-xs text-blue-400 hover:text-blue-300"
+                                  className="text-[10px] text-blue-400 hover:text-blue-300"
                                 >
                                   LinkedIn →
                                 </a>
                               )}
                               {result.website && (
-                                <a 
-                                  href={result.website.startsWith('http') ? result.website : `https://${result.website}`} 
-                                  target="_blank" 
+                                <a
+                                  href={result.website.startsWith('http') ? result.website : `https://${result.website}`}
+                                  target="_blank"
                                   rel="noopener noreferrer"
                                   onClick={(e) => e.stopPropagation()}
-                                  className="text-xs text-indigo-400 hover:text-indigo-300"
+                                  className="text-[10px] text-indigo-400 hover:text-indigo-300"
                                 >
                                   Website →
                                 </a>
                               )}
                               {result.email && (
-                                <span className="text-xs text-zinc-500">{result.email}</span>
+                                <span className="text-[10px] text-zinc-500">{result.email}</span>
                               )}
                             </div>
                           )}
@@ -541,11 +541,11 @@ export default function GrowthResearch() {
               animate={{ opacity: 1, scale: 1 }}
               className="text-center py-12"
             >
-              <GlassCard glow="indigo" className="p-12 max-w-md mx-auto">
-                <div className="w-16 h-16 mx-auto rounded-full bg-indigo-500/20 flex items-center justify-center mb-4">
-                  <Check className="w-8 h-8 text-indigo-400" />
+              <GlassCard glow="indigo" className="p-8 max-w-md mx-auto">
+                <div className="w-12 h-12 mx-auto rounded-full bg-indigo-500/20 flex items-center justify-center mb-4">
+                  <Check className="w-6 h-6 text-indigo-400" />
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-2">List Saved!</h3>
+                <h3 className="text-lg font-bold text-white mb-2">List Saved!</h3>
                 <p className="text-zinc-400 mb-6">
                   {selectedResults.size} prospects have been added to your list.
                 </p>

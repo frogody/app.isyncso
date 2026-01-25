@@ -86,13 +86,13 @@ export default function Contacts() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 p-6">
+    <div className="min-h-screen bg-zinc-950 px-4 lg:px-6 py-4 space-y-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-bold text-white mb-1">Contacts</h1>
-            <p className="text-zinc-400 text-sm">{contacts.length} total contacts</p>
+            <h1 className="text-lg font-bold text-white mb-1">Contacts</h1>
+            <p className="text-zinc-400 text-xs">{contacts.length} total contacts</p>
           </div>
           <button 
             onClick={() => setShowAddContact(true)}
@@ -104,7 +104,7 @@ export default function Contacts() {
         </div>
 
         {/* Search & Filter */}
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex items-center gap-3 mb-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
             <input
@@ -152,10 +152,10 @@ export default function Contacts() {
           </motion.div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Contact List */}
           <div className="lg:col-span-2 bg-zinc-900/50 border border-zinc-800 rounded-xl overflow-hidden">
-            <div className="grid grid-cols-[auto,1fr,1fr,1fr,auto] gap-4 p-4 border-b border-zinc-800 text-xs text-zinc-500 font-medium">
+            <div className="grid grid-cols-[auto,1fr,1fr,1fr,auto] gap-3 p-3 border-b border-zinc-800 text-[10px] text-zinc-500 font-medium">
               <div className="w-5" />
               <div>CONTACT</div>
               <div>COMPANY</div>
@@ -170,7 +170,7 @@ export default function Contacts() {
                   animate={{ opacity: 1 }}
                   transition={{ delay: i * 0.05 }}
                   onClick={() => setSelectedContact(contact)}
-                  className={`grid grid-cols-[auto,1fr,1fr,1fr,auto] gap-4 p-4 items-center cursor-pointer transition-colors ${
+                  className={`grid grid-cols-[auto,1fr,1fr,1fr,auto] gap-3 p-3 items-center cursor-pointer transition-colors ${
                     selectedContact?.id === contact.id ? 'bg-orange-500/10' : 'hover:bg-zinc-800/50'
                   }`}
                 >
@@ -181,21 +181,21 @@ export default function Contacts() {
                     onClick={(e) => e.stopPropagation()}
                     className="w-4 h-4 rounded border-zinc-600 bg-zinc-800 text-orange-500 focus:ring-orange-500"
                   />
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-orange-500/20 flex items-center justify-center">
-                      <span className="text-orange-400 text-sm font-medium">{contact.name.charAt(0)}</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-orange-500/20 flex items-center justify-center">
+                      <span className="text-orange-400 text-xs font-medium">{contact.name.charAt(0)}</span>
                     </div>
                     <div>
-                      <div className="text-sm font-medium text-white">{contact.name}</div>
-                      <div className="text-xs text-zinc-500">{contact.email}</div>
+                      <div className="text-xs font-medium text-white">{contact.name}</div>
+                      <div className="text-[10px] text-zinc-500">{contact.email}</div>
                     </div>
                   </div>
-                  <div className="text-sm text-zinc-400">{contact.company}</div>
+                  <div className="text-xs text-zinc-400">{contact.company}</div>
                   <div className="flex items-center gap-2">
-                    <div className="w-12 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                    <div className="w-10 h-1 bg-zinc-800 rounded-full overflow-hidden">
                       <div className="h-full bg-orange-500" style={{ width: `${contact.score}%` }} />
                     </div>
-                    <span className="text-sm text-orange-400">{contact.score}</span>
+                    <span className="text-xs text-orange-400">{contact.score}</span>
                   </div>
                   <button className="p-1 hover:bg-zinc-700 rounded">
                     <MoreVertical className="w-4 h-4 text-zinc-500" />
@@ -206,19 +206,19 @@ export default function Contacts() {
           </div>
 
           {/* Detail Panel */}
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6">
+          <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4">
             {selectedContact ? (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
               >
-                <div className="text-center mb-6">
-                  <div className="w-20 h-20 rounded-full bg-orange-500/20 flex items-center justify-center mx-auto mb-3">
-                    <span className="text-3xl text-orange-400 font-medium">{selectedContact.name.charAt(0)}</span>
+                <div className="text-center mb-4">
+                  <div className="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center mx-auto mb-2">
+                    <span className="text-lg text-orange-400 font-medium">{selectedContact.name.charAt(0)}</span>
                   </div>
-                  <h3 className="text-lg font-semibold text-white">{selectedContact.name}</h3>
-                  <p className="text-sm text-zinc-400">{selectedContact.company}</p>
-                  <span className={`inline-block mt-2 px-2 py-1 rounded text-xs font-medium ${
+                  <h3 className="text-sm font-semibold text-white">{selectedContact.name}</h3>
+                  <p className="text-xs text-zinc-400">{selectedContact.company}</p>
+                  <span className={`inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-medium ${
                     selectedContact.status === 'hot' ? 'bg-red-500/20 text-red-400' :
                     selectedContact.status === 'warm' ? 'bg-orange-500/20 text-orange-400' :
                     'bg-blue-500/20 text-blue-400'
@@ -227,30 +227,30 @@ export default function Contacts() {
                   </span>
                 </div>
 
-                <div className="space-y-4 mb-6">
-                  <div className="flex items-center gap-3 text-sm">
-                    <Mail className="w-4 h-4 text-zinc-500" />
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-center gap-2 text-xs">
+                    <Mail className="w-3 h-3 text-zinc-500" />
                     <span className="text-zinc-300">{selectedContact.email}</span>
                   </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <Phone className="w-4 h-4 text-zinc-500" />
+                  <div className="flex items-center gap-2 text-xs">
+                    <Phone className="w-3 h-3 text-zinc-500" />
                     <span className="text-zinc-300">{selectedContact.phone}</span>
                   </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <Building className="w-4 h-4 text-zinc-500" />
+                  <div className="flex items-center gap-2 text-xs">
+                    <Building className="w-3 h-3 text-zinc-500" />
                     <span className="text-zinc-300">{selectedContact.company}</span>
                   </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <MapPin className="w-4 h-4 text-zinc-500" />
+                  <div className="flex items-center gap-2 text-xs">
+                    <MapPin className="w-3 h-3 text-zinc-500" />
                     <span className="text-zinc-300">{selectedContact.location}</span>
                   </div>
                 </div>
 
-                <div className="mb-6">
-                  <div className="text-xs text-zinc-500 mb-2">Tags</div>
-                  <div className="flex flex-wrap gap-2">
+                <div className="mb-4">
+                  <div className="text-[10px] text-zinc-500 mb-1">Tags</div>
+                  <div className="flex flex-wrap gap-1">
                     {selectedContact.tags.map((tag, i) => (
-                      <span key={i} className="px-2 py-1 bg-zinc-800 rounded text-xs text-zinc-300">{tag}</span>
+                      <span key={i} className="px-1.5 py-0.5 bg-zinc-800 rounded text-[10px] text-zinc-300">{tag}</span>
                     ))}
                   </div>
                 </div>
@@ -291,7 +291,7 @@ export default function Contacts() {
               initial={{ scale: 0.95 }}
               animate={{ scale: 1 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 w-full max-w-md"
+              className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 w-full max-w-md"
             >
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-white">Add Contact</h3>

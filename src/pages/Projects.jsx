@@ -282,7 +282,7 @@ function FileDropZone({ onFilesAdded, files = [], onRemoveFile, onTogglePublic }
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
-        className={`relative overflow-hidden rounded-2xl border-2 border-dashed p-8 text-center cursor-pointer transition-all duration-300 ${
+        className={`relative overflow-hidden rounded-xl border-2 border-dashed p-8 text-center cursor-pointer transition-all duration-300 ${
           isDragging
             ? "border-cyan-500 bg-gradient-to-br from-cyan-500/10 to-cyan-500/5"
             : "border-zinc-700/60 hover:border-zinc-600 bg-zinc-800/20 hover:bg-zinc-800/40"
@@ -302,7 +302,7 @@ function FileDropZone({ onFilesAdded, files = [], onRemoveFile, onTogglePublic }
         )}
 
         <div className="relative">
-          <div className={`w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center transition-all duration-300 ${
+          <div className={`w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center transition-all duration-300 ${
             isDragging
               ? "bg-gradient-to-br from-cyan-500/30 to-cyan-600/20 shadow-lg shadow-cyan-500/20 scale-110"
               : "bg-zinc-800/80 border border-zinc-700/50"
@@ -328,7 +328,7 @@ function FileDropZone({ onFilesAdded, files = [], onRemoveFile, onTogglePublic }
             </div>
           </div>
 
-          <div className="rounded-2xl bg-zinc-800/30 border border-zinc-700/40 overflow-hidden divide-y divide-zinc-700/30">
+          <div className="rounded-xl bg-zinc-800/30 border border-zinc-700/40 overflow-hidden divide-y divide-zinc-700/30">
             {files.map((file, index) => {
               const fileInfo = getFileTypeInfo(file.name);
               const FileIcon = fileInfo.icon;
@@ -519,13 +519,13 @@ function ShareSettingsPanel({ project, onUpdateSettings, onGenerateLink }) {
   return (
     <div className="space-y-5">
       {/* Share Link Section - Premium Card */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-800/80 to-zinc-900/80 border border-zinc-700/50 backdrop-blur-sm">
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-zinc-800/80 to-zinc-900/80 border border-zinc-700/50 backdrop-blur-sm">
         <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent" />
-        <div className="relative p-5">
+        <div className="relative p-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 flex items-center justify-center border border-cyan-500/20">
-                <Globe className="w-5 h-5 text-cyan-400" />
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 flex items-center justify-center border border-cyan-500/20">
+                <Globe className="w-4 h-4 text-cyan-400" />
               </div>
               <div>
                 <span className="text-sm font-semibold text-white">Public Sharing</span>
@@ -594,7 +594,7 @@ function ShareSettingsPanel({ project, onUpdateSettings, onGenerateLink }) {
           <h4 className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Client Visibility</h4>
         </div>
 
-        <div className="rounded-2xl bg-zinc-800/40 border border-zinc-700/40 overflow-hidden divide-y divide-zinc-700/30">
+        <div className="rounded-xl bg-zinc-800/40 border border-zinc-700/40 overflow-hidden divide-y divide-zinc-700/30">
           {[
             { key: 'show_tasks', label: 'Tasks & Progress', desc: 'Show task completion status', icon: CheckSquare },
             { key: 'show_milestones', label: 'Milestones', desc: 'Display project milestones', icon: Milestone },
@@ -628,7 +628,7 @@ function ShareSettingsPanel({ project, onUpdateSettings, onGenerateLink }) {
       </div>
 
       {/* Password Protection - Premium Card */}
-      <div className="rounded-2xl bg-zinc-800/40 border border-zinc-700/40 overflow-hidden">
+      <div className="rounded-xl bg-zinc-800/40 border border-zinc-700/40 overflow-hidden">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-3">
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
@@ -705,7 +705,7 @@ function PageBlock({ block, onUpdate, onDelete, isEditing }) {
 
   const getBlockStyles = () => {
     switch (block.type) {
-      case 'heading1': return 'text-2xl font-bold text-white';
+      case 'heading1': return 'text-lg font-bold text-white';
       case 'heading2': return 'text-xl font-semibold text-white';
       case 'quote': return 'text-zinc-400 italic border-l-2 border-cyan-500 pl-4';
       case 'code': return 'font-mono text-sm bg-zinc-800 p-3 rounded-lg text-cyan-300';
@@ -871,9 +871,9 @@ function ShareableProjectView({ project, tasks, isOwner, onAddUpdate, onDeleteUp
         >
           <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-purple-500/5" />
           <div className="relative p-8">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
               <div>
-                <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wider mb-1">Overall Progress</h2>
+                <h2 className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1">Overall Progress</h2>
                 <div className="flex items-baseline gap-2">
                   <span className="text-5xl font-bold bg-gradient-to-r from-cyan-400 to-cyan-300 bg-clip-text text-transparent">
                     {progress}%
@@ -883,18 +883,18 @@ function ShareableProjectView({ project, tasks, isOwner, onAddUpdate, onDeleteUp
               </div>
 
               {/* Stats Grid */}
-              <div className="flex gap-6">
-                <div className="text-center px-6 py-3 rounded-2xl bg-zinc-800/50 border border-zinc-700/30">
-                  <div className="text-2xl font-bold text-white">{completedTasks}</div>
-                  <div className="text-xs text-zinc-500 mt-1">Completed</div>
+              <div className="flex gap-4">
+                <div className="text-center px-6 py-3 rounded-xl bg-zinc-800/50 border border-zinc-700/30">
+                  <div className="text-lg font-bold text-white">{completedTasks}</div>
+                  <div className="text-[10px] text-zinc-500 mt-1">Completed</div>
                 </div>
-                <div className="text-center px-6 py-3 rounded-2xl bg-zinc-800/50 border border-zinc-700/30">
-                  <div className="text-2xl font-bold text-cyan-400">{inProgressTasks}</div>
-                  <div className="text-xs text-zinc-500 mt-1">In Progress</div>
+                <div className="text-center px-6 py-3 rounded-xl bg-zinc-800/50 border border-zinc-700/30">
+                  <div className="text-lg font-bold text-cyan-400">{inProgressTasks}</div>
+                  <div className="text-[10px] text-zinc-500 mt-1">In Progress</div>
                 </div>
-                <div className="text-center px-6 py-3 rounded-2xl bg-zinc-800/50 border border-zinc-700/30">
-                  <div className="text-2xl font-bold text-zinc-400">{tasks.length - completedTasks - inProgressTasks}</div>
-                  <div className="text-xs text-zinc-500 mt-1">Remaining</div>
+                <div className="text-center px-6 py-3 rounded-xl bg-zinc-800/50 border border-zinc-700/30">
+                  <div className="text-lg font-bold text-zinc-400">{tasks.length - completedTasks - inProgressTasks}</div>
+                  <div className="text-[10px] text-zinc-500 mt-1">Remaining</div>
                 </div>
               </div>
             </div>
@@ -913,20 +913,20 @@ function ShareableProjectView({ project, tasks, isOwner, onAddUpdate, onDeleteUp
         </motion.div>
 
         {/* Content Grid */}
-        <div className="grid lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid lg:grid-cols-3 gap-4 mb-8">
           {/* Tasks Section */}
           {(settings.show_tasks !== false) && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="lg:col-span-2 rounded-2xl bg-zinc-800/40 border border-zinc-700/40 overflow-hidden"
+              className="lg:col-span-2 rounded-xl bg-zinc-800/40 border border-zinc-700/40 overflow-hidden"
             >
               <div className="p-5 border-b border-zinc-700/40">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 flex items-center justify-center border border-cyan-500/20">
-                      <CheckSquare className="w-5 h-5 text-cyan-400" />
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 flex items-center justify-center border border-cyan-500/20">
+                      <CheckSquare className="w-4 h-4 text-cyan-400" />
                     </div>
                     <div>
                       <h2 className="text-base font-semibold text-white">Tasks</h2>
@@ -991,7 +991,7 @@ function ShareableProjectView({ project, tasks, isOwner, onAddUpdate, onDeleteUp
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="rounded-2xl bg-zinc-800/40 border border-zinc-700/40 overflow-hidden"
+                className="rounded-xl bg-zinc-800/40 border border-zinc-700/40 overflow-hidden"
               >
                 <div className="p-4 border-b border-zinc-700/40">
                   <div className="flex items-center gap-2">
@@ -1026,7 +1026,7 @@ function ShareableProjectView({ project, tasks, isOwner, onAddUpdate, onDeleteUp
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
-                className="rounded-2xl bg-zinc-800/40 border border-zinc-700/40 p-4"
+                className="rounded-xl bg-zinc-800/40 border border-zinc-700/40 p-4"
               >
                 <div className="flex items-center gap-2 mb-4">
                   <CalendarRange className="w-4 h-4 text-cyan-400" />
@@ -1057,13 +1057,13 @@ function ShareableProjectView({ project, tasks, isOwner, onAddUpdate, onDeleteUp
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
-                className="rounded-2xl bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border border-emerald-500/20 p-4"
+                className="rounded-xl bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border border-emerald-500/20 p-4"
               >
                 <div className="flex items-center gap-2 mb-3">
                   <Wallet className="w-4 h-4 text-emerald-400" />
                   <h3 className="text-sm font-semibold text-white">Budget</h3>
                 </div>
-                <div className="text-2xl font-bold text-emerald-400 mb-1">
+                <div className="text-lg font-bold text-emerald-400 mb-1">
                   ${(parseFloat(project.spent) || 0).toLocaleString()}
                 </div>
                 <p className="text-xs text-zinc-500">
@@ -1086,12 +1086,12 @@ function ShareableProjectView({ project, tasks, isOwner, onAddUpdate, onDeleteUp
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.65 }}
-            className="rounded-2xl bg-zinc-800/40 border border-zinc-700/40 overflow-hidden mb-8"
+            className="rounded-xl bg-zinc-800/40 border border-zinc-700/40 overflow-hidden mb-8"
           >
             <div className="p-5 border-b border-zinc-700/40">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 flex items-center justify-center border border-cyan-500/20">
-                  <FileText className="w-5 h-5 text-cyan-400" />
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 flex items-center justify-center border border-cyan-500/20">
+                  <FileText className="w-4 h-4 text-cyan-400" />
                 </div>
                 <div>
                   <h2 className="text-base font-semibold text-white">Documentation</h2>
@@ -1114,11 +1114,11 @@ function ShareableProjectView({ project, tasks, isOwner, onAddUpdate, onDeleteUp
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
-          className="rounded-2xl bg-zinc-800/40 border border-zinc-700/40 overflow-hidden mb-8"
+          className="rounded-xl bg-zinc-800/40 border border-zinc-700/40 overflow-hidden mb-8"
         >
           <div className="p-5 border-b border-zinc-700/40">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-600/10 flex items-center justify-center border border-purple-500/20">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/20 to-purple-600/10 flex items-center justify-center border border-purple-500/20">
                 <Bell className="w-5 h-5 text-purple-400" />
               </div>
               <div>
@@ -1200,7 +1200,7 @@ function ShareableProjectView({ project, tasks, isOwner, onAddUpdate, onDeleteUp
               </div>
             ) : (
               <div className="text-center py-12">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-zinc-800/50 flex items-center justify-center">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-zinc-800/50 flex items-center justify-center">
                   <History className="w-8 h-8 text-zinc-600" />
                 </div>
                 <p className="text-zinc-400 font-medium">No updates yet</p>
@@ -1249,17 +1249,17 @@ function FolderCard({ folder, projects, onClick }) {
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -4, scale: 1.01 }}
       onClick={onClick}
-      className="relative overflow-hidden bg-zinc-900/50 border border-zinc-800/60 rounded-2xl cursor-pointer hover:border-zinc-700 transition-all group"
+      className="relative overflow-hidden bg-zinc-900/50 border border-zinc-800/60 rounded-xl cursor-pointer hover:border-zinc-700 transition-all group"
     >
       {/* Color Header */}
       <div className={`h-2 bg-gradient-to-r ${colorConfig.gradient}`} />
 
-      <div className="p-5">
+      <div className="p-3">
         {/* Header */}
-        <div className="flex items-start justify-between mb-4">
+        <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
-            <div className={`w-12 h-12 rounded-xl ${colorConfig.bg} border ${colorConfig.border} flex items-center justify-center`}>
-              <FolderOpen className={`w-6 h-6 ${colorConfig.text}`} />
+            <div className={`w-8 h-8 rounded-xl ${colorConfig.bg} border ${colorConfig.border} flex items-center justify-center`}>
+              <FolderOpen className={`w-4 h-4 ${colorConfig.text}`} />
             </div>
             <div>
               <h3 className="font-semibold text-white group-hover:text-cyan-400 transition-colors line-clamp-1">
@@ -1280,22 +1280,22 @@ function FolderCard({ folder, projects, onClick }) {
 
         {/* Description */}
         {folder.description && (
-          <p className="text-sm text-zinc-400 line-clamp-2 mb-4">{folder.description}</p>
+          <p className="text-xs text-zinc-400 line-clamp-2 mb-3">{folder.description}</p>
         )}
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3 mb-4">
           <div className="text-center p-2 rounded-lg bg-zinc-800/50">
             <div className="text-lg font-bold text-white">{totalProjects}</div>
-            <div className="text-xs text-zinc-500">Projects</div>
+            <div className="text-[10px] text-zinc-500">Projects</div>
           </div>
           <div className="text-center p-2 rounded-lg bg-zinc-800/50">
             <div className="text-lg font-bold text-cyan-400">{completedProjects}</div>
-            <div className="text-xs text-zinc-500">Completed</div>
+            <div className="text-[10px] text-zinc-500">Completed</div>
           </div>
           <div className="text-center p-2 rounded-lg bg-zinc-800/50">
             <div className="text-lg font-bold text-white">{overallProgress}%</div>
-            <div className="text-xs text-zinc-500">Progress</div>
+            <div className="text-[10px] text-zinc-500">Progress</div>
           </div>
         </div>
 
@@ -1425,10 +1425,10 @@ function FolderDetailSheet({
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-zinc-900" style={{ top: '8px' }} />
           <div className={`absolute inset-0 ${colorConfig.bg} opacity-30`} style={{ top: '8px' }} />
 
-          <div className="relative p-6 pt-8">
+          <div className="relative p-4 pt-6">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-4">
-                <div className={`w-14 h-14 rounded-2xl ${colorConfig.bg} border ${colorConfig.border} flex items-center justify-center`}>
+                <div className={`w-14 h-14 rounded-xl ${colorConfig.bg} border ${colorConfig.border} flex items-center justify-center`}>
                   <FolderOpen className={`w-7 h-7 ${colorConfig.text}`} />
                 </div>
                 <div>
@@ -1447,16 +1447,16 @@ function FolderDetailSheet({
             {/* Stats Row */}
             <div className="grid grid-cols-4 gap-3">
               <div className="bg-zinc-900/50 rounded-xl p-3 text-center border border-zinc-800/50">
-                <div className="text-2xl font-bold text-white">{folderProjects.length}</div>
-                <div className="text-xs text-zinc-500">Projects</div>
+                <div className="text-lg font-bold text-white">{folderProjects.length}</div>
+                <div className="text-[10px] text-zinc-500">Projects</div>
               </div>
               <div className="bg-zinc-900/50 rounded-xl p-3 text-center border border-zinc-800/50">
-                <div className="text-2xl font-bold text-cyan-400">{completedProjects}</div>
-                <div className="text-xs text-zinc-500">Completed</div>
+                <div className="text-lg font-bold text-cyan-400">{completedProjects}</div>
+                <div className="text-[10px] text-zinc-500">Completed</div>
               </div>
               <div className="bg-zinc-900/50 rounded-xl p-3 text-center border border-zinc-800/50">
-                <div className="text-2xl font-bold text-white">{overallProgress}%</div>
-                <div className="text-xs text-zinc-500">Progress</div>
+                <div className="text-lg font-bold text-white">{overallProgress}%</div>
+                <div className="text-[10px] text-zinc-500">Progress</div>
               </div>
               <div className="bg-zinc-900/50 rounded-xl p-3 text-center border border-zinc-800/50">
                 <ProgressRing progress={overallProgress} size={40} strokeWidth={3} />
@@ -1510,7 +1510,7 @@ function FolderDetailSheet({
                       className="flex items-center gap-4 p-4 rounded-xl bg-zinc-800/30 border border-zinc-700/40 hover:bg-zinc-800/50 transition-colors group cursor-pointer"
                       onClick={() => onViewProject?.(project)}
                     >
-                      <div className={`w-10 h-10 rounded-xl ${statusConfig.bgColor} flex items-center justify-center`}>
+                      <div className={`w-8 h-8 rounded-xl ${statusConfig.bgColor} flex items-center justify-center`}>
                         <Folder className={`w-5 h-5 ${statusConfig.textColor}`} />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -1549,7 +1549,7 @@ function FolderDetailSheet({
                   );
                 }) : (
                   <div className="text-center py-12">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-zinc-800/50 flex items-center justify-center">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-zinc-800/50 flex items-center justify-center">
                       <Folder className="w-8 h-8 text-zinc-600" />
                     </div>
                     <p className="text-zinc-400 font-medium">No projects in this folder</p>
@@ -1618,13 +1618,13 @@ function FolderDetailSheet({
               />
 
               {/* Preview Card */}
-              <div className="mt-6 relative overflow-hidden rounded-2xl bg-gradient-to-br from-cyan-500/10 via-purple-500/5 to-transparent border border-cyan-500/20">
+              <div className="mt-6 relative overflow-hidden rounded-xl bg-gradient-to-br from-cyan-500/10 via-purple-500/5 to-transparent border border-cyan-500/20">
                 <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 to-purple-500/5" />
-                <div className="relative p-5">
+                <div className="relative p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-purple-500/10 flex items-center justify-center border border-cyan-500/20">
-                        <Eye className="w-6 h-6 text-cyan-400" />
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500/20 to-purple-500/10 flex items-center justify-center border border-cyan-500/20">
+                        <Eye className="w-4 h-4 text-cyan-400" />
                       </div>
                       <div>
                         <h4 className="text-sm font-semibold text-white">Client Portal Preview</h4>
@@ -1750,13 +1750,13 @@ function FolderShareSettings({ folder, onUpdateSettings, onGenerateLink }) {
   return (
     <div className="space-y-5">
       {/* Share Link */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-800/80 to-zinc-900/80 border border-zinc-700/50">
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-zinc-800/80 to-zinc-900/80 border border-zinc-700/50">
         <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent" />
-        <div className="relative p-5">
+        <div className="relative p-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 flex items-center justify-center border border-cyan-500/20">
-                <Globe className="w-5 h-5 text-cyan-400" />
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 flex items-center justify-center border border-cyan-500/20">
+                <Globe className="w-4 h-4 text-cyan-400" />
               </div>
               <div>
                 <span className="text-sm font-semibold text-white">Share with Client</span>
@@ -1813,7 +1813,7 @@ function FolderShareSettings({ folder, onUpdateSettings, onGenerateLink }) {
           <h4 className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Portal Settings</h4>
         </div>
 
-        <div className="rounded-2xl bg-zinc-800/40 border border-zinc-700/40 overflow-hidden divide-y divide-zinc-700/30">
+        <div className="rounded-xl bg-zinc-800/40 border border-zinc-700/40 overflow-hidden divide-y divide-zinc-700/30">
           {[
             { key: 'show_individual_progress', label: 'Show Project Progress', desc: 'Display progress for each project', icon: TrendingUp },
             { key: 'show_overall_stats', label: 'Show Overall Statistics', desc: 'Display combined folder stats', icon: BarChart3 },
@@ -1838,7 +1838,7 @@ function FolderShareSettings({ folder, onUpdateSettings, onGenerateLink }) {
       </div>
 
       {/* Welcome Message */}
-      <div className="rounded-2xl bg-zinc-800/40 border border-zinc-700/40 p-4">
+      <div className="rounded-xl bg-zinc-800/40 border border-zinc-700/40 p-4">
         <h4 className="text-sm font-medium text-zinc-200 mb-2">Welcome Message</h4>
         <p className="text-xs text-zinc-500 mb-3">Display a custom message on the client portal</p>
         <Textarea
@@ -1921,9 +1921,9 @@ function ShareableFolderView({ folder, projects, tasks }) {
           >
             <div className={`absolute inset-0 bg-gradient-to-br ${colorConfig.bg} opacity-30`} />
             <div className="relative p-8">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <div>
-                  <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wider mb-1">Portfolio Overview</h2>
+                  <h2 className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1">Portfolio Overview</h2>
                   <div className="flex items-baseline gap-2">
                     <span className={`text-5xl font-bold bg-gradient-to-r ${colorConfig.gradient} bg-clip-text text-transparent`}>
                       {projects.length}
@@ -1932,17 +1932,17 @@ function ShareableFolderView({ folder, projects, tasks }) {
                   </div>
                 </div>
 
-                <div className="flex gap-6">
-                  <div className="text-center px-6 py-3 rounded-2xl bg-zinc-800/50 border border-zinc-700/30">
-                    <div className="text-2xl font-bold text-emerald-400">{completedProjects}</div>
-                    <div className="text-xs text-zinc-500 mt-1">Completed</div>
+                <div className="flex gap-4">
+                  <div className="text-center px-6 py-3 rounded-xl bg-zinc-800/50 border border-zinc-700/30">
+                    <div className="text-lg font-bold text-emerald-400">{completedProjects}</div>
+                    <div className="text-[10px] text-zinc-500 mt-1">Completed</div>
                   </div>
-                  <div className="text-center px-6 py-3 rounded-2xl bg-zinc-800/50 border border-zinc-700/30">
-                    <div className={`text-2xl font-bold ${colorConfig.text}`}>{activeProjects}</div>
+                  <div className="text-center px-6 py-3 rounded-xl bg-zinc-800/50 border border-zinc-700/30">
+                    <div className={`text-lg font-bold ${colorConfig.text}`}>{activeProjects}</div>
                     <div className="text-xs text-zinc-500 mt-1">Active</div>
                   </div>
-                  <div className="text-center px-6 py-3 rounded-2xl bg-zinc-800/50 border border-zinc-700/30">
-                    <div className="text-2xl font-bold text-white">{overallProgress}%</div>
+                  <div className="text-center px-6 py-3 rounded-xl bg-zinc-800/50 border border-zinc-700/30">
+                    <div className="text-lg font-bold text-white">{overallProgress}%</div>
                     <div className="text-xs text-zinc-500 mt-1">Avg Progress</div>
                   </div>
                 </div>
@@ -1963,7 +1963,7 @@ function ShareableFolderView({ folder, projects, tasks }) {
         {/* Projects Grid */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
           <div className="flex items-center gap-3 mb-6">
-            <div className={`w-10 h-10 rounded-xl ${colorConfig.bg} border ${colorConfig.border} flex items-center justify-center`}>
+            <div className={`w-8 h-8 rounded-xl ${colorConfig.bg} border ${colorConfig.border} flex items-center justify-center`}>
               <Layers className={`w-5 h-5 ${colorConfig.text}`} />
             </div>
             <div>
@@ -1986,7 +1986,7 @@ function ShareableFolderView({ folder, projects, tasks }) {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 * i }}
-                  className="rounded-2xl bg-zinc-800/40 border border-zinc-700/40 overflow-hidden hover:border-zinc-600 transition-all group"
+                  className="rounded-xl bg-zinc-800/40 border border-zinc-700/40 overflow-hidden hover:border-zinc-600 transition-all group"
                 >
                   <div className={`h-1 bg-gradient-to-r ${
                     project.status === 'completed' ? 'from-emerald-500 to-emerald-400' :
@@ -1997,7 +1997,7 @@ function ShareableFolderView({ folder, projects, tasks }) {
                   <div className="p-5">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl ${statusConfig.bgColor} flex items-center justify-center`}>
+                        <div className={`w-8 h-8 rounded-xl ${statusConfig.bgColor} flex items-center justify-center`}>
                           <StatusIcon className={`w-5 h-5 ${statusConfig.textColor}`} />
                         </div>
                         <div>
@@ -2114,13 +2114,13 @@ function ProjectCard({ project, tasks, onClick, onStatusChange }) {
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -2 }}
       onClick={onClick}
-      className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-5 cursor-pointer hover:border-zinc-700 transition-all group"
+      className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3 cursor-pointer hover:border-zinc-700 transition-all group"
     >
       {/* Header */}
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${statusConfig.bgColor}`}>
-            <StatusIcon className={`w-5 h-5 ${statusConfig.textColor}`} />
+          <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${statusConfig.bgColor}`}>
+            <StatusIcon className={`w-4 h-4 ${statusConfig.textColor}`} />
           </div>
           <div>
             <h3 className="font-semibold text-white group-hover:text-cyan-400 transition-colors line-clamp-1">
@@ -2140,14 +2140,14 @@ function ProjectCard({ project, tasks, onClick, onStatusChange }) {
 
       {/* Description */}
       {project.description && (
-        <p className="text-sm text-zinc-400 line-clamp-2 mb-4">{project.description}</p>
+        <p className="text-xs text-zinc-400 line-clamp-2 mb-3">{project.description}</p>
       )}
 
       {/* Progress & Stats */}
-      <div className="flex items-center gap-4 mb-4">
+      <div className="flex items-center gap-3 mb-3">
         <ProgressRing progress={progress} />
         <div className="flex-1 space-y-1">
-          <div className="flex items-center justify-between text-xs">
+          <div className="flex items-center justify-between text-[10px]">
             <span className="text-zinc-500">Tasks</span>
             <span className="text-zinc-400">{completedTasks}/{totalTasks}</span>
           </div>
@@ -2157,7 +2157,7 @@ function ProjectCard({ project, tasks, onClick, onStatusChange }) {
 
       {/* Budget Progress (if exists) */}
       {project.budget && (
-        <div className="mb-4 p-3 bg-zinc-800/30 rounded-xl">
+        <div className="mb-3 p-2 bg-zinc-800/30 rounded-xl">
           <div className="flex items-center justify-between text-xs mb-1">
             <span className="text-zinc-500 flex items-center gap-1">
               <Wallet className="w-3 h-3" /> Budget
@@ -2438,8 +2438,8 @@ function ProjectDetailSheet({
         <div className={`p-6 bg-cyan-500/5 border-b border-zinc-800/60`}>
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-cyan-500/15 flex items-center justify-center">
-                <Folder className="w-6 h-6 text-cyan-400/80" />
+              <div className="w-8 h-8 rounded-xl bg-cyan-500/15 flex items-center justify-center">
+                <Folder className="w-4 h-4 text-cyan-400/80" />
               </div>
               <div>
                 <SheetTitle className="text-white text-xl">{project.name}</SheetTitle>
@@ -2484,7 +2484,7 @@ function ProjectDetailSheet({
         {/* Content */}
         <div className="p-6">
           {/* Quick Actions */}
-          <div className="flex items-center gap-2 mb-6 flex-wrap">
+          <div className="flex items-center gap-2 mb-4 flex-wrap">
             <Button size="sm" className="bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/20 border-0" onClick={() => onAddTask(project)}>
               <Plus className="w-4 h-4 mr-1" /> Add Task
             </Button>
@@ -2741,13 +2741,13 @@ function ProjectDetailSheet({
               />
 
               {/* Preview Button - Premium Card */}
-              <div className="mt-6 relative overflow-hidden rounded-2xl bg-gradient-to-br from-cyan-500/10 via-purple-500/5 to-transparent border border-cyan-500/20">
+              <div className="mt-6 relative overflow-hidden rounded-xl bg-gradient-to-br from-cyan-500/10 via-purple-500/5 to-transparent border border-cyan-500/20">
                 <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 to-purple-500/5" />
-                <div className="relative p-5">
+                <div className="relative p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-purple-500/10 flex items-center justify-center border border-cyan-500/20">
-                        <Eye className="w-6 h-6 text-cyan-400" />
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500/20 to-purple-500/10 flex items-center justify-center border border-cyan-500/20">
+                        <Eye className="w-4 h-4 text-cyan-400" />
                       </div>
                       <div>
                         <h4 className="text-sm font-semibold text-white">Client Portal Preview</h4>
@@ -2891,45 +2891,45 @@ function ProjectAnalytics({ projects, tasks }) {
   }, [projects]);
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-4">
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
         <div className="flex items-center justify-between mb-2">
-          <Folder className="w-5 h-5 text-cyan-400/70" />
+          <Folder className="w-4 h-4 text-cyan-400/70" />
         </div>
-        <div className="text-2xl font-bold text-white">{stats.total}</div>
-        <div className="text-xs text-zinc-500">Total Projects</div>
+        <div className="text-lg font-bold text-white">{stats.total}</div>
+        <div className="text-[10px] text-zinc-500">Total Projects</div>
       </div>
 
-      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-4">
+      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
         <div className="flex items-center justify-between mb-2">
-          <Play className="w-5 h-5 text-cyan-400/70" />
+          <Play className="w-4 h-4 text-cyan-400/70" />
         </div>
-        <div className="text-2xl font-bold text-white">{stats.byStatus.active || 0}</div>
-        <div className="text-xs text-zinc-500">Active</div>
+        <div className="text-lg font-bold text-white">{stats.byStatus.active || 0}</div>
+        <div className="text-[10px] text-zinc-500">Active</div>
       </div>
 
-      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-4">
+      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
         <div className="flex items-center justify-between mb-2">
-          <Target className="w-5 h-5 text-cyan-400/70" />
+          <Target className="w-4 h-4 text-cyan-400/70" />
         </div>
-        <div className="text-2xl font-bold text-white">{stats.completionRate}%</div>
-        <div className="text-xs text-zinc-500">Completion Rate</div>
+        <div className="text-lg font-bold text-white">{stats.completionRate}%</div>
+        <div className="text-[10px] text-zinc-500">Completion Rate</div>
       </div>
 
-      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-4">
+      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
         <div className="flex items-center justify-between mb-2">
-          <AlertCircle className="w-5 h-5 text-cyan-400/70" />
+          <AlertCircle className="w-4 h-4 text-cyan-400/70" />
         </div>
-        <div className="text-2xl font-bold text-white">{stats.overdue}</div>
-        <div className="text-xs text-zinc-500">Overdue</div>
+        <div className="text-lg font-bold text-white">{stats.overdue}</div>
+        <div className="text-[10px] text-zinc-500">Overdue</div>
       </div>
 
-      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-4">
+      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
         <div className="flex items-center justify-between mb-2">
-          <DollarSign className="w-5 h-5 text-cyan-400/70" />
+          <DollarSign className="w-4 h-4 text-cyan-400/70" />
         </div>
-        <div className="text-2xl font-bold text-white">${(stats.totalBudget / 1000).toFixed(0)}k</div>
-        <div className="text-xs text-zinc-500">Total Budget</div>
+        <div className="text-lg font-bold text-white">${(stats.totalBudget / 1000).toFixed(0)}k</div>
+        <div className="text-[10px] text-zinc-500">Total Budget</div>
       </div>
     </div>
   );
@@ -3492,11 +3492,11 @@ export default function Projects() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-4 sm:p-6">
+      <div className="min-h-screen bg-black px-4 lg:px-6 py-4">
         <div className="max-w-7xl mx-auto">
-          <Skeleton className="h-10 w-48 bg-zinc-800 mb-6" />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className="h-64 bg-zinc-800 rounded-xl" />)}
+          <Skeleton className="h-8 w-40 bg-zinc-800 mb-4" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className="h-48 bg-zinc-800 rounded-xl" />)}
           </div>
         </div>
       </div>
@@ -3505,12 +3505,12 @@ export default function Projects() {
 
   return (
     <div className="min-h-screen bg-black">
-      <div className="max-w-full mx-auto p-4 sm:p-6">
+      <div className="max-w-full mx-auto px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
           <div>
-            <h1 className="text-2xl font-bold text-white">Projects</h1>
-            <p className="text-sm text-zinc-400">{projects.length} total projects</p>
+            <h1 className="text-lg font-bold text-white">Projects</h1>
+            <p className="text-xs text-zinc-400">{projects.length} total projects</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -3588,7 +3588,7 @@ export default function Projects() {
                 <ChevronRight className="w-5 h-5 text-zinc-500 group-hover:text-zinc-300" />
               </motion.div>
               <div className="flex items-center gap-2">
-                <FolderOpen className="w-5 h-5 text-cyan-500" />
+                <FolderOpen className="w-4 h-4 text-cyan-500" />
                 <h2 className="text-lg font-semibold text-white">Client Folders</h2>
                 <Badge variant="outline" className="bg-zinc-800/50 border-zinc-700 text-zinc-400">
                   {folders.length}
@@ -3627,11 +3627,11 @@ export default function Projects() {
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="relative overflow-hidden bg-gradient-to-br from-zinc-900/80 to-zinc-900/40 border border-zinc-800/60 rounded-2xl p-8 text-center"
+                    className="relative overflow-hidden bg-gradient-to-br from-zinc-900/80 to-zinc-900/40 border border-zinc-800/60 rounded-xl p-8 text-center"
                   >
                     <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-purple-500/5" />
                     <div className="relative z-10">
-                      <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 border border-cyan-500/20 flex items-center justify-center">
+                      <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 border border-cyan-500/20 flex items-center justify-center">
                         <FolderOpen className="w-8 h-8 text-cyan-500" />
                       </div>
                       <h3 className="text-lg font-semibold text-white mb-2">No Client Folders Yet</h3>
@@ -3653,7 +3653,7 @@ export default function Projects() {
         </div>
 
         {/* Search & Filters */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
             <Input
@@ -3711,7 +3711,7 @@ export default function Projects() {
             )}
           </div>
         ) : viewMode === "list" ? (
-          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl overflow-hidden">
+          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -3797,7 +3797,7 @@ export default function Projects() {
           </div>
         ) : (
           /* Timeline View */
-          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6">
+          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
             <h3 className="text-lg font-semibold text-white mb-4">Project Timeline</h3>
             <div className="space-y-4">
               {filteredProjects.filter(p => p.start_date && p.due_date).map(project => {
@@ -4052,7 +4052,7 @@ export default function Projects() {
         <DialogContent className="bg-zinc-900 border-zinc-800 max-w-xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-white flex items-center gap-2">
-              <FolderOpen className="w-5 h-5 text-cyan-500" />
+              <FolderOpen className="w-4 h-4 text-cyan-500" />
               {editingFolder ? "Edit Folder" : "Create Client Folder"}
             </DialogTitle>
             <DialogDescription className="text-zinc-400">
@@ -4131,7 +4131,7 @@ export default function Projects() {
                   <button
                     key={color.id}
                     onClick={() => setFolderFormData(prev => ({ ...prev, cover_color: color.id }))}
-                    className={`w-10 h-10 rounded-xl bg-gradient-to-br ${color.gradient} transition-all ${
+                    className={`w-8 h-8 rounded-xl bg-gradient-to-br ${color.gradient} transition-all ${
                       folderFormData.cover_color === color.id
                         ? "ring-2 ring-white ring-offset-2 ring-offset-zinc-900 scale-110"
                         : "hover:scale-105"

@@ -259,13 +259,13 @@ export default function UserAnalytics() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <Skeleton className="h-20 w-full bg-zinc-800 rounded-2xl" />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[1,2,3,4].map(i => <Skeleton key={i} className="h-32 bg-zinc-800 rounded-2xl" />)}
+      <div className="min-h-screen bg-black px-4 lg:px-6 py-4 space-y-4">
+        <div className="max-w-7xl mx-auto space-y-4">
+          <Skeleton className="h-12 w-full bg-zinc-800 rounded-xl" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[1,2,3,4].map(i => <Skeleton key={i} className="h-24 bg-zinc-800 rounded-xl" />)}
           </div>
-          <Skeleton className="h-96 bg-zinc-800 rounded-2xl" />
+          <Skeleton className="h-72 bg-zinc-800 rounded-xl" />
         </div>
       </div>
     );
@@ -273,21 +273,21 @@ export default function UserAnalytics() {
 
   return (
     <div className="min-h-screen bg-black">
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
+      <div className="max-w-7xl mx-auto px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+          className="flex flex-col lg:flex-row lg:items-center justify-between gap-3"
         >
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-cyan-500/15">
-                <BarChart3 className="w-6 h-6 text-cyan-400" />
+            <h1 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-cyan-500/15">
+                <BarChart3 className="w-4 h-4 text-cyan-400" />
               </div>
               Analytics Dashboard
             </h1>
-            <p className="text-zinc-400 mt-1">Deep insights into user engagement and learning patterns</p>
+            <p className="text-xs text-zinc-400 mt-0.5">Deep insights into user engagement and learning patterns</p>
           </div>
 
           <div className="flex items-center gap-3 flex-wrap">
@@ -332,7 +332,7 @@ export default function UserAnalytics() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4"
+          className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3"
         >
           <MetricCard
             icon={Users}
@@ -383,22 +383,22 @@ export default function UserAnalytics() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+          className="grid grid-cols-1 lg:grid-cols-3 gap-4"
         >
           {/* Activity Chart */}
-          <div className="lg:col-span-2 bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <Activity className="w-5 h-5 text-cyan-400" />
+          <div className="lg:col-span-2 bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                <Activity className="w-4 h-4 text-cyan-400" />
                 Activity Trends
               </h3>
-              <div className="flex gap-4 text-sm">
-                <span className="flex items-center gap-2 text-cyan-400">
-                  <span className="w-3 h-3 rounded-full bg-cyan-400"></span>
+              <div className="flex gap-3 text-xs">
+                <span className="flex items-center gap-1.5 text-cyan-400">
+                  <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
                   Enrollments
                 </span>
-                <span className="flex items-center gap-2 text-cyan-300/60">
-                  <span className="w-3 h-3 rounded-full bg-cyan-300/60"></span>
+                <span className="flex items-center gap-1.5 text-cyan-300/60">
+                  <span className="w-2 h-2 rounded-full bg-cyan-300/60"></span>
                   Completions
                 </span>
               </div>
@@ -429,12 +429,12 @@ export default function UserAnalytics() {
           </div>
 
           {/* Engagement Breakdown */}
-          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6">
-            <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
-              <Flame className="w-5 h-5 text-cyan-400" />
+          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+            <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+              <Flame className="w-4 h-4 text-cyan-400" />
               User Engagement
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-3">
               <EngagementRow label="Power Users" count={engagement.power} total={metrics.totalUsers} color="text-cyan-300" desc="5+ courses" />
               <EngagementRow label="Highly Engaged" count={engagement.high} total={metrics.totalUsers} color="text-cyan-400" desc="3-4 courses" />
               <EngagementRow label="Moderately Engaged" count={engagement.medium} total={metrics.totalUsers} color="text-cyan-400/70" desc="2 courses" />
@@ -450,7 +450,7 @@ export default function UserAnalytics() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <Tabs defaultValue="courses" className="space-y-6">
+          <Tabs defaultValue="courses" className="space-y-4">
             <TabsList className="bg-zinc-900/80 border border-zinc-800/60 p-1 rounded-xl">
               <TabsTrigger value="courses" className="data-[state=active]:bg-cyan-500/15 data-[state=active]:text-cyan-400 rounded-lg">
                 <BookOpen className="w-4 h-4 mr-2" />
@@ -471,44 +471,44 @@ export default function UserAnalytics() {
             </TabsList>
 
             {/* Course Performance Tab */}
-            <TabsContent value="courses" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <TabsContent value="courses" className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {/* Course Rankings */}
-                <div className="lg:col-span-2 bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-semibold text-white">Course Rankings</h3>
+                <div className="lg:col-span-2 bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold text-white">Course Rankings</h3>
                     <Badge className="bg-cyan-500/15 text-cyan-400 border-cyan-500/30">
                       {courseAnalytics.length} courses
                     </Badge>
                   </div>
-                  <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+                  <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
                     {courseAnalytics.slice(0, 10).map((course, index) => (
                       <CourseRow key={course.id} course={course} rank={index + 1} />
                     ))}
                     {courseAnalytics.length === 0 && (
-                      <div className="text-center py-12 text-zinc-500">
-                        <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                        <p>No course data available</p>
+                      <div className="text-center py-8 text-zinc-500">
+                        <BookOpen className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-xs">No course data available</p>
                       </div>
                     )}
                   </div>
                 </div>
 
                 {/* Completion Funnel */}
-                <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6">
-                  <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
-                    <GitBranch className="w-5 h-5 text-cyan-400" />
+                <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+                  <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+                    <GitBranch className="w-4 h-4 text-cyan-400" />
                     Learning Funnel
                   </h3>
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     <FunnelStep label="Enrolled" count={metrics.totalEnrollments} percentage={100} />
                     <FunnelStep label="Started" count={metrics.totalEnrollments - Math.round(metrics.totalEnrollments * 0.1)} percentage={90} />
                     <FunnelStep label="In Progress" count={metrics.inProgressEnrollments} percentage={Math.round((metrics.inProgressEnrollments / (metrics.totalEnrollments || 1)) * 100)} />
                     <FunnelStep label="Completed" count={metrics.completedEnrollments} percentage={metrics.completionRate} />
                   </div>
 
-                  <div className="mt-6 pt-6 border-t border-zinc-800">
-                    <div className="flex items-center justify-between text-sm">
+                  <div className="mt-4 pt-4 border-t border-zinc-800">
+                    <div className="flex items-center justify-between text-xs">
                       <span className="text-zinc-400">Drop-off Rate</span>
                       <span className="text-cyan-400 font-semibold">{100 - metrics.completionRate}%</span>
                     </div>
@@ -517,8 +517,8 @@ export default function UserAnalytics() {
               </div>
 
               {/* Course Completion Chart */}
-              <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6">
-                <h3 className="text-lg font-semibold text-white mb-6">Completion Rates by Course</h3>
+              <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+                <h3 className="text-sm font-semibold text-white mb-4">Completion Rates by Course</h3>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={courseAnalytics.slice(0, 8)} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
@@ -535,12 +535,12 @@ export default function UserAnalytics() {
             </TabsContent>
 
             {/* Learning Patterns Tab */}
-            <TabsContent value="patterns" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <TabsContent value="patterns" className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* Category Distribution */}
-                <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6">
-                  <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
-                    <Layers className="w-5 h-5 text-cyan-400" />
+                <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+                  <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-cyan-400" />
                     Category Distribution
                   </h3>
                   <ResponsiveContainer width="100%" height={280}>
@@ -569,9 +569,9 @@ export default function UserAnalytics() {
                 </div>
 
                 {/* Difficulty Radar */}
-                <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6">
-                  <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
-                    <Target className="w-5 h-5 text-cyan-400" />
+                <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+                  <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+                    <Target className="w-4 h-4 text-cyan-400" />
                     Difficulty Preference
                   </h3>
                   <ResponsiveContainer width="100%" height={280}>
@@ -585,19 +585,19 @@ export default function UserAnalytics() {
                 </div>
 
                 {/* Weekly Activity Heatmap */}
-                <div className="lg:col-span-2 bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6">
-                  <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-cyan-400" />
+                <div className="lg:col-span-2 bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+                  <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-cyan-400" />
                     Weekly Activity Pattern
                   </h3>
-                  <div className="grid grid-cols-7 gap-3">
+                  <div className="grid grid-cols-7 gap-2">
                     {Object.entries(learningPatterns.byDay).map(([day, count]) => {
                       const maxCount = Math.max(...Object.values(learningPatterns.byDay)) || 1;
                       const intensity = count / maxCount;
                       return (
                         <div key={day} className="text-center">
                           <div
-                            className="w-full h-20 rounded-xl flex items-center justify-center text-lg font-bold transition-all"
+                            className="w-full h-14 rounded-lg flex items-center justify-center text-sm font-bold transition-all"
                             style={{
                               backgroundColor: `rgba(34, 211, 238, ${0.1 + intensity * 0.4})`,
                               color: intensity > 0.5 ? '#fff' : '#a1a1aa'
@@ -605,7 +605,7 @@ export default function UserAnalytics() {
                           >
                             {count}
                           </div>
-                          <p className="text-xs text-zinc-500 mt-2">{day}</p>
+                          <p className="text-[10px] text-zinc-500 mt-1">{day}</p>
                         </div>
                       );
                     })}
@@ -614,7 +614,7 @@ export default function UserAnalytics() {
               </div>
 
               {/* Learning Insights */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <InsightCard
                   icon={Clock}
                   title="Avg Completion Time"
@@ -640,12 +640,12 @@ export default function UserAnalytics() {
             </TabsContent>
 
             {/* User Insights Tab */}
-            <TabsContent value="users" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <TabsContent value="users" className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* User Segments */}
-                <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6">
-                  <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
-                    <Users className="w-5 h-5 text-cyan-400" />
+                <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+                  <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+                    <Users className="w-4 h-4 text-cyan-400" />
                     User Segments
                   </h3>
                   <ResponsiveContainer width="100%" height={300}>
@@ -678,12 +678,12 @@ export default function UserAnalytics() {
                 </div>
 
                 {/* Key User Metrics */}
-                <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6">
-                  <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-cyan-400" />
+                <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+                  <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-cyan-400" />
                     Key User Metrics
                   </h3>
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     <UserMetricRow
                       label="Activation Rate"
                       value={`${metrics.activationRate}%`}
@@ -713,8 +713,8 @@ export default function UserAnalytics() {
               </div>
 
               {/* User Lifecycle */}
-              <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6">
-                <h3 className="text-lg font-semibold text-white mb-6">User Lifecycle Journey</h3>
+              <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+                <h3 className="text-sm font-semibold text-white mb-4">User Lifecycle Journey</h3>
                 <div className="flex items-center justify-between">
                   <LifecycleStage icon={UserIcon} label="Registered" count={metrics.totalUsers} isFirst />
                   <LifecycleArrow />
@@ -730,11 +730,11 @@ export default function UserAnalytics() {
             </TabsContent>
 
             {/* Live Activity Tab */}
-            <TabsContent value="activity" className="space-y-6">
-              <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-cyan-400" />
+            <TabsContent value="activity" className="space-y-4">
+              <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-cyan-400" />
                     Recent Activity Feed
                   </h3>
                   <Badge className="bg-cyan-500/15 text-cyan-400 border-cyan-500/30 animate-pulse">
@@ -744,13 +744,13 @@ export default function UserAnalytics() {
                 </div>
 
                 {recentActivity.length === 0 ? (
-                  <div className="text-center py-16">
-                    <Activity className="w-16 h-16 text-zinc-600 mx-auto mb-4" />
-                    <p className="text-zinc-400 text-lg">No recent activity</p>
-                    <p className="text-zinc-500 text-sm mt-1">Activity will appear here as users interact with courses</p>
+                  <div className="text-center py-12">
+                    <Activity className="w-8 h-8 text-zinc-600 mx-auto mb-3" />
+                    <p className="text-zinc-400 text-sm">No recent activity</p>
+                    <p className="text-zinc-500 text-xs mt-1">Activity will appear here as users interact with courses</p>
                   </div>
                 ) : (
-                  <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                  <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
                     <AnimatePresence>
                       {recentActivity.map((activity, index) => (
                         <motion.div
@@ -758,36 +758,36 @@ export default function UserAnalytics() {
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: index * 0.05 }}
-                          className="flex items-center gap-4 p-4 rounded-xl bg-zinc-800/30 border border-zinc-800/50 hover:border-zinc-700 transition-colors"
+                          className="flex items-center gap-3 p-3 rounded-lg bg-zinc-800/30 border border-zinc-800/50 hover:border-zinc-700 transition-colors"
                         >
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                             activity.status === 'completed' ? 'bg-cyan-500/20' :
                             activity.status === 'in_progress' ? 'bg-cyan-400/15' :
                             'bg-zinc-700/50'
                           }`}>
                             {activity.status === 'completed' ? (
-                              <CheckCircle2 className="w-5 h-5 text-cyan-400" />
+                              <CheckCircle2 className="w-4 h-4 text-cyan-400" />
                             ) : activity.status === 'in_progress' ? (
-                              <PlayCircle className="w-5 h-5 text-cyan-400/70" />
+                              <PlayCircle className="w-4 h-4 text-cyan-400/70" />
                             ) : (
-                              <PauseCircle className="w-5 h-5 text-zinc-500" />
+                              <PauseCircle className="w-4 h-4 text-zinc-500" />
                             )}
                           </div>
 
                           <div className="flex-1 min-w-0">
-                            <p className="text-white text-sm">
+                            <p className="text-white text-xs">
                               <span className="font-medium">{activity.user?.full_name || 'Unknown User'}</span>
                               {activity.status === 'completed' ? ' completed ' : ' is learning '}
                               <span className="text-cyan-400/80">{activity.course?.title || 'Unknown Course'}</span>
                             </p>
-                            <p className="text-xs text-zinc-500 mt-1">
+                            <p className="text-[10px] text-zinc-500 mt-0.5">
                               {new Date(activity.updated_date || activity.created_date).toLocaleString()}
                             </p>
                           </div>
 
                           <div className="text-right">
-                            <div className="text-lg font-bold text-white">{activity.completion_percentage || 0}%</div>
-                            <Badge className={`text-xs ${
+                            <div className="text-sm font-bold text-white">{activity.completion_percentage || 0}%</div>
+                            <Badge className={`text-[10px] ${
                               activity.status === 'completed' ? 'bg-cyan-500/20 text-cyan-400' :
                               activity.status === 'in_progress' ? 'bg-cyan-400/10 text-cyan-400/70' :
                               'bg-zinc-700 text-zinc-400'
@@ -815,22 +815,22 @@ function MetricCard({ icon: Icon, label, value, subValue, trend, trendLabel, col
   return (
     <motion.div
       whileHover={{ scale: 1.02 }}
-      className={`bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-5 ${className}`}
+      className={`bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3 ${className}`}
     >
-      <div className="flex items-center justify-between mb-3">
-        <div className={`p-2 rounded-xl bg-${color}-500/15`}>
-          <Icon className={`w-5 h-5 text-${color}-400`} />
+      <div className="flex items-center justify-between mb-2">
+        <div className={`p-1.5 rounded-lg bg-${color}-500/15`}>
+          <Icon className={`w-4 h-4 text-${color}-400`} />
         </div>
         {trend !== undefined && (
-          <div className={`flex items-center gap-1 text-xs ${isPositive ? 'text-cyan-400' : 'text-zinc-500'}`}>
-            {isPositive ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+          <div className={`flex items-center gap-1 text-[10px] ${isPositive ? 'text-cyan-400' : 'text-zinc-500'}`}>
+            {isPositive ? <ArrowUp className="w-2.5 h-2.5" /> : <ArrowDown className="w-2.5 h-2.5" />}
             {Math.abs(trend)}%
           </div>
         )}
       </div>
-      <div className="text-2xl font-bold text-white mb-1">{value}</div>
-      <p className="text-sm text-zinc-500">{label}</p>
-      {subValue && <p className="text-xs text-zinc-600 mt-1">{subValue}</p>}
+      <div className="text-lg font-bold text-white mb-0.5">{value}</div>
+      <p className="text-xs text-zinc-500">{label}</p>
+      {subValue && <p className="text-[10px] text-zinc-600 mt-0.5">{subValue}</p>}
     </motion.div>
   );
 }
@@ -858,34 +858,34 @@ function EngagementRow({ label, count, total, color, desc }) {
 
 function CourseRow({ course, rank }) {
   return (
-    <div className="flex items-center gap-4 p-4 rounded-xl bg-zinc-800/30 border border-zinc-800/50 hover:border-zinc-700 transition-colors">
-      <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${
+    <div className="flex items-center gap-3 p-3 rounded-lg bg-zinc-800/30 border border-zinc-800/50 hover:border-zinc-700 transition-colors">
+      <div className={`w-6 h-6 rounded-md flex items-center justify-center font-bold text-xs ${
         rank <= 3 ? 'bg-cyan-500/20 text-cyan-400' : 'bg-zinc-700 text-zinc-400'
       }`}>
         {rank}
       </div>
       <div className="flex-1 min-w-0">
-        <h4 className="font-medium text-white truncate">{course.title}</h4>
-        <div className="flex items-center gap-3 mt-1 text-xs text-zinc-500">
+        <h4 className="font-medium text-white truncate text-xs">{course.title}</h4>
+        <div className="flex items-center gap-2 mt-0.5 text-[10px] text-zinc-500">
           <span className="capitalize">{course.difficulty}</span>
           <span>{course.duration_hours}h</span>
-          <Badge className="bg-cyan-500/10 text-cyan-400/70 border-0 text-xs px-2 py-0">
+          <Badge className="bg-cyan-500/10 text-cyan-400/70 border-0 text-[10px] px-1.5 py-0">
             {course.category?.replace(/_/g, ' ')}
           </Badge>
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-4 text-center">
+      <div className="grid grid-cols-3 gap-3 text-center">
         <div>
-          <div className="text-lg font-bold text-white">{course.enrollmentCount}</div>
-          <div className="text-xs text-zinc-500">Enrolled</div>
+          <div className="text-sm font-bold text-white">{course.enrollmentCount}</div>
+          <div className="text-[10px] text-zinc-500">Enrolled</div>
         </div>
         <div>
-          <div className="text-lg font-bold text-cyan-400">{course.completionCount}</div>
-          <div className="text-xs text-zinc-500">Completed</div>
+          <div className="text-sm font-bold text-cyan-400">{course.completionCount}</div>
+          <div className="text-[10px] text-zinc-500">Completed</div>
         </div>
         <div>
-          <div className="text-lg font-bold text-cyan-300">{course.completionRate}%</div>
-          <div className="text-xs text-zinc-500">Rate</div>
+          <div className="text-sm font-bold text-cyan-300">{course.completionRate}%</div>
+          <div className="text-[10px] text-zinc-500">Rate</div>
         </div>
       </div>
     </div>
@@ -912,15 +912,15 @@ function FunnelStep({ label, count, percentage }) {
 
 function InsightCard({ icon: Icon, title, value, description }) {
   return (
-    <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-5">
-      <div className="flex items-center gap-3 mb-3">
-        <div className="p-2 rounded-xl bg-cyan-500/15">
-          <Icon className="w-5 h-5 text-cyan-400" />
+    <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
+      <div className="flex items-center gap-2 mb-2">
+        <div className="p-1.5 rounded-lg bg-cyan-500/15">
+          <Icon className="w-4 h-4 text-cyan-400" />
         </div>
-        <span className="text-sm text-zinc-400">{title}</span>
+        <span className="text-xs text-zinc-400">{title}</span>
       </div>
-      <div className="text-2xl font-bold text-white capitalize">{value}</div>
-      <p className="text-xs text-zinc-500 mt-1">{description}</p>
+      <div className="text-lg font-bold text-white capitalize">{value}</div>
+      <p className="text-[10px] text-zinc-500 mt-0.5">{description}</p>
     </div>
   );
 }
@@ -948,13 +948,13 @@ function UserMetricRow({ label, value, desc, progress }) {
 function LifecycleStage({ icon: Icon, label, count, isFirst, isLast }) {
   return (
     <div className="text-center flex-1">
-      <div className={`w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-2 ${
+      <div className={`w-10 h-10 mx-auto rounded-xl flex items-center justify-center mb-1.5 ${
         isFirst ? 'bg-zinc-700' : isLast ? 'bg-cyan-500/30' : 'bg-cyan-500/15'
       }`}>
-        <Icon className={`w-6 h-6 ${isFirst ? 'text-zinc-400' : 'text-cyan-400'}`} />
+        <Icon className={`w-4 h-4 ${isFirst ? 'text-zinc-400' : 'text-cyan-400'}`} />
       </div>
-      <div className="text-lg font-bold text-white">{count}</div>
-      <p className="text-xs text-zinc-500">{label}</p>
+      <div className="text-sm font-bold text-white">{count}</div>
+      <p className="text-[10px] text-zinc-500">{label}</p>
     </div>
   );
 }

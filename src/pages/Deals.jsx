@@ -110,13 +110,13 @@ export default function Deals() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 p-6">
+    <div className="min-h-screen bg-zinc-950 px-4 lg:px-6 py-4 space-y-4">
       <div className="max-w-full mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-bold text-white mb-1">Deal Pipeline</h1>
-            <p className="text-zinc-400 text-sm">
+            <h1 className="text-lg font-bold text-white mb-1">Deal Pipeline</h1>
+            <p className="text-zinc-400 text-xs">
               Total value: <span className="text-orange-400 font-medium">${Object.values(deals).flat().reduce((sum, d) => sum + d.value, 0).toLocaleString()}</span>
             </p>
           </div>
@@ -130,26 +130,26 @@ export default function Deals() {
         </div>
 
         {/* Kanban Board */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-4 gap-3">
           {STAGES.map((stage) => (
             <div
               key={stage.id}
               onDragOver={(e) => handleDragOver(e, stage.id)}
               onDrop={(e) => handleDrop(e, stage.id)}
-              className={`bg-zinc-900/50 border rounded-xl p-4 transition-colors ${
+              className={`bg-zinc-900/50 border rounded-xl p-3 transition-colors ${
                 dragOverStage === stage.id ? 'border-orange-500' : 'border-zinc-800'
               }`}
             >
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <div className={`w-2 h-2 rounded-full bg-${stage.color}-500`} />
-                  <h3 className="text-sm font-semibold text-white">{stage.label}</h3>
-                  <span className="text-xs text-zinc-500">({deals[stage.id].length})</span>
+                  <h3 className="text-xs font-semibold text-white">{stage.label}</h3>
+                  <span className="text-[10px] text-zinc-500">({deals[stage.id].length})</span>
                 </div>
-                <span className="text-xs text-zinc-500">${getStageTotal(stage.id).toLocaleString()}</span>
+                <span className="text-[10px] text-zinc-500">${getStageTotal(stage.id).toLocaleString()}</span>
               </div>
 
-              <div className="space-y-3 min-h-[400px]">
+              <div className="space-y-2 min-h-[300px]">
                 {deals[stage.id].map((deal, i) => (
                   <motion.div
                     key={deal.id}
@@ -159,16 +159,16 @@ export default function Deals() {
                     draggable
                     onDragStart={() => handleDragStart(deal, stage.id)}
                     onClick={() => setSelectedDeal(deal)}
-                    className="p-4 bg-zinc-800/50 border border-zinc-700 rounded-lg cursor-grab hover:border-orange-500/50 transition-colors active:cursor-grabbing"
+                    className="p-3 bg-zinc-800/50 border border-zinc-700 rounded-lg cursor-grab hover:border-orange-500/50 transition-colors active:cursor-grabbing"
                   >
-                    <div className="flex items-start justify-between mb-2">
-                      <h4 className="text-sm font-medium text-white line-clamp-2">{deal.title}</h4>
+                    <div className="flex items-start justify-between mb-1">
+                      <h4 className="text-xs font-medium text-white line-clamp-2">{deal.title}</h4>
                       <button onClick={(e) => { e.stopPropagation(); }} className="p-1 hover:bg-zinc-700 rounded">
                         <MoreVertical className="w-3 h-3 text-zinc-500" />
                       </button>
                     </div>
-                    <div className="text-lg font-bold text-orange-400 mb-3">${deal.value.toLocaleString()}</div>
-                    <div className="flex items-center justify-between text-xs text-zinc-500">
+                    <div className="text-sm font-bold text-orange-400 mb-2">${deal.value.toLocaleString()}</div>
+                    <div className="flex items-center justify-between text-[10px] text-zinc-500">
                       <span>{deal.company}</span>
                       <span>{deal.probability}%</span>
                     </div>
@@ -195,32 +195,32 @@ export default function Deals() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 w-full max-w-lg"
+              className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 w-full max-w-lg"
             >
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-white">{selectedDeal.title}</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold text-white">{selectedDeal.title}</h3>
                 <button onClick={() => setSelectedDeal(null)} className="p-2 hover:bg-zinc-800 rounded-lg">
                   <X className="w-4 h-4 text-zinc-400" />
                 </button>
               </div>
 
-              <div className="text-3xl font-bold text-orange-400 mb-6">${selectedDeal.value.toLocaleString()}</div>
+              <div className="text-lg font-bold text-orange-400 mb-4">${selectedDeal.value.toLocaleString()}</div>
 
-              <div className="space-y-4 mb-6">
-                <div className="flex items-center gap-3">
-                  <Building className="w-4 h-4 text-zinc-500" />
+              <div className="space-y-3 mb-4">
+                <div className="flex items-center gap-2 text-xs">
+                  <Building className="w-3 h-3 text-zinc-500" />
                   <span className="text-zinc-300">{selectedDeal.company}</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <User className="w-4 h-4 text-zinc-500" />
+                <div className="flex items-center gap-2 text-xs">
+                  <User className="w-3 h-3 text-zinc-500" />
                   <span className="text-zinc-300">{selectedDeal.contact}</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Calendar className="w-4 h-4 text-zinc-500" />
+                <div className="flex items-center gap-2 text-xs">
+                  <Calendar className="w-3 h-3 text-zinc-500" />
                   <span className="text-zinc-300">Close: {selectedDeal.closeDate}</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <DollarSign className="w-4 h-4 text-zinc-500" />
+                <div className="flex items-center gap-2 text-xs">
+                  <DollarSign className="w-3 h-3 text-zinc-500" />
                   <span className="text-zinc-300">{selectedDeal.probability}% probability</span>
                 </div>
               </div>
@@ -256,15 +256,15 @@ export default function Deals() {
             initial={{ scale: 0.95 }}
             animate={{ scale: 1 }}
             onClick={(e) => e.stopPropagation()}
-            className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 w-full max-w-md"
+            className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 w-full max-w-md"
           >
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-white">Create Deal</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-white">Create Deal</h3>
               <button onClick={() => setShowAddDeal(false)} className="p-2 hover:bg-zinc-800 rounded-lg">
                 <X className="w-4 h-4 text-zinc-400" />
               </button>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-3">
               <input
                 type="text"
                 placeholder="Deal Title *"

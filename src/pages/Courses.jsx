@@ -502,15 +502,15 @@ export default function Courses() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <LoadingSkeleton className="h-32" />
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="min-h-screen bg-black p-4">
+        <div className="max-w-7xl mx-auto space-y-4">
+          <LoadingSkeleton className="h-24" />
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
              {Array(4).fill(0).map((_, i) => (
-                <LoadingSkeleton key={i} className="h-32" />
+                <LoadingSkeleton key={i} className="h-24" />
              ))}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <SkeletonList count={6} />
           </div>
         </div>
@@ -519,7 +519,7 @@ export default function Courses() {
   }
 
   return (
-    <div className="min-h-screen bg-black relative p-4 sm:p-6">
+    <div className="min-h-screen bg-black relative px-4 lg:px-6 py-4">
       {/* Animated Background Orbs */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-yellow-500/5 to-amber-600/5 rounded-full blur-3xl animate-pulse"></div>
@@ -527,7 +527,7 @@ export default function Courses() {
         <div className="absolute top-1/2 right-1/3 w-72 h-72 bg-gradient-to-r from-yellow-500/5 to-amber-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
       </div>
 
-      <div className="w-full max-w-7xl mx-auto space-y-6 md:space-y-8 relative z-10">
+      <div className="w-full max-w-7xl mx-auto space-y-4 relative z-10">
         <Tabs value={courseTab} onValueChange={setCourseTab} className="w-full">
         {/* Header */}
         <div className="relative overflow-hidden mb-8">
@@ -538,7 +538,7 @@ export default function Courses() {
               }
             `}</style>
       
-            <Card className="glass-card p-4 sm:p-5 md:p-6 border-0 relative overflow-hidden bg-black/60">
+            <Card className="glass-card p-3 sm:p-4 border-0 relative overflow-hidden bg-black/60">
               {/* Animated Flowing Lines Background */}
               <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-50">
                 <svg 
@@ -619,13 +619,13 @@ export default function Courses() {
                 <div className="absolute bottom-[20%] right-[55%] w-1 h-1 bg-purple-300/50 rounded-full blur-[1px]"></div>
                 <div className="absolute top-[62%] right-[8%] w-0.5 h-0.5 bg-purple-500/40 rounded-full blur-[1px] animate-pulse" style={{ animationDelay: '2.2s' }}></div>
               </div>
-              <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6">
-                <div className="flex-1 space-y-3">
+              <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-4">
+                <div className="flex-1 space-y-2">
                   <div className="space-y-1">
-                    <h1 className="text-2xl lg:text-3xl font-bold metallic-text">
+                    <h1 className="text-lg lg:text-xl font-bold metallic-text">
                       Learning Center
                     </h1>
-                    <p className="text-base text-gray-400">
+                    <p className="text-xs text-gray-400">
                       Manage your courses and track your progress
                     </p>
                   </div>
@@ -673,15 +673,15 @@ export default function Courses() {
 
           {/* Stats Section (only on My Learning) */}
           {courseTab === "my_learning" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10 animate-in slide-in-from-bottom-4 duration-500">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 animate-in slide-in-from-bottom-4 duration-500">
               {stats.map((stat, index) => (
-                <Card key={index} className="glass-card border-0 p-4 bg-gradient-to-br from-yellow-900/10 to-black/50 border-yellow-500/20 hover:border-yellow-500/40 transition-all flex items-center gap-4">
-                  <div className="p-2.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 shrink-0">
-                     <stat.icon className="w-5 h-5" />
+                <Card key={index} className="glass-card border-0 p-3 bg-gradient-to-br from-yellow-900/10 to-black/50 border-yellow-500/20 hover:border-yellow-500/40 transition-all flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 shrink-0">
+                     <stat.icon className="w-4 h-4" />
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-white leading-tight">{stat.value}</div>
-                    <h3 className="text-xs font-medium text-gray-400">{stat.title}</h3>
+                    <div className="text-lg font-bold text-white leading-tight">{stat.value}</div>
+                    <h3 className="text-[10px] font-medium text-gray-400">{stat.title}</h3>
                   </div>
                 </Card>
               ))}
@@ -703,8 +703,8 @@ export default function Courses() {
 
           {/* Course Grid / Empty States */}
           <TabsContent value={courseTab} className="mt-0">
-             <div className="flex justify-between items-center mb-6">
-               <h2 className="text-2xl font-semibold text-white">
+             <div className="flex justify-between items-center mb-4">
+               <h2 className="text-lg font-semibold text-white">
                  {courseTab === 'library' ? 'Course Library' : 'My Courses'}
                </h2>
                <div className="flex items-center gap-2">
@@ -729,11 +729,11 @@ export default function Courses() {
 
              {filteredCourses.length === 0 ? (
                isGenerating ? (
-                 <Card className="glass-card border-0 p-16 text-center">
-                   <div className="max-w-md mx-auto space-y-6">
-                     <Loader2 className="w-12 h-12 text-yellow-400 animate-spin mx-auto" />
+                 <Card className="glass-card border-0 p-10 text-center">
+                   <div className="max-w-md mx-auto space-y-4">
+                     <Loader2 className="w-10 h-10 text-yellow-400 animate-spin mx-auto" />
                      <div className="space-y-2">
-                       <h3 className="text-xl font-semibold text-white">{generationStage}</h3>
+                       <h3 className="text-base font-semibold text-white">{generationStage}</h3>
                        <ProgressBar value={generationProgress} className="h-2 bg-gray-800" />
                        <p className="text-sm text-gray-400">{generationDetail}</p>
                      </div>
@@ -752,9 +752,9 @@ export default function Courses() {
                  />
                )
              ) : (
-               <div className={`grid gap-6 ${
-                 viewMode === "grid" 
-                   ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" 
+               <div className={`grid gap-4 ${
+                 viewMode === "grid"
+                   ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
                    : "grid-cols-1"
                }`}>
                  {filteredCourses.map((course) => {

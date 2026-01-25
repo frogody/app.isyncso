@@ -411,7 +411,7 @@ export default function Agents() {
         <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-indigo-900/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
       <PageHeader
         title="Specialized Agents"
         subtitle="Browse and manage AI agents that power your workspace"
@@ -491,7 +491,7 @@ export default function Agents() {
       {/* Agents Grid */}
       <div className={cn(
         viewMode === 'grid'
-          ? 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4'
+          ? 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3'
           : 'space-y-3'
       )}>
         <AnimatePresence mode="popLayout">
@@ -515,8 +515,8 @@ export default function Agents() {
 
       {filteredAgents.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-zinc-800/50 flex items-center justify-center mb-4">
-            <Bot className="w-8 h-8 text-zinc-600" />
+          <div className="w-12 h-12 rounded-xl bg-zinc-800/50 flex items-center justify-center mb-4">
+            <Bot className="w-6 h-6 text-zinc-600" />
           </div>
           <h3 className="text-lg font-medium text-white mb-2">No agents found</h3>
           <p className="text-zinc-400">Try adjusting your search or filters</p>
@@ -524,44 +524,44 @@ export default function Agents() {
       )}
 
       {/* Info Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="p-6 rounded-xl bg-zinc-900/60 border border-white/10"
+          className="p-4 rounded-xl bg-zinc-900/60 border border-white/10"
         >
-          <div className="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center mb-3">
-            <Zap className="w-5 h-5 text-cyan-400" />
+          <div className="w-8 h-8 rounded-xl bg-cyan-500/20 flex items-center justify-center mb-3">
+            <Zap className="w-4 h-4 text-cyan-400" />
           </div>
           <h4 className="font-medium text-white mb-1">Orchestrated by Sync</h4>
-          <p className="text-sm text-zinc-400">All agents are coordinated by Sync, your central AI brain</p>
+          <p className="text-xs text-zinc-400">All agents are coordinated by Sync, your central AI brain</p>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="p-6 rounded-xl bg-zinc-900/60 border border-white/10"
+          className="p-4 rounded-xl bg-zinc-900/60 border border-white/10"
         >
-          <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center mb-3">
-            <Settings className="w-5 h-5 text-indigo-400" />
+          <div className="w-8 h-8 rounded-xl bg-indigo-500/20 flex items-center justify-center mb-3">
+            <Settings className="w-4 h-4 text-indigo-400" />
           </div>
           <h4 className="font-medium text-white mb-1">Fully Configurable</h4>
-          <p className="text-sm text-zinc-400">Enable or disable agents based on your team's needs</p>
+          <p className="text-xs text-zinc-400">Enable or disable agents based on your team's needs</p>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="p-6 rounded-xl bg-zinc-900/60 border border-white/10"
+          className="p-4 rounded-xl bg-zinc-900/60 border border-white/10"
         >
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center mb-3">
-            <Power className="w-5 h-5 text-emerald-400" />
+          <div className="w-8 h-8 rounded-xl bg-emerald-500/20 flex items-center justify-center mb-3">
+            <Power className="w-4 h-4 text-emerald-400" />
           </div>
           <h4 className="font-medium text-white mb-1">Always Learning</h4>
-          <p className="text-sm text-zinc-400">Agents improve over time based on your usage patterns</p>
+          <p className="text-xs text-zinc-400">Agents improve over time based on your usage patterns</p>
         </motion.div>
       </div>
       </div>

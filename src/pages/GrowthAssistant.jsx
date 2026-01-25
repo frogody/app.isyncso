@@ -474,12 +474,12 @@ export default function GrowthAssistant() {
 
   if (userLoading) {
     return (
-      <div className="min-h-screen bg-black p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <Skeleton className="h-24 w-full bg-zinc-800 rounded-2xl" />
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            <Skeleton className="lg:col-span-3 h-[600px] bg-zinc-800 rounded-2xl" />
-            <Skeleton className="h-[600px] bg-zinc-800 rounded-2xl" />
+      <div className="min-h-screen bg-black p-4">
+        <div className="max-w-7xl mx-auto space-y-4">
+          <Skeleton className="h-16 w-full bg-zinc-800 rounded-xl" />
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            <Skeleton className="lg:col-span-3 h-[500px] bg-zinc-800 rounded-xl" />
+            <Skeleton className="h-[500px] bg-zinc-800 rounded-xl" />
           </div>
         </div>
       </div>
@@ -494,7 +494,7 @@ export default function GrowthAssistant() {
         <div className="absolute bottom-20 right-1/4 w-72 h-72 bg-purple-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
       </div>
 
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 lg:px-6 py-4 space-y-4">
         <PageHeader
           icon={TrendingUp}
           title="Growth Assistant"
@@ -512,19 +512,19 @@ export default function GrowthAssistant() {
           }
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
           {/* Main Chat Area */}
           <div className="lg:col-span-3">
-            <div className="h-[calc(100vh-220px)] min-h-[500px] flex flex-col rounded-2xl bg-zinc-900/50 border border-zinc-800/60 overflow-hidden">
+            <div className="h-[calc(100vh-180px)] min-h-[450px] flex flex-col rounded-xl bg-zinc-900/50 border border-zinc-800/60 overflow-hidden">
               {/* Chat Header */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800/60">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
-                    <Brain className="w-5 h-5 text-indigo-400" />
+              <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-800/60">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
+                    <Brain className="w-4 h-4 text-indigo-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-white text-sm">Growth AI</h3>
-                    <p className="text-xs text-zinc-500 flex items-center gap-1">
+                    <h3 className="font-semibold text-white text-xs">Growth AI</h3>
+                    <p className="text-[10px] text-zinc-500 flex items-center gap-1">
                       <Sparkles className="w-3 h-3" />
                       RAG-powered with integration context
                     </p>
@@ -542,14 +542,14 @@ export default function GrowthAssistant() {
               </div>
 
               {/* Messages Area */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div className="flex-1 overflow-y-auto p-3 space-y-3">
                 {messages.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center text-center px-4 py-8">
-                    <div className="w-16 h-16 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center mb-4">
-                      <TrendingUp className="w-8 h-8 text-indigo-400" />
+                  <div className="h-full flex flex-col items-center justify-center text-center px-4 py-6">
+                    <div className="w-12 h-12 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center mb-3">
+                      <TrendingUp className="w-6 h-6 text-indigo-400" />
                     </div>
-                    <h4 className="text-lg font-medium text-white mb-2">Growth Research Assistant</h4>
-                    <p className="text-sm text-zinc-500 mb-6 max-w-md">
+                    <h4 className="text-base font-medium text-white mb-2">Growth Research Assistant</h4>
+                    <p className="text-xs text-zinc-500 mb-4 max-w-md">
                       I can help research companies, find prospects, and analyze your pipeline using data from all your connected integrations.
                     </p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-w-lg">
@@ -557,9 +557,9 @@ export default function GrowthAssistant() {
                         <button
                           key={i}
                           onClick={() => handleSend(action.prompt)}
-                          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-zinc-800/50 border border-zinc-700/50 text-zinc-300 text-xs hover:bg-zinc-800 hover:border-indigo-500/30 transition-all"
+                          className="flex items-center gap-2 px-2 py-1.5 rounded-xl bg-zinc-800/50 border border-zinc-700/50 text-zinc-300 text-[10px] hover:bg-zinc-800 hover:border-indigo-500/30 transition-all"
                         >
-                          <action.icon className="w-4 h-4 text-indigo-400/70" />
+                          <action.icon className="w-3 h-3 text-indigo-400/70" />
                           {action.label}
                         </button>
                       ))}
@@ -593,7 +593,7 @@ export default function GrowthAssistant() {
               </div>
 
               {/* Input Area */}
-              <div className="p-4 border-t border-zinc-800/60">
+              <div className="p-3 border-t border-zinc-800/60">
                 <div className="flex items-end gap-2">
                   <input
                     ref={inputRef}
@@ -631,19 +631,19 @@ export default function GrowthAssistant() {
           </div>
 
           {/* Sidebar - Integrations & Insights */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             {/* Integration Status */}
-            <div className="rounded-2xl bg-zinc-900/50 border border-zinc-800/60 p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                  <Database className="w-4 h-4 text-indigo-400" />
+            <div className="rounded-xl bg-zinc-900/50 border border-zinc-800/60 p-3">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-xs font-semibold text-white flex items-center gap-2">
+                  <Database className="w-3 h-3 text-indigo-400" />
                   Data Sources
                 </h3>
-                <Link to={createPageUrl("Integrations")} className="text-xs text-indigo-400 hover:text-indigo-300">
+                <Link to={createPageUrl("Integrations")} className="text-[10px] text-indigo-400 hover:text-indigo-300">
                   Manage
                 </Link>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {Object.entries(integrations).map(([key, value]) => (
                   <IntegrationStatus
                     key={key}
@@ -656,8 +656,8 @@ export default function GrowthAssistant() {
                 ))}
               </div>
               {syncingIntegration && (
-                <div className="mt-3 p-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
-                  <p className="text-xs text-indigo-400 flex items-center gap-2">
+                <div className="mt-2 p-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+                  <p className="text-[10px] text-indigo-400 flex items-center gap-2">
                     <Loader2 className="w-3 h-3 animate-spin" />
                     Syncing {syncingIntegration}...
                   </p>
@@ -666,25 +666,25 @@ export default function GrowthAssistant() {
             </div>
 
             {/* RAG Insights Panel */}
-            <div className="rounded-2xl bg-zinc-900/50 border border-zinc-800/60 p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-indigo-400" />
+            <div className="rounded-xl bg-zinc-900/50 border border-zinc-800/60 p-3">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-xs font-semibold text-white flex items-center gap-2">
+                  <Sparkles className="w-3 h-3 text-indigo-400" />
                   RAG Insights
                 </h3>
                 {loadingInsights && <Loader2 className="w-3 h-3 text-indigo-400 animate-spin" />}
               </div>
 
               {ragInsights.length > 0 ? (
-                <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                <div className="space-y-1.5 max-h-[350px] overflow-y-auto">
                   {ragInsights.slice(0, 8).map((insight, i) => (
                     <RAGInsight key={i} insight={insight} />
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <Brain className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
-                  <p className="text-sm text-zinc-500">
+                <div className="text-center py-6">
+                  <Brain className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
+                  <p className="text-xs text-zinc-500">
                     {messages.length > 0
                       ? "No relevant context found"
                       : "Ask a question to see relevant context"}
@@ -694,31 +694,31 @@ export default function GrowthAssistant() {
             </div>
 
             {/* Quick Stats */}
-            <div className="rounded-2xl bg-zinc-900/50 border border-zinc-800/60 p-4">
-              <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-3">
-                <Zap className="w-4 h-4 text-indigo-400" />
+            <div className="rounded-xl bg-zinc-900/50 border border-zinc-800/60 p-3">
+              <h3 className="text-xs font-semibold text-white flex items-center gap-2 mb-2">
+                <Zap className="w-3 h-3 text-indigo-400" />
                 Quick Actions
               </h3>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Link to={createPageUrl("GrowthResearch")}>
-                  <Button variant="ghost" className="w-full justify-start text-zinc-300 hover:text-white hover:bg-zinc-800">
-                    <Search className="w-4 h-4 mr-2" />
+                  <Button variant="ghost" className="w-full justify-start text-zinc-300 hover:text-white hover:bg-zinc-800 h-8 text-xs">
+                    <Search className="w-3 h-3 mr-2" />
                     Deep Research
-                    <ChevronRight className="w-4 h-4 ml-auto" />
+                    <ChevronRight className="w-3 h-3 ml-auto" />
                   </Button>
                 </Link>
                 <Link to={createPageUrl("GrowthPipeline")}>
-                  <Button variant="ghost" className="w-full justify-start text-zinc-300 hover:text-white hover:bg-zinc-800">
-                    <Target className="w-4 h-4 mr-2" />
+                  <Button variant="ghost" className="w-full justify-start text-zinc-300 hover:text-white hover:bg-zinc-800 h-8 text-xs">
+                    <Target className="w-3 h-3 mr-2" />
                     View Pipeline
-                    <ChevronRight className="w-4 h-4 ml-auto" />
+                    <ChevronRight className="w-3 h-3 ml-auto" />
                   </Button>
                 </Link>
                 <Link to={createPageUrl("GrowthProspects")}>
-                  <Button variant="ghost" className="w-full justify-start text-zinc-300 hover:text-white hover:bg-zinc-800">
-                    <Users className="w-4 h-4 mr-2" />
+                  <Button variant="ghost" className="w-full justify-start text-zinc-300 hover:text-white hover:bg-zinc-800 h-8 text-xs">
+                    <Users className="w-3 h-3 mr-2" />
                     Prospect Lists
-                    <ChevronRight className="w-4 h-4 ml-auto" />
+                    <ChevronRight className="w-3 h-3 ml-auto" />
                   </Button>
                 </Link>
               </div>

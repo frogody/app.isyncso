@@ -156,17 +156,17 @@ export default function CompanyDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          {Array(4).fill(0).map((_,i) => <div key={i} className="h-24 bg-gray-800/40 rounded-xl animate-pulse" />)}
+      <div className="min-h-screen bg-black p-4">
+        <div className="max-w-7xl mx-auto space-y-4">
+          {Array(4).fill(0).map((_,i) => <div key={i} className="h-20 bg-gray-800/40 rounded-xl animate-pulse" />)}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-black p-4">
+      <div className="max-w-7xl mx-auto space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -197,48 +197,48 @@ export default function CompanyDashboard() {
         </div>
 
         {/* KPIs */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="glass-card border-0 p-6">
-            <div className="flex items-center justify-between mb-3">
-              <Users className="w-6 h-6 text-emerald-400" />
-              <div className="text-2xl font-bold text-white">{totalEmployees}</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="glass-card border-0 p-4">
+            <div className="flex items-center justify-between mb-2">
+              <Users className="w-5 h-5 text-emerald-400" />
+              <div className="text-lg font-bold text-white">{totalEmployees}</div>
             </div>
-            <div className="text-white font-medium">Employees</div>
-            <div className="text-sm text-gray-400">Across {departments.length} departments</div>
+            <div className="text-white font-medium text-sm">Employees</div>
+            <div className="text-xs text-gray-400">Across {departments.length} departments</div>
           </Card>
-          <Card className="glass-card border-0 p-6">
-            <div className="flex items-center justify-between mb-3">
-              <ClipboardList className="w-6 h-6 text-emerald-400" />
-              <div className="text-2xl font-bold text-white">{assignments.length}</div>
+          <Card className="glass-card border-0 p-4">
+            <div className="flex items-center justify-between mb-2">
+              <ClipboardList className="w-5 h-5 text-emerald-400" />
+              <div className="text-lg font-bold text-white">{assignments.length}</div>
             </div>
-            <div className="text-white font-medium">Assignments</div>
-            <div className="text-sm text-gray-400">Open training tasks</div>
+            <div className="text-white font-medium text-sm">Assignments</div>
+            <div className="text-xs text-gray-400">Open training tasks</div>
           </Card>
-          <Card className="glass-card border-0 p-6">
-            <div className="flex items-center justify-between mb-3">
-              <Clock className="w-6 h-6 text-emerald-400" />
-              <div className="text-2xl font-bold text-white">{totalLearningHours}h</div>
+          <Card className="glass-card border-0 p-4">
+            <div className="flex items-center justify-between mb-2">
+              <Clock className="w-5 h-5 text-emerald-400" />
+              <div className="text-lg font-bold text-white">{totalLearningHours}h</div>
             </div>
-            <div className="text-white font-medium">Learning Time</div>
-            <div className="text-sm text-gray-400">All-time</div>
+            <div className="text-white font-medium text-sm">Learning Time</div>
+            <div className="text-xs text-gray-400">All-time</div>
           </Card>
-          <Card className="glass-card border-0 p-6">
-            <div className="flex items-center justify-between mb-3">
-              <TrendingUp className="w-6 h-6 text-emerald-400" />
-              <div className="text-2xl font-bold text-white">{completionRate}%</div>
+          <Card className="glass-card border-0 p-4">
+            <div className="flex items-center justify-between mb-2">
+              <TrendingUp className="w-5 h-5 text-emerald-400" />
+              <div className="text-lg font-bold text-white">{completionRate}%</div>
             </div>
-            <div className="text-white font-medium">Completion Rate</div>
-            <div className="text-sm text-gray-400">{completedEnrollments} completed</div>
+            <div className="text-white font-medium text-sm">Completion Rate</div>
+            <div className="text-xs text-gray-400">{completedEnrollments} completed</div>
           </Card>
         </div>
 
         {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <Card className="glass-card border-0 lg:col-span-2">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Activity className="w-5 h-5 text-emerald-400" />
-                <h3 className="text-white font-semibold">Engagement (last 8 weeks)</h3>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Activity className="w-4 h-4 text-emerald-400" />
+                <h3 className="text-white font-semibold text-sm">Engagement (last 8 weeks)</h3>
               </div>
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
@@ -261,21 +261,21 @@ export default function CompanyDashboard() {
           </Card>
 
           <Card className="glass-card border-0">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <BookOpen className="w-5 h-5 text-emerald-400" />
-                <h3 className="text-white font-semibold">Top Courses</h3>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <BookOpen className="w-4 h-4 text-emerald-400" />
+                <h3 className="text-white font-semibold text-sm">Top Courses</h3>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {topCourses.length === 0 ? (
-                  <div className="text-gray-400 text-sm">No course activity yet</div>
+                  <div className="text-gray-400 text-xs">No course activity yet</div>
                 ) : topCourses.map(tc => (
-                  <div key={tc.id} className="p-3 rounded-lg bg-gray-800/30 border border-gray-700/40">
+                  <div key={tc.id} className="p-2 rounded-lg bg-gray-800/30 border border-gray-700/40">
                     <div className="flex items-center justify-between">
-                      <div className="text-white font-medium line-clamp-1">{tc.title}</div>
-                      <Badge className="bg-emerald-500/20 text-emerald-400">{tc.rate}%</Badge>
+                      <div className="text-white font-medium text-sm line-clamp-1">{tc.title}</div>
+                      <Badge className="bg-emerald-500/20 text-emerald-400 text-[10px]">{tc.rate}%</Badge>
                     </div>
-                    <div className="text-xs text-gray-400">{tc.enr} enrolled • {tc.comp} completed</div>
+                    <div className="text-[10px] text-gray-400">{tc.enr} enrolled • {tc.comp} completed</div>
                   </div>
                 ))}
               </div>
@@ -285,27 +285,27 @@ export default function CompanyDashboard() {
 
         {/* Departments */}
         <Card className="glass-card border-0">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Building2 className="w-5 h-5 text-emerald-400" />
-              <h3 className="text-white font-semibold">Departments</h3>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Building2 className="w-4 h-4 text-emerald-400" />
+              <h3 className="text-white font-semibold text-sm">Departments</h3>
             </div>
             {deptStats.length === 0 ? (
-              <div className="text-gray-400 text-sm">No departments yet.</div>
+              <div className="text-gray-400 text-xs">No departments yet.</div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {deptStats.map(d => (
-                  <div key={d.id} className="p-4 rounded-lg bg-gray-800/30 border border-gray-700/40">
+                  <div key={d.id} className="p-3 rounded-lg bg-gray-800/30 border border-gray-700/40">
                     <div className="flex items-center justify-between mb-1">
-                      <div className="text-white font-medium">{d.name}</div>
-                      <div className="text-sm text-gray-400">{d.people} ppl</div>
+                      <div className="text-white font-medium text-sm">{d.name}</div>
+                      <div className="text-xs text-gray-400">{d.people} ppl</div>
                     </div>
-                    <div className="flex items-center gap-3 text-sm text-gray-400 mb-2">
+                    <div className="flex items-center gap-3 text-xs text-gray-400 mb-2">
                       <span>{d.hours}h</span>
                       <span>•</span>
                       <span>{d.completion}% completion</span>
                     </div>
-                    <Progress value={d.completion} className="h-2" />
+                    <Progress value={d.completion} className="h-1.5" />
                   </div>
                 ))}
               </div>

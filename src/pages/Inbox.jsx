@@ -875,7 +875,7 @@ export default function InboxPage() {
               <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-3xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/20 border border-cyan-500/30 flex items-center justify-center mx-auto mb-6 sm:mb-8 shadow-2xl shadow-cyan-500/10">
                 <InboxIcon className="w-10 h-10 sm:w-14 sm:h-14 text-cyan-400" />
               </div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 sm:mb-3">Welcome to Team Inbox</h2>
+              <h2 className="text-lg sm:text-2xl font-bold text-white mb-2 sm:mb-3">Welcome to Team Inbox</h2>
               <p className="text-zinc-400 mb-6 sm:mb-8 leading-relaxed text-sm sm:text-base">
                 Select a channel from the sidebar or start a new conversation to begin collaborating with your team.
               </p>

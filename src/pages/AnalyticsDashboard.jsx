@@ -77,12 +77,12 @@ export default function AnalyticsDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-6">
-        <div className="max-w-7xl mx-auto space-y-8">
-          <Skeleton className="h-12 w-64 bg-gray-800" />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="min-h-screen bg-black px-4 lg:px-6 py-4 space-y-4">
+        <div className="max-w-7xl mx-auto space-y-4">
+          <Skeleton className="h-8 w-64 bg-gray-800" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {Array(4).fill(0).map((_, i) => (
-              <Skeleton key={i} className="h-32 bg-gray-800" />
+              <Skeleton key={i} className="h-24 bg-gray-800" />
             ))}
           </div>
         </div>
@@ -92,13 +92,13 @@ export default function AnalyticsDashboard() {
 
   if (error || !isAdmin) {
     return (
-      <div className="min-h-screen bg-black p-6">
+      <div className="min-h-screen bg-black px-4 lg:px-6 py-4 space-y-4">
         <div className="max-w-7xl mx-auto">
-          <Card className="glass-card border-0 p-8">
-            <div className="text-center space-y-4">
-              <Award className="w-16 h-16 text-red-400 mx-auto" />
-              <h2 className="text-2xl font-bold text-white">Access Denied</h2>
-              <p className="text-gray-400">{error || 'Admin privileges required'}</p>
+          <Card className="glass-card border-0 p-4">
+            <div className="text-center space-y-3">
+              <Award className="w-8 h-8 text-red-400 mx-auto" />
+              <h2 className="text-lg font-bold text-white">Access Denied</h2>
+              <p className="text-xs text-gray-400">{error || 'Admin privileges required'}</p>
             </div>
           </Card>
         </div>
@@ -109,107 +109,117 @@ export default function AnalyticsDashboard() {
   const { platform_stats, top_skills, course_effectiveness } = analytics;
 
   return (
-    <div className="min-h-screen bg-black p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-black px-4 lg:px-6 py-4 space-y-4">
+      <div className="max-w-7xl mx-auto space-y-4">
         {/* Header */}
         <div>
-          <h1 className="text-4xl font-bold text-white mb-2">Analytics Dashboard</h1>
-          <p className="text-gray-400">Platform-wide insights and metrics</p>
+          <h1 className="text-lg font-bold text-white mb-1">Analytics Dashboard</h1>
+          <p className="text-xs text-gray-400">Platform-wide insights and metrics</p>
         </div>
 
         {/* Platform Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-          <Card className="glass-card border-0 p-6 bg-gradient-to-br from-emerald-500/20 to-emerald-600/20">
-            <div className="flex items-center justify-between mb-4">
-              <Users className="w-8 h-8 text-emerald-400" />
-              <div className="text-3xl font-bold text-white">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <Card className="glass-card border-0 p-3 bg-gradient-to-br from-emerald-500/20 to-emerald-600/20 rounded-xl">
+            <div className="flex items-center justify-between mb-2">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                <Users className="w-4 h-4 text-emerald-400" />
+              </div>
+              <div className="text-lg font-bold text-white">
                 {platform_stats.total_users}
               </div>
             </div>
             <div>
-              <h3 className="font-semibold text-white mb-1">Total Users</h3>
-              <p className="text-sm text-emerald-300">
+              <h3 className="font-semibold text-white text-xs mb-0.5">Total Users</h3>
+              <p className="text-[10px] text-emerald-300">
                 {platform_stats.active_users_today} active today
               </p>
             </div>
           </Card>
 
-          <Card className="glass-card border-0 p-6 bg-gradient-to-br from-blue-500/20 to-blue-600/20">
-            <div className="flex items-center justify-between mb-4">
-              <Activity className="w-8 h-8 text-blue-400" />
-              <div className="text-3xl font-bold text-white">
+          <Card className="glass-card border-0 p-3 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-xl">
+            <div className="flex items-center justify-between mb-2">
+              <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                <Activity className="w-4 h-4 text-blue-400" />
+              </div>
+              <div className="text-lg font-bold text-white">
                 {platform_stats.total_sessions.toLocaleString()}
               </div>
             </div>
             <div>
-              <h3 className="font-semibold text-white mb-1">Total Sessions</h3>
-              <p className="text-sm text-blue-300">All-time tracked</p>
+              <h3 className="font-semibold text-white text-xs mb-0.5">Total Sessions</h3>
+              <p className="text-[10px] text-blue-300">All-time tracked</p>
             </div>
           </Card>
 
-          <Card className="glass-card border-0 p-6 bg-gradient-to-br from-purple-500/20 to-purple-600/20">
-            <div className="flex items-center justify-between mb-4">
-              <Brain className="w-8 h-8 text-purple-400" />
-              <div className="text-3xl font-bold text-white">
+          <Card className="glass-card border-0 p-3 bg-gradient-to-br from-purple-500/20 to-purple-600/20 rounded-xl">
+            <div className="flex items-center justify-between mb-2">
+              <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                <Brain className="w-4 h-4 text-purple-400" />
+              </div>
+              <div className="text-lg font-bold text-white">
                 {platform_stats.total_skill_applications.toLocaleString()}
               </div>
             </div>
             <div>
-              <h3 className="font-semibold text-white mb-1">Skill Applications</h3>
-              <p className="text-sm text-purple-300">Total tracked</p>
+              <h3 className="font-semibold text-white text-xs mb-0.5">Skill Applications</h3>
+              <p className="text-[10px] text-purple-300">Total tracked</p>
             </div>
           </Card>
 
-          <Card className="glass-card border-0 p-6 bg-gradient-to-br from-amber-500/20 to-amber-600/20">
-            <div className="flex items-center justify-between mb-4">
-              <Clock className="w-8 h-8 text-amber-400" />
-              <div className="text-3xl font-bold text-white">
+          <Card className="glass-card border-0 p-3 bg-gradient-to-br from-amber-500/20 to-amber-600/20 rounded-xl">
+            <div className="flex items-center justify-between mb-2">
+              <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                <Clock className="w-4 h-4 text-amber-400" />
+              </div>
+              <div className="text-lg font-bold text-white">
                 {platform_stats.avg_session_duration}m
               </div>
             </div>
             <div>
-              <h3 className="font-semibold text-white mb-1">Avg Session</h3>
-              <p className="text-sm text-amber-300">Duration</p>
+              <h3 className="font-semibold text-white text-xs mb-0.5">Avg Session</h3>
+              <p className="text-[10px] text-amber-300">Duration</p>
             </div>
           </Card>
 
-          <Card className="glass-card border-0 p-6 bg-gradient-to-br from-pink-500/20 to-pink-600/20">
-            <div className="flex items-center justify-between mb-4">
-              <Target className="w-8 h-8 text-pink-400" />
-              <div className="text-3xl font-bold text-white">
+          <Card className="glass-card border-0 p-3 bg-gradient-to-br from-pink-500/20 to-pink-600/20 rounded-xl">
+            <div className="flex items-center justify-between mb-2">
+              <div className="w-8 h-8 rounded-lg bg-pink-500/20 flex items-center justify-center">
+                <Target className="w-4 h-4 text-pink-400" />
+              </div>
+              <div className="text-lg font-bold text-white">
                 {Math.round((platform_stats.active_users_today / platform_stats.total_users) * 100)}%
               </div>
             </div>
             <div>
-              <h3 className="font-semibold text-white mb-1">Engagement</h3>
-              <p className="text-sm text-pink-300">Today</p>
+              <h3 className="font-semibold text-white text-xs mb-0.5">Engagement</h3>
+              <p className="text-[10px] text-pink-300">Today</p>
             </div>
           </Card>
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Top Skills */}
-          <Card className="glass-card border-0">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Brain className="w-5 h-5 text-emerald-400" />
+          <Card className="glass-card border-0 rounded-xl">
+            <CardHeader className="p-3 pb-2">
+              <CardTitle className="text-white flex items-center gap-2 text-sm">
+                <Brain className="w-4 h-4 text-emerald-400" />
                 Most Used Skills
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+            <CardContent className="p-3 pt-0">
+              <div className="space-y-3">
                 {top_skills.map((skill, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 rounded-lg bg-gray-800/30 border border-gray-700/50">
+                  <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
                     <div>
-                      <h4 className="font-medium text-white">{skill.skill_name}</h4>
-                      <p className="text-sm text-gray-400">{skill.users} users practicing</p>
+                      <h4 className="font-medium text-white text-xs">{skill.skill_name}</h4>
+                      <p className="text-[10px] text-gray-400">{skill.users} users practicing</p>
                     </div>
                     <div className="text-right">
-                      <div className="text-xl font-bold text-emerald-400">
+                      <div className="text-lg font-bold text-emerald-400">
                         {skill.applications.toLocaleString()}
                       </div>
-                      <div className="text-xs text-gray-500">applications</div>
+                      <div className="text-[10px] text-gray-500">applications</div>
                     </div>
                   </div>
                 ))}
@@ -218,30 +228,30 @@ export default function AnalyticsDashboard() {
           </Card>
 
           {/* Course Effectiveness */}
-          <Card className="glass-card border-0">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-emerald-400" />
+          <Card className="glass-card border-0 rounded-xl">
+            <CardHeader className="p-3 pb-2">
+              <CardTitle className="text-white flex items-center gap-2 text-sm">
+                <BookOpen className="w-4 h-4 text-emerald-400" />
                 Course Effectiveness
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+            <CardContent className="p-3 pt-0">
+              <div className="space-y-3">
                 {course_effectiveness.map((course, index) => (
-                  <div key={index} className="p-4 rounded-lg bg-gray-800/30 border border-gray-700/50">
+                  <div key={index} className="p-3 rounded-lg bg-gray-800/30 border border-gray-700/50">
                     <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-white">{course.course_title}</h4>
-                      <Badge className="bg-emerald-500/20 text-emerald-400">
+                      <h4 className="font-medium text-white text-xs">{course.course_title}</h4>
+                      <Badge className="bg-emerald-500/20 text-emerald-400 text-[10px]">
                         {course.completions} completions
                       </Badge>
                     </div>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="grid grid-cols-2 gap-3 text-xs">
                       <div>
-                        <p className="text-gray-400">Applications after</p>
+                        <p className="text-[10px] text-gray-400">Applications after</p>
                         <p className="text-white font-semibold">{course.applications_after}</p>
                       </div>
                       <div>
-                        <p className="text-gray-400">Avg days to apply</p>
+                        <p className="text-[10px] text-gray-400">Avg days to apply</p>
                         <p className="text-white font-semibold">{course.avg_days_to_apply}</p>
                       </div>
                     </div>
@@ -253,47 +263,47 @@ export default function AnalyticsDashboard() {
         </div>
 
         {/* Engagement Trends */}
-        <Card className="glass-card border-0">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-emerald-400" />
+        <Card className="glass-card border-0 rounded-xl">
+          <CardHeader className="p-3 pb-2">
+            <CardTitle className="text-white flex items-center gap-2 text-sm">
+              <TrendingUp className="w-4 h-4 text-emerald-400" />
               Engagement Trends (Last 7 Days)
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <CardContent className="p-3 pt-0">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <h4 className="text-sm font-medium text-gray-400 mb-4">Daily Active Users</h4>
-                <div className="space-y-2">
-                  <div className="text-3xl font-bold text-white">
+                <h4 className="text-xs font-medium text-gray-400 mb-2">Daily Active Users</h4>
+                <div className="space-y-1">
+                  <div className="text-lg font-bold text-white">
                     {platform_stats.active_users_today}
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-emerald-400">
-                    <TrendingUp className="w-4 h-4" />
+                  <div className="flex items-center gap-1 text-[10px] text-emerald-400">
+                    <TrendingUp className="w-3 h-3" />
                     <span>+18% vs last week</span>
                   </div>
                 </div>
               </div>
 
               <div>
-                <h4 className="text-sm font-medium text-gray-400 mb-4">Avg Session Duration</h4>
-                <div className="space-y-2">
-                  <div className="text-3xl font-bold text-white">
+                <h4 className="text-xs font-medium text-gray-400 mb-2">Avg Session Duration</h4>
+                <div className="space-y-1">
+                  <div className="text-lg font-bold text-white">
                     {platform_stats.avg_session_duration}m
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-emerald-400">
-                    <TrendingUp className="w-4 h-4" />
+                  <div className="flex items-center gap-1 text-[10px] text-emerald-400">
+                    <TrendingUp className="w-3 h-3" />
                     <span>+12% vs last week</span>
                   </div>
                 </div>
               </div>
 
               <div>
-                <h4 className="text-sm font-medium text-gray-400 mb-4">Skill Applications/Day</h4>
-                <div className="space-y-2">
-                  <div className="text-3xl font-bold text-white">240</div>
-                  <div className="flex items-center gap-2 text-sm text-emerald-400">
-                    <TrendingUp className="w-4 h-4" />
+                <h4 className="text-xs font-medium text-gray-400 mb-2">Skill Applications/Day</h4>
+                <div className="space-y-1">
+                  <div className="text-lg font-bold text-white">240</div>
+                  <div className="flex items-center gap-1 text-[10px] text-emerald-400">
+                    <TrendingUp className="w-3 h-3" />
                     <span>+24% vs last week</span>
                   </div>
                 </div>

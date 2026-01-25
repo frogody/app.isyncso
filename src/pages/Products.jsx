@@ -124,22 +124,22 @@ function QuickStatCard({ icon: Icon, label, value, sublabel, color = 'purple' })
   const numValue = typeof value === 'string' && value !== '-' ? parseInt(value) || 0 : (typeof value === 'number' ? value : 0);
 
   return (
-    <div className="p-4 rounded-xl bg-zinc-900/50 border border-white/5">
+    <div className="p-3 rounded-xl bg-zinc-900/50 border border-white/5">
       <div className="flex items-center gap-3">
-        <div className={`w-10 h-10 rounded-lg ${colorClasses[color]} border flex items-center justify-center`}>
-          <Icon className="w-5 h-5" />
+        <div className={`w-8 h-8 rounded-lg ${colorClasses[color]} border flex items-center justify-center`}>
+          <Icon className="w-4 h-4" />
         </div>
         <div>
           {value === '-' ? (
-            <div className="text-2xl font-bold text-white">-</div>
+            <div className="text-lg font-bold text-white">-</div>
           ) : (
-            <div className="stat-number text-2xl font-bold text-white" data-value={numValue}>0</div>
+            <div className="stat-number text-lg font-bold text-white" data-value={numValue}>0</div>
           )}
-          <div className="text-sm text-zinc-500">{label}</div>
+          <div className="text-xs text-zinc-500">{label}</div>
         </div>
       </div>
       {sublabel && (
-        <div className="text-xs text-zinc-600 mt-2">{sublabel}</div>
+        <div className="text-[10px] text-zinc-600 mt-2">{sublabel}</div>
       )}
     </div>
   );
@@ -463,7 +463,7 @@ export default function Products() {
         <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-cyan-950/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Page Header */}
         <div ref={headerRef} style={{ opacity: 0 }}>
           <PageHeader
@@ -546,7 +546,7 @@ export default function Products() {
         </div>
 
         {/* Stats Row */}
-        <div ref={statsRef} className={`grid gap-4 ${digitalEnabled && physicalEnabled ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-6' : 'grid-cols-2 md:grid-cols-4'}`} style={{ opacity: 0 }}>
+        <div ref={statsRef} className={`grid gap-3 ${digitalEnabled && physicalEnabled ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-6' : 'grid-cols-2 md:grid-cols-4'}`} style={{ opacity: 0 }}>
           <QuickStatCard
             icon={Package}
             label="Total Products"
@@ -590,25 +590,25 @@ export default function Products() {
         </div>
 
         {/* Quick Navigation Cards */}
-        <div className={`grid gap-6 ${digitalEnabled && physicalEnabled ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
+        <div className={`grid gap-4 ${digitalEnabled && physicalEnabled ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
           {/* Digital Products Card */}
           {digitalEnabled && (
             <Link to={createPageUrl('ProductsDigital')}>
-              <GlassCard className="p-6 group hover:border-cyan-500/30 transition-all cursor-pointer">
-                <div className="flex items-start gap-4">
-                  <div className="w-14 h-14 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
-                    <Cloud className="w-7 h-7 text-cyan-400" />
+              <GlassCard className="p-4 group hover:border-cyan-500/30 transition-all cursor-pointer">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
+                    <Cloud className="w-5 h-5 text-cyan-400" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-white group-hover:text-cyan-400 transition-colors">
+                    <h3 className="text-base font-semibold text-white group-hover:text-cyan-400 transition-colors">
                       Digital Products
                     </h3>
-                    <p className="text-sm text-zinc-400 mt-1">
+                    <p className="text-xs text-zinc-400 mt-1">
                       Software, SaaS, courses, subscriptions, and downloadable content
                     </p>
-                    <div className="flex items-center gap-4 mt-4">
-                      <span className="text-2xl font-bold text-cyan-400">{stats.digital}</span>
-                      <span className="text-sm text-zinc-500">products</span>
+                    <div className="flex items-center gap-3 mt-3">
+                      <span className="text-lg font-bold text-cyan-400">{stats.digital}</span>
+                      <span className="text-xs text-zinc-500">products</span>
                       <ArrowRight className="w-4 h-4 text-zinc-500 ml-auto group-hover:text-cyan-400 transition-colors" />
                     </div>
                   </div>
@@ -620,21 +620,21 @@ export default function Products() {
           {/* Physical Products Card */}
           {physicalEnabled && (
             <Link to={createPageUrl('ProductsPhysical')}>
-              <GlassCard className="p-6 group hover:border-cyan-500/30 transition-all cursor-pointer">
-                <div className="flex items-start gap-4">
-                  <div className="w-14 h-14 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
-                    <Box className="w-7 h-7 text-cyan-400" />
+              <GlassCard className="p-4 group hover:border-cyan-500/30 transition-all cursor-pointer">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
+                    <Box className="w-5 h-5 text-cyan-400" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-white group-hover:text-cyan-400 transition-colors">
+                    <h3 className="text-base font-semibold text-white group-hover:text-cyan-400 transition-colors">
                       Physical Products
                     </h3>
-                    <p className="text-sm text-zinc-400 mt-1">
+                    <p className="text-xs text-zinc-400 mt-1">
                       Hardware, merchandise, equipment, and tangible goods
                     </p>
-                    <div className="flex items-center gap-4 mt-4">
-                      <span className="text-2xl font-bold text-cyan-400">{stats.physical}</span>
-                      <span className="text-sm text-zinc-500">products</span>
+                    <div className="flex items-center gap-3 mt-3">
+                      <span className="text-lg font-bold text-cyan-400">{stats.physical}</span>
+                      <span className="text-xs text-zinc-500">products</span>
                       <ArrowRight className="w-4 h-4 text-zinc-500 ml-auto group-hover:text-cyan-400 transition-colors" />
                     </div>
                   </div>
@@ -645,15 +645,15 @@ export default function Products() {
         </div>
 
         {/* Recent Products */}
-        <GlassCard className="p-6">
-          <div className="flex items-center justify-between mb-6">
+        <GlassCard className="p-4">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
-                <Layers className="w-5 h-5 text-cyan-400" />
+              <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
+                <Layers className="w-4 h-4 text-cyan-400" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-white">Recent Products</h3>
-                <p className="text-sm text-zinc-500">Your latest product additions</p>
+                <h3 className="text-base font-semibold text-white">Recent Products</h3>
+                <p className="text-xs text-zinc-500">Your latest product additions</p>
               </div>
             </div>
 
@@ -671,13 +671,13 @@ export default function Products() {
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Skeleton key={i} className="h-24 bg-zinc-800/50" />
+                <Skeleton key={i} className="h-20 bg-zinc-800/50" />
               ))}
             </div>
           ) : filteredProducts.length > 0 ? (
-            <div ref={productsGridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div ref={productsGridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {filteredProducts.map((product, index) => (
                 <div key={product.id} className="product-card">
                   <ProductCard product={product} />
@@ -685,12 +685,12 @@ export default function Products() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 rounded-full bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mx-auto mb-4">
-                <Package className="w-8 h-8 text-cyan-400" />
+            <div className="text-center py-8">
+              <div className="w-12 h-12 rounded-full bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mx-auto mb-3">
+                <Package className="w-6 h-6 text-cyan-400" />
               </div>
-              <h4 className="text-lg font-medium text-white mb-2">No products yet</h4>
-              <p className="text-sm text-zinc-500 mb-4">
+              <h4 className="text-base font-medium text-white mb-2">No products yet</h4>
+              <p className="text-xs text-zinc-500 mb-3">
                 {searchQuery ? 'No products match your search' : 'Get started by adding your first product'}
               </p>
               {!searchQuery && (
@@ -702,7 +702,7 @@ export default function Products() {
           )}
 
           {filteredProducts.length > 0 && (
-            <div className="flex justify-center mt-6">
+            <div className="flex justify-center mt-4">
               <Link to={createPageUrl(digitalEnabled ? 'ProductsDigital' : 'ProductsPhysical')}>
                 <Button variant="outline" className="border-white/10 text-zinc-400 hover:text-white">
                   View All Products <ArrowRight className="w-4 h-4 ml-2" />
@@ -714,14 +714,14 @@ export default function Products() {
 
         {/* Categories Section */}
         {categories.length > 0 && (
-          <GlassCard className="p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
-                <Tag className="w-5 h-5 text-cyan-400" />
+          <GlassCard className="p-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
+                <Tag className="w-4 h-4 text-cyan-400" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-white">Categories</h3>
-                <p className="text-sm text-zinc-500">Organize products by category</p>
+                <h3 className="text-base font-semibold text-white">Categories</h3>
+                <p className="text-xs text-zinc-500">Organize products by category</p>
               </div>
             </div>
 
@@ -732,7 +732,7 @@ export default function Products() {
                   className="bg-zinc-800/50 border border-white/10 text-zinc-300 hover:border-cyan-500/30 hover:text-cyan-400 cursor-pointer transition-colors"
                 >
                   {category.name}
-                  <span className="ml-2 text-xs text-zinc-500">
+                  <span className="ml-2 text-[10px] text-zinc-500">
                     {products.filter(p => p.category_id === category.id).length}
                   </span>
                 </Badge>

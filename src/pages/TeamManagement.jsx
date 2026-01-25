@@ -607,16 +607,16 @@ export default function TeamManagement() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-black p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <Skeleton className="h-24 w-full bg-zinc-800 rounded-2xl" />
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            <Skeleton className="h-12 bg-zinc-800 rounded-xl" />
-            <Skeleton className="h-12 bg-zinc-800 rounded-xl" />
-            <Skeleton className="h-12 bg-zinc-800 rounded-xl" />
-            <Skeleton className="h-12 bg-zinc-800 rounded-xl" />
+      <div className="min-h-screen bg-black p-4">
+        <div className="max-w-7xl mx-auto space-y-4">
+          <Skeleton className="h-20 w-full bg-zinc-800 rounded-xl" />
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            <Skeleton className="h-10 bg-zinc-800 rounded-xl" />
+            <Skeleton className="h-10 bg-zinc-800 rounded-xl" />
+            <Skeleton className="h-10 bg-zinc-800 rounded-xl" />
+            <Skeleton className="h-10 bg-zinc-800 rounded-xl" />
           </div>
-          <Skeleton className="h-96 w-full bg-zinc-800 rounded-2xl" />
+          <Skeleton className="h-80 w-full bg-zinc-800 rounded-xl" />
         </div>
       </div>
     );
@@ -630,7 +630,7 @@ export default function TeamManagement() {
         <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-purple-950/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full px-6 py-6 space-y-6">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <div className="flex items-center gap-4 mb-2">
           <Button
@@ -652,70 +652,70 @@ export default function TeamManagement() {
         />
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <GlassCard className="p-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <GlassCard className="p-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
-                <Users className="w-5 h-5 text-cyan-400" />
+              <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center">
+                <Users className="w-4 h-4 text-cyan-400" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-white">{teamMembers.length}</div>
-                <div className="text-xs text-zinc-500">Company Users</div>
+                <div className="text-lg font-bold text-white">{teamMembers.length}</div>
+                <div className="text-[10px] text-zinc-500">Company Users</div>
               </div>
             </div>
           </GlassCard>
 
-          <GlassCard className="p-4">
+          <GlassCard className="p-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-indigo-500/20 flex items-center justify-center">
-                <Boxes className="w-5 h-5 text-indigo-400" />
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
+                <Boxes className="w-4 h-4 text-indigo-400" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-white">{teams.length}</div>
-                <div className="text-xs text-zinc-500">Teams</div>
+                <div className="text-lg font-bold text-white">{teams.length}</div>
+                <div className="text-[10px] text-zinc-500">Teams</div>
               </div>
             </div>
           </GlassCard>
 
-          <GlassCard className="p-4">
+          <GlassCard className="p-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                <Shield className="w-5 h-5 text-purple-400" />
+              <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                <Shield className="w-4 h-4 text-purple-400" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-white">{roles.length}</div>
-                <div className="text-xs text-zinc-500">Active Roles</div>
+                <div className="text-lg font-bold text-white">{roles.length}</div>
+                <div className="text-[10px] text-zinc-500">Active Roles</div>
               </div>
             </div>
           </GlassCard>
 
-          <GlassCard className="p-4">
+          <GlassCard className="p-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
-                <Mail className="w-5 h-5 text-orange-400" />
+              <div className="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center">
+                <Mail className="w-4 h-4 text-orange-400" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-white">{invitations.length}</div>
-                <div className="text-xs text-zinc-500">Pending Invites</div>
+                <div className="text-lg font-bold text-white">{invitations.length}</div>
+                <div className="text-[10px] text-zinc-500">Pending Invites</div>
               </div>
             </div>
           </GlassCard>
 
-          <GlassCard className="p-4">
+          <GlassCard className="p-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
-                <Key className="w-5 h-5 text-green-400" />
+              <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center">
+                <Key className="w-4 h-4 text-green-400" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-white">{permissions.length}</div>
-                <div className="text-xs text-zinc-500">Permissions</div>
+                <div className="text-lg font-bold text-white">{permissions.length}</div>
+                <div className="text-[10px] text-zinc-500">Permissions</div>
               </div>
             </div>
           </GlassCard>
         </div>
 
         {/* Main Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList className="bg-zinc-900/80 border border-zinc-800 p-1">
             <TabsTrigger value="users" className="data-[state=active]:bg-zinc-800">
               <Users className="w-4 h-4 mr-2" />
@@ -736,7 +736,7 @@ export default function TeamManagement() {
           </TabsList>
 
           {/* USERS TAB */}
-          <TabsContent value="users" className="space-y-6">
+          <TabsContent value="users" className="space-y-4">
             <GlassCard className="p-6">
               {/* Toolbar */}
               <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -776,7 +776,7 @@ export default function TeamManagement() {
               <div className="space-y-3">
                 {filteredMembers.length === 0 ? (
                   <div className="text-center py-12 text-zinc-500">
-                    <Users className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                    <Users className="w-10 h-10 mx-auto mb-3 opacity-30" />
                     <p>No team members found</p>
                   </div>
                 ) : (
@@ -798,7 +798,7 @@ export default function TeamManagement() {
           </TabsContent>
 
           {/* TEAMS TAB */}
-          <TabsContent value="teams" className="space-y-6">
+          <TabsContent value="teams" className="space-y-4">
             <GlassCard className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-white flex items-center gap-2">
@@ -816,7 +816,7 @@ export default function TeamManagement() {
 
               {teams.length === 0 ? (
                 <div className="text-center py-12 text-zinc-500">
-                  <Boxes className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <Boxes className="w-10 h-10 mx-auto mb-3 opacity-30" />
                   <p>No teams created yet</p>
                   <p className="text-sm text-zinc-600 mt-1">Create teams to organize users and control app access</p>
                 </div>
@@ -840,8 +840,8 @@ export default function TeamManagement() {
           </TabsContent>
 
           {/* ROLES & PERMISSIONS TAB */}
-          <TabsContent value="roles" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <TabsContent value="roles" className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* Roles List */}
               <GlassCard className="p-6">
                 <div className="flex items-center justify-between mb-6">
@@ -910,7 +910,7 @@ export default function TeamManagement() {
                   />
                 ) : (
                   <div className="text-center py-12 text-zinc-500">
-                    <Shield className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                    <Shield className="w-10 h-10 mx-auto mb-3 opacity-30" />
                     <p>Select a role to view its permissions</p>
                   </div>
                 )}
@@ -924,7 +924,7 @@ export default function TeamManagement() {
                 Permission Reference Guide
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {Object.entries(PERMISSION_CATEGORIES).map(([category, resources]) => (
                   <div key={category}>
                     <h4 className="text-sm font-semibold text-cyan-400 mb-3">{category}</h4>
@@ -945,7 +945,7 @@ export default function TeamManagement() {
           </TabsContent>
 
           {/* INVITATIONS TAB */}
-          <TabsContent value="invitations" className="space-y-6">
+          <TabsContent value="invitations" className="space-y-4">
             <GlassCard className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-white flex items-center gap-2">
@@ -973,7 +973,7 @@ export default function TeamManagement() {
 
               {invitations.length === 0 ? (
                 <div className="text-center py-12 text-zinc-500">
-                  <Mail className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <Mail className="w-10 h-10 mx-auto mb-3 opacity-30" />
                   <p>No pending invitations</p>
                   <p className="text-sm text-zinc-600 mt-1">Invite team members to get started</p>
                 </div>
@@ -1299,7 +1299,7 @@ function UserRow({ member, roles, currentUserId, isSuperAdmin, onAssignRole, onR
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="relative">
-          <div className="w-12 h-12 rounded-full bg-zinc-800 border border-zinc-700 overflow-hidden">
+          <div className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 overflow-hidden">
             {member.avatar_url ? (
               <img src={member.avatar_url} alt="" className="w-full h-full object-cover" />
             ) : (
@@ -1555,8 +1555,8 @@ function TeamCard({ team, teamMembers, allApps, onEdit, onDelete, onToggleApp, o
         className="flex items-center gap-4 p-4 bg-zinc-800/30 cursor-pointer hover:bg-zinc-800/50 transition-colors"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className="w-12 h-12 rounded-lg bg-cyan-500/20 flex items-center justify-center">
-          <Boxes className="w-6 h-6 text-cyan-400" />
+        <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
+          <Boxes className="w-5 h-5 text-cyan-400" />
         </div>
 
         <div className="flex-1 min-w-0">

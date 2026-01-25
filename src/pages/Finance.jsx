@@ -276,7 +276,7 @@ export default function Finance() {
         <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-amber-950/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <PageHeader
           icon={DollarSign}
@@ -302,7 +302,7 @@ export default function Finance() {
         />
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         {metrics.map((metric, index) => (
           <motion.div
             key={metric.title}
@@ -311,10 +311,10 @@ export default function Finance() {
             transition={{ delay: index * 0.1 }}
           >
             <Card className="bg-zinc-900/50 border-zinc-800">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`p-3 rounded-xl ${getColorClasses(metric.color)}`}>
-                    <metric.icon className="w-5 h-5" />
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className={`p-2 rounded-xl ${getColorClasses(metric.color)}`}>
+                    <metric.icon className="w-4 h-4" />
                   </div>
                   {metric.trend === 'up' && (
                     <Badge variant="outline" className="text-amber-400 border-amber-500/30 bg-amber-500/10">
@@ -335,8 +335,8 @@ export default function Finance() {
                   )}
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-white">{metric.value}</p>
-                  <p className="text-sm text-zinc-500">{metric.title}</p>
+                  <p className="text-lg font-bold text-white">{metric.value}</p>
+                  <p className="text-xs text-zinc-500">{metric.title}</p>
                 </div>
               </CardContent>
             </Card>
@@ -345,7 +345,7 @@ export default function Finance() {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="bg-zinc-900 border border-zinc-800">
           <TabsTrigger value="overview" className="data-[state=active]:bg-zinc-800">
             <PieChart className="w-4 h-4 mr-2" />
@@ -366,7 +366,7 @@ export default function Finance() {
         </TabsList>
 
         <TabsContent value="overview">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Revenue Chart Placeholder */}
             <Card className="bg-zinc-900/50 border-zinc-800">
               <CardHeader>
@@ -374,9 +374,9 @@ export default function Finance() {
                 <CardDescription>Monthly revenue trend</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-64 flex items-center justify-center border border-dashed border-zinc-700 rounded-lg">
+                <div className="h-48 flex items-center justify-center border border-dashed border-zinc-700 rounded-lg">
                   <div className="text-center">
-                    <BarChart3 className="w-12 h-12 text-zinc-600 mx-auto mb-2" />
+                    <BarChart3 className="w-10 h-10 text-zinc-600 mx-auto mb-2" />
                     <p className="text-zinc-500">Chart will appear when data is available</p>
                   </div>
                 </div>
@@ -390,9 +390,9 @@ export default function Finance() {
                 <CardDescription>Expenses by category</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-64 flex items-center justify-center border border-dashed border-zinc-700 rounded-lg">
+                <div className="h-48 flex items-center justify-center border border-dashed border-zinc-700 rounded-lg">
                   <div className="text-center">
-                    <PieChart className="w-12 h-12 text-zinc-600 mx-auto mb-2" />
+                    <PieChart className="w-10 h-10 text-zinc-600 mx-auto mb-2" />
                     <p className="text-zinc-500">Chart will appear when data is available</p>
                   </div>
                 </div>
@@ -417,30 +417,30 @@ export default function Finance() {
             </CardHeader>
             <CardContent>
               {invoices.length === 0 ? (
-                <div className="text-center py-12">
-                  <Receipt className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-white mb-2">No invoices yet</h3>
-                  <p className="text-zinc-500 mb-4">Create your first invoice to start tracking revenue</p>
+                <div className="text-center py-8">
+                  <Receipt className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
+                  <h3 className="text-base font-medium text-white mb-2">No invoices yet</h3>
+                  <p className="text-xs text-zinc-500 mb-3">Create your first invoice to start tracking revenue</p>
                   <Button className="bg-amber-500 hover:bg-amber-600" onClick={() => setShowInvoiceModal(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Create Invoice
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {invoices.map((invoice) => (
-                    <div key={invoice.id} className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg">
-                      <div className="flex items-center gap-4">
-                        <div className="p-2 bg-amber-500/10 rounded-lg">
-                          <FileText className="w-5 h-5 text-amber-400" />
+                    <div key={invoice.id} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="p-1.5 bg-amber-500/10 rounded-lg">
+                          <FileText className="w-4 h-4 text-amber-400" />
                         </div>
                         <div>
-                          <p className="font-medium text-white">{invoice.invoice_number || `INV-${invoice.id?.slice(0, 8)}`}</p>
-                          <p className="text-sm text-zinc-500">{invoice.client_name || 'Unknown Client'}</p>
+                          <p className="text-sm font-medium text-white">{invoice.invoice_number || `INV-${invoice.id?.slice(0, 8)}`}</p>
+                          <p className="text-xs text-zinc-500">{invoice.client_name || 'Unknown Client'}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium text-white">${(invoice.total || 0).toLocaleString()}</p>
+                        <p className="text-sm font-medium text-white">${(invoice.total || 0).toLocaleString()}</p>
                         <Badge variant="outline" className={
                           invoice.status === 'paid' ? 'text-amber-400 border-amber-500/30' :
                           invoice.status === 'overdue' ? 'text-red-400 border-red-500/30' :
@@ -473,31 +473,31 @@ export default function Finance() {
             </CardHeader>
             <CardContent>
               {expenses.length === 0 ? (
-                <div className="text-center py-12">
-                  <CreditCard className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-white mb-2">No expenses recorded</h3>
-                  <p className="text-zinc-500 mb-4">Track your business expenses here</p>
+                <div className="text-center py-8">
+                  <CreditCard className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
+                  <h3 className="text-base font-medium text-white mb-2">No expenses recorded</h3>
+                  <p className="text-xs text-zinc-500 mb-3">Track your business expenses here</p>
                   <Button className="bg-amber-500 hover:bg-amber-600" onClick={() => setShowExpenseModal(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Add Expense
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {expenses.map((expense) => (
-                    <div key={expense.id} className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg">
-                      <div className="flex items-center gap-4">
-                        <div className="p-2 bg-red-500/10 rounded-lg">
-                          <CreditCard className="w-5 h-5 text-red-400" />
+                    <div key={expense.id} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="p-1.5 bg-red-500/10 rounded-lg">
+                          <CreditCard className="w-4 h-4 text-red-400" />
                         </div>
                         <div>
-                          <p className="font-medium text-white">{expense.description || 'Expense'}</p>
-                          <p className="text-sm text-zinc-500">{expense.category || 'Uncategorized'}</p>
+                          <p className="text-sm font-medium text-white">{expense.description || 'Expense'}</p>
+                          <p className="text-xs text-zinc-500">{expense.category || 'Uncategorized'}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium text-red-400">-${(expense.amount || 0).toLocaleString()}</p>
-                        <p className="text-sm text-zinc-500">{expense.date || 'No date'}</p>
+                        <p className="text-sm font-medium text-red-400">-${(expense.amount || 0).toLocaleString()}</p>
+                        <p className="text-xs text-zinc-500">{expense.date || 'No date'}</p>
                       </div>
                     </div>
                   ))}
@@ -523,30 +523,30 @@ export default function Finance() {
             </CardHeader>
             <CardContent>
               {subscriptions.length === 0 ? (
-                <div className="text-center py-12">
-                  <CircleDollarSign className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-white mb-2">No subscriptions</h3>
-                  <p className="text-zinc-500 mb-4">Track recurring revenue from subscriptions</p>
+                <div className="text-center py-8">
+                  <CircleDollarSign className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
+                  <h3 className="text-base font-medium text-white mb-2">No subscriptions</h3>
+                  <p className="text-xs text-zinc-500 mb-3">Track recurring revenue from subscriptions</p>
                   <Button className="bg-amber-500 hover:bg-amber-600" onClick={() => setShowSubscriptionModal(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Add Subscription
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {subscriptions.map((sub) => (
-                    <div key={sub.id} className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg">
-                      <div className="flex items-center gap-4">
-                        <div className="p-2 bg-cyan-500/10 rounded-lg">
-                          <CircleDollarSign className="w-5 h-5 text-cyan-400" />
+                    <div key={sub.id} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="p-1.5 bg-cyan-500/10 rounded-lg">
+                          <CircleDollarSign className="w-4 h-4 text-cyan-400" />
                         </div>
                         <div>
-                          <p className="font-medium text-white">{sub.name || 'Subscription'}</p>
-                          <p className="text-sm text-zinc-500">{sub.billing_cycle || 'Monthly'}</p>
+                          <p className="text-sm font-medium text-white">{sub.name || 'Subscription'}</p>
+                          <p className="text-xs text-zinc-500">{sub.billing_cycle || 'Monthly'}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium text-cyan-400">${(sub.amount || 0).toLocaleString()}/mo</p>
+                        <p className="text-sm font-medium text-cyan-400">${(sub.amount || 0).toLocaleString()}/mo</p>
                         <Badge variant="outline" className={
                           sub.status === 'active' ? 'text-amber-400 border-amber-500/30' :
                           'text-zinc-400 border-zinc-500/30'
