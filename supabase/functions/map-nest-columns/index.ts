@@ -78,31 +78,41 @@ function buildPromptForNestType(nestType: string, columnInfo: string): string {
   const typeSpecificContext = {
     candidates: `You are mapping recruitment/talent candidate data. This data will be displayed on candidate profile pages.
 
-CRITICAL LINKEDIN DISTINCTION:
-- "linkedin_profile" = PERSON's LinkedIn profile URL (columns like: linkedin_profile, person linkedin, candidate linkedin)
-- "company_linkedin" = COMPANY's LinkedIn page URL (columns like: Company LinkedIn, employer linkedin)
-These are DIFFERENT fields - map them correctly!
+=== MANDATORY MAPPINGS (NEVER SKIP THESE) ===
+These column names MUST ALWAYS be mapped to the corresponding target field:
+- "linkedin_profile" → linkedin_profile (this is the PERSON's LinkedIn, NOT company!)
+- "linkedIn_profile" → linkedin_profile
+- "first_Name" or "first_name" → first_name
+- "last_name" → last_name
+- "Job_Title" or "job_title" → job_title
+- "Person Home Location" → person_home_location
+- "Company Name" → company_name
+- "Company HQ" → company_hq
+- "Company Domain" → company_domain
+- "Company LinkedIn" → company_linkedin (this is the COMPANY's page)
+- "Industry" → industry
+- "Company Size" → company_size
+- "Employee Count" → employee_count
+- "Description" → company_description
+- "Type" → company_type
+- "Work Address" → work_address
+- "Salary_Range" or "salary_range" → salary_range
+- "Years With Current Company" → years_experience
+- "email" or "Email" → email
+- "phone" or "Phone" → phone
 
-MAPPING PRIORITIES:
-1. Person info: first_name, last_name, email, phone, linkedin_profile (person's profile!)
-2. Job info: job_title, company_name, years_experience, skills, salary_range
-3. Person location: person_home_location, work_address
-4. Company info: company_domain, company_hq, company_linkedin (company page!), company_description, company_type, industry, company_size, employee_count
-5. Other: education, profile_image_url
+=== LINKEDIN DISTINCTION (CRITICAL!) ===
+- "linkedin_profile" or "linkedIn_profile" = PERSON's profile → map to linkedin_profile
+- "Company LinkedIn" = COMPANY's page → map to company_linkedin
+THESE ARE DIFFERENT! Do not confuse them!
 
-COLUMN NAME HINTS:
-- "linkedin_profile" or just "linkedin" without "company" = person's linkedin_profile
-- "Company LinkedIn" = company_linkedin
-- "Person Home Location" = person_home_location
-- "Company HQ" = company_hq
-- "Years With Current Company" = years_experience
-- "Company Domain" = company_domain
-- "Description" about a company = company_description
-- "Type" (Privately Held, Public) = company_type
-- "Employee Count" (numbers) = employee_count
-- "Company Size" (ranges like 51-200) = company_size
-
-SKIP these analysis/enrichment columns: Job Satisfaction Analysis, Recruitment Urgency, Market Position, Experience report, M&A News, Growth metrics, Reasoning columns.`,
+=== SKIP THESE ANALYSIS COLUMNS ===
+Only skip columns that contain AI-generated analysis, reports, or reasoning:
+- Job Satisfaction Analysis, Job Satisfaction, Reasoning - Job Satisfaction
+- Recruitment Urgency, Reasoning Outreach Urgency
+- Market_Position, Experience report, Accounting Experience Analysis
+- Recent M&A News, Find Company Headcount Growth, Percent Employee Growth
+- Times_Promoted, Times_Hopped, Average Threshold, Estimated Age Range`,
 
     prospects: `You are mapping sales/CRM prospect data. Prioritize:
 1. Name and contact fields
@@ -130,10 +140,10 @@ ${targetFieldsList}
 
 IMPORTANT - Mapping rules:
 1. Use the EXACT column names from the source (including spaces, capitalization, underscores)
-2. If a column name or its samples clearly match a target field, map it
-3. If unsure or the column contains analysis/enrichment data, map to 'skip'
-4. LinkedIn URLs should map to the linkedin field for this type
-5. Columns with long text analysis reports should be skipped
+2. MANDATORY: If a column name matches any pattern in the target fields list, map it (don't skip!)
+3. "linkedin_profile" column MUST map to linkedin_profile - this is the person's LinkedIn profile!
+4. Only skip columns that are clearly analysis/AI reports (Job Satisfaction Analysis, Recruitment Urgency, etc.)
+5. When in doubt, MAP the column rather than skip it
 6. Multiple columns may contain similar data - pick the most direct match
 
 Respond with a valid JSON object:
