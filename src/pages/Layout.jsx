@@ -590,10 +590,11 @@ function SecondarySidebar({ config, location }) {
       </div>
 
       <TooltipProvider delayDuration={200}>
-        <nav
-          className="flex-1 overflow-y-auto px-2 lg:px-3 space-y-1 scrollbar-hide"
-          style={{ paddingTop: `${navOffset}px` }}
-        >
+        <nav className="flex-1 overflow-y-auto px-2 lg:px-3 scrollbar-hide">
+          {/* Spacer div to align first item with active primary nav item */}
+          <div style={{ height: `${navOffset}px`, flexShrink: 0 }} aria-hidden="true" />
+
+          <div className="space-y-1">
           {config.items.map((item) => {
             // Parse URLs for proper comparison
             const itemUrl = new URL(item.path, 'http://localhost');
@@ -652,6 +653,7 @@ function SecondarySidebar({ config, location }) {
               </Tooltip>
             );
           })}
+          </div>
         </nav>
       </TooltipProvider>
     </div>
