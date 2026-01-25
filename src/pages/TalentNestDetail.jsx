@@ -41,6 +41,8 @@ import {
   Building2,
   Phone,
   ExternalLink,
+  RefreshCw,
+  Bell,
 } from "lucide-react";
 import { createPageUrl } from "@/utils";
 
@@ -79,6 +81,7 @@ const PurchaseDialog = ({ isOpen, onClose, nest, onPurchase, user }) => {
       }
 
       // 2. Create purchase record
+      const completedAt = new Date().toISOString();
       const { data: purchase, error: purchaseError } = await supabase
         .from('nest_purchases')
         .insert({
@@ -89,7 +92,8 @@ const PurchaseDialog = ({ isOpen, onClose, nest, onPurchase, user }) => {
           currency: 'EUR',
           status: 'completed', // For now, instant completion (add Stripe later)
           items_copied: false,
-          completed_at: new Date().toISOString(),
+          completed_at: completedAt,
+          last_synced_at: completedAt, // Track initial sync timestamp
         })
         .select()
         .single();
@@ -268,6 +272,9 @@ export default function TalentNestDetail() {
   // Track if user has purchased this nest
   const [hasPurchased, setHasPurchased] = useState(false);
   const [checkingPurchase, setCheckingPurchase] = useState(true);
+  const [purchase, setPurchase] = useState(null);
+  const [hasUpdate, setHasUpdate] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Check if user already purchased this nest
   useEffect(() => {
@@ -279,21 +286,139 @@ export default function TalentNestDetail() {
 
       const { data } = await supabase
         .from('nest_purchases')
-        .select('id')
+        .select('id, last_synced_at, completed_at')
         .eq('nest_id', nestId)
         .eq('organization_id', user.organization_id)
         .eq('status', 'completed')
         .single();
 
       setHasPurchased(!!data);
+      setPurchase(data);
       setCheckingPurchase(false);
     }
     checkPurchase();
   }, [user?.company_id, nestId]);
 
-  const handlePurchase = (purchase) => {
+  // Check if nest has updates available
+  useEffect(() => {
+    if (hasPurchased && purchase && nest) {
+      const lastSynced = new Date(purchase.last_synced_at || purchase.completed_at);
+      const nestUpdated = new Date(nest.updated_at);
+      // If nest was updated after last sync, there's an update available
+      setHasUpdate(nestUpdated > lastSynced);
+    }
+  }, [hasPurchased, purchase, nest]);
+
+  // Function to refresh/sync nest data
+  const handleRefreshNest = async () => {
+    if (!purchase || !user?.organization_id || isSyncing) return;
+
+    setIsSyncing(true);
+    try {
+      // Get all nest items with their candidate data
+      const { data: nestItems, error: itemsError } = await supabase
+        .from('nest_items')
+        .select(`
+          candidate_id,
+          candidates (*)
+        `)
+        .eq('nest_id', nestId);
+
+      if (itemsError) {
+        console.error('Error fetching nest items:', itemsError);
+        toast.error('Failed to fetch updated candidates');
+        return;
+      }
+
+      if (!nestItems || nestItems.length === 0) {
+        toast.info('No candidates to sync');
+        return;
+      }
+
+      // Get existing candidates in the organization to avoid duplicates
+      const { data: existingCandidates } = await supabase
+        .from('candidates')
+        .select('email, linkedin_profile')
+        .eq('organization_id', user.organization_id)
+        .eq('source', 'nest_purchase');
+
+      const existingEmails = new Set(
+        existingCandidates?.map(c => c.email?.toLowerCase()).filter(Boolean) || []
+      );
+      const existingLinkedins = new Set(
+        existingCandidates?.map(c => c.linkedin_profile?.toLowerCase()).filter(Boolean) || []
+      );
+
+      // Filter to only new candidates
+      const candidatesToCopy = nestItems
+        .filter(item => item.candidate_id && item.candidates)
+        .filter(item => {
+          const email = item.candidates.email?.toLowerCase();
+          const linkedin = item.candidates.linkedin_profile?.toLowerCase();
+          // Skip if already exists by email or linkedin
+          if (email && existingEmails.has(email)) return false;
+          if (linkedin && existingLinkedins.has(linkedin)) return false;
+          return true;
+        })
+        .map(item => {
+          const { id, created_date, updated_date, organization_id, ...candidateData } = item.candidates;
+          return {
+            ...candidateData,
+            organization_id: user.organization_id,
+            source: 'nest_purchase',
+            import_source: `nest:${nest.id}`,
+          };
+        });
+
+      let addedCount = 0;
+      if (candidatesToCopy.length > 0) {
+        const { error: copyError, data: inserted } = await supabase
+          .from('candidates')
+          .insert(candidatesToCopy)
+          .select('id');
+
+        if (copyError) {
+          console.error('Error copying candidates:', copyError);
+          toast.error('Failed to sync some candidates');
+        } else {
+          addedCount = inserted?.length || candidatesToCopy.length;
+        }
+      }
+
+      // Update the purchase record's last_synced_at
+      await supabase
+        .from('nest_purchases')
+        .update({ last_synced_at: new Date().toISOString() })
+        .eq('id', purchase.id);
+
+      // Update local state
+      setPurchase({ ...purchase, last_synced_at: new Date().toISOString() });
+      setHasUpdate(false);
+
+      if (addedCount > 0) {
+        toast.success(`Synced ${addedCount} new candidates`, {
+          description: 'New candidates have been added to your talent pool',
+        });
+      } else {
+        toast.info('Already up to date', {
+          description: 'No new candidates to sync',
+        });
+      }
+    } catch (err) {
+      console.error('Sync error:', err);
+      toast.error('Failed to sync nest data');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handlePurchase = (purchaseRecord) => {
     setShowPurchaseDialog(false);
     setHasPurchased(true);
+    setPurchase({
+      ...purchaseRecord,
+      last_synced_at: purchaseRecord.completed_at || new Date().toISOString()
+    });
     toast.success(`Purchased "${nest.name}"`, {
       description: `${(nest.item_count || 0).toLocaleString()} candidates added to your talent pool`,
     });
@@ -589,6 +714,28 @@ export default function TalentNestDetail() {
 
               {hasPurchased ? (
                 <>
+                  {hasUpdate && (
+                    <div className="mb-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Bell className="w-4 h-4 text-amber-400" />
+                        <span className="text-sm font-medium text-amber-400">Update Available</span>
+                      </div>
+                      <p className="text-xs text-zinc-400 mb-3">
+                        New candidates have been added to this nest since your last sync.
+                      </p>
+                      <Button
+                        onClick={handleRefreshNest}
+                        disabled={isSyncing}
+                        className="w-full h-9 bg-amber-500 hover:bg-amber-600 text-white font-medium"
+                      >
+                        {isSyncing ? (
+                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Syncing...</>
+                        ) : (
+                          <><RefreshCw className="w-4 h-4 mr-2" />Refresh Nest</>
+                        )}
+                      </Button>
+                    </div>
+                  )}
                   <Button
                     onClick={goToCandidates}
                     className="w-full h-11 bg-green-600 hover:bg-green-700 text-white font-medium"
@@ -658,7 +805,14 @@ export default function TalentNestDetail() {
           <div>
             {hasPurchased ? (
               <>
-                <p className="text-lg font-bold text-green-400">Purchased</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-lg font-bold text-green-400">Purchased</p>
+                  {hasUpdate && (
+                    <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-xs">
+                      Update
+                    </Badge>
+                  )}
+                </div>
                 <p className="text-xs text-zinc-500">{itemCount.toLocaleString()} profiles owned</p>
               </>
             ) : (
@@ -669,13 +823,27 @@ export default function TalentNestDetail() {
             )}
           </div>
           {hasPurchased ? (
-            <Button
-              onClick={goToCandidates}
-              className="bg-green-600 hover:bg-green-700 text-white px-6"
-            >
-              <Check className="w-4 h-4 mr-2" />
-              View Candidates
-            </Button>
+            hasUpdate ? (
+              <Button
+                onClick={handleRefreshNest}
+                disabled={isSyncing}
+                className="bg-amber-500 hover:bg-amber-600 text-white px-6"
+              >
+                {isSyncing ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Syncing</>
+                ) : (
+                  <><RefreshCw className="w-4 h-4 mr-2" />Refresh</>
+                )}
+              </Button>
+            ) : (
+              <Button
+                onClick={goToCandidates}
+                className="bg-green-600 hover:bg-green-700 text-white px-6"
+              >
+                <Check className="w-4 h-4 mr-2" />
+                View Candidates
+              </Button>
+            )
           ) : (
             <Button
               onClick={() => setShowPurchaseDialog(true)}

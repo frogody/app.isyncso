@@ -546,10 +546,13 @@ serve(async (req) => {
 
     await supabase
       .from('nests')
-      .update({ item_count: actualCount || 0 })
+      .update({
+        item_count: actualCount || 0,
+        updated_at: new Date().toISOString() // Explicitly update timestamp for sync detection
+      })
       .eq('id', nestId);
 
-    console.log(`Updated nest ${nestId} item_count to ${actualCount}`);
+    console.log(`Updated nest ${nestId} item_count to ${actualCount}, updated_at refreshed`);
 
     return new Response(
       JSON.stringify({
