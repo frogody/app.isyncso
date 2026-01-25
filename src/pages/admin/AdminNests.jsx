@@ -64,6 +64,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { createClient } from '@supabase/supabase-js';
 import { BUTTON_STYLES } from '@/lib/adminTheme';
+import { NestUploadWizard } from '@/components/admin/NestUploadWizard';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -143,9 +144,7 @@ export default function AdminNests() {
     is_active: false,
   });
 
-  // Upload state
-  const [uploadFile, setUploadFile] = useState(null);
-  const [uploadProgress, setUploadProgress] = useState(null);
+  // Upload wizard state is handled by NestUploadWizard
 
   // Items state
   const [nestItems, setNestItems] = useState([]);
@@ -379,45 +378,11 @@ export default function AdminNests() {
     }
   };
 
-  // Handle file upload
-  const handleUploadCSV = async () => {
-    if (!uploadFile || !selectedNest) return;
-
-    setUploadProgress('Uploading...');
-    try {
-      const formData = new FormData();
-      formData.append('file', uploadFile);
-      formData.append('nest_id', selectedNest.id);
-      formData.append('nest_type', selectedNest.nest_type);
-
-      const { data: { session } } = await supabase.auth.getSession();
-
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/upload-nest-data`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session?.access_token}`,
-        },
-        body: formData,
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Upload failed');
-      }
-
-      setUploadProgress(`Success! Created ${result.created_count || 0} items.`);
-      setTimeout(() => {
-        setShowUploadModal(false);
-        setUploadFile(null);
-        setUploadProgress(null);
-        fetchNests();
-        fetchStats();
-      }, 2000);
-    } catch (err) {
-      setUploadProgress(`Error: ${err.message}`);
-    }
-  };
+  // Handle import complete from wizard
+  const handleImportComplete = useCallback(() => {
+    fetchNests();
+    fetchStats();
+  }, [fetchNests, fetchStats]);
 
   // Handle manage items
   const handleManageItems = (nest) => {
@@ -866,76 +831,15 @@ export default function AdminNests() {
         </DialogContent>
       </Dialog>
 
-      {/* Upload CSV Modal */}
-      <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
-        <DialogContent className="max-w-md bg-[#1a1a2e] border-white/10">
-          <DialogHeader>
-            <DialogTitle className="text-white">
-              Upload Data to {selectedNest?.name}
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            <div className="text-sm text-zinc-400">
-              <p className="mb-2">Upload a CSV file with the following columns:</p>
-              {selectedNest?.nest_type === 'candidates' && (
-                <code className="block bg-white/5 p-2 rounded text-xs">
-                  name, email, title, company, skills, linkedin_url
-                </code>
-              )}
-              {selectedNest?.nest_type === 'prospects' && (
-                <code className="block bg-white/5 p-2 rounded text-xs">
-                  company_name, contact_name, email, title, industry, deal_value
-                </code>
-              )}
-              {selectedNest?.nest_type === 'investors' && (
-                <code className="block bg-white/5 p-2 rounded text-xs">
-                  name, firm, email, type, check_size_min, check_size_max, focus_areas
-                </code>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label>CSV File</Label>
-              <Input
-                type="file"
-                accept=".csv"
-                onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
-                className="bg-white/5 border-white/10"
-              />
-            </div>
-
-            {uploadProgress && (
-              <div className={`p-3 rounded-lg ${uploadProgress.startsWith('Error') ? 'bg-red-500/10 text-red-400' : 'bg-blue-500/10 text-blue-400'}`}>
-                {uploadProgress}
-              </div>
-            )}
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowUploadModal(false);
-                setUploadFile(null);
-                setUploadProgress(null);
-              }}
-              className="border-white/10"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleUploadCSV}
-              disabled={!uploadFile || uploadProgress?.startsWith('Uploading')}
-              className={BUTTON_STYLES.primary}
-            >
-              {uploadProgress?.startsWith('Uploading') && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              <Upload className="w-4 h-4 mr-2" />
-              Upload
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Upload CSV Wizard */}
+      <NestUploadWizard
+        open={showUploadModal}
+        onOpenChange={setShowUploadModal}
+        nestId={selectedNest?.id}
+        nestType={selectedNest?.nest_type}
+        nestName={selectedNest?.name}
+        onImportComplete={handleImportComplete}
+      />
 
       {/* Manage Items Modal */}
       <Dialog open={showItemsModal} onOpenChange={setShowItemsModal}>

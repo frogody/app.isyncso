@@ -9,78 +9,39 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-interface ParsedRow {
-  [key: string]: string;
+interface MappedRow {
+  [key: string]: string | number | null;
 }
 
-// Parse CSV content into array of objects
-function parseCSV(csvText: string): ParsedRow[] {
-  const lines = csvText.trim().split('\n');
-  if (lines.length < 2) return [];
+// Create candidate from pre-mapped row data
+async function createCandidate(supabase: any, row: MappedRow): Promise<string | null> {
+  // Handle skills (comma or semicolon separated string)
+  const skillsStr = row.skills?.toString() || '';
+  const skills = skillsStr ? skillsStr.split(/[,;]/).map(s => s.trim()).filter(Boolean) : null;
 
-  // Parse header
-  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
-
-  const rows: ParsedRow[] = [];
-  for (let i = 1; i < lines.length; i++) {
-    const values = parseCSVLine(lines[i]);
-    if (values.length !== headers.length) continue;
-
-    const row: ParsedRow = {};
-    headers.forEach((header, index) => {
-      row[header] = values[index]?.trim().replace(/^["']|["']$/g, '') || '';
-    });
-    rows.push(row);
-  }
-
-  return rows;
-}
-
-// Handle CSV line parsing with quoted values
-function parseCSVLine(line: string): string[] {
-  const values: string[] = [];
-  let current = '';
-  let inQuotes = false;
-
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    if (char === '"' && (i === 0 || line[i - 1] !== '\\')) {
-      inQuotes = !inQuotes;
-    } else if (char === ',' && !inQuotes) {
-      values.push(current);
-      current = '';
-    } else {
-      current += char;
-    }
-  }
-  values.push(current);
-  return values;
-}
-
-// Create candidate from row
-async function createCandidate(supabase: any, row: ParsedRow): Promise<string | null> {
-  // Parse name into first/last
-  const name = row.name || '';
-  const nameParts = name.split(' ');
-  const firstName = nameParts[0] || '';
-  const lastName = nameParts.slice(1).join(' ') || '';
-
-  // Parse skills (comma or semicolon separated)
-  const skillsStr = row.skills || '';
-  const skills = skillsStr ? skillsStr.split(/[,;]/).map(s => s.trim()).filter(Boolean) : [];
+  // Parse years experience
+  const yearsExperience = row.years_experience
+    ? parseFloat(row.years_experience.toString().replace(/[^0-9.]/g, ''))
+    : null;
 
   const { data, error } = await supabase
     .from('candidates')
     .insert({
-      first_name: firstName,
-      last_name: lastName,
+      first_name: row.first_name || null,
+      last_name: row.last_name || null,
       email: row.email || null,
       phone: row.phone || null,
-      job_title: row.title || row.job_title || null,
-      company_name: row.company || row.company_name || null,
-      linkedin_profile: row.linkedin_url || row.linkedin || null,
-      skills: skills.length > 0 ? skills : null,
-      person_home_location: row.location || null,
+      job_title: row.job_title || null,
+      company_name: row.company_name || null,
+      linkedin_profile: row.linkedin_profile || null,
+      person_home_location: row.person_home_location || null,
+      skills: skills,
+      years_experience: yearsExperience,
+      education: row.education || null,
+      salary_range: row.salary_range || null,
+      industry: row.industry || null,
+      company_size: row.company_size || null,
+      profile_image_url: row.profile_image_url || null,
       source: 'nest_upload',
       organization_id: null, // Platform-owned
     })
@@ -94,26 +55,23 @@ async function createCandidate(supabase: any, row: ParsedRow): Promise<string | 
   return data?.id;
 }
 
-// Create prospect from row
-async function createProspect(supabase: any, row: ParsedRow): Promise<string | null> {
-  // Parse contact name into first/last
-  const contactName = row.contact_name || row.name || '';
-  const nameParts = contactName.split(' ');
-  const firstName = nameParts[0] || '';
-  const lastName = nameParts.slice(1).join(' ') || '';
-
-  const dealValue = row.deal_value ? parseFloat(row.deal_value.replace(/[^0-9.-]/g, '')) : null;
+// Create prospect from pre-mapped row data
+async function createProspect(supabase: any, row: MappedRow): Promise<string | null> {
+  // Parse deal value
+  const dealValue = row.deal_value
+    ? parseFloat(row.deal_value.toString().replace(/[^0-9.-]/g, ''))
+    : null;
 
   const { data, error } = await supabase
     .from('prospects')
     .insert({
-      first_name: firstName,
-      last_name: lastName,
+      first_name: row.first_name || null,
+      last_name: row.last_name || null,
       email: row.email || null,
       phone: row.phone || null,
-      company: row.company_name || row.company || null,
-      job_title: row.title || row.job_title || null,
-      linkedin_url: row.linkedin_url || row.linkedin || null,
+      company: row.company || null,
+      job_title: row.job_title || null,
+      linkedin_url: row.linkedin_url || null,
       industry: row.industry || null,
       deal_value: dealValue,
       website: row.website || null,
@@ -133,32 +91,38 @@ async function createProspect(supabase: any, row: ParsedRow): Promise<string | n
   return data?.id;
 }
 
-// Create investor from row
-async function createInvestor(supabase: any, row: ParsedRow): Promise<string | null> {
+// Create investor from pre-mapped row data
+async function createInvestor(supabase: any, row: MappedRow): Promise<string | null> {
   // Parse check sizes
-  const checkSizeMin = row.check_size_min ? parseFloat(row.check_size_min.replace(/[^0-9.-]/g, '')) : null;
-  const checkSizeMax = row.check_size_max ? parseFloat(row.check_size_max.replace(/[^0-9.-]/g, '')) : null;
+  const checkSizeMin = row.check_size_min
+    ? parseFloat(row.check_size_min.toString().replace(/[^0-9.-]/g, ''))
+    : null;
+  const checkSizeMax = row.check_size_max
+    ? parseFloat(row.check_size_max.toString().replace(/[^0-9.-]/g, ''))
+    : null;
 
-  // Parse focus areas
-  const focusAreasStr = row.focus_areas || '';
+  // Parse focus areas (comma or semicolon separated)
+  const focusAreasStr = row.focus_areas?.toString() || '';
   const focusAreas = focusAreasStr ? focusAreasStr.split(/[,;]/).map(s => s.trim()).filter(Boolean) : [];
 
   const profile = {
     name: row.name || '',
     firm: row.firm || '',
     email: row.email || null,
-    type: row.type || row.investor_type || 'VC',
+    type: row.investor_type || 'VC',
     check_size_min: checkSizeMin,
     check_size_max: checkSizeMax,
     focus_areas: focusAreas,
-    linkedin: row.linkedin_url || row.linkedin || null,
+    linkedin: row.linkedin || null,
     website: row.website || null,
+    location: row.location || null,
+    portfolio: row.portfolio || null,
   };
 
   const { data, error } = await supabase
     .from('raise_investors')
     .insert({
-      investor_type: row.type || row.investor_type || 'vc',
+      investor_type: row.investor_type || 'vc',
       profile: profile,
       organization_id: null, // Platform-owned
       user_id: null, // Will be set when copied to buyer
@@ -179,28 +143,49 @@ serve(async (req) => {
   }
 
   try {
-    // Parse multipart form data
-    const formData = await req.formData();
-    const file = formData.get('file') as File | null;
-    const nestId = formData.get('nest_id') as string;
-    const nestType = formData.get('nest_type') as string;
+    const contentType = req.headers.get('content-type') || '';
 
-    if (!file || !nestId || !nestType) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required fields: file, nest_id, nest_type' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    let nestId: string;
+    let nestType: string;
+    let rows: MappedRow[];
 
-    // Read file content
-    const csvText = await file.text();
-    const rows = parseCSV(csvText);
+    // Handle JSON body (new mapped data format)
+    if (contentType.includes('application/json')) {
+      const body = await req.json();
+      nestId = body.nest_id;
+      nestType = body.nest_type;
+      rows = body.rows || [];
 
-    if (rows.length === 0) {
-      return new Response(
-        JSON.stringify({ error: 'No valid data rows found in CSV' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      if (!nestId || !nestType || !rows.length) {
+        return new Response(
+          JSON.stringify({ error: 'Missing required fields: nest_id, nest_type, rows' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    } else {
+      // Handle FormData (legacy CSV upload)
+      const formData = await req.formData();
+      const file = formData.get('file') as File | null;
+      nestId = formData.get('nest_id') as string;
+      nestType = formData.get('nest_type') as string;
+
+      if (!file || !nestId || !nestType) {
+        return new Response(
+          JSON.stringify({ error: 'Missing required fields: file, nest_id, nest_type' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Parse CSV for legacy support
+      const csvText = await file.text();
+      rows = parseCSV(csvText);
+
+      if (rows.length === 0) {
+        return new Response(
+          JSON.stringify({ error: 'No valid data rows found in CSV' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     console.log(`Processing ${rows.length} rows for nest ${nestId} (${nestType})`);
@@ -269,18 +254,18 @@ serve(async (req) => {
 
           if (linkError) {
             console.error(`Failed to link item ${i}:`, linkError);
-            errors.push(`Row ${i + 2}: Failed to link entity to nest`);
+            errors.push(`Row ${i + 1}: Failed to link entity to nest`);
             errorCount++;
           } else {
             createdCount++;
           }
         } else {
-          errors.push(`Row ${i + 2}: Failed to create entity`);
+          errors.push(`Row ${i + 1}: Failed to create entity`);
           errorCount++;
         }
       } catch (err: any) {
         console.error(`Error processing row ${i}:`, err);
-        errors.push(`Row ${i + 2}: ${err.message}`);
+        errors.push(`Row ${i + 1}: ${err.message}`);
         errorCount++;
       }
     }
@@ -306,3 +291,45 @@ serve(async (req) => {
     );
   }
 });
+
+// Legacy CSV parsing for backwards compatibility
+function parseCSV(csvText: string): MappedRow[] {
+  const lines = csvText.trim().split('\n');
+  if (lines.length < 2) return [];
+
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
+
+  const rows: MappedRow[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const values = parseCSVLine(lines[i]);
+    if (values.length !== headers.length) continue;
+
+    const row: MappedRow = {};
+    headers.forEach((header, index) => {
+      row[header] = values[index]?.trim().replace(/^["']|["']$/g, '') || '';
+    });
+    rows.push(row);
+  }
+
+  return rows;
+}
+
+function parseCSVLine(line: string): string[] {
+  const values: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"' && (i === 0 || line[i - 1] !== '\\')) {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      values.push(current);
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  values.push(current);
+  return values;
+}
