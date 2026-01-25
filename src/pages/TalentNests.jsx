@@ -30,144 +30,26 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { createPageUrl } from "@/utils";
+import { supabase } from "@/api/supabaseClient";
 
 // ============================================================================
-// TALENT NESTS - Ready to be filled with real data
+// TALENT NESTS - Fetched from database
 // ============================================================================
-const NESTS = [
-  {
-    id: "nest-accountants",
-    name: "Accountants bij Accountantskantoren",
-    description: "Accountants werkzaam bij accountantskantoren in Nederland.",
-    category: "industry",
-    regions: ["Netherlands"],
-    candidate_count: 0,
-    price: 499,
-    featured: false,
-  },
-  {
-    id: "nest-software-devs",
-    name: "Software Developers bij SaaS Bedrijven",
-    description: "Software developers en engineers bij SaaS bedrijven.",
-    category: "industry",
-    regions: ["Netherlands"],
-    candidate_count: 0,
-    price: 599,
-    featured: false,
-  },
-  {
-    id: "nest-data-engineers",
-    name: "Data Engineers bij Tech Bedrijven",
-    description: "Data engineers werkzaam bij tech bedrijven.",
-    category: "skill_based",
-    regions: ["Netherlands"],
-    candidate_count: 0,
-    price: 649,
-    featured: false,
-  },
-  {
-    id: "nest-financial-controllers",
-    name: "Financial Controllers bij Corporates",
-    description: "Financial controllers bij grote corporates en multinationals.",
-    category: "job_function",
-    regions: ["Netherlands"],
-    candidate_count: 0,
-    price: 599,
-    featured: false,
-  },
-  {
-    id: "nest-account-managers",
-    name: "Account Managers bij B2B SaaS",
-    description: "Account managers en sales professionals bij B2B SaaS bedrijven.",
-    category: "job_function",
-    regions: ["Netherlands"],
-    candidate_count: 0,
-    price: 549,
-    featured: false,
-  },
-  {
-    id: "nest-cybersecurity",
-    name: "Cybersecurity Specialists bij Security Firms",
-    description: "Cybersecurity specialisten bij security bedrijven.",
-    category: "skill_based",
-    regions: ["Netherlands"],
-    candidate_count: 0,
-    price: 699,
-    featured: false,
-  },
-  {
-    id: "nest-hr-managers",
-    name: "HR Managers bij MKB",
-    description: "HR managers werkzaam bij MKB bedrijven.",
-    category: "job_function",
-    regions: ["Netherlands"],
-    candidate_count: 0,
-    price: 449,
-    featured: false,
-  },
-  {
-    id: "nest-marketing-managers",
-    name: "Marketing Managers bij Scale-ups",
-    description: "Marketing managers bij snelgroeiende scale-ups.",
-    category: "job_function",
-    regions: ["Netherlands"],
-    candidate_count: 0,
-    price: 549,
-    featured: false,
-  },
-  {
-    id: "nest-project-managers",
-    name: "Projectmanagers bij IT Consultancies",
-    description: "Projectmanagers werkzaam bij IT consultancy bureaus.",
-    category: "job_function",
-    regions: ["Netherlands"],
-    candidate_count: 0,
-    price: 549,
-    featured: false,
-  },
-  {
-    id: "nest-recruiters",
-    name: "Recruiters bij Werving & Selectiebureaus",
-    description: "Recruiters werkzaam bij werving en selectie bureaus.",
-    category: "industry",
-    regions: ["Netherlands"],
-    candidate_count: 0,
-    price: 399,
-    featured: false,
-  },
-  {
-    id: "nest-operations-managers",
-    name: "Operations Managers bij Logistiek/E-commerce",
-    description: "Operations managers bij logistiek en e-commerce bedrijven.",
-    category: "job_function",
-    regions: ["Netherlands"],
-    candidate_count: 0,
-    price: 549,
-    featured: false,
-  },
-  {
-    id: "nest-csm",
-    name: "Customer Success Managers bij SaaS Bedrijven",
-    description: "Customer success managers bij SaaS bedrijven.",
-    category: "job_function",
-    regions: ["Netherlands"],
-    candidate_count: 0,
-    price: 499,
-    featured: false,
-  },
-];
 
 const CATEGORIES = [
   { id: "all", label: "All" },
-  { id: "industry", label: "Industry" },
-  { id: "job_function", label: "Job Function" },
-  { id: "skill_based", label: "Skill Based" },
+  { id: "candidates", label: "Candidates" },
+  { id: "prospects", label: "Prospects" },
+  { id: "investors", label: "Investors" },
 ];
 
 // ============================================================================
 // SIMPLE NEST CARD - Clean, minimal design
 // ============================================================================
 const NestCard = ({ nest, onClick }) => {
+  const itemCount = nest.item_count || 0;
+  const price = parseFloat(nest.price) || 0;
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -185,15 +67,15 @@ const NestCard = ({ nest, onClick }) => {
 
         {/* Description */}
         <p className="text-sm text-zinc-500 mb-6 line-clamp-2">
-          {nest.description}
+          {nest.description || `${nest.nest_type} dataset`}
         </p>
 
         {/* Bottom row */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <span className="text-xl font-semibold text-white">€{nest.price}</span>
+            <span className="text-xl font-semibold text-white">€{price.toFixed(0)}</span>
             <span className="text-sm text-zinc-500">
-              {nest.candidate_count.toLocaleString()} profiles
+              {itemCount.toLocaleString()} profiles
             </span>
           </div>
           <ArrowRight className="w-5 h-5 text-zinc-600 group-hover:text-red-400 transition-colors" />
@@ -273,41 +155,63 @@ export default function TalentNests() {
   const navigate = useNavigate();
   const { user } = useUser();
   const [loading, setLoading] = useState(true);
+  const [nests, setNests] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [priceRange, setPriceRange] = useState("all");
   const [sortBy, setSortBy] = useState("featured");
 
+  // Fetch nests from database
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 400);
-    return () => clearTimeout(timer);
+    async function fetchNests() {
+      try {
+        const { data, error } = await supabase
+          .from('nests')
+          .select('*')
+          .eq('is_active', true)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('Error fetching nests:', error);
+        } else {
+          setNests(data || []);
+        }
+      } catch (err) {
+        console.error('Error fetching nests:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchNests();
   }, []);
 
   // Filter nests
   const filteredNests = useMemo(() => {
-    let result = [...NESTS];
+    let result = [...nests];
 
     // Search
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       result = result.filter(nest =>
-        nest.name.toLowerCase().includes(query) ||
-        nest.description.toLowerCase().includes(query)
+        nest.name?.toLowerCase().includes(query) ||
+        nest.description?.toLowerCase().includes(query)
       );
     }
 
-    // Category
+    // Category (nest_type)
     if (selectedCategory !== "all") {
-      result = result.filter(nest => nest.category === selectedCategory);
+      result = result.filter(nest => nest.nest_type === selectedCategory);
     }
 
     // Price range
     if (priceRange !== "all") {
       result = result.filter(nest => {
+        const price = parseFloat(nest.price) || 0;
         switch (priceRange) {
-          case "under500": return nest.price < 500;
-          case "500to700": return nest.price >= 500 && nest.price <= 700;
-          case "over700": return nest.price > 700;
+          case "under500": return price < 500;
+          case "500to700": return price >= 500 && price <= 700;
+          case "over700": return price > 700;
           default: return true;
         }
       });
@@ -316,23 +220,23 @@ export default function TalentNests() {
     // Sort
     switch (sortBy) {
       case "featured":
-        result.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
+        result.sort((a, b) => (b.item_count || 0) - (a.item_count || 0));
         break;
       case "price_low":
-        result.sort((a, b) => a.price - b.price);
+        result.sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
         break;
       case "price_high":
-        result.sort((a, b) => b.price - a.price);
+        result.sort((a, b) => (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0));
         break;
       case "candidates":
-        result.sort((a, b) => b.candidate_count - a.candidate_count);
+        result.sort((a, b) => (b.item_count || 0) - (a.item_count || 0));
         break;
     }
 
     return result;
-  }, [searchQuery, selectedCategory, priceRange, sortBy]);
+  }, [nests, searchQuery, selectedCategory, priceRange, sortBy]);
 
-  const totalCandidates = NESTS.reduce((sum, nest) => sum + nest.candidate_count, 0);
+  const totalCandidates = nests.reduce((sum, nest) => sum + (nest.item_count || 0), 0);
 
   const handleViewNest = (nest) => {
     navigate(createPageUrl("TalentNestDetail") + `?id=${nest.id}`);
