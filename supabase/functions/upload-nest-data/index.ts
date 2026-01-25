@@ -92,8 +92,13 @@ async function findExistingCandidate(
   return { existingId: null, matchType: null, inCurrentNest: false };
 }
 
+interface UpdateResult {
+  success: boolean;
+  error?: string;
+}
+
 // Update existing candidate with new data (only non-null values)
-async function updateCandidate(supabase: any, candidateId: string, row: MappedRow): Promise<boolean> {
+async function updateCandidate(supabase: any, candidateId: string, row: MappedRow): Promise<UpdateResult> {
   // Handle skills
   const skillsStr = row.skills?.toString() || '';
   const skills = skillsStr ? skillsStr.split(/[,;]/).map(s => s.trim()).filter(Boolean) : null;
@@ -157,16 +162,29 @@ async function updateCandidate(supabase: any, candidateId: string, row: MappedRo
 
   updates.updated_at = new Date().toISOString();
 
+  // Check if there's anything to update
+  if (Object.keys(updates).length <= 1) { // Only updated_at
+    return { success: true }; // Nothing to update, but not an error
+  }
+
   const { error } = await supabase
     .from('candidates')
     .update(updates)
     .eq('id', candidateId);
 
-  return !error;
+  if (error) {
+    return { success: false, error: error.message || 'Database update failed' };
+  }
+  return { success: true };
+}
+
+interface CreateResult {
+  id: string | null;
+  error?: string;
 }
 
 // Create candidate from pre-mapped row data
-async function createCandidate(supabase: any, row: MappedRow): Promise<string | null> {
+async function createCandidate(supabase: any, row: MappedRow): Promise<CreateResult> {
   // Handle skills (comma or semicolon separated string)
   const skillsStr = row.skills?.toString() || '';
   const skills = skillsStr ? skillsStr.split(/[,;]/).map(s => s.trim()).filter(Boolean) : null;
@@ -253,9 +271,9 @@ async function createCandidate(supabase: any, row: MappedRow): Promise<string | 
 
   if (error) {
     console.error('Failed to create candidate:', error);
-    return null;
+    return { id: null, error: error.message || 'Database insert failed' };
   }
-  return data?.id;
+  return { id: data?.id || null };
 }
 
 // Create prospect from pre-mapped row data
@@ -433,24 +451,35 @@ serve(async (req) => {
             if (duplicate.inCurrentNest) {
               // Already in this nest - just update the data
               console.log(`Row ${i + 1}: Found duplicate in this nest (match: ${duplicate.matchType}), updating...`);
-              const updated = await updateCandidate(supabase, duplicate.existingId, row);
-              if (updated) {
+              const updateResult = await updateCandidate(supabase, duplicate.existingId, row);
+              if (updateResult.success) {
                 updatedCount++;
               } else {
-                errors.push(`Row ${i + 1}: Failed to update existing candidate`);
+                const reason = updateResult.error || 'Unknown error';
+                errors.push(`Row ${i + 1}: Failed to update existing candidate - ${reason}`);
                 errorCount++;
               }
               skipNestItem = true; // Don't create new nest_item
             } else {
               // Exists globally but not in this nest - update and link
               console.log(`Row ${i + 1}: Found duplicate in other nest (match: ${duplicate.matchType}), linking...`);
-              await updateCandidate(supabase, duplicate.existingId, row);
+              const updateResult = await updateCandidate(supabase, duplicate.existingId, row);
+              if (!updateResult.success) {
+                console.warn(`Row ${i + 1}: Update before link failed: ${updateResult.error}`);
+              }
               entityId = duplicate.existingId;
               linkedCount++;
             }
           } else {
             // New candidate - create
-            entityId = await createCandidate(supabase, row);
+            const createResult = await createCandidate(supabase, row);
+            if (createResult.id) {
+              entityId = createResult.id;
+            } else {
+              const reason = createResult.error || 'Unknown error';
+              errors.push(`Row ${i + 1}: Failed to create candidate - ${reason}`);
+              errorCount++;
+            }
           }
         } else if (nestType === 'prospects') {
           entityId = await createProspect(supabase, row);
@@ -483,7 +512,8 @@ serve(async (req) => {
 
           if (linkError) {
             console.error(`Failed to link item ${i}:`, linkError);
-            errors.push(`Row ${i + 1}: Failed to link entity to nest`);
+            const linkReason = linkError.message || 'Database error';
+            errors.push(`Row ${i + 1}: Failed to link to nest - ${linkReason}`);
             errorCount++;
             // If this was a linked item, decrement the count since link failed
             if (wasLinked) {
@@ -494,12 +524,16 @@ serve(async (req) => {
             createdCount++;
           }
         } else if (!skipNestItem && !entityId) {
-          errors.push(`Row ${i + 1}: Failed to create entity`);
-          errorCount++;
+          // Only add error if not already captured above
+          if (!errors.some(e => e.startsWith(`Row ${i + 1}:`))) {
+            errors.push(`Row ${i + 1}: Failed to create entity - no data returned`);
+            errorCount++;
+          }
         }
       } catch (err: any) {
         console.error(`Error processing row ${i}:`, err);
-        errors.push(`Row ${i + 1}: ${err.message}`);
+        const errorMsg = err.message || 'Unknown error occurred';
+        errors.push(`Row ${i + 1}: ${errorMsg}`);
         errorCount++;
       }
     }
