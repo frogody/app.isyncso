@@ -39,6 +39,49 @@ import { toast } from 'sonner';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+// Translate technical database errors to user-friendly messages
+function formatErrorMessage(error) {
+  // Extract row number
+  const rowMatch = error.match(/^(Row \d+):/);
+  const rowPrefix = rowMatch ? rowMatch[1] + ': ' : '';
+
+  // Common error patterns and their user-friendly translations
+  const translations = [
+    { pattern: /Could not find.*column.*in the schema cache/i, message: 'Database schema issue - please contact support' },
+    { pattern: /duplicate key value violates unique constraint/i, message: 'This record already exists (duplicate email or ID)' },
+    { pattern: /violates foreign key constraint/i, message: 'Referenced data not found' },
+    { pattern: /null value in column.*violates not-null constraint/i, message: 'Missing required field' },
+    { pattern: /value too long for type/i, message: 'Text is too long for one of the fields' },
+    { pattern: /invalid input syntax for type/i, message: 'Invalid data format (check numbers and dates)' },
+    { pattern: /permission denied/i, message: 'Permission denied - contact admin' },
+    { pattern: /connection.*refused|timeout/i, message: 'Connection issue - please try again' },
+    { pattern: /Failed to update existing candidate/i, message: 'Could not update existing record' },
+    { pattern: /Failed to create candidate/i, message: 'Could not create new record' },
+    { pattern: /Failed to link to nest/i, message: 'Could not add to this nest' },
+    { pattern: /no data returned/i, message: 'Record was not saved properly' },
+  ];
+
+  for (const { pattern, message } of translations) {
+    if (pattern.test(error)) {
+      return rowPrefix + message;
+    }
+  }
+
+  // If no pattern matches, clean up the error a bit
+  let cleanError = error
+    .replace(/Row \d+:\s*/i, '')
+    .replace(/Failed to \w+ existing candidate\s*-\s*/i, '')
+    .replace(/Failed to create candidate\s*-\s*/i, '')
+    .replace(/Failed to link to nest\s*-\s*/i, '');
+
+  // Truncate very long errors
+  if (cleanError.length > 80) {
+    cleanError = cleanError.substring(0, 77) + '...';
+  }
+
+  return rowPrefix + cleanError;
+}
+
 // Target fields for each nest type - must match map-nest-columns edge function
 const NEST_TARGET_FIELDS = {
   candidates: [
@@ -572,8 +615,8 @@ export function NestUploadWizard({
                 </div>
                 <div className="max-h-32 overflow-y-auto space-y-1">
                   {importResults.errors.map((error, i) => (
-                    <p key={i} className="text-xs text-red-300/80 font-mono">
-                      {error}
+                    <p key={i} className="text-xs text-red-300/80">
+                      {formatErrorMessage(error)}
                     </p>
                   ))}
                 </div>

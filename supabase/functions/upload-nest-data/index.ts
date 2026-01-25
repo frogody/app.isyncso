@@ -160,10 +160,8 @@ async function updateCandidate(supabase: any, candidateId: string, row: MappedRo
   if (row.outreach_urgency_reasoning) updates.outreach_urgency_reasoning = row.outreach_urgency_reasoning;
   if (row.recent_ma_news) updates.recent_ma_news = row.recent_ma_news;
 
-  updates.updated_at = new Date().toISOString();
-
-  // Check if there's anything to update
-  if (Object.keys(updates).length <= 1) { // Only updated_at
+  // Check if there's anything to update (before adding timestamp)
+  if (Object.keys(updates).length === 0) {
     return { success: true }; // Nothing to update, but not an error
   }
 
