@@ -98,9 +98,9 @@ const StatCard = ({ label, value, icon: Icon, color = 'cyan', subtext, trend }) 
         </div>
       )}
     </div>
-    <p className="text-xl sm:text-2xl font-bold text-white mb-0.5 sm:mb-1 group-hover:text-cyan-400 transition-colors">{value || '-'}</p>
-    <p className="text-xs sm:text-sm text-white/50">{label}</p>
-    {subtext && <p className="text-[10px] sm:text-xs text-white/30 mt-0.5 sm:mt-1">{subtext}</p>}
+    <p className="text-lg font-bold text-white mb-0.5 group-hover:text-cyan-400 transition-colors">{value || '-'}</p>
+    <p className="text-xs text-white/50">{label}</p>
+    {subtext && <p className="text-[10px] text-white/30 mt-0.5">{subtext}</p>}
   </div>
 );
 
@@ -148,11 +148,11 @@ const InfoRow = ({ icon: Icon, label, value, link, copyable }) => {
 
 // Section Card Component - Responsive padding
 const SectionCard = ({ icon: Icon, title, children, action, className = '' }) => (
-  <div className={`bg-white/[0.03] border border-white/[0.06] rounded-xl sm:rounded-2xl p-4 sm:p-6 ${className}`}>
-    <div className="flex items-center justify-between mb-3 sm:mb-4 gap-2">
-      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-        <div className="p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-cyan-500/10 flex-shrink-0">
-          <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
+  <div className={`bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 ${className}`}>
+    <div className="flex items-center justify-between mb-3 gap-2">
+      <div className="flex items-center gap-2 min-w-0">
+        <div className="p-2 rounded-lg bg-cyan-500/10 flex-shrink-0">
+          <Icon className="w-4 h-4 text-cyan-400" />
         </div>
         <h3 className="text-sm sm:text-base font-semibold text-white truncate">{title}</h3>
       </div>
@@ -409,7 +409,7 @@ export default function CRMContactProfile() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black">
-        <div className="w-full px-6 lg:px-8 py-6 space-y-6">
+        <div className="w-full px-4 lg:px-6 py-4 space-y-4">
           <Skeleton className="h-8 w-32 bg-white/10" />
           <Skeleton className="h-64 w-full bg-white/10 rounded-3xl" />
           <Skeleton className="h-12 w-full bg-white/10 rounded-2xl" />
@@ -619,7 +619,7 @@ export default function CRMContactProfile() {
         {/* Hero Section */}
         <motion.div
           variants={itemVariants}
-          className="bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-white/[0.06] rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8"
+          className="bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-white/[0.06] rounded-xl p-4"
         >
           <div className="flex flex-col lg:flex-row lg:items-start gap-4 sm:gap-6">
             {/* Avatar & Basic Info */}
@@ -702,8 +702,8 @@ export default function CRMContactProfile() {
           </div>
 
           {/* Quick Stats Bar - Horizontal scroll on mobile */}
-          <div className="mt-6 sm:mt-8 pt-4 sm:pt-8 border-t border-white/[0.06]">
-            <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:overflow-visible scrollbar-hide sm:grid sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9">
+          <div className="mt-4 pt-4 border-t border-white/[0.06]">
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:overflow-visible scrollbar-hide sm:grid sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9">
               <div className="text-center min-w-[80px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
                 <p className="text-xs sm:text-sm text-white/40 mb-0.5 sm:mb-1">Contact Type</p>
                 <p className="text-sm sm:text-base lg:text-lg font-semibold text-white capitalize whitespace-nowrap">
@@ -757,8 +757,8 @@ export default function CRMContactProfile() {
         </motion.div>
 
         {/* Tab Navigation - Scrollable on mobile */}
-        <motion.div variants={itemVariants} className="-mx-3 px-3 sm:mx-0 sm:px-0">
-          <div className="flex gap-1 p-1.5 bg-white/[0.03] border border-white/[0.06] rounded-xl sm:rounded-2xl overflow-x-auto scrollbar-hide">
+        <motion.div variants={itemVariants} className="-mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="flex gap-1 p-1.5 bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => {
               const IconComponent = tab.icon;
               return (
@@ -789,10 +789,10 @@ export default function CRMContactProfile() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6"
+              className="grid grid-cols-1 lg:grid-cols-3 gap-4"
             >
               {/* Contact Information */}
-              <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+              <div className="lg:col-span-2 space-y-4">
                 <SectionCard icon={User} title="Contact Information">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 sm:gap-x-8">
                     <div>
@@ -894,7 +894,7 @@ export default function CRMContactProfile() {
               </div>
 
               {/* Sidebar */}
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {/* Enrichment Status with Quality Score */}
                 <SectionCard icon={Sparkles} title="Enrichment Data">
                   {/* Quality Score */}
@@ -921,7 +921,7 @@ export default function CRMContactProfile() {
                     const scoreColor = score >= 80 ? 'green' : score >= 50 ? 'yellow' : 'red';
 
                     return (
-                      <div className="mb-4 p-4 bg-gradient-to-r from-white/[0.02] to-white/[0.04] rounded-xl border border-white/[0.06]">
+                      <div className="mb-3 p-3 bg-gradient-to-r from-white/[0.02] to-white/[0.04] rounded-xl border border-white/[0.06]">
                         <div className="flex items-center justify-between mb-2">
                           <p className="text-sm text-white/50">Data Quality Score</p>
                           <Badge className={`bg-${scoreColor}-500/20 text-${scoreColor}-400 border-${scoreColor}-500/30`}>
@@ -951,8 +951,8 @@ export default function CRMContactProfile() {
                     <InfoRow icon={Hash} label="Prospect ID" value={contact.explorium_prospect_id} copyable />
                     <InfoRow icon={Hash} label="Business ID" value={contact.explorium_business_id} copyable />
                   </div>
-                  <div className="mt-4 pt-4 border-t border-white/[0.06]">
-                    <div className="grid grid-cols-2 gap-4 text-center">
+                  <div className="mt-3 pt-3 border-t border-white/[0.06]">
+                    <div className="grid grid-cols-2 gap-3 text-center">
                       <div className="p-3 bg-white/[0.03] rounded-xl">
                         <p className="text-2xl font-bold text-cyan-400">{contact.skills?.length || 0}</p>
                         <p className="text-xs text-white/50">Skills</p>
@@ -1002,9 +1002,9 @@ export default function CRMContactProfile() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+              className="grid grid-cols-1 lg:grid-cols-3 gap-4"
             >
-              <div className="lg:col-span-2 space-y-6">
+              <div className="lg:col-span-2 space-y-4">
                 {/* Skills */}
                 <SectionCard icon={Award} title={`Skills (${contact.skills?.length || 0})`}>
                   {contact.skills && contact.skills.length > 0 ? (
@@ -1041,10 +1041,10 @@ export default function CRMContactProfile() {
                         return (
                           <div
                             key={i}
-                            className="flex gap-4 p-4 bg-white/[0.02] rounded-xl border border-white/[0.04] hover:bg-white/[0.04] transition-colors"
+                            className="flex gap-3 p-3 bg-white/[0.02] rounded-xl border border-white/[0.04] hover:bg-white/[0.04] transition-colors"
                           >
-                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/20 flex items-center justify-center border border-cyan-500/30 flex-shrink-0">
-                              <Briefcase className="w-6 h-6 text-cyan-400" />
+                            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/20 flex items-center justify-center border border-cyan-500/30 flex-shrink-0">
+                              <Briefcase className="w-4 h-4 text-cyan-400" />
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="font-semibold text-white">{jobTitle || 'Unknown Position'}</p>
@@ -1069,7 +1069,7 @@ export default function CRMContactProfile() {
                 </SectionCard>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {/* Education */}
                 <SectionCard icon={GraduationCap} title={`Education (${contact.education?.length || 0})`}>
                   {contact.education && contact.education.length > 0 ? (
@@ -1165,12 +1165,12 @@ export default function CRMContactProfile() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="space-y-6"
+              className="space-y-4"
             >
               {contact.company ? (
                 <>
                   {/* Company Header */}
-                  <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6">
+                  <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4">
                     <div className="flex items-start gap-6">
                       {contact.company_logo_url ? (
                         <img
@@ -1227,7 +1227,7 @@ export default function CRMContactProfile() {
                     </div>
 
                     {/* Company Stats */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4 mt-8 pt-8 border-t border-white/[0.06]">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 mt-4 pt-4 border-t border-white/[0.06]">
                       <StatCard
                         icon={Users}
                         label="Employees"
@@ -1269,7 +1269,7 @@ export default function CRMContactProfile() {
                   )}
 
                   {/* Industry Classification & Locations */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {/* Industry Classification */}
                     {(contact.company_naics || contact.company_sic_code) && (
                       <SectionCard icon={Briefcase} title="Industry Classification">
@@ -1340,12 +1340,12 @@ export default function CRMContactProfile() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="space-y-6"
+              className="space-y-4"
             >
               {hasTechData ? (
                 <>
                   {/* Tech Stack Overview */}
-                  <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-6">
+                  <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4">
                     <div className="flex items-center justify-between mb-6">
                       <div className="flex items-center gap-3">
                         <div className="p-2.5 rounded-xl bg-cyan-500/10">
@@ -1360,7 +1360,7 @@ export default function CRMContactProfile() {
 
                     {/* All Technologies */}
                     {contact.company_tech_stack?.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mb-6">
+                      <div className="flex flex-wrap gap-2 mb-4">
                         {contact.company_tech_stack.map((tech, i) => (
                           <Badge
                             key={i}
@@ -1376,13 +1376,13 @@ export default function CRMContactProfile() {
 
                   {/* Tech by Category */}
                   {Object.keys(techCategories).length > 0 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                       {Object.entries(techCategories).map(([category, techs]) => {
                         const IconComponent = getTechCategoryIcon(category);
                         return (
                           <div
                             key={category}
-                            className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5 hover:bg-white/[0.05] transition-colors"
+                            className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 hover:bg-white/[0.05] transition-colors"
                           >
                             <div className="flex items-center gap-3 mb-4">
                               <div className="p-2 rounded-lg bg-cyan-500/10">
@@ -1435,12 +1435,12 @@ export default function CRMContactProfile() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="space-y-6"
+              className="space-y-4"
             >
               {hasFundingData ? (
                 <>
                   {/* Funding Overview */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     <StatCard
                       icon={DollarSign}
                       label="Total Funding"
@@ -1471,14 +1471,14 @@ export default function CRMContactProfile() {
                   {/* Funding Rounds Timeline */}
                   {fundingRounds.length > 0 && (
                     <SectionCard icon={TrendingUp} title={`Funding Rounds (${fundingRounds.length})`}>
-                      <div className="space-y-4">
+                      <div className="space-y-3">
                         {fundingRounds.map((round, i) => (
                           <div
                             key={i}
-                            className="flex gap-4 p-4 bg-white/[0.02] rounded-xl border border-white/[0.04] hover:bg-white/[0.04] transition-colors"
+                            className="flex gap-3 p-3 bg-white/[0.02] rounded-xl border border-white/[0.04] hover:bg-white/[0.04] transition-colors"
                           >
-                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500/20 to-green-600/20 flex items-center justify-center border border-green-500/30 flex-shrink-0">
-                              <CircleDollarSign className="w-6 h-6 text-green-400" />
+                            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-green-500/20 to-green-600/20 flex items-center justify-center border border-green-500/30 flex-shrink-0">
+                              <CircleDollarSign className="w-4 h-4 text-green-400" />
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
@@ -1518,14 +1518,14 @@ export default function CRMContactProfile() {
                   {/* Investors */}
                   {investors.length > 0 && (
                     <SectionCard icon={Users} title={`Investors (${investors.length})`}>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                         {investors.map((investor, i) => (
                           <div
                             key={i}
-                            className="p-3 bg-white/[0.02] rounded-xl border border-white/[0.04] hover:bg-white/[0.04] transition-colors text-center"
+                            className="p-2 bg-white/[0.02] rounded-xl border border-white/[0.04] hover:bg-white/[0.04] transition-colors text-center"
                           >
-                            <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center mx-auto mb-2">
-                              <Building2 className="w-5 h-5 text-purple-400" />
+                            <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center mx-auto mb-1">
+                              <Building2 className="w-4 h-4 text-purple-400" />
                             </div>
                             <p className="text-sm font-medium text-white truncate">
                               {typeof investor === 'string' ? investor : investor.name}
@@ -1556,7 +1556,7 @@ export default function CRMContactProfile() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+              className="grid grid-cols-1 lg:grid-cols-2 gap-4"
             >
               {/* Social Profiles */}
               <SectionCard icon={Share2} title="Social Profiles">
@@ -1567,10 +1567,10 @@ export default function CRMContactProfile() {
                         href={contact.linkedin_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-4 p-4 bg-white/[0.02] rounded-xl border border-white/[0.04] hover:bg-blue-500/10 hover:border-blue-500/30 transition-all group"
+                        className="flex items-center gap-3 p-3 bg-white/[0.02] rounded-xl border border-white/[0.04] hover:bg-blue-500/10 hover:border-blue-500/30 transition-all group"
                       >
-                        <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/30">
-                          <Linkedin className="w-6 h-6 text-blue-400" />
+                        <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/30">
+                          <Linkedin className="w-4 h-4 text-blue-400" />
                         </div>
                         <div className="flex-1">
                           <p className="font-medium text-white group-hover:text-blue-400 transition-colors">LinkedIn</p>
@@ -1588,10 +1588,10 @@ export default function CRMContactProfile() {
                           href={url.startsWith('http') ? url : `https://${url}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-4 p-4 bg-white/[0.02] rounded-xl border border-white/[0.04] hover:bg-cyan-500/10 hover:border-cyan-500/30 transition-all group"
+                          className="flex items-center gap-3 p-3 bg-white/[0.02] rounded-xl border border-white/[0.04] hover:bg-cyan-500/10 hover:border-cyan-500/30 transition-all group"
                         >
-                          <div className="w-12 h-12 rounded-xl bg-white/[0.06] flex items-center justify-center border border-white/[0.08]">
-                            <IconComponent className="w-6 h-6 text-white/60" />
+                          <div className="w-8 h-8 rounded-xl bg-white/[0.06] flex items-center justify-center border border-white/[0.08]">
+                            <IconComponent className="w-4 h-4 text-white/60" />
                           </div>
                           <div className="flex-1">
                             <p className="font-medium text-white capitalize group-hover:text-cyan-400 transition-colors">{platform}</p>
@@ -1613,7 +1613,7 @@ export default function CRMContactProfile() {
               {/* Social Activity */}
               <SectionCard icon={BarChart3} title="Social Activity">
                 {contact.social_activity && Object.keys(contact.social_activity).length > 0 ? (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {Object.entries(contact.social_activity).map(([key, value]) => (
                       <div key={key} className="flex items-center justify-between p-3 bg-white/[0.02] rounded-xl">
                         <p className="text-sm text-white/70 capitalize">{key.replace(/_/g, ' ')}</p>

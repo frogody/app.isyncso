@@ -99,13 +99,13 @@ const InfoRow = ({ icon: Icon, label, value, link }) => {
 };
 
 const SectionCard = ({ icon: Icon, title, children, action }) => (
-  <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl sm:rounded-2xl p-4 sm:p-6">
-    <div className="flex items-center justify-between mb-3 sm:mb-4 gap-2">
-      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-        <div className="p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-cyan-500/10 flex-shrink-0">
-          <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
+  <div className="bg-white/[0.03] border border-white/[0.06] rounded-lg sm:rounded-xl p-3 sm:p-4">
+    <div className="flex items-center justify-between mb-3 sm:mb-3 gap-2">
+      <div className="flex items-center gap-2 sm:gap-2 min-w-0">
+        <div className="p-2 sm:p-2 rounded-lg sm:rounded-lg bg-cyan-500/10 flex-shrink-0">
+          <Icon className="w-4 h-4 sm:w-4 sm:h-4 text-cyan-400" />
         </div>
-        <h3 className="text-sm sm:text-base font-semibold text-white truncate">{title}</h3>
+        <h3 className="text-sm sm:text-sm font-semibold text-white truncate">{title}</h3>
       </div>
       {action}
     </div>
@@ -145,21 +145,21 @@ const ContactCard = ({ contact, onClick }) => {
   return (
     <div
       onClick={onClick}
-      className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white/[0.02] rounded-xl border border-white/[0.04] hover:bg-white/[0.05] hover:border-cyan-500/30 active:bg-white/[0.08] transition-all cursor-pointer group"
+      className="flex items-center gap-2 sm:gap-3 p-3 sm:p-3 bg-white/[0.02] rounded-lg border border-white/[0.04] hover:bg-white/[0.05] hover:border-cyan-500/30 active:bg-white/[0.08] transition-all cursor-pointer group"
     >
-      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/20 flex items-center justify-center text-sm sm:text-lg font-semibold text-cyan-400 border border-cyan-500/30 flex-shrink-0">
+      <div className="w-8 h-8 sm:w-8 sm:h-8 rounded-lg sm:rounded-lg bg-gradient-to-br from-cyan-500/20 to-cyan-600/20 flex items-center justify-center text-xs sm:text-sm font-semibold text-cyan-400 border border-cyan-500/30 flex-shrink-0">
         {initials}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-medium text-white truncate text-sm sm:text-base">{fullName}</p>
-        <p className="text-xs sm:text-sm text-white/60 truncate">{contact.job_title || 'No title'}</p>
+        <p className="font-medium text-white truncate text-sm sm:text-sm">{fullName}</p>
+        <p className="text-xs sm:text-xs text-white/60 truncate">{contact.job_title || 'No title'}</p>
         {contact.email && (
-          <p className="text-[10px] sm:text-xs text-white/40 truncate">{contact.email}</p>
+          <p className="text-[10px] sm:text-[10px] text-white/40 truncate">{contact.email}</p>
         )}
       </div>
       <div className="flex items-center gap-1.5 sm:gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
         <Badge
-          className={`text-[10px] sm:text-xs ${
+          className={`text-[10px] sm:text-[10px] ${
             contact.stage === 'Won'
               ? 'bg-green-500/20 text-green-400'
               : contact.stage === 'Lost'
@@ -242,13 +242,13 @@ export default function CRMCompanyProfile() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black">
-        <div className="w-full px-6 lg:px-8 py-6 space-y-6">
+        <div className="w-full px-4 lg:px-6 py-4 space-y-4">
           <Skeleton className="h-8 w-32 bg-white/10" />
-          <Skeleton className="h-64 w-full bg-white/10 rounded-3xl" />
-          <Skeleton className="h-12 w-full bg-white/10 rounded-2xl" />
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Skeleton className="h-96 lg:col-span-2 bg-white/10 rounded-2xl" />
-            <Skeleton className="h-96 bg-white/10 rounded-2xl" />
+          <Skeleton className="h-64 w-full bg-white/10 rounded-2xl" />
+          <Skeleton className="h-12 w-full bg-white/10 rounded-xl" />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <Skeleton className="h-96 lg:col-span-2 bg-white/10 rounded-xl" />
+            <Skeleton className="h-96 bg-white/10 rounded-xl" />
           </div>
         </div>
       </div>
@@ -310,7 +310,7 @@ export default function CRMCompanyProfile() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="w-full px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6"
+        className="w-full px-4 lg:px-6 py-4 space-y-4"
       >
         {/* Back Navigation */}
         <motion.div variants={itemVariants}>
@@ -326,20 +326,20 @@ export default function CRMCompanyProfile() {
         {/* Hero Section */}
         <motion.div
           variants={itemVariants}
-          className="bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-white/[0.06] rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8"
+          className="bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-white/[0.06] rounded-xl sm:rounded-xl p-4 sm:p-4 lg:p-4"
         >
-          <div className="flex flex-col lg:flex-row lg:items-start gap-4 sm:gap-6">
+          <div className="flex flex-col lg:flex-row lg:items-start gap-4 sm:gap-4">
             {/* Logo & Basic Info */}
-            <div className="flex items-start gap-4 sm:gap-5 flex-1">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 rounded-xl sm:rounded-2xl bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 flex-shrink-0">
+            <div className="flex items-start gap-4 sm:gap-3 flex-1">
+              <div className="w-16 h-16 sm:w-16 sm:h-16 lg:w-16 lg:h-16 rounded-lg sm:rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 flex-shrink-0">
                 {company.logo_url ? (
                   <img
                     src={company.logo_url}
                     alt={company.name}
-                    className="w-full h-full object-cover rounded-xl sm:rounded-2xl"
+                    className="w-full h-full object-cover rounded-lg sm:rounded-lg"
                   />
                 ) : (
-                  <Building2 className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 text-white" />
+                  <Building2 className="w-4 h-4 sm:w-4 sm:h-4 lg:w-4 lg:h-4 text-white" />
                 )}
               </div>
               <div className="min-w-0 flex-1">
@@ -373,15 +373,15 @@ export default function CRMCompanyProfile() {
             </div>
 
             {/* Social Links */}
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-2 sm:gap-2">
               {company.linkedin_url && (
                 <a
                   href={company.linkedin_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2.5 sm:p-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] active:bg-white/[0.12] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  className="p-2 sm:p-2 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] active:bg-white/[0.12] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                 >
-                  <Linkedin className="w-5 h-5 text-white/60" />
+                  <Linkedin className="w-4 h-4 text-white/60" />
                 </a>
               )}
               {company.twitter_url && (
@@ -389,9 +389,9 @@ export default function CRMCompanyProfile() {
                   href={company.twitter_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2.5 sm:p-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] active:bg-white/[0.12] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  className="p-2 sm:p-2 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] active:bg-white/[0.12] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                 >
-                  <Twitter className="w-5 h-5 text-white/60" />
+                  <Twitter className="w-4 h-4 text-white/60" />
                 </a>
               )}
               {company.facebook_url && (
@@ -399,17 +399,17 @@ export default function CRMCompanyProfile() {
                   href={company.facebook_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2.5 sm:p-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] active:bg-white/[0.12] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  className="p-2 sm:p-2 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] active:bg-white/[0.12] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                 >
-                  <Facebook className="w-5 h-5 text-white/60" />
+                  <Facebook className="w-4 h-4 text-white/60" />
                 </a>
               )}
             </div>
           </div>
 
           {/* Quick Stats Bar - Scrollable on mobile */}
-          <div className="mt-6 sm:mt-8 pt-4 sm:pt-8 border-t border-white/[0.06]">
-            <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:overflow-visible scrollbar-hide sm:grid sm:grid-cols-3 md:grid-cols-6">
+          <div className="mt-4 sm:mt-4 pt-3 sm:pt-3 border-t border-white/[0.06]">
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:overflow-visible scrollbar-hide sm:grid sm:grid-cols-3 md:grid-cols-6">
               <div className="text-center min-w-[80px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
                 <p className="text-xs sm:text-sm text-white/40 mb-0.5 sm:mb-1">Employees</p>
                 <p className="text-sm sm:text-base lg:text-lg font-semibold text-white whitespace-nowrap">
@@ -443,13 +443,13 @@ export default function CRMCompanyProfile() {
         </motion.div>
 
         {/* Tab Navigation - Scrollable on mobile */}
-        <motion.div variants={itemVariants} className="-mx-3 px-3 sm:mx-0 sm:px-0">
-          <div className="flex gap-1 p-1 bg-white/[0.03] border border-white/[0.06] rounded-xl sm:rounded-2xl overflow-x-auto scrollbar-hide">
+        <motion.div variants={itemVariants} className="-mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="flex gap-1 p-1 bg-white/[0.03] border border-white/[0.06] rounded-lg sm:rounded-xl overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 min-w-[90px] px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all flex items-center justify-center gap-2 active:scale-[0.98] ${
+                className={`flex-1 min-w-[90px] px-4 sm:px-4 py-2 sm:py-2 rounded-lg sm:rounded-lg text-xs sm:text-xs font-medium transition-all flex items-center justify-center gap-2 active:scale-[0.98] ${
                   activeTab === tab.id
                     ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/20'
                     : 'text-white/50 hover:text-white hover:bg-white/[0.04]'
@@ -472,9 +472,9 @@ export default function CRMCompanyProfile() {
 
         {/* Tab Content */}
         {activeTab === 'overview' && (
-          <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Main Content */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-4">
               {/* Description */}
               {company.description && (
                 <SectionCard icon={Building} title="About">
@@ -516,7 +516,7 @@ export default function CRMCompanyProfile() {
                     </Button>
                   }
                 >
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {contacts.slice(0, 3).map((contact) => (
                       <ContactCard
                         key={contact.id}
@@ -532,7 +532,7 @@ export default function CRMCompanyProfile() {
             </div>
 
             {/* Sidebar */}
-            <div className="space-y-6">
+            <div className="space-y-4">
               {/* Company Details */}
               <SectionCard icon={Building2} title="Company Details">
                 <div className="space-y-1">
@@ -589,9 +589,9 @@ export default function CRMCompanyProfile() {
         )}
 
         {activeTab === 'contacts' && (
-          <motion.div variants={itemVariants} className="space-y-6">
+          <motion.div variants={itemVariants} className="space-y-4">
             {/* Search & Actions */}
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
                 <Input
@@ -609,7 +609,7 @@ export default function CRMCompanyProfile() {
 
             {/* Contacts List */}
             {filteredContacts.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {filteredContacts.map((contact) => (
                   <ContactCard
                     key={contact.id}
@@ -621,8 +621,8 @@ export default function CRMCompanyProfile() {
                 ))}
               </div>
             ) : (
-              <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-12 text-center">
-                <Users className="w-16 h-16 text-white/20 mx-auto mb-4" />
+              <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-8 text-center">
+                <Users className="w-12 h-12 text-white/20 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-white mb-2">
                   {contactSearch ? 'No Contacts Found' : 'No Contacts Yet'}
                 </h3>
@@ -644,8 +644,8 @@ export default function CRMCompanyProfile() {
 
         {activeTab === 'deals' && (
           <motion.div variants={itemVariants}>
-            <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-12 text-center">
-              <DollarSign className="w-16 h-16 text-white/20 mx-auto mb-4" />
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-8 text-center">
+              <DollarSign className="w-12 h-12 text-white/20 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-white mb-2">Deals Coming Soon</h3>
               <p className="text-white/60">
                 Track opportunities and deals associated with this company.

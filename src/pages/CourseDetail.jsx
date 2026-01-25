@@ -179,17 +179,17 @@ export default function CourseDetail() {
   
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-6">
-        <div className="space-y-6">
-          <Skeleton className="h-64 w-full bg-zinc-800 rounded-2xl" />
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              <Skeleton className="h-48 bg-zinc-800 rounded-2xl" />
-              <Skeleton className="h-64 bg-zinc-800 rounded-2xl" />
+      <div className="min-h-screen bg-black p-4">
+        <div className="space-y-4">
+          <Skeleton className="h-48 w-full bg-zinc-800 rounded-xl" />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-2 space-y-4">
+              <Skeleton className="h-40 bg-zinc-800 rounded-xl" />
+              <Skeleton className="h-48 bg-zinc-800 rounded-xl" />
             </div>
-            <div className="space-y-6">
-              <Skeleton className="h-32 bg-zinc-800 rounded-2xl" />
-              <Skeleton className="h-32 bg-zinc-800 rounded-2xl" />
+            <div className="space-y-4">
+              <Skeleton className="h-24 bg-zinc-800 rounded-xl" />
+              <Skeleton className="h-24 bg-zinc-800 rounded-xl" />
             </div>
           </div>
         </div>
@@ -199,8 +199,8 @@ export default function CourseDetail() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-6">
-        <div className="p-12 text-center max-w-md rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+        <div className="p-8 text-center max-w-md rounded-xl bg-zinc-900/50 border border-zinc-800/60">
           <AlertTriangle className="w-16 h-16 text-cyan-400/60 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-white mb-2">Error</h2>
           <p className="text-zinc-500 mb-6">{error}</p>

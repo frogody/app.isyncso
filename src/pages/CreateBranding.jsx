@@ -745,7 +745,7 @@ export default function CreateBranding() {
 
                     <div className="space-y-2">
                       <Label className="text-zinc-400">Themes to Avoid</Label>
-                      <div className="flex gap-2">
+                      <div className="flex gap-1">
                         <Input
                           value={newAvoidTheme}
                           onChange={(e) => setNewAvoidTheme(e.target.value)}

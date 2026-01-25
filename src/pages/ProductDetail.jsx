@@ -1305,7 +1305,7 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
       </GlassCard>
 
       {/* Purchase History Section */}
-      <GlassCard className="p-6">
+      <GlassCard className="p-4">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
             <History className="w-5 h-5 text-green-400" />
@@ -1488,8 +1488,8 @@ function SpecificationsSection({ details, onDetailsUpdate }) {
   const attributes = details?.attributes || [];
 
   return (
-    <div className="space-y-6">
-      <GlassCard className="p-6">
+    <div className="space-y-4">
+      <GlassCard className="p-4">
         <div className="flex items-center gap-2 mb-6">
           <Settings className="w-5 h-5 text-cyan-400" />
           <span className="font-medium text-white">Technical Specifications</span>
@@ -1514,13 +1514,13 @@ function SpecificationsSection({ details, onDetailsUpdate }) {
       </GlassCard>
 
       {attributes.length > 0 && (
-        <GlassCard className="p-6">
+        <GlassCard className="p-4">
           <div className="flex items-center gap-2 mb-6">
             <Layers className="w-5 h-5 text-purple-400" />
             <span className="font-medium text-white">Attributes</span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {attributes.map((attr, index) => (
               <div key={index} className="p-3 rounded-lg bg-zinc-900/50 border border-white/5">
                 <p className="text-xs text-zinc-500 mb-1">{attr.name}</p>
@@ -1533,7 +1533,7 @@ function SpecificationsSection({ details, onDetailsUpdate }) {
 
       {/* Certifications */}
       {details?.certifications && details.certifications.length > 0 && (
-        <GlassCard className="p-6">
+        <GlassCard className="p-4">
           <div className="flex items-center gap-2 mb-6">
             <Shield className="w-5 h-5 text-green-400" />
             <span className="font-medium text-white">Certifications</span>
@@ -1577,7 +1577,7 @@ function DocumentsSectionWrapper({ details, onDetailsUpdate }) {
   };
 
   return (
-    <GlassCard className="p-6">
+    <GlassCard className="p-4">
       <DocumentsSection
         documents={documents}
         onUpload={handleUpload}
@@ -1595,7 +1595,7 @@ function ActivitySectionWrapper({ product, details }) {
   }, [product, details]);
 
   return (
-    <GlassCard className="p-6">
+    <GlassCard className="p-4">
       <div className="flex items-center gap-2 mb-6">
         <History className="w-5 h-5 text-cyan-400" />
         <span className="font-medium text-white">Activity History</span>
@@ -1807,10 +1807,10 @@ export default function ProductDetail() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black relative">
-        <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+        <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
           <Skeleton className="h-10 w-48 bg-zinc-800/50" />
           <Skeleton className="h-12 w-full bg-zinc-800/50 rounded-lg" />
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <Skeleton className="aspect-square bg-zinc-800/50 rounded-xl" />
             <div className="lg:col-span-2 space-y-4">
               <Skeleton className="h-48 bg-zinc-800/50 rounded-xl" />
@@ -1826,8 +1826,8 @@ export default function ProductDetail() {
   if (error || !product) {
     return (
       <div className="min-h-screen bg-black relative">
-        <div className="relative z-10 w-full px-6 lg:px-8 py-6">
-          <GlassCard className="p-12 text-center max-w-md mx-auto">
+        <div className="relative z-10 w-full px-4 lg:px-6 py-4">
+          <GlassCard className="p-8 text-center max-w-md mx-auto">
             <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mx-auto mb-4">
               <XCircle className="w-8 h-8 text-red-400" />
             </div>
@@ -1858,7 +1858,7 @@ export default function ProductDetail() {
         )} />
       </div>
 
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <div ref={headerRef} style={{ opacity: 0 }} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -1972,12 +1972,12 @@ export default function ProductDetail() {
 
         {/* Related Products */}
         {activeSection === 'overview' && relatedProducts.length > 0 && (
-          <div className="mt-8">
-            <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+          <div className="mt-6">
+            <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
               <Layers className="w-5 h-5 text-cyan-400" />
               Related Products
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {relatedProducts.slice(0, 4).map((relatedProduct) => (
                 <ProductGridCard
                   key={relatedProduct.id}

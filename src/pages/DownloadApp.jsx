@@ -74,8 +74,8 @@ export default function DownloadApp() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 py-16">
-        <div className="text-center mb-12">
+      <div className="max-w-5xl mx-auto px-4 lg:px-6 py-8">
+        <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-white mb-4">
             Installation Instructions
           </h2>
@@ -84,17 +84,17 @@ export default function DownloadApp() {
           </p>
         </div>
 
-        <div className="space-y-8">
-          <Card className="glass-card border-0 p-8">
-            <div className="flex gap-6">
+        <div className="space-y-4">
+          <Card className="glass-card border-0 p-4">
+            <div className="flex gap-4">
               <div className="flex-shrink-0">
-                <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-emerald-400">1</span>
+                <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                  <span className="text-lg font-bold text-emerald-400">1</span>
                 </div>
               </div>
               <div className="flex-1">
-                <h3 className="text-2xl font-semibold text-white mb-4">Download and Install</h3>
-                <ul className="space-y-3 text-gray-300">
+                <h3 className="text-lg font-semibold text-white mb-3">Download and Install</h3>
+                <ul className="space-y-2 text-gray-300">
                   <li className="flex items-start gap-2">
                     <CheckCircle className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
                     <span>Click the download button above</span>
@@ -116,16 +116,16 @@ export default function DownloadApp() {
             </div>
           </Card>
 
-          <Card className="glass-card border-0 p-8">
-            <div className="flex gap-6">
+          <Card className="glass-card border-0 p-4">
+            <div className="flex gap-4">
               <div className="flex-shrink-0">
-                <div className="w-16 h-16 rounded-full bg-blue-500/20 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-blue-400">2</span>
+                <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center">
+                  <span className="text-lg font-bold text-blue-400">2</span>
                 </div>
               </div>
               <div className="flex-1">
-                <h3 className="text-2xl font-semibold text-white mb-4">First Launch</h3>
-                <ul className="space-y-3 text-gray-300">
+                <h3 className="text-lg font-semibold text-white mb-3">First Launch</h3>
+                <ul className="space-y-2 text-gray-300">
                   <li className="flex items-start gap-2">
                     <CheckCircle className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
                     <span>Open LearningTracker from Applications</span>
@@ -151,16 +151,16 @@ export default function DownloadApp() {
             </div>
           </Card>
 
-          <Card className="glass-card border-0 p-8">
-            <div className="flex gap-6">
+          <Card className="glass-card border-0 p-4">
+            <div className="flex gap-4">
               <div className="flex-shrink-0">
-                <div className="w-16 h-16 rounded-full bg-purple-500/20 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-purple-400">3</span>
+                <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center">
+                  <span className="text-lg font-bold text-purple-400">3</span>
                 </div>
               </div>
               <div className="flex-1">
-                <h3 className="text-2xl font-semibold text-white mb-4">Grant Permissions</h3>
-                <ul className="space-y-3 text-gray-300">
+                <h3 className="text-lg font-semibold text-white mb-3">Grant Permissions</h3>
+                <ul className="space-y-2 text-gray-300">
                   <li className="flex items-start gap-2">
                     <CheckCircle className="w-5 h-5 text-purple-400 mt-0.5 flex-shrink-0" />
                     <span>The app will request Accessibility access</span>
@@ -182,16 +182,16 @@ export default function DownloadApp() {
             </div>
           </Card>
 
-          <Card className="glass-card border-0 p-8">
-            <div className="flex gap-6">
+          <Card className="glass-card border-0 p-4">
+            <div className="flex gap-4">
               <div className="flex-shrink-0">
-                <div className="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-amber-400">4</span>
+                <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center">
+                  <span className="text-lg font-bold text-amber-400">4</span>
                 </div>
               </div>
               <div className="flex-1">
-                <h3 className="text-2xl font-semibold text-white mb-4">Connect Your Account</h3>
-                <ul className="space-y-3 text-gray-300">
+                <h3 className="text-lg font-semibold text-white mb-3">Connect Your Account</h3>
+                <ul className="space-y-2 text-gray-300">
                   <li className="flex items-start gap-2">
                     <CheckCircle className="w-5 h-5 text-amber-400 mt-0.5 flex-shrink-0" />
                     <span>Enter your email (the one you use for courses)</span>
@@ -211,9 +211,9 @@ export default function DownloadApp() {
         </div>
       </div>
 
-      <div className="bg-gradient-to-b from-gray-900/50 to-black py-16">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-12">
+      <div className="bg-gradient-to-b from-gray-900/50 to-black py-8">
+        <div className="max-w-7xl mx-auto px-4 lg:px-6">
+          <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-white mb-4">
               How It Works
             </h2>
@@ -222,42 +222,42 @@ export default function DownloadApp() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <Card className="glass-card border-0 p-6 text-center">
-              <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-4">
-                <Activity className="w-8 h-8 text-emerald-400" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="glass-card border-0 p-4 text-center">
+              <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-3">
+                <Activity className="w-6 h-6 text-emerald-400" />
               </div>
-              <h3 className="text-xl font-semibold text-white mb-3">Runs Silently</h3>
+              <h3 className="text-lg font-semibold text-white mb-2">Runs Silently</h3>
               <p className="text-gray-400">
                 Lives in menu bar, works in background
               </p>
             </Card>
 
-            <Card className="glass-card border-0 p-6 text-center">
-              <div className="w-16 h-16 rounded-full bg-blue-500/20 flex items-center justify-center mx-auto mb-4">
-                <Brain className="w-8 h-8 text-blue-400" />
+            <Card className="glass-card border-0 p-4 text-center">
+              <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center mx-auto mb-3">
+                <Brain className="w-6 h-6 text-blue-400" />
               </div>
-              <h3 className="text-xl font-semibold text-white mb-3">Learns Your Workflow</h3>
+              <h3 className="text-lg font-semibold text-white mb-2">Learns Your Workflow</h3>
               <p className="text-gray-400">
                 Understands what skills you use
               </p>
             </Card>
 
-            <Card className="glass-card border-0 p-6 text-center">
-              <div className="w-16 h-16 rounded-full bg-purple-500/20 flex items-center justify-center mx-auto mb-4">
-                <Zap className="w-8 h-8 text-purple-400" />
+            <Card className="glass-card border-0 p-4 text-center">
+              <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center mx-auto mb-3">
+                <Zap className="w-6 h-6 text-purple-400" />
               </div>
-              <h3 className="text-xl font-semibold text-white mb-3">Personalizes Courses</h3>
+              <h3 className="text-lg font-semibold text-white mb-2">Personalizes Courses</h3>
               <p className="text-gray-400">
                 Recommends what you need to learn
               </p>
             </Card>
 
-            <Card className="glass-card border-0 p-6 text-center">
-              <div className="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-4">
-                <Lock className="w-8 h-8 text-amber-400" />
+            <Card className="glass-card border-0 p-4 text-center">
+              <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-3">
+                <Lock className="w-6 h-6 text-amber-400" />
               </div>
-              <h3 className="text-xl font-semibold text-white mb-3">Privacy First</h3>
+              <h3 className="text-lg font-semibold text-white mb-2">Privacy First</h3>
               <p className="text-gray-400">
                 All data encrypted, you control everything
               </p>
@@ -266,8 +266,8 @@ export default function DownloadApp() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-6 py-16">
-        <div className="text-center mb-12">
+      <div className="max-w-5xl mx-auto px-4 lg:px-6 py-8">
+        <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-white mb-4">
             Frequently Asked Questions
           </h2>
@@ -276,12 +276,12 @@ export default function DownloadApp() {
           </p>
         </div>
 
-        <div className="space-y-6">
-          <Card className="glass-card border-0 p-8">
-            <div className="flex gap-4">
+        <div className="space-y-4">
+          <Card className="glass-card border-0 p-4">
+            <div className="flex gap-3">
               <HelpCircle className="w-6 h-6 text-emerald-400 flex-shrink-0 mt-1" />
               <div>
-                <h3 className="text-xl font-semibold text-white mb-3">Is it safe?</h3>
+                <h3 className="text-lg font-semibold text-white mb-2">Is it safe?</h3>
                 <p className="text-gray-300">
                   Yes! The app is notarized by Apple and all data is encrypted. We only track development activity, not personal browsing.
                 </p>
@@ -289,11 +289,11 @@ export default function DownloadApp() {
             </div>
           </Card>
 
-          <Card className="glass-card border-0 p-8">
-            <div className="flex gap-4">
+          <Card className="glass-card border-0 p-4">
+            <div className="flex gap-3">
               <HelpCircle className="w-6 h-6 text-emerald-400 flex-shrink-0 mt-1" />
               <div>
-                <h3 className="text-xl font-semibold text-white mb-3">Will it slow down my Mac?</h3>
+                <h3 className="text-lg font-semibold text-white mb-2">Will it slow down my Mac?</h3>
                 <p className="text-gray-300">
                   No, it uses less than 3% CPU and 100MB of RAM. You won't notice it running.
                 </p>
@@ -301,11 +301,11 @@ export default function DownloadApp() {
             </div>
           </Card>
 
-          <Card className="glass-card border-0 p-8">
-            <div className="flex gap-4">
+          <Card className="glass-card border-0 p-4">
+            <div className="flex gap-3">
               <HelpCircle className="w-6 h-6 text-emerald-400 flex-shrink-0 mt-1" />
               <div>
-                <h3 className="text-xl font-semibold text-white mb-3">What does it track?</h3>
+                <h3 className="text-lg font-semibold text-white mb-2">What does it track?</h3>
                 <p className="text-gray-300">
                   Which applications you use for learning/work, how long you spend, and what skills you apply. It never captures passwords, personal data, or sensitive content.
                 </p>
@@ -313,11 +313,11 @@ export default function DownloadApp() {
             </div>
           </Card>
 
-          <Card className="glass-card border-0 p-8">
-            <div className="flex gap-4">
+          <Card className="glass-card border-0 p-4">
+            <div className="flex gap-3">
               <HelpCircle className="w-6 h-6 text-emerald-400 flex-shrink-0 mt-1" />
               <div>
-                <h3 className="text-xl font-semibold text-white mb-3">Can I pause it?</h3>
+                <h3 className="text-lg font-semibold text-white mb-2">Can I pause it?</h3>
                 <p className="text-gray-300">
                   Yes, click the menu bar icon and choose "Pause" anytime.
                 </p>
@@ -325,11 +325,11 @@ export default function DownloadApp() {
             </div>
           </Card>
 
-          <Card className="glass-card border-0 p-8">
-            <div className="flex gap-4">
+          <Card className="glass-card border-0 p-4">
+            <div className="flex gap-3">
               <HelpCircle className="w-6 h-6 text-emerald-400 flex-shrink-0 mt-1" />
               <div>
-                <h3 className="text-xl font-semibold text-white mb-3">How do I uninstall?</h3>
+                <h3 className="text-lg font-semibold text-white mb-2">How do I uninstall?</h3>
                 <p className="text-gray-300">
                   Just drag LearningTracker from Applications to Trash.
                 </p>
@@ -339,13 +339,13 @@ export default function DownloadApp() {
         </div>
       </div>
 
-      <div className="bg-gradient-to-t from-gray-900/50 to-black py-16">
-        <div className="max-w-5xl mx-auto px-6">
-          <Card className="glass-card border-0 p-8">
-            <h2 className="text-2xl font-bold text-white mb-6 text-center">
+      <div className="bg-gradient-to-t from-gray-900/50 to-black py-8">
+        <div className="max-w-5xl mx-auto px-4 lg:px-6">
+          <Card className="glass-card border-0 p-4">
+            <h2 className="text-2xl font-bold text-white mb-4 text-center">
               System Requirements
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="flex items-start gap-4">
                 <Monitor className="w-8 h-8 text-emerald-400 flex-shrink-0" />
                 <div>
@@ -374,8 +374,8 @@ export default function DownloadApp() {
         </div>
       </div>
 
-      <div className="py-16 text-center">
-        <div className="max-w-3xl mx-auto px-6 space-y-6">
+      <div className="py-8 text-center">
+        <div className="max-w-3xl mx-auto px-4 lg:px-6 space-y-4">
           <h2 className="text-3xl font-bold text-white">
             Ready to Get Started?
           </h2>
