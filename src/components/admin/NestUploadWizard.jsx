@@ -71,6 +71,16 @@ const NEST_TARGET_FIELDS = {
     { id: 'industry', label: 'Industry', required: false, description: 'Industry sector' },
     { id: 'company_size', label: 'Company Size', required: false, description: 'Size category (51-200)' },
     { id: 'employee_count', label: 'Employee Count', required: false, description: 'Number of employees' },
+
+    // Enrichment data (field names match TalentCandidateProfile.jsx)
+    { id: 'times_promoted', label: 'Times Promoted', required: false, description: 'Promotions at current company' },
+    { id: 'times_company_hopped', label: 'Company Changes', required: false, description: 'Number of job changes/company hops' },
+    { id: 'years_at_company', label: 'Years at Company', required: false, description: 'Years at current company' },
+    { id: 'job_satisfaction', label: 'Job Satisfaction', required: false, description: 'Satisfaction level' },
+    { id: 'estimated_age_range', label: 'Estimated Age', required: false, description: 'Estimated age range' },
+    { id: 'market_position', label: 'Market Position', required: false, description: 'Market position analysis' },
+    { id: 'employee_growth_rate', label: 'Employee Growth', required: false, description: 'Company growth rate' },
+    { id: 'recruitment_urgency', label: 'Recruitment Urgency', required: false, description: 'Urgency level' },
   ],
   prospects: [
     { id: 'first_name', label: 'First Name', required: false, description: 'Person\'s first name' },

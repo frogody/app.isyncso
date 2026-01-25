@@ -73,6 +73,16 @@ async function createCandidate(supabase: any, row: MappedRow): Promise<string | 
       company_size: row.company_size || null,
       employee_count: employeeCount,
 
+      // Enrichment data (field names match TalentCandidateProfile.jsx)
+      times_promoted: row.times_promoted ? parseInt(row.times_promoted.toString()) : null,
+      times_company_hopped: row.times_company_hopped ? parseInt(row.times_company_hopped.toString()) : null,
+      years_at_company: row.years_at_company ? parseFloat(row.years_at_company.toString()) : null,
+      job_satisfaction: row.job_satisfaction || null,
+      estimated_age_range: row.estimated_age_range || null,
+      market_position: row.market_position || null,
+      employee_growth_rate: row.employee_growth_rate ? parseFloat(row.employee_growth_rate.toString()) : null,
+      recruitment_urgency: row.recruitment_urgency || null,
+
       // Meta
       source: 'nest_upload',
       organization_id: null, // Platform-owned

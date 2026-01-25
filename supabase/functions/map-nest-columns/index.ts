@@ -37,6 +37,16 @@ const NEST_TARGET_FIELDS = {
     { id: 'industry', label: 'Industry', description: 'Industry sector', patterns: ['industry', 'sector', 'branche', 'vertical', 'market'] },
     { id: 'company_size', label: 'Company Size', description: 'Size category of employer (e.g., 51-200 employees)', patterns: ['company_size', 'company size', 'size', 'organization size'] },
     { id: 'employee_count', label: 'Employee Count', description: 'Exact number of employees', patterns: ['employee count', 'employee_count', 'employees', 'headcount', 'staff count', 'number of employees'] },
+
+    // Enrichment/analysis data (field names match TalentCandidateProfile.jsx)
+    { id: 'times_promoted', label: 'Times Promoted', description: 'Number of promotions at current company', patterns: ['times_promoted', 'times promoted', 'promotions', 'promoted current company'] },
+    { id: 'times_company_hopped', label: 'Company Changes', description: 'Number of job changes/company hops', patterns: ['times_hopped', 'times hopped', 'job hops', 'company changes', 'times_hopped_company'] },
+    { id: 'years_at_company', label: 'Years at Company', description: 'Years at current company', patterns: ['years with current company', 'years at company', 'tenure', 'time at company'] },
+    { id: 'job_satisfaction', label: 'Job Satisfaction', description: 'Job satisfaction level', patterns: ['job satisfaction', 'job_satisfaction', 'satisfaction'] },
+    { id: 'estimated_age_range', label: 'Estimated Age', description: 'Estimated age range', patterns: ['estimated age', 'age range', 'estimated_age'] },
+    { id: 'market_position', label: 'Market Position', description: 'Market position analysis', patterns: ['market_position', 'market position'] },
+    { id: 'employee_growth_rate', label: 'Employee Growth', description: 'Company employee growth rate', patterns: ['employee growth', 'headcount growth', 'growth rate', 'percent employee growth'] },
+    { id: 'recruitment_urgency', label: 'Recruitment Urgency', description: 'Urgency level for recruitment', patterns: ['recruitment urgency', 'urgency', 'outreach urgency'] },
   ],
   prospects: [
     { id: 'first_name', label: 'First Name', description: 'Person\'s first name', patterns: ['first_name', 'fname', 'first'] },
@@ -80,8 +90,7 @@ function buildPromptForNestType(nestType: string, columnInfo: string): string {
 
 === MANDATORY MAPPINGS (NEVER SKIP THESE) ===
 These column names MUST ALWAYS be mapped to the corresponding target field:
-- "linkedin_profile" → linkedin_profile (this is the PERSON's LinkedIn, NOT company!)
-- "linkedIn_profile" → linkedin_profile
+- "linkedin_profile" or "linkedIn_profile" → linkedin_profile (PERSON's LinkedIn!)
 - "first_Name" or "first_name" → first_name
 - "last_name" → last_name
 - "Job_Title" or "job_title" → job_title
@@ -89,30 +98,40 @@ These column names MUST ALWAYS be mapped to the corresponding target field:
 - "Company Name" → company_name
 - "Company HQ" → company_hq
 - "Company Domain" → company_domain
-- "Company LinkedIn" → company_linkedin (this is the COMPANY's page)
+- "Company LinkedIn" → company_linkedin (COMPANY's page)
 - "Industry" → industry
 - "Company Size" → company_size
 - "Employee Count" → employee_count
 - "Description" → company_description
 - "Type" → company_type
 - "Work Address" → work_address
-- "Salary_Range" or "salary_range" → salary_range
-- "Years With Current Company" → years_experience
-- "email" or "Email" → email
-- "phone" or "Phone" → phone
+- "Salary_Range" → salary_range
+- "Years With Current Company" → years_at_company
+- "email" → email
+- "phone" → phone
+
+=== ENRICHMENT DATA MAPPINGS ===
+These enrichment columns should ALSO be mapped (not skipped!):
+- "Times_Promoted Current Company" or "Times_Promoted" → times_promoted
+- "Times_Hopped Company" or "Times_Hopped" → times_company_hopped
+- "Years With Current Company" → years_at_company
+- "Job Satisfaction" → job_satisfaction
+- "Estimated Age Range" → estimated_age_range
+- "Market_Position" → market_position
+- "Find Company Headcount Growth" or "Percent Employee Growth" → employee_growth_rate
+- "Recruitment Urgency" → recruitment_urgency
 
 === LINKEDIN DISTINCTION (CRITICAL!) ===
-- "linkedin_profile" or "linkedIn_profile" = PERSON's profile → map to linkedin_profile
-- "Company LinkedIn" = COMPANY's page → map to company_linkedin
-THESE ARE DIFFERENT! Do not confuse them!
+- "linkedin_profile" = PERSON's profile → linkedin_profile
+- "Company LinkedIn" = COMPANY's page → company_linkedin
 
-=== SKIP THESE ANALYSIS COLUMNS ===
-Only skip columns that contain AI-generated analysis, reports, or reasoning:
-- Job Satisfaction Analysis, Job Satisfaction, Reasoning - Job Satisfaction
-- Recruitment Urgency, Reasoning Outreach Urgency
-- Market_Position, Experience report, Accounting Experience Analysis
-- Recent M&A News, Find Company Headcount Growth, Percent Employee Growth
-- Times_Promoted, Times_Hopped, Average Threshold, Estimated Age Range`,
+=== SKIP ONLY THESE ===
+Only skip columns with long-form text analysis or reasoning:
+- "Accounting Experience Analysis", "Experience report" (long text reports)
+- "Reasoning - Job Satisfaction", "Reasoning Outreach Urgency" (reasoning text)
+- "Recent M&A News" (news articles)
+- "Average Threshold Towards Promotion In Years" (derived metric)
+- "Job Satisfaction Analysis" (long analysis text, different from "Job Satisfaction")`,
 
     prospects: `You are mapping sales/CRM prospect data. Prioritize:
 1. Name and contact fields
