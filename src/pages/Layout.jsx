@@ -535,7 +535,7 @@ const SIDEBAR_CONSTANTS = {
   CORE_ITEM_HEIGHT: 44,    // min-h-[44px]
   ITEM_GAP: 4,             // space-y-1
   DIVIDER_HEIGHT: 17,      // h-px + my-2 (1px + 8px + 8px)
-  ALIGNMENT_ADJUST: -7,    // Fine-tune adjustment to align items perfectly
+  ALIGNMENT_ADJUST: -8,    // Fine-tune adjustment to align items perfectly
 };
 
 // Core nav item indices (Dashboard, CRM, Projects, Products, Inbox)
