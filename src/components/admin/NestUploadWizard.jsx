@@ -39,23 +39,38 @@ import { toast } from 'sonner';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Target fields for each nest type
+// Target fields for each nest type - must match map-nest-columns edge function
 const NEST_TARGET_FIELDS = {
   candidates: [
+    // Person basic info
     { id: 'first_name', label: 'First Name', required: false, description: 'Person\'s first name' },
     { id: 'last_name', label: 'Last Name', required: false, description: 'Person\'s last name' },
-    { id: 'email', label: 'Email', required: false, description: 'Email address' },
+    { id: 'email', label: 'Email', required: false, description: 'Person\'s email address' },
     { id: 'phone', label: 'Phone', required: false, description: 'Phone number' },
+    { id: 'linkedin_profile', label: 'LinkedIn Profile', required: false, description: 'Person\'s LinkedIn profile URL' },
+    { id: 'profile_image_url', label: 'Profile Image', required: false, description: 'Profile photo URL' },
+
+    // Person professional info
     { id: 'job_title', label: 'Job Title', required: false, description: 'Current job title/position' },
-    { id: 'company_name', label: 'Company', required: false, description: 'Current employer' },
-    { id: 'linkedin_profile', label: 'LinkedIn URL', required: false, description: 'LinkedIn profile URL' },
-    { id: 'person_home_location', label: 'Location', required: false, description: 'Home location/city' },
     { id: 'skills', label: 'Skills', required: false, description: 'Technical or professional skills' },
-    { id: 'years_experience', label: 'Years Experience', required: false, description: 'Total years of experience' },
+    { id: 'years_experience', label: 'Years Experience', required: false, description: 'Years of experience' },
     { id: 'education', label: 'Education', required: false, description: 'Educational background' },
     { id: 'salary_range', label: 'Salary Range', required: false, description: 'Expected or current salary' },
+
+    // Person location
+    { id: 'person_home_location', label: 'Person Location', required: false, description: 'Home location/city' },
+    { id: 'work_address', label: 'Work Address', required: false, description: 'Work/office address' },
+
+    // Company info
+    { id: 'company_name', label: 'Company Name', required: false, description: 'Current employer' },
+    { id: 'company_domain', label: 'Company Domain', required: false, description: 'Company website domain' },
+    { id: 'company_hq', label: 'Company HQ', required: false, description: 'Company headquarters' },
+    { id: 'company_linkedin', label: 'Company LinkedIn', required: false, description: 'Company LinkedIn page' },
+    { id: 'company_description', label: 'Company Description', required: false, description: 'Description of company' },
+    { id: 'company_type', label: 'Company Type', required: false, description: 'Private, Public, etc' },
     { id: 'industry', label: 'Industry', required: false, description: 'Industry sector' },
-    { id: 'company_size', label: 'Company Size', required: false, description: 'Size of employer' },
+    { id: 'company_size', label: 'Company Size', required: false, description: 'Size category (51-200)' },
+    { id: 'employee_count', label: 'Employee Count', required: false, description: 'Number of employees' },
   ],
   prospects: [
     { id: 'first_name', label: 'First Name', required: false, description: 'Person\'s first name' },

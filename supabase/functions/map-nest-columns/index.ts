@@ -8,21 +8,35 @@ const corsHeaders = {
 // Target fields for each nest type
 const NEST_TARGET_FIELDS = {
   candidates: [
-    { id: 'first_name', label: 'First Name', description: 'Person\'s first name', patterns: ['first_name', 'fname', 'voornaam', 'first', 'given name'] },
-    { id: 'last_name', label: 'Last Name', description: 'Person\'s last name', patterns: ['last_name', 'lname', 'achternaam', 'surname', 'family name'] },
-    { id: 'email', label: 'Email', description: 'Email address', patterns: ['email', 'e-mail', 'mail'] },
-    { id: 'phone', label: 'Phone', description: 'Phone number', patterns: ['phone', 'tel', 'telephone', 'mobile', 'telefoon'] },
-    { id: 'job_title', label: 'Job Title', description: 'Current job title/position', patterns: ['job_title', 'title', 'position', 'role', 'functie'] },
-    { id: 'company_name', label: 'Company', description: 'Current employer', patterns: ['company', 'company_name', 'employer', 'organization', 'bedrijf'] },
-    { id: 'linkedin_profile', label: 'LinkedIn URL', description: 'LinkedIn profile URL', patterns: ['linkedin', 'linkedin_profile', 'li_url'] },
-    { id: 'person_home_location', label: 'Location', description: 'Home location/city', patterns: ['location', 'city', 'home location', 'person home location', 'locatie'] },
-    { id: 'skills', label: 'Skills', description: 'Technical or professional skills', patterns: ['skills', 'expertise', 'competencies'] },
-    { id: 'years_experience', label: 'Years Experience', description: 'Total years of experience', patterns: ['years_experience', 'experience', 'years with current company'] },
-    { id: 'education', label: 'Education', description: 'Educational background', patterns: ['education', 'degree', 'school', 'university'] },
-    { id: 'salary_range', label: 'Salary Range', description: 'Expected or current salary', patterns: ['salary', 'salary_range', 'compensation', 'salary intelligence'] },
-    { id: 'industry', label: 'Industry', description: 'Industry sector', patterns: ['industry', 'sector', 'branche'] },
-    { id: 'company_size', label: 'Company Size', description: 'Size of employer', patterns: ['company_size', 'company size', 'employees', 'employee count'] },
-    { id: 'profile_image_url', label: 'Profile Image', description: 'Profile photo URL', patterns: ['image', 'photo', 'avatar', 'profile_image'] },
+    // Person basic info
+    { id: 'first_name', label: 'First Name', description: 'Person\'s first name', patterns: ['first_name', 'fname', 'voornaam', 'first', 'given name', 'given_name'] },
+    { id: 'last_name', label: 'Last Name', description: 'Person\'s last name', patterns: ['last_name', 'lname', 'achternaam', 'surname', 'family name', 'family_name'] },
+    { id: 'email', label: 'Email', description: 'Person\'s email address', patterns: ['email', 'e-mail', 'mail', 'personal email', 'work email'] },
+    { id: 'phone', label: 'Phone', description: 'Phone number', patterns: ['phone', 'tel', 'telephone', 'mobile', 'telefoon', 'cell'] },
+    { id: 'linkedin_profile', label: 'LinkedIn Profile', description: 'Person\'s LinkedIn profile URL (NOT company LinkedIn)', patterns: ['linkedin_profile', 'person linkedin', 'personal linkedin', 'candidate linkedin', 'li_url', 'linkedin url'] },
+    { id: 'profile_image_url', label: 'Profile Image', description: 'Profile photo URL', patterns: ['image', 'photo', 'avatar', 'profile_image', 'headshot', 'picture'] },
+
+    // Person professional info
+    { id: 'job_title', label: 'Job Title', description: 'Current job title/position', patterns: ['job_title', 'title', 'position', 'role', 'functie', 'job title'] },
+    { id: 'skills', label: 'Skills', description: 'Technical or professional skills', patterns: ['skills', 'expertise', 'competencies', 'technologies', 'tech stack'] },
+    { id: 'years_experience', label: 'Years Experience', description: 'Total years of professional experience or years at current company', patterns: ['years_experience', 'experience', 'years with current company', 'tenure', 'work experience', 'years of experience'] },
+    { id: 'education', label: 'Education', description: 'Educational background, degrees, schools', patterns: ['education', 'degree', 'school', 'university', 'college', 'qualification'] },
+    { id: 'salary_range', label: 'Salary Range', description: 'Expected or current salary/compensation', patterns: ['salary', 'salary_range', 'compensation', 'salary intelligence', 'pay', 'remuneration'] },
+
+    // Person location
+    { id: 'person_home_location', label: 'Person Location', description: 'Person\'s home location/city', patterns: ['person home location', 'home location', 'person location', 'candidate location', 'locatie'] },
+    { id: 'work_address', label: 'Work Address', description: 'Person\'s work/office address', patterns: ['work address', 'office address', 'business address', 'work location'] },
+
+    // Company info
+    { id: 'company_name', label: 'Company Name', description: 'Current employer/company name', patterns: ['company', 'company_name', 'company name', 'employer', 'organization', 'bedrijf', 'current company'] },
+    { id: 'company_domain', label: 'Company Domain', description: 'Company website domain', patterns: ['company domain', 'domain', 'company website', 'website', 'company url'] },
+    { id: 'company_hq', label: 'Company HQ', description: 'Company headquarters location', patterns: ['company hq', 'headquarters', 'hq', 'company location', 'office location'] },
+    { id: 'company_linkedin', label: 'Company LinkedIn', description: 'Company\'s LinkedIn page URL (NOT person\'s profile)', patterns: ['company linkedin', 'company_linkedin', 'company li', 'employer linkedin', 'organization linkedin'] },
+    { id: 'company_description', label: 'Company Description', description: 'Description of the company', patterns: ['description', 'company description', 'about company', 'company bio', 'company overview'] },
+    { id: 'company_type', label: 'Company Type', description: 'Type of company (Private, Public, etc)', patterns: ['type', 'company type', 'organization type', 'business type', 'privately held', 'public'] },
+    { id: 'industry', label: 'Industry', description: 'Industry sector', patterns: ['industry', 'sector', 'branche', 'vertical', 'market'] },
+    { id: 'company_size', label: 'Company Size', description: 'Size category of employer (e.g., 51-200 employees)', patterns: ['company_size', 'company size', 'size', 'organization size'] },
+    { id: 'employee_count', label: 'Employee Count', description: 'Exact number of employees', patterns: ['employee count', 'employee_count', 'employees', 'headcount', 'staff count', 'number of employees'] },
   ],
   prospects: [
     { id: 'first_name', label: 'First Name', description: 'Person\'s first name', patterns: ['first_name', 'fname', 'first'] },
@@ -62,14 +76,33 @@ function buildPromptForNestType(nestType: string, columnInfo: string): string {
   ).join('\n');
 
   const typeSpecificContext = {
-    candidates: `You are mapping recruitment/talent data. Prioritize:
-1. Name fields (first_name, last_name)
-2. Contact info (email, phone, linkedin_profile)
-3. Professional info (job_title, company_name, location)
-4. Skills and experience data
-5. Salary information if available
+    candidates: `You are mapping recruitment/talent candidate data. This data will be displayed on candidate profile pages.
 
-IMPORTANT: Many columns may be enrichment/analysis data (like "Job Satisfaction Analysis", "Recruitment Urgency", etc.) - map these to 'skip' unless they clearly match a target field.`,
+CRITICAL LINKEDIN DISTINCTION:
+- "linkedin_profile" = PERSON's LinkedIn profile URL (columns like: linkedin_profile, person linkedin, candidate linkedin)
+- "company_linkedin" = COMPANY's LinkedIn page URL (columns like: Company LinkedIn, employer linkedin)
+These are DIFFERENT fields - map them correctly!
+
+MAPPING PRIORITIES:
+1. Person info: first_name, last_name, email, phone, linkedin_profile (person's profile!)
+2. Job info: job_title, company_name, years_experience, skills, salary_range
+3. Person location: person_home_location, work_address
+4. Company info: company_domain, company_hq, company_linkedin (company page!), company_description, company_type, industry, company_size, employee_count
+5. Other: education, profile_image_url
+
+COLUMN NAME HINTS:
+- "linkedin_profile" or just "linkedin" without "company" = person's linkedin_profile
+- "Company LinkedIn" = company_linkedin
+- "Person Home Location" = person_home_location
+- "Company HQ" = company_hq
+- "Years With Current Company" = years_experience
+- "Company Domain" = company_domain
+- "Description" about a company = company_description
+- "Type" (Privately Held, Public) = company_type
+- "Employee Count" (numbers) = employee_count
+- "Company Size" (ranges like 51-200) = company_size
+
+SKIP these analysis/enrichment columns: Job Satisfaction Analysis, Recruitment Urgency, Market Position, Experience report, M&A News, Growth metrics, Reasoning columns.`,
 
     prospects: `You are mapping sales/CRM prospect data. Prioritize:
 1. Name and contact fields

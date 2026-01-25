@@ -19,29 +19,61 @@ async function createCandidate(supabase: any, row: MappedRow): Promise<string | 
   const skillsStr = row.skills?.toString() || '';
   const skills = skillsStr ? skillsStr.split(/[,;]/).map(s => s.trim()).filter(Boolean) : null;
 
-  // Parse years experience
-  const yearsExperience = row.years_experience
-    ? parseFloat(row.years_experience.toString().replace(/[^0-9.]/g, ''))
-    : null;
+  // Parse years experience - handle various formats like "1 year and 10 months", "5", "5.5"
+  let yearsExperience = null;
+  if (row.years_experience) {
+    const expStr = row.years_experience.toString();
+    // Try to extract just the numeric part
+    const match = expStr.match(/(\d+(?:\.\d+)?)/);
+    if (match) {
+      yearsExperience = parseFloat(match[1]);
+    }
+  }
+
+  // Parse employee count - handle various formats
+  let employeeCount = null;
+  if (row.employee_count) {
+    const countStr = row.employee_count.toString().replace(/,/g, '');
+    const match = countStr.match(/(\d+)/);
+    if (match) {
+      employeeCount = parseInt(match[1], 10);
+    }
+  }
 
   const { data, error } = await supabase
     .from('candidates')
     .insert({
+      // Person basic info
       first_name: row.first_name || null,
       last_name: row.last_name || null,
       email: row.email || null,
       phone: row.phone || null,
-      job_title: row.job_title || null,
-      company_name: row.company_name || null,
       linkedin_profile: row.linkedin_profile || null,
-      person_home_location: row.person_home_location || null,
+      profile_image_url: row.profile_image_url || null,
+
+      // Person professional info
+      job_title: row.job_title || null,
       skills: skills,
       years_experience: yearsExperience,
       education: row.education || null,
       salary_range: row.salary_range || null,
+
+      // Person location
+      person_home_location: row.person_home_location || null,
+      work_address: row.work_address || null,
+
+      // Company info
+      company_name: row.company_name || null,
+      company_domain: row.company_domain || null,
+      company_hq: row.company_hq || null,
+      company_linkedin: row.company_linkedin || null,
+      company_description: row.company_description || null,
+      company_type: row.company_type || null,
       industry: row.industry || null,
       company_size: row.company_size || null,
-      profile_image_url: row.profile_image_url || null,
+      employee_count: employeeCount,
+
+      // Meta
       source: 'nest_upload',
       organization_id: null, // Platform-owned
     })
