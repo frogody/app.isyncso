@@ -567,7 +567,7 @@ export default function AgentDetail() {
   const isComingSoon = agent.status === 'coming_soon';
 
   return (
-    <div className="space-y-6">
+    <div className="px-4 lg:px-6 py-4 space-y-4">
       {/* Back Button */}
       <button
         onClick={() => navigate('/Agents')}
@@ -582,29 +582,29 @@ export default function AgentDetail() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className={cn(
-          'relative rounded-2xl border bg-zinc-900/60 backdrop-blur-xl overflow-hidden',
+          'relative rounded-xl border bg-zinc-900/60 backdrop-blur-xl overflow-hidden',
           colors.border
         )}
       >
         {/* Background gradient */}
         <div className={cn('absolute inset-0 bg-gradient-to-br', colors.gradient)} />
 
-        <div className="relative p-8">
-          <div className="flex flex-col lg:flex-row items-start lg:items-center gap-6">
+        <div className="relative p-4">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4">
             {/* Icon */}
             <div className={cn(
-              'w-20 h-20 rounded-2xl flex items-center justify-center border',
+              'w-8 h-8 rounded-xl flex items-center justify-center border',
               colors.bg,
               colors.border,
               colors.glow
             )}>
-              <Icon className={cn('w-10 h-10', colors.text)} />
+              <Icon className={cn('w-4 h-4', colors.text)} />
             </div>
 
             {/* Info */}
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-3xl font-bold text-white">{agent.name}</h1>
+                <h1 className="text-2xl font-bold text-white">{agent.name}</h1>
                 {isActive ? (
                   <span className="px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-sm font-medium">
                     Active

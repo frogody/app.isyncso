@@ -30,20 +30,20 @@ export function WelcomeStep({ data, onChange, onNext }) {
   const isValid = data.fullName?.trim() && data.jobTitle?.trim();
 
   return (
-    <motion.div {...fadeIn} className="space-y-8">
+    <motion.div {...fadeIn} className="space-y-4">
       <div className="text-center space-y-3">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-zinc-800/80 border border-zinc-700/50 mb-2">
-          <User className="w-7 h-7 text-zinc-300" />
+        <div className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-zinc-800/80 border border-zinc-700/50 mb-2">
+          <User className="w-4 h-4 text-zinc-300" />
         </div>
-        <h2 className="text-2xl font-semibold text-white">Welcome</h2>
-        <p className="text-zinc-500 text-sm max-w-sm mx-auto">
+        <h2 className="text-lg font-semibold text-white">Welcome</h2>
+        <p className="text-zinc-500 text-xs max-w-sm mx-auto">
           Tell us about yourself so we can personalize your experience
         </p>
       </div>
 
-      <div className="space-y-5 max-w-sm mx-auto">
+      <div className="space-y-3 max-w-sm mx-auto">
         <div className="space-y-2">
-          <Label className="text-zinc-400 text-sm">Your name</Label>
+          <Label className="text-zinc-400 text-xs">Your name</Label>
           <Input
             placeholder="John Smith"
             value={data.fullName || ''}
@@ -53,7 +53,7 @@ export function WelcomeStep({ data, onChange, onNext }) {
         </div>
 
         <div className="space-y-2">
-          <Label className="text-zinc-400 text-sm">Job title</Label>
+          <Label className="text-zinc-400 text-xs">Job title</Label>
           <Input
             placeholder="Product Manager, Engineer, etc."
             value={data.jobTitle || ''}
@@ -63,8 +63,8 @@ export function WelcomeStep({ data, onChange, onNext }) {
         </div>
 
         <div className="space-y-2">
-          <Label className="text-zinc-400 text-sm">Experience level</Label>
-          <div className="grid grid-cols-3 gap-2">
+          <Label className="text-zinc-400 text-xs">Experience level</Label>
+          <div className="grid grid-cols-3 gap-3">
             {['Beginner', 'Intermediate', 'Advanced'].map((level) => (
               <button
                 key={level}
@@ -83,7 +83,7 @@ export function WelcomeStep({ data, onChange, onNext }) {
         </div>
       </div>
 
-      <div className="flex justify-center pt-2">
+      <div className="flex justify-center pt-4">
         <Button
           onClick={onNext}
           disabled={!isValid}
@@ -115,20 +115,20 @@ export function LinkedInStep({ data, onChange, onNext, onBack, onSkip }) {
   };
 
   return (
-    <motion.div {...fadeIn} className="space-y-8">
+    <motion.div {...fadeIn} className="space-y-4">
       <div className="text-center space-y-3">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-zinc-800/80 border border-zinc-700/50 mb-2">
-          <Linkedin className="w-7 h-7 text-zinc-300" />
+        <div className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-zinc-800/80 border border-zinc-700/50 mb-2">
+          <Linkedin className="w-4 h-4 text-zinc-300" />
         </div>
-        <h2 className="text-2xl font-semibold text-white">Your Profile</h2>
-        <p className="text-zinc-500 text-sm max-w-sm mx-auto">
+        <h2 className="text-lg font-semibold text-white">Your Profile</h2>
+        <p className="text-zinc-500 text-xs max-w-sm mx-auto">
           Share your LinkedIn so we can learn more about your background and tailor your learning path
         </p>
       </div>
 
-      <div className="space-y-5 max-w-sm mx-auto">
+      <div className="space-y-3 max-w-sm mx-auto">
         <div className="space-y-2">
-          <Label className="text-zinc-400 text-sm flex items-center gap-2">
+          <Label className="text-zinc-400 text-xs flex items-center gap-2">
             <Linkedin className="w-4 h-4" />
             LinkedIn profile URL
           </Label>
@@ -138,21 +138,21 @@ export function LinkedInStep({ data, onChange, onNext, onBack, onSkip }) {
             onChange={(e) => onChange({ linkedinUrl: e.target.value })}
             className="h-11 bg-zinc-900/50 border-zinc-800 text-white placeholder:text-zinc-600 focus:border-zinc-600 focus:ring-0"
           />
-          <p className="text-xs text-zinc-600">
+          <p className="text-[10px] text-zinc-600">
             We'll research your background to personalize courses and recommendations
           </p>
         </div>
 
         {/* Benefits of sharing LinkedIn */}
-        <div className="p-4 rounded-xl bg-zinc-900/30 border border-zinc-800/50 space-y-3">
-          <p className="text-xs text-zinc-500 uppercase tracking-wide">What we'll discover</p>
+        <div className="p-3 rounded-xl bg-zinc-900/30 border border-zinc-800/50 space-y-2">
+          <p className="text-[10px] text-zinc-500 uppercase tracking-wide">What we'll discover</p>
           <div className="space-y-2">
             {[
               'Your industry expertise and focus areas',
               'Skills to build upon or develop',
               'Relevant experience for course content'
             ].map((benefit, i) => (
-              <div key={i} className="flex items-center gap-2 text-sm text-zinc-400">
+              <div key={i} className="flex items-center gap-2 text-[10px] text-zinc-400">
                 <div className="w-1 h-1 rounded-full bg-cyan-500/50" />
                 {benefit}
               </div>
@@ -199,20 +199,20 @@ export function CompanyStep({ data, onChange, onNext, onBack }) {
   const isValid = data.companyName?.trim() && data.companyWebsite?.trim();
 
   return (
-    <motion.div {...fadeIn} className="space-y-8">
+    <motion.div {...fadeIn} className="space-y-4">
       <div className="text-center space-y-3">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-zinc-800/80 border border-zinc-700/50 mb-2">
-          <Building2 className="w-7 h-7 text-zinc-300" />
+        <div className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-zinc-800/80 border border-zinc-700/50 mb-2">
+          <Building2 className="w-4 h-4 text-zinc-300" />
         </div>
-        <h2 className="text-2xl font-semibold text-white">Your Company</h2>
-        <p className="text-zinc-500 text-sm max-w-sm mx-auto">
+        <h2 className="text-lg font-semibold text-white">Your Company</h2>
+        <p className="text-zinc-500 text-xs max-w-sm mx-auto">
           We'll use this to create relevant examples and scenarios
         </p>
       </div>
 
-      <div className="space-y-5 max-w-sm mx-auto">
+      <div className="space-y-3 max-w-sm mx-auto">
         <div className="space-y-2">
-          <Label className="text-zinc-400 text-sm">Company name</Label>
+          <Label className="text-zinc-400 text-xs">Company name</Label>
           <Input
             placeholder="Acme Inc."
             value={data.companyName || ''}
@@ -222,7 +222,7 @@ export function CompanyStep({ data, onChange, onNext, onBack }) {
         </div>
 
         <div className="space-y-2">
-          <Label className="text-zinc-400 text-sm flex items-center gap-2">
+          <Label className="text-zinc-400 text-xs flex items-center gap-2">
             <Globe className="w-3.5 h-3.5" />
             Website
           </Label>
@@ -235,8 +235,8 @@ export function CompanyStep({ data, onChange, onNext, onBack }) {
         </div>
 
         <div className="space-y-2">
-          <Label className="text-zinc-400 text-sm">Company size</Label>
-          <div className="grid grid-cols-2 gap-2">
+          <Label className="text-zinc-400 text-xs">Company size</Label>
+          <div className="grid grid-cols-2 gap-3">
             {[
               { value: '1-50', label: '1-50' },
               { value: '51-200', label: '51-200' },
@@ -260,11 +260,11 @@ export function CompanyStep({ data, onChange, onNext, onBack }) {
         </div>
 
         <div className="space-y-2">
-          <Label className="text-zinc-400 text-sm">Industry</Label>
+          <Label className="text-zinc-400 text-xs">Industry</Label>
           <select
             value={data.industry || ''}
             onChange={(e) => onChange({ industry: e.target.value })}
-            className="w-full h-11 bg-zinc-900/50 border border-zinc-800 text-white rounded-lg px-3 focus:border-zinc-600 focus:outline-none text-sm"
+            className="w-full h-11 bg-zinc-900/50 border border-zinc-800 text-white rounded-lg px-3 focus:border-zinc-600 focus:outline-none text-xs"
           >
             <option value="" className="bg-zinc-900">Select...</option>
             <option value="technology" className="bg-zinc-900">Technology</option>
@@ -280,7 +280,7 @@ export function CompanyStep({ data, onChange, onNext, onBack }) {
         </div>
       </div>
 
-      <div className="flex justify-between pt-2 max-w-sm mx-auto">
+      <div className="flex justify-between pt-4 max-w-sm mx-auto">
         <Button variant="ghost" onClick={onBack} className="text-zinc-500 hover:text-zinc-300">
           <ChevronLeft className="w-4 h-4 mr-1" />
           Back
@@ -410,13 +410,13 @@ export function GoalsStep({ data, onChange, onNext, onBack }) {
   const selectedCount = data.selectedGoals?.length || 0;
 
   return (
-    <motion.div {...fadeIn} className="space-y-8">
+    <motion.div {...fadeIn} className="space-y-4">
       <div className="text-center space-y-3">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-zinc-800/80 border border-zinc-700/50 mb-2">
-          <Target className="w-7 h-7 text-zinc-300" />
+        <div className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-zinc-800/80 border border-zinc-700/50 mb-2">
+          <Target className="w-4 h-4 text-zinc-300" />
         </div>
-        <h2 className="text-2xl font-semibold text-white">What brings you here?</h2>
-        <p className="text-zinc-500 text-sm max-w-sm mx-auto">
+        <h2 className="text-lg font-semibold text-white">What brings you here?</h2>
+        <p className="text-zinc-500 text-xs max-w-sm mx-auto">
           Select the apps you're interested in to personalize your experience
         </p>
       </div>
@@ -433,7 +433,7 @@ export function GoalsStep({ data, onChange, onNext, onBack }) {
               variants={fadeIn}
               onClick={() => toggleApp(app.id)}
               className={cn(
-                "p-4 rounded-xl text-left transition-all border group",
+                "p-3 rounded-xl text-left transition-all border group",
                 isSelected
                   ? `${colors.border} ${colors.bg}`
                   : "border-zinc-800 hover:border-zinc-700 bg-zinc-900/30"
@@ -441,23 +441,23 @@ export function GoalsStep({ data, onChange, onNext, onBack }) {
             >
               <div className="flex items-start gap-3">
                 <div className={cn(
-                  "flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center",
+                  "flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center",
                   isSelected ? colors.bg : "bg-zinc-800/80"
                 )}>
                   <Icon className={cn(
-                    "w-5 h-5",
+                    "w-4 h-4",
                     isSelected ? colors.icon : "text-zinc-500 group-hover:text-zinc-400"
                   )} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className={cn(
-                    "text-sm font-medium mb-1",
+                    "text-xs font-medium mb-1",
                     isSelected ? "text-white" : "text-zinc-300"
                   )}>
                     {app.label}
                   </h3>
                   <p className={cn(
-                    "text-xs leading-relaxed",
+                    "text-[10px] leading-relaxed",
                     isSelected ? "text-zinc-400" : "text-zinc-600"
                   )}>
                     {app.description}
@@ -479,13 +479,13 @@ export function GoalsStep({ data, onChange, onNext, onBack }) {
           animate={{ opacity: 1, y: 0 }}
           className="text-center"
         >
-          <span className="text-sm text-zinc-500">
+          <span className="text-xs text-zinc-500">
             {selectedCount} app{selectedCount !== 1 ? 's' : ''} selected
           </span>
         </motion.div>
       )}
 
-      <div className="flex justify-between pt-2 max-w-2xl mx-auto">
+      <div className="flex justify-between pt-4 max-w-2xl mx-auto">
         <Button variant="ghost" onClick={onBack} className="text-zinc-500 hover:text-zinc-300">
           <ChevronLeft className="w-4 h-4 mr-1" />
           Back
@@ -506,27 +506,27 @@ export function GoalsStep({ data, onChange, onNext, onBack }) {
 // Step 5: Analysis / Loading
 export function AnalysisStep({ data, currentMessage }) {
   return (
-    <motion.div {...fadeIn} className="py-16">
-      <div className="text-center space-y-6">
+    <motion.div {...fadeIn} className="py-12">
+      <div className="text-center space-y-4">
         {/* Minimal loading animation */}
-        <div className="relative inline-flex items-center justify-center w-20 h-20">
+        <div className="relative inline-flex items-center justify-center w-16 h-16">
           <motion.div
             className="absolute inset-0 rounded-full border border-zinc-700"
             animate={{ scale: [1, 1.1, 1], opacity: [0.5, 0.2, 0.5] }}
             transition={{ duration: 2, repeat: Infinity }}
           />
-          <div className="w-14 h-14 rounded-2xl bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center">
-            <Brain className="w-7 h-7 text-zinc-300" />
+          <div className="w-12 h-12 rounded-xl bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center">
+            <Brain className="w-4 h-4 text-zinc-300" />
           </div>
         </div>
 
         <div className="space-y-2">
-          <h3 className="text-xl font-medium text-white">Setting up your workspace</h3>
+          <h3 className="text-lg font-medium text-white">Setting up your workspace</h3>
           <motion.p
             key={currentMessage}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-zinc-500 text-sm"
+            className="text-zinc-500 text-xs"
           >
             {currentMessage}
           </motion.p>
@@ -586,29 +586,29 @@ export function ReviewStep({ data, dossier, profileData, companyEnrichment, onCh
   };
 
   return (
-    <motion.div {...fadeIn} className="space-y-6 max-h-[70vh] overflow-y-auto scrollbar-hide">
-      <div className="text-center space-y-3 sticky top-0 bg-zinc-900/95 backdrop-blur-sm z-10 pb-4">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-cyan-500/10 border border-cyan-500/30 mb-2">
-          <CheckCircle2 className="w-7 h-7 text-cyan-400" />
+    <motion.div {...fadeIn} className="space-y-4 max-h-[70vh] overflow-y-auto scrollbar-hide">
+      <div className="text-center space-y-3 sticky top-0 bg-zinc-900/95 backdrop-blur-sm z-10 pb-2">
+        <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-cyan-500/10 border border-cyan-500/30 mb-2">
+          <CheckCircle2 className="w-4 h-4 text-cyan-400" />
         </div>
-        <h2 className="text-2xl font-semibold text-white">Your Workspace is Ready</h2>
-        <p className="text-zinc-500 text-sm">Here's what we discovered about you and your company</p>
+        <h2 className="text-lg font-semibold text-white">Your Workspace is Ready</h2>
+        <p className="text-zinc-500 text-xs">Here's what we discovered about you and your company</p>
       </div>
 
-      <div className="space-y-4 max-w-2xl mx-auto">
+      <div className="space-y-3 max-w-2xl mx-auto">
         {/* === YOUR PROFILE SECTION === */}
-        <div className="p-5 rounded-xl bg-zinc-900/50 border border-zinc-800 space-y-4">
+        <div className="p-3 rounded-xl bg-zinc-900/50 border border-zinc-800 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <User className="w-4 h-4 text-cyan-400" />
-              <span className="text-sm font-medium text-white">Your Profile</span>
+              <span className="text-xs font-medium text-white">Your Profile</span>
             </div>
             {data.linkedinUrl && (
               <a
                 href={data.linkedinUrl.startsWith('http') ? data.linkedinUrl : `https://${data.linkedinUrl}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-cyan-500 hover:text-cyan-400 flex items-center gap-1"
+                className="text-[10px] text-cyan-500 hover:text-cyan-400 flex items-center gap-1"
               >
                 <Linkedin className="w-3 h-3" />
                 LinkedIn
@@ -621,9 +621,9 @@ export function ReviewStep({ data, dossier, profileData, companyEnrichment, onCh
           <div className="flex items-start gap-4">
             <div className="flex-1 space-y-1">
               <h3 className="text-lg font-medium text-white">{data.fullName || 'Your Name'}</h3>
-              <p className="text-sm text-zinc-400">{data.jobTitle || 'Your Role'}</p>
+              <p className="text-xs text-zinc-400">{data.jobTitle || 'Your Role'}</p>
               {profileData?.headline && profileData.headline !== data.jobTitle && (
-                <p className="text-sm text-zinc-500 italic">{profileData.headline}</p>
+                <p className="text-xs text-zinc-500 italic">{profileData.headline}</p>
               )}
             </div>
             <div className="px-3 py-1 rounded-lg bg-zinc-800 text-xs text-zinc-400 capitalize">
@@ -636,25 +636,25 @@ export function ReviewStep({ data, dossier, profileData, companyEnrichment, onCh
             <>
               {/* Experience Summary */}
               {profileData.experience_summary && (
-                <div className="p-3 rounded-lg bg-zinc-800/50 space-y-2">
-                  <div className="flex items-center gap-2 text-xs text-zinc-500">
+                <div className="p-2 rounded-lg bg-zinc-800/50 space-y-1">
+                  <div className="flex items-center gap-2 text-[10px] text-zinc-500">
                     <Briefcase className="w-3 h-3" />
                     <span>Experience</span>
                     {profileData.years_experience && (
                       <span className="px-1.5 py-0.5 rounded bg-zinc-700 text-zinc-400">{profileData.years_experience} years</span>
                     )}
                   </div>
-                  <p className="text-sm text-zinc-300">{profileData.experience_summary}</p>
+                  <p className="text-xs text-zinc-300">{profileData.experience_summary}</p>
                 </div>
               )}
 
               {/* Industries */}
               {profileData.industries?.length > 0 && (
-                <div className="space-y-2">
-                  <span className="text-xs text-zinc-500">Industries</span>
-                  <div className="flex flex-wrap gap-1.5">
+                <div className="space-y-1">
+                  <span className="text-[10px] text-zinc-500">Industries</span>
+                  <div className="flex flex-wrap gap-1">
                     {profileData.industries.slice(0, 5).map((industry, i) => (
-                      <span key={i} className="px-2 py-0.5 rounded text-xs bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                      <span key={i} className="px-2 py-0.5 rounded text-[10px] bg-purple-500/10 text-purple-400 border border-purple-500/20">
                         {industry}
                       </span>
                     ))}
@@ -664,16 +664,16 @@ export function ReviewStep({ data, dossier, profileData, companyEnrichment, onCh
 
               {/* Skills */}
               {(profileData.skills?.length > 0 || profileData.technical_skills?.length > 0) && (
-                <div className="space-y-2">
-                  <span className="text-xs text-zinc-500 flex items-center gap-1">
+                <div className="space-y-1">
+                  <span className="text-[10px] text-zinc-500 flex items-center gap-1">
                     <Code className="w-3 h-3" />
                     Skills & Expertise
                   </span>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex flex-wrap gap-1">
                     {[...(profileData.technical_skills || []), ...(profileData.skills || [])]
                       .slice(0, 12)
                       .map((skill, i) => (
-                        <span key={i} className="px-2 py-0.5 rounded text-xs bg-zinc-800 text-zinc-400">
+                        <span key={i} className="px-2 py-0.5 rounded text-[10px] bg-zinc-800 text-zinc-400">
                           {skill}
                         </span>
                       ))}
@@ -683,25 +683,25 @@ export function ReviewStep({ data, dossier, profileData, companyEnrichment, onCh
 
               {/* Education & Certifications */}
               {(profileData.education || profileData.certifications?.length > 0) && (
-                <div className="flex flex-wrap gap-4">
+                <div className="flex flex-wrap gap-3">
                   {profileData.education && (
                     <div className="space-y-1">
-                      <span className="text-xs text-zinc-500 flex items-center gap-1">
+                      <span className="text-[10px] text-zinc-500 flex items-center gap-1">
                         <GraduationCap className="w-3 h-3" />
                         Education
                       </span>
-                      <p className="text-sm text-zinc-400">{profileData.education}</p>
+                      <p className="text-xs text-zinc-400">{profileData.education}</p>
                     </div>
                   )}
                   {profileData.certifications?.length > 0 && (
                     <div className="space-y-1">
-                      <span className="text-xs text-zinc-500 flex items-center gap-1">
+                      <span className="text-[10px] text-zinc-500 flex items-center gap-1">
                         <Award className="w-3 h-3" />
                         Certifications
                       </span>
                       <div className="flex flex-wrap gap-1">
                         {profileData.certifications.slice(0, 3).map((cert, i) => (
-                          <span key={i} className="text-xs text-zinc-400">{cert}{i < Math.min(profileData.certifications.length, 3) - 1 ? ', ' : ''}</span>
+                          <span key={i} className="text-[10px] text-zinc-400">{cert}{i < Math.min(profileData.certifications.length, 3) - 1 ? ', ' : ''}</span>
                         ))}
                       </div>
                     </div>
@@ -711,34 +711,34 @@ export function ReviewStep({ data, dossier, profileData, companyEnrichment, onCh
 
               {/* Interests & Thought Leadership */}
               {(profileData.interests?.length > 0 || profileData.thought_leadership) && (
-                <div className="space-y-2">
-                  <span className="text-xs text-zinc-500 flex items-center gap-1">
+                <div className="space-y-1">
+                  <span className="text-[10px] text-zinc-500 flex items-center gap-1">
                     <Lightbulb className="w-3 h-3" />
                     Focus Areas
                   </span>
                   {profileData.interests?.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap gap-1">
                       {profileData.interests.slice(0, 6).map((interest, i) => (
-                        <span key={i} className="px-2 py-0.5 rounded text-xs bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                        <span key={i} className="px-2 py-0.5 rounded text-[10px] bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
                           {interest}
                         </span>
                       ))}
                     </div>
                   )}
                   {profileData.thought_leadership && (
-                    <p className="text-xs text-zinc-500 italic">{profileData.thought_leadership}</p>
+                    <p className="text-[10px] text-zinc-500 italic">{profileData.thought_leadership}</p>
                   )}
                 </div>
               )}
 
               {/* Learning Style Recommendation */}
               {profileData.learning_style_hint && (
-                <div className="p-3 rounded-lg bg-cyan-500/5 border border-cyan-500/20 space-y-1">
-                  <span className="text-xs text-cyan-400 flex items-center gap-1">
+                <div className="p-2 rounded-lg bg-cyan-500/5 border border-cyan-500/20 space-y-1">
+                  <span className="text-[10px] text-cyan-400 flex items-center gap-1">
                     <BookOpen className="w-3 h-3" />
                     Personalized Learning Approach
                   </span>
-                  <p className="text-sm text-zinc-400">{profileData.learning_style_hint}</p>
+                  <p className="text-xs text-zinc-400">{profileData.learning_style_hint}</p>
                 </div>
               )}
             </>
@@ -746,7 +746,7 @@ export function ReviewStep({ data, dossier, profileData, companyEnrichment, onCh
 
           {/* No profile data message */}
           {!hasProfileData && (
-            <div className="text-sm text-zinc-500 italic flex items-center gap-2">
+            <div className="text-xs text-zinc-500 italic flex items-center gap-2">
               {data.linkedinUrl ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -760,26 +760,26 @@ export function ReviewStep({ data, dossier, profileData, companyEnrichment, onCh
         </div>
 
         {/* === COMPANY SECTION === */}
-        <div className="p-5 rounded-xl bg-zinc-900/50 border border-zinc-800 space-y-4">
+        <div className="p-3 rounded-xl bg-zinc-900/50 border border-zinc-800 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Building2 className="w-4 h-4 text-indigo-400" />
-              <span className="text-sm font-medium text-white">Company Intelligence</span>
+              <span className="text-xs font-medium text-white">Company Intelligence</span>
             </div>
             {dossier?.data_completeness > 0 && (
-              <span className="text-xs text-zinc-500">
+              <span className="text-[10px] text-zinc-500">
                 {dossier.data_completeness}% data coverage
               </span>
             )}
           </div>
 
           {/* Company Header */}
-          <div className="flex items-start gap-4">
+          <div className="flex items-start gap-3">
             {dossier?.logo_url && (
               <img
                 src={dossier.logo_url}
                 alt={dossier?.company_name}
-                className="w-12 h-12 rounded-lg object-contain bg-white p-1"
+                className="w-8 h-8 rounded-lg object-contain bg-white p-1"
                 onError={(e) => e.target.style.display = 'none'}
               />
             )}
@@ -787,9 +787,9 @@ export function ReviewStep({ data, dossier, profileData, companyEnrichment, onCh
               <Input
                 value={dossier?.company_name || data.companyName || ''}
                 onChange={(e) => onChange({ companyName: e.target.value })}
-                className="bg-zinc-800/50 border-zinc-700 text-white text-base font-medium h-9 mb-2"
+                className="bg-zinc-800/50 border-zinc-700 text-white text-base font-medium h-8 mb-1"
               />
-              <div className="flex flex-wrap gap-2 text-xs">
+              <div className="flex flex-wrap gap-1 text-[10px]">
                 {dossier?.industry && (
                   <span className="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
                     {dossier.industry}
@@ -813,20 +813,20 @@ export function ReviewStep({ data, dossier, profileData, companyEnrichment, onCh
 
           {/* Description */}
           {dossier?.business_summary && (
-            <p className="text-sm text-zinc-400 leading-relaxed">{dossier.business_summary}</p>
+            <p className="text-xs text-zinc-400 leading-relaxed">{dossier.business_summary}</p>
           )}
 
           {/* Location & Funding Row */}
-          <div className="flex flex-wrap gap-4">
+          <div className="flex flex-wrap gap-3">
             {dossier?.headquarters && (
-              <div className="flex items-center gap-2 text-sm text-zinc-400">
-                <MapPin className="w-4 h-4 text-zinc-500" />
+              <div className="flex items-center gap-2 text-xs text-zinc-400">
+                <MapPin className="w-3 h-3 text-zinc-500" />
                 <span>{dossier.headquarters}</span>
               </div>
             )}
             {dossier?.revenue_range && (
-              <div className="flex items-center gap-2 text-sm text-zinc-400">
-                <DollarSign className="w-4 h-4 text-zinc-500" />
+              <div className="flex items-center gap-2 text-xs text-zinc-400">
+                <DollarSign className="w-3 h-3 text-zinc-500" />
                 <span>{dossier.revenue_range} revenue</span>
               </div>
             )}
@@ -835,9 +835,9 @@ export function ReviewStep({ data, dossier, profileData, companyEnrichment, onCh
                 href={dossier.linkedin_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1 text-sm text-indigo-400 hover:text-indigo-300"
+                className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300"
               >
-                <Linkedin className="w-4 h-4" />
+                <Linkedin className="w-3 h-3" />
                 <span>Company Page</span>
               </a>
             )}
@@ -845,32 +845,32 @@ export function ReviewStep({ data, dossier, profileData, companyEnrichment, onCh
 
           {/* Funding Data */}
           {dossier?.funding_data && (dossier.total_funding || dossier.funding_stage) && (
-            <div className="p-3 rounded-lg bg-green-500/5 border border-green-500/20 space-y-2">
-              <span className="text-xs text-green-400 flex items-center gap-1">
+            <div className="p-2 rounded-lg bg-green-500/5 border border-green-500/20 space-y-1">
+              <span className="text-[10px] text-green-400 flex items-center gap-1">
                 <Banknote className="w-3 h-3" />
                 Funding Information
               </span>
-              <div className="flex flex-wrap gap-4">
+              <div className="flex flex-wrap gap-3">
                 {dossier.total_funding && (
                   <div>
                     <span className="text-lg font-semibold text-white">{formatFunding(dossier.total_funding)}</span>
-                    <span className="text-xs text-zinc-500 ml-1">total raised</span>
+                    <span className="text-[10px] text-zinc-500 ml-1">total raised</span>
                   </div>
                 )}
                 {dossier.funding_stage && (
-                  <div className="px-2 py-1 rounded bg-green-500/10 text-green-400 text-xs">
+                  <div className="px-2 py-1 rounded bg-green-500/10 text-green-400 text-[10px]">
                     {dossier.funding_stage}
                   </div>
                 )}
                 {dossier.funding_data?.last_funding_type && (
-                  <span className="text-xs text-zinc-400">
+                  <span className="text-[10px] text-zinc-400">
                     Last: {dossier.funding_data.last_funding_type}
                     {dossier.funding_data.last_funding_date && ` (${dossier.funding_data.last_funding_date})`}
                   </span>
                 )}
               </div>
               {dossier.funding_data?.investors?.length > 0 && (
-                <div className="text-xs text-zinc-500">
+                <div className="text-[10px] text-zinc-500">
                   Investors: {dossier.funding_data.investors.slice(0, 5).join(', ')}
                   {dossier.funding_data.investors.length > 5 && ` +${dossier.funding_data.investors.length - 5} more`}
                 </div>
@@ -880,16 +880,16 @@ export function ReviewStep({ data, dossier, profileData, companyEnrichment, onCh
 
           {/* Tech Stack */}
           {dossier?.tech_stack?.length > 0 && (
-            <div className="space-y-2">
+            <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-zinc-500 flex items-center gap-1">
+                <span className="text-[10px] text-zinc-500 flex items-center gap-1">
                   <Cpu className="w-3 h-3" />
                   Tech Stack ({dossier.tech_stack.length} technologies)
                 </span>
                 {dossier.tech_stack.length > 15 && (
                   <button
                     onClick={() => setExpandedSection(expandedSection === 'tech' ? null : 'tech')}
-                    className="text-xs text-cyan-500 hover:text-cyan-400"
+                    className="text-[10px] text-cyan-500 hover:text-cyan-400"
                   >
                     {expandedSection === 'tech' ? 'Show less' : 'Show all'}
                   </button>
@@ -898,32 +898,32 @@ export function ReviewStep({ data, dossier, profileData, companyEnrichment, onCh
 
               {/* Tech Categories */}
               {dossier.tech_categories?.length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {dossier.tech_categories.slice(0, expandedSection === 'tech' ? undefined : 4).map((cat, i) => (
                     <div key={i}>
-                      <span className="text-xs text-zinc-600 uppercase tracking-wide">{cat.category}</span>
-                      <div className="flex flex-wrap gap-1.5 mt-1">
+                      <span className="text-[10px] text-zinc-600 uppercase tracking-wide">{cat.category}</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
                         {cat.technologies.slice(0, expandedSection === 'tech' ? undefined : 8).map((tech, j) => (
-                          <span key={j} className="px-2 py-0.5 rounded text-xs bg-zinc-800 text-zinc-400">
+                          <span key={j} className="px-2 py-0.5 rounded text-[10px] bg-zinc-800 text-zinc-400">
                             {tech}
                           </span>
                         ))}
                         {!expandedSection && cat.technologies.length > 8 && (
-                          <span className="text-xs text-zinc-600">+{cat.technologies.length - 8}</span>
+                          <span className="text-[10px] text-zinc-600">+{cat.technologies.length - 8}</span>
                         )}
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-1">
                   {dossier.tech_stack.slice(0, expandedSection === 'tech' ? undefined : 15).map((tech, i) => (
-                    <span key={i} className="px-2 py-0.5 rounded text-xs bg-zinc-800 text-zinc-400">
+                    <span key={i} className="px-2 py-0.5 rounded text-[10px] bg-zinc-800 text-zinc-400">
                       {tech}
                     </span>
                   ))}
                   {!expandedSection && dossier.tech_stack.length > 15 && (
-                    <span className="text-xs text-zinc-600">+{dossier.tech_stack.length - 15} more</span>
+                    <span className="text-[10px] text-zinc-600">+{dossier.tech_stack.length - 15} more</span>
                   )}
                 </div>
               )}
@@ -932,7 +932,7 @@ export function ReviewStep({ data, dossier, profileData, companyEnrichment, onCh
 
           {/* No company data message */}
           {!hasCompanyData && (
-            <div className="text-sm text-zinc-500 italic flex items-center gap-2">
+            <div className="text-xs text-zinc-500 italic flex items-center gap-2">
               <Loader2 className="w-4 h-4 animate-spin" />
               Gathering company intelligence...
             </div>
@@ -941,14 +941,14 @@ export function ReviewStep({ data, dossier, profileData, companyEnrichment, onCh
 
         {/* === GOALS SECTION === */}
         {data.selectedGoals?.length > 0 && (
-          <div className="p-5 rounded-xl bg-zinc-900/50 border border-zinc-800 space-y-3">
+          <div className="p-3 rounded-xl bg-zinc-900/50 border border-zinc-800 space-y-2">
             <div className="flex items-center gap-2">
               <Target className="w-4 h-4 text-orange-400" />
-              <span className="text-sm font-medium text-white">Your Goals</span>
+              <span className="text-xs font-medium text-white">Your Goals</span>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1">
               {data.selectedGoals.map((goalId) => (
-                <span key={goalId} className="px-3 py-1.5 rounded-lg text-sm bg-orange-500/10 text-orange-400 border border-orange-500/20">
+                <span key={goalId} className="px-3 py-1 rounded-lg text-xs bg-orange-500/10 text-orange-400 border border-orange-500/20">
                   {GOAL_LABELS[goalId] || goalId.replace(/-/g, ' ')}
                 </span>
               ))}
@@ -958,12 +958,12 @@ export function ReviewStep({ data, dossier, profileData, companyEnrichment, onCh
 
         {/* === APPS SECTION === */}
         {data.selectedApps?.length > 0 && (
-          <div className="p-5 rounded-xl bg-zinc-900/50 border border-zinc-800 space-y-3">
+          <div className="p-3 rounded-xl bg-zinc-900/50 border border-zinc-800 space-y-2">
             <div className="flex items-center gap-2">
               <Zap className="w-4 h-4 text-cyan-400" />
-              <span className="text-sm font-medium text-white">Your Workspace Apps</span>
+              <span className="text-xs font-medium text-white">Your Workspace Apps</span>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1">
               {data.selectedApps.map((appId) => {
                 const appConfig = {
                   sync: { name: 'SYNC', icon: Bot, color: 'purple' },
@@ -992,10 +992,10 @@ export function ReviewStep({ data, dossier, profileData, companyEnrichment, onCh
                 const Icon = app.icon;
                 return (
                   <span key={appId} className={cn(
-                    "px-3 py-1.5 rounded-lg text-sm flex items-center gap-2 border",
+                    "px-2 py-1 rounded-lg text-xs flex items-center gap-2 border",
                     colorClasses[app.color]
                   )}>
-                    <Icon className="w-4 h-4" />
+                    <Icon className="w-3 h-3" />
                     {app.name}
                   </span>
                 );
@@ -1005,7 +1005,7 @@ export function ReviewStep({ data, dossier, profileData, companyEnrichment, onCh
         )}
       </div>
 
-      <div className="flex justify-between pt-4 max-w-2xl mx-auto sticky bottom-0 bg-zinc-900/95 backdrop-blur-sm py-4">
+      <div className="flex justify-between pt-2 max-w-2xl mx-auto sticky bottom-0 bg-zinc-900/95 backdrop-blur-sm py-2">
         <Button variant="ghost" onClick={onBack} className="text-zinc-500 hover:text-zinc-300">
           <ChevronLeft className="w-4 h-4 mr-1" />
           Back
@@ -1035,7 +1035,7 @@ export function ReviewStep({ data, dossier, profileData, companyEnrichment, onCh
 // Progress Indicator - more subtle
 export function ProgressIndicator({ currentStep, totalSteps }) {
   return (
-    <div className="flex items-center justify-center gap-1.5 mb-8">
+    <div className="flex items-center justify-center gap-1 mb-4">
       {Array.from({ length: totalSteps }).map((_, i) => (
         <motion.div
           key={i}

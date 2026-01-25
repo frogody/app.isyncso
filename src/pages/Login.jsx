@@ -210,16 +210,16 @@ export default function Login() {
           <Button
             type="button"
             variant="outline"
-            className="w-full h-12 bg-white hover:bg-zinc-100 text-zinc-900 border-0"
+            className="w-full h-10 bg-white hover:bg-zinc-100 text-zinc-900 border-0 text-sm"
             onClick={handleGoogleAuth}
             disabled={googleLoading || loading}
           >
             {googleLoading ? (
-              <Loader2 className="w-5 h-5 animate-spin mr-2" />
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
             ) : (
               <GoogleIcon />
             )}
-            <span className="ml-3">Continue with Google</span>
+            <span className="ml-2">Continue with Google</span>
           </Button>
 
           {/* Divider */}
@@ -227,16 +227,16 @@ export default function Login() {
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-zinc-700" />
             </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-zinc-900 text-zinc-500">or continue with email</span>
+            <div className="relative flex justify-center text-xs">
+              <span className="px-3 bg-zinc-900 text-zinc-500">or continue with email</span>
             </div>
           </div>
 
           {/* Email/Password Form */}
-          <form onSubmit={handleEmailAuth} className="space-y-4">
+          <form onSubmit={handleEmailAuth} className="space-y-3">
             {isSignUp && (
-              <div className="space-y-2">
-                <Label htmlFor="fullName" className="text-zinc-300">Full Name</Label>
+              <div className="space-y-1">
+                <Label htmlFor="fullName" className="text-zinc-300 text-xs">Full Name</Label>
                 <Input
                   id="fullName"
                   name="fullName"
@@ -244,16 +244,16 @@ export default function Login() {
                   placeholder="John Doe"
                   value={formData.fullName}
                   onChange={handleInputChange}
-                  className="h-12 bg-zinc-800/50 border-zinc-700 text-white placeholder:text-zinc-500 focus:border-emerald-500"
+                  className="h-9 bg-zinc-800/50 border-zinc-700 text-white placeholder:text-zinc-500 focus:border-emerald-500 text-sm"
                   required={isSignUp}
                 />
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-zinc-300">Email</Label>
+            <div className="space-y-1">
+              <Label htmlFor="email" className="text-zinc-300 text-xs">Email</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                 <Input
                   id="email"
                   name="email"
@@ -261,27 +261,27 @@ export default function Login() {
                   placeholder="you@example.com"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="h-12 pl-10 bg-zinc-800/50 border-zinc-700 text-white placeholder:text-zinc-500 focus:border-emerald-500"
+                  className="h-9 pl-10 bg-zinc-800/50 border-zinc-700 text-white placeholder:text-zinc-500 focus:border-emerald-500 text-sm"
                   required
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-zinc-300">Password</Label>
+                <Label htmlFor="password" className="text-zinc-300 text-xs">Password</Label>
                 {!isSignUp && (
                   <button
                     type="button"
                     onClick={handleForgotPassword}
-                    className="text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
+                    className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
                   >
                     Forgot password?
                   </button>
                 )}
               </div>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                 <Input
                   id="password"
                   name="password"
@@ -289,7 +289,7 @@ export default function Login() {
                   placeholder="Enter your password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="h-12 pl-10 pr-10 bg-zinc-800/50 border-zinc-700 text-white placeholder:text-zinc-500 focus:border-emerald-500"
+                  className="h-9 pl-10 pr-10 bg-zinc-800/50 border-zinc-700 text-white placeholder:text-zinc-500 focus:border-emerald-500 text-sm"
                   required
                   minLength={6}
                 />
@@ -298,21 +298,21 @@ export default function Login() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
               {isSignUp && (
-                <p className="text-xs text-zinc-500">Password must be at least 6 characters</p>
+                <p className="text-[10px] text-zinc-500">Password must be at least 6 characters</p>
               )}
             </div>
 
             <Button
               type="submit"
-              className="w-full h-12 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-medium"
+              className="w-full h-10 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white font-medium text-sm"
               disabled={loading || googleLoading}
             >
               {loading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" />
               ) : isSignUp ? (
                 "Create Account"
               ) : (
@@ -322,7 +322,7 @@ export default function Login() {
           </form>
 
           {/* Toggle Sign Up / Sign In */}
-          <div className="text-center text-sm text-zinc-400">
+          <div className="text-center text-xs text-zinc-400">
             {isSignUp ? (
               <>
                 Already have an account?{" "}

@@ -736,15 +736,15 @@ export default function FinanceProposalBuilder() {
         </div>
 
         {/* Sidebar - Pricing Summary */}
-        <div className="space-y-6">
-          <Card className="bg-zinc-900/50 border-zinc-800 sticky top-6">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-white flex items-center gap-2 text-lg">
-                <DollarSign className="w-5 h-5 text-amber-400" />
+        <div className="space-y-4">
+          <Card className="bg-zinc-900/50 border-zinc-800 sticky top-4">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-white flex items-center gap-2 text-sm">
+                <DollarSign className="w-4 h-4 text-amber-400" />
                 Pricing Summary
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               {/* Items count */}
               <div className="flex justify-between text-sm">
                 <span className="text-zinc-400">Items</span>
@@ -775,10 +775,10 @@ export default function FinanceProposalBuilder() {
                 </div>
               )}
 
-              <div className="border-t border-zinc-700 pt-4">
+              <div className="border-t border-zinc-700 pt-2">
                 <div className="flex justify-between items-center">
-                  <span className="text-lg font-medium text-white">Total</span>
-                  <span className="text-2xl font-bold text-amber-400">
+                  <span className="text-sm font-medium text-white">Total</span>
+                  <span className="text-lg font-bold text-amber-400">
                     €{pricing.total.toLocaleString()}
                   </span>
                 </div>
@@ -786,9 +786,9 @@ export default function FinanceProposalBuilder() {
 
               {/* Subscription indicator */}
               {proposal.line_items.some(i => i.is_subscription) && (
-                <div className="flex items-center gap-2 p-3 bg-cyan-500/10 rounded-lg border border-cyan-500/20">
-                  <RefreshCw className="w-4 h-4 text-cyan-400" />
-                  <span className="text-sm text-cyan-400">
+                <div className="flex items-center gap-2 p-2 bg-cyan-500/10 rounded-lg border border-cyan-500/20">
+                  <RefreshCw className="w-3 h-3 text-cyan-400" />
+                  <span className="text-xs text-cyan-400">
                     Includes recurring subscriptions
                   </span>
                 </div>
@@ -798,8 +798,8 @@ export default function FinanceProposalBuilder() {
 
           {/* Quick Actions */}
           <Card className="bg-zinc-900/50 border-zinc-800">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-white text-sm">Quick Actions</CardTitle>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-white text-xs">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <Button
@@ -844,9 +844,9 @@ export default function FinanceProposalBuilder() {
             </DialogTitle>
           </DialogHeader>
 
-          <div className="bg-white text-zinc-900 rounded-lg p-8 space-y-6">
+          <div className="bg-white text-zinc-900 rounded-lg p-6 space-y-4">
             {/* Header */}
-            <div className="border-b border-zinc-200 pb-6">
+            <div className="border-b border-zinc-200 pb-4">
               <h1 className="text-2xl font-bold">{proposal.title || 'Untitled Proposal'}</h1>
               {proposal.proposal_number && (
                 <p className="text-sm text-zinc-500 font-mono mt-1">{proposal.proposal_number}</p>
@@ -854,7 +854,7 @@ export default function FinanceProposalBuilder() {
             </div>
 
             {/* Client Info */}
-            <div className="bg-zinc-50 rounded-lg p-4">
+            <div className="bg-zinc-50 rounded-lg p-3">
               <p className="text-xs text-zinc-500 uppercase tracking-wide mb-2">Prepared For</p>
               <p className="font-semibold">{proposal.client_company || 'Client Company'}</p>
               <p className="text-sm text-zinc-600">{proposal.client_name}</p>
@@ -870,7 +870,7 @@ export default function FinanceProposalBuilder() {
 
             {/* Sections */}
             {proposal.sections.map((section, idx) => (
-              <div key={idx} className="border-t border-zinc-200 pt-4">
+              <div key={idx} className="border-t border-zinc-200 pt-3">
                 <h3 className="font-semibold text-lg mb-2">{section.title || 'Section'}</h3>
                 <p className="text-zinc-700 whitespace-pre-wrap">{section.content}</p>
               </div>
@@ -878,7 +878,7 @@ export default function FinanceProposalBuilder() {
 
             {/* Line Items */}
             {proposal.line_items.length > 0 && (
-              <div className="border-t border-zinc-200 pt-4">
+              <div className="border-t border-zinc-200 pt-3">
                 <h3 className="font-semibold text-lg mb-4">Pricing</h3>
                 <table className="w-full text-sm">
                   <thead>
@@ -907,7 +907,7 @@ export default function FinanceProposalBuilder() {
                 </table>
 
                 {/* Totals */}
-                <div className="mt-4 space-y-2 text-right">
+                <div className="mt-3 space-y-2 text-right">
                   <div className="flex justify-end gap-4">
                     <span className="text-zinc-500">Subtotal:</span>
                     <span className="w-24">€{pricing.subtotal.toLocaleString()}</span>
@@ -924,7 +924,7 @@ export default function FinanceProposalBuilder() {
                       <span className="w-24">€{pricing.taxAmount.toLocaleString()}</span>
                     </div>
                   )}
-                  <div className="flex justify-end gap-4 text-lg font-bold border-t border-zinc-200 pt-2">
+                  <div className="flex justify-end gap-4 text-base font-bold border-t border-zinc-200 pt-2">
                     <span>Total:</span>
                     <span className="w-24 text-amber-600">€{pricing.total.toLocaleString()}</span>
                   </div>
@@ -934,7 +934,7 @@ export default function FinanceProposalBuilder() {
 
             {/* Terms */}
             {proposal.terms_and_conditions && (
-              <div className="border-t border-zinc-200 pt-4 text-sm">
+              <div className="border-t border-zinc-200 pt-3 text-sm">
                 <h3 className="font-semibold mb-2">Terms & Conditions</h3>
                 <p className="text-zinc-600 whitespace-pre-wrap">{proposal.terms_and_conditions}</p>
               </div>
@@ -942,7 +942,7 @@ export default function FinanceProposalBuilder() {
 
             {/* Valid until */}
             {proposal.valid_until && (
-              <div className="text-center pt-4 text-sm text-zinc-500">
+              <div className="text-center pt-3 text-xs text-zinc-500">
                 Valid until: {new Date(proposal.valid_until).toLocaleDateString()}
               </div>
             )}

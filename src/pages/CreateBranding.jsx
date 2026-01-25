@@ -283,7 +283,7 @@ export default function CreateBranding() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-rose-400 animate-spin" />
+        <Loader2 className="w-8 h-8 text-rose-400 animate-spin" />
       </div>
     );
   }
@@ -296,7 +296,7 @@ export default function CreateBranding() {
         <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-pink-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
       </div>
 
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
         <PageHeader
           title="Brand Assets"
           subtitle="Configure your brand identity for AI-generated content"
@@ -330,7 +330,7 @@ export default function CreateBranding() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <Tabs defaultValue="logos" className="space-y-6">
+          <Tabs defaultValue="logos" className="space-y-4">
             <TabsList className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-1">
               <TabsTrigger value="logos" className="data-[state=active]:bg-rose-500/20 data-[state=active]:text-rose-400 rounded-lg">
                 <ImageIcon className="w-4 h-4 mr-2" />
@@ -356,7 +356,7 @@ export default function CreateBranding() {
 
             {/* Logos Tab */}
             <TabsContent value="logos">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {['primary', 'secondary', 'icon'].map((logoType, index) => {
                   const logo = getLogo(logoType);
                   return (
@@ -365,11 +365,11 @@ export default function CreateBranding() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: index * 0.1 }}
-                      className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6"
+                      className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4"
                     >
                       <div className="mb-4">
                         <h3 className="text-white font-semibold capitalize">{logoType} Logo</h3>
-                        <p className="text-zinc-500 text-sm mt-1">
+                        <p className="text-zinc-500 text-xs mt-1">
                           {logoType === 'primary' && 'Main logo for headers and documents'}
                           {logoType === 'secondary' && 'Alternative version for dark/light backgrounds'}
                           {logoType === 'icon' && 'Square icon for favicons and apps'}
@@ -417,8 +417,8 @@ export default function CreateBranding() {
                               disabled={uploadingLogo}
                             />
                             <div className="aspect-video bg-zinc-800/50 rounded-xl border-2 border-dashed border-zinc-700 hover:border-rose-500/50 transition-colors flex flex-col items-center justify-center gap-2">
-                              <Upload className="w-8 h-8 text-zinc-600" />
-                              <span className="text-sm text-zinc-500">
+                              <Upload className="w-4 h-4 text-zinc-600" />
+                              <span className="text-xs text-zinc-500">
                                 {uploadingLogo ? 'Uploading...' : 'Click to upload'}
                               </span>
                             </div>
@@ -437,15 +437,15 @@ export default function CreateBranding() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
-                className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6"
+                className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4"
               >
-                <div className="mb-6">
+                <div className="mb-4">
                   <h3 className="text-white font-semibold">Brand Colors</h3>
-                  <p className="text-zinc-500 text-sm mt-1">
+                  <p className="text-zinc-500 text-xs mt-1">
                     Define your brand's color palette for consistent AI-generated content
                   </p>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                   {Object.entries(brandData.colors).map(([key, value]) => (
                     <div key={key} className="space-y-2">
                       <Label className="text-zinc-400 capitalize">{key.replace('_', ' ')}</Label>
@@ -509,7 +509,7 @@ export default function CreateBranding() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
-                className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6"
+                className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4"
               >
                 <div className="mb-6">
                   <h3 className="text-white font-semibold">Typography</h3>
@@ -584,7 +584,7 @@ export default function CreateBranding() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
-                className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6"
+                className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4"
               >
                 <div className="mb-6">
                   <h3 className="text-white font-semibold">Voice & Tone</h3>
@@ -672,7 +672,7 @@ export default function CreateBranding() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
-                className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6"
+                className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4"
               >
                 <div className="mb-6">
                   <h3 className="text-white font-semibold">Visual Style</h3>

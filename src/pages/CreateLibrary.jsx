@@ -190,7 +190,7 @@ export default function CreateLibrary() {
         <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-pink-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
       </div>
 
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
         <PageHeader
           title="Content Library"
           subtitle="Manage all your AI-generated images and videos"
@@ -208,9 +208,9 @@ export default function CreateLibrary() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-4"
+          className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3"
         >
-          <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+          <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center justify-between">
             {/* Search */}
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
@@ -223,7 +223,7 @@ export default function CreateLibrary() {
             </div>
 
             {/* Filters */}
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2">
               {/* Type Filter */}
               <Select value={filterType} onValueChange={setFilterType}>
                 <SelectTrigger className="w-32 bg-zinc-900/50 border-zinc-700 text-white">
@@ -271,7 +271,7 @@ export default function CreateLibrary() {
 
           {/* Bulk Actions */}
           {selectedItems.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-zinc-700/50 flex items-center gap-3">
+            <div className="mt-3 pt-3 border-t border-zinc-700/50 flex items-center gap-2">
               <Button
                 size="sm"
                 variant="outline"
@@ -326,7 +326,7 @@ export default function CreateLibrary() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-12 text-center"
+            className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-8 text-center"
           >
             <FolderOpen className="w-16 h-16 text-zinc-700 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-white mb-2">No content yet</h3>
@@ -335,7 +335,7 @@ export default function CreateLibrary() {
                 ? 'No content matches your filters'
                 : 'Start creating images and videos to build your library'}
             </p>
-            <div className="flex justify-center gap-3">
+            <div className="flex justify-center gap-2">
               <Button
                 onClick={() => navigate(createPageUrl('CreateImages'))}
                 className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 border-0"
@@ -358,7 +358,7 @@ export default function CreateLibrary() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
+            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3"
           >
             {filteredContent.map((item, index) => (
               <motion.div
@@ -491,7 +491,7 @@ export default function CreateLibrary() {
                     : 'border-zinc-800/60 hover:border-zinc-700'
                 }`}
               >
-                <div className="p-4 flex items-center gap-4">
+                <div className="p-3 flex items-center gap-3">
                   {/* Selection */}
                   <button
                     onClick={(e) => {
@@ -508,7 +508,7 @@ export default function CreateLibrary() {
 
                   {/* Thumbnail */}
                   <div
-                    className="w-16 h-16 rounded-xl overflow-hidden bg-zinc-800 flex-shrink-0"
+                    className="w-12 h-12 rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0"
                     onClick={() => setPreviewItem(item)}
                   >
                     {item.content_type === 'video' ? (
@@ -516,7 +516,7 @@ export default function CreateLibrary() {
                         <img src={item.thumbnail_url} alt="" className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <Video className="w-6 h-6 text-zinc-600" />
+                          <Video className="w-4 h-4 text-zinc-600" />
                         </div>
                       )
                     ) : (

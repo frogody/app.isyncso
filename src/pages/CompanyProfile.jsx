@@ -231,7 +231,7 @@ export default function CompanyProfile() {
         </motion.div>
 
         {/* Tabs Content */}
-        <Tabs defaultValue="overview" className="space-y-6">
+        <Tabs defaultValue="overview" className="space-y-4">
           <TabsList className="bg-zinc-900 border border-zinc-700 p-1">
             <TabsTrigger value="overview" className="data-[state=active]:bg-indigo-500/20 data-[state=active]:text-indigo-400">
               Overview
@@ -245,40 +245,40 @@ export default function CompanyProfile() {
           </TabsList>
 
           {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <TabsContent value="overview" className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               {/* Quick Stats */}
-              <GlassCard className="p-6 lg:col-span-2">
-                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <GlassCard className="p-4 lg:col-span-2">
+                <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
                   <Briefcase className="w-5 h-5 text-indigo-400" />
                   Company Overview
                 </h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="p-4 rounded-xl bg-zinc-800/50 text-center">
-                    <Users className="w-6 h-6 text-indigo-400 mx-auto mb-2" />
-                    <div className="text-xl font-bold text-white">{firmographics.number_of_employees_range || 'N/A'}</div>
-                    <div className="text-xs text-zinc-500">Employees</div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="p-3 rounded-lg bg-zinc-800/50 text-center">
+                    <Users className="w-4 h-4 text-indigo-400 mx-auto mb-1" />
+                    <div className="text-lg font-bold text-white">{firmographics.number_of_employees_range || 'N/A'}</div>
+                    <div className="text-[10px] text-zinc-500">Employees</div>
                   </div>
-                  <div className="p-4 rounded-xl bg-zinc-800/50 text-center">
-                    <DollarSign className="w-6 h-6 text-green-400 mx-auto mb-2" />
-                    <div className="text-xl font-bold text-white">{firmographics.yearly_revenue_range || 'N/A'}</div>
-                    <div className="text-xs text-zinc-500">Revenue</div>
+                  <div className="p-3 rounded-lg bg-zinc-800/50 text-center">
+                    <DollarSign className="w-4 h-4 text-green-400 mx-auto mb-1" />
+                    <div className="text-lg font-bold text-white">{firmographics.yearly_revenue_range || 'N/A'}</div>
+                    <div className="text-[10px] text-zinc-500">Revenue</div>
                   </div>
-                  <div className="p-4 rounded-xl bg-zinc-800/50 text-center">
-                    <TrendingUp className="w-6 h-6 text-cyan-400 mx-auto mb-2" />
-                    <div className="text-xl font-bold text-white">{formatCurrency(funding.known_funding_total_value)}</div>
-                    <div className="text-xs text-zinc-500">Total Funding</div>
+                  <div className="p-3 rounded-lg bg-zinc-800/50 text-center">
+                    <TrendingUp className="w-4 h-4 text-cyan-400 mx-auto mb-1" />
+                    <div className="text-lg font-bold text-white">{formatCurrency(funding.known_funding_total_value)}</div>
+                    <div className="text-[10px] text-zinc-500">Total Funding</div>
                   </div>
-                  <div className="p-4 rounded-xl bg-zinc-800/50 text-center">
-                    <Globe className="w-6 h-6 text-amber-400 mx-auto mb-2" />
-                    <div className="text-xl font-bold text-white">{firmographics.locations_distribution?.length || 1}</div>
-                    <div className="text-xs text-zinc-500">Countries</div>
+                  <div className="p-3 rounded-lg bg-zinc-800/50 text-center">
+                    <Globe className="w-4 h-4 text-amber-400 mx-auto mb-1" />
+                    <div className="text-lg font-bold text-white">{firmographics.locations_distribution?.length || 1}</div>
+                    <div className="text-[10px] text-zinc-500">Countries</div>
                   </div>
                 </div>
 
                 {/* Industry Info */}
                 {(firmographics.naics_description || firmographics.sic_code_description) && (
-                  <div className="mt-6 p-4 rounded-xl bg-zinc-800/30 border border-zinc-700/50">
+                  <div className="mt-4 p-3 rounded-lg bg-zinc-800/30 border border-zinc-700/50">
                     <h4 className="text-sm font-medium text-zinc-400 mb-2">Industry Classification</h4>
                     <div className="space-y-2">
                       {firmographics.naics_description && (
@@ -299,8 +299,8 @@ export default function CompanyProfile() {
               </GlassCard>
 
               {/* Global Presence */}
-              <GlassCard className="p-6">
-                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <GlassCard className="p-4">
+                <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
                   <MapPin className="w-5 h-5 text-indigo-400" />
                   Global Presence
                 </h3>
@@ -323,31 +323,31 @@ export default function CompanyProfile() {
           </TabsContent>
 
           {/* Funding Tab */}
-          <TabsContent value="funding" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <TabsContent value="funding" className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               {/* Funding Summary */}
-              <GlassCard className="p-6">
-                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <GlassCard className="p-4">
+                <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
                   <DollarSign className="w-5 h-5 text-green-400" />
                   Funding Summary
                 </h3>
-                <div className="space-y-4">
-                  <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/30 text-center">
-                    <div className="text-3xl font-bold text-green-400">{formatCurrency(funding.known_funding_total_value)}</div>
-                    <div className="text-sm text-zinc-400">Total Raised</div>
+                <div className="space-y-3">
+                  <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30 text-center">
+                    <div className="text-lg font-bold text-green-400">{formatCurrency(funding.known_funding_total_value)}</div>
+                    <div className="text-xs text-zinc-400">Total Raised</div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 rounded-lg bg-zinc-800/50 text-center">
-                      <div className="text-xl font-bold text-white">{funding.number_of_funding_rounds || 0}</div>
-                      <div className="text-xs text-zinc-500">Rounds</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="p-2 rounded-lg bg-zinc-800/50 text-center">
+                      <div className="text-lg font-bold text-white">{funding.number_of_funding_rounds || 0}</div>
+                      <div className="text-[10px] text-zinc-500">Rounds</div>
                     </div>
-                    <div className="p-3 rounded-lg bg-zinc-800/50 text-center">
-                      <div className="text-xl font-bold text-white">{funding.number_of_advisors || 0}</div>
-                      <div className="text-xs text-zinc-500">Advisors</div>
+                    <div className="p-2 rounded-lg bg-zinc-800/50 text-center">
+                      <div className="text-lg font-bold text-white">{funding.number_of_advisors || 0}</div>
+                      <div className="text-[10px] text-zinc-500">Advisors</div>
                     </div>
                   </div>
                   {funding.last_funding_round_type && (
-                    <div className="p-3 rounded-lg bg-zinc-800/30 border border-zinc-700/50">
+                    <div className="p-2 rounded-lg bg-zinc-800/30 border border-zinc-700/50">
                       <div className="text-xs text-zinc-500 mb-1">Latest Round</div>
                       <div className="text-white font-medium capitalize">{funding.last_funding_round_type}</div>
                       <div className="text-sm text-green-400">{formatCurrency(parseFloat(funding.last_funding_round_value_usd))}</div>
@@ -360,15 +360,15 @@ export default function CompanyProfile() {
               </GlassCard>
 
               {/* Funding Rounds */}
-              <GlassCard className="p-6 lg:col-span-2">
-                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <GlassCard className="p-4 lg:col-span-2">
+                <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-indigo-400" />
                   Funding History
                 </h3>
                 {funding.funding_rounds_info?.length > 0 ? (
-                  <div className="space-y-3 max-h-80 overflow-y-auto">
+                  <div className="space-y-2 max-h-80 overflow-y-auto">
                     {funding.funding_rounds_info.map((round, i) => (
-                      <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/30 border border-zinc-700/50">
+                      <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-zinc-800/30 border border-zinc-700/50">
                         <div>
                           <div className="text-white font-medium">{round['Announcement date']}</div>
                           {round['Lead investors'] && (
@@ -393,8 +393,8 @@ export default function CompanyProfile() {
 
               {/* Investors */}
               {funding.investors?.length > 0 && (
-                <GlassCard className="p-6 lg:col-span-3">
-                  <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <GlassCard className="p-4 lg:col-span-3">
+                  <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
                     <Award className="w-5 h-5 text-amber-400" />
                     Investors
                   </h3>
@@ -411,21 +411,21 @@ export default function CompanyProfile() {
           </TabsContent>
 
           {/* Tech Stack Tab */}
-          <TabsContent value="tech" className="space-y-6">
-            <GlassCard className="p-6">
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <TabsContent value="tech" className="space-y-4">
+            <GlassCard className="p-4">
+              <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
                 <Server className="w-5 h-5 text-cyan-400" />
                 Technology Stack
               </h3>
               {technographics.full_nested_tech_stack?.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-2">
                   {technographics.full_nested_tech_stack.map((category, i) => (
-                    <div key={i} className="border border-zinc-700/50 rounded-xl overflow-hidden">
+                    <div key={i} className="border border-zinc-700/50 rounded-lg overflow-hidden">
                       <button
                         onClick={() => toggleTechCategory(category.category)}
-                        className="w-full flex items-center justify-between p-4 bg-zinc-800/30 hover:bg-zinc-800/50 transition-colors"
+                        className="w-full flex items-center justify-between p-3 bg-zinc-800/30 hover:bg-zinc-800/50 transition-colors"
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
                           <Layers className="w-5 h-5 text-cyan-400" />
                           <span className="text-white font-medium">{category.category}</span>
                           <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
@@ -439,7 +439,7 @@ export default function CompanyProfile() {
                         )}
                       </button>
                       {expandedTechCategories[category.category] && (
-                        <div className="p-4 bg-zinc-900/50">
+                        <div className="p-3 bg-zinc-900/50">
                           <div className="flex flex-wrap gap-2">
                             {category.techs?.map((tech, j) => (
                               <Badge key={j} className="bg-zinc-800 text-zinc-300 border-zinc-700">

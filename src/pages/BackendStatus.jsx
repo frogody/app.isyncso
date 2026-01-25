@@ -246,9 +246,9 @@ export default function BackendStatus() {
                 </Badge>
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between text-sm">
+            <CardContent className="p-3">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs">
                   <span className="text-gray-400">Status</span>
                   <div className="flex items-center gap-2">
                     {getStatusIcon(results.technographics?.status)}
@@ -259,33 +259,33 @@ export default function BackendStatus() {
                 </div>
 
                 {results.technographics?.duration && (
-                  <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center justify-between text-xs">
                     <span className="text-gray-400">Response Time</span>
                     <span className="text-white">{results.technographics.duration}ms</span>
                   </div>
                 )}
 
                 {results.technographics?.error && (
-                  <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                    <p className="text-red-300 text-sm">{results.technographics.error}</p>
+                  <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/20">
+                    <p className="text-red-300 text-xs">{results.technographics.error}</p>
                   </div>
                 )}
 
                 {results.technographics?.data?.data?.[0]?.data && (
-                  <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                    <p className="text-green-300 text-sm">
+                  <div className="p-2 rounded-lg bg-green-500/10 border border-green-500/20">
+                    <p className="text-green-300 text-xs">
                       ✓ Retrieved tech stack data
                     </p>
                     {results.technographics.data.data[0].data.full_nested_tech_stack && (
-                      <div className="mt-2 text-xs text-gray-400">
+                      <div className="mt-1 text-[10px] text-gray-400">
                         Found {Object.keys(results.technographics.data.data[0].data.full_nested_tech_stack || {}).length} tech categories
                       </div>
                     )}
                   </div>
                 )}
 
-                <div className="text-xs text-gray-500">
-                  Endpoint: <code className="bg-gray-800 px-2 py-1 rounded">/api/explorium/technographics</code>
+                <div className="text-[10px] text-gray-500">
+                  Endpoint: <code className="bg-gray-800 px-1 py-0.5 rounded text-[9px]">/api/explorium/technographics</code>
                 </div>
               </div>
             </CardContent>
@@ -295,8 +295,8 @@ export default function BackendStatus() {
           <Card className="glass-card border-0">
             <CardHeader>
               <CardTitle className="text-white flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Users className="w-5 h-5 text-purple-400" />
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-purple-400" />
                   People API
                 </div>
                 <Badge className={`${getStatusColor(results.people?.status)} text-white`}>
@@ -304,9 +304,9 @@ export default function BackendStatus() {
                 </Badge>
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between text-sm">
+            <CardContent className="p-3">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs">
                   <span className="text-gray-400">Status</span>
                   <div className="flex items-center gap-2">
                     {getStatusIcon(results.people?.status)}
@@ -317,33 +317,33 @@ export default function BackendStatus() {
                 </div>
 
                 {results.people?.duration && (
-                  <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center justify-between text-xs">
                     <span className="text-gray-400">Response Time</span>
                     <span className="text-white">{results.people.duration}ms</span>
                   </div>
                 )}
 
                 {results.people?.error && (
-                  <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                    <p className="text-red-300 text-sm">{results.people.error}</p>
+                  <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/20">
+                    <p className="text-red-300 text-xs">{results.people.error}</p>
                   </div>
                 )}
 
                 {results.people?.data && (
-                  <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                    <p className="text-green-300 text-sm">
+                  <div className="p-2 rounded-lg bg-green-500/10 border border-green-500/20">
+                    <p className="text-green-300 text-xs">
                       ✓ Retrieved data for {results.people.data.total_results || 0} people
                     </p>
                     {results.people.data.data?.[0]?.data && (
-                      <div className="mt-2 text-xs text-gray-400">
+                      <div className="mt-1 text-[10px] text-gray-400">
                         Sample: Professional profile data available
                       </div>
                     )}
                   </div>
                 )}
 
-                <div className="text-xs text-gray-500">
-                  Endpoint: <code className="bg-gray-800 px-2 py-1 rounded">/api/explorium/people</code>
+                <div className="text-[10px] text-gray-500">
+                  Endpoint: <code className="bg-gray-800 px-1 py-0.5 rounded text-[9px]">/api/explorium/people</code>
                 </div>
               </div>
             </CardContent>
@@ -355,34 +355,34 @@ export default function BackendStatus() {
           <CardHeader>
             <CardTitle className="text-white">Backend Setup Checklist</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-start gap-3">
-              <CheckCircle className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+          <CardContent className="p-3 space-y-3">
+            <div className="flex items-start gap-2">
+              <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
               <div>
-                <div className="text-white font-medium">Environment Variable Set</div>
-                <div className="text-sm text-gray-400">
+                <div className="text-white font-medium text-sm">Environment Variable Set</div>
+                <div className="text-xs text-gray-400">
                   EXPLORIUM_API_KEY configured in Dashboard → Settings
                 </div>
               </div>
             </div>
-            <div className="flex items-start gap-3">
-              <CheckCircle className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+            <div className="flex items-start gap-2">
+              <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
               <div>
-                <div className="text-white font-medium">Backend Functions Created</div>
-                <div className="text-sm text-gray-400">
+                <div className="text-white font-medium text-sm">Backend Functions Created</div>
+                <div className="text-xs text-gray-400">
                   explorium/firmographics, explorium/technographics, explorium/people
                 </div>
               </div>
             </div>
-            <div className="flex items-start gap-3">
+            <div className="flex items-start gap-2">
               {allHealthy ? (
-                <CheckCircle className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
               ) : (
-                <XCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                <XCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
               )}
               <div>
-                <div className="text-white font-medium">All Endpoints Healthy</div>
-                <div className="text-sm text-gray-400">
+                <div className="text-white font-medium text-sm">All Endpoints Healthy</div>
+                <div className="text-xs text-gray-400">
                   {allHealthy ? "All API calls returning successfully" : "Some endpoints need attention"}
                 </div>
               </div>

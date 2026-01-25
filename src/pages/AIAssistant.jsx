@@ -151,7 +151,7 @@ function OrbitVisualization() {
             style={{ transformOrigin: 'center center' }}
           >
             <motion.div
-              className={`w-12 h-12 rounded-xl ${colors.bg} border ${colors.border} flex items-center justify-center`}
+              className={`w-8 h-8 rounded-xl ${colors.bg} border ${colors.border} flex items-center justify-center`}
               style={{
                 transform: `translateY(-${radius}px) rotate(-${angle}deg)`,
               }}
@@ -161,7 +161,7 @@ function OrbitVisualization() {
               transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
               whileHover={{ scale: 1.2 }}
             >
-              <agent.icon className={`w-5 h-5 ${colors.text}`} />
+              <agent.icon className={`w-4 h-4 ${colors.text}`} />
             </motion.div>
           </motion.div>
         );
@@ -220,7 +220,7 @@ export default function AIAssistant() {
         <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-cyan-950/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-8">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Page Header */}
         <PageHeader
           title="Sync"
@@ -242,10 +242,10 @@ export default function AIAssistant() {
         />
 
         {/* Hero Section with Orbit Visualization */}
-        <GlassCard className="p-8 overflow-hidden">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+        <GlassCard className="p-4 overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-center">
             {/* Left: Text content */}
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div>
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 mb-4">
                   <Network className="w-4 h-4 text-cyan-400" />
@@ -261,20 +261,20 @@ export default function AIAssistant() {
               </div>
 
               {/* Quick stats */}
-              <div className="grid grid-cols-3 gap-4">
-                <div className="p-4 rounded-xl bg-zinc-900/50 border border-white/5">
-                  <div className="text-2xl font-bold text-white">{SPECIALIZED_AGENTS.filter(a => a.status === 'active').length}</div>
-                  <div className="text-sm text-zinc-500">Active Agents</div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="p-3 rounded-xl bg-zinc-900/50 border border-white/5">
+                  <div className="text-lg font-bold text-white">{SPECIALIZED_AGENTS.filter(a => a.status === 'active').length}</div>
+                  <div className="text-xs text-zinc-500">Active Agents</div>
                 </div>
-                <div className="p-4 rounded-xl bg-zinc-900/50 border border-white/5">
-                  <div className="text-2xl font-bold text-white">24/7</div>
-                  <div className="text-sm text-zinc-500">Always On</div>
+                <div className="p-3 rounded-xl bg-zinc-900/50 border border-white/5">
+                  <div className="text-lg font-bold text-white">24/7</div>
+                  <div className="text-xs text-zinc-500">Always On</div>
                 </div>
-                <div className="p-4 rounded-xl bg-zinc-900/50 border border-white/5">
-                  <div className="text-2xl font-bold text-green-400">
-                    <Activity className="w-6 h-6" />
+                <div className="p-3 rounded-xl bg-zinc-900/50 border border-white/5">
+                  <div className="text-lg font-bold text-green-400">
+                    <Activity className="w-4 h-4" />
                   </div>
-                  <div className="text-sm text-zinc-500">All Systems Go</div>
+                  <div className="text-xs text-zinc-500">All Systems Go</div>
                 </div>
               </div>
 
@@ -307,18 +307,18 @@ export default function AIAssistant() {
         </GlassCard>
 
         {/* How it works */}
-        <GlassCard className="p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
-              <Workflow className="w-5 h-5 text-cyan-400" />
+        <GlassCard className="p-4">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
+              <Workflow className="w-4 h-4 text-cyan-400" />
             </div>
             <div>
               <h3 className="text-lg font-semibold text-white">How Sync Works</h3>
-              <p className="text-sm text-zinc-500">Intelligent task routing and orchestration</p>
+              <p className="text-xs text-zinc-500">Intelligent task routing and orchestration</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="relative">
               <div className="flex items-center gap-4 mb-3">
                 <div className="w-8 h-8 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-sm font-medium text-cyan-400">
@@ -363,8 +363,8 @@ export default function AIAssistant() {
           </div>
 
           {/* Example queries */}
-          <div className="mt-8 p-4 rounded-xl bg-zinc-900/50 border border-white/5">
-            <h5 className="text-sm font-medium text-zinc-300 mb-3">Example Requests</h5>
+          <div className="mt-4 p-3 rounded-xl bg-zinc-900/50 border border-white/5">
+            <h5 className="text-xs font-medium text-zinc-300 mb-3">Example Requests</h5>
             <div className="flex flex-wrap gap-2">
               {[
                 "What courses should I take next?",

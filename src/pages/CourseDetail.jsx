@@ -224,7 +224,7 @@ export default function CourseDetail() {
         <div className="absolute bottom-20 right-1/4 w-[400px] h-[400px] bg-cyan-400/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Back Button */}
         <Link to={createPageUrl("Learn")}>
           <Button variant="ghost" className="text-zinc-400 hover:text-white mb-2">
@@ -235,12 +235,12 @@ export default function CourseDetail() {
 
         {/* Course Header */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="p-6 lg:p-8 relative overflow-hidden rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className="p-4 lg:p-6 relative overflow-hidden rounded-xl bg-zinc-900/50 border border-zinc-800/60">
             <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${config.gradient}`} />
             
-            <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+            <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
               <div className="flex-1 space-y-4">
-                <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Badge className={`${config.color} border`}>
                     {course.difficulty}
                   </Badge>
@@ -260,7 +260,7 @@ export default function CourseDetail() {
                 <h1 className="text-3xl lg:text-4xl font-bold text-white">{course.title}</h1>
                 <p className="text-lg text-zinc-400 leading-relaxed">{course.description}</p>
 
-                <div className="flex flex-wrap items-center gap-4 lg:gap-6 text-sm text-zinc-500 pt-2">
+                <div className="flex flex-wrap items-center gap-3 lg:gap-4 text-xs text-zinc-500 pt-2">
                   <div className="flex items-center gap-2 bg-zinc-800/40 px-3 py-1.5 rounded-lg border border-zinc-700/30">
                     <Layers className="w-4 h-4 text-cyan-400/70" />
                     <span>{modules.length} Modules</span>
@@ -335,7 +335,7 @@ export default function CourseDetail() {
         )}
 
         {/* Course Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2 space-y-6">
             {/* What you'll learn */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>

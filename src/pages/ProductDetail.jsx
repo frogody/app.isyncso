@@ -146,23 +146,23 @@ function StatCard({ icon: Icon, label, value, subtext, trend, color = "cyan" }) 
   };
 
   return (
-    <div className="stat-card p-4 rounded-xl bg-zinc-900/50 border border-white/5">
+    <div className="stat-card p-3 rounded-xl bg-zinc-900/50 border border-white/5">
       <div className="flex items-start justify-between mb-2">
-        <div className={cn("w-10 h-10 rounded-lg border flex items-center justify-center", colors[color])}>
-          <Icon className="w-5 h-5" />
+        <div className={cn("w-8 h-8 rounded-lg border flex items-center justify-center", colors[color])}>
+          <Icon className="w-4 h-4" />
         </div>
         {trend && (
           <Badge variant="outline" className={cn(
-            "text-xs",
+            "text-[10px]",
             trend > 0 ? "border-green-500/30 text-green-400" : "border-red-500/30 text-red-400"
           )}>
             {trend > 0 ? '+' : ''}{trend}%
           </Badge>
         )}
       </div>
-      <p className="text-2xl font-bold text-white">{value}</p>
-      <p className="text-xs text-zinc-500 mt-1">{label}</p>
-      {subtext && <p className="text-xs text-zinc-600 mt-0.5">{subtext}</p>}
+      <p className="text-lg font-bold text-white">{value}</p>
+      <p className="text-[10px] text-zinc-500 mt-1">{label}</p>
+      {subtext && <p className="text-[10px] text-zinc-600 mt-0.5">{subtext}</p>}
     </div>
   );
 }
@@ -238,10 +238,10 @@ function OverviewSection({
     : null;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       {/* Left Column - Images */}
-      <div className="lg:col-span-1 space-y-4">
-        <GlassCard className="p-4">
+      <div className="lg:col-span-1 space-y-3">
+        <GlassCard className="p-3">
           <ProductImageUploader
             images={localImages}
             featuredImage={localFeatured}

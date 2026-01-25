@@ -261,7 +261,7 @@ export default function NestDetail() {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-black p-6 space-y-6">
+      <div className="min-h-screen bg-black px-4 lg:px-6 py-4 space-y-4">
         {/* Back Button */}
         <Button
           variant="ghost"
@@ -273,9 +273,9 @@ export default function NestDetail() {
         </Button>
 
         {/* Header */}
-        <div className="flex flex-col md:flex-row gap-6">
+        <div className="flex flex-col md:flex-row gap-4">
           {/* Thumbnail */}
-          <div className="w-full md:w-64 h-48 rounded-xl bg-gradient-to-br from-zinc-800 to-zinc-900 border border-white/5 flex items-center justify-center overflow-hidden">
+          <div className="w-full md:w-48 h-32 rounded-lg bg-gradient-to-br from-zinc-800 to-zinc-900 border border-white/5 flex items-center justify-center overflow-hidden">
             {nest.thumbnail_url ? (
               <img
                 src={nest.thumbnail_url}
@@ -283,15 +283,15 @@ export default function NestDetail() {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <Icon className={`w-16 h-16 ${config.color.split(' ')[0]}`} />
+              <Icon className={`w-8 h-8 ${config.color.split(' ')[0]}`} />
             )}
           </div>
 
           {/* Info */}
-          <div className="flex-1 space-y-4">
+          <div className="flex-1 space-y-3">
             <div className="flex items-start justify-between">
               <div>
-                <div className="flex items-center gap-3 mb-2">
+                <div className="flex items-center gap-2 mb-2">
                   <Badge className={config.color}>
                     <Icon className="w-3 h-3 mr-1" />
                     {config.label}

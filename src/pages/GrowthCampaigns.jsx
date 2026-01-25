@@ -69,9 +69,9 @@ function CampaignCard({ campaign, onEdit, onDelete, onStatusChange, onViewDetail
       <div className="bg-zinc-900/60 backdrop-blur-sm rounded-xl border border-zinc-800/60 hover:border-zinc-700/60 transition-all overflow-hidden">
         <div className={`h-0.5 bg-gradient-to-r ${typeConfig.color}`} />
 
-        <div className="p-4">
-          <div className="flex items-start gap-3">
-            <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${typeConfig.color} flex items-center justify-center flex-shrink-0`}>
+        <div className="p-3">
+          <div className="flex items-start gap-2">
+            <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${typeConfig.color} flex items-center justify-center flex-shrink-0`}>
               <Icon className="w-4 h-4 text-white" />
             </div>
 
@@ -87,7 +87,7 @@ function CampaignCard({ campaign, onEdit, onDelete, onStatusChange, onViewDetail
                     <StatusIcon className="w-3 h-3" />
                     {statusConfig.label}
                   </Badge>
-                  
+
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100">
@@ -120,7 +120,7 @@ function CampaignCard({ campaign, onEdit, onDelete, onStatusChange, onViewDetail
               </div>
 
               {/* Stats */}
-              <div className="flex items-center gap-4 mt-3">
+              <div className="flex items-center gap-3 mt-2">
                 <div className="flex items-center gap-1.5">
                   <Users className="w-3 h-3 text-zinc-500" />
                   <span className="text-white text-xs font-medium">{campaign.contacted || 0}</span>
@@ -138,7 +138,7 @@ function CampaignCard({ campaign, onEdit, onDelete, onStatusChange, onViewDetail
                 </div>
               </div>
 
-              <div className="mt-3">
+              <div className="mt-2">
                 <div className="flex items-center justify-between text-[10px] text-zinc-500 mb-1">
                   <span>Progress</span>
                   <span>{progress}%</span>
@@ -399,7 +399,7 @@ export default function GrowthCampaigns() {
 
         {/* Stats */}
         <div ref={statsGridRef} className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="stat-card p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className="stat-card p-3 rounded-lg bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-zinc-500 text-xs">Active</p>
@@ -410,7 +410,7 @@ export default function GrowthCampaigns() {
               </div>
             </div>
           </div>
-          <div className="stat-card p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className="stat-card p-3 rounded-lg bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-zinc-500 text-xs">Contacted</p>
@@ -422,7 +422,7 @@ export default function GrowthCampaigns() {
               </div>
             </div>
           </div>
-          <div className="stat-card p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className="stat-card p-3 rounded-lg bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-zinc-500 text-xs">Meetings</p>
@@ -433,7 +433,7 @@ export default function GrowthCampaigns() {
               </div>
             </div>
           </div>
-          <div className="stat-card p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className="stat-card p-3 rounded-lg bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-zinc-500 text-xs">Revenue</p>

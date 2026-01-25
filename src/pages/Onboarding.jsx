@@ -703,11 +703,11 @@ export default function Onboarding() {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
+          className="text-center mb-4"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-900/50 border border-zinc-800 mb-6">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-900/50 border border-zinc-800 mb-4">
             <Sparkles className="w-4 h-4 text-cyan-400" />
-            <span className="text-sm text-zinc-400">
+            <span className="text-xs text-zinc-400">
               {isInvitedUser ? 'Complete Your Profile' : 'Personalized Workspace Setup'}
             </span>
           </div>
@@ -719,7 +719,7 @@ export default function Onboarding() {
         {/* Card */}
         <motion.div
           layout
-          className="bg-zinc-900/40 backdrop-blur-xl border border-zinc-800 rounded-3xl p-6 sm:p-8"
+          className="bg-zinc-900/40 backdrop-blur-xl border border-zinc-800 rounded-xl p-4 lg:p-6"
         >
           <AnimatePresence mode="wait">
             {step === 1 && (
@@ -811,7 +811,7 @@ export default function Onboarding() {
         </motion.div>
 
         {/* Footer */}
-        <p className="text-center text-xs text-zinc-600 mt-6">
+        <p className="text-center text-[10px] text-zinc-600 mt-4">
           Your data is used only to personalize your workspace experience
         </p>
       </div>

@@ -884,22 +884,22 @@ export default function CreateImages() {
               <div className="space-y-3">
                 {/* Style Presets */}
                 <div>
-                  <Label className="text-zinc-400 mb-3 block text-sm">Style</Label>
-                  <div className="grid grid-cols-4 gap-2">
+                  <Label className="text-zinc-400 mb-2 block text-xs">Style</Label>
+                  <div className="grid grid-cols-4 gap-1.5">
                     {STYLE_PRESETS.map(style => {
                       const IconComponent = style.icon;
                       return (
                         <button
                           key={style.id}
                           onClick={() => setSelectedStyle(style.id)}
-                          className={`p-3 rounded-xl border text-center transition-all ${
+                          className={`p-2.5 rounded-lg border text-center transition-all ${
                             selectedStyle === style.id
                               ? 'bg-rose-500/20 border-rose-500/50 text-rose-400'
                               : 'bg-zinc-800/30 border-zinc-700/30 text-zinc-400 hover:border-zinc-600 hover:text-zinc-300'
                           }`}
                         >
-                          <IconComponent className="w-5 h-5 mx-auto mb-1.5" />
-                          <div className="text-xs">{style.label}</div>
+                          <IconComponent className="w-4 h-4 mx-auto mb-1" />
+                          <div className="text-[10px]">{style.label}</div>
                         </button>
                       );
                     })}
@@ -908,7 +908,7 @@ export default function CreateImages() {
 
                 {/* Aspect Ratio */}
                 <div>
-                  <Label className="text-zinc-400 mb-2 block text-sm">Aspect Ratio</Label>
+                  <Label className="text-zinc-400 mb-2 block text-xs">Aspect Ratio</Label>
                   <Select value={aspectRatio} onValueChange={setAspectRatio}>
                     <SelectTrigger className="bg-zinc-800/50 border-zinc-700/50 text-white focus:ring-rose-500/50">
                       <SelectValue />
@@ -928,11 +928,11 @@ export default function CreateImages() {
                 </div>
 
                 {/* Cost Estimate & Generate Button */}
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {/* Cost Estimate */}
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/30 border border-zinc-700/30">
+                  <div className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-800/30 border border-zinc-700/30">
                     <div className="flex items-center gap-2">
-                      <span className="text-zinc-400 text-sm">Estimated cost:</span>
+                      <span className="text-zinc-400 text-xs">Estimated cost:</span>
                       <Badge
                         variant="outline"
                         className={`${
@@ -944,7 +944,7 @@ export default function CreateImages() {
                         ${USE_CASES[selectedUseCase]?.estimatedCost?.toFixed(3) || '0.025'}
                       </Badge>
                     </div>
-                    <span className="text-zinc-500 text-xs">
+                    <span className="text-zinc-500 text-[10px]">
                       {USE_CASES[selectedUseCase]?.costTier === 'economy' ? '⚡ Fast & cheap' :
                        USE_CASES[selectedUseCase]?.costTier === 'premium' ? '✨ Highest quality' :
                        '🎯 Balanced'}
@@ -982,29 +982,29 @@ export default function CreateImages() {
               <Button
                 variant="outline"
                 onClick={() => setShowHistory(!showHistory)}
-                className="w-full border-zinc-700/50 text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-300"
+                className="w-full border-zinc-700/50 text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-300 text-xs"
               >
-                <History className="w-4 h-4 mr-2" />
+                <History className="w-3.5 h-3.5 mr-1.5" />
                 {showHistory ? 'Hide' : 'Show'} Generation History ({generationHistory.length})
               </Button>
             </motion.div>
           </div>
 
           {/* Right Panel - Preview */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60"
+              className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60"
             >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-base font-semibold text-white flex items-center gap-2">
                   <Image className="w-5 h-5 text-rose-400/70" />
                   Preview
                 </h3>
                 {generatedImage && (
-                  <div className="flex gap-2">
+                  <div className="flex gap-1.5">
                     <Button
                       size="sm"
                       variant="outline"
@@ -1026,19 +1026,19 @@ export default function CreateImages() {
               </div>
 
               <div
-                className={`aspect-square rounded-xl overflow-hidden border border-zinc-700/30 ${
+                className={`aspect-square rounded-lg overflow-hidden border border-zinc-700/30 ${
                   !generatedImage && !isGenerating ? 'flex items-center justify-center bg-zinc-800/30' : ''
                 }`}
               >
                 {isGenerating ? (
                   <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-800/30">
                     <div className="relative">
-                      <Loader2 className="w-12 h-12 text-rose-400 animate-spin" />
+                      <Loader2 className="w-8 h-8 text-rose-400 animate-spin" />
                       {isEnhancing && (
-                        <Wand2 className="w-5 h-5 text-rose-300 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                        <Wand2 className="w-4 h-4 text-rose-300 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                       )}
                     </div>
-                    <p className="text-zinc-300 mt-4 font-medium">
+                    <p className="text-zinc-300 mt-3 font-medium text-sm">
                       {isEnhancing ? '🪄 AI is optimizing your prompt...' : '🎨 Generating your image...'}
                     </p>
                     <p className="text-zinc-500 text-sm mt-2">
@@ -1053,33 +1053,33 @@ export default function CreateImages() {
                     onClick={() => setPreviewImage(generatedImage)}
                   />
                 ) : (
-                  <div className="text-center p-8">
-                    <Image className="w-16 h-16 text-zinc-700 mx-auto mb-4" />
-                    <p className="text-zinc-400">Your generated image will appear here</p>
-                    <p className="text-zinc-500 text-sm mt-2">Enter a prompt and click Generate</p>
+                  <div className="text-center p-6">
+                    <Image className="w-12 h-12 text-zinc-700 mx-auto mb-3" />
+                    <p className="text-zinc-400 text-sm">Your generated image will appear here</p>
+                    <p className="text-zinc-500 text-xs mt-1.5">Enter a prompt and click Generate</p>
                   </div>
                 )}
               </div>
 
               {/* AI Enhanced Prompt Display */}
               {generatedImage?.enhanced_prompt && (
-                <div className="mt-4 p-4 bg-gradient-to-br from-zinc-800/50 to-zinc-900/50 rounded-xl border border-zinc-700/30">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Wand2 className="w-4 h-4 text-rose-400" />
-                    <Label className="text-rose-400 text-xs font-medium">AI-Enhanced Prompt</Label>
+                <div className="mt-3 p-3 bg-gradient-to-br from-zinc-800/50 to-zinc-900/50 rounded-lg border border-zinc-700/30">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Wand2 className="w-3.5 h-3.5 text-rose-400" />
+                    <Label className="text-rose-400 text-[10px] font-medium">AI-Enhanced Prompt</Label>
                     {generatedImage.ai_enhancement && !generatedImage.ai_enhancement.fallback && (
                       <Badge variant="outline" className="text-xs bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
                         AI Optimized
                       </Badge>
                     )}
                   </div>
-                  <p className="text-zinc-200 text-sm leading-relaxed">{generatedImage.enhanced_prompt}</p>
+                  <p className="text-zinc-200 text-xs leading-relaxed">{generatedImage.enhanced_prompt}</p>
 
                   {/* Style Tags */}
                   {generatedImage.ai_enhancement?.style_tags?.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-1.5">
+                    <div className="mt-2 flex flex-wrap gap-1">
                       {generatedImage.ai_enhancement.style_tags.map((tag, i) => (
-                        <span key={i} className="px-2 py-0.5 text-xs rounded-full bg-zinc-700/50 text-zinc-400">
+                        <span key={i} className="px-1.5 py-0.5 text-[10px] rounded-full bg-zinc-700/50 text-zinc-400">
                           {tag}
                         </span>
                       ))}
@@ -1088,8 +1088,8 @@ export default function CreateImages() {
 
                   {/* Composition Notes */}
                   {generatedImage.ai_enhancement?.composition_notes && (
-                    <div className="mt-3 pt-3 border-t border-zinc-700/30">
-                      <p className="text-zinc-500 text-xs">
+                    <div className="mt-2 pt-2 border-t border-zinc-700/30">
+                      <p className="text-zinc-500 text-[10px]">
                         <span className="text-zinc-400">Composition:</span> {generatedImage.ai_enhancement.composition_notes}
                       </p>
                     </div>
@@ -1103,17 +1103,17 @@ export default function CreateImages() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60"
+                className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60"
               >
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
+                <h3 className="text-base font-semibold text-white flex items-center gap-2 mb-3">
                   <History className="w-5 h-5 text-rose-400/70" />
                   Recent Generations
                 </h3>
-                <div className="grid grid-cols-3 gap-3 max-h-[400px] overflow-y-auto">
+                <div className="grid grid-cols-3 gap-2 max-h-[400px] overflow-y-auto">
                   {generationHistory.map(item => (
                     <div
                       key={item.id}
-                      className="group relative aspect-square rounded-xl overflow-hidden border border-zinc-700/30 cursor-pointer hover:border-rose-500/50 transition-colors"
+                      className="group relative aspect-square rounded-lg overflow-hidden border border-zinc-700/30 cursor-pointer hover:border-rose-500/50 transition-colors"
                       onClick={() => setPreviewImage(item)}
                     >
                       <img
@@ -1121,39 +1121,39 @@ export default function CreateImages() {
                         alt={item.name}
                         className="w-full h-full object-cover"
                       />
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleRegenerate(item);
                           }}
-                          className="p-2 bg-zinc-800 rounded-lg hover:bg-zinc-700 transition-colors"
+                          className="p-1.5 bg-zinc-800 rounded-md hover:bg-zinc-700 transition-colors"
                         >
-                          <RefreshCw className="w-4 h-4 text-white" />
+                          <RefreshCw className="w-3.5 h-3.5 text-white" />
                         </button>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleDownload(item.url, item.name);
                           }}
-                          className="p-2 bg-zinc-800 rounded-lg hover:bg-zinc-700 transition-colors"
+                          className="p-1.5 bg-zinc-800 rounded-md hover:bg-zinc-700 transition-colors"
                         >
-                          <Download className="w-4 h-4 text-white" />
+                          <Download className="w-3.5 h-3.5 text-white" />
                         </button>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleDeleteFromHistory(item.id);
                           }}
-                          className="p-2 bg-zinc-800 rounded-lg hover:bg-red-900 transition-colors"
+                          className="p-1.5 bg-zinc-800 rounded-md hover:bg-red-900 transition-colors"
                         >
-                          <Trash2 className="w-4 h-4 text-white" />
+                          <Trash2 className="w-3.5 h-3.5 text-white" />
                         </button>
                       </div>
                     </div>
                   ))}
                   {generationHistory.length === 0 && (
-                    <div className="col-span-3 text-center py-8 text-zinc-500">
+                    <div className="col-span-3 text-center py-6 text-zinc-500 text-xs">
                       No images generated yet
                     </div>
                   )}
@@ -1168,29 +1168,30 @@ export default function CreateImages() {
       <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
         <DialogContent className="max-w-4xl bg-zinc-900 border-zinc-800">
           <DialogHeader>
-            <DialogTitle className="text-white">
+            <DialogTitle className="text-white text-base">
               {previewImage?.name || 'Generated Image'}
             </DialogTitle>
           </DialogHeader>
           {previewImage && (
-            <div className="space-y-4">
+            <div className="space-y-3">
               <img
                 src={previewImage.url}
                 alt="Preview"
-                className="w-full rounded-xl"
+                className="w-full rounded-lg"
               />
               {previewImage.generation_config?.prompt && (
-                <div className="p-3 bg-zinc-800/50 rounded-lg border border-zinc-700/30">
-                  <Label className="text-zinc-500 text-xs mb-1 block">Prompt:</Label>
-                  <p className="text-zinc-300 text-sm">{previewImage.generation_config.prompt}</p>
+                <div className="p-2.5 bg-zinc-800/50 rounded-lg border border-zinc-700/30">
+                  <Label className="text-zinc-500 text-[10px] mb-1 block">Prompt:</Label>
+                  <p className="text-zinc-300 text-xs">{previewImage.generation_config.prompt}</p>
                 </div>
               )}
-              <div className="flex gap-2">
+              <div className="flex gap-1.5">
                 <Button
                   onClick={() => handleDownload(previewImage.url, previewImage.name)}
-                  className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                  className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs"
+                  size="sm"
                 >
-                  <Download className="w-4 h-4 mr-2" />
+                  <Download className="w-3.5 h-3.5 mr-1" />
                   Download
                 </Button>
                 <Button
@@ -1199,9 +1200,10 @@ export default function CreateImages() {
                     handleRegenerate(previewImage);
                     setPreviewImage(null);
                   }}
-                  className="border-zinc-700/50 text-zinc-400 hover:bg-zinc-800"
+                  className="border-zinc-700/50 text-zinc-400 hover:bg-zinc-800 text-xs"
+                  size="sm"
                 >
-                  <RefreshCw className="w-4 h-4 mr-2" />
+                  <RefreshCw className="w-3.5 h-3.5 mr-1" />
                   Use Settings
                 </Button>
               </div>
