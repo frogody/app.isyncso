@@ -68,7 +68,7 @@ const PurchaseDialog = ({ isOpen, onClose, nest, onPurchase, user }) => {
         .from('nest_purchases')
         .select('id')
         .eq('nest_id', nest.id)
-        .eq('organization_id', user.company_id)
+        .eq('organization_id', user.organization_id)
         .eq('status', 'completed')
         .single();
 
@@ -83,7 +83,7 @@ const PurchaseDialog = ({ isOpen, onClose, nest, onPurchase, user }) => {
         .from('nest_purchases')
         .insert({
           nest_id: nest.id,
-          organization_id: user.company_id,
+          organization_id: user.organization_id,
           purchased_by: user.id,
           price_paid: price,
           currency: 'EUR',
@@ -122,7 +122,7 @@ const PurchaseDialog = ({ isOpen, onClose, nest, onPurchase, user }) => {
             const { id, created_date, updated_date, organization_id, ...candidateData } = item.candidates;
             return {
               ...candidateData,
-              organization_id: user.company_id,
+              organization_id: user.organization_id,
               source: 'nest_purchase',
               import_source: `nest:${nest.id}`,
             };
@@ -281,7 +281,7 @@ export default function TalentNestDetail() {
         .from('nest_purchases')
         .select('id')
         .eq('nest_id', nestId)
-        .eq('organization_id', user.company_id)
+        .eq('organization_id', user.organization_id)
         .eq('status', 'completed')
         .single();
 
