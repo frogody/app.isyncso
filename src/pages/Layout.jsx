@@ -535,7 +535,7 @@ const SIDEBAR_CONSTANTS = {
   CORE_ITEM_HEIGHT: 44,    // min-h-[44px]
   ITEM_GAP: 4,             // space-y-1
   DIVIDER_HEIGHT: 17,      // h-px + my-2 (1px + 8px + 8px)
-  ALIGNMENT_ADJUST: -24,   // Fine-tune adjustment to align items perfectly
+  ALIGNMENT_ADJUST: -4,    // Fine-tune adjustment to align items perfectly
 };
 
 // Core nav item indices (Dashboard, CRM, Projects, Products, Inbox)
@@ -948,6 +948,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
             const isFinance = item.id === "finance";
             const isRaise = item.id === "raise";
             const isTalent = item.id === "talent";
+            const isCreate = item.id === "create";
 
             // Get the appropriate color classes for this engine
             const getEngineColors = () => {
@@ -958,6 +959,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
               if (isFinance) return { text: 'text-amber-400', bg: 'bg-amber-950/30', solid: 'bg-amber-500', glow: 'shadow-[0_0_10px_rgba(245,158,11,0.5)]' };
               if (isRaise) return { text: 'text-orange-400', bg: 'bg-orange-950/30', solid: 'bg-orange-500', glow: 'shadow-[0_0_10px_rgba(249,115,22,0.5)]' };
               if (isTalent) return { text: 'text-red-400', bg: 'bg-red-950/30', solid: 'bg-red-500', glow: 'shadow-[0_0_10px_rgba(239,68,68,0.5)]' };
+              if (isCreate) return { text: 'text-rose-400', bg: 'bg-rose-950/30', solid: 'bg-rose-500', glow: 'shadow-[0_0_10px_rgba(244,63,94,0.5)]' };
               return { text: 'text-cyan-400', bg: 'bg-cyan-950/30', solid: 'bg-cyan-500', glow: 'shadow-[0_0_10px_rgba(6,182,212,0.5)]' };
             };
             const colors = getEngineColors();
