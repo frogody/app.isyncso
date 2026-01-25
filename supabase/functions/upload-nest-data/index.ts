@@ -314,12 +314,26 @@ serve(async (req) => {
 
     console.log(`Created ${createdCount} items, ${errorCount} errors`);
 
+    // Update the nest's item_count to reflect actual count
+    const { count: actualCount } = await supabase
+      .from('nest_items')
+      .select('*', { count: 'exact', head: true })
+      .eq('nest_id', nestId);
+
+    await supabase
+      .from('nests')
+      .update({ item_count: actualCount || 0 })
+      .eq('id', nestId);
+
+    console.log(`Updated nest ${nestId} item_count to ${actualCount}`);
+
     return new Response(
       JSON.stringify({
         success: true,
         created_count: createdCount,
         error_count: errorCount,
         total_rows: rows.length,
+        item_count: actualCount || 0,
         errors: errors.slice(0, 10), // Only return first 10 errors
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
