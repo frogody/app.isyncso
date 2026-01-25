@@ -664,7 +664,7 @@ function SubmenuFlyout({ config, openSubmenu, onClose, onEnter, location }) {
                     )}
                   </Link>
                 </TooltipTrigger>
-                <TooltipContent side="right" className={`${colors.bg} ${colors.border} ${colors.text}`}>
+                <TooltipContent side="right" className={`bg-gray-900 ${colors.border} ${colors.text}`}>
                   <p>{item.label}</p>
                 </TooltipContent>
               </Tooltip>
