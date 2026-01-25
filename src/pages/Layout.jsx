@@ -152,22 +152,20 @@ const navigationItems = [
   },
 ];
 
-// Bottom navigation items (Settings, Admin)
+// Bottom navigation items (Admin, Settings)
 const bottomNavItems = [
-  {
-    title: "Settings",
-    url: createPageUrl("Settings"),
-    icon: SettingsIcon,
-    permission: null, // Always visible
-    matchPattern: "/settings",
-  },
   {
     title: "Admin",
     url: "/admin",
     icon: Shield,
     permission: "admin.access", // Platform admin access
     isAdmin: true, // Special flag for admin link styling
-    matchPattern: "/admin",
+  },
+  {
+    title: "Settings",
+    url: createPageUrl("Settings"),
+    icon: SettingsIcon,
+    permission: null, // Always visible
   },
 ];
 
@@ -242,28 +240,31 @@ const PRODUCTS_SETTINGS_KEY = 'isyncso_products_settings';
 function isNavItemActive(item, pathname) {
   const lowerPath = pathname.toLowerCase();
 
-  // Use matchPatterns array if defined (for multiple patterns)
-  if (item.matchPatterns) {
-    return item.matchPatterns.some(pattern =>
-      lowerPath.includes(pattern.toLowerCase())
-    );
-  }
-
-  // Use matchPattern if defined (for broader matching)
-  if (item.matchPattern) {
-    return lowerPath.includes(item.matchPattern.toLowerCase());
-  }
-
-  // Otherwise, extract base path from url (remove query params)
+  // Extract base path from url (remove query params)
   const baseUrl = item.url.split('?')[0].toLowerCase();
 
-  // For exact pages like Dashboard, use exact match
+  // For Dashboard, use exact match
   if (baseUrl === '/dashboard') {
     return lowerPath === '/dashboard' || lowerPath === '/';
   }
 
-  // For other items, check if pathname starts with or contains the base URL
-  return lowerPath.startsWith(baseUrl) || lowerPath.includes(baseUrl.replace('/', ''));
+  // For other items, check if pathname starts with the base URL
+  // This is strict: /admin matches /admin and /admin/users, but not /administrator
+  if (lowerPath === baseUrl || lowerPath.startsWith(baseUrl + '/') || lowerPath.startsWith(baseUrl + '?')) {
+    return true;
+  }
+
+  // Use matchPatterns array if defined (for related pages that don't share URL prefix)
+  if (item.matchPatterns) {
+    return item.matchPatterns.some(pattern => {
+      const lowerPattern = pattern.toLowerCase();
+      // Match if path starts with pattern (e.g., /crm matches /crmcontacts)
+      return lowerPath.startsWith(lowerPattern) ||
+             lowerPath.startsWith(lowerPattern.replace('/', ''));
+    });
+  }
+
+  return false;
 }
 
 // Get secondary nav config based on current route
@@ -536,11 +537,21 @@ function SecondarySidebar({ config, location }) {
       <TooltipProvider delayDuration={200}>
         <nav className="flex-1 overflow-y-auto py-3 lg:py-4 px-2 lg:px-3 space-y-1.5 lg:space-y-2 scrollbar-hide">
           {config.items.map((item) => {
-            // Use startsWith for better matching of nested routes, but also check query params
-            const basePath = item.path.split('?')[0].toLowerCase();
-            const currentPath = location.pathname.toLowerCase();
-            const isActive = currentPath === basePath || currentPath.startsWith(basePath + '/') ||
-              (location.pathname + location.search).toLowerCase() === item.path.toLowerCase();
+            // Check if item path has query params
+            const hasQueryParams = item.path.includes('?');
+            const currentFullPath = (location.pathname + location.search).toLowerCase();
+            const itemPathLower = item.path.toLowerCase();
+
+            let isActive;
+            if (hasQueryParams) {
+              // For items with query params, require exact match including query string
+              isActive = currentFullPath === itemPathLower || currentFullPath.startsWith(itemPathLower + '&');
+            } else {
+              // For items without query params, use path-based matching
+              const basePath = item.path.toLowerCase();
+              const currentPath = location.pathname.toLowerCase();
+              isActive = currentPath === basePath || currentPath.startsWith(basePath + '/');
+            }
             const Icon = item.icon;
 
             return (
@@ -594,11 +605,21 @@ function MobileSecondaryNav({ config, location }) {
       </div>
       <div className="space-y-0.5 px-1">
         {config.items.map((item) => {
-          // Use startsWith for better matching of nested routes, but also check query params
-          const basePath = item.path.split('?')[0].toLowerCase();
-          const currentPath = location.pathname.toLowerCase();
-          const isActive = currentPath === basePath || currentPath.startsWith(basePath + '/') ||
-            (location.pathname + location.search).toLowerCase() === item.path.toLowerCase();
+          // Check if item path has query params
+          const hasQueryParams = item.path.includes('?');
+          const currentFullPath = (location.pathname + location.search).toLowerCase();
+          const itemPathLower = item.path.toLowerCase();
+
+          let isActive;
+          if (hasQueryParams) {
+            // For items with query params, require exact match including query string
+            isActive = currentFullPath === itemPathLower || currentFullPath.startsWith(itemPathLower + '&');
+          } else {
+            // For items without query params, use path-based matching
+            const basePath = item.path.toLowerCase();
+            const currentPath = location.pathname.toLowerCase();
+            isActive = currentPath === basePath || currentPath.startsWith(basePath + '/');
+          }
           const Icon = item.icon;
 
           return (
