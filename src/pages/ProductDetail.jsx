@@ -277,9 +277,9 @@ function OverviewSection({
       </div>
 
       {/* Right Column - Details */}
-      <div className="lg:col-span-2 space-y-4">
+      <div className="lg:col-span-2 space-y-3">
         {/* Header Card */}
-        <GlassCard className="p-6">
+        <GlassCard className="p-4">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div className="flex-1 space-y-3">
               <div className="flex items-center gap-3">
@@ -341,9 +341,9 @@ function OverviewSection({
 
         {/* SKU & Barcode - Physical Only */}
         {isPhysical && (
-          <GlassCard className="p-4">
-            <div className="flex items-center gap-4">
-              <div className="grid grid-cols-2 gap-4 flex-1">
+          <GlassCard className="p-3">
+            <div className="flex items-center gap-3">
+              <div className="grid grid-cols-2 gap-3 flex-1">
                 <InlineEditText
                   value={details?.sku}
                   onSave={(val) => onDetailsUpdate({ sku: val })}
@@ -372,7 +372,7 @@ function OverviewSection({
         )}
 
         {/* Description */}
-        <GlassCard className="p-6">
+        <GlassCard className="p-4">
           <div className="flex items-center gap-2 mb-4">
             <FileText className="w-5 h-5 text-cyan-400" />
             <span className="font-medium text-white">Description</span>
@@ -388,7 +388,7 @@ function OverviewSection({
         </GlassCard>
 
         {/* Key Info Grid */}
-        <div ref={statsGridRef} className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div ref={statsGridRef} className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {isPhysical && (
             <>
               <div className="stat-card p-3 rounded-xl bg-zinc-900/50 border border-white/5">
@@ -499,10 +499,10 @@ function PricingSection({ details, onDetailsUpdate, currency }) {
     : 0;
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Pricing Details */}
-        <GlassCard className="p-6">
+        <GlassCard className="p-4">
           <div className="flex items-center gap-2 mb-6">
             <Euro className="w-5 h-5 text-cyan-400" />
             <span className="font-medium text-white">Pricing Details</span>
@@ -567,7 +567,7 @@ function PricingSection({ details, onDetailsUpdate, currency }) {
         </GlassCard>
 
         {/* Margin Analysis */}
-        <GlassCard className="p-6">
+        <GlassCard className="p-4">
           <div className="flex items-center gap-2 mb-6">
             <TrendingUp className="w-5 h-5 text-green-400" />
             <span className="font-medium text-white">Margin Analysis</span>
@@ -610,7 +610,7 @@ function PricingSection({ details, onDetailsUpdate, currency }) {
       </div>
 
       {/* Volume Pricing */}
-      <GlassCard className="p-6">
+      <GlassCard className="p-4">
         <PricingTiers
           tiers={tiers}
           basePrice={pricing.base_price || 0}
@@ -633,8 +633,8 @@ function DigitalPricingSection({ details, onDetailsUpdate, currency }) {
   };
 
   return (
-    <div className="space-y-6">
-      <GlassCard className="p-6">
+    <div className="space-y-4">
+      <GlassCard className="p-4">
         <DigitalPricingManager
           pricingConfig={pricingConfig}
           currency={currency}
@@ -783,7 +783,7 @@ function BundlesSection({ product, details, currency }) {
 
   if (showEditor) {
     return (
-      <GlassCard className="p-6">
+      <GlassCard className="p-4">
         <BundleEditor
           bundle={editingBundle}
           currency={currency}
@@ -799,7 +799,7 @@ function BundlesSection({ product, details, currency }) {
   }
 
   return (
-    <GlassCard className="p-6">
+    <GlassCard className="p-4">
       <BundleManager
         bundles={bundles}
         currency={currency}
@@ -1036,9 +1036,9 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Stock Overview */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatCard
           icon={Package}
           label="Current Stock"
@@ -1065,9 +1065,9 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Stock Management */}
-        <GlassCard className="p-6">
+        <GlassCard className="p-4">
           <div className="flex items-center gap-2 mb-6">
             <Package className="w-5 h-5 text-cyan-400" />
             <span className="font-medium text-white">Stock Management</span>
@@ -1123,7 +1123,7 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
         </GlassCard>
 
         {/* Shipping Info */}
-        <GlassCard className="p-6">
+        <GlassCard className="p-4">
           <div className="flex items-center gap-2 mb-6">
             <Truck className="w-5 h-5 text-blue-400" />
             <span className="font-medium text-white">Shipping Details</span>
@@ -1174,7 +1174,7 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
       </div>
 
       {/* Suppliers Section */}
-      <GlassCard className="p-6">
+      <GlassCard className="p-4">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
             <Building2 className="w-5 h-5 text-purple-400" />
@@ -1247,11 +1247,11 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
               >
                 <div className="flex items-center gap-3">
                   <div className={cn(
-                    "w-10 h-10 rounded-lg flex items-center justify-center",
+                    "w-8 h-8 rounded-lg flex items-center justify-center",
                     ps.is_preferred ? "bg-purple-500/20" : "bg-zinc-800"
                   )}>
                     <Building2 className={cn(
-                      "w-5 h-5",
+                      "w-4 h-4",
                       ps.is_preferred ? "text-purple-400" : "text-zinc-400"
                     )} />
                   </div>

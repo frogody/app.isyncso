@@ -303,21 +303,21 @@ export default function NestDetail() {
                     </Badge>
                   )}
                 </div>
-                <h1 className="text-3xl font-bold text-white">{nest.name}</h1>
-                <p className="text-zinc-400 mt-2 max-w-2xl">{nest.description}</p>
+                <h1 className="text-2xl font-bold text-white">{nest.name}</h1>
+                <p className="text-xs text-zinc-400 mt-1 max-w-2xl">{nest.description}</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-6 text-sm">
+            <div className="flex items-center gap-4 text-xs">
               <div className="flex items-center gap-2 text-zinc-400">
-                <Users className="w-4 h-4" />
+                <Users className="w-3 h-3" />
                 <span>{nest.item_count || 0} items</span>
               </div>
             </div>
 
             {/* Price & Purchase */}
-            <div className="flex items-center gap-4 pt-4">
-              <div className="text-3xl font-bold text-white">
+            <div className="flex items-center gap-3 pt-2">
+              <div className="text-xl font-bold text-white">
                 {nest.price > 0 ? formatCurrency(nest.price, nest.currency) : 'Free'}
               </div>
 
@@ -349,8 +349,8 @@ export default function NestDetail() {
 
         {/* Preview Items */}
         <Card className="bg-zinc-900/50 border-white/5">
-          <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
+          <CardHeader className="p-3">
+            <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
               <Eye className="w-5 h-5 text-cyan-400" />
               Preview Items
               <Badge variant="outline" className="ml-2 text-zinc-400 border-zinc-600">
@@ -358,12 +358,12 @@ export default function NestDetail() {
               </Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-3">
             {previewItems.length === 0 ? (
-              <div className="text-center py-10 text-zinc-500">
-                <Lock className="w-10 h-10 mx-auto mb-3 opacity-50" />
-                <p>No preview items available</p>
-                <p className="text-sm mt-1">Purchase to access all items</p>
+              <div className="text-center py-6 text-zinc-500">
+                <Lock className="w-6 h-6 mx-auto mb-2 opacity-50" />
+                <p className="text-xs font-medium">No preview items available</p>
+                <p className="text-[10px] mt-1 text-zinc-600">Purchase to access all items</p>
               </div>
             ) : (
               <Table>
@@ -423,14 +423,14 @@ export default function NestDetail() {
 
             {/* Locked Items */}
             {nonPreviewCount > 0 && !isPurchased && (
-              <div className="mt-4 p-4 rounded-lg bg-zinc-800/50 border border-white/5 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Lock className="w-5 h-5 text-zinc-500" />
+              <div className="mt-3 p-3 rounded-lg bg-zinc-800/50 border border-white/5 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-zinc-500" />
                   <div>
-                    <p className="text-white font-medium">
+                    <p className="text-xs font-semibold text-white">
                       +{nonPreviewCount} more items
                     </p>
-                    <p className="text-sm text-zinc-500">
+                    <p className="text-[10px] text-zinc-600">
                       Purchase to unlock all items
                     </p>
                   </div>
@@ -453,8 +453,8 @@ export default function NestDetail() {
 
             {/* All Items (if purchased) */}
             {isPurchased && items.length > previewItems.length && (
-              <div className="mt-4 border-t border-white/10 pt-4">
-                <h4 className="text-sm font-medium text-zinc-400 mb-3">All Items</h4>
+              <div className="mt-3 border-t border-white/10 pt-3">
+                <h4 className="text-xs font-semibold text-zinc-400 mb-2">All Items</h4>
                 <Table>
                   <TableBody>
                     {items.filter(i => !i.is_preview).map((item) => {

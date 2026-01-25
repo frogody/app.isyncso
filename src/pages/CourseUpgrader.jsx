@@ -113,8 +113,8 @@ Return JSON with: title, content (markdown), duration_minutes (15-25), lesson_ty
   };
 
   return (
-    <div className="min-h-screen bg-black p-6">
-      <div className="max-w-5xl mx-auto space-y-6">
+    <div className="min-h-screen bg-black px-4 lg:px-6 py-4">
+      <div className="max-w-5xl mx-auto space-y-4">
         <Card className="glass-card border-0">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
@@ -122,13 +122,13 @@ Return JSON with: title, content (markdown), duration_minutes (15-25), lesson_ty
               Course Content Upgrader
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="text-gray-300 mb-4">
+          <CardContent className="space-y-3">
+            <div className="text-gray-300 mb-3">
               This will upgrade all lessons to have quality content (400-700 words) and simple quiz questions.
               Removes all complex interactive components.
             </div>
-            
-            <div className="flex items-center gap-4">
+
+            <div className="flex items-center gap-3">
               <Button 
                 onClick={doUpgrade} 
                 disabled={working} 
@@ -148,7 +148,7 @@ Return JSON with: title, content (markdown), duration_minutes (15-25), lesson_ty
               </Button>
               
               <div className="flex-1">
-                <div className="flex justify-between text-sm mb-1">
+                <div className="flex justify-between text-xs mb-1">
                   <span className="text-gray-400">Progress</span>
                   <span className="text-white">{pct}%</span>
                 </div>
@@ -157,8 +157,8 @@ Return JSON with: title, content (markdown), duration_minutes (15-25), lesson_ty
             </div>
 
             {log.length > 0 && (
-              <div className="mt-4 p-4 rounded-lg bg-gray-800/30 border border-gray-700">
-                <div className="text-xs text-gray-400 space-y-1 max-h-64 overflow-y-auto font-mono">
+              <div className="mt-3 p-3 rounded-lg bg-gray-800/30 border border-gray-700">
+                <div className="text-[10px] text-gray-400 space-y-1 max-h-64 overflow-y-auto font-mono">
                   {log.map((line, i) => (
                     <div key={i} className={line.startsWith('✓') ? 'text-emerald-400' : line.startsWith('✗') ? 'text-red-400' : ''}>
                       {line}

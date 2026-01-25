@@ -451,14 +451,14 @@ export default function CreateBranding() {
                       <Label className="text-zinc-400 capitalize">{key.replace('_', ' ')}</Label>
                       <div className="flex items-center gap-2">
                         <div
-                          className="w-12 h-12 rounded-xl border border-zinc-700/50"
+                          className="w-8 h-8 rounded-xl border border-zinc-700/50"
                           style={{ backgroundColor: value }}
                         />
                         <Input
                           type="color"
                           value={value}
                           onChange={(e) => updateField('colors', key, e.target.value)}
-                          className="w-12 h-12 p-1 cursor-pointer bg-transparent border-0"
+                          className="w-8 h-8 p-1 cursor-pointer bg-transparent border-0"
                         />
                       </div>
                       <Input
@@ -472,14 +472,14 @@ export default function CreateBranding() {
                 </div>
 
                 {/* Preview */}
-                <div className="mt-8 p-6 rounded-2xl border border-zinc-700/50" style={{ backgroundColor: brandData.colors.background }}>
-                  <h3 className="text-lg font-bold mb-2" style={{ color: brandData.colors.primary }}>
+                <div className="mt-4 p-4 rounded-xl border border-zinc-700/50" style={{ backgroundColor: brandData.colors.background }}>
+                  <h3 className="text-base font-bold mb-2" style={{ color: brandData.colors.primary }}>
                     Preview Header
                   </h3>
                   <p style={{ color: brandData.colors.text }}>
                     This is how your brand colors will look in content.
                   </p>
-                  <div className="flex gap-2 mt-4">
+                  <div className="flex gap-1 mt-2">
                     <div
                       className="px-4 py-2 rounded-xl font-medium transition-transform hover:scale-105"
                       style={{ backgroundColor: brandData.colors.primary, color: brandData.colors.background }}
@@ -511,14 +511,14 @@ export default function CreateBranding() {
                 transition={{ duration: 0.3 }}
                 className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4"
               >
-                <div className="mb-6">
+                <div className="mb-4">
                   <h3 className="text-white font-semibold">Typography</h3>
-                  <p className="text-zinc-500 text-sm mt-1">
+                  <p className="text-zinc-500 text-xs mt-1">
                     Select fonts and styles for your brand
                   </p>
                 </div>
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label className="text-zinc-400">Primary Font</Label>
                       <Select
@@ -559,9 +559,9 @@ export default function CreateBranding() {
                   </div>
 
                   {/* Preview */}
-                  <div className="p-6 bg-zinc-800/50 rounded-2xl border border-zinc-700/50 space-y-4">
+                  <div className="p-4 bg-zinc-800/50 rounded-xl border border-zinc-700/50 space-y-2">
                     <h3
-                      className="text-2xl font-bold text-white"
+                      className="text-lg font-bold text-white"
                       style={{ fontFamily: brandData.typography.primary_font }}
                     >
                       Heading in {brandData.typography.primary_font}
@@ -586,14 +586,14 @@ export default function CreateBranding() {
                 transition={{ duration: 0.3 }}
                 className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4"
               >
-                <div className="mb-6">
+                <div className="mb-4">
                   <h3 className="text-white font-semibold">Voice & Tone</h3>
-                  <p className="text-zinc-500 text-sm mt-1">
+                  <p className="text-zinc-500 text-xs mt-1">
                     Define how your brand should sound in AI-generated content
                   </p>
                 </div>
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label className="text-zinc-400">Tone</Label>
                       <Select
@@ -615,7 +615,7 @@ export default function CreateBranding() {
 
                     <div className="space-y-2">
                       <Label className="text-zinc-400">Brand Keywords</Label>
-                      <div className="flex gap-2">
+                      <div className="flex gap-1">
                         <Input
                           value={newKeyword}
                           onChange={(e) => setNewKeyword(e.target.value)}
@@ -649,7 +649,7 @@ export default function CreateBranding() {
                       value={brandData.voice.style_guide}
                       onChange={(e) => updateField('voice', 'style_guide', e.target.value)}
                       placeholder="Describe your brand's writing style, preferred phrases, things to avoid..."
-                      className="bg-zinc-800/50 border-zinc-700 text-white min-h-[100px] focus:border-rose-500/50"
+                      className="bg-zinc-800/50 border-zinc-700 text-white min-h-[80px] focus:border-rose-500/50"
                     />
                   </div>
 
@@ -659,7 +659,7 @@ export default function CreateBranding() {
                       value={brandData.voice.sample_copy}
                       onChange={(e) => updateField('voice', 'sample_copy', e.target.value)}
                       placeholder="Paste examples of your brand's writing that represent the ideal tone..."
-                      className="bg-zinc-800/50 border-zinc-700 text-white min-h-[150px] focus:border-rose-500/50"
+                      className="bg-zinc-800/50 border-zinc-700 text-white min-h-[120px] focus:border-rose-500/50"
                     />
                   </div>
                 </div>
@@ -674,14 +674,14 @@ export default function CreateBranding() {
                 transition={{ duration: 0.3 }}
                 className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4"
               >
-                <div className="mb-6">
+                <div className="mb-4">
                   <h3 className="text-white font-semibold">Visual Style</h3>
-                  <p className="text-zinc-500 text-sm mt-1">
+                  <p className="text-zinc-500 text-xs mt-1">
                     Define the visual aesthetic for AI-generated images and videos
                   </p>
                 </div>
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label className="text-zinc-400">Overall Mood</Label>
                       <Select
@@ -712,10 +712,10 @@ export default function CreateBranding() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label className="text-zinc-400">Preferred Themes</Label>
-                      <div className="flex gap-2">
+                      <div className="flex gap-1">
                         <Input
                           value={newTheme}
                           onChange={(e) => setNewTheme(e.target.value)}

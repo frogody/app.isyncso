@@ -650,22 +650,22 @@ export default function AgentDetail() {
 
           {/* Stats */}
           {isActive && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-6 border-t border-white/10">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4 pt-4 border-t border-white/10">
               <div>
-                <div className="text-2xl font-bold text-white">{agent.stats.users}</div>
-                <div className="text-sm text-zinc-400">Active Users</div>
+                <div className="text-lg font-bold text-white">{agent.stats.users}</div>
+                <div className="text-xs text-zinc-400">Active Users</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-white">{agent.stats.tasksCompleted}</div>
-                <div className="text-sm text-zinc-400">Tasks Completed</div>
+                <div className="text-lg font-bold text-white">{agent.stats.tasksCompleted}</div>
+                <div className="text-xs text-zinc-400">Tasks Completed</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-white">{agent.stats.satisfaction}</div>
-                <div className="text-sm text-zinc-400">Satisfaction</div>
+                <div className="text-lg font-bold text-white">{agent.stats.satisfaction}</div>
+                <div className="text-xs text-zinc-400">Satisfaction</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-white">{agent.stats.avgResponseTime}</div>
-                <div className="text-sm text-zinc-400">Avg Response Time</div>
+                <div className="text-lg font-bold text-white">{agent.stats.avgResponseTime}</div>
+                <div className="text-xs text-zinc-400">Avg Response Time</div>
               </div>
             </div>
           )}
@@ -686,13 +686,13 @@ export default function AgentDetail() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="rounded-2xl border border-white/10 bg-zinc-900/60 backdrop-blur-xl p-6"
+        className="rounded-xl border border-white/10 bg-zinc-900/60 backdrop-blur-xl p-4"
       >
-        <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+        <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
           <Sparkles className={cn('w-5 h-5', colors.text)} />
           Capabilities
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {agent.capabilities.map((cap, idx) => {
             const CapIcon = cap.icon;
             return (
@@ -702,12 +702,12 @@ export default function AgentDetail() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 + idx * 0.05 }}
                 className={cn(
-                  'p-4 rounded-xl border bg-zinc-800/30',
+                  'p-3 rounded-xl border bg-zinc-800/30',
                   colors.border
                 )}
               >
-                <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center mb-3', colors.bg)}>
-                  <CapIcon className={cn('w-5 h-5', colors.text)} />
+                <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center mb-2', colors.bg)}>
+                  <CapIcon className={cn('w-4 h-4', colors.text)} />
                 </div>
                 <h3 className="font-medium text-white mb-1">{cap.title}</h3>
                 <p className="text-sm text-zinc-400">{cap.description}</p>
@@ -722,26 +722,26 @@ export default function AgentDetail() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="rounded-2xl border border-white/10 bg-zinc-900/60 backdrop-blur-xl p-6"
+        className="rounded-xl border border-white/10 bg-zinc-900/60 backdrop-blur-xl p-4"
       >
-        <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+        <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
           <Target className={cn('w-5 h-5', colors.text)} />
           Example Use Cases
         </h2>
-        <div className="space-y-4">
+        <div className="space-y-3">
           {agent.useCases.map((uc, idx) => (
             <motion.div
               key={idx}
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 + idx * 0.05 }}
-              className="p-5 rounded-xl bg-zinc-800/30 border border-white/5"
+              className="p-4 rounded-xl bg-zinc-800/30 border border-white/5"
             >
               <h3 className="font-medium text-white mb-2">{uc.title}</h3>
-              <p className="text-sm text-zinc-400 mb-3">{uc.description}</p>
-              <div className={cn('p-3 rounded-lg border', colors.bg, colors.border)}>
+              <p className="text-sm text-zinc-400 mb-2">{uc.description}</p>
+              <div className={cn('p-2 rounded-lg border', colors.bg, colors.border)}>
                 <div className="flex items-start gap-2">
-                  <MessageSquare className={cn('w-4 h-4 mt-0.5 flex-shrink-0', colors.text)} />
+                  <MessageSquare className={cn('w-3 h-3 mt-0.5 flex-shrink-0', colors.text)} />
                   <span className="text-sm text-zinc-300 italic">{uc.example}</span>
                 </div>
               </div>
@@ -755,13 +755,13 @@ export default function AgentDetail() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="rounded-2xl border border-white/10 bg-zinc-900/60 backdrop-blur-xl p-6"
+        className="rounded-xl border border-white/10 bg-zinc-900/60 backdrop-blur-xl p-4"
       >
-        <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+        <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
           <Settings className={cn('w-5 h-5', colors.text)} />
           Integrations
         </h2>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-2">
           {agent.integrations.map((integration, idx) => (
             <motion.div
               key={idx}
@@ -769,13 +769,13 @@ export default function AgentDetail() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.3 + idx * 0.05 }}
               className={cn(
-                'px-4 py-2 rounded-lg border flex items-center gap-2',
+                'px-3 py-1.5 rounded-lg border flex items-center gap-2',
                 colors.bg,
                 colors.border
               )}
             >
-              <Check className={cn('w-4 h-4', colors.text)} />
-              <span className="text-sm text-white">{integration}</span>
+              <Check className={cn('w-3 h-3', colors.text)} />
+              <span className="text-xs text-white">{integration}</span>
             </motion.div>
           ))}
         </div>
@@ -788,18 +788,18 @@ export default function AgentDetail() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
           className={cn(
-            'rounded-2xl border p-8 text-center',
+            'rounded-xl border p-4 text-center',
             colors.border,
             colors.bg
           )}
         >
-          <h3 className="text-xl font-semibold text-white mb-2">Ready to get started?</h3>
-          <p className="text-zinc-400 mb-6">Start using {agent.name} to enhance your workflow</p>
-          <div className="flex items-center justify-center gap-4">
+          <h3 className="text-lg font-semibold text-white mb-2">Ready to get started?</h3>
+          <p className="text-zinc-400 mb-4">Start using {agent.name} to enhance your workflow</p>
+          <div className="flex items-center justify-center gap-3">
             <Link
               to={agent.appLink}
               className={cn(
-                'flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all',
+                'flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all',
                 colors.solid,
                 'text-black hover:opacity-90'
               )}
@@ -809,7 +809,7 @@ export default function AgentDetail() {
             </Link>
             <Link
               to="/Sync"
-              className="flex items-center gap-2 px-6 py-3 rounded-xl font-medium border border-white/20 text-white hover:bg-white/5 transition-all"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl font-medium border border-white/20 text-white hover:bg-white/5 transition-all"
             >
               <Bot className="w-4 h-4" />
               Talk to Sync
@@ -824,12 +824,12 @@ export default function AgentDetail() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="rounded-2xl border border-zinc-700 bg-zinc-800/50 p-8 text-center"
+          className="rounded-xl border border-zinc-700 bg-zinc-800/50 p-4 text-center"
         >
-          <Clock className="w-12 h-12 text-zinc-500 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-white mb-2">Coming Soon</h3>
-          <p className="text-zinc-400 mb-6">{agent.name} is currently in development. Get notified when it launches.</p>
-          <button className="px-6 py-3 rounded-xl font-medium bg-zinc-700 text-white hover:bg-zinc-600 transition-all">
+          <Clock className="w-8 h-8 text-zinc-500 mx-auto mb-3" />
+          <h3 className="text-lg font-semibold text-white mb-2">Coming Soon</h3>
+          <p className="text-zinc-400 mb-4">{agent.name} is currently in development. Get notified when it launches.</p>
+          <button className="px-4 py-2 rounded-xl font-medium bg-zinc-700 text-white hover:bg-zinc-600 transition-all">
             Notify Me
           </button>
         </motion.div>

@@ -29,13 +29,13 @@ export default function DownloadApp() {
           </div>
         </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-6 py-24">
-          <div className="text-center space-y-8">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 lg:px-6 py-4 space-y-4">
+          <div className="text-center space-y-4">
             <div className="flex items-center justify-center gap-3 mb-6">
               <img
                 src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/db-prod/public/4314197e6_logoisyncso1.png"
                 alt="ISYNCSO"
-                className="w-20 h-20 rounded-2xl"
+                className="w-16 h-16 rounded-xl"
               />
             </div>
             
@@ -47,8 +47,8 @@ export default function DownloadApp() {
               Install our macOS app to get personalized course recommendations based on your real activity
             </p>
 
-            <div className="max-w-2xl mx-auto my-12">
-              <div className="rounded-2xl bg-gray-800/50 border border-gray-700 p-8 backdrop-blur-sm">
+            <div className="max-w-2xl mx-auto my-8">
+              <div className="rounded-xl bg-gray-800/50 border border-gray-700 p-4 backdrop-blur-sm">
                 <div className="flex items-center gap-3 mb-4">
                   <Activity className="w-6 h-6 text-emerald-400" />
                   <span className="text-white font-medium">Menu Bar App Preview</span>

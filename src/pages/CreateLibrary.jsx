@@ -530,7 +530,7 @@ export default function CreateLibrary() {
                     <p className="text-zinc-500 text-sm truncate">
                       {item.generation_config?.prompt || 'No prompt'}
                     </p>
-                    <div className="flex items-center gap-3 mt-1">
+                    <div className="flex items-center gap-2 mt-1">
                       <Badge variant="outline" className={`text-xs ${
                         item.content_type === 'video' ? 'border-purple-500/50 text-purple-400' : 'border-rose-500/50 text-rose-400'
                       }`}>
@@ -635,52 +635,52 @@ export default function CreateLibrary() {
                 )}
 
                 {/* Metadata */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 bg-zinc-800/50 rounded-xl border border-zinc-700/50">
-                    <Label className="text-zinc-500 text-xs mb-1 block">Created</Label>
-                    <p className="text-zinc-300 text-sm">{formatDate(previewItem.created_at)}</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-2 bg-zinc-800/50 rounded-lg border border-zinc-700/50">
+                    <Label className="text-zinc-500 text-[10px] mb-1 block">Created</Label>
+                    <p className="text-zinc-300 text-xs">{formatDate(previewItem.created_at)}</p>
                   </div>
                   {previewItem.content_type === 'video' && previewItem.duration && (
-                    <div className="p-3 bg-zinc-800/50 rounded-xl border border-zinc-700/50">
-                      <Label className="text-zinc-500 text-xs mb-1 block">Duration</Label>
-                      <p className="text-zinc-300 text-sm">{previewItem.duration} seconds</p>
+                    <div className="p-2 bg-zinc-800/50 rounded-lg border border-zinc-700/50">
+                      <Label className="text-zinc-500 text-[10px] mb-1 block">Duration</Label>
+                      <p className="text-zinc-300 text-xs">{previewItem.duration} seconds</p>
                     </div>
                   )}
                   {previewItem.generation_config?.style && (
-                    <div className="p-3 bg-zinc-800/50 rounded-xl border border-zinc-700/50">
-                      <Label className="text-zinc-500 text-xs mb-1 block">Style</Label>
-                      <p className="text-zinc-300 text-sm capitalize">{previewItem.generation_config.style.replace('_', ' ')}</p>
+                    <div className="p-2 bg-zinc-800/50 rounded-lg border border-zinc-700/50">
+                      <Label className="text-zinc-500 text-[10px] mb-1 block">Style</Label>
+                      <p className="text-zinc-300 text-xs capitalize">{previewItem.generation_config.style.replace('_', ' ')}</p>
                     </div>
                   )}
                   {previewItem.dimensions && (
-                    <div className="p-3 bg-zinc-800/50 rounded-xl border border-zinc-700/50">
-                      <Label className="text-zinc-500 text-xs mb-1 block">Dimensions</Label>
-                      <p className="text-zinc-300 text-sm">{previewItem.dimensions.width} x {previewItem.dimensions.height}</p>
+                    <div className="p-2 bg-zinc-800/50 rounded-lg border border-zinc-700/50">
+                      <Label className="text-zinc-500 text-[10px] mb-1 block">Dimensions</Label>
+                      <p className="text-zinc-300 text-xs">{previewItem.dimensions.width} x {previewItem.dimensions.height}</p>
                     </div>
                   )}
                 </div>
 
                 {/* Prompt */}
                 {previewItem.generation_config?.prompt && (
-                  <div className="p-3 bg-zinc-800/50 rounded-xl border border-zinc-700/50">
-                    <Label className="text-zinc-500 text-xs mb-1 block">Prompt</Label>
-                    <p className="text-zinc-300 text-sm">{previewItem.generation_config.prompt}</p>
+                  <div className="p-2 bg-zinc-800/50 rounded-lg border border-zinc-700/50">
+                    <Label className="text-zinc-500 text-[10px] mb-1 block">Prompt</Label>
+                    <p className="text-zinc-300 text-xs">{previewItem.generation_config.prompt}</p>
                   </div>
                 )}
 
                 {/* Product Context */}
                 {previewItem.product_context?.product_name && (
-                  <div className="p-3 bg-zinc-800/50 rounded-xl border border-zinc-700/50">
-                    <Label className="text-zinc-500 text-xs mb-1 block">Product Context</Label>
-                    <p className="text-zinc-300 text-sm flex items-center gap-2">
-                      <Package className="w-4 h-4" />
+                  <div className="p-2 bg-zinc-800/50 rounded-lg border border-zinc-700/50">
+                    <Label className="text-zinc-500 text-[10px] mb-1 block">Product Context</Label>
+                    <p className="text-zinc-300 text-xs flex items-center gap-2">
+                      <Package className="w-3 h-3" />
                       {previewItem.product_context.product_name}
                     </p>
                   </div>
                 )}
 
                 {/* Actions */}
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <Button
                     onClick={() => handleDownload(previewItem)}
                     className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 border-0"

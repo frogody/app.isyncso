@@ -336,25 +336,25 @@ export default function CourseDetail() {
 
         {/* Course Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4">
             {/* What you'll learn */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-              <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
-                <h3 className="text-xl font-semibold text-white flex items-center gap-2 mb-5">
+              <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
                   <Award className="w-5 h-5 text-cyan-400/70" />
                   What you'll learn
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {course.learning_outcomes?.map((outcome, index) => (
                     <motion.div
                       key={index}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.15 + index * 0.05 }}
-                      className="flex items-start gap-3 p-3 rounded-lg bg-zinc-800/30 border border-zinc-700/30"
+                      className="flex items-start gap-2 p-2 rounded-lg bg-zinc-800/30 border border-zinc-700/30"
                     >
                       <CheckCircle className="w-5 h-5 text-cyan-400/70 mt-0.5 flex-shrink-0" />
-                      <span className="text-zinc-400 text-sm">{outcome}</span>
+                      <span className="text-zinc-400 text-xs">{outcome}</span>
                     </motion.div>
                   ))}
                 </div>
@@ -363,12 +363,12 @@ export default function CourseDetail() {
 
             {/* Course Curriculum */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-              <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
-                <h3 className="text-xl font-semibold text-white flex items-center gap-2 mb-5">
+              <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
                   <BookOpen className="w-5 h-5 text-cyan-400/70" />
                   Course Curriculum
                 </h3>
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {modules.sort((a,b) => a.order_index - b.order_index).map((module, idx) => {
                     const moduleLessons = lessons.filter(l => l.module_id === module.id).sort((a,b) => a.order_index - b.order_index);
                     
@@ -378,26 +378,26 @@ export default function CourseDetail() {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.25 + idx * 0.05 }}
-                        className="rounded-xl bg-zinc-800/30 border border-zinc-700/30 overflow-hidden"
+                        className="rounded-lg bg-zinc-800/30 border border-zinc-700/30 overflow-hidden"
                       >
-                        <div className="flex items-center gap-3 p-4 bg-zinc-800/40">
-                          <div className="w-10 h-10 rounded-lg bg-cyan-500/15 border border-cyan-500/25 flex items-center justify-center flex-shrink-0">
+                        <div className="flex items-center gap-2 p-3 bg-zinc-800/40">
+                          <div className="w-8 h-8 rounded-lg bg-cyan-500/15 border border-cyan-500/25 flex items-center justify-center flex-shrink-0">
                             <span className="text-cyan-400/80 font-bold">{idx + 1}</span>
                           </div>
                           <div className="flex-1">
-                            <h4 className="font-semibold text-white">{module.title}</h4>
-                            <p className="text-xs text-zinc-500">{moduleLessons.length} lessons</p>
+                            <h4 className="font-semibold text-sm text-white">{module.title}</h4>
+                            <p className="text-[10px] text-zinc-500">{moduleLessons.length} lessons</p>
                           </div>
                         </div>
-                        
-                        <div className="p-3 space-y-1">
+
+                        <div className="p-2 space-y-1">
                           {moduleLessons.map((lesson, lessonIdx) => (
-                            <div key={lesson.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-zinc-800/40 transition-colors">
-                              <div className="flex items-center gap-3">
-                                <ChevronRight className="w-4 h-4 text-cyan-400/40" />
-                                <span className="text-zinc-400 text-sm">{lesson.title}</span>
+                            <div key={lesson.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-zinc-800/40 transition-colors">
+                              <div className="flex items-center gap-2">
+                                <ChevronRight className="w-3 h-3 text-cyan-400/40" />
+                                <span className="text-zinc-400 text-xs">{lesson.title}</span>
                               </div>
-                              <span className="text-xs text-zinc-500 bg-zinc-800/60 px-2 py-1 rounded">
+                              <span className="text-[10px] text-zinc-500 bg-zinc-800/60 px-2 py-0.5 rounded">
                                 {lesson.duration_minutes} min
                               </span>
                             </div>
@@ -412,29 +412,29 @@ export default function CourseDetail() {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Instructor */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-              <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
+              <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+                <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-3">
                   <UserIcon className="w-5 h-5 text-cyan-400/70" />
                   Instructor
                 </h3>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                   {course.instructor_image ? (
                     <img
                       src={course.instructor_image}
                       alt={course.instructor || "Instructor"}
-                      className="w-16 h-16 rounded-xl object-cover border-2 border-zinc-700/50"
+                      className="w-12 h-12 rounded-lg object-cover border-2 border-zinc-700/50"
                     />
                   ) : (
-                    <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/20 flex items-center justify-center border-2 border-zinc-700/50">
-                      <GraduationCap className="w-8 h-8 text-cyan-400" />
+                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-cyan-500/20 to-cyan-600/20 flex items-center justify-center border-2 border-zinc-700/50">
+                      <GraduationCap className="w-6 h-6 text-cyan-400" />
                     </div>
                   )}
                   <div>
-                    <p className="font-semibold text-white">{course.instructor || "AI Learning Engine"}</p>
-                    <p className="text-sm text-zinc-500">{course.instructor_title || "Expert in AI Applications"}</p>
+                    <p className="font-semibold text-sm text-white">{course.instructor || "AI Learning Engine"}</p>
+                    <p className="text-xs text-zinc-500">{course.instructor_title || "Expert in AI Applications"}</p>
                   </div>
                 </div>
               </div>
@@ -442,20 +442,20 @@ export default function CourseDetail() {
 
             {/* Prerequisites */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
-              <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
+              <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+                <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-3">
                   <Target className="w-5 h-5 text-cyan-400/70" />
                   Prerequisites
                 </h3>
-                <ul className="space-y-2">
+                <ul className="space-y-1">
                   {course.prerequisites?.length > 0 ? course.prerequisites.map((req, index) => (
-                    <li key={index} className="flex items-start gap-2 text-zinc-400 text-sm">
-                      <div className="w-1.5 h-1.5 rounded-full bg-cyan-400/60 mt-2 flex-shrink-0" />
+                    <li key={index} className="flex items-start gap-2 text-zinc-400 text-xs">
+                      <div className="w-1 h-1 rounded-full bg-cyan-400/60 mt-1.5 flex-shrink-0" />
                       <span>{req}</span>
                     </li>
                   )) : (
-                    <li className="flex items-start gap-2 text-zinc-400 text-sm">
-                      <CheckCircle className="w-4 h-4 text-cyan-400/70 mt-0.5 flex-shrink-0" />
+                    <li className="flex items-start gap-2 text-zinc-400 text-xs">
+                      <CheckCircle className="w-3 h-3 text-cyan-400/70 mt-0.5 flex-shrink-0" />
                       <span>No specific prerequisites required.</span>
                     </li>
                   )}
@@ -465,24 +465,24 @@ export default function CourseDetail() {
 
             {/* Course Stats */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-              <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
+              <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+                <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-3">
                   <BarChart3 className="w-5 h-5 text-cyan-400/70" />
                   Course Details
                 </h3>
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {[
                     { label: 'Difficulty', value: course.difficulty, icon: Target },
                     { label: 'Duration', value: `${course.duration_hours} hours`, icon: Clock },
                     { label: 'Modules', value: modules.length, icon: Layers },
                     { label: 'Lessons', value: lessons.length, icon: BookOpen },
                   ].map((item, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/30 border border-zinc-700/30">
+                    <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-zinc-800/30 border border-zinc-700/30">
                       <div className="flex items-center gap-2 text-zinc-500">
                         <item.icon className="w-4 h-4" />
-                        <span className="text-sm">{item.label}</span>
+                        <span className="text-xs">{item.label}</span>
                       </div>
-                      <span className="text-zinc-300 font-medium capitalize">{item.value}</span>
+                      <span className="text-zinc-300 font-medium text-xs capitalize">{item.value}</span>
                     </div>
                   ))}
                 </div>

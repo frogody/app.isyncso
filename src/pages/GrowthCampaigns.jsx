@@ -466,14 +466,14 @@ export default function GrowthCampaigns() {
 
         {/* Campaigns List */}
         {filteredCampaigns.length === 0 ? (
-          <div className="p-16 text-center rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 flex items-center justify-center mx-auto mb-6">
-              <Send className="w-10 h-10 text-indigo-400" />
+          <div className="p-12 text-center rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 flex items-center justify-center mx-auto mb-4">
+              <Send className="w-8 h-8 text-indigo-400" />
             </div>
-            <h3 className="text-2xl font-bold text-white mb-3">
+            <h3 className="text-lg font-bold text-white mb-2">
               {activeFilter === 'all' ? 'Create Your First Campaign' : `No ${activeFilter} Campaigns`}
             </h3>
-            <p className="text-zinc-400 mb-8 max-w-md mx-auto">
+            <p className="text-zinc-400 mb-6 max-w-md mx-auto text-sm">
               Build multi-step outreach sequences to engage prospects at scale.
             </p>
             <Button onClick={openNewModal} className="bg-indigo-600/80 hover:bg-indigo-600 text-white font-medium px-6">
@@ -643,16 +643,16 @@ export default function GrowthCampaigns() {
               onClick={(e) => e.stopPropagation()}
               className="absolute right-0 top-0 h-full w-full max-w-lg bg-zinc-950 border-l border-zinc-800 overflow-y-auto"
             >
-              <div className="p-6 border-b border-zinc-800 sticky top-0 bg-zinc-950 z-10">
+              <div className="p-4 border-b border-zinc-800 sticky top-0 bg-zinc-950 z-10">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-semibold text-white">{detailCampaign.name}</h2>
+                  <h2 className="text-lg font-semibold text-white">{detailCampaign.name}</h2>
                   <Button variant="ghost" size="icon" onClick={() => setDetailCampaign(null)}>
                     <ArrowRight className="w-5 h-5 text-zinc-400" />
                   </Button>
                 </div>
               </div>
 
-              <div className="p-6 space-y-6">
+              <div className="p-4 space-y-4">
                 <CampaignMetricsPanel
                   campaign={detailCampaign}
                   onUpdate={(updated) => {
@@ -662,17 +662,17 @@ export default function GrowthCampaigns() {
                 />
 
                 {detailCampaign.sequence_steps?.length > 0 && (
-                  <div className="space-y-3">
-                    <h3 className="text-white font-medium">Sequence Steps</h3>
+                  <div className="space-y-2">
+                    <h3 className="text-white font-medium text-sm">Sequence Steps</h3>
                     {detailCampaign.sequence_steps.map((step, i) => (
-                      <div key={i} className="flex items-center gap-3 p-3 bg-zinc-900/50 rounded-lg border border-zinc-800">
+                      <div key={i} className="flex items-center gap-2 p-2 bg-zinc-900/50 rounded-lg border border-zinc-800">
                         <div className="w-6 h-6 rounded-full bg-indigo-500/20 flex items-center justify-center text-xs text-indigo-400 font-medium">
                           {i + 1}
                         </div>
                         <div className="flex-1">
-                          <p className="text-white text-sm capitalize">{step.type?.replace('_', ' ')}</p>
+                          <p className="text-white text-xs capitalize">{step.type?.replace('_', ' ')}</p>
                           {step.delay_days > 0 && (
-                            <p className="text-xs text-zinc-500">+{step.delay_days} day{step.delay_days > 1 ? 's' : ''}</p>
+                            <p className="text-[10px] text-zinc-500">+{step.delay_days} day{step.delay_days > 1 ? 's' : ''}</p>
                           )}
                         </div>
                       </div>
@@ -680,10 +680,10 @@ export default function GrowthCampaigns() {
                   </div>
                 )}
 
-                <div className="flex gap-3">
-                  <Button 
+                <div className="flex gap-2">
+                  <Button
                     onClick={() => { handleEdit(detailCampaign); setDetailCampaign(null); }}
-                    className="flex-1 bg-indigo-500 hover:bg-indigo-400 text-white"
+                    className="flex-1 bg-indigo-500 hover:bg-indigo-400 text-white text-sm"
                   >
                     <Edit className="w-4 h-4 mr-2" /> Edit Campaign
                   </Button>

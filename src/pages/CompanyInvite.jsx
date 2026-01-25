@@ -190,31 +190,31 @@ export default function CompanyInvite() {
           )}
 
           {invitation?.message && (
-            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
-              <p className="text-sm text-blue-200 italic">"{invitation.message}"</p>
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
+              <p className="text-xs text-blue-200 italic">"{invitation.message}"</p>
             </div>
           )}
 
-          <div className="space-y-3">
-            <Button 
-              onClick={handleJoin} 
-              className="w-full bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white font-medium h-12 text-base"
+          <div className="space-y-2">
+            <Button
+              onClick={handleJoin}
+              className="w-full bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white font-medium h-10 text-sm"
             >
               {currentUser ? (
                 <>
-                  <CheckCircle className="w-5 h-5 mr-2" />
+                  <CheckCircle className="w-4 h-4 mr-2" />
                   Join {company?.name}
                 </>
               ) : (
                 <>
-                  <Users className="w-5 h-5 mr-2" />
+                  <Users className="w-4 h-4 mr-2" />
                   Sign Up & Join
                 </>
               )}
             </Button>
 
             {currentUser && (
-              <p className="text-center text-xs text-gray-500">
+              <p className="text-center text-[10px] text-gray-500">
                 Joining as {currentUser.email}
               </p>
             )}

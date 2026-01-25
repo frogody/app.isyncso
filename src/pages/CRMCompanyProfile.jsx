@@ -59,15 +59,15 @@ const itemVariants = {
 
 // Reusable components - Mobile responsive
 const StatCard = ({ label, value, icon: Icon, color = 'cyan', subtext }) => (
-  <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl sm:rounded-2xl p-3 sm:p-5 hover:bg-white/[0.05] transition-colors">
-    <div className="flex items-start justify-between mb-2 sm:mb-3">
-      <div className={`p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-${color}-500/10`}>
-        <Icon className={`w-4 h-4 sm:w-5 sm:h-5 text-${color}-400`} />
+  <div className="bg-white/[0.03] border border-white/[0.06] rounded-lg sm:rounded-xl p-3 sm:p-4 hover:bg-white/[0.05] transition-colors">
+    <div className="flex items-start justify-between mb-2 sm:mb-2">
+      <div className={`p-2 sm:p-2 rounded-lg sm:rounded-lg bg-${color}-500/10`}>
+        <Icon className={`w-4 h-4 sm:w-4 sm:h-4 text-${color}-400`} />
       </div>
     </div>
-    <p className="text-xl sm:text-2xl font-bold text-white mb-0.5 sm:mb-1">{value || '-'}</p>
-    <p className="text-xs sm:text-sm text-white/50">{label}</p>
-    {subtext && <p className="text-[10px] sm:text-xs text-white/30 mt-0.5 sm:mt-1">{subtext}</p>}
+    <p className="text-lg sm:text-lg font-bold text-white mb-0.5 sm:mb-1">{value || '-'}</p>
+    <p className="text-xs sm:text-xs text-white/50">{label}</p>
+    {subtext && <p className="text-[10px] sm:text-[10px] text-white/30 mt-0.5 sm:mt-1">{subtext}</p>}
   </div>
 );
 

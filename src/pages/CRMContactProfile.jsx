@@ -86,10 +86,10 @@ const itemVariants = {
 
 // Stat Card Component - Responsive sizing
 const StatCard = ({ label, value, icon: Icon, color = 'cyan', subtext, trend }) => (
-  <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl sm:rounded-2xl p-3 sm:p-5 hover:bg-white/[0.05] transition-colors group">
-    <div className="flex items-start justify-between mb-2 sm:mb-3">
-      <div className={`p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-${color}-500/10`}>
-        <Icon className={`w-4 h-4 sm:w-5 sm:h-5 text-${color}-400`} />
+  <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 hover:bg-white/[0.05] transition-colors group">
+    <div className="flex items-start justify-between mb-2">
+      <div className={`p-2 rounded-lg bg-${color}-500/10`}>
+        <Icon className={`w-4 h-4 text-${color}-400`} />
       </div>
       {trend && (
         <div className={`flex items-center gap-1 text-[10px] sm:text-xs ${trend > 0 ? 'text-green-400' : 'text-red-400'}`}>
@@ -502,7 +502,7 @@ export default function CRMContactProfile() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="w-full px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6"
+        className="w-full px-4 lg:px-6 py-4 space-y-4"
       >
         {/* Back Navigation */}
         <motion.div variants={itemVariants}>
