@@ -47,16 +47,113 @@ import { createPageUrl } from "@/utils";
 // ============================================================================
 // PURCHASE DIALOG
 // ============================================================================
-const PurchaseDialog = ({ isOpen, onClose, nest, onPurchase }) => {
+const PurchaseDialog = ({ isOpen, onClose, nest, onPurchase, user }) => {
   const [purchasing, setPurchasing] = useState(false);
+  const [error, setError] = useState(null);
   const itemCount = nest?.item_count || 0;
   const price = parseFloat(nest?.price) || 0;
 
   const handlePurchase = async () => {
+    if (!user?.id || !user?.company_id) {
+      setError('Please sign in to purchase');
+      return;
+    }
+
     setPurchasing(true);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setPurchasing(false);
-    onPurchase();
+    setError(null);
+
+    try {
+      // 1. Check if already purchased
+      const { data: existingPurchase } = await supabase
+        .from('nest_purchases')
+        .select('id')
+        .eq('nest_id', nest.id)
+        .eq('organization_id', user.company_id)
+        .eq('status', 'completed')
+        .single();
+
+      if (existingPurchase) {
+        setError('You have already purchased this nest');
+        setPurchasing(false);
+        return;
+      }
+
+      // 2. Create purchase record
+      const { data: purchase, error: purchaseError } = await supabase
+        .from('nest_purchases')
+        .insert({
+          nest_id: nest.id,
+          organization_id: user.company_id,
+          purchased_by: user.id,
+          price_paid: price,
+          currency: 'EUR',
+          status: 'completed', // For now, instant completion (add Stripe later)
+          items_copied: false,
+          completed_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (purchaseError) {
+        console.error('Purchase error:', purchaseError);
+        setError('Failed to complete purchase. Please try again.');
+        setPurchasing(false);
+        return;
+      }
+
+      // 3. Copy nest items (candidates) to buyer's organization
+      // Get all nest items with their candidate data
+      const { data: nestItems, error: itemsError } = await supabase
+        .from('nest_items')
+        .select(`
+          candidate_id,
+          candidates (*)
+        `)
+        .eq('nest_id', nest.id);
+
+      if (itemsError) {
+        console.error('Error fetching nest items:', itemsError);
+      } else if (nestItems && nestItems.length > 0) {
+        // Copy candidates to buyer's organization
+        const candidatesToCopy = nestItems
+          .filter(item => item.candidate_id && item.candidates)
+          .map(item => {
+            // Remove id and dates so new ones are generated
+            const { id, created_date, updated_date, organization_id, ...candidateData } = item.candidates;
+            return {
+              ...candidateData,
+              organization_id: user.company_id,
+              source: 'nest_purchase',
+              import_source: `nest:${nest.id}`,
+            };
+          });
+
+        if (candidatesToCopy.length > 0) {
+          const { error: copyError } = await supabase
+            .from('candidates')
+            .insert(candidatesToCopy);
+
+          if (copyError) {
+            console.error('Error copying candidates:', copyError);
+            // Don't fail the purchase, just log the error
+          }
+        }
+
+        // Mark items as copied
+        await supabase
+          .from('nest_purchases')
+          .update({ items_copied: true })
+          .eq('id', purchase.id);
+      }
+
+      // 4. Success!
+      setPurchasing(false);
+      onPurchase(purchase);
+    } catch (err) {
+      console.error('Purchase error:', err);
+      setError('An unexpected error occurred');
+      setPurchasing(false);
+    }
   };
 
   return (
@@ -99,6 +196,12 @@ const PurchaseDialog = ({ isOpen, onClose, nest, onPurchase }) => {
               </div>
             ))}
           </div>
+
+          {error && (
+            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+              {error}
+            </div>
+          )}
         </div>
 
         <DialogFooter>
@@ -162,11 +265,46 @@ export default function TalentNestDetail() {
     fetchNest();
   }, [nestId]);
 
-  const handlePurchase = () => {
+  // Track if user has purchased this nest
+  const [hasPurchased, setHasPurchased] = useState(false);
+  const [checkingPurchase, setCheckingPurchase] = useState(true);
+
+  // Check if user already purchased this nest
+  useEffect(() => {
+    async function checkPurchase() {
+      if (!user?.company_id || !nestId) {
+        setCheckingPurchase(false);
+        return;
+      }
+
+      const { data } = await supabase
+        .from('nest_purchases')
+        .select('id')
+        .eq('nest_id', nestId)
+        .eq('organization_id', user.company_id)
+        .eq('status', 'completed')
+        .single();
+
+      setHasPurchased(!!data);
+      setCheckingPurchase(false);
+    }
+    checkPurchase();
+  }, [user?.company_id, nestId]);
+
+  const handlePurchase = (purchase) => {
     setShowPurchaseDialog(false);
+    setHasPurchased(true);
     toast.success(`Purchased "${nest.name}"`, {
-      description: `${(nest.item_count || 0).toLocaleString()} candidates now available`,
+      description: `${(nest.item_count || 0).toLocaleString()} candidates added to your talent pool`,
     });
+    // Navigate to candidates page after short delay
+    setTimeout(() => {
+      navigate(createPageUrl("TalentCandidates"));
+    }, 1500);
+  };
+
+  const goToCandidates = () => {
+    navigate(createPageUrl("TalentCandidates"));
   };
 
   if (loading) {
@@ -449,17 +587,33 @@ export default function TalentNestDetail() {
                 ))}
               </div>
 
-              <Button
-                onClick={() => setShowPurchaseDialog(true)}
-                className="w-full h-11 bg-red-500 hover:bg-red-600 text-white font-medium"
-              >
-                Purchase Nest
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-
-              <p className="text-xs text-zinc-600 text-center mt-3">
-                Instant access after purchase
-              </p>
+              {hasPurchased ? (
+                <>
+                  <Button
+                    onClick={goToCandidates}
+                    className="w-full h-11 bg-green-600 hover:bg-green-700 text-white font-medium"
+                  >
+                    <Check className="w-4 h-4 mr-2" />
+                    View Candidates
+                  </Button>
+                  <p className="text-xs text-green-500 text-center mt-3">
+                    You own this nest
+                  </p>
+                </>
+              ) : (
+                <>
+                  <Button
+                    onClick={() => setShowPurchaseDialog(true)}
+                    className="w-full h-11 bg-red-500 hover:bg-red-600 text-white font-medium"
+                  >
+                    Purchase Nest
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                  <p className="text-xs text-zinc-600 text-center mt-3">
+                    Instant access after purchase
+                  </p>
+                </>
+              )}
             </div>
 
             {/* Trust Badges */}
@@ -502,15 +656,34 @@ export default function TalentNestDetail() {
       <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-zinc-900/95 backdrop-blur-lg border-t border-white/[0.08] z-50">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-2xl font-bold text-white">€{price.toFixed(0)}</p>
-            <p className="text-xs text-zinc-500">{itemCount.toLocaleString()} profiles</p>
+            {hasPurchased ? (
+              <>
+                <p className="text-lg font-bold text-green-400">Purchased</p>
+                <p className="text-xs text-zinc-500">{itemCount.toLocaleString()} profiles owned</p>
+              </>
+            ) : (
+              <>
+                <p className="text-2xl font-bold text-white">€{price.toFixed(0)}</p>
+                <p className="text-xs text-zinc-500">{itemCount.toLocaleString()} profiles</p>
+              </>
+            )}
           </div>
-          <Button
-            onClick={() => setShowPurchaseDialog(true)}
-            className="bg-red-500 hover:bg-red-600 text-white px-6"
-          >
-            Purchase Nest
-          </Button>
+          {hasPurchased ? (
+            <Button
+              onClick={goToCandidates}
+              className="bg-green-600 hover:bg-green-700 text-white px-6"
+            >
+              <Check className="w-4 h-4 mr-2" />
+              View Candidates
+            </Button>
+          ) : (
+            <Button
+              onClick={() => setShowPurchaseDialog(true)}
+              className="bg-red-500 hover:bg-red-600 text-white px-6"
+            >
+              Purchase Nest
+            </Button>
+          )}
         </div>
       </div>
 
@@ -522,6 +695,7 @@ export default function TalentNestDetail() {
         onClose={() => setShowPurchaseDialog(false)}
         nest={nest}
         onPurchase={handlePurchase}
+        user={user}
       />
     </div>
   );
