@@ -114,7 +114,7 @@ const emptyContact = {
 };
 
 // Lead Score Component - using cyan theme
-function LeadScoreIndicator({ score }) {
+function LeadScoreIndicator({ score, size = "md" }) {
   const getScoreColor = (s) => {
     if (s >= 80) return { bg: "bg-cyan-400", text: "text-cyan-400", label: "Hot" };
     if (s >= 60) return { bg: "bg-cyan-500/80", text: "text-cyan-400/80", label: "Warm" };
@@ -122,22 +122,29 @@ function LeadScoreIndicator({ score }) {
     return { bg: "bg-zinc-600", text: "text-zinc-500", label: "Cold" };
   };
 
+  const sizes = {
+    xs: { container: "w-6 h-6", cx: 12, cy: 12, r: 9, stroke: 2, text: "text-[9px]", labelText: "text-[9px]", circumference: 56.55 },
+    sm: { container: "w-8 h-8", cx: 16, cy: 16, r: 12, stroke: 2.5, text: "text-[10px]", labelText: "text-[10px]", circumference: 75.4 },
+    md: { container: "w-10 h-10", cx: 20, cy: 20, r: 16, stroke: 3, text: "text-xs", labelText: "text-xs", circumference: 100.53 },
+  };
+
+  const s = sizes[size] || sizes.md;
   const { bg, text, label } = getScoreColor(score);
 
   return (
-    <div className="flex items-center gap-2">
-      <div className="relative w-10 h-10">
+    <div className="flex items-center gap-1.5">
+      <div className={`relative ${s.container}`}>
         <svg className="w-full h-full transform -rotate-90">
-          <circle cx="20" cy="20" r="16" stroke="currentColor" strokeWidth="3" fill="transparent" className="text-zinc-800" />
+          <circle cx={s.cx} cy={s.cy} r={s.r} stroke="currentColor" strokeWidth={s.stroke} fill="transparent" className="text-zinc-800" />
           <circle
-            cx="20" cy="20" r="16" stroke="currentColor" strokeWidth="3" fill="transparent"
-            strokeDasharray={`${(score / 100) * 100.53} 100.53`}
+            cx={s.cx} cy={s.cy} r={s.r} stroke="currentColor" strokeWidth={s.stroke} fill="transparent"
+            strokeDasharray={`${(score / 100) * s.circumference} ${s.circumference}`}
             className={text}
           />
         </svg>
-        <span className={`absolute inset-0 flex items-center justify-center text-xs font-bold ${text}`}>{score}</span>
+        <span className={`absolute inset-0 flex items-center justify-center ${s.text} font-bold ${text}`}>{score}</span>
       </div>
-      <span className={`text-xs font-medium ${text}`}>{label}</span>
+      <span className={`${s.labelText} font-medium ${text}`}>{label}</span>
     </div>
   );
 }
@@ -1547,29 +1554,30 @@ export default function CRMContacts() {
               <table className="w-full min-w-[700px]">
                 <thead>
                   <tr className="border-b border-zinc-800">
-                    <th className="p-2 sm:p-3 text-left sticky left-0 bg-zinc-900/95 z-10">
+                    <th className="py-1.5 px-2 text-left sticky left-0 bg-zinc-900/95 z-10 w-8">
                       <Checkbox
                         checked={selectedContacts.length === paginatedContacts.length && paginatedContacts.length > 0}
                         onCheckedChange={(checked) => {
                           setSelectedContacts(checked ? paginatedContacts.map(c => c.id) : []);
                         }}
+                        className="w-3.5 h-3.5"
                       />
                     </th>
-                    <th className="p-2 sm:p-3 text-left text-xs font-medium text-zinc-500 uppercase whitespace-nowrap">Contact</th>
-                    <th className="p-2 sm:p-3 text-left text-xs font-medium text-zinc-500 uppercase whitespace-nowrap hidden sm:table-cell">Company</th>
-                    <th className="p-2 sm:p-3 text-left text-xs font-medium text-zinc-500 uppercase whitespace-nowrap">Stage</th>
-                    <th className="p-2 sm:p-3 text-left text-xs font-medium text-zinc-500 uppercase whitespace-nowrap hidden md:table-cell">Score</th>
-                    <th className="p-2 sm:p-3 text-left text-xs font-medium text-zinc-500 uppercase whitespace-nowrap">Value</th>
-                    <th className="p-2 sm:p-3 text-left text-xs font-medium text-zinc-500 uppercase whitespace-nowrap hidden lg:table-cell">Source</th>
-                    <th className="p-2 sm:p-3 text-left text-xs font-medium text-zinc-500 uppercase whitespace-nowrap">Actions</th>
+                    <th className="py-1.5 px-2 text-left text-[10px] font-medium text-zinc-500 uppercase tracking-wider whitespace-nowrap">Contact</th>
+                    <th className="py-1.5 px-2 text-left text-[10px] font-medium text-zinc-500 uppercase tracking-wider whitespace-nowrap hidden sm:table-cell">Company</th>
+                    <th className="py-1.5 px-2 text-left text-[10px] font-medium text-zinc-500 uppercase tracking-wider whitespace-nowrap">Stage</th>
+                    <th className="py-1.5 px-2 text-left text-[10px] font-medium text-zinc-500 uppercase tracking-wider whitespace-nowrap hidden md:table-cell">Score</th>
+                    <th className="py-1.5 px-2 text-left text-[10px] font-medium text-zinc-500 uppercase tracking-wider whitespace-nowrap">Value</th>
+                    <th className="py-1.5 px-2 text-left text-[10px] font-medium text-zinc-500 uppercase tracking-wider whitespace-nowrap hidden lg:table-cell">Source</th>
+                    <th className="py-1.5 px-2 text-left text-[10px] font-medium text-zinc-500 uppercase tracking-wider whitespace-nowrap w-16"></th>
                   </tr>
                 </thead>
                 <tbody ref={tableBodyRef}>
                   {paginatedContacts.map(contact => {
                     const stageConfig = PIPELINE_STAGES.find(s => s.id === contact.stage) || PIPELINE_STAGES[0];
                     return (
-                      <tr key={contact.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors active:bg-zinc-800/50">
-                        <td className="p-2 sm:p-3 sticky left-0 bg-zinc-900/95 z-10">
+                      <tr key={contact.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/20 transition-colors h-9">
+                        <td className="py-1 px-2 sticky left-0 bg-zinc-900/95 z-10">
                           <Checkbox
                             checked={selectedContacts.includes(contact.id)}
                             onCheckedChange={(checked) => {
@@ -1577,60 +1585,59 @@ export default function CRMContacts() {
                                 checked ? [...prev, contact.id] : prev.filter(id => id !== contact.id)
                               );
                             }}
+                            className="w-3.5 h-3.5"
                           />
                         </td>
-                        <td className="p-2 sm:p-3">
-                          <div className="flex items-center gap-2 sm:gap-3 cursor-pointer min-w-[150px]" onClick={() => handleViewContact(contact)}>
-                            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-cyan-500/15 to-cyan-400/10 flex items-center justify-center flex-shrink-0">
-                              <span className="text-cyan-400/80 text-xs sm:text-sm font-medium">{contact.name?.charAt(0)?.toUpperCase()}</span>
+                        <td className="py-1 px-2">
+                          <div className="flex items-center gap-1.5 cursor-pointer" onClick={() => handleViewContact(contact)}>
+                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-cyan-500/15 to-cyan-400/10 flex items-center justify-center flex-shrink-0">
+                              <span className="text-cyan-400/80 text-[9px] font-medium">{contact.name?.charAt(0)?.toUpperCase()}</span>
                             </div>
                             <div className="min-w-0">
-                              <div className="font-medium text-white hover:text-cyan-400 transition-colors text-sm truncate">{contact.name}</div>
-                              <div className="text-xs text-zinc-500 truncate">{contact.email}</div>
-                              {/* Show company on mobile */}
-                              <div className="text-xs text-zinc-600 truncate sm:hidden">{contact.company_name}</div>
+                              <div className="font-medium text-white hover:text-cyan-400 transition-colors text-xs truncate max-w-[120px]">{contact.name}</div>
+                              <div className="text-[10px] text-zinc-500 truncate max-w-[120px] sm:hidden">{contact.company_name}</div>
                             </div>
                           </div>
                         </td>
-                        <td className="p-2 sm:p-3 hidden sm:table-cell">
+                        <td className="py-1 px-2 hidden sm:table-cell">
                           {contact.crm_company_id ? (
                             <Link
                               to={createPageUrl('CRMCompanyProfile') + `?id=${contact.crm_company_id}`}
-                              className="text-sm text-cyan-400 hover:text-cyan-300 truncate max-w-[150px] block"
+                              className="text-xs text-cyan-400 hover:text-cyan-300 truncate max-w-[120px] block"
                               onClick={(e) => e.stopPropagation()}
                             >
                               {contact.company_name || "-"}
                             </Link>
                           ) : (
-                            <div className="text-sm text-zinc-300 truncate max-w-[150px]">{contact.company_name || "-"}</div>
+                            <div className="text-xs text-zinc-300 truncate max-w-[120px]">{contact.company_name || "-"}</div>
                           )}
-                          {contact.job_title && <div className="text-xs text-zinc-500 truncate max-w-[150px]">{contact.job_title}</div>}
+                          {contact.job_title && <div className="text-[10px] text-zinc-500 truncate max-w-[120px]">{contact.job_title}</div>}
                         </td>
-                        <td className="p-2 sm:p-3">
-                          <Badge variant="outline" className={`${stageConfig.bgColor} ${stageConfig.textColor} ${stageConfig.borderColor} text-xs whitespace-nowrap`}>
+                        <td className="py-1 px-2">
+                          <Badge variant="outline" className={`${stageConfig.bgColor} ${stageConfig.textColor} ${stageConfig.borderColor} text-[10px] py-px px-1.5 whitespace-nowrap`}>
                             {stageConfig.label}
                           </Badge>
                         </td>
-                        <td className="p-2 sm:p-3 hidden md:table-cell">
-                          <LeadScoreIndicator score={contact.score || 50} />
+                        <td className="py-1 px-2 hidden md:table-cell">
+                          <LeadScoreIndicator score={contact.score || 50} size="xs" />
                         </td>
-                        <td className="p-2 sm:p-3">
-                          <span className="font-medium text-white text-sm whitespace-nowrap">
+                        <td className="py-1 px-2">
+                          <span className="font-medium text-white text-xs whitespace-nowrap">
                             {contact.deal_value ? `$${parseFloat(contact.deal_value).toLocaleString()}` : "-"}
                           </span>
                         </td>
-                        <td className="p-2 sm:p-3 hidden lg:table-cell">
-                          <span className="text-sm text-zinc-400 capitalize whitespace-nowrap">{contact.source?.replace(/_/g, ' ') || "-"}</span>
+                        <td className="py-1 px-2 hidden lg:table-cell">
+                          <span className="text-[11px] text-zinc-400 capitalize whitespace-nowrap">{contact.source?.replace(/_/g, ' ') || "-"}</span>
                         </td>
-                        <td className="p-2 sm:p-3">
-                          <div className="flex items-center gap-0.5 sm:gap-1">
-                            <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-8 sm:w-8" onClick={() => handleEdit(contact)}>
-                              <Edit2 className="w-4 h-4 text-zinc-400" />
+                        <td className="py-1 px-2">
+                          <div className="flex items-center">
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleEdit(contact)}>
+                              <Edit2 className="w-3 h-3 text-zinc-400" />
                             </Button>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-8 sm:w-8">
-                                  <MoreVertical className="w-4 h-4 text-zinc-400" />
+                                <Button variant="ghost" size="icon" className="h-6 w-6">
+                                  <MoreVertical className="w-3 h-3 text-zinc-400" />
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
