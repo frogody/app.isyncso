@@ -651,7 +651,7 @@ export default function FinanceInvoices() {
                         </DropdownMenu>
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             )}
