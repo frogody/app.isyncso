@@ -87,15 +87,15 @@ export default function ManagerDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <Skeleton className="h-12 w-64 bg-gray-800" />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Skeleton className="h-32 bg-gray-800" />
-            <Skeleton className="h-32 bg-gray-800" />
-            <Skeleton className="h-32 bg-gray-800" />
+      <div className="min-h-screen bg-black p-4">
+        <div className="max-w-7xl mx-auto space-y-4">
+          <Skeleton className="h-10 w-64 bg-gray-800" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Skeleton className="h-20 bg-gray-800 rounded-xl" />
+            <Skeleton className="h-20 bg-gray-800 rounded-xl" />
+            <Skeleton className="h-20 bg-gray-800 rounded-xl" />
           </div>
-          <Skeleton className="h-96 bg-gray-800" />
+          <Skeleton className="h-72 bg-gray-800 rounded-xl" />
         </div>
       </div>
     );
@@ -147,26 +147,27 @@ export default function ManagerDashboard() {
   const { team_overview, skill_heatmap, activity_trend, top_performers, engagement_breakdown } = analytics || {};
 
   return (
-    <div className="min-h-screen bg-black p-4 sm:p-8 animate-in fade-in duration-500">
-      <div className="w-full px-6 lg:px-8 space-y-8">
+    <div className="min-h-screen bg-black p-4 animate-in fade-in duration-500">
+      <div className="w-full px-4 lg:px-6 space-y-4">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-4xl font-bold text-white tracking-tight">Team Learning Dashboard</h1>
-              <Sparkles className="w-6 h-6 text-purple-400 animate-pulse" />
+            <div className="flex items-center gap-2 mb-1">
+              <h1 className="text-xl font-bold text-white tracking-tight">Team Learning Dashboard</h1>
+              <Sparkles className="w-4 h-4 text-purple-400 animate-pulse" />
             </div>
-            <p className="text-gray-400 text-lg">Monitor your team's progress and identify skill gaps</p>
+            <p className="text-gray-400 text-xs">Monitor your team's progress and identify skill gaps</p>
           </div>
-          
-          <div className="flex gap-2">
+
+          <div className="flex gap-1.5">
             {['7d', '30d', '90d'].map(range => (
               <Button
                 key={range}
+                size="sm"
                 onClick={() => setTimeRange(range)}
                 variant={timeRange === range ? 'default' : 'outline'}
-                className={`transition-all ${timeRange === range 
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white border-0 shadow-lg shadow-purple-500/50' 
+                className={`transition-all h-7 text-xs ${timeRange === range
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white border-0 shadow-lg shadow-purple-500/50'
                   : 'border-slate-700 text-gray-400 hover:text-white hover:border-purple-500/50 hover:bg-purple-500/10'
                 }`}
               >
@@ -177,51 +178,51 @@ export default function ManagerDashboard() {
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <Card className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 hover:border-cyan-500/50 transition-all duration-300 group hover:shadow-xl hover:shadow-cyan-500/20">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-3">
-                <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/30 group-hover:bg-cyan-500/20 transition-colors">
-                  <Users className="w-7 h-7 text-cyan-400" />
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/30 group-hover:bg-cyan-500/20 transition-colors">
+                  <Users className="w-4 h-4 text-cyan-400" />
                 </div>
-                <ArrowUpRight className="w-5 h-5 text-green-400" />
+                <ArrowUpRight className="w-3 h-3 text-green-400" />
               </div>
-              <h3 className="text-sm text-gray-400 uppercase tracking-wider mb-2">Team Members</h3>
-              <p className="text-4xl font-bold text-white mb-1">{team_overview.total_members}</p>
-              <p className="text-sm text-cyan-400 flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+              <h3 className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Team Members</h3>
+              <p className="text-lg font-bold text-white">{team_overview.total_members}</p>
+              <p className="text-[10px] text-cyan-400 flex items-center gap-1 mt-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
                 {team_overview.active_this_week} active this week
               </p>
             </CardContent>
           </Card>
 
           <Card className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 hover:border-yellow-500/50 transition-all duration-300 group hover:shadow-xl hover:shadow-yellow-500/20">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-3">
-                <div className="p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/30 group-hover:bg-yellow-500/20 transition-colors">
-                  <Award className="w-7 h-7 text-yellow-400" />
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-1.5 rounded-lg bg-yellow-500/10 border border-yellow-500/30 group-hover:bg-yellow-500/20 transition-colors">
+                  <Award className="w-4 h-4 text-yellow-400" />
                 </div>
-                <TrendingUp className="w-5 h-5 text-green-400" />
+                <TrendingUp className="w-3 h-3 text-green-400" />
               </div>
-              <h3 className="text-sm text-gray-400 uppercase tracking-wider mb-2">Total Team XP</h3>
-              <p className="text-4xl font-bold text-white mb-1">{team_overview.total_xp.toLocaleString()}</p>
-              <p className="text-sm text-yellow-400">
+              <h3 className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Total Team XP</h3>
+              <p className="text-lg font-bold text-white">{team_overview.total_xp.toLocaleString()}</p>
+              <p className="text-[10px] text-yellow-400 mt-0.5">
                 {team_overview.avg_xp_per_member} avg per member
               </p>
             </CardContent>
           </Card>
 
           <Card className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 hover:border-purple-500/50 transition-all duration-300 group hover:shadow-xl hover:shadow-purple-500/20">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-3">
-                <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/30 group-hover:bg-purple-500/20 transition-colors">
-                  <Target className="w-7 h-7 text-purple-400" />
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-1.5 rounded-lg bg-purple-500/10 border border-purple-500/30 group-hover:bg-purple-500/20 transition-colors">
+                  <Target className="w-4 h-4 text-purple-400" />
                 </div>
-                <TrendingUp className="w-5 h-5 text-green-400" />
+                <TrendingUp className="w-3 h-3 text-green-400" />
               </div>
-              <h3 className="text-sm text-gray-400 uppercase tracking-wider mb-2">Skills Tracked</h3>
-              <p className="text-4xl font-bold text-white mb-1">{skill_heatmap.length}</p>
-              <p className="text-sm text-purple-400">
+              <h3 className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">Skills Tracked</h3>
+              <p className="text-lg font-bold text-white">{skill_heatmap.length}</p>
+              <p className="text-[10px] text-purple-400 mt-0.5">
                 {engagement_breakdown.total_interactions} interactions
               </p>
             </CardContent>
@@ -229,20 +230,20 @@ export default function ManagerDashboard() {
         </div>
 
         {/* Activity Trend + Top Performers */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Activity Trend Chart - 2/3 width */}
           <Card className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 lg:col-span-2">
-            <CardHeader className="border-b border-slate-800">
-              <CardTitle className="text-white flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/30">
-                  <TrendingUp className="w-5 h-5 text-cyan-400" />
+            <CardHeader className="border-b border-slate-800 p-3">
+              <CardTitle className="text-white text-sm flex items-center gap-2">
+                <div className="p-1 rounded-lg bg-cyan-500/10 border border-cyan-500/30">
+                  <TrendingUp className="w-3.5 h-3.5 text-cyan-400" />
                 </div>
                 Activity Trend
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-6 not-prose">
+            <CardContent className="pt-4 p-3 not-prose">
               {activity_trend.length > 0 ? (
-                <ResponsiveContainer width="100%" height={320} className="not-prose">
+                <ResponsiveContainer width="100%" height={240} className="not-prose">
                   <LineChart data={activity_trend}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
                     <XAxis 

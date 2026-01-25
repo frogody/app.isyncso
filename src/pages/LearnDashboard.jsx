@@ -38,23 +38,23 @@ function StatCardEnhanced({ icon: Icon, label, value, sublabel, color = 'cyan', 
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay }}
       onClick={onClick}
-      className={`relative bg-zinc-900/50 backdrop-blur-sm rounded-xl border border-zinc-800/60 p-5 transition-all duration-200 ${
+      className={`relative bg-zinc-900/50 backdrop-blur-sm rounded-xl border border-zinc-800/60 p-3 transition-all duration-200 ${
         onClick ? 'cursor-pointer hover:border-cyan-700/40 hover:bg-zinc-900/70' : ''
       }`}
     >
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-zinc-500 text-sm">{label}</p>
-          <p className="text-2xl font-bold text-zinc-100 mt-1">{value}</p>
-          {sublabel && <p className={`text-xs ${colors.icon} mt-0.5`}>{sublabel}</p>}
+          <p className="text-zinc-500 text-xs">{label}</p>
+          <p className="text-lg font-bold text-zinc-100 mt-0.5">{value}</p>
+          {sublabel && <p className={`text-[10px] ${colors.icon} mt-0.5`}>{sublabel}</p>}
         </div>
-        <div className={`w-12 h-12 rounded-xl ${colors.bg} ${colors.border} border flex items-center justify-center`}>
-          <Icon className={`w-6 h-6 ${colors.icon}`} />
+        <div className={`w-8 h-8 rounded-lg ${colors.bg} ${colors.border} border flex items-center justify-center`}>
+          <Icon className={`w-4 h-4 ${colors.icon}`} />
         </div>
       </div>
       {onClick && (
-        <div className="absolute bottom-2 right-2">
-          <Info className="w-3 h-3 text-zinc-700" />
+        <div className="absolute bottom-1.5 right-1.5">
+          <Info className="w-2.5 h-2.5 text-zinc-700" />
         </div>
       )}
     </motion.div>
@@ -69,29 +69,29 @@ function ContinueLearningCard({ course, progress, index }) {
       transition={{ delay: index * 0.1 }}
     >
       <Link to={createPageUrl(`LessonViewer?courseId=${course.id}`)}>
-        <div className="group relative bg-zinc-900/50 backdrop-blur-sm rounded-xl border border-zinc-800/60 hover:border-cyan-800/50 transition-all duration-200 p-4">
-          <div className="absolute top-0 left-0 right-0 h-1 rounded-t-xl bg-cyan-600/40" />
-          
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-xl bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center flex-shrink-0">
-              <BookOpen className="w-7 h-7 text-cyan-400/70" />
+        <div className="group relative bg-zinc-900/50 backdrop-blur-sm rounded-xl border border-zinc-800/60 hover:border-cyan-800/50 transition-all duration-200 p-3">
+          <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-xl bg-cyan-600/40" />
+
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center flex-shrink-0">
+              <BookOpen className="w-5 h-5 text-cyan-400/70" />
             </div>
-            
+
             <div className="flex-1 min-w-0">
-              <h4 className="font-semibold text-zinc-100 truncate group-hover:text-cyan-300/90 transition-colors">
+              <h4 className="font-semibold text-zinc-100 text-sm truncate group-hover:text-cyan-300/90 transition-colors">
                 {course.title}
               </h4>
-              <div className="flex items-center gap-3 mt-2">
-                <Progress value={progress?.completion_percentage || 0} className="flex-1 h-2 bg-zinc-800" />
-                <span className="text-sm font-medium text-cyan-400/80">{progress?.completion_percentage || 0}%</span>
+              <div className="flex items-center gap-2 mt-1.5">
+                <Progress value={progress?.completion_percentage || 0} className="flex-1 h-1.5 bg-zinc-800" />
+                <span className="text-xs font-medium text-cyan-400/80">{progress?.completion_percentage || 0}%</span>
               </div>
-              <div className="flex items-center gap-3 mt-2 text-xs text-zinc-600">
+              <div className="flex items-center gap-2 mt-1.5 text-[10px] text-zinc-600">
                 <span className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
+                  <Clock className="w-2.5 h-2.5" />
                   {course.duration_hours}h total
                 </span>
                 {course.category && (
-                  <Badge className="bg-zinc-800/80 text-zinc-500 border-zinc-700/50 text-[10px]">
+                  <Badge className="bg-zinc-800/80 text-zinc-500 border-zinc-700/50 text-[9px] px-1 py-0">
                     {course.category}
                   </Badge>
                 )}
@@ -201,15 +201,15 @@ export default function LearnDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-6">
-        <div className="space-y-6">
-          <Skeleton className="h-28 w-full bg-zinc-800 rounded-2xl" />
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[1,2,3,4].map(i => <Skeleton key={i} className="h-28 bg-zinc-800 rounded-xl" />)}
+      <div className="min-h-screen bg-black p-4">
+        <div className="space-y-4">
+          <Skeleton className="h-20 w-full bg-zinc-800 rounded-xl" />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {[1,2,3,4].map(i => <Skeleton key={i} className="h-16 bg-zinc-800 rounded-xl" />)}
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Skeleton className="h-64 bg-zinc-800 rounded-2xl lg:col-span-2" />
-            <Skeleton className="h-64 bg-zinc-800 rounded-2xl" />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <Skeleton className="h-52 bg-zinc-800 rounded-xl lg:col-span-2" />
+            <Skeleton className="h-52 bg-zinc-800 rounded-xl" />
           </div>
         </div>
       </div>
@@ -224,7 +224,7 @@ export default function LearnDashboard() {
         <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-cyan-950/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <PageHeader
           icon={GraduationCap}
@@ -233,8 +233,8 @@ export default function LearnDashboard() {
           color="cyan"
           actions={
             <Link to={createPageUrl('Learn')}>
-              <Button className="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
-                <BookOpen className="w-4 h-4 mr-2" />
+              <Button size="sm" className="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 h-8 text-xs">
+                <BookOpen className="w-3 h-3 mr-1.5" />
                 Browse Courses
               </Button>
             </Link>
@@ -242,7 +242,7 @@ export default function LearnDashboard() {
         />
 
         {/* Stats Row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <StatCardEnhanced
             icon={Play}
             label="In Progress"
@@ -279,37 +279,37 @@ export default function LearnDashboard() {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Left Column */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4">
             {/* Continue Learning */}
-            <GlassCard glow="cyan" className="p-6">
-              <div className="flex items-center justify-between mb-5">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                  <Play className="w-5 h-5 text-cyan-400" />
+            <GlassCard glow="cyan" className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                  <Play className="w-4 h-4 text-cyan-400" />
                   Continue Learning
                 </h3>
-                <Link to={createPageUrl('Learn')} className="text-cyan-400 text-sm hover:text-cyan-300 flex items-center gap-1">
-                  View All <ArrowRight className="w-4 h-4" />
+                <Link to={createPageUrl('Learn')} className="text-cyan-400 text-xs hover:text-cyan-300 flex items-center gap-1">
+                  View All <ArrowRight className="w-3 h-3" />
                 </Link>
               </div>
 
               {continueLearning.length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {continueLearning.map((course, i) => {
                     const progress = userProgress.find(p => p.course_id === course.id);
                     return <ContinueLearningCard key={course.id} course={course} progress={progress} index={i} />;
                   })}
                 </div>
               ) : (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 flex items-center justify-center mx-auto mb-4">
-                    <BookOpen className="w-8 h-8 text-cyan-400" />
+                <div className="text-center py-8">
+                  <div className="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center mx-auto mb-3">
+                    <BookOpen className="w-5 h-5 text-cyan-400" />
                   </div>
-                  <h4 className="text-white font-medium mb-2">No courses in progress</h4>
-                  <p className="text-zinc-400 text-sm mb-4">Start your learning journey today</p>
+                  <h4 className="text-white font-medium text-sm mb-1.5">No courses in progress</h4>
+                  <p className="text-zinc-400 text-xs mb-3">Start your learning journey today</p>
                   <Link to={createPageUrl('Learn')}>
-                    <Button className="bg-cyan-500 hover:bg-cyan-400 text-white">
+                    <Button size="sm" className="bg-cyan-500 hover:bg-cyan-400 text-white h-8 text-xs">
                       Start a Course
                     </Button>
                   </Link>
@@ -318,9 +318,9 @@ export default function LearnDashboard() {
             </GlassCard>
 
             {/* Activity Heatmap */}
-            <GlassCard glow="cyan" className="p-6">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
-                <Calendar className="w-5 h-5 text-cyan-400" />
+            <GlassCard glow="cyan" className="p-4">
+              <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-3">
+                <Calendar className="w-4 h-4 text-cyan-400" />
                 Weekly Activity
               </h3>
               <ActivityHeatmap userId={user?.id} color="cyan" />
@@ -328,14 +328,14 @@ export default function LearnDashboard() {
 
             {/* Skill Progress */}
             {skills.length > 0 && (
-              <GlassCard glow="cyan" className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                    <Target className="w-5 h-5 text-cyan-400" />
+              <GlassCard glow="cyan" className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                    <Target className="w-4 h-4 text-cyan-400" />
                     Skill Progress
                   </h3>
-                  <Link to={createPageUrl('SkillMap')} className="text-cyan-400 text-sm hover:text-cyan-300 flex items-center gap-1">
-                    View All <ArrowRight className="w-4 h-4" />
+                  <Link to={createPageUrl('SkillMap')} className="text-cyan-400 text-xs hover:text-cyan-300 flex items-center gap-1">
+                    View All <ArrowRight className="w-3 h-3" />
                   </Link>
                 </div>
                 <SkillProgressList skills={skills} color="cyan" clickable />
@@ -344,95 +344,95 @@ export default function LearnDashboard() {
           </div>
 
           {/* Right Column */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Progress Ring */}
-            <GlassCard glow="cyan" className="p-6">
-              <h3 className="text-lg font-semibold text-white text-center mb-6">Overall Progress</h3>
-              <div className="flex justify-center mb-6">
+            <GlassCard glow="cyan" className="p-4">
+              <h3 className="text-sm font-semibold text-white text-center mb-4">Overall Progress</h3>
+              <div className="flex justify-center mb-4">
                 <ProgressRing value={overallProgress} color="cyan" />
               </div>
-              <div className="grid grid-cols-2 gap-4 text-center">
-                <div 
+              <div className="grid grid-cols-2 gap-3 text-center">
+                <div
                   onClick={() => setShowTimeModal(true)}
-                  className="cursor-pointer hover:bg-zinc-800/50 rounded-xl p-3 transition-colors border border-transparent hover:border-zinc-700"
+                  className="cursor-pointer hover:bg-zinc-800/50 rounded-lg p-2 transition-colors border border-transparent hover:border-zinc-700"
                 >
-                  <div className="text-2xl font-bold text-white">{formatMinutes(analytics?.totalTimeMinutes || 0)}</div>
-                  <div className="text-xs text-zinc-400 flex items-center justify-center gap-1">
-                    Time Invested <Info className="w-3 h-3" />
+                  <div className="text-lg font-bold text-white">{formatMinutes(analytics?.totalTimeMinutes || 0)}</div>
+                  <div className="text-[10px] text-zinc-400 flex items-center justify-center gap-1">
+                    Time Invested <Info className="w-2.5 h-2.5" />
                   </div>
                 </div>
-                <div 
+                <div
                   onClick={() => setShowXPModal(true)}
-                  className="cursor-pointer hover:bg-zinc-800/50 rounded-xl p-3 transition-colors border border-transparent hover:border-zinc-700"
+                  className="cursor-pointer hover:bg-zinc-800/50 rounded-lg p-2 transition-colors border border-transparent hover:border-zinc-700"
                 >
-                  <div className="text-2xl font-bold text-cyan-400">{analytics?.totalPoints || 0}</div>
-                  <div className="text-xs text-zinc-400 flex items-center justify-center gap-1">
-                    Total XP <Info className="w-3 h-3" />
+                  <div className="text-lg font-bold text-cyan-400">{analytics?.totalPoints || 0}</div>
+                  <div className="text-[10px] text-zinc-400 flex items-center justify-center gap-1">
+                    Total XP <Info className="w-2.5 h-2.5" />
                   </div>
                 </div>
               </div>
             </GlassCard>
 
             {/* Level & Streak */}
-            <GlassCard glow="cyan" className="p-6">
-              <div 
+            <GlassCard glow="cyan" className="p-4">
+              <div
                 onClick={() => setShowLevelModal(true)}
-                className="flex items-center justify-between mb-4 cursor-pointer hover:bg-zinc-800/30 rounded-xl p-3 -m-3 transition-colors"
+                className="flex items-center justify-between mb-3 cursor-pointer hover:bg-zinc-800/30 rounded-lg p-2 -m-2 transition-colors"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-cyan-500/30">
+                <div className="flex items-center gap-2">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-cyan-500/30">
                     {analytics?.level || 1}
                   </div>
                   <div>
-                    <div className="text-white font-semibold">Level {analytics?.level || 1}</div>
-                    <div className="text-xs text-zinc-400">Click for details</div>
+                    <div className="text-white font-semibold text-sm">Level {analytics?.level || 1}</div>
+                    <div className="text-[10px] text-zinc-400">Click for details</div>
                   </div>
                 </div>
-                <ChevronRight className="w-5 h-5 text-zinc-500" />
+                <ChevronRight className="w-4 h-4 text-zinc-500" />
               </div>
-              
-              <div className="mb-4 mt-4">
-                <div className="flex justify-between text-xs text-zinc-400 mb-1.5">
+
+              <div className="mb-3 mt-3">
+                <div className="flex justify-between text-[10px] text-zinc-400 mb-1">
                   <span>Progress to Level {(analytics?.level || 1) + 1}</span>
                   <span className="text-cyan-400">{((analytics?.totalPoints || 0) % 1000)} / 1000 XP</span>
                 </div>
-                <Progress value={((analytics?.totalPoints || 0) % 1000) / 10} className="h-2 bg-zinc-800" />
+                <Progress value={((analytics?.totalPoints || 0) % 1000) / 10} className="h-1.5 bg-zinc-800" />
               </div>
-              
-              <div 
+
+              <div
                 onClick={() => setShowStreakModal(true)}
-                className="flex items-center justify-between gap-3 p-4 rounded-xl bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-orange-500/20 cursor-pointer hover:bg-orange-500/15 transition-colors"
+                className="flex items-center justify-between gap-2 p-3 rounded-lg bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-orange-500/20 cursor-pointer hover:bg-orange-500/15 transition-colors"
               >
-                <div className="flex items-center gap-3">
-                  <Flame className="w-7 h-7 text-orange-400" />
+                <div className="flex items-center gap-2">
+                  <Flame className="w-5 h-5 text-orange-400" />
                   <div>
-                    <div className="text-white font-semibold">{analytics?.streak || 0} Day Streak!</div>
-                    <div className="text-xs text-zinc-400">Click to view history</div>
+                    <div className="text-white font-semibold text-sm">{analytics?.streak || 0} Day Streak!</div>
+                    <div className="text-[10px] text-zinc-400">Click to view history</div>
                   </div>
                 </div>
-                <Button 
-                  size="sm" 
-                  variant="ghost" 
-                  className="text-orange-400 hover:bg-orange-500/20"
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-orange-400 hover:bg-orange-500/20 h-7 w-7 p-0"
                   onClick={(e) => {
                     e.stopPropagation();
                     navigator.clipboard.writeText(`I'm on a ${analytics?.streak || 0} day learning streak!`);
                     toast.success('Streak copied!');
                   }}
                 >
-                  <Share2 className="w-4 h-4" />
+                  <Share2 className="w-3 h-3" />
                 </Button>
               </div>
             </GlassCard>
 
             {/* Achievements */}
-            <GlassCard glow="cyan" className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                  <Trophy className="w-5 h-5 text-cyan-400" />
+            <GlassCard glow="cyan" className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                  <Trophy className="w-4 h-4 text-cyan-400" />
                   Achievements
                 </h3>
-                <Link to={createPageUrl('Leaderboard')} className="text-cyan-400 text-sm hover:text-cyan-300">
+                <Link to={createPageUrl('Leaderboard')} className="text-cyan-400 text-xs hover:text-cyan-300">
                   View All
                 </Link>
               </div>
