@@ -283,11 +283,18 @@ export function NestUploadWizard({
 
       setImportResults({
         created: result.created_count || 0,
+        updated: result.updated_count || 0,
+        linked: result.linked_count || 0,
         failed: result.error_count || 0,
         total: validation.validRows.length
       });
 
-      toast.success(`Successfully imported ${result.created_count} items`);
+      // Build descriptive toast message
+      const parts = [];
+      if (result.created_count > 0) parts.push(`${result.created_count} new`);
+      if (result.updated_count > 0) parts.push(`${result.updated_count} updated`);
+      if (result.linked_count > 0) parts.push(`${result.linked_count} linked`);
+      toast.success(`Import complete: ${parts.join(', ') || '0 items'}`);
 
       if (onImportComplete) {
         onImportComplete(result);
@@ -515,15 +522,36 @@ export function NestUploadWizard({
             </div>
 
             {importResults && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-4 gap-3">
                 <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20 text-center">
-                  <p className="text-3xl font-bold text-green-400">{importResults.created}</p>
-                  <p className="text-sm text-zinc-500">Created</p>
+                  <p className="text-2xl font-bold text-green-400">{importResults.created}</p>
+                  <p className="text-xs text-zinc-500">New</p>
+                </div>
+                <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 text-center">
+                  <p className="text-2xl font-bold text-blue-400">{importResults.updated || 0}</p>
+                  <p className="text-xs text-zinc-500">Updated</p>
+                </div>
+                <div className="p-4 rounded-lg bg-purple-500/10 border border-purple-500/20 text-center">
+                  <p className="text-2xl font-bold text-purple-400">{importResults.linked || 0}</p>
+                  <p className="text-xs text-zinc-500">Linked</p>
                 </div>
                 <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-center">
-                  <p className="text-3xl font-bold text-red-400">{importResults.failed}</p>
-                  <p className="text-sm text-zinc-500">Failed</p>
+                  <p className="text-2xl font-bold text-red-400">{importResults.failed}</p>
+                  <p className="text-xs text-zinc-500">Failed</p>
                 </div>
+              </div>
+            )}
+
+            {importResults && (importResults.updated > 0 || importResults.linked > 0) && (
+              <div className="p-3 rounded-lg bg-zinc-800/50 border border-white/5">
+                <p className="text-xs text-zinc-400">
+                  {importResults.updated > 0 && (
+                    <span className="block">• <span className="text-blue-400">{importResults.updated}</span> existing candidates in this nest were updated with new data</span>
+                  )}
+                  {importResults.linked > 0 && (
+                    <span className="block">• <span className="text-purple-400">{importResults.linked}</span> existing candidates from other nests were linked to this nest</span>
+                  )}
+                </p>
               </div>
             )}
 

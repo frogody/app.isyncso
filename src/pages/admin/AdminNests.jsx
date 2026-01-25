@@ -855,9 +855,21 @@ export default function AdminNests() {
       <Dialog open={showItemsModal} onOpenChange={setShowItemsModal}>
         <DialogContent compact className="max-w-2xl max-h-[80vh] overflow-y-auto bg-[#1a1a2e] border-white/10">
           <DialogHeader compact>
-            <DialogTitle compact className="text-white">
-              Items in {selectedNest?.name}
-            </DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle compact className="text-white">
+                Items in {selectedNest?.name}
+              </DialogTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => selectedNest && fetchNestItems(selectedNest.id)}
+                disabled={loadingItems}
+                className="text-zinc-400 hover:text-white"
+              >
+                <RefreshCw className={`w-3 h-3 mr-1.5 ${loadingItems ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            </div>
           </DialogHeader>
 
           <div className="py-2">

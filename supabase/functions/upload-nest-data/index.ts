@@ -13,6 +13,158 @@ interface MappedRow {
   [key: string]: string | number | null;
 }
 
+interface DuplicateCheckResult {
+  existingId: string | null;
+  matchType: 'email' | 'linkedin' | 'name' | null;
+  inCurrentNest: boolean;
+}
+
+// Check if a candidate already exists in the current nest
+async function checkIfInNest(supabase: any, candidateId: string, nestId: string): Promise<boolean> {
+  const { data } = await supabase
+    .from('nest_items')
+    .select('id')
+    .eq('nest_id', nestId)
+    .eq('candidate_id', candidateId)
+    .limit(1)
+    .maybeSingle();
+
+  return !!data;
+}
+
+// Find existing candidate by email, linkedin, or name
+async function findExistingCandidate(
+  supabase: any,
+  row: MappedRow,
+  nestId: string
+): Promise<DuplicateCheckResult> {
+  const email = row.email?.toString().toLowerCase().trim();
+  const linkedin = row.linkedin_profile?.toString().toLowerCase().trim();
+  const firstName = row.first_name?.toString().toLowerCase().trim();
+  const lastName = row.last_name?.toString().toLowerCase().trim();
+
+  // Priority 1: Email match (most reliable)
+  if (email) {
+    const { data } = await supabase
+      .from('candidates')
+      .select('id')
+      .ilike('email', email)
+      .limit(1)
+      .maybeSingle();
+
+    if (data?.id) {
+      const inNest = await checkIfInNest(supabase, data.id, nestId);
+      return { existingId: data.id, matchType: 'email', inCurrentNest: inNest };
+    }
+  }
+
+  // Priority 2: LinkedIn profile match
+  if (linkedin) {
+    const { data } = await supabase
+      .from('candidates')
+      .select('id')
+      .ilike('linkedin_profile', linkedin)
+      .limit(1)
+      .maybeSingle();
+
+    if (data?.id) {
+      const inNest = await checkIfInNest(supabase, data.id, nestId);
+      return { existingId: data.id, matchType: 'linkedin', inCurrentNest: inNest };
+    }
+  }
+
+  // Priority 3: Name match (least reliable, only if both names present)
+  if (firstName && lastName) {
+    const { data } = await supabase
+      .from('candidates')
+      .select('id')
+      .ilike('first_name', firstName)
+      .ilike('last_name', lastName)
+      .limit(1)
+      .maybeSingle();
+
+    if (data?.id) {
+      const inNest = await checkIfInNest(supabase, data.id, nestId);
+      return { existingId: data.id, matchType: 'name', inCurrentNest: inNest };
+    }
+  }
+
+  return { existingId: null, matchType: null, inCurrentNest: false };
+}
+
+// Update existing candidate with new data (only non-null values)
+async function updateCandidate(supabase: any, candidateId: string, row: MappedRow): Promise<boolean> {
+  // Handle skills
+  const skillsStr = row.skills?.toString() || '';
+  const skills = skillsStr ? skillsStr.split(/[,;]/).map(s => s.trim()).filter(Boolean) : null;
+
+  // Parse years experience
+  let yearsExperience = null;
+  if (row.years_experience) {
+    const expStr = row.years_experience.toString();
+    const match = expStr.match(/(\d+(?:\.\d+)?)/);
+    if (match) yearsExperience = parseFloat(match[1]);
+  }
+
+  // Parse employee count
+  let employeeCount = null;
+  if (row.employee_count) {
+    const countStr = row.employee_count.toString().replace(/,/g, '');
+    const match = countStr.match(/(\d+)/);
+    if (match) employeeCount = parseInt(match[1], 10);
+  }
+
+  // Build update object with only provided values
+  const updates: Record<string, any> = {};
+
+  // Only update fields that have values
+  if (row.first_name) updates.first_name = row.first_name;
+  if (row.last_name) updates.last_name = row.last_name;
+  if (row.email) updates.email = row.email;
+  if (row.phone) updates.phone = row.phone;
+  if (row.linkedin_profile) updates.linkedin_profile = row.linkedin_profile;
+  if (row.profile_image_url) updates.profile_image_url = row.profile_image_url;
+  if (row.job_title) updates.job_title = row.job_title;
+  if (skills) updates.skills = skills;
+  if (yearsExperience !== null) updates.years_experience = yearsExperience;
+  if (row.education) updates.education = row.education;
+  if (row.salary_range) updates.salary_range = row.salary_range;
+  if (row.person_home_location) updates.person_home_location = row.person_home_location;
+  if (row.work_address) updates.work_address = row.work_address;
+  if (row.company_name) updates.company_name = row.company_name;
+  if (row.company_domain) updates.company_domain = row.company_domain;
+  if (row.company_hq) updates.company_hq = row.company_hq;
+  if (row.company_linkedin) updates.company_linkedin = row.company_linkedin;
+  if (row.company_description) updates.company_description = row.company_description;
+  if (row.company_type) updates.company_type = row.company_type;
+  if (row.industry) updates.industry = row.industry;
+  if (row.company_size) updates.company_size = row.company_size;
+  if (employeeCount !== null) updates.employee_count = employeeCount;
+  if (row.times_promoted) updates.times_promoted = parseInt(row.times_promoted.toString());
+  if (row.times_company_hopped) updates.times_company_hopped = parseInt(row.times_company_hopped.toString());
+  if (row.years_at_company) updates.years_at_company = parseFloat(row.years_at_company.toString().replace(/[^0-9.]/g, ''));
+  if (row.job_satisfaction) updates.job_satisfaction = row.job_satisfaction;
+  if (row.estimated_age_range) updates.estimated_age_range = row.estimated_age_range;
+  if (row.market_position) updates.market_position = row.market_position;
+  if (row.employee_growth_rate) updates.employee_growth_rate = parseFloat(row.employee_growth_rate.toString());
+  if (row.recruitment_urgency) updates.recruitment_urgency = row.recruitment_urgency;
+  if (row.experience_report) updates.experience_report = row.experience_report;
+  if (row.experience_analysis) updates.experience_analysis = row.experience_analysis;
+  if (row.job_satisfaction_analysis) updates.job_satisfaction_analysis = row.job_satisfaction_analysis;
+  if (row.avg_promotion_threshold) updates.avg_promotion_threshold = parseFloat(row.avg_promotion_threshold.toString());
+  if (row.outreach_urgency_reasoning) updates.outreach_urgency_reasoning = row.outreach_urgency_reasoning;
+  if (row.recent_ma_news) updates.recent_ma_news = row.recent_ma_news;
+
+  updates.updated_at = new Date().toISOString();
+
+  const { error } = await supabase
+    .from('candidates')
+    .update(updates)
+    .eq('id', candidateId);
+
+  return !error;
+}
+
 // Create candidate from pre-mapped row data
 async function createCandidate(supabase: any, row: MappedRow): Promise<string | null> {
   // Handle skills (comma or semicolon separated string)
@@ -259,6 +411,8 @@ serve(async (req) => {
     }
 
     let createdCount = 0;
+    let updatedCount = 0;
+    let linkedCount = 0;
     let errorCount = 0;
     const errors: string[] = [];
 
@@ -266,23 +420,47 @@ serve(async (req) => {
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
       let entityId: string | null = null;
+      let skipNestItem = false;
+      let wasLinked = false; // Track if this was linked from another nest
 
       try {
-        switch (nestType) {
-          case 'candidates':
+        if (nestType === 'candidates') {
+          // Check for existing candidate (duplicate detection)
+          const duplicate = await findExistingCandidate(supabase, row, nestId);
+          wasLinked = duplicate.existingId !== null && !duplicate.inCurrentNest;
+
+          if (duplicate.existingId) {
+            if (duplicate.inCurrentNest) {
+              // Already in this nest - just update the data
+              console.log(`Row ${i + 1}: Found duplicate in this nest (match: ${duplicate.matchType}), updating...`);
+              const updated = await updateCandidate(supabase, duplicate.existingId, row);
+              if (updated) {
+                updatedCount++;
+              } else {
+                errors.push(`Row ${i + 1}: Failed to update existing candidate`);
+                errorCount++;
+              }
+              skipNestItem = true; // Don't create new nest_item
+            } else {
+              // Exists globally but not in this nest - update and link
+              console.log(`Row ${i + 1}: Found duplicate in other nest (match: ${duplicate.matchType}), linking...`);
+              await updateCandidate(supabase, duplicate.existingId, row);
+              entityId = duplicate.existingId;
+              linkedCount++;
+            }
+          } else {
+            // New candidate - create
             entityId = await createCandidate(supabase, row);
-            break;
-          case 'prospects':
-            entityId = await createProspect(supabase, row);
-            break;
-          case 'investors':
-            entityId = await createInvestor(supabase, row);
-            break;
-          default:
-            throw new Error(`Unknown nest type: ${nestType}`);
+          }
+        } else if (nestType === 'prospects') {
+          entityId = await createProspect(supabase, row);
+        } else if (nestType === 'investors') {
+          entityId = await createInvestor(supabase, row);
+        } else {
+          throw new Error(`Unknown nest type: ${nestType}`);
         }
 
-        if (entityId) {
+        if (!skipNestItem && entityId) {
           // Create nest_item link
           const itemData: any = {
             nest_id: nestId,
@@ -307,10 +485,15 @@ serve(async (req) => {
             console.error(`Failed to link item ${i}:`, linkError);
             errors.push(`Row ${i + 1}: Failed to link entity to nest`);
             errorCount++;
-          } else {
+            // If this was a linked item, decrement the count since link failed
+            if (wasLinked) {
+              linkedCount--;
+            }
+          } else if (!wasLinked) {
+            // Only count as created if it was a brand new entity (not linked from other nest)
             createdCount++;
           }
-        } else {
+        } else if (!skipNestItem && !entityId) {
           errors.push(`Row ${i + 1}: Failed to create entity`);
           errorCount++;
         }
@@ -321,7 +504,7 @@ serve(async (req) => {
       }
     }
 
-    console.log(`Created ${createdCount} items, ${errorCount} errors`);
+    console.log(`Created ${createdCount} new, ${updatedCount} updated, ${linkedCount} linked, ${errorCount} errors`);
 
     // Update the nest's item_count to reflect actual count
     const { count: actualCount } = await supabase
@@ -340,6 +523,8 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         created_count: createdCount,
+        updated_count: updatedCount,
+        linked_count: linkedCount,
         error_count: errorCount,
         total_rows: rows.length,
         item_count: actualCount || 0,
