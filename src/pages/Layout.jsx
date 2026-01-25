@@ -594,13 +594,16 @@ function SubmenuFlyout({ config, openSubmenu, onClose, onEnter, location }) {
 
   return (
     <div
-      className="absolute left-[72px] lg:left-[80px] bg-black/95 backdrop-blur-sm border border-white/10 rounded-2xl p-3 shadow-2xl z-50 animate-in fade-in slide-in-from-left-2 duration-200 hidden md:block"
+      className="absolute left-[72px] lg:left-[80px] bg-black/95 backdrop-blur-sm border border-white/10 rounded-2xl p-3 shadow-2xl z-50 animate-in fade-in slide-in-from-left-2 duration-200 hidden md:block overflow-hidden"
       style={{ top: `${navOffset}px` }}
       onMouseEnter={onEnter}
       onMouseLeave={onClose}
     >
+      {/* Subtle color tint overlay */}
+      <div className={`absolute inset-0 ${colors.bg} opacity-30 rounded-2xl pointer-events-none`} />
+
       {/* Title */}
-      <div className="px-2 pb-2 mb-2 border-b border-white/5">
+      <div className="relative px-2 pb-2 mb-2 border-b border-white/5">
         <h3 className={`text-[10px] font-bold uppercase tracking-widest ${colors.text}`}>
           {config.title}
         </h3>
@@ -608,7 +611,7 @@ function SubmenuFlyout({ config, openSubmenu, onClose, onEnter, location }) {
 
       {/* Nav items */}
       <TooltipProvider delayDuration={200}>
-        <nav className="space-y-1">
+        <nav className="relative space-y-1">
           {config.items.map((item) => {
             // Parse URLs for proper comparison
             const itemUrl = new URL(item.path, 'http://localhost');
@@ -661,7 +664,7 @@ function SubmenuFlyout({ config, openSubmenu, onClose, onEnter, location }) {
                     )}
                   </Link>
                 </TooltipTrigger>
-                <TooltipContent side="right" className="bg-gray-900 border-gray-700 text-white">
+                <TooltipContent side="right" className={`bg-gray-900 border-gray-700 ${colors.text}`}>
                   <p>{item.label}</p>
                 </TooltipContent>
               </Tooltip>
