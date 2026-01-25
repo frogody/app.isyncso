@@ -288,6 +288,35 @@ serve(async (req) => {
       result = { mappings: {}, confidence: 0, notes: ['Failed to parse AI response'] };
     }
 
+    // POST-PROCESSING: Force mandatory mappings that AI sometimes misses
+    // This ensures critical fields are ALWAYS mapped correctly
+    if (nestType === 'candidates' && result.mappings) {
+      const forcedMappings: Record<string, string> = {
+        // LinkedIn profile variations (person's profile, NOT company)
+        'linkedin_profile': 'linkedin_profile',
+        'linkedIn_profile': 'linkedin_profile',
+        'LinkedIn_profile': 'linkedin_profile',
+        'LinkedIn Profile': 'linkedin_profile',
+        'Person LinkedIn': 'linkedin_profile',
+        'Candidate LinkedIn': 'linkedin_profile',
+        // Other commonly missed fields
+        'first_Name': 'first_name',
+        'First_Name': 'first_name',
+        'last_Name': 'last_name',
+        'Last_Name': 'last_name',
+      };
+
+      // Apply forced mappings for columns that exist in the data
+      for (const header of headers) {
+        const normalizedHeader = header.trim();
+        if (forcedMappings[normalizedHeader] &&
+            (result.mappings[normalizedHeader] === 'skip' || !result.mappings[normalizedHeader])) {
+          result.mappings[normalizedHeader] = forcedMappings[normalizedHeader];
+          console.log(`Forced mapping: "${normalizedHeader}" → ${forcedMappings[normalizedHeader]}`);
+        }
+      }
+    }
+
     // Add target fields info for the UI
     result.targetFields = NEST_TARGET_FIELDS[nestType as keyof typeof NEST_TARGET_FIELDS];
 
