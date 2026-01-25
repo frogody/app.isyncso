@@ -584,7 +584,10 @@ function SubmenuFlyout({ config, openSubmenu, onClose, onEnter, location }) {
   const colors = COLOR_CLASSES[config.color] || COLOR_CLASSES.cyan;
 
   // Calculate dynamic offset to align with the active primary nav item
-  const navOffset = calculateSecondaryNavOffset(config);
+  // Subtract header height (title + padding + border + container padding) so first nav item aligns
+  const baseOffset = calculateSecondaryNavOffset(config);
+  const headerHeight = 44; // title (~14px) + pb-2 (8px) + mb-2 (8px) + p-3 container (12px) + border (1px)
+  const navOffset = baseOffset - headerHeight;
 
   return (
     <div
