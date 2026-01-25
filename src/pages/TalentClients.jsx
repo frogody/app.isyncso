@@ -483,7 +483,7 @@ export default function TalentClients() {
         <div className="absolute bottom-20 right-1/4 w-[400px] h-[400px] bg-red-500/5 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
         <div ref={headerRef} style={{ opacity: reducedMotion ? 1 : 0 }}>
           <PageHeader
             icon={Building2}
@@ -513,28 +513,28 @@ export default function TalentClients() {
         </div>
 
         {/* Stats Row */}
-        <div ref={statsGridRef} className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-          <div className="stat-card p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+        <div ref={statsGridRef} className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="stat-card p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-sm">Total Clients</p>
-                <p className="text-2xl font-bold text-white mt-1">{stats.total}</p>
+                <p className="text-zinc-500 text-xs">Total Clients</p>
+                <p className="text-lg font-bold text-white">{stats.total}</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center">
-                <Building2 className="w-6 h-6 text-red-400/70" />
+              <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
+                <Building2 className="w-4 h-4 text-red-400/70" />
               </div>
             </div>
           </div>
 
           {CLIENT_STAGES.slice(0, 4).map(stage => (
-            <div key={stage.id} className="stat-card p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+            <div key={stage.id} className="stat-card p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-zinc-500 text-sm">{stage.label}</p>
-                  <p className="text-2xl font-bold text-white mt-1">{stats.byStage[stage.id] || 0}</p>
+                  <p className="text-zinc-500 text-xs">{stage.label}</p>
+                  <p className="text-lg font-bold text-white">{stats.byStage[stage.id] || 0}</p>
                 </div>
-                <div className={`w-12 h-12 rounded-xl ${stage.color}/20 flex items-center justify-center`}>
-                  <div className={`w-3 h-3 rounded-full ${stage.color}`} />
+                <div className={`w-8 h-8 rounded-lg ${stage.color}/20 flex items-center justify-center`}>
+                  <div className={`w-2 h-2 rounded-full ${stage.color}`} />
                 </div>
               </div>
             </div>
@@ -542,8 +542,8 @@ export default function TalentClients() {
         </div>
 
         {/* Filters and View Toggle */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3 flex-1 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2 flex-1 w-full sm:w-auto">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
               <Input

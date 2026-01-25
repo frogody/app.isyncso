@@ -473,7 +473,7 @@ export default function GrowthProspects() {
         <div className="absolute top-20 left-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl animate-pulse" />
       </div>
 
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
         <div ref={headerRef} style={{ opacity: 0 }}>
           <PageHeader
             icon={Users}
@@ -485,7 +485,7 @@ export default function GrowthProspects() {
         </div>
 
         {/* Stats */}
-        <div ref={contentRef} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div ref={contentRef} className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="animate-card"><StatCard icon={Users} label="Total Prospects" value={totalProspects} color="indigo" delay={0} /></div>
           <div className="animate-card"><StatCard icon={Building2} label="Active Lists" value={activeListsCount} color="indigo" delay={0.1} /></div>
           <div className="animate-card"><StatCard icon={Mail} label="Enriched" value={enrichedCount} color="indigo" delay={0.2} /></div>
@@ -580,13 +580,13 @@ export default function GrowthProspects() {
 
               {/* Prospects Table */}
               <div className="lg:col-span-2">
-                <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+                <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
                   {selectedList ? (
                     <>
-                      <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center justify-between mb-3">
                         <div>
-                          <h3 className="text-lg font-semibold text-white">{selectedList.name}</h3>
-                          <p className="text-sm text-zinc-400">{prospects.length} prospects</p>
+                          <h3 className="text-base font-semibold text-white">{selectedList.name}</h3>
+                          <p className="text-xs text-zinc-400">{prospects.length} prospects</p>
                         </div>
                         <div className="flex gap-2">
                           {selectedProspects.size > 0 && (
@@ -604,56 +604,53 @@ export default function GrowthProspects() {
                         </div>
                       </div>
 
-                      <div className="flex gap-3 mb-4">
+                      <div className="flex gap-2 mb-3">
                         <div className="relative flex-1">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
                           <Input
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             placeholder="Search prospects..."
-                            className="pl-10 bg-zinc-800 border-zinc-700 text-white"
+                            className="pl-9 h-8 text-sm bg-zinc-800 border-zinc-700 text-white"
                           />
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 mb-3 text-sm text-zinc-400">
-                        <Checkbox checked={selectedProspects.size === prospects.length && prospects.length > 0} onCheckedChange={selectAllProspects} />
+                      <div className="flex items-center gap-2 mb-2 text-xs text-zinc-400">
+                        <Checkbox checked={selectedProspects.size === prospects.length && prospects.length > 0} onCheckedChange={selectAllProspects} className="w-3.5 h-3.5" />
                         <span>Select All ({selectedProspects.size} selected)</span>
                       </div>
 
-                      <div className="space-y-2 max-h-[500px] overflow-y-auto">
+                      <div className="divide-y divide-zinc-800/60 max-h-[500px] overflow-y-auto">
                         {filteredProspects.map((prospect, i) => (
-                          <motion.div
+                          <div
                             key={prospect.id || i}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: i * 0.02 }}
                             onClick={() => toggleProspect(prospect.id)}
-                            className={`p-3 rounded-xl cursor-pointer transition-all ${
+                            className={`py-2 px-2 cursor-pointer transition-all ${
                               selectedProspects.has(prospect.id)
-                                ? 'bg-indigo-500/10 border border-indigo-500/30'
-                                : 'bg-zinc-800/50 border border-transparent hover:border-zinc-700'
+                                ? 'bg-indigo-500/10'
+                                : 'hover:bg-white/[0.03]'
                             }`}
                           >
-                            <div className="flex items-center gap-3">
-                              <Checkbox checked={selectedProspects.has(prospect.id)} />
+                            <div className="flex items-center gap-2">
+                              <Checkbox checked={selectedProspects.has(prospect.id)} className="w-3.5 h-3.5" />
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
-                                  <p className="font-medium text-white">{prospect.name}</p>
+                                  <p className="text-sm font-medium text-white">{prospect.name}</p>
                                   {prospect.score && (
-                                    <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/30 text-xs">
+                                    <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/30 text-[10px] px-1.5 py-px">
                                       {prospect.score}%
                                     </Badge>
                                   )}
                                 </div>
-                                <div className="flex flex-wrap gap-2 mt-1 text-xs text-zinc-400">
+                                <div className="flex flex-wrap gap-2 text-[10px] text-zinc-500">
                                   {prospect.company && <span>{prospect.company}</span>}
                                   {prospect.title && <span>• {prospect.title}</span>}
                                   {prospect.location && <span>• {prospect.location}</span>}
                                 </div>
                               </div>
                             </div>
-                          </motion.div>
+                          </div>
                         ))}
                       </div>
                     </>
