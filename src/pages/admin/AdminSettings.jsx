@@ -57,7 +57,7 @@ function SettingField({ setting, value, onChange, disabled }) {
             value={value || ''}
             onChange={(e) => onChange(Number(e.target.value))}
             disabled={disabled}
-            className="bg-zinc-800 border-zinc-700 text-white max-w-[200px]"
+            className="bg-zinc-800 border-zinc-700 text-white max-w-[150px] h-7 text-xs"
           />
         );
       case 'json':
@@ -73,7 +73,7 @@ function SettingField({ setting, value, onChange, disabled }) {
               }
             }}
             disabled={disabled}
-            className="bg-zinc-800 border-zinc-700 text-white font-mono text-sm"
+            className="bg-zinc-800 border-zinc-700 text-white font-mono text-xs h-7"
           />
         );
       default:
@@ -83,26 +83,26 @@ function SettingField({ setting, value, onChange, disabled }) {
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
             disabled={disabled}
-            className="bg-zinc-800 border-zinc-700 text-white"
+            className="bg-zinc-800 border-zinc-700 text-white h-7 text-xs"
           />
         );
     }
   };
 
   return (
-    <div className="flex items-center justify-between py-4 border-b border-zinc-800 last:border-0">
+    <div className="flex items-center justify-between py-2 border-b border-zinc-800 last:border-0">
       <div className="flex-1">
-        <Label className="text-white font-medium">{setting.key.replace(/_/g, ' ')}</Label>
+        <Label className="text-white font-medium text-xs">{setting.key.replace(/_/g, ' ')}</Label>
         {setting.description && (
-          <p className="text-sm text-zinc-500 mt-0.5">{setting.description}</p>
+          <p className="text-[10px] text-zinc-500 mt-0.5">{setting.description}</p>
         )}
         {setting.is_sensitive && (
-          <Badge className="mt-1 text-[10px] bg-orange-500/20 text-orange-400 border-orange-500/30">
+          <Badge className="mt-0.5 text-[10px] px-1.5 py-px bg-orange-500/20 text-orange-400 border-orange-500/30">
             Sensitive
           </Badge>
         )}
       </div>
-      <div className="ml-4">{renderInput()}</div>
+      <div className="ml-3">{renderInput()}</div>
     </div>
   );
 }
@@ -232,31 +232,32 @@ export default function AdminSettings() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <RefreshCw className="w-8 h-8 text-red-400 animate-spin" />
+        <RefreshCw className="w-5 h-5 text-red-400 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black p-6">
+    <div className="min-h-screen bg-black p-4 space-y-4">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-              <Settings className="w-8 h-8 text-red-400" />
+            <h1 className="text-lg font-bold text-white flex items-center gap-2">
+              <Settings className="w-5 h-5 text-red-400" />
               Platform Settings
             </h1>
-            <p className="text-zinc-400 mt-1">
+            <p className="text-zinc-400 text-xs mt-0.5">
               Configure global platform settings and defaults.
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {hasChanges && (
               <Button
                 onClick={handleReset}
                 variant="outline"
-                className="border-zinc-700 text-zinc-300"
+                size="sm"
+                className="border-zinc-700 text-zinc-300 h-7 text-xs"
               >
                 Reset
               </Button>
@@ -264,12 +265,13 @@ export default function AdminSettings() {
             <Button
               onClick={handleSave}
               disabled={!hasChanges || isSaving || !isSuperAdmin}
-              className="bg-red-500 hover:bg-red-600 text-white"
+              size="sm"
+              className="bg-red-500 hover:bg-red-600 text-white h-7 text-xs"
             >
               {isSaving ? (
-                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                <RefreshCw className="w-3 h-3 mr-1.5 animate-spin" />
               ) : (
-                <Save className="w-4 h-4 mr-2" />
+                <Save className="w-3 h-3 mr-1.5" />
               )}
               Save Changes
             </Button>
@@ -277,9 +279,9 @@ export default function AdminSettings() {
         </div>
 
         {!isSuperAdmin && (
-          <div className="mt-4 p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg flex items-center gap-3">
-            <AlertTriangle className="w-5 h-5 text-orange-400" />
-            <p className="text-sm text-orange-400">
+          <div className="mt-3 p-2 bg-orange-500/10 border border-orange-500/30 rounded-lg flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-orange-400" />
+            <p className="text-xs text-orange-400">
               You have read-only access. Only super admins can modify platform settings.
             </p>
           </div>
@@ -296,19 +298,19 @@ export default function AdminSettings() {
                   key={category.id}
                   value={category.id}
                   className={cn(
-                    'px-6 py-4 rounded-none border-b-2 border-transparent data-[state=active]:border-red-500',
+                    'px-4 py-2 rounded-none border-b-2 border-transparent data-[state=active]:border-red-500',
                     'data-[state=active]:bg-transparent data-[state=active]:text-white',
-                    'text-zinc-400 hover:text-white transition-colors'
+                    'text-zinc-400 hover:text-white transition-colors text-xs'
                   )}
                 >
-                  <category.icon className="w-4 h-4 mr-2" />
+                  <category.icon className="w-3 h-3 mr-1.5" />
                   {category.label}
                 </TabsTrigger>
               ))}
             </TabsList>
           </div>
 
-          <CardContent className="p-6">
+          <CardContent className="p-4">
             {SETTING_CATEGORIES.map((category) => (
               <TabsContent key={category.id} value={category.id} className="m-0">
                 <SettingsCategory
@@ -329,18 +331,18 @@ export default function AdminSettings() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="fixed bottom-6 right-6 bg-zinc-900 border border-zinc-700 rounded-lg p-4 shadow-2xl"
+          className="fixed bottom-4 right-4 bg-zinc-900 border border-zinc-700 rounded-lg p-3 shadow-2xl"
         >
-          <div className="flex items-center gap-3">
-            <AlertTriangle className="w-5 h-5 text-orange-400" />
-            <span className="text-white">You have unsaved changes</span>
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-orange-400" />
+            <span className="text-white text-xs">You have unsaved changes</span>
             <Button
               onClick={handleSave}
               size="sm"
               disabled={!isSuperAdmin || isSaving}
-              className="bg-red-500 hover:bg-red-600 text-white ml-2"
+              className="bg-red-500 hover:bg-red-600 text-white ml-1 h-6 text-xs px-2"
             >
-              {isSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'Save'}
+              {isSaving ? <RefreshCw className="w-3 h-3 animate-spin" /> : 'Save'}
             </Button>
           </div>
         </motion.div>

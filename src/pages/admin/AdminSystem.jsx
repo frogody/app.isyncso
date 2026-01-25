@@ -79,20 +79,20 @@ function StatusBadge({ status }) {
 function StatCard({ title, value, subtitle, icon: Icon, color, trend }) {
   return (
     <Card className="bg-zinc-900/50 border-zinc-800">
-      <CardContent className="p-6">
+      <CardContent className="p-3">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-zinc-400 mb-1">{title}</p>
-            <h3 className="text-2xl font-bold text-white">{value}</h3>
-            {subtitle && <p className="text-xs text-zinc-500 mt-1">{subtitle}</p>}
+            <p className="text-[10px] text-zinc-400 mb-0.5">{title}</p>
+            <h3 className="text-lg font-bold text-white">{value}</h3>
+            {subtitle && <p className="text-[10px] text-zinc-500 mt-0.5">{subtitle}</p>}
           </div>
           <div
             className={cn(
-              'w-12 h-12 rounded-xl flex items-center justify-center border',
+              'w-8 h-8 rounded-lg flex items-center justify-center border',
               getIconColor(color)
             )}
           >
-            <Icon className="w-6 h-6" />
+            <Icon className="w-4 h-4" />
           </div>
         </div>
       </CardContent>
@@ -104,30 +104,31 @@ function StatCard({ title, value, subtitle, icon: Icon, color, trend }) {
 function HealthCheckCard({ checks, onRunChecks, isRunning }) {
   return (
     <Card className="bg-zinc-900/50 border-zinc-800">
-      <CardHeader className="border-b border-zinc-800">
+      <CardHeader className="border-b border-zinc-800 py-2 px-3">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Activity className="w-5 h-5 text-green-400" />
+            <CardTitle className="text-white flex items-center gap-1.5 text-sm">
+              <Activity className="w-4 h-4 text-green-400" />
               System Health
             </CardTitle>
-            <CardDescription className="text-zinc-500">
+            <CardDescription className="text-zinc-500 text-[10px]">
               Service status and response times
             </CardDescription>
           </div>
           <Button
             onClick={onRunChecks}
             disabled={isRunning}
-            className={BUTTON_STYLES.primary}
+            size="sm"
+            className="bg-red-500 hover:bg-red-600 text-white h-7 text-xs"
           >
-            <RefreshCw className={cn('w-4 h-4 mr-2', isRunning && 'animate-spin')} />
+            <RefreshCw className={cn('w-3 h-3 mr-1.5', isRunning && 'animate-spin')} />
             Run Checks
           </Button>
         </div>
       </CardHeader>
       <CardContent className="p-0">
         {!checks?.length ? (
-          <div className="p-6 text-center text-zinc-500">
+          <div className="p-4 text-center text-zinc-500 text-xs">
             No health checks recorded. Click "Run Checks" to start.
           </div>
         ) : (
@@ -137,29 +138,29 @@ function HealthCheckCard({ checks, onRunChecks, isRunning }) {
                 key={check.check_name || index}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="p-4 flex items-center justify-between hover:bg-zinc-800/30"
+                className="py-2 px-3 flex items-center justify-between hover:bg-zinc-800/30"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <div className={cn(
-                    'w-10 h-10 rounded-lg flex items-center justify-center',
+                    'w-6 h-6 rounded-lg flex items-center justify-center',
                     check.status === 'healthy' && 'bg-green-500/20',
                     check.status === 'degraded' && 'bg-yellow-500/20',
                     check.status === 'down' && 'bg-red-500/20'
                   )}>
-                    {check.status === 'healthy' && <CheckCircle className="w-5 h-5 text-green-400" />}
-                    {check.status === 'degraded' && <AlertTriangle className="w-5 h-5 text-yellow-400" />}
-                    {check.status === 'down' && <XCircle className="w-5 h-5 text-red-400" />}
+                    {check.status === 'healthy' && <CheckCircle className="w-3 h-3 text-green-400" />}
+                    {check.status === 'degraded' && <AlertTriangle className="w-3 h-3 text-yellow-400" />}
+                    {check.status === 'down' && <XCircle className="w-3 h-3 text-red-400" />}
                   </div>
                   <div>
-                    <p className="text-white font-medium">{check.check_name}</p>
-                    <p className="text-xs text-zinc-500">
+                    <p className="text-white text-xs">{check.check_name}</p>
+                    <p className="text-[10px] text-zinc-500">
                       {check.checked_at ? new Date(check.checked_at).toLocaleString() : 'Never'}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
                   {check.response_time_ms && (
-                    <span className="text-sm text-zinc-400">
+                    <span className="text-xs text-zinc-400">
                       {check.response_time_ms}ms
                     </span>
                   )}
@@ -177,7 +178,7 @@ function HealthCheckCard({ checks, onRunChecks, isRunning }) {
 // Database Stats Table
 function DatabaseStatsTable({ tables }) {
   if (!tables?.length) {
-    return <div className="p-6 text-center text-zinc-500">No table statistics available</div>;
+    return <div className="p-4 text-center text-zinc-500 text-xs">No table statistics available</div>;
   }
 
   return (
@@ -185,12 +186,12 @@ function DatabaseStatsTable({ tables }) {
       <table className="w-full">
         <thead>
           <tr className="border-b border-zinc-800">
-            <th className="text-left p-4 text-zinc-400 font-medium">Table</th>
-            <th className="text-left p-4 text-zinc-400 font-medium">Rows</th>
-            <th className="text-left p-4 text-zinc-400 font-medium">Total Size</th>
-            <th className="text-left p-4 text-zinc-400 font-medium">Data Size</th>
-            <th className="text-left p-4 text-zinc-400 font-medium">Index Size</th>
-            <th className="text-left p-4 text-zinc-400 font-medium">Last Vacuum</th>
+            <th className="text-left py-1.5 px-2 text-zinc-400 font-medium text-[10px] uppercase">Table</th>
+            <th className="text-left py-1.5 px-2 text-zinc-400 font-medium text-[10px] uppercase">Rows</th>
+            <th className="text-left py-1.5 px-2 text-zinc-400 font-medium text-[10px] uppercase">Total Size</th>
+            <th className="text-left py-1.5 px-2 text-zinc-400 font-medium text-[10px] uppercase">Data Size</th>
+            <th className="text-left py-1.5 px-2 text-zinc-400 font-medium text-[10px] uppercase">Index Size</th>
+            <th className="text-left py-1.5 px-2 text-zinc-400 font-medium text-[10px] uppercase">Last Vacuum</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-zinc-800">
@@ -200,19 +201,19 @@ function DatabaseStatsTable({ tables }) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: index * 0.02 }}
-              className="hover:bg-zinc-800/50"
+              className="hover:bg-zinc-800/50 h-9"
             >
-              <td className="p-4">
-                <div className="flex items-center gap-2">
-                  <Database className="w-4 h-4 text-purple-400" />
-                  <span className="text-white font-mono text-sm">{table.table_name}</span>
+              <td className="py-1.5 px-2">
+                <div className="flex items-center gap-1.5">
+                  <Database className="w-3 h-3 text-purple-400" />
+                  <span className="text-white font-mono text-xs">{table.table_name}</span>
                 </div>
               </td>
-              <td className="p-4 text-zinc-300">{(table.row_count || 0).toLocaleString()}</td>
-              <td className="p-4 text-zinc-300">{table.total_size}</td>
-              <td className="p-4 text-zinc-400">{table.data_size}</td>
-              <td className="p-4 text-zinc-400">{table.index_size}</td>
-              <td className="p-4 text-zinc-500 text-sm">
+              <td className="py-1.5 px-2 text-zinc-300 text-xs">{(table.row_count || 0).toLocaleString()}</td>
+              <td className="py-1.5 px-2 text-zinc-300 text-xs">{table.total_size}</td>
+              <td className="py-1.5 px-2 text-zinc-400 text-xs">{table.data_size}</td>
+              <td className="py-1.5 px-2 text-zinc-400 text-xs">{table.index_size}</td>
+              <td className="py-1.5 px-2 text-zinc-500 text-xs">
                 {table.last_autovacuum
                   ? new Date(table.last_autovacuum).toLocaleDateString()
                   : 'Never'}
@@ -231,27 +232,27 @@ function ErrorsList({ errors, onResolve, showResolved, onToggleResolved }) {
 
   return (
     <Card className="bg-zinc-900/50 border-zinc-800">
-      <CardHeader className="border-b border-zinc-800">
+      <CardHeader className="border-b border-zinc-800 py-2 px-3">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-white flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-red-400" />
+            <CardTitle className="text-white flex items-center gap-1.5 text-sm">
+              <AlertTriangle className="w-4 h-4 text-red-400" />
               System Errors
             </CardTitle>
-            <CardDescription className="text-zinc-500">
+            <CardDescription className="text-zinc-500 text-[10px]">
               Recent errors and exceptions
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-zinc-400">Show resolved</span>
+            <span className="text-xs text-zinc-400">Show resolved</span>
             <Switch checked={showResolved} onCheckedChange={onToggleResolved} />
           </div>
         </div>
       </CardHeader>
       <CardContent className="p-0">
         {!errors?.length ? (
-          <div className="p-6 text-center text-zinc-500">
-            <CheckCircle className="w-8 h-8 mx-auto mb-2 text-green-400" />
+          <div className="p-4 text-center text-zinc-500 text-xs">
+            <CheckCircle className="w-5 h-5 mx-auto mb-1.5 text-green-400" />
             No errors found
           </div>
         ) : (
@@ -259,38 +260,38 @@ function ErrorsList({ errors, onResolve, showResolved, onToggleResolved }) {
             {errors.map((error) => (
               <div key={error.id} className="hover:bg-zinc-800/30">
                 <div
-                  className="p-4 flex items-center justify-between cursor-pointer"
+                  className="py-2 px-3 flex items-center justify-between cursor-pointer"
                   onClick={() => setExpandedError(expandedError === error.id ? null : error.id)}
                 >
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
                     <div className={cn(
-                      'w-10 h-10 rounded-lg flex items-center justify-center shrink-0',
+                      'w-6 h-6 rounded-lg flex items-center justify-center shrink-0',
                       error.resolved ? 'bg-green-500/20' : 'bg-red-500/20'
                     )}>
                       {error.resolved
-                        ? <CheckCircle className="w-5 h-5 text-green-400" />
-                        : <AlertCircle className="w-5 h-5 text-red-400" />
+                        ? <CheckCircle className="w-3 h-3 text-green-400" />
+                        : <AlertCircle className="w-3 h-3 text-red-400" />
                       }
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <Badge className="bg-zinc-700/50 text-zinc-300 text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <Badge className="bg-zinc-700/50 text-zinc-300 text-[10px] px-1.5 py-px">
                           {error.error_type}
                         </Badge>
                         {error.error_code && (
-                          <Badge className="bg-red-500/20 text-red-400 text-xs">
+                          <Badge className="bg-red-500/20 text-red-400 text-[10px] px-1.5 py-px">
                             {error.error_code}
                           </Badge>
                         )}
                       </div>
-                      <p className="text-white mt-1 truncate">{error.error_message}</p>
-                      <p className="text-xs text-zinc-500 mt-1">
+                      <p className="text-white text-xs mt-0.5 truncate">{error.error_message}</p>
+                      <p className="text-[10px] text-zinc-500 mt-0.5">
                         {new Date(error.created_at).toLocaleString()}
                         {error.user_name && ` - ${error.user_name}`}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 ml-4">
+                  <div className="flex items-center gap-2 ml-2">
                     {!error.resolved && (
                       <Button
                         size="sm"
@@ -299,14 +300,14 @@ function ErrorsList({ errors, onResolve, showResolved, onToggleResolved }) {
                           e.stopPropagation();
                           onResolve(error.id);
                         }}
-                        className="border-green-500/30 text-green-400 hover:bg-green-500/10"
+                        className="border-green-500/30 text-green-400 hover:bg-green-500/10 h-6 text-[10px] px-2"
                       >
                         Resolve
                       </Button>
                     )}
                     {expandedError === error.id
-                      ? <ChevronDown className="w-5 h-5 text-zinc-400" />
-                      : <ChevronRight className="w-5 h-5 text-zinc-400" />
+                      ? <ChevronDown className="w-4 h-4 text-zinc-400" />
+                      : <ChevronRight className="w-4 h-4 text-zinc-400" />
                     }
                   </div>
                 </div>
@@ -319,25 +320,25 @@ function ErrorsList({ errors, onResolve, showResolved, onToggleResolved }) {
                       exit={{ height: 0, opacity: 0 }}
                       className="overflow-hidden"
                     >
-                      <div className="p-4 pt-0 border-t border-zinc-800 bg-zinc-900/50">
+                      <div className="p-3 pt-0 border-t border-zinc-800 bg-zinc-900/50">
                         {error.stack_trace && (
-                          <div className="mb-4">
-                            <p className="text-sm text-zinc-400 mb-2">Stack Trace:</p>
-                            <pre className="bg-black/50 p-3 rounded-lg text-xs text-zinc-300 overflow-x-auto">
+                          <div className="mb-3">
+                            <p className="text-xs text-zinc-400 mb-1.5">Stack Trace:</p>
+                            <pre className="bg-black/50 p-2 rounded-lg text-[10px] text-zinc-300 overflow-x-auto">
                               {error.stack_trace}
                             </pre>
                           </div>
                         )}
                         {error.context && Object.keys(error.context).length > 0 && (
                           <div>
-                            <p className="text-sm text-zinc-400 mb-2">Context:</p>
-                            <pre className="bg-black/50 p-3 rounded-lg text-xs text-zinc-300 overflow-x-auto">
+                            <p className="text-xs text-zinc-400 mb-1.5">Context:</p>
+                            <pre className="bg-black/50 p-2 rounded-lg text-[10px] text-zinc-300 overflow-x-auto">
                               {JSON.stringify(error.context, null, 2)}
                             </pre>
                           </div>
                         )}
                         {error.resolved && (
-                          <p className="text-sm text-green-400 mt-4">
+                          <p className="text-xs text-green-400 mt-3">
                             Resolved on {new Date(error.resolved_at).toLocaleString()}
                           </p>
                         )}
@@ -358,35 +359,35 @@ function ErrorsList({ errors, onResolve, showResolved, onToggleResolved }) {
 function JobsList({ jobs, statusFilter, onStatusFilter }) {
   return (
     <Card className="bg-zinc-900/50 border-zinc-800">
-      <CardHeader className="border-b border-zinc-800">
+      <CardHeader className="border-b border-zinc-800 py-2 px-3">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-white flex items-center gap-2">
-              <Cpu className="w-5 h-5 text-cyan-400" />
+            <CardTitle className="text-white flex items-center gap-1.5 text-sm">
+              <Cpu className="w-4 h-4 text-cyan-400" />
               Background Jobs
             </CardTitle>
-            <CardDescription className="text-zinc-500">
+            <CardDescription className="text-zinc-500 text-[10px]">
               Scheduled and running tasks
             </CardDescription>
           </div>
           <Select value={statusFilter} onValueChange={onStatusFilter}>
-            <SelectTrigger className="w-[150px] bg-zinc-900 border-zinc-700">
+            <SelectTrigger className="w-[120px] bg-zinc-900 border-zinc-700 h-7 text-xs">
               <SelectValue placeholder="All statuses" />
             </SelectTrigger>
             <SelectContent className="bg-zinc-900 border-zinc-700">
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="running">Running</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="failed">Failed</SelectItem>
-              <SelectItem value="cancelled">Cancelled</SelectItem>
+              <SelectItem value="all" className="text-xs">All Statuses</SelectItem>
+              <SelectItem value="pending" className="text-xs">Pending</SelectItem>
+              <SelectItem value="running" className="text-xs">Running</SelectItem>
+              <SelectItem value="completed" className="text-xs">Completed</SelectItem>
+              <SelectItem value="failed" className="text-xs">Failed</SelectItem>
+              <SelectItem value="cancelled" className="text-xs">Cancelled</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </CardHeader>
       <CardContent className="p-0">
         {!jobs?.length ? (
-          <div className="p-6 text-center text-zinc-500">
+          <div className="p-4 text-center text-zinc-500 text-xs">
             No background jobs found
           </div>
         ) : (
@@ -396,49 +397,49 @@ function JobsList({ jobs, statusFilter, onStatusFilter }) {
                 key={job.id}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="p-4 hover:bg-zinc-800/30"
+                className="py-2 px-3 hover:bg-zinc-800/30"
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <div className={cn(
-                      'w-10 h-10 rounded-lg flex items-center justify-center',
+                      'w-6 h-6 rounded-lg flex items-center justify-center',
                       job.status === 'completed' && 'bg-green-500/20',
                       job.status === 'running' && 'bg-cyan-500/20',
                       job.status === 'failed' && 'bg-red-500/20',
                       job.status === 'pending' && 'bg-blue-500/20',
                       job.status === 'cancelled' && 'bg-zinc-500/20'
                     )}>
-                      <Terminal className="w-5 h-5 text-current" />
+                      <Terminal className="w-3 h-3 text-current" />
                     </div>
                     <div>
-                      <p className="text-white font-medium">{job.job_name}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge className="bg-zinc-700/50 text-zinc-300 text-xs">
+                      <p className="text-white text-xs">{job.job_name}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <Badge className="bg-zinc-700/50 text-zinc-300 text-[10px] px-1.5 py-px">
                           {job.job_type}
                         </Badge>
                         {job.created_by_name && (
-                          <span className="text-xs text-zinc-500">
+                          <span className="text-[10px] text-zinc-500">
                             by {job.created_by_name}
                           </span>
                         )}
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
                     {job.status === 'running' && (
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 h-2 bg-zinc-800 rounded-full overflow-hidden">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-16 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
                           <div
                             className="h-full bg-cyan-500 transition-all"
                             style={{ width: `${job.progress}%` }}
                           />
                         </div>
-                        <span className="text-xs text-zinc-400">{job.progress}%</span>
+                        <span className="text-[10px] text-zinc-400">{job.progress}%</span>
                       </div>
                     )}
                     <div className="text-right">
                       <StatusBadge status={job.status} />
-                      <p className="text-xs text-zinc-500 mt-1">
+                      <p className="text-[10px] text-zinc-500 mt-0.5">
                         {job.completed_at
                           ? new Date(job.completed_at).toLocaleString()
                           : job.started_at
@@ -450,7 +451,7 @@ function JobsList({ jobs, statusFilter, onStatusFilter }) {
                   </div>
                 </div>
                 {job.error_message && (
-                  <div className="mt-3 p-2 bg-red-500/10 border border-red-500/20 rounded text-sm text-red-400">
+                  <div className="mt-2 p-1.5 bg-red-500/10 border border-red-500/20 rounded text-[10px] text-red-400">
                     {job.error_message}
                   </div>
                 )}
@@ -467,31 +468,31 @@ function JobsList({ jobs, statusFilter, onStatusFilter }) {
 function APIStatsCard({ stats }) {
   return (
     <Card className="bg-zinc-900/50 border-zinc-800">
-      <CardHeader className="border-b border-zinc-800">
-        <CardTitle className="text-white flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 text-orange-400" />
+      <CardHeader className="border-b border-zinc-800 py-2 px-3">
+        <CardTitle className="text-white flex items-center gap-1.5 text-sm">
+          <BarChart3 className="w-4 h-4 text-orange-400" />
           API Usage (Last 24h)
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-6">
+      <CardContent className="p-3">
         {!stats ? (
-          <div className="text-center text-zinc-500">No API stats available</div>
+          <div className="text-center text-zinc-500 text-xs">No API stats available</div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-3">
             <div className="text-center">
-              <p className="text-4xl font-bold text-white">
+              <p className="text-2xl font-bold text-white">
                 {(stats.total_requests_24h || 0).toLocaleString()}
               </p>
-              <p className="text-sm text-zinc-400">Total Requests</p>
+              <p className="text-[10px] text-zinc-400">Total Requests</p>
             </div>
 
             <div>
-              <p className="text-sm text-zinc-400 mb-3">Top Actions</p>
-              <div className="space-y-2">
+              <p className="text-xs text-zinc-400 mb-2">Top Actions</p>
+              <div className="space-y-1.5">
                 {stats.requests_by_action?.map((item, index) => (
                   <div key={item.action} className="flex items-center justify-between">
-                    <span className="text-sm text-zinc-300">{item.action}</span>
-                    <Badge className="bg-orange-500/20 text-orange-400">
+                    <span className="text-xs text-zinc-300">{item.action}</span>
+                    <Badge className="bg-orange-500/20 text-orange-400 text-[10px] px-1.5 py-px">
                       {item.count}
                     </Badge>
                   </div>
@@ -501,12 +502,12 @@ function APIStatsCard({ stats }) {
 
             {stats.requests_by_admin?.length > 0 && (
               <div>
-                <p className="text-sm text-zinc-400 mb-3">Top Admins</p>
-                <div className="space-y-2">
+                <p className="text-xs text-zinc-400 mb-2">Top Admins</p>
+                <div className="space-y-1.5">
                   {stats.requests_by_admin.map((item, index) => (
                     <div key={item.admin || index} className="flex items-center justify-between">
-                      <span className="text-sm text-zinc-300">{item.admin || 'Unknown'}</span>
-                      <Badge className="bg-purple-500/20 text-purple-400">
+                      <span className="text-xs text-zinc-300">{item.admin || 'Unknown'}</span>
+                      <Badge className="bg-purple-500/20 text-purple-400 text-[10px] px-1.5 py-px">
                         {item.count}
                       </Badge>
                     </div>
@@ -681,29 +682,30 @@ export default function AdminSystem() {
     : 'degraded';
 
   return (
-    <div className="min-h-screen bg-black p-6">
+    <div className="min-h-screen bg-black p-4 space-y-4">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white">System Administration</h1>
-            <p className="text-zinc-400 mt-1">
+            <h1 className="text-lg font-bold text-white">System Administration</h1>
+            <p className="text-zinc-400 text-xs mt-0.5">
               Monitor system health, errors, and background jobs
             </p>
           </div>
           <Button
             onClick={fetchData}
             variant="outline"
-            className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+            size="sm"
+            className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 h-7 text-xs"
           >
-            <RefreshCw className={cn('w-4 h-4 mr-2', isLoading && 'animate-spin')} />
+            <RefreshCw className={cn('w-3 h-3 mr-1.5', isLoading && 'animate-spin')} />
             Refresh
           </Button>
         </div>
       </div>
 
       {/* Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         <StatCard
           title="System Status"
           value={systemHealth === 'healthy' ? 'Operational' : systemHealth === 'down' ? 'Down' : 'Degraded'}
@@ -735,21 +737,21 @@ export default function AdminSystem() {
       </div>
 
       {/* Main Content */}
-      <Tabs defaultValue="health" className="space-y-6">
+      <Tabs defaultValue="health" className="space-y-4">
         <TabsList className="bg-zinc-900 border border-zinc-800">
-          <TabsTrigger value="health" className="data-[state=active]:bg-green-500/20 data-[state=active]:text-green-400">
+          <TabsTrigger value="health" className="data-[state=active]:bg-green-500/20 data-[state=active]:text-green-400 text-xs">
             Health Checks
           </TabsTrigger>
-          <TabsTrigger value="database" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400">
+          <TabsTrigger value="database" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400 text-xs">
             Database Stats
           </TabsTrigger>
-          <TabsTrigger value="errors" className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400">
+          <TabsTrigger value="errors" className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400 text-xs">
             Errors
           </TabsTrigger>
-          <TabsTrigger value="jobs" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400">
+          <TabsTrigger value="jobs" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400 text-xs">
             Background Jobs
           </TabsTrigger>
-          <TabsTrigger value="api" className="data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-400">
+          <TabsTrigger value="api" className="data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-400 text-xs">
             API Stats
           </TabsTrigger>
         </TabsList>
@@ -764,19 +766,19 @@ export default function AdminSystem() {
 
         <TabsContent value="database">
           <Card className="bg-zinc-900/50 border-zinc-800">
-            <CardHeader className="border-b border-zinc-800">
-              <CardTitle className="text-white flex items-center gap-2">
-                <Database className="w-5 h-5 text-purple-400" />
+            <CardHeader className="border-b border-zinc-800 py-2 px-3">
+              <CardTitle className="text-white flex items-center gap-1.5 text-sm">
+                <Database className="w-4 h-4 text-purple-400" />
                 Database Table Statistics
               </CardTitle>
-              <CardDescription className="text-zinc-500">
+              <CardDescription className="text-zinc-500 text-[10px]">
                 Row counts, sizes, and maintenance status
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               {isLoading ? (
-                <div className="p-6 flex justify-center">
-                  <RefreshCw className="w-6 h-6 text-zinc-400 animate-spin" />
+                <div className="p-4 flex justify-center">
+                  <RefreshCw className="w-4 h-4 text-zinc-400 animate-spin" />
                 </div>
               ) : (
                 <DatabaseStatsTable tables={tables} />
@@ -787,8 +789,8 @@ export default function AdminSystem() {
 
         <TabsContent value="errors">
           {isLoading ? (
-            <div className="p-6 flex justify-center">
-              <RefreshCw className="w-6 h-6 text-zinc-400 animate-spin" />
+            <div className="p-4 flex justify-center">
+              <RefreshCw className="w-4 h-4 text-zinc-400 animate-spin" />
             </div>
           ) : (
             <ErrorsList
@@ -802,8 +804,8 @@ export default function AdminSystem() {
 
         <TabsContent value="jobs">
           {isLoading ? (
-            <div className="p-6 flex justify-center">
-              <RefreshCw className="w-6 h-6 text-zinc-400 animate-spin" />
+            <div className="p-4 flex justify-center">
+              <RefreshCw className="w-4 h-4 text-zinc-400 animate-spin" />
             </div>
           ) : (
             <JobsList
@@ -816,8 +818,8 @@ export default function AdminSystem() {
 
         <TabsContent value="api">
           {isLoading ? (
-            <div className="p-6 flex justify-center">
-              <RefreshCw className="w-6 h-6 text-zinc-400 animate-spin" />
+            <div className="p-4 flex justify-center">
+              <RefreshCw className="w-4 h-4 text-zinc-400 animate-spin" />
             </div>
           ) : (
             <APIStatsCard stats={apiStats} />

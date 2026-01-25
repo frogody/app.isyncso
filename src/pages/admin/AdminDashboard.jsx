@@ -32,37 +32,37 @@ const ADMIN_API_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-a
 function StatCard({ title, value, change, changeType, icon: Icon, color }) {
   return (
     <Card className="bg-zinc-900/50 border-zinc-800">
-      <CardContent className="p-6">
+      <CardContent className="p-3">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-zinc-400 mb-1">{title}</p>
-            <h3 className="text-3xl font-bold text-white">{value}</h3>
+            <p className="text-[10px] text-zinc-400 mb-0.5">{title}</p>
+            <h3 className="text-lg font-bold text-white">{value}</h3>
             {change && (
-              <div className="flex items-center gap-1 mt-2">
+              <div className="flex items-center gap-1 mt-1">
                 {changeType === 'increase' ? (
-                  <TrendingUp className="w-4 h-4 text-green-400" />
+                  <TrendingUp className="w-3 h-3 text-green-400" />
                 ) : (
-                  <TrendingDown className="w-4 h-4 text-red-400" />
+                  <TrendingDown className="w-3 h-3 text-red-400" />
                 )}
                 <span
                   className={cn(
-                    'text-sm',
+                    'text-[10px]',
                     changeType === 'increase' ? 'text-green-400' : 'text-red-400'
                   )}
                 >
                   {change}
                 </span>
-                <span className="text-sm text-zinc-500">vs last month</span>
+                <span className="text-[10px] text-zinc-500">vs last month</span>
               </div>
             )}
           </div>
           <div
             className={cn(
-              'w-12 h-12 rounded-xl flex items-center justify-center border',
+              'w-8 h-8 rounded-lg flex items-center justify-center border',
               getIconColor(color)
             )}
           >
-            <Icon className="w-6 h-6" />
+            <Icon className="w-4 h-4" />
           </div>
         </div>
       </CardContent>
@@ -73,32 +73,32 @@ function StatCard({ title, value, change, changeType, icon: Icon, color }) {
 function RecentActivity({ activities, isLoading }) {
   const getActivityIcon = (action) => {
     if (action.includes('create') || action.includes('insert')) {
-      return <CheckCircle className="w-4 h-4 text-green-400" />;
+      return <CheckCircle className="w-3 h-3 text-green-400" />;
     }
     if (action.includes('delete') || action.includes('remove')) {
-      return <AlertCircle className="w-4 h-4 text-red-400" />;
+      return <AlertCircle className="w-3 h-3 text-red-400" />;
     }
     if (action.includes('update') || action.includes('edit')) {
-      return <RefreshCw className="w-4 h-4 text-blue-400" />;
+      return <RefreshCw className="w-3 h-3 text-blue-400" />;
     }
-    return <Activity className="w-4 h-4 text-zinc-400" />;
+    return <Activity className="w-3 h-3 text-zinc-400" />;
   };
 
   return (
     <Card className="bg-zinc-900/50 border-zinc-800">
-      <CardHeader className="border-b border-zinc-800">
-        <CardTitle className="text-white flex items-center gap-2">
-          <Clock className="w-5 h-5 text-red-400" />
+      <CardHeader className="border-b border-zinc-800 py-2 px-3">
+        <CardTitle className="text-white flex items-center gap-1.5 text-sm">
+          <Clock className="w-4 h-4 text-red-400" />
           Recent Activity
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         {isLoading ? (
-          <div className="p-6 text-center">
-            <RefreshCw className="w-6 h-6 text-zinc-400 animate-spin mx-auto" />
+          <div className="p-4 text-center">
+            <RefreshCw className="w-4 h-4 text-zinc-400 animate-spin mx-auto" />
           </div>
         ) : activities.length === 0 ? (
-          <div className="p-6 text-center text-zinc-500">No recent activity</div>
+          <div className="p-4 text-center text-zinc-500 text-xs">No recent activity</div>
         ) : (
           <div className="divide-y divide-zinc-800">
             {activities.map((activity, index) => (
@@ -107,23 +107,23 @@ function RecentActivity({ activities, isLoading }) {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className="p-4 hover:bg-zinc-800/30 transition-colors"
+                className="py-2 px-3 hover:bg-zinc-800/30 transition-colors"
               >
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-2">
                   <div className="mt-0.5">{getActivityIcon(activity.action)}</div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-white">
+                    <p className="text-xs text-white">
                       <span className="font-medium">{activity.admin_email || 'Admin'}</span>{' '}
                       <span className="text-zinc-400">{activity.action}</span>
                     </p>
                     {activity.details && (
-                      <p className="text-xs text-zinc-500 mt-1 truncate">
+                      <p className="text-[10px] text-zinc-500 mt-0.5 truncate">
                         {typeof activity.details === 'object'
                           ? JSON.stringify(activity.details)
                           : activity.details}
                       </p>
                     )}
-                    <p className="text-xs text-zinc-600 mt-1">
+                    <p className="text-[10px] text-zinc-600 mt-0.5">
                       {new Date(activity.created_at).toLocaleString()}
                     </p>
                   </div>
@@ -147,21 +147,21 @@ function QuickActions() {
 
   return (
     <Card className="bg-zinc-900/50 border-zinc-800">
-      <CardHeader className="border-b border-zinc-800">
-        <CardTitle className="text-white">Quick Actions</CardTitle>
+      <CardHeader className="border-b border-zinc-800 py-2 px-3">
+        <CardTitle className="text-white text-sm">Quick Actions</CardTitle>
       </CardHeader>
-      <CardContent className="p-4">
-        <div className="grid grid-cols-2 gap-3">
+      <CardContent className="p-2">
+        <div className="grid grid-cols-2 gap-2">
           {actions.map((action) => (
             <a key={action.href} href={action.href}>
               <motion.div
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="flex items-center gap-3 p-3 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 border border-zinc-700/50 hover:border-red-500/30 transition-all"
+                className="flex items-center gap-2 p-2 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 border border-zinc-700/50 hover:border-red-500/30 transition-all"
               >
-                <action.icon className="w-5 h-5 text-red-400" />
-                <span className="text-sm text-white">{action.label}</span>
-                <ArrowUpRight className="w-4 h-4 text-zinc-500 ml-auto" />
+                <action.icon className="w-3.5 h-3.5 text-red-400" />
+                <span className="text-xs text-white">{action.label}</span>
+                <ArrowUpRight className="w-3 h-3 text-zinc-500 ml-auto" />
               </motion.div>
             </a>
           ))}
@@ -252,29 +252,30 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-black p-6 space-y-6">
+    <div className="min-h-screen bg-black p-4 space-y-4">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
-            <p className="text-zinc-400 mt-1">
+            <h1 className="text-lg font-bold text-white">Admin Dashboard</h1>
+            <p className="text-zinc-400 text-xs mt-0.5">
               Welcome back. Here's what's happening on the platform.
             </p>
           </div>
           <Button
             onClick={fetchDashboardData}
             variant="outline"
-            className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+            size="sm"
+            className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 h-7 text-xs"
           >
-            <RefreshCw className={cn('w-4 h-4 mr-2', isLoading && 'animate-spin')} />
+            <RefreshCw className={cn('w-3 h-3 mr-1.5', isLoading && 'animate-spin')} />
             Refresh
           </Button>
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         <StatCard
           title="Total Users"
           value={stats.totalUsers.toLocaleString()}
@@ -310,7 +311,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Recent Activity - Takes 2 columns */}
         <div className="lg:col-span-2">
           <RecentActivity activities={activities} isLoading={isLoading} />
@@ -321,29 +322,29 @@ export default function AdminDashboard() {
           <QuickActions />
 
           {/* Admin Info Card */}
-          <Card className="bg-zinc-900/50 border-zinc-800 mt-6">
-            <CardHeader className="border-b border-zinc-800">
-              <CardTitle className="text-white flex items-center gap-2">
-                <Shield className="w-5 h-5 text-red-400" />
+          <Card className="bg-zinc-900/50 border-zinc-800 mt-3">
+            <CardHeader className="border-b border-zinc-800 py-2 px-3">
+              <CardTitle className="text-white flex items-center gap-1.5 text-sm">
+                <Shield className="w-4 h-4 text-red-400" />
                 Your Admin Profile
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 space-y-3">
+            <CardContent className="p-3 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-zinc-400">Role</span>
-                <Badge className="bg-red-500/20 text-red-400 border-red-500/30">
+                <span className="text-xs text-zinc-400">Role</span>
+                <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-[10px] px-1.5 py-px">
                   {adminRole?.replace('_', ' ')}
                 </Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-zinc-400">Status</span>
-                <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                <span className="text-xs text-zinc-400">Status</span>
+                <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-[10px] px-1.5 py-px">
                   Active
                 </Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-zinc-400">Last Login</span>
-                <span className="text-sm text-white">
+                <span className="text-xs text-zinc-400">Last Login</span>
+                <span className="text-xs text-white">
                   {adminData?.last_login
                     ? new Date(adminData.last_login).toLocaleDateString()
                     : 'Today'}

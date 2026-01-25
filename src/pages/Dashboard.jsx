@@ -493,14 +493,14 @@ export default function Dashboard() {
   
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-4 sm:p-6">
-        <div className="space-y-4 sm:space-y-6">
-          <Skeleton className="h-16 sm:h-20 w-full bg-zinc-800 rounded-xl sm:rounded-2xl" />
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            {[1,2,3,4].map(i => <Skeleton key={i} className="h-24 sm:h-28 bg-zinc-800 rounded-xl sm:rounded-2xl" />)}
+      <div className="min-h-screen bg-black p-3 sm:p-4">
+        <div className="space-y-3 sm:space-y-4">
+          <Skeleton className="h-14 sm:h-16 w-full bg-zinc-800 rounded-xl sm:rounded-2xl" />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+            {[1,2,3,4].map(i => <Skeleton key={i} className="h-20 sm:h-24 bg-zinc-800 rounded-xl sm:rounded-2xl" />)}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {[1,2,3].map(i => <Skeleton key={i} className="h-56 sm:h-72 bg-zinc-800 rounded-xl sm:rounded-2xl" />)}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            {[1,2,3].map(i => <Skeleton key={i} className="h-48 sm:h-56 bg-zinc-800 rounded-xl sm:rounded-2xl" />)}
           </div>
         </div>
       </div>
@@ -649,7 +649,7 @@ export default function Dashboard() {
         <div className="absolute bottom-40 right-1/4 w-80 h-80 bg-indigo-900/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 px-4 sm:px-6 py-4 sm:py-6 lg:py-8 space-y-4 sm:space-y-6">
+      <div className="relative z-10 px-3 sm:px-4 py-3 sm:py-4 space-y-3 sm:space-y-4">
 
         {/* Welcome Header - Mobile optimized */}
         <motion.div

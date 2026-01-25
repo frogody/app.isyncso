@@ -81,44 +81,44 @@ function LogRow({ log, onViewDetails }) {
     <motion.tr
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="border-b border-zinc-800 hover:bg-zinc-800/30 transition-colors"
+      className="border-b border-zinc-800 hover:bg-zinc-800/30 transition-colors h-9"
     >
-      <td className="px-4 py-3">
-        <span className="text-sm text-zinc-400">
+      <td className="px-2 py-1.5">
+        <span className="text-xs text-zinc-400">
           {new Date(log.created_at).toLocaleString()}
         </span>
       </td>
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-2">
-          <User className="w-4 h-4 text-zinc-500" />
-          <span className="text-sm text-white">
+      <td className="px-2 py-1.5">
+        <div className="flex items-center gap-1.5">
+          <User className="w-3 h-3 text-zinc-500" />
+          <span className="text-xs text-white">
             {log.admin_email || log.admin_id?.slice(0, 8) || 'System'}
           </span>
         </div>
       </td>
-      <td className="px-4 py-3">
-        <Badge className={cn('text-xs', getActionColor(log.action))}>
+      <td className="px-2 py-1.5">
+        <Badge className={cn('text-[10px] px-1.5 py-px', getActionColor(log.action))}>
           {log.action.replace(/_/g, ' ')}
         </Badge>
       </td>
-      <td className="px-4 py-3">
-        <span className="text-sm text-zinc-400">
+      <td className="px-2 py-1.5">
+        <span className="text-xs text-zinc-400">
           {log.resource_type?.replace(/_/g, ' ') || '-'}
         </span>
       </td>
-      <td className="px-4 py-3">
-        <span className="text-sm text-zinc-500 font-mono">
+      <td className="px-2 py-1.5">
+        <span className="text-xs text-zinc-500 font-mono">
           {log.resource_id?.slice(0, 8) || '-'}
         </span>
       </td>
-      <td className="px-4 py-3">
+      <td className="px-2 py-1.5">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => onViewDetails(log)}
-          className="text-zinc-400 hover:text-white"
+          className="text-zinc-400 hover:text-white h-6 w-6 p-0"
         >
-          <Eye className="w-4 h-4" />
+          <Eye className="w-3 h-3" />
         </Button>
       </td>
     </motion.tr>
@@ -130,48 +130,48 @@ function LogDetailsModal({ log, isOpen, onClose }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-zinc-900 border-zinc-800 max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="text-white flex items-center gap-2">
-            <Activity className="w-5 h-5 text-red-400" />
+      <DialogContent compact className="bg-zinc-900 border-zinc-800 max-w-2xl">
+        <DialogHeader compact>
+          <DialogTitle compact className="text-white flex items-center gap-1.5">
+            <Activity className="w-4 h-4 text-red-400" />
             Audit Log Details
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-3 py-2">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-zinc-500 uppercase">Timestamp</label>
-              <p className="text-white">{new Date(log.created_at).toLocaleString()}</p>
+              <label className="text-[10px] text-zinc-500 uppercase">Timestamp</label>
+              <p className="text-white text-xs">{new Date(log.created_at).toLocaleString()}</p>
             </div>
             <div>
-              <label className="text-xs text-zinc-500 uppercase">Admin</label>
-              <p className="text-white">{log.admin_email || log.admin_id || 'System'}</p>
+              <label className="text-[10px] text-zinc-500 uppercase">Admin</label>
+              <p className="text-white text-xs">{log.admin_email || log.admin_id || 'System'}</p>
             </div>
             <div>
-              <label className="text-xs text-zinc-500 uppercase">Action</label>
-              <Badge className={cn('mt-1', getActionColor(log.action))}>
+              <label className="text-[10px] text-zinc-500 uppercase">Action</label>
+              <Badge className={cn('mt-0.5 text-[10px] px-1.5 py-px', getActionColor(log.action))}>
                 {log.action.replace(/_/g, ' ')}
               </Badge>
             </div>
             <div>
-              <label className="text-xs text-zinc-500 uppercase">Resource Type</label>
-              <p className="text-white">{log.resource_type?.replace(/_/g, ' ') || '-'}</p>
+              <label className="text-[10px] text-zinc-500 uppercase">Resource Type</label>
+              <p className="text-white text-xs">{log.resource_type?.replace(/_/g, ' ') || '-'}</p>
             </div>
             <div>
-              <label className="text-xs text-zinc-500 uppercase">Resource ID</label>
-              <p className="text-white font-mono text-sm">{log.resource_id || '-'}</p>
+              <label className="text-[10px] text-zinc-500 uppercase">Resource ID</label>
+              <p className="text-white font-mono text-xs">{log.resource_id || '-'}</p>
             </div>
             <div>
-              <label className="text-xs text-zinc-500 uppercase">IP Address</label>
-              <p className="text-white font-mono text-sm">{log.ip_address || '-'}</p>
+              <label className="text-[10px] text-zinc-500 uppercase">IP Address</label>
+              <p className="text-white font-mono text-xs">{log.ip_address || '-'}</p>
             </div>
           </div>
 
           {log.details && Object.keys(log.details).length > 0 && (
             <div>
-              <label className="text-xs text-zinc-500 uppercase block mb-2">Details</label>
-              <pre className="bg-zinc-950 border border-zinc-800 rounded-lg p-4 text-sm text-zinc-300 overflow-auto max-h-60">
+              <label className="text-[10px] text-zinc-500 uppercase block mb-1">Details</label>
+              <pre className="bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-xs text-zinc-300 overflow-auto max-h-48">
                 {JSON.stringify(log.details, null, 2)}
               </pre>
             </div>
@@ -179,8 +179,8 @@ function LogDetailsModal({ log, isOpen, onClose }) {
 
           {log.previous_value && (
             <div>
-              <label className="text-xs text-zinc-500 uppercase block mb-2">Previous Value</label>
-              <pre className="bg-zinc-950 border border-zinc-800 rounded-lg p-4 text-sm text-red-400/70 overflow-auto max-h-40">
+              <label className="text-[10px] text-zinc-500 uppercase block mb-1">Previous Value</label>
+              <pre className="bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-xs text-red-400/70 overflow-auto max-h-32">
                 {JSON.stringify(log.previous_value, null, 2)}
               </pre>
             </div>
@@ -188,8 +188,8 @@ function LogDetailsModal({ log, isOpen, onClose }) {
 
           {log.new_value && (
             <div>
-              <label className="text-xs text-zinc-500 uppercase block mb-2">New Value</label>
-              <pre className="bg-zinc-950 border border-zinc-800 rounded-lg p-4 text-sm text-green-400/70 overflow-auto max-h-40">
+              <label className="text-[10px] text-zinc-500 uppercase block mb-1">New Value</label>
+              <pre className="bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-xs text-green-400/70 overflow-auto max-h-32">
                 {JSON.stringify(log.new_value, null, 2)}
               </pre>
             </div>
@@ -288,34 +288,36 @@ export default function AdminAuditLogs() {
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   return (
-    <div className="min-h-screen bg-black p-6">
+    <div className="min-h-screen bg-black p-4 space-y-4">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-              <ScrollText className="w-8 h-8 text-red-400" />
+            <h1 className="text-lg font-bold text-white flex items-center gap-2">
+              <ScrollText className="w-5 h-5 text-red-400" />
               Audit Logs
             </h1>
-            <p className="text-zinc-400 mt-1">
+            <p className="text-zinc-400 text-xs mt-0.5">
               Track all administrative actions on the platform.
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Button
               onClick={fetchLogs}
               variant="outline"
-              className="border-zinc-700 text-zinc-300"
+              size="sm"
+              className="border-zinc-700 text-zinc-300 h-7 text-xs"
             >
-              <RefreshCw className={cn('w-4 h-4 mr-2', isLoading && 'animate-spin')} />
+              <RefreshCw className={cn('w-3 h-3 mr-1.5', isLoading && 'animate-spin')} />
               Refresh
             </Button>
             <Button
               onClick={handleExport}
               variant="outline"
-              className="border-zinc-700 text-zinc-300"
+              size="sm"
+              className="border-zinc-700 text-zinc-300 h-7 text-xs"
             >
-              <Download className="w-4 h-4 mr-2" />
+              <Download className="w-3 h-3 mr-1.5" />
               Export CSV
             </Button>
           </div>
@@ -323,11 +325,11 @@ export default function AdminAuditLogs() {
       </div>
 
       {/* Filters */}
-      <Card className="bg-zinc-900/50 border-zinc-800 mb-6">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-4">
+      <Card className="bg-zinc-900/50 border-zinc-800">
+        <CardContent className="p-2">
+          <div className="flex items-center gap-2">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" />
               <Input
                 value={searchQuery}
                 onChange={(e) => {
@@ -335,7 +337,7 @@ export default function AdminAuditLogs() {
                   setPage(0);
                 }}
                 placeholder="Search by action or admin..."
-                className="pl-10 bg-zinc-800 border-zinc-700 text-white"
+                className="pl-8 bg-zinc-800 border-zinc-700 text-white h-7 text-xs"
               />
             </div>
             <Select
@@ -345,8 +347,8 @@ export default function AdminAuditLogs() {
                 setPage(0);
               }}
             >
-              <SelectTrigger className="w-[200px] bg-zinc-800 border-zinc-700 text-white">
-                <Filter className="w-4 h-4 mr-2" />
+              <SelectTrigger className="w-[160px] bg-zinc-800 border-zinc-700 text-white h-7 text-xs">
+                <Filter className="w-3 h-3 mr-1.5" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-zinc-900 border-zinc-800">
@@ -354,7 +356,7 @@ export default function AdminAuditLogs() {
                   <SelectItem
                     key={type.value}
                     value={type.value}
-                    className="text-white hover:bg-zinc-800"
+                    className="text-white hover:bg-zinc-800 text-xs"
                   >
                     {type.label}
                   </SelectItem>
@@ -371,22 +373,22 @@ export default function AdminAuditLogs() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-zinc-800 bg-zinc-900/50">
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">
+                <th className="px-2 py-2 text-left text-[10px] font-medium text-zinc-500 uppercase">
                   Timestamp
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">
+                <th className="px-2 py-2 text-left text-[10px] font-medium text-zinc-500 uppercase">
                   Admin
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">
+                <th className="px-2 py-2 text-left text-[10px] font-medium text-zinc-500 uppercase">
                   Action
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">
+                <th className="px-2 py-2 text-left text-[10px] font-medium text-zinc-500 uppercase">
                   Resource
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">
+                <th className="px-2 py-2 text-left text-[10px] font-medium text-zinc-500 uppercase">
                   ID
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">
+                <th className="px-2 py-2 text-left text-[10px] font-medium text-zinc-500 uppercase">
                   Details
                 </th>
               </tr>
@@ -394,13 +396,13 @@ export default function AdminAuditLogs() {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center">
-                    <RefreshCw className="w-6 h-6 text-zinc-500 animate-spin mx-auto" />
+                  <td colSpan={6} className="px-2 py-8 text-center">
+                    <RefreshCw className="w-4 h-4 text-zinc-500 animate-spin mx-auto" />
                   </td>
                 </tr>
               ) : logs.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-zinc-500">
+                  <td colSpan={6} className="px-2 py-8 text-center text-zinc-500 text-xs">
                     No audit logs found
                   </td>
                 </tr>
@@ -419,22 +421,22 @@ export default function AdminAuditLogs() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-zinc-800">
-            <span className="text-sm text-zinc-500">
+          <div className="flex items-center justify-between px-2 py-2 border-t border-zinc-800">
+            <span className="text-xs text-zinc-500">
               Showing {page * PAGE_SIZE + 1} -{' '}
               {Math.min((page + 1) * PAGE_SIZE, totalCount)} of {totalCount}
             </span>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0}
-                className="border-zinc-700 text-zinc-300"
+                className="border-zinc-700 text-zinc-300 h-6 w-6 p-0"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-3 h-3" />
               </Button>
-              <span className="text-sm text-zinc-400 px-3">
+              <span className="text-xs text-zinc-400 px-2">
                 Page {page + 1} of {totalPages}
               </span>
               <Button
@@ -442,9 +444,9 @@ export default function AdminAuditLogs() {
                 size="sm"
                 onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
-                className="border-zinc-700 text-zinc-300"
+                className="border-zinc-700 text-zinc-300 h-6 w-6 p-0"
               >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-3 h-3" />
               </Button>
             </div>
           </div>

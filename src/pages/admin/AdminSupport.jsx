@@ -317,7 +317,7 @@ export default function AdminSupport() {
       dismissed: 'archived',
     };
     const mappedStatus = statusMap[status] || status;
-    return <Badge className={cn('text-xs', getStatusColor(mappedStatus))}>{status.replace('_', ' ')}</Badge>;
+    return <Badge className={cn('text-[10px] px-1.5 py-px', getStatusColor(mappedStatus))}>{status.replace('_', ' ')}</Badge>;
   };
 
   const getPriorityBadge = (priority) => {
@@ -327,7 +327,7 @@ export default function AdminSupport() {
       high: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
       urgent: 'bg-red-500/20 text-red-400 border-red-500/30',
     };
-    return <Badge className={cn('text-xs', styles[priority])}>{priority}</Badge>;
+    return <Badge className={cn('text-[10px] px-1.5 py-px', styles[priority])}>{priority}</Badge>;
   };
 
   const getReasonBadge = (reason) => {
@@ -339,7 +339,7 @@ export default function AdminSupport() {
       copyright: 'bg-blue-500/20 text-blue-400',
       other: 'bg-zinc-500/20 text-zinc-400',
     };
-    return <Badge className={cn('text-xs', styles[reason])}>{reason}</Badge>;
+    return <Badge className={cn('text-[10px] px-1.5 py-px', styles[reason])}>{reason}</Badge>;
   };
 
   if (loading) {
@@ -351,80 +351,80 @@ export default function AdminSupport() {
   }
 
   return (
-    <div className="min-h-screen bg-black p-6 space-y-6">
+    <div className="min-h-screen bg-black p-4 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Support & Moderation</h1>
-          <p className="text-zinc-400">Manage tickets, reports, and user flags</p>
+          <h1 className="text-lg font-bold text-white">Support & Moderation</h1>
+          <p className="text-zinc-400 text-xs">Manage tickets, reports, and user flags</p>
         </div>
         <Button
           variant="outline"
           size="sm"
           onClick={handleRefresh}
           disabled={refreshing}
-          className="border-zinc-700"
+          className="border-zinc-700 h-7 text-xs"
         >
-          <RefreshCw className={cn("w-4 h-4 mr-2", refreshing && "animate-spin")} />
+          <RefreshCw className={cn("w-3 h-3 mr-1.5", refreshing && "animate-spin")} />
           Refresh
         </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         <Card className="bg-zinc-900/50 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                <Headphones className="w-5 h-5 text-blue-400" />
-              </div>
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-2xl font-bold text-white">{stats?.open_tickets || 0}</p>
-                <p className="text-xs text-zinc-500">Open Tickets</p>
+                <p className="text-[10px] text-zinc-500 mb-0.5">Open Tickets</p>
+                <p className="text-lg font-bold text-white">{stats?.open_tickets || 0}</p>
+              </div>
+              <div className="w-8 h-8 rounded-lg bg-blue-500/20 border border-blue-500/30 flex items-center justify-center">
+                <Headphones className="w-4 h-4 text-blue-400" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-zinc-900/50 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
-                <Clock className="w-5 h-5 text-green-400" />
-              </div>
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-2xl font-bold text-white">
+                <p className="text-[10px] text-zinc-500 mb-0.5">Avg Response Time</p>
+                <p className="text-lg font-bold text-white">
                   {stats?.avg_response_hours ? `${Math.round(stats.avg_response_hours)}h` : '-'}
                 </p>
-                <p className="text-xs text-zinc-500">Avg Response Time</p>
+              </div>
+              <div className="w-8 h-8 rounded-lg bg-green-500/20 border border-green-500/30 flex items-center justify-center">
+                <Clock className="w-4 h-4 text-green-400" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-zinc-900/50 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-orange-400" />
-              </div>
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-2xl font-bold text-white">{stats?.pending_reports || 0}</p>
-                <p className="text-xs text-zinc-500">Pending Reports</p>
+                <p className="text-[10px] text-zinc-500 mb-0.5">Pending Reports</p>
+                <p className="text-lg font-bold text-white">{stats?.pending_reports || 0}</p>
+              </div>
+              <div className="w-8 h-8 rounded-lg bg-orange-500/20 border border-orange-500/30 flex items-center justify-center">
+                <AlertTriangle className="w-4 h-4 text-orange-400" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-zinc-900/50 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center">
-                <Ban className="w-5 h-5 text-red-400" />
-              </div>
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-2xl font-bold text-white">{stats?.active_bans || 0}</p>
-                <p className="text-xs text-zinc-500">Active Bans</p>
+                <p className="text-[10px] text-zinc-500 mb-0.5">Active Bans</p>
+                <p className="text-lg font-bold text-white">{stats?.active_bans || 0}</p>
+              </div>
+              <div className="w-8 h-8 rounded-lg bg-red-500/20 border border-red-500/30 flex items-center justify-center">
+                <Ban className="w-4 h-4 text-red-400" />
               </div>
             </div>
           </CardContent>
@@ -434,37 +434,37 @@ export default function AdminSupport() {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="bg-zinc-900 border border-zinc-800">
-          <TabsTrigger value="tickets" className="data-[state=active]:bg-zinc-800">
-            <Headphones className="w-4 h-4 mr-2" />
+          <TabsTrigger value="tickets" className="data-[state=active]:bg-zinc-800 text-xs">
+            <Headphones className="w-3 h-3 mr-1.5" />
             Tickets ({ticketsTotal})
           </TabsTrigger>
-          <TabsTrigger value="reports" className="data-[state=active]:bg-zinc-800">
-            <AlertTriangle className="w-4 h-4 mr-2" />
+          <TabsTrigger value="reports" className="data-[state=active]:bg-zinc-800 text-xs">
+            <AlertTriangle className="w-3 h-3 mr-1.5" />
             Reports ({reportsTotal})
           </TabsTrigger>
-          <TabsTrigger value="flags" className="data-[state=active]:bg-zinc-800">
-            <Flag className="w-4 h-4 mr-2" />
+          <TabsTrigger value="flags" className="data-[state=active]:bg-zinc-800 text-xs">
+            <Flag className="w-3 h-3 mr-1.5" />
             User Flags
           </TabsTrigger>
-          <TabsTrigger value="canned" className="data-[state=active]:bg-zinc-800">
-            <MessageSquare className="w-4 h-4 mr-2" />
+          <TabsTrigger value="canned" className="data-[state=active]:bg-zinc-800 text-xs">
+            <MessageSquare className="w-3 h-3 mr-1.5" />
             Canned Responses
           </TabsTrigger>
         </TabsList>
 
         {/* Tickets Tab */}
-        <TabsContent value="tickets" className="mt-4">
+        <TabsContent value="tickets" className="mt-3">
           <Card className="bg-zinc-900/50 border-zinc-800">
-            <CardHeader className="border-b border-zinc-800">
+            <CardHeader className="border-b border-zinc-800 py-3 px-4">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-white">Support Tickets</CardTitle>
+                <CardTitle className="text-white text-sm">Support Tickets</CardTitle>
               </div>
-              <div className="flex gap-3 mt-4">
+              <div className="flex gap-2 mt-3">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-500" />
                   <Input
                     placeholder="Search tickets..."
-                    className="pl-10 bg-zinc-800 border-zinc-700"
+                    className="pl-8 bg-zinc-800 border-zinc-700 h-7 text-xs"
                     value={ticketsFilter.search}
                     onChange={(e) => setTicketsFilter({ ...ticketsFilter, search: e.target.value })}
                   />
@@ -473,7 +473,7 @@ export default function AdminSupport() {
                   value={ticketsFilter.status}
                   onValueChange={(v) => setTicketsFilter({ ...ticketsFilter, status: v })}
                 >
-                  <SelectTrigger className="w-40 bg-zinc-800 border-zinc-700">
+                  <SelectTrigger className="w-32 bg-zinc-800 border-zinc-700 h-7 text-xs">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -489,7 +489,7 @@ export default function AdminSupport() {
                   value={ticketsFilter.priority}
                   onValueChange={(v) => setTicketsFilter({ ...ticketsFilter, priority: v })}
                 >
-                  <SelectTrigger className="w-40 bg-zinc-800 border-zinc-700">
+                  <SelectTrigger className="w-32 bg-zinc-800 border-zinc-700 h-7 text-xs">
                     <SelectValue placeholder="Priority" />
                   </SelectTrigger>
                   <SelectContent>
@@ -507,62 +507,62 @@ export default function AdminSupport() {
                 {tickets.map((ticket) => (
                   <div key={ticket.id}>
                     <div
-                      className="p-4 hover:bg-zinc-800/30 cursor-pointer"
+                      className="py-2 px-3 hover:bg-zinc-800/30 cursor-pointer"
                       onClick={() => toggleTicketExpand(ticket.id)}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <code className="text-xs text-zinc-500">{ticket.ticket_number}</code>
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <code className="text-[10px] text-zinc-500">{ticket.ticket_number}</code>
                             {getStatusBadge(ticket.status)}
                             {getPriorityBadge(ticket.priority)}
                           </div>
-                          <h3 className="text-white font-medium">{ticket.subject}</h3>
-                          <div className="flex items-center gap-4 mt-2 text-xs text-zinc-500">
+                          <h3 className="text-white text-xs font-medium">{ticket.subject}</h3>
+                          <div className="flex items-center gap-3 mt-1 text-[10px] text-zinc-500">
                             <span className="flex items-center gap-1">
-                              <User className="w-3 h-3" />
+                              <User className="w-2.5 h-2.5" />
                               {ticket.user_name || ticket.user_email}
                             </span>
                             {ticket.organization_name && (
                               <span className="flex items-center gap-1">
-                                <Building2 className="w-3 h-3" />
+                                <Building2 className="w-2.5 h-2.5" />
                                 {ticket.organization_name}
                               </span>
                             )}
                             <span className="flex items-center gap-1">
-                              <MessageCircle className="w-3 h-3" />
+                              <MessageCircle className="w-2.5 h-2.5" />
                               {ticket.message_count} messages
                             </span>
                             <span>{new Date(ticket.created_at).toLocaleDateString()}</span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                              <Button variant="ghost" size="sm">
-                                <MoreVertical className="w-4 h-4" />
+                              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                <MoreVertical className="w-3 h-3" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleUpdateTicket(ticket.id, { status: 'in_progress' }); }}>
+                              <DropdownMenuItem className="text-xs" onClick={(e) => { e.stopPropagation(); handleUpdateTicket(ticket.id, { status: 'in_progress' }); }}>
                                 Mark In Progress
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleUpdateTicket(ticket.id, { status: 'resolved' }); }}>
+                              <DropdownMenuItem className="text-xs" onClick={(e) => { e.stopPropagation(); handleUpdateTicket(ticket.id, { status: 'resolved' }); }}>
                                 Mark Resolved
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleUpdateTicket(ticket.id, { priority: 'urgent' }); }}>
+                              <DropdownMenuItem className="text-xs" onClick={(e) => { e.stopPropagation(); handleUpdateTicket(ticket.id, { priority: 'urgent' }); }}>
                                 Set Urgent
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleUpdateTicket(ticket.id, { priority: 'high' }); }}>
+                              <DropdownMenuItem className="text-xs" onClick={(e) => { e.stopPropagation(); handleUpdateTicket(ticket.id, { priority: 'high' }); }}>
                                 Set High Priority
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                           {expandedTicket === ticket.id ? (
-                            <ChevronUp className="w-5 h-5 text-zinc-500" />
+                            <ChevronUp className="w-4 h-4 text-zinc-500" />
                           ) : (
-                            <ChevronDown className="w-5 h-5 text-zinc-500" />
+                            <ChevronDown className="w-4 h-4 text-zinc-500" />
                           )}
                         </div>
                       </div>
@@ -570,39 +570,39 @@ export default function AdminSupport() {
 
                     {/* Expanded Ticket Detail */}
                     {expandedTicket === ticket.id && ticketDetail && (
-                      <div className="bg-zinc-800/30 p-4 border-t border-zinc-700">
-                        <div className="space-y-4">
+                      <div className="bg-zinc-800/30 p-3 border-t border-zinc-700">
+                        <div className="space-y-3">
                           {/* Description */}
                           {ticketDetail.ticket?.description && (
-                            <div className="bg-zinc-900 p-3 rounded-lg">
-                              <p className="text-sm text-zinc-300">{ticketDetail.ticket.description}</p>
+                            <div className="bg-zinc-900 p-2 rounded-lg">
+                              <p className="text-xs text-zinc-300">{ticketDetail.ticket.description}</p>
                             </div>
                           )}
 
                           {/* Messages */}
-                          <div className="space-y-3 max-h-96 overflow-y-auto">
+                          <div className="space-y-2 max-h-72 overflow-y-auto">
                             {ticketDetail.messages?.map((msg) => (
                               <div
                                 key={msg.id}
                                 className={cn(
-                                  "p-3 rounded-lg",
+                                  "p-2 rounded-lg",
                                   msg.is_internal ? "bg-yellow-500/10 border border-yellow-500/30" : "bg-zinc-900"
                                 )}
                               >
-                                <div className="flex items-center gap-2 mb-2">
-                                  <Avatar className="w-6 h-6">
+                                <div className="flex items-center gap-1.5 mb-1">
+                                  <Avatar className="w-5 h-5">
                                     <AvatarImage src={msg.user_avatar} />
-                                    <AvatarFallback className="text-xs">{msg.user_name?.charAt(0) || '?'}</AvatarFallback>
+                                    <AvatarFallback className="text-[9px]">{msg.user_name?.charAt(0) || '?'}</AvatarFallback>
                                   </Avatar>
-                                  <span className="text-sm text-white font-medium">{msg.user_name}</span>
+                                  <span className="text-xs text-white font-medium">{msg.user_name}</span>
                                   {msg.is_internal && (
-                                    <Badge className="text-[10px] bg-yellow-500/20 text-yellow-400">Internal</Badge>
+                                    <Badge className="text-[10px] px-1.5 py-px bg-yellow-500/20 text-yellow-400">Internal</Badge>
                                   )}
-                                  <span className="text-xs text-zinc-500 ml-auto">
+                                  <span className="text-[10px] text-zinc-500 ml-auto">
                                     {new Date(msg.created_at).toLocaleString()}
                                   </span>
                                 </div>
-                                <p className="text-sm text-zinc-300 whitespace-pre-wrap">{msg.message}</p>
+                                <p className="text-xs text-zinc-300 whitespace-pre-wrap">{msg.message}</p>
                               </div>
                             ))}
                           </div>
@@ -611,22 +611,23 @@ export default function AdminSupport() {
                           <div className="flex gap-2">
                             <Button
                               size="sm"
-                              className="bg-red-500 hover:bg-red-600"
+                              className="bg-red-500 hover:bg-red-600 h-7 text-xs"
                               onClick={() => setShowReplyModal(true)}
                             >
-                              <Send className="w-4 h-4 mr-2" />
+                              <Send className="w-3 h-3 mr-1.5" />
                               Reply
                             </Button>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="sm" className="border-zinc-700">
+                                <Button variant="outline" size="sm" className="border-zinc-700 h-7 text-xs">
                                   Use Canned Response
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent className="w-64">
+                              <DropdownMenuContent className="w-56">
                                 {cannedResponses.map((response) => (
                                   <DropdownMenuItem
                                     key={response.id}
+                                    className="text-xs"
                                     onClick={() => {
                                       useCannedResponse(response);
                                       setShowReplyModal(true);
@@ -644,7 +645,7 @@ export default function AdminSupport() {
                   </div>
                 ))}
                 {tickets.length === 0 && (
-                  <div className="p-8 text-center text-zinc-500">
+                  <div className="p-6 text-center text-zinc-500 text-xs">
                     No tickets found
                   </div>
                 )}
@@ -654,16 +655,16 @@ export default function AdminSupport() {
         </TabsContent>
 
         {/* Reports Tab */}
-        <TabsContent value="reports" className="mt-4">
+        <TabsContent value="reports" className="mt-3">
           <Card className="bg-zinc-900/50 border-zinc-800">
-            <CardHeader className="border-b border-zinc-800">
+            <CardHeader className="border-b border-zinc-800 py-3 px-4">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-white">Moderation Reports</CardTitle>
+                <CardTitle className="text-white text-sm">Moderation Reports</CardTitle>
                 <Select
                   value={reportsFilter.status}
                   onValueChange={(v) => setReportsFilter({ status: v })}
                 >
-                  <SelectTrigger className="w-40 bg-zinc-800 border-zinc-700">
+                  <SelectTrigger className="w-32 bg-zinc-800 border-zinc-700 h-7 text-xs">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -680,40 +681,40 @@ export default function AdminSupport() {
               <table className="w-full">
                 <thead className="bg-zinc-800/50">
                   <tr>
-                    <th className="text-left p-4 text-xs font-medium text-zinc-400">Reported User</th>
-                    <th className="text-left p-4 text-xs font-medium text-zinc-400">Reason</th>
-                    <th className="text-left p-4 text-xs font-medium text-zinc-400">Reporter</th>
-                    <th className="text-left p-4 text-xs font-medium text-zinc-400">Status</th>
-                    <th className="text-left p-4 text-xs font-medium text-zinc-400">Date</th>
-                    <th className="text-right p-4 text-xs font-medium text-zinc-400">Actions</th>
+                    <th className="text-left py-2 px-3 text-[10px] font-medium text-zinc-400 uppercase">Reported User</th>
+                    <th className="text-left py-2 px-3 text-[10px] font-medium text-zinc-400 uppercase">Reason</th>
+                    <th className="text-left py-2 px-3 text-[10px] font-medium text-zinc-400 uppercase">Reporter</th>
+                    <th className="text-left py-2 px-3 text-[10px] font-medium text-zinc-400 uppercase">Status</th>
+                    <th className="text-left py-2 px-3 text-[10px] font-medium text-zinc-400 uppercase">Date</th>
+                    <th className="text-right py-2 px-3 text-[10px] font-medium text-zinc-400 uppercase">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {reports.map((report) => (
-                    <tr key={report.id} className="border-t border-zinc-800 hover:bg-zinc-800/30">
-                      <td className="p-4">
+                    <tr key={report.id} className="border-t border-zinc-800 hover:bg-zinc-800/30 h-9">
+                      <td className="py-1.5 px-3">
                         <div>
-                          <p className="text-white font-medium">{report.reported_user_name || 'Unknown'}</p>
-                          <p className="text-xs text-zinc-500">{report.reported_user_email}</p>
+                          <p className="text-white text-xs font-medium">{report.reported_user_name || 'Unknown'}</p>
+                          <p className="text-[10px] text-zinc-500">{report.reported_user_email}</p>
                         </div>
                       </td>
-                      <td className="p-4">
+                      <td className="py-1.5 px-3">
                         {getReasonBadge(report.reason)}
                         {report.description && (
-                          <p className="text-xs text-zinc-500 mt-1 line-clamp-1">{report.description}</p>
+                          <p className="text-[10px] text-zinc-500 mt-0.5 line-clamp-1">{report.description}</p>
                         )}
                       </td>
-                      <td className="p-4 text-sm text-zinc-400">{report.reporter_name || 'Anonymous'}</td>
-                      <td className="p-4">{getStatusBadge(report.status)}</td>
-                      <td className="p-4 text-sm text-zinc-400">
+                      <td className="py-1.5 px-3 text-xs text-zinc-400">{report.reporter_name || 'Anonymous'}</td>
+                      <td className="py-1.5 px-3">{getStatusBadge(report.status)}</td>
+                      <td className="py-1.5 px-3 text-xs text-zinc-400">
                         {new Date(report.created_at).toLocaleDateString()}
                       </td>
-                      <td className="p-4 text-right">
+                      <td className="py-1.5 px-3 text-right">
                         {report.status === 'pending' && (
                           <Button
                             size="sm"
                             variant="outline"
-                            className="border-zinc-700"
+                            className="border-zinc-700 h-6 text-xs"
                             onClick={() => {
                               setSelectedReport(report);
                               setShowResolveModal(true);
@@ -727,7 +728,7 @@ export default function AdminSupport() {
                   ))}
                   {reports.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="p-8 text-center text-zinc-500">
+                      <td colSpan={6} className="p-6 text-center text-zinc-500 text-xs">
                         No reports found
                       </td>
                     </tr>
@@ -739,33 +740,33 @@ export default function AdminSupport() {
         </TabsContent>
 
         {/* User Flags Tab */}
-        <TabsContent value="flags" className="mt-4">
+        <TabsContent value="flags" className="mt-3">
           <Card className="bg-zinc-900/50 border-zinc-800">
-            <CardHeader className="border-b border-zinc-800">
-              <CardTitle className="text-white">User Flags</CardTitle>
+            <CardHeader className="border-b border-zinc-800 py-3 px-4">
+              <CardTitle className="text-white text-sm">User Flags</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <table className="w-full">
                 <thead className="bg-zinc-800/50">
                   <tr>
-                    <th className="text-left p-4 text-xs font-medium text-zinc-400">User</th>
-                    <th className="text-left p-4 text-xs font-medium text-zinc-400">Flag Type</th>
-                    <th className="text-left p-4 text-xs font-medium text-zinc-400">Reason</th>
-                    <th className="text-left p-4 text-xs font-medium text-zinc-400">Flagged By</th>
-                    <th className="text-left p-4 text-xs font-medium text-zinc-400">Status</th>
-                    <th className="text-left p-4 text-xs font-medium text-zinc-400">Date</th>
+                    <th className="text-left py-2 px-3 text-[10px] font-medium text-zinc-400 uppercase">User</th>
+                    <th className="text-left py-2 px-3 text-[10px] font-medium text-zinc-400 uppercase">Flag Type</th>
+                    <th className="text-left py-2 px-3 text-[10px] font-medium text-zinc-400 uppercase">Reason</th>
+                    <th className="text-left py-2 px-3 text-[10px] font-medium text-zinc-400 uppercase">Flagged By</th>
+                    <th className="text-left py-2 px-3 text-[10px] font-medium text-zinc-400 uppercase">Status</th>
+                    <th className="text-left py-2 px-3 text-[10px] font-medium text-zinc-400 uppercase">Date</th>
                   </tr>
                 </thead>
                 <tbody>
                   {userFlags.map((flag) => (
-                    <tr key={flag.id} className="border-t border-zinc-800 hover:bg-zinc-800/30">
-                      <td className="p-4">
-                        <p className="text-white font-medium">{flag.user_name}</p>
-                        <p className="text-xs text-zinc-500">{flag.user_email}</p>
+                    <tr key={flag.id} className="border-t border-zinc-800 hover:bg-zinc-800/30 h-9">
+                      <td className="py-1.5 px-3">
+                        <p className="text-white text-xs font-medium">{flag.user_name}</p>
+                        <p className="text-[10px] text-zinc-500">{flag.user_email}</p>
                       </td>
-                      <td className="p-4">
+                      <td className="py-1.5 px-3">
                         <Badge className={cn(
-                          'text-xs',
+                          'text-[10px] px-1.5 py-px',
                           flag.flag_type === 'vip' ? 'bg-purple-500/20 text-purple-400' :
                           flag.flag_type === 'fraud' ? 'bg-red-500/20 text-red-400' :
                           'bg-yellow-500/20 text-yellow-400'
@@ -773,23 +774,23 @@ export default function AdminSupport() {
                           {flag.flag_type}
                         </Badge>
                       </td>
-                      <td className="p-4 text-sm text-zinc-400">{flag.reason || '-'}</td>
-                      <td className="p-4 text-sm text-zinc-400">{flag.flagged_by_name || 'System'}</td>
-                      <td className="p-4">
+                      <td className="py-1.5 px-3 text-xs text-zinc-400">{flag.reason || '-'}</td>
+                      <td className="py-1.5 px-3 text-xs text-zinc-400">{flag.flagged_by_name || 'System'}</td>
+                      <td className="py-1.5 px-3">
                         {flag.resolved_at ? (
-                          <Badge className="bg-green-500/20 text-green-400 text-xs">Resolved</Badge>
+                          <Badge className="bg-green-500/20 text-green-400 text-[10px] px-1.5 py-px">Resolved</Badge>
                         ) : (
-                          <Badge className="bg-yellow-500/20 text-yellow-400 text-xs">Active</Badge>
+                          <Badge className="bg-yellow-500/20 text-yellow-400 text-[10px] px-1.5 py-px">Active</Badge>
                         )}
                       </td>
-                      <td className="p-4 text-sm text-zinc-400">
+                      <td className="py-1.5 px-3 text-xs text-zinc-400">
                         {new Date(flag.created_at).toLocaleDateString()}
                       </td>
                     </tr>
                   ))}
                   {userFlags.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="p-8 text-center text-zinc-500">
+                      <td colSpan={6} className="p-6 text-center text-zinc-500 text-xs">
                         No user flags found
                       </td>
                     </tr>
@@ -801,24 +802,24 @@ export default function AdminSupport() {
         </TabsContent>
 
         {/* Canned Responses Tab */}
-        <TabsContent value="canned" className="mt-4">
+        <TabsContent value="canned" className="mt-3">
           <Card className="bg-zinc-900/50 border-zinc-800">
-            <CardHeader className="border-b border-zinc-800">
-              <CardTitle className="text-white">Canned Responses</CardTitle>
+            <CardHeader className="border-b border-zinc-800 py-3 px-4">
+              <CardTitle className="text-white text-sm">Canned Responses</CardTitle>
             </CardHeader>
-            <CardContent className="p-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent className="p-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {cannedResponses.map((response) => (
-                  <div key={response.id} className="bg-zinc-800/50 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-white font-medium">{response.name}</h3>
+                  <div key={response.id} className="bg-zinc-800/50 rounded-lg p-3">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <h3 className="text-white text-xs font-medium">{response.name}</h3>
                       {response.category && (
-                        <Badge variant="outline" className="text-xs border-zinc-700">
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-px border-zinc-700">
                           {response.category}
                         </Badge>
                       )}
                     </div>
-                    <p className="text-sm text-zinc-400 line-clamp-3 mb-3">{response.content}</p>
+                    <p className="text-xs text-zinc-400 line-clamp-3 mb-2">{response.content}</p>
                     {response.variables?.length > 0 && (
                       <div className="flex flex-wrap gap-1">
                         {response.variables.map((v) => (
@@ -831,20 +832,20 @@ export default function AdminSupport() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="mt-3"
+                      className="mt-2 h-6 text-xs"
                       onClick={() => {
                         navigator.clipboard.writeText(response.content);
                         toast.success('Copied to clipboard');
                       }}
                     >
-                      <Copy className="w-3 h-3 mr-2" />
+                      <Copy className="w-3 h-3 mr-1.5" />
                       Copy
                     </Button>
                   </div>
                 ))}
               </div>
               {cannedResponses.length === 0 && (
-                <div className="text-center text-zinc-500 py-8">
+                <div className="text-center text-zinc-500 py-6 text-xs">
                   No canned responses found
                 </div>
               )}
@@ -855,15 +856,15 @@ export default function AdminSupport() {
 
       {/* Reply Modal */}
       <Dialog open={showReplyModal} onOpenChange={setShowReplyModal}>
-        <DialogContent className="bg-zinc-900 border-zinc-800">
-          <DialogHeader>
-            <DialogTitle className="text-white">Reply to Ticket</DialogTitle>
+        <DialogContent className="bg-zinc-900 border-zinc-800 p-4">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="text-white text-sm">Reply to Ticket</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label className="text-zinc-400">Message</Label>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-zinc-400 text-xs">Message</Label>
               <Textarea
-                className="bg-zinc-800 border-zinc-700 min-h-[150px]"
+                className="bg-zinc-800 border-zinc-700 min-h-[120px] text-xs"
                 value={replyMessage}
                 onChange={(e) => setReplyMessage(e.target.value)}
                 placeholder="Type your reply..."
@@ -874,14 +875,14 @@ export default function AdminSupport() {
                 checked={isInternalNote}
                 onCheckedChange={setIsInternalNote}
               />
-              <Label className="text-zinc-400">Internal note (not visible to customer)</Label>
+              <Label className="text-zinc-400 text-xs">Internal note (not visible to customer)</Label>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowReplyModal(false)} className="border-zinc-700">
+          <DialogFooter className="pt-2">
+            <Button variant="outline" onClick={() => setShowReplyModal(false)} className="border-zinc-700 h-7 text-xs">
               Cancel
             </Button>
-            <Button className="bg-red-500 hover:bg-red-600" onClick={handleSendReply} disabled={saving}>
+            <Button className="bg-red-500 hover:bg-red-600 h-7 text-xs" onClick={handleSendReply} disabled={saving}>
               {saving ? 'Sending...' : isInternalNote ? 'Add Note' : 'Send Reply'}
             </Button>
           </DialogFooter>
@@ -890,42 +891,42 @@ export default function AdminSupport() {
 
       {/* Resolve Report Modal */}
       <Dialog open={showResolveModal} onOpenChange={setShowResolveModal}>
-        <DialogContent className="bg-zinc-900 border-zinc-800">
-          <DialogHeader>
-            <DialogTitle className="text-white">Resolve Report</DialogTitle>
+        <DialogContent className="bg-zinc-900 border-zinc-800 p-4">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="text-white text-sm">Resolve Report</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label className="text-zinc-400">Resolution</Label>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-zinc-400 text-xs">Resolution</Label>
               <Textarea
-                className="bg-zinc-800 border-zinc-700"
+                className="bg-zinc-800 border-zinc-700 text-xs min-h-[80px]"
                 value={resolution}
                 onChange={(e) => setResolution(e.target.value)}
                 placeholder="Describe the resolution..."
               />
             </div>
-            <div className="space-y-2">
-              <Label className="text-zinc-400">Take Action (optional)</Label>
+            <div className="space-y-1.5">
+              <Label className="text-zinc-400 text-xs">Take Action (optional)</Label>
               <Select value={actionType} onValueChange={setActionType}>
-                <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                <SelectTrigger className="bg-zinc-800 border-zinc-700 h-7 text-xs">
                   <SelectValue placeholder="No action" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No action</SelectItem>
-                  <SelectItem value="warning">Issue Warning</SelectItem>
-                  <SelectItem value="mute">Mute User</SelectItem>
-                  <SelectItem value="suspend">Suspend User</SelectItem>
-                  <SelectItem value="ban">Ban User</SelectItem>
-                  <SelectItem value="content_removal">Remove Content</SelectItem>
+                  <SelectItem value="" className="text-xs">No action</SelectItem>
+                  <SelectItem value="warning" className="text-xs">Issue Warning</SelectItem>
+                  <SelectItem value="mute" className="text-xs">Mute User</SelectItem>
+                  <SelectItem value="suspend" className="text-xs">Suspend User</SelectItem>
+                  <SelectItem value="ban" className="text-xs">Ban User</SelectItem>
+                  <SelectItem value="content_removal" className="text-xs">Remove Content</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowResolveModal(false)} className="border-zinc-700">
+          <DialogFooter className="pt-2">
+            <Button variant="outline" onClick={() => setShowResolveModal(false)} className="border-zinc-700 h-7 text-xs">
               Cancel
             </Button>
-            <Button className="bg-red-500 hover:bg-red-600" onClick={handleResolveReport} disabled={saving}>
+            <Button className="bg-red-500 hover:bg-red-600 h-7 text-xs" onClick={handleResolveReport} disabled={saving}>
               {saving ? 'Resolving...' : 'Resolve Report'}
             </Button>
           </DialogFooter>

@@ -52,8 +52,8 @@ function StatusBadge({ status }) {
   const Icon = icons[status] || Clock;
 
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
-      <Icon className="w-3 h-3" />
+    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(status)}`}>
+      <Icon className="w-2.5 h-2.5" />
       {status?.replace('_', ' ')}
     </span>
   );
@@ -61,19 +61,19 @@ function StatusBadge({ status }) {
 
 function StatCard({ title, value, icon: Icon, color = 'blue', subtitle, trend }) {
   return (
-    <div className="bg-zinc-900/50 rounded-xl border border-zinc-800 p-6">
-      <div className="flex items-center gap-4">
-        <div className={`p-3 rounded-lg border ${getIconColor(color)}`}>
-          <Icon className="w-6 h-6" />
+    <div className="bg-zinc-900/50 rounded-xl border border-zinc-800 p-3">
+      <div className="flex items-center gap-3">
+        <div className={`p-2 rounded-lg border ${getIconColor(color)}`}>
+          <Icon className="w-4 h-4" />
         </div>
         <div className="flex-1">
-          <p className="text-sm text-zinc-400">{title}</p>
-          <p className="text-2xl font-bold text-white">{value}</p>
-          {subtitle && <p className="text-xs text-zinc-500 mt-1">{subtitle}</p>}
+          <p className="text-[10px] text-zinc-400">{title}</p>
+          <p className="text-lg font-bold text-white">{value}</p>
+          {subtitle && <p className="text-[10px] text-zinc-500">{subtitle}</p>}
         </div>
         {trend && (
-          <div className={`flex items-center gap-1 text-sm ${trend > 0 ? 'text-green-400' : 'text-red-400'}`}>
-            <TrendingUp className={`w-4 h-4 ${trend < 0 ? 'rotate-180' : ''}`} />
+          <div className={`flex items-center gap-1 text-xs ${trend > 0 ? 'text-green-400' : 'text-red-400'}`}>
+            <TrendingUp className={`w-3 h-3 ${trend < 0 ? 'rotate-180' : ''}`} />
             {Math.abs(trend)}%
           </div>
         )}
@@ -140,32 +140,32 @@ function PlanModal({ plan, onClose, onSave }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-zinc-900 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-zinc-800">
-        <div className="p-6 border-b border-zinc-800">
-          <h2 className="text-xl font-semibold text-white">
+      <div className="bg-zinc-900 rounded-xl max-w-xl w-full max-h-[90vh] overflow-y-auto border border-zinc-800">
+        <div className="py-3 px-4 border-b border-zinc-800">
+          <h2 className="text-sm font-semibold text-white">
             {plan ? 'Edit Plan' : 'Add Subscription Plan'}
           </h2>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="p-4 space-y-3">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-1">Name *</label>
+              <label className="block text-xs font-medium text-zinc-300 mb-1">Name *</label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-2.5 py-1.5 h-7 text-xs bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-1">Slug *</label>
+              <label className="block text-xs font-medium text-zinc-300 mb-1">Slug *</label>
               <input
                 type="text"
                 value={formData.slug}
                 onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
-                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-2.5 py-1.5 h-7 text-xs bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
                 disabled={!!plan}
               />
@@ -173,104 +173,104 @@ function PlanModal({ plan, onClose, onSave }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-1">Description</label>
+            <label className="block text-xs font-medium text-zinc-300 mb-1">Description</label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-2.5 py-1.5 text-xs bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               rows={2}
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-1">Monthly Price ($)</label>
+              <label className="block text-xs font-medium text-zinc-300 mb-1">Monthly ($)</label>
               <input
                 type="number"
                 step="0.01"
                 value={formData.price_monthly}
                 onChange={(e) => setFormData({ ...formData, price_monthly: e.target.value })}
-                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-2.5 py-1.5 h-7 text-xs bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-1">Yearly Price ($)</label>
+              <label className="block text-xs font-medium text-zinc-300 mb-1">Yearly ($)</label>
               <input
                 type="number"
                 step="0.01"
                 value={formData.price_yearly}
                 onChange={(e) => setFormData({ ...formData, price_yearly: e.target.value })}
-                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-2.5 py-1.5 h-7 text-xs bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-1">Sort Order</label>
+              <label className="block text-xs font-medium text-zinc-300 mb-1">Sort Order</label>
               <input
                 type="number"
                 value={formData.sort_order}
                 onChange={(e) => setFormData({ ...formData, sort_order: e.target.value })}
-                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-2.5 py-1.5 h-7 text-xs bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-1">Features (JSON array)</label>
+            <label className="block text-xs font-medium text-zinc-300 mb-1">Features (JSON)</label>
             <textarea
               value={formData.features}
               onChange={(e) => setFormData({ ...formData, features: e.target.value })}
-              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
-              rows={4}
+              className="w-full px-2.5 py-1.5 text-xs bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono"
+              rows={3}
               placeholder='["Feature 1", "Feature 2"]'
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-1">Limits (JSON object)</label>
+            <label className="block text-xs font-medium text-zinc-300 mb-1">Limits (JSON)</label>
             <textarea
               value={formData.limits}
               onChange={(e) => setFormData({ ...formData, limits: e.target.value })}
-              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
-              rows={3}
+              className="w-full px-2.5 py-1.5 text-xs bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono"
+              rows={2}
               placeholder='{"users": 10, "storage_gb": 50}'
             />
           </div>
 
-          <div className="flex gap-4">
-            <label className="flex items-center gap-2">
+          <div className="flex gap-3">
+            <label className="flex items-center gap-1.5">
               <input
                 type="checkbox"
                 checked={formData.is_active}
                 onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                className="rounded border-zinc-700 bg-zinc-800"
+                className="rounded border-zinc-700 bg-zinc-800 w-3.5 h-3.5"
               />
-              <span className="text-sm text-zinc-300">Active</span>
+              <span className="text-xs text-zinc-300">Active</span>
             </label>
-            <label className="flex items-center gap-2">
+            <label className="flex items-center gap-1.5">
               <input
                 type="checkbox"
                 checked={formData.is_featured}
                 onChange={(e) => setFormData({ ...formData, is_featured: e.target.checked })}
-                className="rounded border-zinc-700 bg-zinc-800"
+                className="rounded border-zinc-700 bg-zinc-800 w-3.5 h-3.5"
               />
-              <span className="text-sm text-zinc-300">Featured</span>
+              <span className="text-xs text-zinc-300">Featured</span>
             </label>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
+          <div className="flex justify-end gap-2 pt-3 border-t border-zinc-800">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-zinc-300 hover:bg-zinc-800 rounded-lg transition-colors"
+              className="px-3 py-1.5 h-7 text-xs text-zinc-300 hover:bg-zinc-800 rounded-lg transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className={`px-4 py-2 rounded-lg transition-colors disabled:opacity-50 ${BUTTON_STYLES.primary}`}
+              className={`px-3 py-1.5 h-7 text-xs rounded-lg transition-colors disabled:opacity-50 ${BUTTON_STYLES.primary}`}
             >
-              {saving ? 'Saving...' : plan ? 'Update Plan' : 'Create Plan'}
+              {saving ? 'Saving...' : plan ? 'Update' : 'Create'}
             </button>
           </div>
         </form>
@@ -317,132 +317,132 @@ function CouponModal({ coupon, onClose, onSave }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-zinc-900 rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto border border-zinc-800">
-        <div className="p-6 border-b border-zinc-800">
-          <h2 className="text-xl font-semibold text-white">
+      <div className="bg-zinc-900 rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-zinc-800">
+        <div className="py-3 px-4 border-b border-zinc-800">
+          <h2 className="text-sm font-semibold text-white">
             {coupon ? 'Edit Coupon' : 'Add Coupon'}
           </h2>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="p-4 space-y-3">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-1">Code *</label>
+              <label className="block text-xs font-medium text-zinc-300 mb-1">Code *</label>
               <input
                 type="text"
                 value={formData.code}
                 onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-2.5 py-1.5 h-7 text-xs bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
                 disabled={!!coupon}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-1">Name *</label>
+              <label className="block text-xs font-medium text-zinc-300 mb-1">Name *</label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-2.5 py-1.5 h-7 text-xs bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-1">Description</label>
+            <label className="block text-xs font-medium text-zinc-300 mb-1">Description</label>
             <input
               type="text"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-2.5 py-1.5 h-7 text-xs bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-1">Discount Type *</label>
+              <label className="block text-xs font-medium text-zinc-300 mb-1">Type *</label>
               <select
                 value={formData.discount_type}
                 onChange={(e) => setFormData({ ...formData, discount_type: e.target.value })}
-                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-2.5 py-1.5 h-7 text-xs bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="percentage">Percentage (%)</option>
-                <option value="fixed_amount">Fixed Amount ($)</option>
+                <option value="fixed_amount">Fixed ($)</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-1">
-                Discount Value ({formData.discount_type === 'percentage' ? '%' : '$'}) *
+              <label className="block text-xs font-medium text-zinc-300 mb-1">
+                Value ({formData.discount_type === 'percentage' ? '%' : '$'}) *
               </label>
               <input
                 type="number"
                 step={formData.discount_type === 'percentage' ? '1' : '0.01'}
                 value={formData.discount_value}
                 onChange={(e) => setFormData({ ...formData, discount_value: e.target.value })}
-                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-2.5 py-1.5 h-7 text-xs bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-1">Valid Until</label>
+              <label className="block text-xs font-medium text-zinc-300 mb-1">Valid Until</label>
               <input
                 type="date"
                 value={formData.valid_until}
                 onChange={(e) => setFormData({ ...formData, valid_until: e.target.value })}
-                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-2.5 py-1.5 h-7 text-xs bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-1">Max Uses</label>
+              <label className="block text-xs font-medium text-zinc-300 mb-1">Max Uses</label>
               <input
                 type="number"
                 value={formData.max_uses}
                 onChange={(e) => setFormData({ ...formData, max_uses: e.target.value })}
-                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-2.5 py-1.5 h-7 text-xs bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Unlimited"
               />
             </div>
           </div>
 
-          <div className="flex gap-4">
-            <label className="flex items-center gap-2">
+          <div className="flex gap-3">
+            <label className="flex items-center gap-1.5">
               <input
                 type="checkbox"
                 checked={formData.is_active}
                 onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                className="rounded border-zinc-700 bg-zinc-800"
+                className="rounded border-zinc-700 bg-zinc-800 w-3.5 h-3.5"
               />
-              <span className="text-sm text-zinc-300">Active</span>
+              <span className="text-xs text-zinc-300">Active</span>
             </label>
-            <label className="flex items-center gap-2">
+            <label className="flex items-center gap-1.5">
               <input
                 type="checkbox"
                 checked={formData.first_subscription_only}
                 onChange={(e) => setFormData({ ...formData, first_subscription_only: e.target.checked })}
-                className="rounded border-zinc-700 bg-zinc-800"
+                className="rounded border-zinc-700 bg-zinc-800 w-3.5 h-3.5"
               />
-              <span className="text-sm text-zinc-300">First subscription only</span>
+              <span className="text-xs text-zinc-300">First subscription only</span>
             </label>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
+          <div className="flex justify-end gap-2 pt-3 border-t border-zinc-800">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-zinc-300 hover:bg-zinc-800 rounded-lg transition-colors"
+              className="px-3 py-1.5 h-7 text-xs text-zinc-300 hover:bg-zinc-800 rounded-lg transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className={`px-4 py-2 rounded-lg transition-colors disabled:opacity-50 ${BUTTON_STYLES.primary}`}
+              className={`px-3 py-1.5 h-7 text-xs rounded-lg transition-colors disabled:opacity-50 ${BUTTON_STYLES.primary}`}
             >
-              {saving ? 'Saving...' : coupon ? 'Update Coupon' : 'Create Coupon'}
+              {saving ? 'Saving...' : coupon ? 'Update' : 'Create'}
             </button>
           </div>
         </form>
@@ -597,30 +597,30 @@ export default function AdminBilling() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <RefreshCw className="w-8 h-8 animate-spin text-zinc-400" />
+        <RefreshCw className="w-5 h-5 animate-spin text-zinc-400" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black p-6 space-y-6">
+    <div className="min-h-screen bg-black p-4 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Billing & Revenue</h1>
-          <p className="text-zinc-400 mt-1">Manage subscriptions, invoices, and revenue</p>
+          <h1 className="text-lg font-bold text-white">Billing & Revenue</h1>
+          <p className="text-zinc-400 text-xs mt-0.5">Manage subscriptions, invoices, and revenue</p>
         </div>
         <button
           onClick={() => fetchData()}
-          className="flex items-center gap-2 px-4 py-2 text-zinc-300 hover:bg-zinc-800 rounded-lg transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-zinc-300 hover:bg-zinc-800 rounded-lg transition-colors text-xs"
         >
-          <RefreshCw className="w-4 h-4" />
+          <RefreshCw className="w-3 h-3" />
           Refresh
         </button>
       </div>
 
       {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard
           title="MRR"
           value={formatCurrency(overview?.mrr)}
@@ -652,9 +652,9 @@ export default function AdminBilling() {
       </div>
 
       {/* Revenue Chart */}
-      <div className="bg-zinc-900/50 rounded-xl border border-zinc-800 p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">Revenue (Last 30 Days)</h2>
-        <div className="h-64">
+      <div className="bg-zinc-900/50 rounded-xl border border-zinc-800 p-4">
+        <h2 className="text-sm font-semibold text-white mb-3">Revenue (Last 30 Days)</h2>
+        <div className="h-48">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={revenueChart}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -678,7 +678,7 @@ export default function AdminBilling() {
       {/* Tabs */}
       <div className="bg-zinc-900/50 rounded-xl border border-zinc-800">
         <div className="border-b border-zinc-800">
-          <nav className="flex gap-4 px-6" aria-label="Tabs">
+          <nav className="flex gap-2 px-4" aria-label="Tabs">
             {[
               { id: 'plans', label: 'Plans', icon: Star },
               { id: 'subscriptions', label: 'Subscriptions', icon: Users },
@@ -693,31 +693,31 @@ export default function AdminBilling() {
                   setStatusFilter('');
                   setSearchQuery('');
                 }}
-                className={`flex items-center gap-2 py-4 px-2 border-b-2 transition-colors ${
+                className={`flex items-center gap-1.5 py-2.5 px-2 border-b-2 transition-colors text-xs ${
                   activeTab === tab.id
                     ? 'border-blue-500 text-blue-400'
                     : 'border-transparent text-zinc-400 hover:text-zinc-300'
                 }`}
               >
-                <tab.icon className="w-4 h-4" />
+                <tab.icon className="w-3 h-3" />
                 {tab.label}
               </button>
             ))}
           </nav>
         </div>
 
-        <div className="p-6">
+        <div className="p-4">
           {/* Filters */}
           {activeTab !== 'plans' && (
-            <div className="flex flex-wrap gap-4 mb-6">
-              <div className="relative flex-1 min-w-[200px]">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <div className="flex flex-wrap gap-2 mb-4">
+              <div className="relative flex-1 min-w-[180px]">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-zinc-500" />
                 <input
                   type="text"
                   placeholder="Search..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-8 pr-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-xs placeholder-zinc-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
 
@@ -725,7 +725,7 @@ export default function AdminBilling() {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="px-2.5 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">All Status</option>
                   {activeTab === 'subscriptions' && (
@@ -760,53 +760,53 @@ export default function AdminBilling() {
           {/* Plans Tab */}
           {activeTab === 'plans' && (
             <>
-              <div className="flex justify-end mb-4">
+              <div className="flex justify-end mb-3">
                 <button
                   onClick={() => {
                     setEditingPlan(null);
                     setShowPlanModal(true);
                   }}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${BUTTON_STYLES.primary}`}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors text-xs ${BUTTON_STYLES.primary}`}
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-3 h-3" />
                   Add Plan
                 </button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                 {plans.map((plan) => (
                   <div
                     key={plan.id}
-                    className={`border rounded-xl p-5 bg-zinc-800/50 ${plan.is_featured ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-zinc-700'}`}
+                    className={`border rounded-lg p-3 bg-zinc-800/50 ${plan.is_featured ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-zinc-700'}`}
                   >
                     {plan.is_featured && (
-                      <div className="flex justify-center mb-2">
-                        <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs font-medium rounded-full">
+                      <div className="flex justify-center mb-1.5">
+                        <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-400 text-[10px] font-medium rounded-full">
                           Most Popular
                         </span>
                       </div>
                     )}
-                    <h3 className="text-lg font-semibold text-center text-white">{plan.name}</h3>
-                    <div className="text-center mt-2">
-                      <span className="text-3xl font-bold text-white">${plan.price_monthly}</span>
-                      <span className="text-zinc-400">/mo</span>
+                    <h3 className="text-sm font-semibold text-center text-white">{plan.name}</h3>
+                    <div className="text-center mt-1">
+                      <span className="text-xl font-bold text-white">${plan.price_monthly}</span>
+                      <span className="text-zinc-400 text-xs">/mo</span>
                     </div>
-                    <p className="text-sm text-zinc-400 text-center mt-1">
+                    <p className="text-[10px] text-zinc-400 text-center">
                       or ${plan.price_yearly}/year
                     </p>
-                    <p className="text-sm text-zinc-400 text-center mt-3">{plan.description}</p>
-                    <ul className="mt-4 space-y-2">
+                    <p className="text-[10px] text-zinc-400 text-center mt-2">{plan.description}</p>
+                    <ul className="mt-2 space-y-1">
                       {plan.features?.slice(0, 4).map((feature, i) => (
-                        <li key={i} className="flex items-center gap-2 text-sm text-zinc-300">
-                          <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
+                        <li key={i} className="flex items-center gap-1.5 text-[10px] text-zinc-300">
+                          <CheckCircle2 className="w-3 h-3 text-green-400 flex-shrink-0" />
                           {feature}
                         </li>
                       ))}
                       {plan.features?.length > 4 && (
-                        <li className="text-sm text-zinc-500">+{plan.features.length - 4} more</li>
+                        <li className="text-[10px] text-zinc-500">+{plan.features.length - 4} more</li>
                       )}
                     </ul>
-                    <div className="mt-4 pt-4 border-t border-zinc-700 flex items-center justify-between">
-                      <span className="text-sm text-zinc-400">
+                    <div className="mt-3 pt-2 border-t border-zinc-700 flex items-center justify-between">
+                      <span className="text-[10px] text-zinc-400">
                         {plan.active_subscribers || 0} subscribers
                       </span>
                       <button
@@ -814,9 +814,9 @@ export default function AdminBilling() {
                           setEditingPlan(plan);
                           setShowPlanModal(true);
                         }}
-                        className="p-1.5 text-zinc-400 hover:text-blue-400 hover:bg-blue-500/20 rounded"
+                        className="p-1 text-zinc-400 hover:text-blue-400 hover:bg-blue-500/20 rounded"
                       >
-                        <Edit2 className="w-4 h-4" />
+                        <Edit2 className="w-3 h-3" />
                       </button>
                     </div>
                   </div>
@@ -828,35 +828,35 @@ export default function AdminBilling() {
           {/* Subscriptions Tab */}
           {activeTab === 'subscriptions' && (
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-zinc-800">
-                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Company</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Plan</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Status</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Billing</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Period End</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Started</th>
+                    <th className="text-left py-1.5 px-2 text-[10px] font-medium text-zinc-400 uppercase">Company</th>
+                    <th className="text-left py-1.5 px-2 text-[10px] font-medium text-zinc-400 uppercase">Plan</th>
+                    <th className="text-left py-1.5 px-2 text-[10px] font-medium text-zinc-400 uppercase">Status</th>
+                    <th className="text-left py-1.5 px-2 text-[10px] font-medium text-zinc-400 uppercase">Billing</th>
+                    <th className="text-left py-1.5 px-2 text-[10px] font-medium text-zinc-400 uppercase">Period End</th>
+                    <th className="text-left py-1.5 px-2 text-[10px] font-medium text-zinc-400 uppercase">Started</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-800">
                   {filteredSubscriptions.map((sub) => (
-                    <tr key={sub.id} className="hover:bg-zinc-800/50">
-                      <td className="py-3 px-4 font-medium text-white">{sub.company_name}</td>
-                      <td className="py-3 px-4 text-sm text-zinc-400">{sub.plan_name}</td>
-                      <td className="py-3 px-4"><StatusBadge status={sub.status} /></td>
-                      <td className="py-3 px-4 text-sm text-zinc-400 capitalize">{sub.billing_cycle}</td>
-                      <td className="py-3 px-4 text-sm text-zinc-500">
+                    <tr key={sub.id} className="hover:bg-zinc-800/50 h-9">
+                      <td className="py-1.5 px-2 font-medium text-white">{sub.company_name}</td>
+                      <td className="py-1.5 px-2 text-zinc-400">{sub.plan_name}</td>
+                      <td className="py-1.5 px-2"><StatusBadge status={sub.status} /></td>
+                      <td className="py-1.5 px-2 text-zinc-400 capitalize">{sub.billing_cycle}</td>
+                      <td className="py-1.5 px-2 text-zinc-500">
                         {sub.current_period_end ? new Date(sub.current_period_end).toLocaleDateString() : '-'}
                       </td>
-                      <td className="py-3 px-4 text-sm text-zinc-500">
+                      <td className="py-1.5 px-2 text-zinc-500">
                         {new Date(sub.started_at).toLocaleDateString()}
                       </td>
                     </tr>
                   ))}
                   {filteredSubscriptions.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="py-12 text-center text-zinc-500">No subscriptions found</td>
+                      <td colSpan={6} className="py-8 text-center text-zinc-500">No subscriptions found</td>
                     </tr>
                   )}
                 </tbody>
@@ -867,35 +867,35 @@ export default function AdminBilling() {
           {/* Invoices Tab */}
           {activeTab === 'invoices' && (
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-zinc-800">
-                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Invoice #</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Company</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Amount</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Status</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Due Date</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Created</th>
+                    <th className="text-left py-1.5 px-2 text-[10px] font-medium text-zinc-400 uppercase">Invoice #</th>
+                    <th className="text-left py-1.5 px-2 text-[10px] font-medium text-zinc-400 uppercase">Company</th>
+                    <th className="text-left py-1.5 px-2 text-[10px] font-medium text-zinc-400 uppercase">Amount</th>
+                    <th className="text-left py-1.5 px-2 text-[10px] font-medium text-zinc-400 uppercase">Status</th>
+                    <th className="text-left py-1.5 px-2 text-[10px] font-medium text-zinc-400 uppercase">Due Date</th>
+                    <th className="text-left py-1.5 px-2 text-[10px] font-medium text-zinc-400 uppercase">Created</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-800">
                   {filteredInvoices.map((invoice) => (
-                    <tr key={invoice.id} className="hover:bg-zinc-800/50">
-                      <td className="py-3 px-4 font-medium text-white">{invoice.invoice_number}</td>
-                      <td className="py-3 px-4 text-sm text-zinc-400">{invoice.company_name}</td>
-                      <td className="py-3 px-4 text-sm font-medium text-white">{formatCurrency(invoice.total, invoice.currency)}</td>
-                      <td className="py-3 px-4"><StatusBadge status={invoice.status} /></td>
-                      <td className="py-3 px-4 text-sm text-zinc-500">
+                    <tr key={invoice.id} className="hover:bg-zinc-800/50 h-9">
+                      <td className="py-1.5 px-2 font-medium text-white">{invoice.invoice_number}</td>
+                      <td className="py-1.5 px-2 text-zinc-400">{invoice.company_name}</td>
+                      <td className="py-1.5 px-2 font-medium text-white">{formatCurrency(invoice.total, invoice.currency)}</td>
+                      <td className="py-1.5 px-2"><StatusBadge status={invoice.status} /></td>
+                      <td className="py-1.5 px-2 text-zinc-500">
                         {invoice.due_at ? new Date(invoice.due_at).toLocaleDateString() : '-'}
                       </td>
-                      <td className="py-3 px-4 text-sm text-zinc-500">
+                      <td className="py-1.5 px-2 text-zinc-500">
                         {new Date(invoice.created_at).toLocaleDateString()}
                       </td>
                     </tr>
                   ))}
                   {filteredInvoices.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="py-12 text-center text-zinc-500">No invoices found</td>
+                      <td colSpan={6} className="py-8 text-center text-zinc-500">No invoices found</td>
                     </tr>
                   )}
                 </tbody>
@@ -906,39 +906,39 @@ export default function AdminBilling() {
           {/* Payments Tab */}
           {activeTab === 'payments' && (
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-zinc-800">
-                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Company</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Invoice</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Amount</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Method</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Status</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Date</th>
+                    <th className="text-left py-1.5 px-2 text-[10px] font-medium text-zinc-400 uppercase">Company</th>
+                    <th className="text-left py-1.5 px-2 text-[10px] font-medium text-zinc-400 uppercase">Invoice</th>
+                    <th className="text-left py-1.5 px-2 text-[10px] font-medium text-zinc-400 uppercase">Amount</th>
+                    <th className="text-left py-1.5 px-2 text-[10px] font-medium text-zinc-400 uppercase">Method</th>
+                    <th className="text-left py-1.5 px-2 text-[10px] font-medium text-zinc-400 uppercase">Status</th>
+                    <th className="text-left py-1.5 px-2 text-[10px] font-medium text-zinc-400 uppercase">Date</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-800">
                   {filteredPayments.map((payment) => (
-                    <tr key={payment.id} className="hover:bg-zinc-800/50">
-                      <td className="py-3 px-4 font-medium text-white">{payment.company_name}</td>
-                      <td className="py-3 px-4 text-sm text-zinc-400">{payment.invoice_number || '-'}</td>
-                      <td className="py-3 px-4 text-sm font-medium text-white">{formatCurrency(payment.amount, payment.currency)}</td>
-                      <td className="py-3 px-4 text-sm text-zinc-400">
+                    <tr key={payment.id} className="hover:bg-zinc-800/50 h-9">
+                      <td className="py-1.5 px-2 font-medium text-white">{payment.company_name}</td>
+                      <td className="py-1.5 px-2 text-zinc-400">{payment.invoice_number || '-'}</td>
+                      <td className="py-1.5 px-2 font-medium text-white">{formatCurrency(payment.amount, payment.currency)}</td>
+                      <td className="py-1.5 px-2 text-zinc-400">
                         {payment.card_brand && payment.card_last4 ? (
                           <span className="capitalize">{payment.card_brand} ****{payment.card_last4}</span>
                         ) : (
                           payment.payment_method || '-'
                         )}
                       </td>
-                      <td className="py-3 px-4"><StatusBadge status={payment.status} /></td>
-                      <td className="py-3 px-4 text-sm text-zinc-500">
+                      <td className="py-1.5 px-2"><StatusBadge status={payment.status} /></td>
+                      <td className="py-1.5 px-2 text-zinc-500">
                         {new Date(payment.created_at).toLocaleDateString()}
                       </td>
                     </tr>
                   ))}
                   {filteredPayments.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="py-12 text-center text-zinc-500">No payments found</td>
+                      <td colSpan={6} className="py-8 text-center text-zinc-500">No payments found</td>
                     </tr>
                   )}
                 </tbody>
@@ -949,73 +949,73 @@ export default function AdminBilling() {
           {/* Coupons Tab */}
           {activeTab === 'coupons' && (
             <>
-              <div className="flex justify-end mb-4">
+              <div className="flex justify-end mb-3">
                 <button
                   onClick={() => {
                     setEditingCoupon(null);
                     setShowCouponModal(true);
                   }}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${BUTTON_STYLES.primary}`}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors text-xs ${BUTTON_STYLES.primary}`}
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-3 h-3" />
                   Add Coupon
                 </button>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-zinc-800">
-                      <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Code</th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Name</th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Discount</th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Usage</th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Valid Until</th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Status</th>
-                      <th className="text-right py-3 px-4 text-xs font-medium text-zinc-400 uppercase">Actions</th>
+                      <th className="text-left py-1.5 px-2 text-[10px] font-medium text-zinc-400 uppercase">Code</th>
+                      <th className="text-left py-1.5 px-2 text-[10px] font-medium text-zinc-400 uppercase">Name</th>
+                      <th className="text-left py-1.5 px-2 text-[10px] font-medium text-zinc-400 uppercase">Discount</th>
+                      <th className="text-left py-1.5 px-2 text-[10px] font-medium text-zinc-400 uppercase">Usage</th>
+                      <th className="text-left py-1.5 px-2 text-[10px] font-medium text-zinc-400 uppercase">Valid Until</th>
+                      <th className="text-left py-1.5 px-2 text-[10px] font-medium text-zinc-400 uppercase">Status</th>
+                      <th className="text-right py-1.5 px-2 text-[10px] font-medium text-zinc-400 uppercase">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-800">
                     {coupons.map((coupon) => (
-                      <tr key={coupon.id} className="hover:bg-zinc-800/50">
-                        <td className="py-3 px-4">
-                          <span className="px-2 py-1 bg-zinc-800 rounded font-mono text-sm text-white">{coupon.code}</span>
+                      <tr key={coupon.id} className="hover:bg-zinc-800/50 h-9">
+                        <td className="py-1.5 px-2">
+                          <span className="px-1.5 py-0.5 bg-zinc-800 rounded font-mono text-white">{coupon.code}</span>
                         </td>
-                        <td className="py-3 px-4 text-sm text-white">{coupon.name}</td>
-                        <td className="py-3 px-4 text-sm font-medium text-green-400">
+                        <td className="py-1.5 px-2 text-white">{coupon.name}</td>
+                        <td className="py-1.5 px-2 font-medium text-green-400">
                           {coupon.discount_type === 'percentage' ? (
                             <span className="flex items-center gap-1">
-                              <Percent className="w-3 h-3" />
+                              <Percent className="w-2.5 h-2.5" />
                               {coupon.discount_value}%
                             </span>
                           ) : (
                             formatCurrency(coupon.discount_value)
                           )}
                         </td>
-                        <td className="py-3 px-4 text-sm text-zinc-400">
+                        <td className="py-1.5 px-2 text-zinc-400">
                           {coupon.current_uses || 0}{coupon.max_uses ? ` / ${coupon.max_uses}` : ''}
                         </td>
-                        <td className="py-3 px-4 text-sm text-zinc-500">
+                        <td className="py-1.5 px-2 text-zinc-500">
                           {coupon.valid_until ? new Date(coupon.valid_until).toLocaleDateString() : 'No expiry'}
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-1.5 px-2">
                           <StatusBadge status={coupon.is_active ? 'active' : 'expired'} />
                         </td>
-                        <td className="py-3 px-4 text-right">
+                        <td className="py-1.5 px-2 text-right">
                           <div className="flex items-center justify-end gap-1">
                             <button
                               onClick={() => {
                                 setEditingCoupon(coupon);
                                 setShowCouponModal(true);
                               }}
-                              className="p-1.5 text-zinc-400 hover:text-blue-400 hover:bg-blue-500/20 rounded"
+                              className="p-1 text-zinc-400 hover:text-blue-400 hover:bg-blue-500/20 rounded"
                             >
-                              <Edit2 className="w-4 h-4" />
+                              <Edit2 className="w-3 h-3" />
                             </button>
                             <button
                               onClick={() => handleDeleteCoupon(coupon)}
-                              className="p-1.5 text-zinc-400 hover:text-red-400 hover:bg-red-500/20 rounded"
+                              className="p-1 text-zinc-400 hover:text-red-400 hover:bg-red-500/20 rounded"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3 h-3" />
                             </button>
                           </div>
                         </td>
@@ -1023,7 +1023,7 @@ export default function AdminBilling() {
                     ))}
                     {coupons.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="py-12 text-center text-zinc-500">No coupons found</td>
+                        <td colSpan={7} className="py-8 text-center text-zinc-500">No coupons found</td>
                       </tr>
                     )}
                   </tbody>

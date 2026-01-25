@@ -293,7 +293,7 @@ export default function FinanceOverview() {
         <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-amber-950/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <PageHeader
           icon={DollarSign}
@@ -311,7 +311,7 @@ export default function FinanceOverview() {
         />
 
         {/* Key Metrics Grid */}
-        <div ref={statsGridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div ref={statsGridRef} className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
             { title: 'Total Revenue', value: metrics.totalRevenue, displayValue: `$${metrics.totalRevenue.toLocaleString()}`, change: '+12.5%', trend: 'up', icon: DollarSign, color: 'amber' },
             { title: 'Total Expenses', value: metrics.totalExpenses, displayValue: `$${metrics.totalExpenses.toLocaleString()}`, change: '-3.2%', trend: 'down', icon: CreditCard, color: 'red' },
@@ -320,31 +320,31 @@ export default function FinanceOverview() {
           ].map((metric, index) => (
             <div key={metric.title} className="stat-card">
               <Card className="bg-zinc-900/50 border-zinc-800 hover:border-zinc-700 transition-colors">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className={`p-3 rounded-xl ${getColorClasses(metric.color)}`}>
-                      <metric.icon className="w-5 h-5" />
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className={`p-2 rounded-lg ${getColorClasses(metric.color)}`}>
+                      <metric.icon className="w-4 h-4" />
                     </div>
                     {metric.trend === 'up' && (
-                      <Badge variant="outline" className="text-amber-400 border-amber-500/30 bg-amber-500/10">
-                        <ArrowUpRight className="w-3 h-3 mr-1" />
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-px text-amber-400 border-amber-500/30 bg-amber-500/10">
+                        <ArrowUpRight className="w-2.5 h-2.5 mr-0.5" />
                         {metric.change}
                       </Badge>
                     )}
                     {metric.trend === 'down' && (
-                      <Badge variant="outline" className="text-red-400 border-red-500/30 bg-red-500/10">
-                        <ArrowDownRight className="w-3 h-3 mr-1" />
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-px text-red-400 border-red-500/30 bg-red-500/10">
+                        <ArrowDownRight className="w-2.5 h-2.5 mr-0.5" />
                         {metric.change}
                       </Badge>
                     )}
                     {metric.trend === 'neutral' && (
-                      <Badge variant="outline" className="text-zinc-400 border-zinc-500/30">
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-px text-zinc-400 border-zinc-500/30">
                         {metric.change}
                       </Badge>
                     )}
                   </div>
-                  <p className="stat-number text-2xl font-bold text-white" data-value={metric.value} data-prefix="$">{metric.displayValue}</p>
-                  <p className="text-sm text-zinc-500">{metric.title}</p>
+                  <p className="stat-number text-lg font-bold text-white" data-value={metric.value} data-prefix="$">{metric.displayValue}</p>
+                  <p className="text-xs text-zinc-500">{metric.title}</p>
                 </CardContent>
               </Card>
             </div>
@@ -353,31 +353,31 @@ export default function FinanceOverview() {
 
         {/* Profit Overview */}
         <Card className="bg-gradient-to-r from-amber-950/30 to-amber-950/30 border-amber-500/20">
-          <CardContent className="p-6">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-400 text-sm mb-1">Net Income</p>
-                <p className={`text-3xl font-bold ${metrics.netIncome >= 0 ? 'text-amber-400' : 'text-red-400'}`}>
+                <p className="text-zinc-400 text-xs mb-0.5">Net Income</p>
+                <p className={`text-xl font-bold ${metrics.netIncome >= 0 ? 'text-amber-400' : 'text-red-400'}`}>
                   {metrics.netIncome >= 0 ? '+' : ''}{metrics.netIncome.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-zinc-400 text-sm mb-1">Profit Margin</p>
-                <p className={`text-2xl font-bold ${metrics.profitMargin >= 0 ? 'text-amber-400' : 'text-red-400'}`}>
+                <p className="text-zinc-400 text-xs mb-0.5">Profit Margin</p>
+                <p className={`text-lg font-bold ${metrics.profitMargin >= 0 ? 'text-amber-400' : 'text-red-400'}`}>
                   {metrics.profitMargin}%
                 </p>
               </div>
             </div>
-            <div className="mt-4">
+            <div className="mt-3">
               <Progress
                 value={Math.max(0, Math.min(100, Number(metrics.profitMargin)))}
-                className="h-2 bg-zinc-800"
+                className="h-1.5 bg-zinc-800"
               />
             </div>
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Expense Breakdown */}
           <Card className="bg-zinc-900/50 border-zinc-800 lg:col-span-1">
             <CardHeader>

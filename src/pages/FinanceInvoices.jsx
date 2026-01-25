@@ -404,7 +404,7 @@ export default function FinanceInvoices() {
         <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-amber-950/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <PageHeader
           icon={Receipt}
@@ -431,7 +431,7 @@ export default function FinanceInvoices() {
         />
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
             { label: 'Total', value: `$${stats.total.toLocaleString()}`, count: stats.count, color: 'zinc' },
             { label: 'Paid', value: `$${stats.paid.toLocaleString()}`, icon: Check, color: 'amber' },
@@ -439,14 +439,14 @@ export default function FinanceInvoices() {
             { label: 'Overdue', value: `$${stats.overdue.toLocaleString()}`, icon: AlertCircle, color: 'red' }
           ].map((stat) => (
             <Card key={stat.label} className="bg-zinc-900/50 border-zinc-800">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-zinc-400">{stat.label}</span>
-                  {stat.icon && <stat.icon className={`w-4 h-4 text-${stat.color}-400`} />}
+              <CardContent className="p-3">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-zinc-400">{stat.label}</span>
+                  {stat.icon && <stat.icon className={`w-3.5 h-3.5 text-${stat.color}-400`} />}
                 </div>
-                <p className="text-xl font-bold text-white">{stat.value}</p>
+                <p className="text-lg font-bold text-white">{stat.value}</p>
                 {stat.count !== undefined && (
-                  <p className="text-xs text-zinc-500">{stat.count} invoices</p>
+                  <p className="text-[10px] text-zinc-500">{stat.count} invoices</p>
                 )}
               </CardContent>
             </Card>
@@ -455,8 +455,8 @@ export default function FinanceInvoices() {
 
         {/* Filters */}
         <Card className="bg-zinc-900/50 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex flex-col md:flex-row gap-4">
+          <CardContent className="p-3">
+            <div className="flex flex-col md:flex-row gap-3">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                 <Input
@@ -547,27 +547,25 @@ export default function FinanceInvoices() {
             ) : (
               <div className="divide-y divide-zinc-800">
                 {filteredInvoices.map((invoice) => (
-                  <motion.div
+                  <div
                     key={invoice.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="p-4 hover:bg-zinc-800/30 transition-colors"
+                    className="px-3 py-2 hover:bg-white/[0.03] transition-colors"
                   >
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4 flex-1">
-                        <div className="p-2 bg-amber-500/10 rounded-lg">
-                          <FileText className="w-5 h-5 text-amber-400" />
+                      <div className="flex items-center gap-2 flex-1">
+                        <div className="p-1.5 bg-amber-500/10 rounded-lg">
+                          <FileText className="w-4 h-4 text-amber-400" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-3">
-                            <p className="font-medium text-white">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium text-white">
                               {invoice.invoice_number || `INV-${invoice.id?.slice(0, 8)}`}
                             </p>
-                            <Badge variant="outline" className={getStatusBadge(invoice.status)}>
+                            <Badge variant="outline" size="xs" className={getStatusBadge(invoice.status)}>
                               {invoice.status || 'draft'}
                             </Badge>
                           </div>
-                          <div className="flex items-center gap-4 mt-1 text-sm text-zinc-500">
+                          <div className="flex items-center gap-3 mt-0.5 text-xs text-zinc-500">
                             <span className="flex items-center gap-1">
                               <Building2 className="w-3 h-3" />
                               {invoice.client_name || 'No client'}
@@ -582,8 +580,8 @@ export default function FinanceInvoices() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-4">
-                        <p className="text-lg font-semibold text-white">
+                      <div className="flex items-center gap-3">
+                        <p className="text-sm font-semibold text-white">
                           ${(invoice.total || 0).toLocaleString()}
                         </p>
 

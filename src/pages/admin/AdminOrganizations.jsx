@@ -93,23 +93,23 @@ async function adminApi(endpoint, options = {}) {
 function StatCard({ title, value, icon: Icon, color, isLoading }) {
   return (
     <Card className="bg-zinc-900/50 border-zinc-800">
-      <CardContent className="p-6">
+      <CardContent className="p-3">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-zinc-400 mb-1">{title}</p>
+            <p className="text-[10px] text-zinc-400 mb-0.5">{title}</p>
             {isLoading ? (
-              <div className="h-9 w-20 bg-zinc-800 animate-pulse rounded" />
+              <div className="h-6 w-16 bg-zinc-800 animate-pulse rounded" />
             ) : (
-              <h3 className="text-3xl font-bold text-white">{value}</h3>
+              <h3 className="text-lg font-bold text-white">{value}</h3>
             )}
           </div>
           <div
             className={cn(
-              'w-12 h-12 rounded-xl flex items-center justify-center border',
+              'w-8 h-8 rounded-lg flex items-center justify-center border',
               getIconColor(color)
             )}
           >
-            <Icon className="w-6 h-6" />
+            <Icon className="w-4 h-4" />
           </div>
         </div>
       </CardContent>
@@ -120,13 +120,13 @@ function StatCard({ title, value, icon: Icon, color, isLoading }) {
 // Status Badge Component
 function StatusBadge({ isActive }) {
   return isActive ? (
-    <Badge className={cn('text-xs', getStatusColor('active'))}>
-      <CheckCircle className="w-3 h-3 mr-1" />
+    <Badge className={cn('text-[10px] px-1.5 py-px', getStatusColor('active'))}>
+      <CheckCircle className="w-2.5 h-2.5 mr-0.5" />
       Active
     </Badge>
   ) : (
-    <Badge className={cn('text-xs', getStatusColor('inactive'))}>
-      <XCircle className="w-3 h-3 mr-1" />
+    <Badge className={cn('text-[10px] px-1.5 py-px', getStatusColor('inactive'))}>
+      <XCircle className="w-2.5 h-2.5 mr-0.5" />
       Inactive
     </Badge>
   );
@@ -695,29 +695,28 @@ export default function AdminOrganizations() {
   const canEdit = adminRole === 'super_admin' || adminRole === 'admin';
 
   return (
-    <div className="min-h-screen bg-black p-6">
+    <div className="min-h-screen bg-black p-4 space-y-4">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white">Organizations</h1>
-            <p className="text-zinc-400 mt-1">
-              Manage all organizations on the platform
-            </p>
-          </div>
-          <Button
-            onClick={handleRefresh}
-            variant="outline"
-            className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
-          >
-            <RefreshCw className={cn('w-4 h-4 mr-2', isLoading && 'animate-spin')} />
-            Refresh
-          </Button>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-bold text-white">Organizations</h1>
+          <p className="text-zinc-400 text-xs mt-0.5">
+            Manage all organizations on the platform
+          </p>
         </div>
+        <Button
+          onClick={handleRefresh}
+          variant="outline"
+          size="sm"
+          className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 h-7 text-xs"
+        >
+          <RefreshCw className={cn('w-3 h-3 mr-1.5', isLoading && 'animate-spin')} />
+          Refresh
+        </Button>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard
           title="Total Organizations"
           value={stats.total_organizations?.toLocaleString()}
@@ -749,23 +748,24 @@ export default function AdminOrganizations() {
       </div>
 
       {/* Filters */}
-      <Card className="bg-zinc-900/50 border-zinc-800 mb-6">
-        <CardContent className="p-4">
-          <div className="flex flex-wrap items-center gap-4">
+      <Card className="bg-zinc-900/50 border-zinc-800">
+        <CardContent className="p-2">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Search */}
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <div className="relative flex-1 min-w-[180px]">
+              <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-3 h-3 text-zinc-500" />
               <Input
                 placeholder="Search organizations..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                className="pl-10 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+                size="sm"
+                className="pl-8 h-7 text-xs bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
               />
             </div>
 
             {/* Industry Filter */}
             <Select value={industryFilter} onValueChange={setIndustryFilter}>
-              <SelectTrigger className="w-[150px] bg-zinc-800 border-zinc-700 text-white">
+              <SelectTrigger className="w-[130px] h-7 text-xs bg-zinc-800 border-zinc-700 text-white">
                 <SelectValue placeholder="All Industries" />
               </SelectTrigger>
               <SelectContent className="bg-zinc-800 border-zinc-700">
@@ -780,7 +780,7 @@ export default function AdminOrganizations() {
 
             {/* Status Filter */}
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[130px] bg-zinc-800 border-zinc-700 text-white">
+              <SelectTrigger className="w-[110px] h-7 text-xs bg-zinc-800 border-zinc-700 text-white">
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent className="bg-zinc-800 border-zinc-700">
@@ -796,7 +796,7 @@ export default function AdminOrganizations() {
               setSortBy(by);
               setSortOrder(order);
             }}>
-              <SelectTrigger className="w-[180px] bg-zinc-800 border-zinc-700 text-white">
+              <SelectTrigger className="w-[130px] h-7 text-xs bg-zinc-800 border-zinc-700 text-white">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent className="bg-zinc-800 border-zinc-700">
@@ -814,25 +814,25 @@ export default function AdminOrganizations() {
 
       {/* Organizations Table */}
       <Card className="bg-zinc-900/50 border-zinc-800">
-        <CardHeader className="border-b border-zinc-800">
+        <CardHeader className="border-b border-zinc-800 py-2 px-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-white flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-purple-400" />
+            <CardTitle className="text-white flex items-center gap-1.5 text-sm">
+              <Building2 className="w-4 h-4 text-purple-400" />
               Organizations ({totalCount})
             </CardTitle>
           </div>
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="p-8 text-center">
-              <RefreshCw className="w-8 h-8 text-zinc-400 animate-spin mx-auto mb-2" />
-              <p className="text-zinc-500">Loading organizations...</p>
+            <div className="p-6 text-center">
+              <RefreshCw className="w-5 h-5 text-zinc-400 animate-spin mx-auto mb-2" />
+              <p className="text-zinc-500 text-xs">Loading organizations...</p>
             </div>
           ) : organizations.length === 0 ? (
-            <div className="p-8 text-center">
-              <Building2 className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
-              <p className="text-zinc-400">No organizations found</p>
-              <p className="text-zinc-500 text-sm mt-1">Try adjusting your filters</p>
+            <div className="p-6 text-center">
+              <Building2 className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
+              <p className="text-zinc-400 text-xs">No organizations found</p>
+              <p className="text-zinc-500 text-[10px] mt-0.5">Try adjusting your filters</p>
             </div>
           ) : (
             <>
@@ -840,13 +840,13 @@ export default function AdminOrganizations() {
                 <table className="w-full">
                   <thead className="bg-zinc-800/50">
                     <tr>
-                      <th className="text-left text-xs text-zinc-400 font-medium px-4 py-3">Organization</th>
-                      <th className="text-left text-xs text-zinc-400 font-medium px-4 py-3">Industry</th>
-                      <th className="text-left text-xs text-zinc-400 font-medium px-4 py-3">Location</th>
-                      <th className="text-left text-xs text-zinc-400 font-medium px-4 py-3">Users</th>
-                      <th className="text-left text-xs text-zinc-400 font-medium px-4 py-3">Status</th>
-                      <th className="text-left text-xs text-zinc-400 font-medium px-4 py-3">Created</th>
-                      <th className="text-right text-xs text-zinc-400 font-medium px-4 py-3">Actions</th>
+                      <th className="text-left text-[10px] text-zinc-400 font-medium px-2 py-1.5 uppercase">Organization</th>
+                      <th className="text-left text-[10px] text-zinc-400 font-medium px-2 py-1.5 uppercase">Industry</th>
+                      <th className="text-left text-[10px] text-zinc-400 font-medium px-2 py-1.5 uppercase">Location</th>
+                      <th className="text-left text-[10px] text-zinc-400 font-medium px-2 py-1.5 uppercase">Users</th>
+                      <th className="text-left text-[10px] text-zinc-400 font-medium px-2 py-1.5 uppercase">Status</th>
+                      <th className="text-left text-[10px] text-zinc-400 font-medium px-2 py-1.5 uppercase">Created</th>
+                      <th className="text-right text-[10px] text-zinc-400 font-medium px-2 py-1.5 uppercase">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-800">
@@ -858,59 +858,59 @@ export default function AdminOrganizations() {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0 }}
                           transition={{ delay: index * 0.02 }}
-                          className="hover:bg-zinc-800/30 transition-colors"
+                          className="hover:bg-zinc-800/30 transition-colors h-9"
                         >
                           {/* Organization Info */}
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-3">
-                              <Avatar className="w-10 h-10">
+                          <td className="px-2 py-1.5">
+                            <div className="flex items-center gap-1.5">
+                              <Avatar className="w-6 h-6">
                                 <AvatarImage src={org.logo_url} />
-                                <AvatarFallback className="bg-purple-500/20 text-purple-400 text-sm">
+                                <AvatarFallback className="bg-purple-500/20 text-purple-400 text-[9px]">
                                   {getInitials(org.name)}
                                 </AvatarFallback>
                               </Avatar>
                               <div>
-                                <p className="text-white font-medium">{org.name}</p>
-                                <p className="text-zinc-500 text-sm">{org.domain || '-'}</p>
+                                <p className="text-white font-medium text-xs">{org.name}</p>
+                                <p className="text-zinc-500 text-[10px]">{org.domain || '-'}</p>
                               </div>
                             </div>
                           </td>
 
                           {/* Industry */}
-                          <td className="px-4 py-3">
-                            <span className="text-zinc-300 text-sm">
+                          <td className="px-2 py-1.5">
+                            <span className="text-zinc-300 text-xs">
                               {org.industry || '-'}
                             </span>
                           </td>
 
                           {/* Location */}
-                          <td className="px-4 py-3">
-                            <span className="text-zinc-300 text-sm">
+                          <td className="px-2 py-1.5">
+                            <span className="text-zinc-300 text-xs">
                               {org.location || '-'}
                             </span>
                           </td>
 
                           {/* Users */}
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2">
-                              <Users className="w-4 h-4 text-zinc-500" />
-                              <span className="text-zinc-300">{org.total_users || 0}</span>
+                          <td className="px-2 py-1.5">
+                            <div className="flex items-center gap-1">
+                              <Users className="w-3 h-3 text-zinc-500" />
+                              <span className="text-zinc-300 text-xs">{org.total_users || 0}</span>
                               {org.active_users > 0 && (
-                                <span className="text-xs text-green-500">
-                                  ({org.active_users} active)
+                                <span className="text-[10px] text-green-500">
+                                  ({org.active_users})
                                 </span>
                               )}
                             </div>
                           </td>
 
                           {/* Status */}
-                          <td className="px-4 py-3">
+                          <td className="px-2 py-1.5">
                             <StatusBadge isActive={org.is_active} />
                           </td>
 
                           {/* Created */}
-                          <td className="px-4 py-3">
-                            <span className="text-zinc-400 text-sm">
+                          <td className="px-2 py-1.5">
+                            <span className="text-zinc-400 text-xs">
                               {org.created_date
                                 ? new Date(org.created_date).toLocaleDateString()
                                 : '-'}
@@ -918,15 +918,15 @@ export default function AdminOrganizations() {
                           </td>
 
                           {/* Actions */}
-                          <td className="px-4 py-3 text-right">
+                          <td className="px-2 py-1.5 text-right">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-8 w-8 p-0 text-zinc-400 hover:text-white"
+                                  className="h-6 w-6 p-0 text-zinc-400 hover:text-white"
                                 >
-                                  <MoreVertical className="w-4 h-4" />
+                                  <MoreVertical className="w-3 h-3" />
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent
@@ -935,17 +935,17 @@ export default function AdminOrganizations() {
                               >
                                 <DropdownMenuItem
                                   onClick={() => handleViewOrg(org)}
-                                  className="text-zinc-300 hover:text-white focus:text-white"
+                                  className="text-zinc-300 hover:text-white focus:text-white text-xs"
                                 >
-                                  <Eye className="w-4 h-4 mr-2" />
+                                  <Eye className="w-3 h-3 mr-1.5" />
                                   View Details
                                 </DropdownMenuItem>
                                 {canEdit && (
                                   <DropdownMenuItem
                                     onClick={() => handleEditOrg(org)}
-                                    className="text-zinc-300 hover:text-white focus:text-white"
+                                    className="text-zinc-300 hover:text-white focus:text-white text-xs"
                                   >
-                                    <Edit className="w-4 h-4 mr-2" />
+                                    <Edit className="w-3 h-3 mr-1.5" />
                                     Edit
                                   </DropdownMenuItem>
                                 )}
@@ -961,21 +961,21 @@ export default function AdminOrganizations() {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-between px-4 py-4 border-t border-zinc-800">
-                  <p className="text-sm text-zinc-500">
+                <div className="flex items-center justify-between px-3 py-2 border-t border-zinc-800">
+                  <p className="text-xs text-zinc-500">
                     Showing {((page - 1) * limit) + 1} - {Math.min(page * limit, totalCount)} of {totalCount} organizations
                   </p>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={page === 1}
-                      className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 disabled:opacity-50"
+                      className="h-6 w-6 p-0 border-zinc-700 text-zinc-300 hover:bg-zinc-800 disabled:opacity-50"
                     >
-                      <ChevronLeft className="w-4 h-4" />
+                      <ChevronLeft className="w-3 h-3" />
                     </Button>
-                    <span className="text-sm text-zinc-400">
+                    <span className="text-xs text-zinc-400">
                       Page {page} of {totalPages}
                     </span>
                     <Button
@@ -983,9 +983,9 @@ export default function AdminOrganizations() {
                       size="sm"
                       onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                       disabled={page === totalPages}
-                      className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 disabled:opacity-50"
+                      className="h-6 w-6 p-0 border-zinc-700 text-zinc-300 hover:bg-zinc-800 disabled:opacity-50"
                     >
-                      <ChevronRight className="w-4 h-4" />
+                      <ChevronRight className="w-3 h-3" />
                     </Button>
                   </div>
                 </div>

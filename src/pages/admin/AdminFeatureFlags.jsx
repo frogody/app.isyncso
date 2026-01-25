@@ -67,43 +67,43 @@ function FeatureFlagCard({ flag, onEdit, onToggle, onDelete, disabled }) {
           flag.is_enabled && 'border-l-2 border-l-green-500'
         )}
       >
-        <CardContent className="p-5">
+        <CardContent className="p-3">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <h3 className="text-lg font-semibold text-white">{flag.name}</h3>
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="text-sm font-semibold text-white">{flag.name}</h3>
                 <Badge
                   className={cn(
-                    'text-xs',
+                    'text-[10px] px-1.5 py-px',
                     getStatusColor(flag.is_enabled ? 'enabled' : 'disabled')
                   )}
                 >
                   {flag.is_enabled ? 'Enabled' : 'Disabled'}
                 </Badge>
                 {flag.rollout_percentage < 100 && flag.is_enabled && (
-                  <Badge className="text-xs bg-blue-500/20 text-blue-400 border-blue-500/30">
-                    <Percent className="w-3 h-3 mr-1" />
+                  <Badge className="text-[10px] px-1.5 py-px bg-blue-500/20 text-blue-400 border-blue-500/30">
+                    <Percent className="w-2.5 h-2.5 mr-0.5" />
                     {flag.rollout_percentage}%
                   </Badge>
                 )}
               </div>
 
-              <p className="text-sm text-zinc-500 font-mono mb-2">{flag.slug}</p>
+              <p className="text-xs text-zinc-500 font-mono mb-1">{flag.slug}</p>
 
               {flag.description && (
-                <p className="text-sm text-zinc-400 mb-3">{flag.description}</p>
+                <p className="text-xs text-zinc-400 mb-2">{flag.description}</p>
               )}
 
-              <div className="flex items-center gap-4 text-xs text-zinc-500">
+              <div className="flex items-center gap-3 text-[10px] text-zinc-500">
                 {flag.targeted_user_ids?.length > 0 && (
-                  <span className="flex items-center gap-1">
-                    <Users className="w-3 h-3" />
+                  <span className="flex items-center gap-0.5">
+                    <Users className="w-2.5 h-2.5" />
                     {flag.targeted_user_ids.length} users
                   </span>
                 )}
                 {flag.targeted_org_ids?.length > 0 && (
-                  <span className="flex items-center gap-1">
-                    <Building2 className="w-3 h-3" />
+                  <span className="flex items-center gap-0.5">
+                    <Building2 className="w-2.5 h-2.5" />
                     {flag.targeted_org_ids.length} orgs
                   </span>
                 )}
@@ -113,7 +113,7 @@ function FeatureFlagCard({ flag, onEdit, onToggle, onDelete, disabled }) {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 ml-4">
+            <div className="flex items-center gap-1.5 ml-3">
               <Switch
                 checked={flag.is_enabled}
                 onCheckedChange={(checked) => onToggle(flag, checked)}
@@ -124,18 +124,18 @@ function FeatureFlagCard({ flag, onEdit, onToggle, onDelete, disabled }) {
                 size="icon"
                 onClick={() => onEdit(flag)}
                 disabled={disabled}
-                className="text-zinc-400 hover:text-white"
+                className="text-zinc-400 hover:text-white h-7 w-7"
               >
-                <Pencil className="w-4 h-4" />
+                <Pencil className="w-3 h-3" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => onDelete(flag)}
                 disabled={disabled}
-                className="text-zinc-400 hover:text-red-400"
+                className="text-zinc-400 hover:text-red-400 h-7 w-7"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-3 h-3" />
               </Button>
             </div>
           </div>
@@ -448,26 +448,27 @@ export default function AdminFeatureFlags() {
   const enabledCount = flags.filter((f) => f.is_enabled).length;
 
   return (
-    <div className="min-h-screen bg-black p-6">
+    <div className="min-h-screen bg-black p-4 space-y-4">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-              <Flag className="w-8 h-8 text-red-400" />
+            <h1 className="text-lg font-bold text-white flex items-center gap-2">
+              <Flag className="w-5 h-5 text-red-400" />
               Feature Flags
             </h1>
-            <p className="text-zinc-400 mt-1">
+            <p className="text-zinc-400 text-xs mt-0.5">
               Control feature rollouts and A/B testing.
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Button
               onClick={fetchFlags}
               variant="outline"
-              className="border-zinc-700 text-zinc-300"
+              size="sm"
+              className="border-zinc-700 text-zinc-300 h-7 text-xs"
             >
-              <RefreshCw className={cn('w-4 h-4 mr-2', isLoading && 'animate-spin')} />
+              <RefreshCw className={cn('w-3 h-3 mr-1.5', isLoading && 'animate-spin')} />
               Refresh
             </Button>
             {canModify && (
@@ -476,9 +477,10 @@ export default function AdminFeatureFlags() {
                   setEditingFlag(null);
                   setIsModalOpen(true);
                 }}
-                className="bg-red-500 hover:bg-red-600 text-white"
+                size="sm"
+                className="bg-red-500 hover:bg-red-600 text-white h-7 text-xs"
               >
-                <Plus className="w-4 h-4 mr-2" />
+                <Plus className="w-3 h-3 mr-1.5" />
                 New Flag
               </Button>
             )}
@@ -487,64 +489,64 @@ export default function AdminFeatureFlags() {
       </div>
 
       {/* Stats Bar */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-3 gap-3">
         <Card className="bg-zinc-900/50 border-zinc-800">
-          <CardContent className="p-4 flex items-center justify-between">
+          <CardContent className="p-3 flex items-center justify-between">
             <div>
-              <p className="text-sm text-zinc-400">Total Flags</p>
-              <p className="text-2xl font-bold text-white">{flags.length}</p>
+              <p className="text-[10px] text-zinc-400">Total Flags</p>
+              <p className="text-lg font-bold text-white">{flags.length}</p>
             </div>
-            <Flag className="w-8 h-8 text-zinc-600" />
+            <Flag className="w-5 h-5 text-zinc-600" />
           </CardContent>
         </Card>
         <Card className="bg-zinc-900/50 border-zinc-800">
-          <CardContent className="p-4 flex items-center justify-between">
+          <CardContent className="p-3 flex items-center justify-between">
             <div>
-              <p className="text-sm text-zinc-400">Enabled</p>
-              <p className="text-2xl font-bold text-green-400">{enabledCount}</p>
+              <p className="text-[10px] text-zinc-400">Enabled</p>
+              <p className="text-lg font-bold text-green-400">{enabledCount}</p>
             </div>
-            <ToggleRight className="w-8 h-8 text-green-500/50" />
+            <ToggleRight className="w-5 h-5 text-green-500/50" />
           </CardContent>
         </Card>
         <Card className="bg-zinc-900/50 border-zinc-800">
-          <CardContent className="p-4 flex items-center justify-between">
+          <CardContent className="p-3 flex items-center justify-between">
             <div>
-              <p className="text-sm text-zinc-400">Disabled</p>
-              <p className="text-2xl font-bold text-zinc-400">
+              <p className="text-[10px] text-zinc-400">Disabled</p>
+              <p className="text-lg font-bold text-zinc-400">
                 {flags.length - enabledCount}
               </p>
             </div>
-            <ToggleLeft className="w-8 h-8 text-zinc-600" />
+            <ToggleLeft className="w-5 h-5 text-zinc-600" />
           </CardContent>
         </Card>
       </div>
 
       {/* Search */}
-      <div className="mb-6">
+      <div>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" />
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search flags..."
-            className="pl-10 bg-zinc-900/50 border-zinc-800 text-white"
+            className="pl-8 bg-zinc-900/50 border-zinc-800 text-white h-7 text-xs"
           />
         </div>
       </div>
 
       {/* Flags List */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <RefreshCw className="w-8 h-8 text-red-400 animate-spin" />
+        <div className="flex items-center justify-center py-8">
+          <RefreshCw className="w-5 h-5 text-red-400 animate-spin" />
         </div>
       ) : filteredFlags.length === 0 ? (
         <Card className="bg-zinc-900/50 border-zinc-800">
-          <CardContent className="p-12 text-center">
-            <Flag className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-white mb-2">
+          <CardContent className="p-8 text-center">
+            <Flag className="w-8 h-8 text-zinc-600 mx-auto mb-3" />
+            <h3 className="text-sm font-medium text-white mb-1">
               {searchQuery ? 'No flags found' : 'No feature flags yet'}
             </h3>
-            <p className="text-sm text-zinc-500 mb-4">
+            <p className="text-xs text-zinc-500 mb-3">
               {searchQuery
                 ? 'Try a different search term.'
                 : 'Create your first feature flag to control feature rollouts.'}
@@ -555,16 +557,17 @@ export default function AdminFeatureFlags() {
                   setEditingFlag(null);
                   setIsModalOpen(true);
                 }}
-                className="bg-red-500 hover:bg-red-600 text-white"
+                size="sm"
+                className="bg-red-500 hover:bg-red-600 text-white h-7 text-xs"
               >
-                <Plus className="w-4 h-4 mr-2" />
+                <Plus className="w-3 h-3 mr-1.5" />
                 Create Flag
               </Button>
             )}
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           <AnimatePresence>
             {filteredFlags.map((flag) => (
               <FeatureFlagCard

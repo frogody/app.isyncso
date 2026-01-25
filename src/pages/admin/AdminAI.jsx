@@ -303,102 +303,103 @@ export default function AdminAI() {
 
   return (
     <>
-      <div className="p-8">
+      <div className="p-4 space-y-4">
           {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center">
-                <Bot className="w-6 h-6 text-purple-400" />
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-purple-500/20 border border-purple-500/30 flex items-center justify-center">
+                <Bot className="w-4 h-4 text-purple-400" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-white">AI & Automation</h1>
-                <p className="text-zinc-400">Manage AI models, prompts, and automated workflows</p>
+                <h1 className="text-lg font-bold text-white">AI & Automation</h1>
+                <p className="text-zinc-400 text-xs">Manage AI models, prompts, and automated workflows</p>
               </div>
             </div>
             <Button
               variant="outline"
+              size="sm"
               onClick={fetchData}
               disabled={loading}
-              className="border-zinc-700"
+              className="border-zinc-700 h-7 text-xs"
             >
-              <RefreshCw className={cn("w-4 h-4 mr-2", loading && "animate-spin")} />
+              <RefreshCw className={cn("w-3 h-3 mr-1.5", loading && "animate-spin")} />
               Refresh
             </Button>
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
             <Card className="bg-zinc-900/50 border-zinc-800">
-              <CardContent className="p-6">
+              <CardContent className="p-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-zinc-400 text-sm">Tokens (30d)</p>
-                    <p className="text-2xl font-bold text-white">
+                    <p className="text-zinc-400 text-[10px]">Tokens (30d)</p>
+                    <p className="text-lg font-bold text-white">
                       {formatTokens(stats?.total_tokens_30d)}
                     </p>
-                    <p className="text-xs text-zinc-500">
+                    <p className="text-[10px] text-zinc-500">
                       Today: {formatTokens(stats?.total_tokens_today)}
                     </p>
                   </div>
-                  <div className={`w-12 h-12 rounded-lg border flex items-center justify-center ${getIconColor('blue')}`}>
-                    <Coins className="w-6 h-6" />
+                  <div className={`w-8 h-8 rounded-lg border flex items-center justify-center ${getIconColor('blue')}`}>
+                    <Coins className="w-4 h-4" />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <Card className="bg-zinc-900/50 border-zinc-800">
-              <CardContent className="p-6">
+              <CardContent className="p-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-zinc-400 text-sm">Cost (30d)</p>
-                    <p className="text-2xl font-bold text-white">
+                    <p className="text-zinc-400 text-[10px]">Cost (30d)</p>
+                    <p className="text-lg font-bold text-white">
                       {formatCost(stats?.total_cost_30d)}
                     </p>
-                    <p className="text-xs text-zinc-500">
+                    <p className="text-[10px] text-zinc-500">
                       Today: {formatCost(stats?.total_cost_today)}
                     </p>
                   </div>
-                  <div className={`w-12 h-12 rounded-lg border flex items-center justify-center ${getIconColor('green')}`}>
-                    <TrendingUp className="w-6 h-6" />
+                  <div className={`w-8 h-8 rounded-lg border flex items-center justify-center ${getIconColor('green')}`}>
+                    <TrendingUp className="w-4 h-4" />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <Card className="bg-zinc-900/50 border-zinc-800">
-              <CardContent className="p-6">
+              <CardContent className="p-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-zinc-400 text-sm">Active Models</p>
-                    <p className="text-2xl font-bold text-white">
+                    <p className="text-zinc-400 text-[10px]">Active Models</p>
+                    <p className="text-lg font-bold text-white">
                       {stats?.active_models || 0}
                     </p>
-                    <p className="text-xs text-zinc-500">
+                    <p className="text-[10px] text-zinc-500">
                       {stats?.total_models || 0} total configured
                     </p>
                   </div>
-                  <div className={`w-12 h-12 rounded-lg border flex items-center justify-center ${getIconColor('purple')}`}>
-                    <Brain className="w-6 h-6" />
+                  <div className={`w-8 h-8 rounded-lg border flex items-center justify-center ${getIconColor('purple')}`}>
+                    <Brain className="w-4 h-4" />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <Card className="bg-zinc-900/50 border-zinc-800">
-              <CardContent className="p-6">
+              <CardContent className="p-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-zinc-400 text-sm">Active Workflows</p>
-                    <p className="text-2xl font-bold text-white">
+                    <p className="text-zinc-400 text-[10px]">Active Workflows</p>
+                    <p className="text-lg font-bold text-white">
                       {stats?.active_workflows || 0}
                     </p>
-                    <p className="text-xs text-zinc-500">
+                    <p className="text-[10px] text-zinc-500">
                       {stats?.workflow_runs_today || 0} runs today
                     </p>
                   </div>
-                  <div className={`w-12 h-12 rounded-lg border flex items-center justify-center ${getIconColor('orange')}`}>
-                    <Workflow className="w-6 h-6" />
+                  <div className={`w-8 h-8 rounded-lg border flex items-center justify-center ${getIconColor('orange')}`}>
+                    <Workflow className="w-4 h-4" />
                   </div>
                 </div>
               </CardContent>
@@ -407,79 +408,80 @@ export default function AdminAI() {
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="bg-zinc-900 border border-zinc-800 mb-6">
-              <TabsTrigger value="models" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400">
-                <Brain className="w-4 h-4 mr-2" />
+            <TabsList className="bg-zinc-900 border border-zinc-800 mb-4">
+              <TabsTrigger value="models" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400 text-xs">
+                <Brain className="w-3 h-3 mr-1.5" />
                 AI Models
               </TabsTrigger>
-              <TabsTrigger value="usage" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400">
-                <BarChart3 className="w-4 h-4 mr-2" />
+              <TabsTrigger value="usage" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400 text-xs">
+                <BarChart3 className="w-3 h-3 mr-1.5" />
                 Usage Analytics
               </TabsTrigger>
-              <TabsTrigger value="prompts" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400">
-                <Sparkles className="w-4 h-4 mr-2" />
+              <TabsTrigger value="prompts" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400 text-xs">
+                <Sparkles className="w-3 h-3 mr-1.5" />
                 Prompt Library
               </TabsTrigger>
-              <TabsTrigger value="workflows" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400">
-                <Workflow className="w-4 h-4 mr-2" />
+              <TabsTrigger value="workflows" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400 text-xs">
+                <Workflow className="w-3 h-3 mr-1.5" />
                 Workflows
               </TabsTrigger>
-              <TabsTrigger value="scheduled" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400">
-                <Clock className="w-4 h-4 mr-2" />
+              <TabsTrigger value="scheduled" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400 text-xs">
+                <Clock className="w-3 h-3 mr-1.5" />
                 Scheduled Tasks
               </TabsTrigger>
             </TabsList>
 
             {/* AI Models Tab */}
             <TabsContent value="models">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold text-white">Configured AI Models</h2>
+              <div className="flex justify-between items-center mb-3">
+                <h2 className="text-sm font-semibold text-white">Configured AI Models</h2>
                 <Button
                   onClick={() => { setSelectedItem(null); setShowModelModal(true); }}
-                  className={BUTTON_STYLES.primary}
+                  size="sm"
+                  className="bg-red-500 hover:bg-red-600 text-white h-7 text-xs"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
+                  <Plus className="w-3 h-3 mr-1.5" />
                   Add Model
                 </Button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {models.map((model) => (
                   <Card key={model.id} className="bg-zinc-900/50 border-zinc-800">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center gap-3">
+                    <CardContent className="p-3">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
                           <div className={cn(
-                            "w-10 h-10 rounded-lg flex items-center justify-center",
+                            "w-6 h-6 rounded-lg flex items-center justify-center",
                             model.provider === 'openai' && "bg-green-500/20",
                             model.provider === 'anthropic' && "bg-orange-500/20",
                             model.provider === 'google' && "bg-blue-500/20"
                           )}>
                             <Brain className={cn(
-                              "w-5 h-5",
+                              "w-3 h-3",
                               model.provider === 'openai' && "text-green-400",
                               model.provider === 'anthropic' && "text-orange-400",
                               model.provider === 'google' && "text-blue-400"
                             )} />
                           </div>
                           <div>
-                            <h3 className="font-semibold text-white flex items-center gap-2">
+                            <h3 className="text-xs font-semibold text-white flex items-center gap-1.5">
                               {model.name}
                               {model.is_default && (
-                                <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                                <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
                               )}
                             </h3>
-                            <p className="text-xs text-zinc-500">{model.provider}</p>
+                            <p className="text-[10px] text-zinc-500">{model.provider}</p>
                           </div>
                         </div>
-                        <Badge className={model.is_active ? "bg-green-500/20 text-green-400" : "bg-zinc-700 text-zinc-400"}>
+                        <Badge className={cn("text-[10px] px-1.5 py-px", model.is_active ? "bg-green-500/20 text-green-400" : "bg-zinc-700 text-zinc-400")}>
                           {model.is_active ? 'Active' : 'Inactive'}
                         </Badge>
                       </div>
 
-                      <p className="text-sm text-zinc-400 mb-4 line-clamp-2">{model.description}</p>
+                      <p className="text-[10px] text-zinc-400 mb-2 line-clamp-2">{model.description}</p>
 
-                      <div className="space-y-2 text-sm">
+                      <div className="space-y-1 text-[10px]">
                         <div className="flex justify-between text-zinc-400">
                           <span>Input Price</span>
                           <span className="text-white">${model.pricing_input}/1K</span>
@@ -498,14 +500,14 @@ export default function AdminAI() {
                         </div>
                       </div>
 
-                      <div className="flex gap-2 mt-4 pt-4 border-t border-zinc-800">
+                      <div className="flex gap-2 mt-3 pt-3 border-t border-zinc-800">
                         <Button
                           variant="outline"
                           size="sm"
-                          className="flex-1 border-zinc-700"
+                          className="flex-1 border-zinc-700 h-6 text-[10px]"
                           onClick={() => { setSelectedItem(model); setShowModelModal(true); }}
                         >
-                          <Edit className="w-4 h-4 mr-1" />
+                          <Edit className="w-3 h-3 mr-1" />
                           Edit
                         </Button>
                       </div>
@@ -517,19 +519,19 @@ export default function AdminAI() {
 
             {/* Usage Analytics Tab */}
             <TabsContent value="usage">
-              <div className="space-y-6">
+              <div className="space-y-3">
                 {/* Usage by Model */}
                 <Card className="bg-zinc-900/50 border-zinc-800">
-                  <CardHeader>
-                    <CardTitle className="text-white">Usage by Model (30 days)</CardTitle>
+                  <CardHeader className="py-2 px-3 border-b border-zinc-800">
+                    <CardTitle className="text-white text-sm">Usage by Model (30 days)</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
+                  <CardContent className="p-3">
+                    <div className="space-y-2">
                       {stats?.usage_by_model?.map((item, index) => (
-                        <div key={index} className="flex items-center gap-4">
-                          <div className="w-32 text-sm text-zinc-400">{item.name}</div>
+                        <div key={index} className="flex items-center gap-2">
+                          <div className="w-24 text-xs text-zinc-400 truncate">{item.name}</div>
                           <div className="flex-1">
-                            <div className="h-6 bg-zinc-800 rounded-full overflow-hidden">
+                            <div className="h-4 bg-zinc-800 rounded-full overflow-hidden">
                               <div
                                 className="h-full bg-gradient-to-r from-purple-600 to-purple-400 rounded-full"
                                 style={{
@@ -538,16 +540,16 @@ export default function AdminAI() {
                               />
                             </div>
                           </div>
-                          <div className="w-24 text-right text-sm text-white">
+                          <div className="w-16 text-right text-xs text-white">
                             {formatTokens(item.tokens)}
                           </div>
-                          <div className="w-20 text-right text-sm text-green-400">
+                          <div className="w-14 text-right text-xs text-green-400">
                             {formatCost(item.cost)}
                           </div>
                         </div>
                       ))}
                       {(!stats?.usage_by_model || stats.usage_by_model.length === 0) && (
-                        <p className="text-center text-zinc-500 py-8">No usage data yet</p>
+                        <p className="text-center text-zinc-500 text-xs py-4">No usage data yet</p>
                       )}
                     </div>
                   </CardContent>
@@ -555,16 +557,16 @@ export default function AdminAI() {
 
                 {/* Usage by Type */}
                 <Card className="bg-zinc-900/50 border-zinc-800">
-                  <CardHeader>
-                    <CardTitle className="text-white">Usage by Request Type</CardTitle>
+                  <CardHeader className="py-2 px-3 border-b border-zinc-800">
+                    <CardTitle className="text-white text-sm">Usage by Request Type</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <CardContent className="p-3">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                       {stats?.usage_by_type?.map((item, index) => (
-                        <div key={index} className="bg-zinc-800/50 rounded-lg p-4 text-center">
-                          <p className="text-2xl font-bold text-white">{item.requests}</p>
-                          <p className="text-sm text-zinc-400">{item.request_type || 'Unknown'}</p>
-                          <p className="text-xs text-zinc-500">{formatTokens(item.tokens)} tokens</p>
+                        <div key={index} className="bg-zinc-800/50 rounded-lg p-2 text-center">
+                          <p className="text-lg font-bold text-white">{item.requests}</p>
+                          <p className="text-xs text-zinc-400">{item.request_type || 'Unknown'}</p>
+                          <p className="text-[10px] text-zinc-500">{formatTokens(item.tokens)} tokens</p>
                         </div>
                       ))}
                     </div>
@@ -573,11 +575,11 @@ export default function AdminAI() {
 
                 {/* Daily Usage Chart Placeholder */}
                 <Card className="bg-zinc-900/50 border-zinc-800">
-                  <CardHeader>
-                    <CardTitle className="text-white">Daily Usage Trend</CardTitle>
+                  <CardHeader className="py-2 px-3 border-b border-zinc-800">
+                    <CardTitle className="text-white text-sm">Daily Usage Trend</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="h-64 flex items-end gap-1">
+                  <CardContent className="p-3">
+                    <div className="h-40 flex items-end gap-0.5">
                       {stats?.daily_usage?.slice(-30).map((day, index) => (
                         <div
                           key={index}
@@ -589,7 +591,7 @@ export default function AdminAI() {
                         />
                       ))}
                     </div>
-                    <div className="flex justify-between mt-2 text-xs text-zinc-500">
+                    <div className="flex justify-between mt-1.5 text-[10px] text-zinc-500">
                       <span>30 days ago</span>
                       <span>Today</span>
                     </div>
@@ -600,40 +602,41 @@ export default function AdminAI() {
 
             {/* Prompt Library Tab */}
             <TabsContent value="prompts">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold text-white">Prompt Templates</h2>
+              <div className="flex justify-between items-center mb-3">
+                <h2 className="text-sm font-semibold text-white">Prompt Templates</h2>
                 <Button
                   onClick={() => { setSelectedItem(null); setShowPromptModal(true); }}
-                  className={BUTTON_STYLES.primary}
+                  size="sm"
+                  className="bg-red-500 hover:bg-red-600 text-white h-7 text-xs"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
+                  <Plus className="w-3 h-3 mr-1.5" />
                   Create Prompt
                 </Button>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {prompts.map((prompt) => (
                   <Card key={prompt.id} className="bg-zinc-900/50 border-zinc-800">
-                    <CardContent className="p-6">
+                    <CardContent className="p-3">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="font-semibold text-white">{prompt.name}</h3>
-                            <Badge className="bg-purple-500/20 text-purple-400">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <h3 className="text-xs font-semibold text-white">{prompt.name}</h3>
+                            <Badge className="bg-purple-500/20 text-purple-400 text-[10px] px-1.5 py-px">
                               {prompt.category}
                             </Badge>
-                            <Badge className={prompt.is_active ? "bg-green-500/20 text-green-400" : "bg-zinc-700 text-zinc-400"}>
+                            <Badge className={cn("text-[10px] px-1.5 py-px", prompt.is_active ? "bg-green-500/20 text-green-400" : "bg-zinc-700 text-zinc-400")}>
                               {prompt.is_active ? 'Active' : 'Inactive'}
                             </Badge>
                           </div>
-                          <p className="text-sm text-zinc-400 mb-3">{prompt.description}</p>
+                          <p className="text-[10px] text-zinc-400 mb-2">{prompt.description}</p>
 
-                          <div className="bg-zinc-800/50 rounded-lg p-3 mb-3">
-                            <p className="text-xs text-zinc-500 mb-1">User Prompt Template:</p>
-                            <p className="text-sm text-zinc-300 font-mono">{prompt.user_prompt_template}</p>
+                          <div className="bg-zinc-800/50 rounded-lg p-2 mb-2">
+                            <p className="text-[10px] text-zinc-500 mb-0.5">User Prompt Template:</p>
+                            <p className="text-[10px] text-zinc-300 font-mono line-clamp-2">{prompt.user_prompt_template}</p>
                           </div>
 
-                          <div className="flex items-center gap-4 text-sm text-zinc-500">
+                          <div className="flex items-center gap-3 text-[10px] text-zinc-500">
                             <span>Model: {prompt.model_name || 'Default'}</span>
                             <span>Temp: {prompt.temperature}</span>
                             <span>Max Tokens: {prompt.max_tokens}</span>
@@ -643,22 +646,22 @@ export default function AdminAI() {
                           </div>
                         </div>
 
-                        <div className="flex gap-2 ml-4">
+                        <div className="flex gap-1.5 ml-3">
                           <Button
                             variant="outline"
                             size="sm"
-                            className="border-zinc-700"
+                            className="border-zinc-700 h-6 w-6 p-0"
                             onClick={() => { setSelectedItem(prompt); setShowPromptModal(true); }}
                           >
-                            <Edit className="w-4 h-4" />
+                            <Edit className="w-3 h-3" />
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
-                            className="border-red-500/30 text-red-400 hover:bg-red-500/20"
+                            className="border-red-500/30 text-red-400 hover:bg-red-500/20 h-6 w-6 p-0"
                             onClick={() => handleDeletePrompt(prompt.id)}
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3 h-3" />
                           </Button>
                         </div>
                       </div>
@@ -667,12 +670,13 @@ export default function AdminAI() {
                 ))}
                 {prompts.length === 0 && (
                   <Card className="bg-zinc-900/50 border-zinc-800">
-                    <CardContent className="p-12 text-center">
-                      <Sparkles className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-                      <p className="text-zinc-400">No prompts created yet</p>
+                    <CardContent className="p-6 text-center">
+                      <Sparkles className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
+                      <p className="text-zinc-400 text-xs">No prompts created yet</p>
                       <Button
                         onClick={() => setShowPromptModal(true)}
-                        className={`mt-4 ${BUTTON_STYLES.primary}`}
+                        size="sm"
+                        className="mt-3 bg-red-500 hover:bg-red-600 text-white h-7 text-xs"
                       >
                         Create First Prompt
                       </Button>
@@ -684,45 +688,46 @@ export default function AdminAI() {
 
             {/* Workflows Tab */}
             <TabsContent value="workflows">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold text-white">Automation Workflows</h2>
+              <div className="flex justify-between items-center mb-3">
+                <h2 className="text-sm font-semibold text-white">Automation Workflows</h2>
                 <Button
                   onClick={() => { setSelectedItem(null); setShowWorkflowModal(true); }}
-                  className={BUTTON_STYLES.primary}
+                  size="sm"
+                  className="bg-red-500 hover:bg-red-600 text-white h-7 text-xs"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
+                  <Plus className="w-3 h-3 mr-1.5" />
                   Create Workflow
                 </Button>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {workflows.map((workflow) => (
                   <Card key={workflow.id} className="bg-zinc-900/50 border-zinc-800">
-                    <CardContent className="p-6">
+                    <CardContent className="p-3">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="font-semibold text-white">{workflow.name}</h3>
-                            <Badge className="bg-blue-500/20 text-blue-400">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <h3 className="text-xs font-semibold text-white">{workflow.name}</h3>
+                            <Badge className="bg-blue-500/20 text-blue-400 text-[10px] px-1.5 py-px">
                               {workflow.trigger_type}
                             </Badge>
-                            <Badge className={workflow.is_active ? "bg-green-500/20 text-green-400" : "bg-zinc-700 text-zinc-400"}>
+                            <Badge className={cn("text-[10px] px-1.5 py-px", workflow.is_active ? "bg-green-500/20 text-green-400" : "bg-zinc-700 text-zinc-400")}>
                               {workflow.is_active ? 'Active' : 'Inactive'}
                             </Badge>
                           </div>
-                          <p className="text-sm text-zinc-400 mb-3">{workflow.description}</p>
+                          <p className="text-[10px] text-zinc-400 mb-2">{workflow.description}</p>
 
-                          <div className="flex items-center gap-6 text-sm text-zinc-500">
+                          <div className="flex items-center gap-4 text-[10px] text-zinc-500">
                             <span className="flex items-center gap-1">
-                              <Activity className="w-4 h-4" />
+                              <Activity className="w-3 h-3" />
                               {workflow.total_runs || 0} runs
                             </span>
                             <span className="flex items-center gap-1 text-green-400">
-                              <Check className="w-4 h-4" />
+                              <Check className="w-3 h-3" />
                               {workflow.successful_runs || 0} successful
                             </span>
                             <span className="flex items-center gap-1 text-red-400">
-                              <X className="w-4 h-4" />
+                              <X className="w-3 h-3" />
                               {workflow.failed_runs || 0} failed
                             </span>
                             {workflow.last_run_at && (
@@ -731,32 +736,32 @@ export default function AdminAI() {
                           </div>
                         </div>
 
-                        <div className="flex gap-2 ml-4">
+                        <div className="flex gap-1.5 ml-3">
                           <Button
                             variant="outline"
                             size="sm"
-                            className="border-zinc-700"
+                            className="border-zinc-700 h-6 text-[10px] px-2"
                             onClick={() => handleViewRuns(workflow)}
                           >
-                            <Clock className="w-4 h-4 mr-1" />
+                            <Clock className="w-3 h-3 mr-1" />
                             History
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
-                            className="border-green-500/30 text-green-400 hover:bg-green-500/20"
+                            className="border-green-500/30 text-green-400 hover:bg-green-500/20 h-6 text-[10px] px-2"
                             onClick={() => handleTriggerWorkflow(workflow.id)}
                           >
-                            <Play className="w-4 h-4 mr-1" />
+                            <Play className="w-3 h-3 mr-1" />
                             Run
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
-                            className="border-zinc-700"
+                            className="border-zinc-700 h-6 w-6 p-0"
                             onClick={() => { setSelectedItem(workflow); setShowWorkflowModal(true); }}
                           >
-                            <Edit className="w-4 h-4" />
+                            <Edit className="w-3 h-3" />
                           </Button>
                         </div>
                       </div>
@@ -765,12 +770,13 @@ export default function AdminAI() {
                 ))}
                 {workflows.length === 0 && (
                   <Card className="bg-zinc-900/50 border-zinc-800">
-                    <CardContent className="p-12 text-center">
-                      <Workflow className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-                      <p className="text-zinc-400">No workflows created yet</p>
+                    <CardContent className="p-6 text-center">
+                      <Workflow className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
+                      <p className="text-zinc-400 text-xs">No workflows created yet</p>
                       <Button
                         onClick={() => setShowWorkflowModal(true)}
-                        className={`mt-4 ${BUTTON_STYLES.primary}`}
+                        size="sm"
+                        className="mt-3 bg-red-500 hover:bg-red-600 text-white h-7 text-xs"
                       >
                         Create First Workflow
                       </Button>
@@ -782,30 +788,30 @@ export default function AdminAI() {
 
             {/* Scheduled Tasks Tab */}
             <TabsContent value="scheduled">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold text-white">Scheduled Tasks</h2>
+              <div className="flex justify-between items-center mb-3">
+                <h2 className="text-sm font-semibold text-white">Scheduled Tasks</h2>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {scheduledTasks.map((task) => (
                   <Card key={task.id} className="bg-zinc-900/50 border-zinc-800">
-                    <CardContent className="p-6">
+                    <CardContent className="p-3">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="font-semibold text-white">{task.name}</h3>
-                            <Badge className="bg-purple-500/20 text-purple-400">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <h3 className="text-xs font-semibold text-white">{task.name}</h3>
+                            <Badge className="bg-purple-500/20 text-purple-400 text-[10px] px-1.5 py-px">
                               {task.task_type}
                             </Badge>
-                            <Badge className={task.is_active ? "bg-green-500/20 text-green-400" : "bg-zinc-700 text-zinc-400"}>
+                            <Badge className={cn("text-[10px] px-1.5 py-px", task.is_active ? "bg-green-500/20 text-green-400" : "bg-zinc-700 text-zinc-400")}>
                               {task.is_active ? 'Active' : 'Inactive'}
                             </Badge>
                           </div>
-                          <p className="text-sm text-zinc-400 mb-3">{task.description}</p>
+                          <p className="text-[10px] text-zinc-400 mb-2">{task.description}</p>
 
-                          <div className="flex items-center gap-6 text-sm text-zinc-500">
+                          <div className="flex items-center gap-4 text-[10px] text-zinc-500 flex-wrap">
                             <span className="flex items-center gap-1 font-mono">
-                              <Clock className="w-4 h-4" />
+                              <Clock className="w-3 h-3" />
                               {task.cron_expression}
                             </span>
                             <span>Timezone: {task.timezone}</span>
@@ -819,7 +825,7 @@ export default function AdminAI() {
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-4 ml-4">
+                        <div className="flex items-center gap-3 ml-3">
                           <Switch
                             checked={task.is_active}
                             onCheckedChange={() => handleToggleTask(task)}
@@ -831,9 +837,9 @@ export default function AdminAI() {
                 ))}
                 {scheduledTasks.length === 0 && (
                   <Card className="bg-zinc-900/50 border-zinc-800">
-                    <CardContent className="p-12 text-center">
-                      <Clock className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-                      <p className="text-zinc-400">No scheduled tasks configured</p>
+                    <CardContent className="p-6 text-center">
+                      <Clock className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
+                      <p className="text-zinc-400 text-xs">No scheduled tasks configured</p>
                     </CardContent>
                   </Card>
                 )}
@@ -936,135 +942,135 @@ function ModelModal({ open, onClose, model, onSave }) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-zinc-900 border-zinc-800 max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="text-white">
+      <DialogContent className="bg-zinc-900 border-zinc-800 max-w-md p-4">
+        <DialogHeader className="pb-2">
+          <DialogTitle className="text-white text-sm">
             {model ? 'Edit AI Model' : 'Add AI Model'}
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="text-zinc-400">Name</Label>
+              <Label className="text-zinc-400 text-xs">Name</Label>
               <Input
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="bg-zinc-800 border-zinc-700"
+                className="bg-zinc-800 border-zinc-700 h-7 text-xs"
                 required
               />
             </div>
             <div>
-              <Label className="text-zinc-400">Slug</Label>
+              <Label className="text-zinc-400 text-xs">Slug</Label>
               <Input
                 value={formData.slug}
                 onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                className="bg-zinc-800 border-zinc-700"
+                className="bg-zinc-800 border-zinc-700 h-7 text-xs"
                 required
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="text-zinc-400">Provider</Label>
+              <Label className="text-zinc-400 text-xs">Provider</Label>
               <Select
                 value={formData.provider}
                 onValueChange={(v) => setFormData({ ...formData, provider: v })}
               >
-                <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                <SelectTrigger className="bg-zinc-800 border-zinc-700 h-7 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-zinc-800 border-zinc-700">
-                  <SelectItem value="openai">OpenAI</SelectItem>
-                  <SelectItem value="anthropic">Anthropic</SelectItem>
-                  <SelectItem value="google">Google</SelectItem>
-                  <SelectItem value="together">Together.ai</SelectItem>
-                  <SelectItem value="groq">Groq</SelectItem>
+                  <SelectItem value="openai" className="text-xs">OpenAI</SelectItem>
+                  <SelectItem value="anthropic" className="text-xs">Anthropic</SelectItem>
+                  <SelectItem value="google" className="text-xs">Google</SelectItem>
+                  <SelectItem value="together" className="text-xs">Together.ai</SelectItem>
+                  <SelectItem value="groq" className="text-xs">Groq</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label className="text-zinc-400">Model ID</Label>
+              <Label className="text-zinc-400 text-xs">Model ID</Label>
               <Input
                 value={formData.model_id}
                 onChange={(e) => setFormData({ ...formData, model_id: e.target.value })}
-                className="bg-zinc-800 border-zinc-700"
+                className="bg-zinc-800 border-zinc-700 h-7 text-xs"
                 placeholder="gpt-4o"
                 required
               />
             </div>
           </div>
           <div>
-            <Label className="text-zinc-400">Description</Label>
+            <Label className="text-zinc-400 text-xs">Description</Label>
             <Textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="bg-zinc-800 border-zinc-700"
+              className="bg-zinc-800 border-zinc-700 text-xs"
               rows={2}
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="text-zinc-400">Input Price ($/1K)</Label>
+              <Label className="text-zinc-400 text-xs">Input Price ($/1K)</Label>
               <Input
                 type="number"
                 step="0.000001"
                 value={formData.pricing_input}
                 onChange={(e) => setFormData({ ...formData, pricing_input: parseFloat(e.target.value) })}
-                className="bg-zinc-800 border-zinc-700"
+                className="bg-zinc-800 border-zinc-700 h-7 text-xs"
               />
             </div>
             <div>
-              <Label className="text-zinc-400">Output Price ($/1K)</Label>
+              <Label className="text-zinc-400 text-xs">Output Price ($/1K)</Label>
               <Input
                 type="number"
                 step="0.000001"
                 value={formData.pricing_output}
                 onChange={(e) => setFormData({ ...formData, pricing_output: parseFloat(e.target.value) })}
-                className="bg-zinc-800 border-zinc-700"
+                className="bg-zinc-800 border-zinc-700 h-7 text-xs"
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="text-zinc-400">Max Tokens</Label>
+              <Label className="text-zinc-400 text-xs">Max Tokens</Label>
               <Input
                 type="number"
                 value={formData.max_tokens}
                 onChange={(e) => setFormData({ ...formData, max_tokens: parseInt(e.target.value) })}
-                className="bg-zinc-800 border-zinc-700"
+                className="bg-zinc-800 border-zinc-700 h-7 text-xs"
               />
             </div>
             <div>
-              <Label className="text-zinc-400">Context Window</Label>
+              <Label className="text-zinc-400 text-xs">Context Window</Label>
               <Input
                 type="number"
                 value={formData.context_window}
                 onChange={(e) => setFormData({ ...formData, context_window: parseInt(e.target.value) })}
-                className="bg-zinc-800 border-zinc-700"
+                className="bg-zinc-800 border-zinc-700 h-7 text-xs"
               />
             </div>
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <Switch
                 checked={formData.is_active}
                 onCheckedChange={(v) => setFormData({ ...formData, is_active: v })}
               />
-              <Label className="text-zinc-400">Active</Label>
+              <Label className="text-zinc-400 text-xs">Active</Label>
             </div>
             <div className="flex items-center gap-2">
               <Switch
                 checked={formData.is_default}
                 onCheckedChange={(v) => setFormData({ ...formData, is_default: v })}
               />
-              <Label className="text-zinc-400">Default Model</Label>
+              <Label className="text-zinc-400 text-xs">Default Model</Label>
             </div>
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose} className="border-zinc-700">
+          <DialogFooter className="pt-2">
+            <Button type="button" variant="outline" onClick={onClose} className="border-zinc-700 h-7 text-xs">
               Cancel
             </Button>
-            <Button type="submit" className={BUTTON_STYLES.primary}>
+            <Button type="submit" className="bg-red-500 hover:bg-red-600 text-white h-7 text-xs">
               {model ? 'Update' : 'Create'}
             </Button>
           </DialogFooter>
@@ -1129,101 +1135,101 @@ function PromptModal({ open, onClose, prompt, models, onSave }) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-zinc-900 border-zinc-800 max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-white">
+      <DialogContent className="bg-zinc-900 border-zinc-800 max-w-xl max-h-[90vh] overflow-y-auto p-4">
+        <DialogHeader className="pb-2">
+          <DialogTitle className="text-white text-sm">
             {prompt ? 'Edit Prompt' : 'Create Prompt'}
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="text-zinc-400">Name</Label>
+              <Label className="text-zinc-400 text-xs">Name</Label>
               <Input
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="bg-zinc-800 border-zinc-700"
+                className="bg-zinc-800 border-zinc-700 h-7 text-xs"
                 required
               />
             </div>
             <div>
-              <Label className="text-zinc-400">Slug</Label>
+              <Label className="text-zinc-400 text-xs">Slug</Label>
               <Input
                 value={formData.slug}
                 onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                className="bg-zinc-800 border-zinc-700"
+                className="bg-zinc-800 border-zinc-700 h-7 text-xs"
                 required
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="text-zinc-400">Category</Label>
+              <Label className="text-zinc-400 text-xs">Category</Label>
               <Select
                 value={formData.category}
                 onValueChange={(v) => setFormData({ ...formData, category: v })}
               >
-                <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                <SelectTrigger className="bg-zinc-800 border-zinc-700 h-7 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-zinc-800 border-zinc-700">
-                  <SelectItem value="email">Email</SelectItem>
-                  <SelectItem value="summary">Summary</SelectItem>
-                  <SelectItem value="extraction">Extraction</SelectItem>
-                  <SelectItem value="creative">Creative</SelectItem>
-                  <SelectItem value="analysis">Analysis</SelectItem>
+                  <SelectItem value="email" className="text-xs">Email</SelectItem>
+                  <SelectItem value="summary" className="text-xs">Summary</SelectItem>
+                  <SelectItem value="extraction" className="text-xs">Extraction</SelectItem>
+                  <SelectItem value="creative" className="text-xs">Creative</SelectItem>
+                  <SelectItem value="analysis" className="text-xs">Analysis</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label className="text-zinc-400">Model (optional)</Label>
+              <Label className="text-zinc-400 text-xs">Model (optional)</Label>
               <Select
                 value={formData.model_id || 'default'}
                 onValueChange={(v) => setFormData({ ...formData, model_id: v === 'default' ? null : v })}
               >
-                <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                <SelectTrigger className="bg-zinc-800 border-zinc-700 h-7 text-xs">
                   <SelectValue placeholder="Use default" />
                 </SelectTrigger>
                 <SelectContent className="bg-zinc-800 border-zinc-700">
-                  <SelectItem value="default">Use Default</SelectItem>
+                  <SelectItem value="default" className="text-xs">Use Default</SelectItem>
                   {models.map((m) => (
-                    <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                    <SelectItem key={m.id} value={m.id} className="text-xs">{m.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
           <div>
-            <Label className="text-zinc-400">Description</Label>
+            <Label className="text-zinc-400 text-xs">Description</Label>
             <Input
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="bg-zinc-800 border-zinc-700"
+              className="bg-zinc-800 border-zinc-700 h-7 text-xs"
             />
           </div>
           <div>
-            <Label className="text-zinc-400">System Prompt</Label>
+            <Label className="text-zinc-400 text-xs">System Prompt</Label>
             <Textarea
               value={formData.system_prompt}
               onChange={(e) => setFormData({ ...formData, system_prompt: e.target.value })}
-              className="bg-zinc-800 border-zinc-700 font-mono text-sm"
-              rows={3}
+              className="bg-zinc-800 border-zinc-700 font-mono text-xs"
+              rows={2}
             />
           </div>
           <div>
-            <Label className="text-zinc-400">User Prompt Template</Label>
+            <Label className="text-zinc-400 text-xs">User Prompt Template</Label>
             <Textarea
               value={formData.user_prompt_template}
               onChange={(e) => setFormData({ ...formData, user_prompt_template: e.target.value })}
-              className="bg-zinc-800 border-zinc-700 font-mono text-sm"
-              rows={4}
+              className="bg-zinc-800 border-zinc-700 font-mono text-xs"
+              rows={3}
               placeholder="Use {{variable}} for dynamic content"
               required
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="text-zinc-400">Temperature (0-1)</Label>
+              <Label className="text-zinc-400 text-xs">Temperature (0-1)</Label>
               <Input
                 type="number"
                 step="0.1"
@@ -1231,16 +1237,16 @@ function PromptModal({ open, onClose, prompt, models, onSave }) {
                 max="1"
                 value={formData.temperature}
                 onChange={(e) => setFormData({ ...formData, temperature: parseFloat(e.target.value) })}
-                className="bg-zinc-800 border-zinc-700"
+                className="bg-zinc-800 border-zinc-700 h-7 text-xs"
               />
             </div>
             <div>
-              <Label className="text-zinc-400">Max Tokens</Label>
+              <Label className="text-zinc-400 text-xs">Max Tokens</Label>
               <Input
                 type="number"
                 value={formData.max_tokens}
                 onChange={(e) => setFormData({ ...formData, max_tokens: parseInt(e.target.value) })}
-                className="bg-zinc-800 border-zinc-700"
+                className="bg-zinc-800 border-zinc-700 h-7 text-xs"
               />
             </div>
           </div>
@@ -1249,13 +1255,13 @@ function PromptModal({ open, onClose, prompt, models, onSave }) {
               checked={formData.is_active}
               onCheckedChange={(v) => setFormData({ ...formData, is_active: v })}
             />
-            <Label className="text-zinc-400">Active</Label>
+            <Label className="text-zinc-400 text-xs">Active</Label>
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose} className="border-zinc-700">
+          <DialogFooter className="pt-2">
+            <Button type="button" variant="outline" onClick={onClose} className="border-zinc-700 h-7 text-xs">
               Cancel
             </Button>
-            <Button type="submit" className={BUTTON_STYLES.primary}>
+            <Button type="submit" className="bg-red-500 hover:bg-red-600 text-white h-7 text-xs">
               {prompt ? 'Update' : 'Create'}
             </Button>
           </DialogFooter>
@@ -1308,56 +1314,56 @@ function WorkflowModal({ open, onClose, workflow, onSave }) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-zinc-900 border-zinc-800 max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="text-white">
+      <DialogContent className="bg-zinc-900 border-zinc-800 max-w-md p-4">
+        <DialogHeader className="pb-2">
+          <DialogTitle className="text-white text-sm">
             {workflow ? 'Edit Workflow' : 'Create Workflow'}
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="text-zinc-400">Name</Label>
+              <Label className="text-zinc-400 text-xs">Name</Label>
               <Input
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="bg-zinc-800 border-zinc-700"
+                className="bg-zinc-800 border-zinc-700 h-7 text-xs"
                 required
               />
             </div>
             <div>
-              <Label className="text-zinc-400">Slug</Label>
+              <Label className="text-zinc-400 text-xs">Slug</Label>
               <Input
                 value={formData.slug}
                 onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                className="bg-zinc-800 border-zinc-700"
+                className="bg-zinc-800 border-zinc-700 h-7 text-xs"
                 required
               />
             </div>
           </div>
           <div>
-            <Label className="text-zinc-400">Description</Label>
+            <Label className="text-zinc-400 text-xs">Description</Label>
             <Textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="bg-zinc-800 border-zinc-700"
+              className="bg-zinc-800 border-zinc-700 text-xs"
               rows={2}
             />
           </div>
           <div>
-            <Label className="text-zinc-400">Trigger Type</Label>
+            <Label className="text-zinc-400 text-xs">Trigger Type</Label>
             <Select
               value={formData.trigger_type}
               onValueChange={(v) => setFormData({ ...formData, trigger_type: v })}
             >
-              <SelectTrigger className="bg-zinc-800 border-zinc-700">
+              <SelectTrigger className="bg-zinc-800 border-zinc-700 h-7 text-xs">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-zinc-800 border-zinc-700">
-                <SelectItem value="manual">Manual</SelectItem>
-                <SelectItem value="webhook">Webhook</SelectItem>
-                <SelectItem value="schedule">Schedule</SelectItem>
-                <SelectItem value="event">Event</SelectItem>
+                <SelectItem value="manual" className="text-xs">Manual</SelectItem>
+                <SelectItem value="webhook" className="text-xs">Webhook</SelectItem>
+                <SelectItem value="schedule" className="text-xs">Schedule</SelectItem>
+                <SelectItem value="event" className="text-xs">Event</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -1366,13 +1372,13 @@ function WorkflowModal({ open, onClose, workflow, onSave }) {
               checked={formData.is_active}
               onCheckedChange={(v) => setFormData({ ...formData, is_active: v })}
             />
-            <Label className="text-zinc-400">Active</Label>
+            <Label className="text-zinc-400 text-xs">Active</Label>
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose} className="border-zinc-700">
+          <DialogFooter className="pt-2">
+            <Button type="button" variant="outline" onClick={onClose} className="border-zinc-700 h-7 text-xs">
               Cancel
             </Button>
-            <Button type="submit" className={BUTTON_STYLES.primary}>
+            <Button type="submit" className="bg-red-500 hover:bg-red-600 text-white h-7 text-xs">
               {workflow ? 'Update' : 'Create'}
             </Button>
           </DialogFooter>
@@ -1397,35 +1403,35 @@ function RunsModal({ open, onClose, workflow, runs }) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-zinc-900 border-zinc-800 max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-white">
+      <DialogContent className="bg-zinc-900 border-zinc-800 max-w-xl max-h-[80vh] overflow-y-auto p-4">
+        <DialogHeader className="pb-2">
+          <DialogTitle className="text-white text-sm">
             Run History: {workflow?.name}
           </DialogTitle>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="space-y-2">
           {runs.map((run) => (
-            <div key={run.id} className="bg-zinc-800/50 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <Badge className={getStatusBadge(run.status)}>
+            <div key={run.id} className="bg-zinc-800/50 rounded-lg p-3">
+              <div className="flex items-center justify-between mb-1.5">
+                <Badge className={cn("text-[10px] px-1.5 py-px", getStatusBadge(run.status))}>
                   {run.status}
                 </Badge>
-                <span className="text-sm text-zinc-500">
+                <span className="text-[10px] text-zinc-500">
                   {format(new Date(run.started_at), 'MMM d, HH:mm:ss')}
                 </span>
               </div>
               {run.error_message && (
-                <p className="text-sm text-red-400 mt-2">{run.error_message}</p>
+                <p className="text-[10px] text-red-400 mt-1.5">{run.error_message}</p>
               )}
               {run.completed_at && (
-                <p className="text-xs text-zinc-500 mt-2">
+                <p className="text-[10px] text-zinc-500 mt-1.5">
                   Duration: {Math.round((new Date(run.completed_at) - new Date(run.started_at)) / 1000)}s
                 </p>
               )}
             </div>
           ))}
           {runs.length === 0 && (
-            <p className="text-center text-zinc-500 py-8">No runs yet</p>
+            <p className="text-center text-zinc-500 py-6 text-xs">No runs yet</p>
           )}
         </div>
       </DialogContent>

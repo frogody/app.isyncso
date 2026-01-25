@@ -578,7 +578,7 @@ export default function Tasks() {
           </DragDropContext>
         ) : (
           /* List View */
-          <div className="space-y-2">
+          <div className="divide-y divide-zinc-800/60 rounded-xl border border-zinc-800/60 bg-zinc-900/30 overflow-hidden">
             {filteredTasks.length > 0 ? (
               filteredTasks.map(task => {
                 const priorityConfig = PRIORITY_LEVELS.find(p => p.id === task.priority) || PRIORITY_LEVELS[1];
@@ -588,45 +588,45 @@ export default function Tasks() {
                 return (
                   <div
                     key={task.id}
-                    className="flex items-center gap-4 p-4 bg-zinc-900/50 border border-zinc-800/60 rounded-xl hover:border-zinc-700 transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 hover:bg-white/[0.03] transition-colors"
                   >
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-cyan-500/10">
-                      <StatusIcon className="w-4 h-4 text-cyan-400/80" />
+                    <div className="w-6 h-6 rounded flex items-center justify-center bg-cyan-500/10">
+                      <StatusIcon className="w-3 h-3 text-cyan-400/80" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4
-                        className="font-medium text-white cursor-pointer hover:text-cyan-400"
+                        className="text-sm font-medium text-white cursor-pointer hover:text-cyan-400"
                         onClick={() => handleEditTask(task)}
                       >
                         {task.title}
                       </h4>
                       {task.description && (
-                        <p className="text-sm text-zinc-500 truncate">{task.description}</p>
+                        <p className="text-xs text-zinc-500 truncate">{task.description}</p>
                       )}
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       {task.due_date && (
-                        <span className="text-xs text-zinc-500 flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
+                        <span className="text-[10px] text-zinc-500 flex items-center gap-1">
+                          <Calendar className="w-2.5 h-2.5" />
                           {new Date(task.due_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                         </span>
                       )}
-                      <Badge variant="outline" className={`${priorityConfig.color}`}>
+                      <Badge variant="outline" className={`text-[10px] px-1.5 py-px ${priorityConfig.color}`}>
                         {priorityConfig.label}
                       </Badge>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="w-4 h-4 text-zinc-400" />
+                          <Button variant="ghost" size="icon" className="h-6 w-6">
+                            <MoreHorizontal className="w-3.5 h-3.5 text-zinc-400" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
                           <DropdownMenuItem onClick={() => handleEditTask(task)} className="text-zinc-300">
-                            <Edit2 className="w-4 h-4 mr-2" /> Edit
+                            <Edit2 className="w-3.5 h-3.5 mr-2" /> Edit
                           </DropdownMenuItem>
                           <DropdownMenuSeparator className="bg-zinc-800" />
                           <DropdownMenuItem onClick={() => handleDeleteTask(task.id)} className="text-red-400">
-                            <Trash2 className="w-4 h-4 mr-2" /> Delete
+                            <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

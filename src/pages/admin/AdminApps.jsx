@@ -73,26 +73,26 @@ const ADMIN_API_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-a
 function StatCard({ title, value, change, icon: Icon, color, subtitle }) {
   return (
     <Card className="bg-zinc-900/50 border-zinc-800">
-      <CardContent className="p-6">
+      <CardContent className="p-3">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-zinc-400 mb-1">{title}</p>
-            <h3 className="text-3xl font-bold text-white">{value}</h3>
-            {subtitle && <p className="text-xs text-zinc-500 mt-1">{subtitle}</p>}
+            <p className="text-[10px] text-zinc-500 mb-0.5">{title}</p>
+            <h3 className="text-lg font-bold text-white">{value}</h3>
+            {subtitle && <p className="text-[10px] text-zinc-500 mt-0.5">{subtitle}</p>}
             {change && (
-              <div className="flex items-center gap-1 mt-2">
-                <TrendingUp className="w-4 h-4 text-green-400" />
-                <span className="text-sm text-green-400">{change}</span>
+              <div className="flex items-center gap-1 mt-1">
+                <TrendingUp className="w-3 h-3 text-green-400" />
+                <span className="text-[10px] text-green-400">{change}</span>
               </div>
             )}
           </div>
           <div
             className={cn(
-              'w-12 h-12 rounded-xl flex items-center justify-center border',
+              'w-8 h-8 rounded-lg flex items-center justify-center border',
               getIconColor(color)
             )}
           >
-            <Icon className="w-6 h-6" />
+            <Icon className="w-4 h-4" />
           </div>
         </div>
       </CardContent>
@@ -124,67 +124,67 @@ function AppCard({ app, onEdit, onDelete, onViewLicenses }) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 hover:border-zinc-700 transition-colors"
+      className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-3 hover:border-zinc-700 transition-colors"
     >
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500/20 to-orange-500/20 flex items-center justify-center">
-            <AppIcon className="w-6 h-6 text-white" />
+      <div className="flex items-start justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500/20 to-orange-500/20 flex items-center justify-center">
+            <AppIcon className="w-4 h-4 text-white" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-white">{app.name}</h3>
-            <p className="text-sm text-zinc-400">{app.slug}</p>
+            <h3 className="text-xs font-semibold text-white">{app.name}</h3>
+            <p className="text-[10px] text-zinc-400">{app.slug}</p>
           </div>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="text-zinc-400 hover:text-white">
-              <MoreVertical className="w-4 h-4" />
+            <Button variant="ghost" size="icon" className="text-zinc-400 hover:text-white h-6 w-6">
+              <MoreVertical className="w-3 h-3" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
-            <DropdownMenuItem onClick={() => onEdit(app)} className="text-zinc-300 hover:text-white">
-              <Edit className="w-4 h-4 mr-2" />
+            <DropdownMenuItem onClick={() => onEdit(app)} className="text-zinc-300 hover:text-white text-xs">
+              <Edit className="w-3 h-3 mr-1.5" />
               Edit App
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onViewLicenses(app)} className="text-zinc-300 hover:text-white">
-              <Key className="w-4 h-4 mr-2" />
+            <DropdownMenuItem onClick={() => onViewLicenses(app)} className="text-zinc-300 hover:text-white text-xs">
+              <Key className="w-3 h-3 mr-1.5" />
               View Licenses
             </DropdownMenuItem>
             <DropdownMenuSeparator className="bg-zinc-800" />
-            <DropdownMenuItem onClick={() => onDelete(app)} className="text-red-400 hover:text-red-300">
-              <Trash2 className="w-4 h-4 mr-2" />
+            <DropdownMenuItem onClick={() => onDelete(app)} className="text-red-400 hover:text-red-300 text-xs">
+              <Trash2 className="w-3 h-3 mr-1.5" />
               Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
 
-      <p className="text-sm text-zinc-400 mb-4 line-clamp-2">{app.description}</p>
+      <p className="text-[10px] text-zinc-400 mb-2 line-clamp-2">{app.description}</p>
 
-      <div className="flex flex-wrap gap-2 mb-4">
-        <Badge className={cn('text-xs', getStatusColor(getStatus()))}>
+      <div className="flex flex-wrap gap-1 mb-2">
+        <Badge className={cn('text-[10px] px-1.5 py-px', getStatusColor(getStatus()))}>
           {getStatus()?.replace('_', ' ')}
         </Badge>
-        <Badge className={cn('text-xs', pricingColors[getPricingModel()] || pricingColors.free)}>
+        <Badge className={cn('text-[10px] px-1.5 py-px', pricingColors[getPricingModel()] || pricingColors.free)}>
           {getPricingModel()}
         </Badge>
         {(app.is_core || app.module_type === 'core') && (
-          <Badge className="bg-yellow-500/20 text-yellow-400 text-xs">
-            <Crown className="w-3 h-3 mr-1" />
+          <Badge className="bg-yellow-500/20 text-yellow-400 text-[10px] px-1.5 py-px">
+            <Crown className="w-2.5 h-2.5 mr-0.5" />
             Core
           </Badge>
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-zinc-800">
+      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-zinc-800">
         <div>
-          <p className="text-xs text-zinc-500">Active Licenses</p>
-          <p className="text-lg font-semibold text-white">{app.active_licenses || 0}</p>
+          <p className="text-[10px] text-zinc-500">Active Licenses</p>
+          <p className="text-sm font-semibold text-white">{app.active_licenses || 0}</p>
         </div>
         <div>
-          <p className="text-xs text-zinc-500">Revenue</p>
-          <p className="text-lg font-semibold text-white">
+          <p className="text-[10px] text-zinc-500">Revenue</p>
+          <p className="text-sm font-semibold text-white">
             ${(app.total_revenue || 0).toLocaleString()}
           </p>
         </div>
@@ -207,60 +207,56 @@ function LicenseRow({ license, onEdit, onRevoke }) {
   const LicenseAppIcon = getIcon(license.app_icon, Package);
 
   return (
-    <motion.tr
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="border-b border-zinc-800 hover:bg-zinc-800/50"
-    >
-      <td className="p-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center">
-            <LicenseAppIcon className="w-5 h-5 text-zinc-300" />
+    <tr className="border-b border-zinc-800 hover:bg-zinc-800/30 h-9">
+      <td className="py-1.5 px-3">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded bg-zinc-800 flex items-center justify-center">
+            <LicenseAppIcon className="w-3 h-3 text-zinc-300" />
           </div>
           <div>
-            <p className="font-medium text-white">{license.app_name}</p>
-            <p className="text-sm text-zinc-400">{license.license_type}</p>
+            <p className="text-xs font-medium text-white">{license.app_name}</p>
+            <p className="text-[10px] text-zinc-400">{license.license_type}</p>
           </div>
         </div>
       </td>
-      <td className="p-4">
-        <div className="flex items-center gap-2">
-          <Building2 className="w-4 h-4 text-zinc-400" />
-          <span className="text-zinc-300">{license.company_name}</span>
+      <td className="py-1.5 px-3">
+        <div className="flex items-center gap-1.5">
+          <Building2 className="w-3 h-3 text-zinc-400" />
+          <span className="text-xs text-zinc-300">{license.company_name}</span>
         </div>
       </td>
-      <td className="p-4">
-        <Badge className={cn('text-xs', config.bg, config.color)}>
-          <StatusIcon className="w-3 h-3 mr-1" />
+      <td className="py-1.5 px-3">
+        <Badge className={cn('text-[10px] px-1.5 py-px', config.bg, config.color)}>
+          <StatusIcon className="w-2.5 h-2.5 mr-0.5" />
           {license.status}
         </Badge>
       </td>
-      <td className="p-4 text-zinc-400">
+      <td className="py-1.5 px-3 text-xs text-zinc-400">
         {license.expires_at ? new Date(license.expires_at).toLocaleDateString() : 'Never'}
       </td>
-      <td className="p-4 text-zinc-300">${(license.amount || 0).toLocaleString()}</td>
-      <td className="p-4">
+      <td className="py-1.5 px-3 text-xs text-zinc-300">${(license.amount || 0).toLocaleString()}</td>
+      <td className="py-1.5 px-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="text-zinc-400 hover:text-white">
-              <MoreVertical className="w-4 h-4" />
+            <Button variant="ghost" size="icon" className="text-zinc-400 hover:text-white h-6 w-6">
+              <MoreVertical className="w-3 h-3" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
-            <DropdownMenuItem onClick={() => onEdit(license)} className="text-zinc-300 hover:text-white">
-              <Edit className="w-4 h-4 mr-2" />
+            <DropdownMenuItem onClick={() => onEdit(license)} className="text-zinc-300 hover:text-white text-xs">
+              <Edit className="w-3 h-3 mr-1.5" />
               Edit License
             </DropdownMenuItem>
             {license.status === 'active' && (
-              <DropdownMenuItem onClick={() => onRevoke(license)} className="text-red-400 hover:text-red-300">
-                <XCircle className="w-4 h-4 mr-2" />
+              <DropdownMenuItem onClick={() => onRevoke(license)} className="text-red-400 hover:text-red-300 text-xs">
+                <XCircle className="w-3 h-3 mr-1.5" />
                 Revoke License
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>
         </DropdownMenu>
       </td>
-    </motion.tr>
+    </tr>
   );
 }
 
@@ -596,14 +592,14 @@ export default function AdminApps() {
   }
 
   return (
-    <div className="min-h-screen bg-black p-6 space-y-6">
+    <div className="min-h-screen bg-black p-4 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">App Store Management</h1>
-          <p className="text-zinc-400">Manage platform apps and licenses</p>
+          <h1 className="text-lg font-bold text-white">App Store Management</h1>
+          <p className="text-zinc-400 text-xs">Manage platform apps and licenses</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <Button
             onClick={() => {
               resetLicenseForm();
@@ -611,9 +607,10 @@ export default function AdminApps() {
               setShowLicenseModal(true);
             }}
             variant="outline"
-            className="border-zinc-700 text-zinc-300 hover:text-white"
+            size="sm"
+            className="border-zinc-700 text-zinc-300 hover:text-white h-7 text-xs"
           >
-            <Key className="w-4 h-4 mr-2" />
+            <Key className="w-3 h-3 mr-1.5" />
             Grant License
           </Button>
           <Button
@@ -622,16 +619,17 @@ export default function AdminApps() {
               setEditingApp(null);
               setShowAppModal(true);
             }}
-            className={BUTTON_STYLES.primary}
+            size="sm"
+            className="bg-red-500 hover:bg-red-600 h-7 text-xs"
           >
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="w-3 h-3 mr-1.5" />
             Add App
           </Button>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard
           title="Total Apps"
           value={stats?.total_apps || 0}
@@ -661,18 +659,18 @@ export default function AdminApps() {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-3">
         <div className="flex items-center justify-between">
           <TabsList className="bg-zinc-900 border border-zinc-800">
-            <TabsTrigger value="apps" className="data-[state=active]:bg-red-600">
-              <Package className="w-4 h-4 mr-2" />
+            <TabsTrigger value="apps" className="data-[state=active]:bg-zinc-800 text-xs">
+              <Package className="w-3 h-3 mr-1.5" />
               Apps
             </TabsTrigger>
-            <TabsTrigger value="licenses" className="data-[state=active]:bg-red-600">
-              <Key className="w-4 h-4 mr-2" />
+            <TabsTrigger value="licenses" className="data-[state=active]:bg-zinc-800 text-xs">
+              <Key className="w-3 h-3 mr-1.5" />
               Licenses
               {selectedAppForLicenses && (
-                <Badge variant="outline" className="ml-2 text-xs">
+                <Badge variant="outline" className="ml-1.5 text-[10px] px-1.5 py-px">
                   {selectedAppForLicenses.name}
                 </Badge>
               )}
@@ -680,58 +678,58 @@ export default function AdminApps() {
           </TabsList>
 
           {/* Filters */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-zinc-400" />
+              <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-3 h-3 text-zinc-400" />
               <Input
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-zinc-900 border-zinc-800 text-white w-64"
+                className="pl-8 bg-zinc-900 border-zinc-800 text-white w-48 h-7 text-xs"
               />
             </div>
 
             {activeTab === 'apps' && (
               <>
                 <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger className="w-40 bg-zinc-900 border-zinc-800 text-zinc-300">
+                  <SelectTrigger className="w-32 bg-zinc-900 border-zinc-800 text-zinc-300 h-7 text-xs">
                     <SelectValue placeholder="Category" />
                   </SelectTrigger>
                   <SelectContent className="bg-zinc-900 border-zinc-800">
-                    <SelectItem value="all">All Categories</SelectItem>
-                    <SelectItem value="productivity">Productivity</SelectItem>
-                    <SelectItem value="communication">Communication</SelectItem>
-                    <SelectItem value="analytics">Analytics</SelectItem>
-                    <SelectItem value="automation">Automation</SelectItem>
-                    <SelectItem value="ai">AI & Machine Learning</SelectItem>
-                    <SelectItem value="integration">Integrations</SelectItem>
-                    <SelectItem value="security">Security</SelectItem>
+                    <SelectItem value="all" className="text-xs">All Categories</SelectItem>
+                    <SelectItem value="productivity" className="text-xs">Productivity</SelectItem>
+                    <SelectItem value="communication" className="text-xs">Communication</SelectItem>
+                    <SelectItem value="analytics" className="text-xs">Analytics</SelectItem>
+                    <SelectItem value="automation" className="text-xs">Automation</SelectItem>
+                    <SelectItem value="ai" className="text-xs">AI & ML</SelectItem>
+                    <SelectItem value="integration" className="text-xs">Integrations</SelectItem>
+                    <SelectItem value="security" className="text-xs">Security</SelectItem>
                   </SelectContent>
                 </Select>
 
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-36 bg-zinc-900 border-zinc-800 text-zinc-300">
+                  <SelectTrigger className="w-28 bg-zinc-900 border-zinc-800 text-zinc-300 h-7 text-xs">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent className="bg-zinc-900 border-zinc-800">
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="beta">Beta</SelectItem>
-                    <SelectItem value="coming_soon">Coming Soon</SelectItem>
-                    <SelectItem value="deprecated">Deprecated</SelectItem>
+                    <SelectItem value="all" className="text-xs">All Status</SelectItem>
+                    <SelectItem value="active" className="text-xs">Active</SelectItem>
+                    <SelectItem value="beta" className="text-xs">Beta</SelectItem>
+                    <SelectItem value="coming_soon" className="text-xs">Coming Soon</SelectItem>
+                    <SelectItem value="deprecated" className="text-xs">Deprecated</SelectItem>
                   </SelectContent>
                 </Select>
 
                 <Select value={pricingFilter} onValueChange={setPricingFilter}>
-                  <SelectTrigger className="w-36 bg-zinc-900 border-zinc-800 text-zinc-300">
+                  <SelectTrigger className="w-28 bg-zinc-900 border-zinc-800 text-zinc-300 h-7 text-xs">
                     <SelectValue placeholder="Pricing" />
                   </SelectTrigger>
                   <SelectContent className="bg-zinc-900 border-zinc-800">
-                    <SelectItem value="all">All Pricing</SelectItem>
-                    <SelectItem value="free">Free</SelectItem>
-                    <SelectItem value="freemium">Freemium</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="enterprise">Enterprise</SelectItem>
+                    <SelectItem value="all" className="text-xs">All Pricing</SelectItem>
+                    <SelectItem value="free" className="text-xs">Free</SelectItem>
+                    <SelectItem value="freemium" className="text-xs">Freemium</SelectItem>
+                    <SelectItem value="paid" className="text-xs">Paid</SelectItem>
+                    <SelectItem value="enterprise" className="text-xs">Enterprise</SelectItem>
                   </SelectContent>
                 </Select>
               </>
@@ -742,9 +740,9 @@ export default function AdminApps() {
                 variant="outline"
                 size="sm"
                 onClick={() => setSelectedAppForLicenses(null)}
-                className="border-zinc-700 text-zinc-300"
+                className="border-zinc-700 text-zinc-300 h-7 text-xs"
               >
-                <XCircle className="w-4 h-4 mr-2" />
+                <XCircle className="w-3 h-3 mr-1.5" />
                 Clear Filter
               </Button>
             )}
@@ -752,8 +750,8 @@ export default function AdminApps() {
         </div>
 
         {/* Apps Tab */}
-        <TabsContent value="apps" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <TabsContent value="apps" className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {filteredApps.map((app) => (
               <AppCard
                 key={app.id}
@@ -766,10 +764,10 @@ export default function AdminApps() {
           </div>
 
           {filteredApps.length === 0 && (
-            <div className="text-center py-12">
-              <Package className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-white mb-2">No apps found</h3>
-              <p className="text-zinc-400 mb-4">
+            <div className="text-center py-8">
+              <Package className="w-8 h-8 text-zinc-600 mx-auto mb-3" />
+              <h3 className="text-sm font-medium text-white mb-1">No apps found</h3>
+              <p className="text-zinc-400 text-xs mb-3">
                 {searchTerm ? 'Try adjusting your search' : 'Create your first app to get started'}
               </p>
               {!searchTerm && (
@@ -779,9 +777,10 @@ export default function AdminApps() {
                     setEditingApp(null);
                     setShowAppModal(true);
                   }}
-                  className={BUTTON_STYLES.primary}
+                  size="sm"
+                  className="bg-red-500 hover:bg-red-600 h-7 text-xs"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
+                  <Plus className="w-3 h-3 mr-1.5" />
                   Add App
                 </Button>
               )}
@@ -790,19 +789,19 @@ export default function AdminApps() {
         </TabsContent>
 
         {/* Licenses Tab */}
-        <TabsContent value="licenses" className="space-y-6">
+        <TabsContent value="licenses" className="space-y-3">
           <Card className="bg-zinc-900/50 border-zinc-800">
             <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-zinc-800 bg-zinc-900/80">
-                      <th className="text-left p-4 text-sm font-medium text-zinc-400">App</th>
-                      <th className="text-left p-4 text-sm font-medium text-zinc-400">Company</th>
-                      <th className="text-left p-4 text-sm font-medium text-zinc-400">Status</th>
-                      <th className="text-left p-4 text-sm font-medium text-zinc-400">Expires</th>
-                      <th className="text-left p-4 text-sm font-medium text-zinc-400">Amount</th>
-                      <th className="text-left p-4 text-sm font-medium text-zinc-400">Actions</th>
+                    <tr className="border-b border-zinc-800 bg-zinc-800/50">
+                      <th className="text-left py-2 px-3 text-[10px] font-medium text-zinc-400 uppercase">App</th>
+                      <th className="text-left py-2 px-3 text-[10px] font-medium text-zinc-400 uppercase">Company</th>
+                      <th className="text-left py-2 px-3 text-[10px] font-medium text-zinc-400 uppercase">Status</th>
+                      <th className="text-left py-2 px-3 text-[10px] font-medium text-zinc-400 uppercase">Expires</th>
+                      <th className="text-left py-2 px-3 text-[10px] font-medium text-zinc-400 uppercase">Amount</th>
+                      <th className="text-left py-2 px-3 text-[10px] font-medium text-zinc-400 uppercase">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -819,10 +818,10 @@ export default function AdminApps() {
               </div>
 
               {filteredLicenses.length === 0 && (
-                <div className="text-center py-12">
-                  <Key className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-white mb-2">No licenses found</h3>
-                  <p className="text-zinc-400 mb-4">
+                <div className="text-center py-8">
+                  <Key className="w-8 h-8 text-zinc-600 mx-auto mb-3" />
+                  <h3 className="text-sm font-medium text-white mb-1">No licenses found</h3>
+                  <p className="text-zinc-400 text-xs mb-3">
                     {selectedAppForLicenses
                       ? `No licenses for ${selectedAppForLicenses.name}`
                       : 'Grant your first license to get started'}
@@ -836,9 +835,10 @@ export default function AdminApps() {
                       setEditingLicense(null);
                       setShowLicenseModal(true);
                     }}
-                    className={BUTTON_STYLES.primary}
+                    size="sm"
+                    className="bg-red-500 hover:bg-red-600 h-7 text-xs"
                   >
-                    <Plus className="w-4 h-4 mr-2" />
+                    <Plus className="w-3 h-3 mr-1.5" />
                     Grant License
                   </Button>
                 </div>
@@ -850,132 +850,132 @@ export default function AdminApps() {
 
       {/* App Modal */}
       <Dialog open={showAppModal} onOpenChange={setShowAppModal}>
-        <DialogContent className="bg-zinc-900 border-zinc-800 max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-white">
+        <DialogContent className="bg-zinc-900 border-zinc-800 max-w-xl p-4">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="text-white text-sm">
               {editingApp ? 'Edit App' : 'Create New App'}
             </DialogTitle>
-            <DialogDescription className="text-zinc-400">
+            <DialogDescription className="text-zinc-400 text-xs">
               {editingApp ? 'Update app details' : 'Add a new app to the platform'}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-zinc-300">Name</Label>
+          <div className="grid gap-3 py-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-zinc-300 text-xs">Name</Label>
                 <Input
                   value={appForm.name}
                   onChange={(e) => setAppForm({ ...appForm, name: e.target.value })}
-                  className="bg-zinc-800 border-zinc-700 text-white"
+                  className="bg-zinc-800 border-zinc-700 text-white h-7 text-xs"
                   placeholder="App Name"
                 />
               </div>
-              <div className="space-y-2">
-                <Label className="text-zinc-300">Slug</Label>
+              <div className="space-y-1.5">
+                <Label className="text-zinc-300 text-xs">Slug</Label>
                 <Input
                   value={appForm.slug}
                   onChange={(e) => setAppForm({ ...appForm, slug: e.target.value })}
-                  className="bg-zinc-800 border-zinc-700 text-white"
+                  className="bg-zinc-800 border-zinc-700 text-white h-7 text-xs"
                   placeholder="app-slug"
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-zinc-300">Description</Label>
+            <div className="space-y-1.5">
+              <Label className="text-zinc-300 text-xs">Description</Label>
               <Textarea
                 value={appForm.description}
                 onChange={(e) => setAppForm({ ...appForm, description: e.target.value })}
-                className="bg-zinc-800 border-zinc-700 text-white"
+                className="bg-zinc-800 border-zinc-700 text-white text-xs min-h-[60px]"
                 placeholder="App description..."
-                rows={3}
+                rows={2}
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-zinc-300">Category</Label>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-zinc-300 text-xs">Category</Label>
                 <Select
                   value={appForm.category}
                   onValueChange={(value) => setAppForm({ ...appForm, category: value })}
                 >
-                  <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                  <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white h-7 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-zinc-900 border-zinc-800">
-                    <SelectItem value="productivity">Productivity</SelectItem>
-                    <SelectItem value="communication">Communication</SelectItem>
-                    <SelectItem value="analytics">Analytics</SelectItem>
-                    <SelectItem value="automation">Automation</SelectItem>
-                    <SelectItem value="ai">AI & Machine Learning</SelectItem>
-                    <SelectItem value="integration">Integrations</SelectItem>
-                    <SelectItem value="security">Security</SelectItem>
+                    <SelectItem value="productivity" className="text-xs">Productivity</SelectItem>
+                    <SelectItem value="communication" className="text-xs">Communication</SelectItem>
+                    <SelectItem value="analytics" className="text-xs">Analytics</SelectItem>
+                    <SelectItem value="automation" className="text-xs">Automation</SelectItem>
+                    <SelectItem value="ai" className="text-xs">AI & ML</SelectItem>
+                    <SelectItem value="integration" className="text-xs">Integrations</SelectItem>
+                    <SelectItem value="security" className="text-xs">Security</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label className="text-zinc-300">Icon (emoji)</Label>
+              <div className="space-y-1.5">
+                <Label className="text-zinc-300 text-xs">Icon (emoji)</Label>
                 <Input
                   value={appForm.icon}
                   onChange={(e) => setAppForm({ ...appForm, icon: e.target.value })}
-                  className="bg-zinc-800 border-zinc-700 text-white"
+                  className="bg-zinc-800 border-zinc-700 text-white h-7 text-xs"
                   placeholder="📦"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label className="text-zinc-300">Pricing Model</Label>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-zinc-300 text-xs">Pricing Model</Label>
                 <Select
                   value={appForm.pricing_model}
                   onValueChange={(value) => setAppForm({ ...appForm, pricing_model: value })}
                 >
-                  <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                  <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white h-7 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-zinc-900 border-zinc-800">
-                    <SelectItem value="free">Free</SelectItem>
-                    <SelectItem value="freemium">Freemium</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="enterprise">Enterprise</SelectItem>
+                    <SelectItem value="free" className="text-xs">Free</SelectItem>
+                    <SelectItem value="freemium" className="text-xs">Freemium</SelectItem>
+                    <SelectItem value="paid" className="text-xs">Paid</SelectItem>
+                    <SelectItem value="enterprise" className="text-xs">Enterprise</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label className="text-zinc-300">Base Price</Label>
+              <div className="space-y-1.5">
+                <Label className="text-zinc-300 text-xs">Base Price</Label>
                 <Input
                   type="number"
                   value={appForm.base_price}
                   onChange={(e) => setAppForm({ ...appForm, base_price: parseFloat(e.target.value) || 0 })}
-                  className="bg-zinc-800 border-zinc-700 text-white"
+                  className="bg-zinc-800 border-zinc-700 text-white h-7 text-xs"
                   placeholder="0.00"
                 />
               </div>
-              <div className="space-y-2">
-                <Label className="text-zinc-300">Status</Label>
+              <div className="space-y-1.5">
+                <Label className="text-zinc-300 text-xs">Status</Label>
                 <Select
                   value={appForm.status}
                   onValueChange={(value) => setAppForm({ ...appForm, status: value })}
                 >
-                  <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                  <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white h-7 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-zinc-900 border-zinc-800">
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="beta">Beta</SelectItem>
-                    <SelectItem value="coming_soon">Coming Soon</SelectItem>
-                    <SelectItem value="deprecated">Deprecated</SelectItem>
+                    <SelectItem value="active" className="text-xs">Active</SelectItem>
+                    <SelectItem value="beta" className="text-xs">Beta</SelectItem>
+                    <SelectItem value="coming_soon" className="text-xs">Coming Soon</SelectItem>
+                    <SelectItem value="deprecated" className="text-xs">Deprecated</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
-            <div className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-lg">
+            <div className="flex items-center justify-between p-2 bg-zinc-800/50 rounded-lg">
               <div>
-                <Label className="text-zinc-300">Core App</Label>
-                <p className="text-sm text-zinc-500">Mark this app as a core platform feature</p>
+                <Label className="text-zinc-300 text-xs">Core App</Label>
+                <p className="text-[10px] text-zinc-500">Mark as core platform feature</p>
               </div>
               <Switch
                 checked={appForm.is_core}
@@ -984,17 +984,17 @@ export default function AdminApps() {
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="pt-2">
             <Button
               variant="outline"
               onClick={() => setShowAppModal(false)}
-              className="border-zinc-700 text-zinc-300"
+              className="border-zinc-700 text-zinc-300 h-7 text-xs"
             >
               Cancel
             </Button>
             <Button
               onClick={handleSaveApp}
-              className={BUTTON_STYLES.primary}
+              className="bg-red-500 hover:bg-red-600 h-7 text-xs"
             >
               {editingApp ? 'Update App' : 'Create App'}
             </Button>
@@ -1004,30 +1004,30 @@ export default function AdminApps() {
 
       {/* License Modal */}
       <Dialog open={showLicenseModal} onOpenChange={setShowLicenseModal}>
-        <DialogContent className="bg-zinc-900 border-zinc-800 max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="text-white">
+        <DialogContent className="bg-zinc-900 border-zinc-800 max-w-md p-4">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="text-white text-sm">
               {editingLicense ? 'Edit License' : 'Grant License'}
             </DialogTitle>
-            <DialogDescription className="text-zinc-400">
+            <DialogDescription className="text-zinc-400 text-xs">
               {editingLicense ? 'Update license details' : 'Grant app access to a company'}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label className="text-zinc-300">App</Label>
+          <div className="grid gap-3 py-2">
+            <div className="space-y-1.5">
+              <Label className="text-zinc-300 text-xs">App</Label>
               <Select
                 value={licenseForm.app_id}
                 onValueChange={(value) => setLicenseForm({ ...licenseForm, app_id: value })}
                 disabled={!!editingLicense}
               >
-                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white h-7 text-xs">
                   <SelectValue placeholder="Select app" />
                 </SelectTrigger>
                 <SelectContent className="bg-zinc-900 border-zinc-800">
                   {apps.map((app) => (
-                    <SelectItem key={app.id} value={app.id}>
+                    <SelectItem key={app.id} value={app.id} className="text-xs">
                       {app.name}
                     </SelectItem>
                   ))}
@@ -1035,19 +1035,19 @@ export default function AdminApps() {
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-zinc-300">Company</Label>
+            <div className="space-y-1.5">
+              <Label className="text-zinc-300 text-xs">Company</Label>
               <Select
                 value={licenseForm.company_id}
                 onValueChange={(value) => setLicenseForm({ ...licenseForm, company_id: value })}
                 disabled={!!editingLicense}
               >
-                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white h-7 text-xs">
                   <SelectValue placeholder="Select company" />
                 </SelectTrigger>
                 <SelectContent className="bg-zinc-900 border-zinc-800">
                   {companies.map((company) => (
-                    <SelectItem key={company.id} value={company.id}>
+                    <SelectItem key={company.id} value={company.id} className="text-xs">
                       {company.name}
                     </SelectItem>
                   ))}
@@ -1055,119 +1055,119 @@ export default function AdminApps() {
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-zinc-300">License Type</Label>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-zinc-300 text-xs">License Type</Label>
                 <Select
                   value={licenseForm.license_type}
                   onValueChange={(value) => setLicenseForm({ ...licenseForm, license_type: value })}
                 >
-                  <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                  <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white h-7 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-zinc-900 border-zinc-800">
-                    <SelectItem value="trial">Trial</SelectItem>
-                    <SelectItem value="subscription">Subscription</SelectItem>
-                    <SelectItem value="lifetime">Lifetime</SelectItem>
-                    <SelectItem value="enterprise">Enterprise</SelectItem>
+                    <SelectItem value="trial" className="text-xs">Trial</SelectItem>
+                    <SelectItem value="subscription" className="text-xs">Subscription</SelectItem>
+                    <SelectItem value="lifetime" className="text-xs">Lifetime</SelectItem>
+                    <SelectItem value="enterprise" className="text-xs">Enterprise</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label className="text-zinc-300">Billing Cycle</Label>
+              <div className="space-y-1.5">
+                <Label className="text-zinc-300 text-xs">Billing Cycle</Label>
                 <Select
                   value={licenseForm.billing_cycle}
                   onValueChange={(value) => setLicenseForm({ ...licenseForm, billing_cycle: value })}
                 >
-                  <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                  <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white h-7 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-zinc-900 border-zinc-800">
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="quarterly">Quarterly</SelectItem>
-                    <SelectItem value="yearly">Yearly</SelectItem>
-                    <SelectItem value="one_time">One-time</SelectItem>
+                    <SelectItem value="monthly" className="text-xs">Monthly</SelectItem>
+                    <SelectItem value="quarterly" className="text-xs">Quarterly</SelectItem>
+                    <SelectItem value="yearly" className="text-xs">Yearly</SelectItem>
+                    <SelectItem value="one_time" className="text-xs">One-time</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-zinc-300">Amount ($)</Label>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-zinc-300 text-xs">Amount ($)</Label>
                 <Input
                   type="number"
                   value={licenseForm.amount}
                   onChange={(e) => setLicenseForm({ ...licenseForm, amount: parseFloat(e.target.value) || 0 })}
-                  className="bg-zinc-800 border-zinc-700 text-white"
+                  className="bg-zinc-800 border-zinc-700 text-white h-7 text-xs"
                   placeholder="0.00"
                 />
               </div>
-              <div className="space-y-2">
-                <Label className="text-zinc-300">User Limit</Label>
+              <div className="space-y-1.5">
+                <Label className="text-zinc-300 text-xs">User Limit</Label>
                 <Input
                   type="number"
                   value={licenseForm.user_limit || ''}
                   onChange={(e) => setLicenseForm({ ...licenseForm, user_limit: e.target.value ? parseInt(e.target.value) : null })}
-                  className="bg-zinc-800 border-zinc-700 text-white"
+                  className="bg-zinc-800 border-zinc-700 text-white h-7 text-xs"
                   placeholder="Unlimited"
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-zinc-300">Expires At</Label>
+            <div className="space-y-1.5">
+              <Label className="text-zinc-300 text-xs">Expires At</Label>
               <Input
                 type="date"
                 value={licenseForm.expires_at}
                 onChange={(e) => setLicenseForm({ ...licenseForm, expires_at: e.target.value })}
-                className="bg-zinc-800 border-zinc-700 text-white"
+                className="bg-zinc-800 border-zinc-700 text-white h-7 text-xs"
               />
             </div>
 
             {editingLicense && (
-              <div className="space-y-2">
-                <Label className="text-zinc-300">Status</Label>
+              <div className="space-y-1.5">
+                <Label className="text-zinc-300 text-xs">Status</Label>
                 <Select
                   value={licenseForm.status}
                   onValueChange={(value) => setLicenseForm({ ...licenseForm, status: value })}
                 >
-                  <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                  <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white h-7 text-xs">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-zinc-900 border-zinc-800">
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="expired">Expired</SelectItem>
-                    <SelectItem value="revoked">Revoked</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="active" className="text-xs">Active</SelectItem>
+                    <SelectItem value="expired" className="text-xs">Expired</SelectItem>
+                    <SelectItem value="revoked" className="text-xs">Revoked</SelectItem>
+                    <SelectItem value="pending" className="text-xs">Pending</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label className="text-zinc-300">Notes</Label>
+            <div className="space-y-1.5">
+              <Label className="text-zinc-300 text-xs">Notes</Label>
               <Textarea
                 value={licenseForm.notes}
                 onChange={(e) => setLicenseForm({ ...licenseForm, notes: e.target.value })}
-                className="bg-zinc-800 border-zinc-700 text-white"
+                className="bg-zinc-800 border-zinc-700 text-white text-xs min-h-[50px]"
                 placeholder="Optional notes..."
                 rows={2}
               />
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="pt-2">
             <Button
               variant="outline"
               onClick={() => setShowLicenseModal(false)}
-              className="border-zinc-700 text-zinc-300"
+              className="border-zinc-700 text-zinc-300 h-7 text-xs"
             >
               Cancel
             </Button>
             <Button
               onClick={handleSaveLicense}
-              className={BUTTON_STYLES.primary}
+              className="bg-red-500 hover:bg-red-600 h-7 text-xs"
             >
               {editingLicense ? 'Update License' : 'Grant License'}
             </Button>

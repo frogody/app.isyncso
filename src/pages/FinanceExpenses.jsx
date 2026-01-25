@@ -303,7 +303,7 @@ export default function FinanceExpenses() {
         <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-red-950/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <PageHeader
           icon={CreditCard}
@@ -330,50 +330,50 @@ export default function FinanceExpenses() {
         />
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Card className="bg-zinc-900/50 border-zinc-800">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-zinc-400">Total Expenses</span>
-                <Wallet className="w-4 h-4 text-red-400" />
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-zinc-400">Total Expenses</span>
+                <Wallet className="w-3.5 h-3.5 text-red-400" />
               </div>
-              <p className="text-xl font-bold text-white">${stats.total.toLocaleString()}</p>
-              <p className="text-xs text-zinc-500">{stats.count} expenses</p>
+              <p className="text-lg font-bold text-white">${stats.total.toLocaleString()}</p>
+              <p className="text-[10px] text-zinc-500">{stats.count} expenses</p>
             </CardContent>
           </Card>
 
           <Card className="bg-zinc-900/50 border-zinc-800">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-zinc-400">This Month</span>
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-zinc-400">This Month</span>
                 {monthlyTrend === 'up' ? (
-                  <TrendingUp className="w-4 h-4 text-red-400" />
+                  <TrendingUp className="w-3.5 h-3.5 text-red-400" />
                 ) : (
-                  <TrendingDown className="w-4 h-4 text-amber-400" />
+                  <TrendingDown className="w-3.5 h-3.5 text-amber-400" />
                 )}
               </div>
-              <p className="text-xl font-bold text-white">${stats.thisMonth.toLocaleString()}</p>
-              <p className={`text-xs ${monthlyTrend === 'up' ? 'text-red-400' : 'text-amber-400'}`}>
+              <p className="text-lg font-bold text-white">${stats.thisMonth.toLocaleString()}</p>
+              <p className={`text-[10px] ${monthlyTrend === 'up' ? 'text-red-400' : 'text-amber-400'}`}>
                 {stats.percentChange > 0 ? '+' : ''}{stats.percentChange}% vs last month
               </p>
             </CardContent>
           </Card>
 
           <Card className="bg-zinc-900/50 border-zinc-800 md:col-span-2">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm text-zinc-400">Top Categories</span>
-                <PieChart className="w-4 h-4 text-zinc-400" />
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-zinc-400">Top Categories</span>
+                <PieChart className="w-3.5 h-3.5 text-zinc-400" />
               </div>
-              <div className="flex gap-4">
+              <div className="flex gap-3">
                 {categoryBreakdown.slice(0, 3).map((cat) => (
                   <div key={cat.category} className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-lg">{cat.config.icon}</span>
-                      <span className="text-xs text-zinc-400 capitalize">{cat.config.label}</span>
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <span className="text-sm">{cat.config.icon}</span>
+                      <span className="text-[10px] text-zinc-400 capitalize">{cat.config.label}</span>
                     </div>
-                    <p className="text-sm font-medium text-white">${cat.amount.toLocaleString()}</p>
-                    <Progress value={parseFloat(cat.percentage)} className="h-1 mt-1 bg-zinc-800" />
+                    <p className="text-xs font-medium text-white">${cat.amount.toLocaleString()}</p>
+                    <Progress value={parseFloat(cat.percentage)} className="h-0.5 mt-1 bg-zinc-800" />
                   </div>
                 ))}
               </div>
@@ -383,8 +383,8 @@ export default function FinanceExpenses() {
 
         {/* Filters */}
         <Card className="bg-zinc-900/50 border-zinc-800">
-          <CardContent className="p-4">
-            <div className="flex flex-col md:flex-row gap-4">
+          <CardContent className="p-3">
+            <div className="flex flex-col md:flex-row gap-3">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                 <Input
@@ -514,32 +514,30 @@ export default function FinanceExpenses() {
                 {filteredExpenses.map((expense) => {
                   const catConfig = getCategoryConfig(expense.category);
                   return (
-                    <motion.div
+                    <div
                       key={expense.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="p-4 hover:bg-zinc-800/30 transition-colors"
+                      className="px-3 py-2 hover:bg-white/[0.03] transition-colors"
                     >
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4 flex-1">
-                          <div className={`p-2 rounded-lg bg-${catConfig.color}-500/10`}>
-                            <span className="text-xl">{catConfig.icon}</span>
+                        <div className="flex items-center gap-2 flex-1">
+                          <div className={`p-1.5 rounded-lg bg-${catConfig.color}-500/10`}>
+                            <span className="text-base">{catConfig.icon}</span>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-3">
-                              <p className="font-medium text-white truncate">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-medium text-white truncate">
                                 {expense.description || 'Untitled Expense'}
                               </p>
-                              <Badge variant="outline" className="text-zinc-400 border-zinc-600 text-xs">
+                              <Badge variant="outline" size="xs" className="text-zinc-400 border-zinc-600">
                                 {catConfig.label}
                               </Badge>
                               {expense.tax_deductible && (
-                                <Badge variant="outline" className="text-amber-400 border-amber-500/30 text-xs">
+                                <Badge variant="outline" size="xs" className="text-amber-400 border-amber-500/30">
                                   Tax Deductible
                                 </Badge>
                               )}
                             </div>
-                            <div className="flex items-center gap-4 mt-1 text-sm text-zinc-500">
+                            <div className="flex items-center gap-3 mt-0.5 text-xs text-zinc-500">
                               {expense.vendor && (
                                 <span className="flex items-center gap-1">
                                   <Building className="w-3 h-3" />
@@ -554,8 +552,8 @@ export default function FinanceExpenses() {
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-4">
-                          <p className="text-lg font-semibold text-red-400">
+                        <div className="flex items-center gap-3">
+                          <p className="text-sm font-semibold text-red-400">
                             -${(expense.amount || 0).toLocaleString()}
                           </p>
 

@@ -99,33 +99,33 @@ function StatCard({ title, value, change, changeType, icon: Icon, color, subtitl
 
   return (
     <Card className="bg-zinc-900/50 border-zinc-800">
-      <CardContent className="p-6">
+      <CardContent className="p-3">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-zinc-400 mb-1">{title}</p>
-            <h3 className="text-3xl font-bold text-white">{value}</h3>
-            {subtitle && <p className="text-xs text-zinc-500 mt-1">{subtitle}</p>}
+            <p className="text-[10px] text-zinc-500 mb-0.5">{title}</p>
+            <h3 className="text-lg font-bold text-white">{value}</h3>
+            {subtitle && <p className="text-[10px] text-zinc-500 mt-0.5">{subtitle}</p>}
             {change !== undefined && change !== null && (
-              <div className="flex items-center gap-1 mt-2">
+              <div className="flex items-center gap-1 mt-1">
                 {isPositive ? (
-                  <ArrowUpRight className="w-4 h-4 text-green-400" />
+                  <ArrowUpRight className="w-3 h-3 text-green-400" />
                 ) : (
-                  <ArrowDownRight className="w-4 h-4 text-red-400" />
+                  <ArrowDownRight className="w-3 h-3 text-red-400" />
                 )}
-                <span className={cn('text-sm', isPositive ? 'text-green-400' : 'text-red-400')}>
+                <span className={cn('text-[10px]', isPositive ? 'text-green-400' : 'text-red-400')}>
                   {Math.abs(change)}%
                 </span>
-                <span className="text-sm text-zinc-500">vs prev period</span>
+                <span className="text-[10px] text-zinc-500">vs prev</span>
               </div>
             )}
           </div>
           <div
             className={cn(
-              'w-12 h-12 rounded-xl flex items-center justify-center border',
+              'w-8 h-8 rounded-lg flex items-center justify-center border',
               getIconColor(color)
             )}
           >
-            <Icon className="w-6 h-6" />
+            <Icon className="w-4 h-4" />
           </div>
         </div>
       </CardContent>
@@ -138,10 +138,10 @@ function CustomTooltip({ active, payload, label, valueFormatter }) {
   if (!active || !payload?.length) return null;
 
   return (
-    <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-3 shadow-xl">
-      <p className="text-zinc-400 text-sm mb-2">{label}</p>
+    <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-2 shadow-xl">
+      <p className="text-zinc-400 text-[10px] mb-1">{label}</p>
       {payload.map((entry, index) => (
-        <p key={index} className="text-sm" style={{ color: entry.color }}>
+        <p key={index} className="text-[10px]" style={{ color: entry.color }}>
           {entry.name}: {valueFormatter ? valueFormatter(entry.value) : entry.value}
         </p>
       ))}
@@ -153,7 +153,7 @@ function CustomTooltip({ active, payload, label, valueFormatter }) {
 function UserGrowthChart({ data }) {
   if (!data?.length) {
     return (
-      <div className="h-[300px] flex items-center justify-center text-zinc-500">
+      <div className="h-[200px] flex items-center justify-center text-zinc-500 text-xs">
         No user growth data available
       </div>
     );
@@ -197,7 +197,7 @@ function UserGrowthChart({ data }) {
 function DAUChart({ data }) {
   if (!data?.length) {
     return (
-      <div className="h-[300px] flex items-center justify-center text-zinc-500">
+      <div className="h-[200px] flex items-center justify-center text-zinc-500 text-xs">
         No DAU data available
       </div>
     );
@@ -232,7 +232,7 @@ function DAUChart({ data }) {
 function RevenueChart({ data }) {
   if (!data?.length) {
     return (
-      <div className="h-[300px] flex items-center justify-center text-zinc-500">
+      <div className="h-[200px] flex items-center justify-center text-zinc-500 text-xs">
         No revenue data available
       </div>
     );
@@ -262,7 +262,7 @@ function RevenueChart({ data }) {
 function AppUsageChart({ data }) {
   if (!data?.length) {
     return (
-      <div className="h-[300px] flex items-center justify-center text-zinc-500">
+      <div className="h-[200px] flex items-center justify-center text-zinc-500 text-xs">
         No app usage data available
       </div>
     );
@@ -291,7 +291,7 @@ function AppUsageChart({ data }) {
 // Top Users Table
 function TopUsersTable({ users }) {
   if (!users?.length) {
-    return <div className="p-6 text-center text-zinc-500">No user data available</div>;
+    return <div className="p-3 text-center text-zinc-500 text-xs">No user data available</div>;
   }
 
   return (
@@ -299,50 +299,48 @@ function TopUsersTable({ users }) {
       <table className="w-full">
         <thead>
           <tr className="border-b border-zinc-800">
-            <th className="text-left p-4 text-zinc-400 font-medium">User</th>
-            <th className="text-left p-4 text-zinc-400 font-medium">Organization</th>
-            <th className="text-left p-4 text-zinc-400 font-medium">Role</th>
-            <th className="text-left p-4 text-zinc-400 font-medium">Last Login</th>
-            <th className="text-left p-4 text-zinc-400 font-medium">Activity</th>
+            <th className="text-left py-1.5 px-3 text-[10px] uppercase tracking-wider text-zinc-500 font-medium">User</th>
+            <th className="text-left py-1.5 px-3 text-[10px] uppercase tracking-wider text-zinc-500 font-medium">Organization</th>
+            <th className="text-left py-1.5 px-3 text-[10px] uppercase tracking-wider text-zinc-500 font-medium">Role</th>
+            <th className="text-left py-1.5 px-3 text-[10px] uppercase tracking-wider text-zinc-500 font-medium">Last Login</th>
+            <th className="text-left py-1.5 px-3 text-[10px] uppercase tracking-wider text-zinc-500 font-medium">Activity</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-zinc-800">
+        <tbody className="divide-y divide-zinc-800/50">
           {users.map((user) => (
-            <motion.tr
+            <tr
               key={user.id}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="hover:bg-zinc-800/50"
+              className="h-9 hover:bg-zinc-800/30"
             >
-              <td className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center overflow-hidden">
+              <td className="py-1.5 px-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center overflow-hidden flex-shrink-0">
                     {user.avatar_url ? (
                       <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
                     ) : (
-                      <Users className="w-5 h-5 text-zinc-500" />
+                      <Users className="w-3 h-3 text-zinc-500" />
                     )}
                   </div>
-                  <div>
-                    <p className="text-white font-medium">{user.name || 'Unknown'}</p>
-                    <p className="text-sm text-zinc-500">{user.email}</p>
+                  <div className="min-w-0">
+                    <p className="text-white text-xs font-medium truncate">{user.name || 'Unknown'}</p>
+                    <p className="text-[10px] text-zinc-500 truncate">{user.email}</p>
                   </div>
                 </div>
               </td>
-              <td className="p-4 text-zinc-300">{user.company_name || '-'}</td>
-              <td className="p-4">
-                <Badge className="bg-zinc-700/50 text-zinc-300">{user.role || 'user'}</Badge>
+              <td className="py-1.5 px-3 text-zinc-300 text-xs">{user.company_name || '-'}</td>
+              <td className="py-1.5 px-3">
+                <Badge className="bg-zinc-700/50 text-zinc-300 text-[10px] px-1.5 py-px">{user.role || 'user'}</Badge>
               </td>
-              <td className="p-4 text-zinc-400">
+              <td className="py-1.5 px-3 text-zinc-400 text-xs">
                 {user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never'}
               </td>
-              <td className="p-4">
-                <div className="flex items-center gap-2 text-zinc-300">
-                  <Activity className="w-4 h-4 text-green-400" />
-                  {user.event_count || 0} events
+              <td className="py-1.5 px-3">
+                <div className="flex items-center gap-1.5 text-zinc-300 text-xs">
+                  <Activity className="w-3 h-3 text-green-400" />
+                  {user.event_count || 0}
                 </div>
               </td>
-            </motion.tr>
+            </tr>
           ))}
         </tbody>
       </table>
@@ -353,7 +351,7 @@ function TopUsersTable({ users }) {
 // Organizations Table
 function OrganizationsTable({ organizations }) {
   if (!organizations?.length) {
-    return <div className="p-6 text-center text-zinc-500">No organization data available</div>;
+    return <div className="p-3 text-center text-zinc-500 text-xs">No organization data available</div>;
   }
 
   return (
@@ -361,37 +359,35 @@ function OrganizationsTable({ organizations }) {
       <table className="w-full">
         <thead>
           <tr className="border-b border-zinc-800">
-            <th className="text-left p-4 text-zinc-400 font-medium">Organization</th>
-            <th className="text-left p-4 text-zinc-400 font-medium">Industry</th>
-            <th className="text-left p-4 text-zinc-400 font-medium">Users</th>
-            <th className="text-left p-4 text-zinc-400 font-medium">Active</th>
-            <th className="text-left p-4 text-zinc-400 font-medium">Apps</th>
-            <th className="text-left p-4 text-zinc-400 font-medium">Monthly Spend</th>
+            <th className="text-left py-1.5 px-3 text-[10px] uppercase tracking-wider text-zinc-500 font-medium">Organization</th>
+            <th className="text-left py-1.5 px-3 text-[10px] uppercase tracking-wider text-zinc-500 font-medium">Industry</th>
+            <th className="text-left py-1.5 px-3 text-[10px] uppercase tracking-wider text-zinc-500 font-medium">Users</th>
+            <th className="text-left py-1.5 px-3 text-[10px] uppercase tracking-wider text-zinc-500 font-medium">Active</th>
+            <th className="text-left py-1.5 px-3 text-[10px] uppercase tracking-wider text-zinc-500 font-medium">Apps</th>
+            <th className="text-left py-1.5 px-3 text-[10px] uppercase tracking-wider text-zinc-500 font-medium">Monthly Spend</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-zinc-800">
+        <tbody className="divide-y divide-zinc-800/50">
           {organizations.map((org) => (
-            <motion.tr
+            <tr
               key={org.id}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="hover:bg-zinc-800/50"
+              className="h-9 hover:bg-zinc-800/30"
             >
-              <td className="p-4">
-                <div className="flex items-center gap-3">
-                  <Building2 className="w-5 h-5 text-purple-400" />
-                  <span className="text-white font-medium">{org.name}</span>
+              <td className="py-1.5 px-3">
+                <div className="flex items-center gap-2">
+                  <Building2 className="w-3 h-3 text-purple-400" />
+                  <span className="text-white text-xs font-medium">{org.name}</span>
                 </div>
               </td>
-              <td className="p-4 text-zinc-300">{org.industry || '-'}</td>
-              <td className="p-4 text-zinc-300">{org.user_count || 0}</td>
-              <td className="p-4">
+              <td className="py-1.5 px-3 text-zinc-300 text-xs">{org.industry || '-'}</td>
+              <td className="py-1.5 px-3 text-zinc-300 text-xs">{org.user_count || 0}</td>
+              <td className="py-1.5 px-3 text-xs">
                 <span className="text-green-400">{org.active_users || 0}</span>
                 <span className="text-zinc-500"> / {org.user_count || 0}</span>
               </td>
-              <td className="p-4 text-zinc-300">{org.app_licenses || 0}</td>
-              <td className="p-4 text-green-400">${(org.monthly_spend || 0).toLocaleString()}</td>
-            </motion.tr>
+              <td className="py-1.5 px-3 text-zinc-300 text-xs">{org.app_licenses || 0}</td>
+              <td className="py-1.5 px-3 text-green-400 text-xs">${(org.monthly_spend || 0).toLocaleString()}</td>
+            </tr>
           ))}
         </tbody>
       </table>
@@ -402,7 +398,7 @@ function OrganizationsTable({ organizations }) {
 // App Performance Table
 function AppPerformanceTable({ apps }) {
   if (!apps?.length) {
-    return <div className="p-6 text-center text-zinc-500">No app data available</div>;
+    return <div className="p-3 text-center text-zinc-500 text-xs">No app data available</div>;
   }
 
   return (
@@ -410,35 +406,33 @@ function AppPerformanceTable({ apps }) {
       <table className="w-full">
         <thead>
           <tr className="border-b border-zinc-800">
-            <th className="text-left p-4 text-zinc-400 font-medium">App</th>
-            <th className="text-left p-4 text-zinc-400 font-medium">Category</th>
-            <th className="text-left p-4 text-zinc-400 font-medium">Pricing</th>
-            <th className="text-left p-4 text-zinc-400 font-medium">Licenses</th>
-            <th className="text-left p-4 text-zinc-400 font-medium">Companies</th>
-            <th className="text-left p-4 text-zinc-400 font-medium">Revenue</th>
-            <th className="text-left p-4 text-zinc-400 font-medium">Usage</th>
+            <th className="text-left py-1.5 px-3 text-[10px] uppercase tracking-wider text-zinc-500 font-medium">App</th>
+            <th className="text-left py-1.5 px-3 text-[10px] uppercase tracking-wider text-zinc-500 font-medium">Category</th>
+            <th className="text-left py-1.5 px-3 text-[10px] uppercase tracking-wider text-zinc-500 font-medium">Pricing</th>
+            <th className="text-left py-1.5 px-3 text-[10px] uppercase tracking-wider text-zinc-500 font-medium">Licenses</th>
+            <th className="text-left py-1.5 px-3 text-[10px] uppercase tracking-wider text-zinc-500 font-medium">Companies</th>
+            <th className="text-left py-1.5 px-3 text-[10px] uppercase tracking-wider text-zinc-500 font-medium">Revenue</th>
+            <th className="text-left py-1.5 px-3 text-[10px] uppercase tracking-wider text-zinc-500 font-medium">Usage</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-zinc-800">
+        <tbody className="divide-y divide-zinc-800/50">
           {apps.map((app) => (
-            <motion.tr
+            <tr
               key={app.id}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="hover:bg-zinc-800/50"
+              className="h-9 hover:bg-zinc-800/30"
             >
-              <td className="p-4">
+              <td className="py-1.5 px-3">
                 <div>
-                  <p className="text-white font-medium">{app.name}</p>
-                  <p className="text-sm text-zinc-500">{app.slug}</p>
+                  <p className="text-white text-xs font-medium">{app.name}</p>
+                  <p className="text-[10px] text-zinc-500">{app.slug}</p>
                 </div>
               </td>
-              <td className="p-4">
-                <Badge className="bg-zinc-700/50 text-zinc-300">{app.category || 'other'}</Badge>
+              <td className="py-1.5 px-3">
+                <Badge className="bg-zinc-700/50 text-zinc-300 text-[10px] px-1.5 py-px">{app.category || 'other'}</Badge>
               </td>
-              <td className="p-4">
+              <td className="py-1.5 px-3">
                 <Badge className={cn(
-                  'text-xs',
+                  'text-[10px] px-1.5 py-px',
                   app.pricing_type === 'free' && 'bg-green-500/20 text-green-400',
                   app.pricing_type === 'freemium' && 'bg-blue-500/20 text-blue-400',
                   app.pricing_type === 'paid' && 'bg-purple-500/20 text-purple-400',
@@ -447,16 +441,16 @@ function AppPerformanceTable({ apps }) {
                   {app.pricing_type || 'free'}
                 </Badge>
               </td>
-              <td className="p-4 text-zinc-300">{app.total_licenses || 0}</td>
-              <td className="p-4 text-zinc-300">{app.licensed_companies || 0}</td>
-              <td className="p-4 text-green-400">${(app.total_revenue || 0).toLocaleString()}</td>
-              <td className="p-4">
-                <div className="flex items-center gap-2 text-zinc-300">
-                  <Eye className="w-4 h-4 text-blue-400" />
+              <td className="py-1.5 px-3 text-zinc-300 text-xs">{app.total_licenses || 0}</td>
+              <td className="py-1.5 px-3 text-zinc-300 text-xs">{app.licensed_companies || 0}</td>
+              <td className="py-1.5 px-3 text-green-400 text-xs">${(app.total_revenue || 0).toLocaleString()}</td>
+              <td className="py-1.5 px-3">
+                <div className="flex items-center gap-1.5 text-zinc-300 text-xs">
+                  <Eye className="w-3 h-3 text-blue-400" />
                   {app.usage_count || 0}
                 </div>
               </td>
-            </motion.tr>
+            </tr>
           ))}
         </tbody>
       </table>
@@ -587,40 +581,43 @@ export default function AdminAnalytics() {
   }, [overview]);
 
   return (
-    <div className="min-h-screen bg-black p-6">
+    <div className="min-h-screen bg-black p-4 space-y-4">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-bold text-white">Analytics & Insights</h1>
-            <p className="text-zinc-400 mt-1">
+            <h1 className="text-lg font-bold text-white flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-red-400" />
+              Analytics & Insights
+            </h1>
+            <p className="text-zinc-400 text-xs mt-0.5">
               Platform performance metrics and growth analytics
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {/* Date Range Selector */}
             <Select value={dateRange} onValueChange={setDateRange}>
-              <SelectTrigger className="w-[180px] bg-zinc-900 border-zinc-700">
-                <Calendar className="w-4 h-4 mr-2 text-zinc-400" />
+              <SelectTrigger className="w-[140px] h-7 text-xs bg-zinc-900 border-zinc-700">
+                <Calendar className="w-3 h-3 mr-1.5 text-zinc-400" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-zinc-900 border-zinc-700">
                 {Object.entries(DATE_RANGES).map(([key, { label }]) => (
-                  <SelectItem key={key} value={key}>{label}</SelectItem>
+                  <SelectItem key={key} value={key} className="text-xs">{label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
             {/* Granularity Selector */}
             <Select value={granularity} onValueChange={setGranularity}>
-              <SelectTrigger className="w-[120px] bg-zinc-900 border-zinc-700">
+              <SelectTrigger className="w-[100px] h-7 text-xs bg-zinc-900 border-zinc-700">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-zinc-900 border-zinc-700">
-                <SelectItem value="day">Daily</SelectItem>
-                <SelectItem value="week">Weekly</SelectItem>
-                <SelectItem value="month">Monthly</SelectItem>
+                <SelectItem value="day" className="text-xs">Daily</SelectItem>
+                <SelectItem value="week" className="text-xs">Weekly</SelectItem>
+                <SelectItem value="month" className="text-xs">Monthly</SelectItem>
               </SelectContent>
             </Select>
 
@@ -628,9 +625,10 @@ export default function AdminAnalytics() {
             <Button
               onClick={fetchData}
               variant="outline"
-              className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+              size="sm"
+              className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 h-7 text-xs"
             >
-              <RefreshCw className={cn('w-4 h-4 mr-2', isLoading && 'animate-spin')} />
+              <RefreshCw className={cn('w-3 h-3 mr-1.5', isLoading && 'animate-spin')} />
               Refresh
             </Button>
           </div>
@@ -639,7 +637,7 @@ export default function AdminAnalytics() {
 
       {/* Overview Stats */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
           <StatCard
             title="Total Users"
             value={stats.totalUsers.toLocaleString()}
@@ -680,17 +678,17 @@ export default function AdminAnalytics() {
       )}
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-4">
         {/* User Growth Chart */}
         <Card className="bg-zinc-900/50 border-zinc-800">
-          <CardHeader className="border-b border-zinc-800">
+          <CardHeader className="py-3 px-4 border-b border-zinc-800">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <LineChart className="w-5 h-5 text-red-400" />
+                <CardTitle className="text-white text-sm flex items-center gap-2">
+                  <LineChart className="w-4 h-4 text-red-400" />
                   User Growth
                 </CardTitle>
-                <CardDescription className="text-zinc-500">
+                <CardDescription className="text-zinc-500 text-[10px] mt-0.5">
                   New and cumulative users over time
                 </CardDescription>
               </div>
@@ -698,16 +696,16 @@ export default function AdminAnalytics() {
                 variant="ghost"
                 size="sm"
                 onClick={() => exportToCSV(userGrowth, 'user-growth')}
-                className="text-zinc-400 hover:text-white"
+                className="text-zinc-400 hover:text-white h-6 w-6 p-0"
               >
-                <Download className="w-4 h-4" />
+                <Download className="w-3 h-3" />
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="pt-6">
+          <CardContent className="pt-4 pb-3 px-3">
             {isLoading ? (
-              <div className="h-[300px] flex items-center justify-center">
-                <RefreshCw className="w-6 h-6 text-zinc-400 animate-spin" />
+              <div className="h-[250px] flex items-center justify-center">
+                <RefreshCw className="w-4 h-4 text-zinc-400 animate-spin" />
               </div>
             ) : (
               <UserGrowthChart data={userGrowth} />
@@ -717,14 +715,14 @@ export default function AdminAnalytics() {
 
         {/* DAU Chart */}
         <Card className="bg-zinc-900/50 border-zinc-800">
-          <CardHeader className="border-b border-zinc-800">
+          <CardHeader className="py-3 px-4 border-b border-zinc-800">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-green-400" />
+                <CardTitle className="text-white text-sm flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4 text-green-400" />
                   Daily Active Users
                 </CardTitle>
-                <CardDescription className="text-zinc-500">
+                <CardDescription className="text-zinc-500 text-[10px] mt-0.5">
                   Users active each day
                 </CardDescription>
               </div>
@@ -732,16 +730,16 @@ export default function AdminAnalytics() {
                 variant="ghost"
                 size="sm"
                 onClick={() => exportToCSV(dauData, 'dau')}
-                className="text-zinc-400 hover:text-white"
+                className="text-zinc-400 hover:text-white h-6 w-6 p-0"
               >
-                <Download className="w-4 h-4" />
+                <Download className="w-3 h-3" />
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="pt-6">
+          <CardContent className="pt-4 pb-3 px-3">
             {isLoading ? (
-              <div className="h-[300px] flex items-center justify-center">
-                <RefreshCw className="w-6 h-6 text-zinc-400 animate-spin" />
+              <div className="h-[250px] flex items-center justify-center">
+                <RefreshCw className="w-4 h-4 text-zinc-400 animate-spin" />
               </div>
             ) : (
               <DAUChart data={dauData} />
@@ -751,14 +749,14 @@ export default function AdminAnalytics() {
 
         {/* Revenue Chart */}
         <Card className="bg-zinc-900/50 border-zinc-800">
-          <CardHeader className="border-b border-zinc-800">
+          <CardHeader className="py-3 px-4 border-b border-zinc-800">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <DollarSign className="w-5 h-5 text-orange-400" />
+                <CardTitle className="text-white text-sm flex items-center gap-2">
+                  <DollarSign className="w-4 h-4 text-orange-400" />
                   Revenue Breakdown
                 </CardTitle>
-                <CardDescription className="text-zinc-500">
+                <CardDescription className="text-zinc-500 text-[10px] mt-0.5">
                   Revenue from data products and app licenses
                 </CardDescription>
               </div>
@@ -766,16 +764,16 @@ export default function AdminAnalytics() {
                 variant="ghost"
                 size="sm"
                 onClick={() => exportToCSV(revenueData, 'revenue')}
-                className="text-zinc-400 hover:text-white"
+                className="text-zinc-400 hover:text-white h-6 w-6 p-0"
               >
-                <Download className="w-4 h-4" />
+                <Download className="w-3 h-3" />
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="pt-6">
+          <CardContent className="pt-4 pb-3 px-3">
             {isLoading ? (
-              <div className="h-[300px] flex items-center justify-center">
-                <RefreshCw className="w-6 h-6 text-zinc-400 animate-spin" />
+              <div className="h-[250px] flex items-center justify-center">
+                <RefreshCw className="w-4 h-4 text-zinc-400 animate-spin" />
               </div>
             ) : (
               <RevenueChart data={revenueData} />
@@ -785,14 +783,14 @@ export default function AdminAnalytics() {
 
         {/* App Usage Chart */}
         <Card className="bg-zinc-900/50 border-zinc-800">
-          <CardHeader className="border-b border-zinc-800">
+          <CardHeader className="py-3 px-4 border-b border-zinc-800">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <Package className="w-5 h-5 text-purple-400" />
+                <CardTitle className="text-white text-sm flex items-center gap-2">
+                  <Package className="w-4 h-4 text-purple-400" />
                   App Performance
                 </CardTitle>
-                <CardDescription className="text-zinc-500">
+                <CardDescription className="text-zinc-500 text-[10px] mt-0.5">
                   Active licenses by app
                 </CardDescription>
               </div>
@@ -800,16 +798,16 @@ export default function AdminAnalytics() {
                 variant="ghost"
                 size="sm"
                 onClick={() => exportToCSV(appUsage, 'app-usage')}
-                className="text-zinc-400 hover:text-white"
+                className="text-zinc-400 hover:text-white h-6 w-6 p-0"
               >
-                <Download className="w-4 h-4" />
+                <Download className="w-3 h-3" />
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="pt-6">
+          <CardContent className="pt-4 pb-3 px-3">
             {isLoading ? (
-              <div className="h-[300px] flex items-center justify-center">
-                <RefreshCw className="w-6 h-6 text-zinc-400 animate-spin" />
+              <div className="h-[250px] flex items-center justify-center">
+                <RefreshCw className="w-4 h-4 text-zinc-400 animate-spin" />
               </div>
             ) : (
               <AppUsageChart data={appUsage} />
@@ -819,39 +817,39 @@ export default function AdminAnalytics() {
       </div>
 
       {/* Tables Section */}
-      <Tabs defaultValue="users" className="space-y-6">
-        <TabsList className="bg-zinc-900 border border-zinc-800">
-          <TabsTrigger value="users" className="data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400">
+      <Tabs defaultValue="users" className="space-y-3">
+        <TabsList className="bg-zinc-900 border border-zinc-800 h-8">
+          <TabsTrigger value="users" className="text-xs data-[state=active]:bg-red-500/20 data-[state=active]:text-red-400">
             Top Users
           </TabsTrigger>
-          <TabsTrigger value="organizations" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400">
+          <TabsTrigger value="organizations" className="text-xs data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400">
             Organizations
           </TabsTrigger>
-          <TabsTrigger value="apps" className="data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-400">
+          <TabsTrigger value="apps" className="text-xs data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-400">
             App Performance
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="users">
           <Card className="bg-zinc-900/50 border-zinc-800">
-            <CardHeader className="border-b border-zinc-800">
+            <CardHeader className="py-3 px-4 border-b border-zinc-800">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-white">Top Users by Recent Activity</CardTitle>
+                <CardTitle className="text-white text-sm">Top Users by Recent Activity</CardTitle>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => exportToCSV(topUsers, 'top-users')}
-                  className="text-zinc-400 hover:text-white"
+                  className="text-zinc-400 hover:text-white h-7 text-xs"
                 >
-                  <Download className="w-4 h-4 mr-2" />
-                  Export CSV
+                  <Download className="w-3 h-3 mr-1.5" />
+                  Export
                 </Button>
               </div>
             </CardHeader>
             <CardContent className="p-0">
               {isLoading ? (
-                <div className="p-6 flex justify-center">
-                  <RefreshCw className="w-6 h-6 text-zinc-400 animate-spin" />
+                <div className="p-3 flex justify-center">
+                  <RefreshCw className="w-4 h-4 text-zinc-400 animate-spin" />
                 </div>
               ) : (
                 <TopUsersTable users={topUsers} />
@@ -862,24 +860,24 @@ export default function AdminAnalytics() {
 
         <TabsContent value="organizations">
           <Card className="bg-zinc-900/50 border-zinc-800">
-            <CardHeader className="border-b border-zinc-800">
+            <CardHeader className="py-3 px-4 border-b border-zinc-800">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-white">Organization Breakdown</CardTitle>
+                <CardTitle className="text-white text-sm">Organization Breakdown</CardTitle>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => exportToCSV(organizations, 'organizations')}
-                  className="text-zinc-400 hover:text-white"
+                  className="text-zinc-400 hover:text-white h-7 text-xs"
                 >
-                  <Download className="w-4 h-4 mr-2" />
-                  Export CSV
+                  <Download className="w-3 h-3 mr-1.5" />
+                  Export
                 </Button>
               </div>
             </CardHeader>
             <CardContent className="p-0">
               {isLoading ? (
-                <div className="p-6 flex justify-center">
-                  <RefreshCw className="w-6 h-6 text-zinc-400 animate-spin" />
+                <div className="p-3 flex justify-center">
+                  <RefreshCw className="w-4 h-4 text-zinc-400 animate-spin" />
                 </div>
               ) : (
                 <OrganizationsTable organizations={organizations} />
@@ -890,24 +888,24 @@ export default function AdminAnalytics() {
 
         <TabsContent value="apps">
           <Card className="bg-zinc-900/50 border-zinc-800">
-            <CardHeader className="border-b border-zinc-800">
+            <CardHeader className="py-3 px-4 border-b border-zinc-800">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-white">App Performance Details</CardTitle>
+                <CardTitle className="text-white text-sm">App Performance Details</CardTitle>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => exportToCSV(appUsage, 'app-performance')}
-                  className="text-zinc-400 hover:text-white"
+                  className="text-zinc-400 hover:text-white h-7 text-xs"
                 >
-                  <Download className="w-4 h-4 mr-2" />
-                  Export CSV
+                  <Download className="w-3 h-3 mr-1.5" />
+                  Export
                 </Button>
               </div>
             </CardHeader>
             <CardContent className="p-0">
               {isLoading ? (
-                <div className="p-6 flex justify-center">
-                  <RefreshCw className="w-6 h-6 text-zinc-400 animate-spin" />
+                <div className="p-3 flex justify-center">
+                  <RefreshCw className="w-4 h-4 text-zinc-400 animate-spin" />
                 </div>
               ) : (
                 <AppPerformanceTable apps={appUsage} />

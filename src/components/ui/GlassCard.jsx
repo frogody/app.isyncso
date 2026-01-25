@@ -2,13 +2,15 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
-export function GlassCard({ 
-  children, 
-  className, 
+export function GlassCard({
+  children,
+  className,
   hover = true,
   glow,
   delay = 0,
-  ...props 
+  size = 'md',
+  animated = true,
+  ...props
 }) {
   const glowColors = {
     cyan: 'hover:shadow-[0_0_30px_rgba(6,182,212,0.15)] hover:border-cyan-500/30',
@@ -23,19 +25,37 @@ export function GlassCard({
     purple: 'hover:shadow-[0_0_30px_rgba(168,85,247,0.15)] hover:border-purple-500/30',
   };
 
+  const sizeClasses = {
+    xs: 'p-2 rounded-lg',
+    sm: 'p-3 rounded-xl',
+    md: 'p-4 rounded-2xl',
+    lg: 'p-6 rounded-2xl',
+  };
+
+  const baseClasses = cn(
+    'bg-zinc-900/60 backdrop-blur-xl border border-white/10',
+    'transition-all duration-300',
+    sizeClasses[size] || sizeClasses.md,
+    hover && 'cursor-pointer',
+    glow && glowColors[glow],
+    className
+  );
+
+  if (!animated) {
+    return (
+      <div className={baseClasses} {...props}>
+        {children}
+      </div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay }}
       whileHover={hover ? { scale: 1.02, y: -2 } : undefined}
-      className={cn(
-        'bg-zinc-900/60 backdrop-blur-xl border border-white/10 rounded-2xl',
-        'transition-all duration-300',
-        hover && 'cursor-pointer',
-        glow && glowColors[glow],
-        className
-      )}
+      className={baseClasses}
       {...props}
     >
       {children}
@@ -43,14 +63,15 @@ export function GlassCard({
   );
 }
 
-export function StatCard({ 
-  icon: Icon, 
-  label, 
-  value, 
-  change, 
+export function StatCard({
+  icon: Icon,
+  label,
+  value,
+  change,
   trend,
   color = 'cyan',
-  delay = 0 
+  delay = 0,
+  size = 'md'
 }) {
   const colorClasses = {
     cyan: { icon: 'text-cyan-400', bg: 'bg-cyan-500/20', border: 'border-cyan-500/30' },
@@ -68,23 +89,56 @@ export function StatCard({
   // Safe fallback to cyan if color not found
   const colors = colorClasses[color] || colorClasses.cyan;
 
+  const sizeConfig = {
+    sm: {
+      card: 'p-3',
+      iconContainer: 'w-8 h-8 rounded-lg',
+      icon: 'w-4 h-4',
+      value: 'text-xl',
+      label: 'text-xs',
+      change: 'text-xs px-1.5 py-0.5',
+      mb: 'mb-2',
+    },
+    md: {
+      card: 'p-4',
+      iconContainer: 'w-10 h-10 rounded-lg',
+      icon: 'w-5 h-5',
+      value: 'text-2xl',
+      label: 'text-xs',
+      change: 'text-xs px-1.5 py-0.5',
+      mb: 'mb-3',
+    },
+    lg: {
+      card: 'p-6',
+      iconContainer: 'w-12 h-12 rounded-xl',
+      icon: 'w-6 h-6',
+      value: 'text-3xl',
+      label: 'text-sm',
+      change: 'text-sm px-2 py-1',
+      mb: 'mb-4',
+    },
+  };
+
+  const s = sizeConfig[size] || sizeConfig.md;
+
   return (
-    <GlassCard glow={color} delay={delay} className="p-6">
-      <div className="flex items-center justify-between mb-4">
-        <div className={cn('w-12 h-12 rounded-xl flex items-center justify-center', colors.bg, colors.border, 'border')}>
-          <Icon className={cn('w-6 h-6', colors.icon)} />
+    <GlassCard glow={color} delay={delay} className={s.card} size={size}>
+      <div className={cn('flex items-center justify-between', s.mb)}>
+        <div className={cn(s.iconContainer, 'flex items-center justify-center', colors.bg, colors.border, 'border')}>
+          <Icon className={cn(s.icon, colors.icon)} />
         </div>
         {change && (
           <span className={cn(
-            'text-sm font-medium px-2 py-1 rounded-lg',
+            'font-medium rounded-lg',
+            s.change,
             trend === 'up' ? 'text-green-400 bg-green-500/20' : 'text-red-400 bg-red-500/20'
           )}>
             {trend === 'up' ? '↑' : '↓'} {change}
           </span>
         )}
       </div>
-      <div className="text-3xl font-bold text-white mb-1">{value}</div>
-      <div className="text-sm text-zinc-400">{label}</div>
+      <div className={cn(s.value, 'font-bold text-white mb-0.5')}>{value}</div>
+      <div className={cn(s.label, 'text-zinc-400')}>{label}</div>
     </GlassCard>
   );
 }

@@ -326,7 +326,7 @@ export default function FinanceProposals() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 space-y-4">
       <PageHeader
         title="Proposals"
         subtitle="Create and manage sales proposals"
@@ -344,7 +344,7 @@ export default function FinanceProposals() {
       />
 
       {/* Stats Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard
           label="Total Proposals"
           value={stats.total}
@@ -373,8 +373,8 @@ export default function FinanceProposals() {
 
       {/* Filters & Search */}
       <Card className="bg-zinc-900/50 border-zinc-800">
-        <CardContent className="p-4">
-          <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+        <CardContent className="p-3">
+          <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center justify-between">
             <div className="flex-1 max-w-md">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
@@ -452,46 +452,43 @@ export default function FinanceProposals() {
               )}
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="divide-y divide-zinc-800">
               {filteredProposals.map((proposal, idx) => {
                 const StatusIcon = STATUS_CONFIG[proposal.status]?.icon || FileText;
                 const statusConfig = STATUS_CONFIG[proposal.status] || STATUS_CONFIG.draft;
 
                 return (
-                  <motion.div
+                  <div
                     key={proposal.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.03 }}
-                    className="group flex items-center gap-4 p-4 rounded-lg bg-zinc-800/50 border border-zinc-700/50 hover:border-amber-500/30 transition-all cursor-pointer"
+                    className="group flex items-center gap-2 px-3 py-2 hover:bg-white/[0.03] transition-all cursor-pointer"
                     onClick={() => { setSelectedProposal(proposal); setShowDetailModal(true); }}
                   >
                     {/* Icon */}
-                    <div className="w-10 h-10 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
-                      <FileText className="w-5 h-5 text-amber-400" />
+                    <div className="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+                      <FileText className="w-3.5 h-3.5 text-amber-400" />
                     </div>
 
                     {/* Main Content */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-mono text-xs text-zinc-500">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-[10px] text-zinc-500">
                           {proposal.proposal_number || 'DRAFT'}
                         </span>
-                        <Badge variant="outline" className={`text-xs ${statusConfig.color}`}>
-                          <StatusIcon className="w-3 h-3 mr-1" />
+                        <Badge variant="outline" className={`text-[10px] px-1.5 py-px ${statusConfig.color}`}>
+                          <StatusIcon className="w-2.5 h-2.5 mr-0.5" />
                           {statusConfig.label}
                         </Badge>
                         {proposal.converted_to_invoice_id && (
-                          <Badge variant="outline" className="text-xs bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
-                            <FileCheck className="w-3 h-3 mr-1" />
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-px bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                            <FileCheck className="w-2.5 h-2.5 mr-0.5" />
                             Converted
                           </Badge>
                         )}
                       </div>
-                      <h4 className="font-medium text-white truncate">
+                      <h4 className="text-sm font-medium text-white truncate">
                         {proposal.title || 'Untitled Proposal'}
                       </h4>
-                      <div className="flex items-center gap-3 mt-1 text-sm text-zinc-400">
+                      <div className="flex items-center gap-3 text-xs text-zinc-500">
                         <span className="flex items-center gap-1">
                           <Building2 className="w-3 h-3" />
                           {proposal.client_company || proposal.client_name || 'No client'}
@@ -507,10 +504,10 @@ export default function FinanceProposals() {
 
                     {/* Amount */}
                     <div className="text-right flex-shrink-0">
-                      <p className="text-lg font-bold text-white">
+                      <p className="text-sm font-bold text-white">
                         €{(proposal.total || 0).toLocaleString()}
                       </p>
-                      <p className="text-xs text-zinc-500">
+                      <p className="text-[10px] text-zinc-500">
                         {new Date(proposal.created_at).toLocaleDateString()}
                       </p>
                     </div>
@@ -574,7 +571,7 @@ export default function FinanceProposals() {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
-                  </motion.div>
+                  </div>
                 );
               })}
             </div>

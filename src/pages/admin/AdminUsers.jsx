@@ -96,23 +96,23 @@ async function adminApi(endpoint, options = {}) {
 function StatCard({ title, value, icon: Icon, color, isLoading }) {
   return (
     <Card className="bg-zinc-900/50 border-zinc-800">
-      <CardContent className="p-6">
+      <CardContent className="p-3">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-zinc-400 mb-1">{title}</p>
+            <p className="text-[10px] text-zinc-400 mb-0.5">{title}</p>
             {isLoading ? (
-              <div className="h-9 w-20 bg-zinc-800 animate-pulse rounded" />
+              <div className="h-6 w-16 bg-zinc-800 animate-pulse rounded" />
             ) : (
-              <h3 className="text-3xl font-bold text-white">{value}</h3>
+              <h3 className="text-lg font-bold text-white">{value}</h3>
             )}
           </div>
           <div
             className={cn(
-              'w-12 h-12 rounded-xl flex items-center justify-center border',
+              'w-8 h-8 rounded-lg flex items-center justify-center border',
               getIconColor(color)
             )}
           >
-            <Icon className="w-6 h-6" />
+            <Icon className="w-4 h-4" />
           </div>
         </div>
       </CardContent>
@@ -123,7 +123,7 @@ function StatCard({ title, value, icon: Icon, color, isLoading }) {
 // Role Badge Component
 function RoleBadge({ role }) {
   return (
-    <Badge className={cn('text-xs', getRoleColor(role))}>
+    <Badge className={cn('text-[10px] px-1.5 py-px', getRoleColor(role))}>
       {role?.replace('_', ' ') || 'User'}
     </Badge>
   );
@@ -133,21 +133,21 @@ function RoleBadge({ role }) {
 function StatusBadge({ isActive, isPlatformAdmin }) {
   if (isPlatformAdmin) {
     return (
-      <Badge className={cn('text-xs', getStatusColor('platform_admin'))}>
-        <Shield className="w-3 h-3 mr-1" />
+      <Badge className={cn('text-[10px] px-1.5 py-px', getStatusColor('platform_admin'))}>
+        <Shield className="w-2.5 h-2.5 mr-0.5" />
         Platform Admin
       </Badge>
     );
   }
 
   return isActive ? (
-    <Badge className={cn('text-xs', getStatusColor('active'))}>
-      <CheckCircle className="w-3 h-3 mr-1" />
+    <Badge className={cn('text-[10px] px-1.5 py-px', getStatusColor('active'))}>
+      <CheckCircle className="w-2.5 h-2.5 mr-0.5" />
       Active
     </Badge>
   ) : (
-    <Badge className={cn('text-xs', getStatusColor('inactive'))}>
-      <Clock className="w-3 h-3 mr-1" />
+    <Badge className={cn('text-[10px] px-1.5 py-px', getStatusColor('inactive'))}>
+      <Clock className="w-2.5 h-2.5 mr-0.5" />
       Inactive
     </Badge>
   );
@@ -539,29 +539,28 @@ export default function AdminUsers() {
   const canDeactivate = adminRole === 'super_admin';
 
   return (
-    <div className="min-h-screen bg-black p-6">
+    <div className="min-h-screen bg-black p-4 space-y-4">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white">User Management</h1>
-            <p className="text-zinc-400 mt-1">
-              Manage all platform users and their permissions
-            </p>
-          </div>
-          <Button
-            onClick={handleRefresh}
-            variant="outline"
-            className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
-          >
-            <RefreshCw className={cn('w-4 h-4 mr-2', isLoading && 'animate-spin')} />
-            Refresh
-          </Button>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-bold text-white">User Management</h1>
+          <p className="text-zinc-400 text-xs mt-0.5">
+            Manage all platform users and their permissions
+          </p>
         </div>
+        <Button
+          onClick={handleRefresh}
+          variant="outline"
+          size="sm"
+          className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 h-7 text-xs"
+        >
+          <RefreshCw className={cn('w-3 h-3 mr-1.5', isLoading && 'animate-spin')} />
+          Refresh
+        </Button>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard
           title="Total Users"
           value={stats.total_users?.toLocaleString()}
@@ -593,23 +592,24 @@ export default function AdminUsers() {
       </div>
 
       {/* Filters */}
-      <Card className="bg-zinc-900/50 border-zinc-800 mb-6">
-        <CardContent className="p-4">
-          <div className="flex flex-wrap items-center gap-4">
+      <Card className="bg-zinc-900/50 border-zinc-800">
+        <CardContent className="p-2">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Search */}
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <div className="relative flex-1 min-w-[180px]">
+              <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 w-3 h-3 text-zinc-500" />
               <Input
                 placeholder="Search by name or email..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                className="pl-10 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+                size="sm"
+                className="pl-8 h-7 text-xs bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
               />
             </div>
 
             {/* Role Filter */}
             <Select value={roleFilter} onValueChange={setRoleFilter}>
-              <SelectTrigger className="w-[150px] bg-zinc-800 border-zinc-700 text-white">
+              <SelectTrigger className="w-[130px] h-7 text-xs bg-zinc-800 border-zinc-700 text-white">
                 <SelectValue placeholder="All Roles" />
               </SelectTrigger>
               <SelectContent className="bg-zinc-800 border-zinc-700">
@@ -625,7 +625,7 @@ export default function AdminUsers() {
 
             {/* Company Filter */}
             <Select value={companyFilter} onValueChange={setCompanyFilter}>
-              <SelectTrigger className="w-[180px] bg-zinc-800 border-zinc-700 text-white">
+              <SelectTrigger className="w-[150px] h-7 text-xs bg-zinc-800 border-zinc-700 text-white">
                 <SelectValue placeholder="All Companies" />
               </SelectTrigger>
               <SelectContent className="bg-zinc-800 border-zinc-700 max-h-[300px]">
@@ -640,7 +640,7 @@ export default function AdminUsers() {
 
             {/* Status Filter */}
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[150px] bg-zinc-800 border-zinc-700 text-white">
+              <SelectTrigger className="w-[120px] h-7 text-xs bg-zinc-800 border-zinc-700 text-white">
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent className="bg-zinc-800 border-zinc-700">
@@ -656,7 +656,7 @@ export default function AdminUsers() {
               setSortBy(by);
               setSortOrder(order);
             }}>
-              <SelectTrigger className="w-[180px] bg-zinc-800 border-zinc-700 text-white">
+              <SelectTrigger className="w-[140px] h-7 text-xs bg-zinc-800 border-zinc-700 text-white">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent className="bg-zinc-800 border-zinc-700">
@@ -673,25 +673,25 @@ export default function AdminUsers() {
 
       {/* Users Table */}
       <Card className="bg-zinc-900/50 border-zinc-800">
-        <CardHeader className="border-b border-zinc-800">
+        <CardHeader className="border-b border-zinc-800 py-2 px-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-white flex items-center gap-2">
-              <Users className="w-5 h-5 text-red-400" />
+            <CardTitle className="text-white flex items-center gap-1.5 text-sm">
+              <Users className="w-4 h-4 text-red-400" />
               Users ({totalCount})
             </CardTitle>
           </div>
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="p-8 text-center">
-              <RefreshCw className="w-8 h-8 text-zinc-400 animate-spin mx-auto mb-2" />
-              <p className="text-zinc-500">Loading users...</p>
+            <div className="p-6 text-center">
+              <RefreshCw className="w-5 h-5 text-zinc-400 animate-spin mx-auto mb-2" />
+              <p className="text-zinc-500 text-xs">Loading users...</p>
             </div>
           ) : users.length === 0 ? (
-            <div className="p-8 text-center">
-              <Users className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
-              <p className="text-zinc-400">No users found</p>
-              <p className="text-zinc-500 text-sm mt-1">Try adjusting your filters</p>
+            <div className="p-6 text-center">
+              <Users className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
+              <p className="text-zinc-400 text-xs">No users found</p>
+              <p className="text-zinc-500 text-[10px] mt-0.5">Try adjusting your filters</p>
             </div>
           ) : (
             <>
@@ -699,13 +699,13 @@ export default function AdminUsers() {
                 <table className="w-full">
                   <thead className="bg-zinc-800/50">
                     <tr>
-                      <th className="text-left text-xs text-zinc-400 font-medium px-4 py-3">User</th>
-                      <th className="text-left text-xs text-zinc-400 font-medium px-4 py-3">Role</th>
-                      <th className="text-left text-xs text-zinc-400 font-medium px-4 py-3">Company</th>
-                      <th className="text-left text-xs text-zinc-400 font-medium px-4 py-3">Status</th>
-                      <th className="text-left text-xs text-zinc-400 font-medium px-4 py-3">Last Active</th>
-                      <th className="text-left text-xs text-zinc-400 font-medium px-4 py-3">Joined</th>
-                      <th className="text-right text-xs text-zinc-400 font-medium px-4 py-3">Actions</th>
+                      <th className="text-left text-[10px] text-zinc-400 font-medium px-2 py-1.5 uppercase">User</th>
+                      <th className="text-left text-[10px] text-zinc-400 font-medium px-2 py-1.5 uppercase">Role</th>
+                      <th className="text-left text-[10px] text-zinc-400 font-medium px-2 py-1.5 uppercase">Company</th>
+                      <th className="text-left text-[10px] text-zinc-400 font-medium px-2 py-1.5 uppercase">Status</th>
+                      <th className="text-left text-[10px] text-zinc-400 font-medium px-2 py-1.5 uppercase">Last Active</th>
+                      <th className="text-left text-[10px] text-zinc-400 font-medium px-2 py-1.5 uppercase">Joined</th>
+                      <th className="text-right text-[10px] text-zinc-400 font-medium px-2 py-1.5 uppercase">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-800">
@@ -717,40 +717,40 @@ export default function AdminUsers() {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0 }}
                           transition={{ delay: index * 0.02 }}
-                          className="hover:bg-zinc-800/30 transition-colors"
+                          className="hover:bg-zinc-800/30 transition-colors h-9"
                         >
                           {/* User Info */}
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-3">
-                              <Avatar className="w-10 h-10">
+                          <td className="px-2 py-1.5">
+                            <div className="flex items-center gap-1.5">
+                              <Avatar className="w-6 h-6">
                                 <AvatarImage src={user.avatar_url} />
-                                <AvatarFallback className="bg-red-500/20 text-red-400 text-sm">
+                                <AvatarFallback className="bg-red-500/20 text-red-400 text-[9px]">
                                   {(user.full_name || user.name || user.email)?.[0]?.toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>
                               <div>
-                                <p className="text-white font-medium">
+                                <p className="text-white font-medium text-xs">
                                   {user.full_name || user.name || 'Unnamed'}
                                 </p>
-                                <p className="text-zinc-500 text-sm">{user.email}</p>
+                                <p className="text-zinc-500 text-[10px]">{user.email}</p>
                               </div>
                             </div>
                           </td>
 
                           {/* Role */}
-                          <td className="px-4 py-3">
+                          <td className="px-2 py-1.5">
                             <RoleBadge role={user.role} />
                           </td>
 
                           {/* Company */}
-                          <td className="px-4 py-3">
-                            <span className="text-zinc-300 text-sm">
+                          <td className="px-2 py-1.5">
+                            <span className="text-zinc-300 text-xs">
                               {user.company_name || '-'}
                             </span>
                           </td>
 
                           {/* Status */}
-                          <td className="px-4 py-3">
+                          <td className="px-2 py-1.5">
                             <StatusBadge
                               isActive={user.is_active_recently}
                               isPlatformAdmin={user.is_platform_admin}
@@ -758,8 +758,8 @@ export default function AdminUsers() {
                           </td>
 
                           {/* Last Active */}
-                          <td className="px-4 py-3">
-                            <span className="text-zinc-400 text-sm">
+                          <td className="px-2 py-1.5">
+                            <span className="text-zinc-400 text-xs">
                               {user.last_active_at
                                 ? new Date(user.last_active_at).toLocaleDateString()
                                 : 'Never'}
@@ -767,22 +767,22 @@ export default function AdminUsers() {
                           </td>
 
                           {/* Joined */}
-                          <td className="px-4 py-3">
-                            <span className="text-zinc-400 text-sm">
+                          <td className="px-2 py-1.5">
+                            <span className="text-zinc-400 text-xs">
                               {new Date(user.created_at).toLocaleDateString()}
                             </span>
                           </td>
 
                           {/* Actions */}
-                          <td className="px-4 py-3 text-right">
+                          <td className="px-2 py-1.5 text-right">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-8 w-8 p-0 text-zinc-400 hover:text-white"
+                                  className="h-6 w-6 p-0 text-zinc-400 hover:text-white"
                                 >
-                                  <MoreVertical className="w-4 h-4" />
+                                  <MoreVertical className="w-3 h-3" />
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent
@@ -791,17 +791,17 @@ export default function AdminUsers() {
                               >
                                 <DropdownMenuItem
                                   onClick={() => handleViewUser(user)}
-                                  className="text-zinc-300 hover:text-white focus:text-white"
+                                  className="text-zinc-300 hover:text-white focus:text-white text-xs"
                                 >
-                                  <Eye className="w-4 h-4 mr-2" />
+                                  <Eye className="w-3 h-3 mr-1.5" />
                                   View Details
                                 </DropdownMenuItem>
                                 {(adminRole === 'super_admin' || adminRole === 'admin') && (
                                   <DropdownMenuItem
                                     onClick={() => handleViewUser(user)}
-                                    className="text-zinc-300 hover:text-white focus:text-white"
+                                    className="text-zinc-300 hover:text-white focus:text-white text-xs"
                                   >
-                                    <Edit className="w-4 h-4 mr-2" />
+                                    <Edit className="w-3 h-3 mr-1.5" />
                                     Edit User
                                   </DropdownMenuItem>
                                 )}
@@ -813,9 +813,9 @@ export default function AdminUsers() {
                                         setUserToDeactivate(user);
                                         setIsDeactivateModalOpen(true);
                                       }}
-                                      className="text-red-400 hover:text-red-300 focus:text-red-300"
+                                      className="text-red-400 hover:text-red-300 focus:text-red-300 text-xs"
                                     >
-                                      <Trash2 className="w-4 h-4 mr-2" />
+                                      <Trash2 className="w-3 h-3 mr-1.5" />
                                       Deactivate
                                     </DropdownMenuItem>
                                   </>
@@ -832,21 +832,21 @@ export default function AdminUsers() {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-between px-4 py-4 border-t border-zinc-800">
-                  <p className="text-sm text-zinc-500">
+                <div className="flex items-center justify-between px-3 py-2 border-t border-zinc-800">
+                  <p className="text-xs text-zinc-500">
                     Showing {((page - 1) * limit) + 1} - {Math.min(page * limit, totalCount)} of {totalCount} users
                   </p>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
                       disabled={page === 1}
-                      className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 disabled:opacity-50"
+                      className="h-6 w-6 p-0 border-zinc-700 text-zinc-300 hover:bg-zinc-800 disabled:opacity-50"
                     >
-                      <ChevronLeft className="w-4 h-4" />
+                      <ChevronLeft className="w-3 h-3" />
                     </Button>
-                    <span className="text-sm text-zinc-400">
+                    <span className="text-xs text-zinc-400">
                       Page {page} of {totalPages}
                     </span>
                     <Button
@@ -854,9 +854,9 @@ export default function AdminUsers() {
                       size="sm"
                       onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                       disabled={page === totalPages}
-                      className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 disabled:opacity-50"
+                      className="h-6 w-6 p-0 border-zinc-700 text-zinc-300 hover:bg-zinc-800 disabled:opacity-50"
                     >
-                      <ChevronRight className="w-4 h-4" />
+                      <ChevronRight className="w-3 h-3" />
                     </Button>
                   </div>
                 </div>
