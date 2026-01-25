@@ -9,14 +9,15 @@ import { motion } from "framer-motion";
  * @param {boolean} showLabel - Whether to show the risk level label below the gauge
  * @param {boolean} animated - Whether to animate the gauge on mount
  */
-export const IntelligenceGauge = ({ 
-  score = 0, 
-  size = "md", 
+export const IntelligenceGauge = ({
+  score = 0,
+  size = "md",
   showLabel = false,
-  animated = true 
+  animated = true
 }) => {
   const sizes = {
-    sm: { width: 40, height: 40, strokeWidth: 3, fontSize: "text-xs" },
+    xs: { width: 24, height: 24, strokeWidth: 2, fontSize: "text-[10px]" },
+    sm: { width: 32, height: 32, strokeWidth: 2.5, fontSize: "text-xs" },
     md: { width: 56, height: 56, strokeWidth: 4, fontSize: "text-sm" },
     lg: { width: 80, height: 80, strokeWidth: 5, fontSize: "text-lg" },
     xl: { width: 120, height: 120, strokeWidth: 6, fontSize: "text-2xl" },
@@ -143,6 +144,7 @@ export const IntelligenceLevelBadge = ({ level, size = "md" }) => {
   };
 
   const sizeStyles = {
+    xs: "px-1.5 py-px text-[10px]",
     sm: "px-1.5 py-0.5 text-xs",
     md: "px-2 py-1 text-sm",
   };
@@ -175,20 +177,27 @@ export const UrgencyBadge = ({ urgency }) => {
 
 /**
  * ApproachBadge - A badge showing the recommended engagement approach
- * 
+ *
  * @param {string} approach - Approach type: 'immediate' | 'targeted' | 'nurture'
+ * @param {string} size - Size variant: 'xs' | 'sm' | 'md'
  */
-export const ApproachBadge = ({ approach }) => {
+export const ApproachBadge = ({ approach, size = "sm" }) => {
   const styles = {
     immediate: { bg: "bg-red-500/20", text: "text-red-400", label: "Immediate" },
     targeted: { bg: "bg-red-500/20", text: "text-red-400", label: "Targeted" },
     nurture: { bg: "bg-blue-500/20", text: "text-blue-400", label: "Nurture" },
   };
 
+  const sizeStyles = {
+    xs: "px-1.5 py-px text-[10px]",
+    sm: "px-2 py-0.5 text-xs",
+    md: "px-2.5 py-1 text-sm",
+  };
+
   const style = styles[approach] || styles.nurture;
 
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${style.bg} ${style.text}`}>
+    <span className={`inline-flex items-center rounded font-medium ${style.bg} ${style.text} ${sizeStyles[size]}`}>
       {style.label}
     </span>
   );
