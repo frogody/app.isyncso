@@ -20,6 +20,12 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import CampaignSequenceEditor from "@/components/campaigns/CampaignSequenceEditor";
 import CampaignMetricsPanel from "@/components/campaigns/CampaignMetricsPanel";
 import { OutreachPipeline, OutreachQueue } from "@/components/talent";
@@ -53,12 +59,16 @@ import {
   Package,
   ExternalLink,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Plus,
   Check,
   AlertCircle,
   Lightbulb,
   Brain,
   Filter,
+  Edit2,
+  FileText,
 } from "lucide-react";
 import { createPageUrl } from "@/utils";
 
@@ -348,8 +358,136 @@ const CandidateMatchResultCard = ({ match, isSelected, onToggleSelect }) => {
   );
 };
 
+// Outreach Preview Modal - Shows generated messages before sending
+const OutreachPreviewModal = ({ open, onOpenChange, messages, onApprove, onEdit, campaignType }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  if (!messages || messages.length === 0) return null;
+
+  const currentMessage = messages[currentIndex];
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl bg-zinc-900 border-zinc-800 max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-white flex items-center gap-2">
+            <Mail className="w-5 h-5 text-red-400" />
+            Outreach Preview ({currentIndex + 1} of {messages.length})
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {/* Candidate Info */}
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-zinc-800/50">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white font-bold text-sm">
+              {currentMessage.candidate_name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || '??'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-white truncate">{currentMessage.candidate_name}</p>
+              <p className="text-sm text-zinc-400 truncate">{currentMessage.current_role || 'Role not specified'}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              {currentMessage.match_score && (
+                <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                  {currentMessage.match_score}% Match
+                </Badge>
+              )}
+              <Badge className={`${
+                currentMessage.personalization_score >= 70 ? 'bg-purple-500/20 text-purple-400' :
+                currentMessage.personalization_score >= 40 ? 'bg-blue-500/20 text-blue-400' :
+                'bg-zinc-700/50 text-zinc-400'
+              }`}>
+                {currentMessage.personalization_score || 0}% Personal
+              </Badge>
+            </div>
+          </div>
+
+          {/* Subject Line (for email) */}
+          {campaignType === 'email' && currentMessage.subject && (
+            <div>
+              <Label className="text-xs text-zinc-500 uppercase tracking-wider">Subject Line</Label>
+              <div className="mt-1 p-3 rounded-lg bg-zinc-800 border border-zinc-700">
+                <p className="text-white">{currentMessage.subject}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Message Body */}
+          <div>
+            <Label className="text-xs text-zinc-500 uppercase tracking-wider">Message</Label>
+            <div className="mt-1 p-4 rounded-lg bg-zinc-800 border border-zinc-700 max-h-[250px] overflow-y-auto">
+              <p className="text-white whitespace-pre-wrap leading-relaxed">{currentMessage.content}</p>
+            </div>
+          </div>
+
+          {/* Intelligence Used */}
+          {currentMessage.intelligence_used?.length > 0 && (
+            <div className="p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+              <p className="text-xs text-cyan-400 mb-2 flex items-center gap-1">
+                <Brain className="w-3 h-3" />
+                AI Personalization Used
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {currentMessage.intelligence_used.map((item, i) => (
+                  <Badge key={i} className="bg-cyan-500/20 text-cyan-400 text-xs">
+                    {item.replace(/_/g, ' ')}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Navigation */}
+          <div className="flex items-center justify-between pt-4 border-t border-zinc-800">
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentIndex(i => Math.max(0, i - 1))}
+                disabled={currentIndex === 0}
+                className="border-zinc-700"
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentIndex(i => Math.min(messages.length - 1, i + 1))}
+                disabled={currentIndex === messages.length - 1}
+                className="border-zinc-700"
+              >
+                Next
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => onEdit && onEdit(currentMessage, currentIndex)}
+                className="border-zinc-700"
+              >
+                <Edit2 className="w-4 h-4 mr-2" />
+                Edit
+              </Button>
+              <Button
+                onClick={() => onApprove && onApprove(messages)}
+                className="bg-red-500 hover:bg-red-600"
+              >
+                <Check className="w-4 h-4 mr-2" />
+                Approve All ({messages.length})
+              </Button>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 // Overview Tab Component
-const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching, linkedNest, nestCandidates, selectedCandidates, onToggleCandidateSelect, onSelectAllExcellent }) => {
+const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching, linkedNest, nestCandidates, selectedCandidates, onToggleCandidateSelect, onSelectAllExcellent, onSaveSelection, onGenerateOutreach, savingSelection, generatingOutreach }) => {
   const matchedCandidates = campaign?.matched_candidates || [];
   const [showAllCandidates, setShowAllCandidates] = useState(false);
   const [matchFilter, setMatchFilter] = useState("All");
@@ -515,7 +653,7 @@ const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching, lin
                 )}
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {/* Bulk Add Excellent */}
                 {levelCounts.Excellent > 0 && (
                   <Button
@@ -526,6 +664,46 @@ const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching, lin
                   >
                     <Plus className="w-4 h-4 mr-1" />
                     Add Excellent ({levelCounts.Excellent})
+                  </Button>
+                )}
+
+                {/* Save Selection */}
+                {selectedCandidates?.size > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={onSaveSelection}
+                    disabled={savingSelection}
+                    className="border-zinc-700 text-zinc-300 hover:text-white"
+                  >
+                    {savingSelection ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4 mr-2" />
+                    )}
+                    Save ({selectedCandidates.size})
+                  </Button>
+                )}
+
+                {/* Generate Outreach */}
+                {selectedCandidates?.size > 0 && (
+                  <Button
+                    size="sm"
+                    onClick={onGenerateOutreach}
+                    disabled={generatingOutreach}
+                    className="bg-red-500 hover:bg-red-600"
+                  >
+                    {generatingOutreach ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="w-4 h-4 mr-2" />
+                        Generate Outreach
+                      </>
+                    )}
                   </Button>
                 )}
 
@@ -1171,6 +1349,10 @@ export default function TalentCampaignDetail() {
   const [linkedNest, setLinkedNest] = useState(null);
   const [nestCandidates, setNestCandidates] = useState([]);
   const [selectedCandidates, setSelectedCandidates] = useState(new Set());
+  const [savingSelection, setSavingSelection] = useState(false);
+  const [generatingOutreach, setGeneratingOutreach] = useState(false);
+  const [outreachMessages, setOutreachMessages] = useState([]);
+  const [showOutreachPreview, setShowOutreachPreview] = useState(false);
 
   // Handle individual candidate selection toggle
   const handleToggleCandidateSelect = (candidateId) => {
@@ -1205,6 +1387,164 @@ export default function TalentCampaignDetail() {
     });
 
     toast.success(`Added ${excellentCandidates.length} excellent matches to selection`);
+  };
+
+  // Save selected candidates to the campaign
+  const handleSaveSelection = async () => {
+    if (selectedCandidates.size === 0) {
+      toast.error("No candidates selected");
+      return;
+    }
+
+    setSavingSelection(true);
+    try {
+      // Update matched_candidates with selection status
+      const updatedMatches = (campaign?.matched_candidates || []).map(m => ({
+        ...m,
+        selected: selectedCandidates.has(m.candidate_id),
+        selected_at: selectedCandidates.has(m.candidate_id) ? new Date().toISOString() : m.selected_at || null,
+      }));
+
+      const { error } = await supabase
+        .from('campaigns')
+        .update({
+          matched_candidates: updatedMatches,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', campaign.id);
+
+      if (error) throw error;
+
+      setCampaign(prev => prev ? { ...prev, matched_candidates: updatedMatches } : null);
+      toast.success(`${selectedCandidates.size} candidates saved to campaign`);
+    } catch (err) {
+      console.error("Save selection error:", err);
+      toast.error("Failed to save selection");
+    } finally {
+      setSavingSelection(false);
+    }
+  };
+
+  // Generate outreach messages for selected candidates
+  const handleGenerateOutreach = async () => {
+    const selectedMatches = (campaign?.matched_candidates || []).filter(m =>
+      selectedCandidates.has(m.candidate_id)
+    );
+
+    if (selectedMatches.length === 0) {
+      toast.error("Select candidates first");
+      return;
+    }
+
+    setGeneratingOutreach(true);
+    const generatedMessages = [];
+
+    try {
+      // Generate messages for each selected candidate
+      for (const match of selectedMatches) {
+        try {
+          const response = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generateCampaignOutreach`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+              },
+              body: JSON.stringify({
+                campaign_id: campaign.id,
+                candidate_id: match.candidate_id,
+                organization_id: user.organization_id,
+                candidate_name: match.candidate_name,
+                candidate_title: match.current_title || match.current_role?.split(' at ')[0],
+                candidate_company: match.current_company || match.current_role?.split(' at ')[1],
+                match_score: match.match_score,
+                match_reasons: match.match_reasons || match.key_strengths,
+                intelligence_score: match.intelligence_score,
+                recommended_approach: match.recommended_approach,
+                outreach_hooks: match.outreach_hooks,
+                best_outreach_angle: match.best_outreach_angle || match.outreach_angle,
+                timing_signals: match.timing_signals,
+                company_pain_points: match.company_pain_points,
+                key_insights: match.key_insights,
+                role_context: campaign.role_context,
+                role_title: campaign.role_title,
+                company_name: user.company_name || 'Our company',
+                stage: 'initial',
+                campaign_type: campaign.campaign_type || 'email',
+              }),
+            }
+          );
+
+          const result = await response.json();
+
+          if (result.content) {
+            generatedMessages.push({
+              candidate_id: match.candidate_id,
+              candidate_name: match.candidate_name,
+              current_role: match.current_role || `${match.current_title || 'Role'} at ${match.current_company || 'Company'}`,
+              match_score: match.match_score,
+              subject: result.subject,
+              content: result.content,
+              intelligence_used: result.intelligence_used,
+              personalization_score: result.personalization_score,
+            });
+          }
+        } catch (msgError) {
+          console.error(`Error generating for ${match.candidate_name}:`, msgError);
+        }
+      }
+
+      if (generatedMessages.length > 0) {
+        setOutreachMessages(generatedMessages);
+        setShowOutreachPreview(true);
+        toast.success(`Generated ${generatedMessages.length} personalized messages`);
+      } else {
+        toast.error("Failed to generate messages");
+      }
+    } catch (err) {
+      console.error("Generate outreach error:", err);
+      toast.error("Failed to generate outreach");
+    } finally {
+      setGeneratingOutreach(false);
+    }
+  };
+
+  // Handle approving outreach messages
+  const handleApproveOutreach = async (messages) => {
+    try {
+      // Update campaign with approved messages
+      const updatedMatches = (campaign?.matched_candidates || []).map(m => {
+        const msg = messages.find(msg => msg.candidate_id === m.candidate_id);
+        if (msg) {
+          return {
+            ...m,
+            outreach_message: {
+              subject: msg.subject,
+              content: msg.content,
+              generated_at: new Date().toISOString(),
+              approved: true,
+            },
+            status: 'ready_to_send',
+          };
+        }
+        return m;
+      });
+
+      const { error } = await supabase
+        .from('campaigns')
+        .update({ matched_candidates: updatedMatches })
+        .eq('id', campaign.id);
+
+      if (error) throw error;
+
+      setCampaign(prev => prev ? { ...prev, matched_candidates: updatedMatches } : null);
+      setShowOutreachPreview(false);
+      toast.success(`${messages.length} messages approved and ready to send!`);
+    } catch (err) {
+      console.error("Approve outreach error:", err);
+      toast.error("Failed to approve messages");
+    }
   };
 
   // Fetch projects and roles for selection
@@ -1729,6 +2069,10 @@ export default function TalentCampaignDetail() {
                 selectedCandidates={selectedCandidates}
                 onToggleCandidateSelect={handleToggleCandidateSelect}
                 onSelectAllExcellent={handleSelectAllExcellent}
+                onSaveSelection={handleSaveSelection}
+                onGenerateOutreach={handleGenerateOutreach}
+                savingSelection={savingSelection}
+                generatingOutreach={generatingOutreach}
               />
             </TabsContent>
           )}
@@ -1769,6 +2113,15 @@ export default function TalentCampaignDetail() {
           )}
         </Tabs>
       </GlassCard>
+
+      {/* Outreach Preview Modal */}
+      <OutreachPreviewModal
+        open={showOutreachPreview}
+        onOpenChange={setShowOutreachPreview}
+        messages={outreachMessages}
+        onApprove={handleApproveOutreach}
+        campaignType={campaign?.campaign_type || 'email'}
+      />
       </motion.div>
     </div>
   );
