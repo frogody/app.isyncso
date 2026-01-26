@@ -114,6 +114,10 @@ import { SyncStateProvider } from "@/components/context/SyncStateContext";
 import SyncFloatingChat from "@/components/sync/SyncFloatingChat";
 import SyncVoiceMode from "@/components/sync/SyncVoiceMode";
 
+// Import Keyboard Shortcuts
+import { KeyboardShortcutsProvider } from "@/contexts/KeyboardShortcutsContext";
+import GlobalShortcuts from "@/components/GlobalShortcuts";
+
 // Navigation items with permission requirements
 // permission: null = always visible, string = requires that permission
 const navigationItems = [
@@ -1367,8 +1371,10 @@ export default function Layout({ children, currentPageName }) {
           <SyncStateProvider>
           <AnimationProvider>
           <PermissionProvider>
+          <KeyboardShortcutsProvider>
             <AchievementProvider>
               <Toaster />
+              <GlobalShortcuts />
               {/* Skip to main content link for keyboard navigation */}
               <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-cyan-600 focus:text-white focus:rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
                 Skip to main content
@@ -1642,6 +1648,7 @@ export default function Layout({ children, currentPageName }) {
         />
         </div>
           </AchievementProvider>
+          </KeyboardShortcutsProvider>
           </PermissionProvider>
           </AnimationProvider>
           </SyncStateProvider>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
@@ -42,6 +42,7 @@ import { createPageUrl } from "@/utils";
 import { AddCandidateModal, EditCandidateModal, CandidateImportModal, CandidateDetailDrawer, BulkActionBar, AddToCampaignModal, SearchFilterBar } from "@/components/talent";
 import { IntelligenceGauge, IntelligenceLevelBadge, ApproachBadge, IntelStatusBadge } from "@/components/talent/IntelligenceGauge";
 import { useCandidateFilters, extractFilterOptions, countActiveFilters, getDefaultFilters } from "@/hooks/useCandidateFilters";
+import { useShortcut } from "@/contexts/KeyboardShortcutsContext";
 
 // Animation variants
 const containerVariants = {
@@ -111,12 +112,13 @@ const CandidateAvatar = ({ name, image, size = "md" }) => {
 };
 
 // Candidate Card (Grid View)
-const CandidateCard = ({ candidate, isSelected, onToggle, onClick, onEdit }) => {
+const CandidateCard = ({ candidate, isSelected, isFocused, onToggle, onClick, onEdit }) => {
   return (
     <motion.div
       variants={itemVariants}
       whileHover={{ scale: 1.02, y: -2 }}
       className="cursor-pointer relative"
+      data-candidate-card
     >
       <div className="absolute top-3 left-3 z-10">
         <Checkbox
@@ -126,7 +128,7 @@ const CandidateCard = ({ candidate, isSelected, onToggle, onClick, onEdit }) => 
           className="border-zinc-600 bg-zinc-800/80"
         />
       </div>
-      <GlassCard className="p-4 hover:border-red-500/30 transition-all duration-300" onClick={onClick}>
+      <GlassCard className={`p-4 hover:border-red-500/30 transition-all duration-300 ${isFocused ? "ring-1 ring-red-500/50 border-red-500/30" : ""}`} onClick={onClick}>
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3 ml-6">
             <CandidateAvatar name={`${candidate.first_name} ${candidate.last_name}`} image={candidate.profile_image_url} size="lg" />
@@ -175,12 +177,15 @@ const CandidateCard = ({ candidate, isSelected, onToggle, onClick, onEdit }) => 
 };
 
 // Candidate Row (Table View)
-const CandidateRow = ({ candidate, isSelected, onToggle, onClick, onEdit }) => {
+const CandidateRow = ({ candidate, isSelected, isFocused, onToggle, onClick, onEdit }) => {
   return (
     <motion.tr
       variants={itemVariants}
       whileHover={{ backgroundColor: "rgba(255,255,255,0.03)" }}
-      className="cursor-pointer border-b border-white/5 last:border-0 h-9"
+      className={`cursor-pointer border-b border-white/5 last:border-0 h-9 ${
+        isFocused ? "ring-1 ring-red-500/50 bg-red-500/5" : ""
+      }`}
+      data-candidate-row
     >
       <td className="py-1 px-2">
         <Checkbox
@@ -275,6 +280,11 @@ export default function TalentCandidates() {
   // Drawer state
   const [drawerCandidateId, setDrawerCandidateId] = useState(null);
 
+  // Keyboard navigation state
+  const [focusedIndex, setFocusedIndex] = useState(-1);
+  const searchInputRef = useRef(null);
+  const tableRef = useRef(null);
+
   // Bulk operations loading state
   const [bulkLoading, setBulkLoading] = useState({
     addToCampaign: false,
@@ -282,6 +292,112 @@ export default function TalentCandidates() {
     export: false,
     remove: false,
   });
+
+  // Scroll focused item into view
+  const scrollFocusedIntoView = useCallback((index) => {
+    if (index < 0) return;
+
+    if (viewMode === "table" && tableRef.current) {
+      const rows = tableRef.current.querySelectorAll("[data-candidate-row]");
+      if (rows[index]) {
+        rows[index].scrollIntoView({ block: "nearest", behavior: "smooth" });
+      }
+    } else {
+      const cards = document.querySelectorAll("[data-candidate-card]");
+      if (cards[index]) {
+        cards[index].scrollIntoView({ block: "nearest", behavior: "smooth" });
+      }
+    }
+  }, [viewMode]);
+
+  // Keyboard shortcuts for list navigation
+  // j = Move down
+  useShortcut(
+    "j",
+    () => {
+      setFocusedIndex((prev) => {
+        const next = Math.min(prev + 1, paginatedCandidates.length - 1);
+        scrollFocusedIntoView(next);
+        return next;
+      });
+    },
+    "Focus next candidate",
+    "Candidates",
+    [paginatedCandidates.length, scrollFocusedIntoView]
+  );
+
+  // k = Move up
+  useShortcut(
+    "k",
+    () => {
+      setFocusedIndex((prev) => {
+        const next = Math.max(prev - 1, 0);
+        scrollFocusedIntoView(next);
+        return next;
+      });
+    },
+    "Focus previous candidate",
+    "Candidates",
+    [scrollFocusedIntoView]
+  );
+
+  // Enter = Open focused candidate
+  useShortcut(
+    "enter",
+    () => {
+      if (focusedIndex >= 0 && paginatedCandidates[focusedIndex]) {
+        setDrawerCandidateId(paginatedCandidates[focusedIndex].id);
+      }
+    },
+    "Open candidate details",
+    "Candidates",
+    [focusedIndex, paginatedCandidates]
+  );
+
+  // x = Toggle selection on focused candidate
+  useShortcut(
+    "x",
+    () => {
+      if (focusedIndex >= 0 && paginatedCandidates[focusedIndex]) {
+        toggleCandidate(paginatedCandidates[focusedIndex].id);
+      }
+    },
+    "Toggle selection",
+    "Candidates",
+    [focusedIndex, paginatedCandidates]
+  );
+
+  // / = Focus search
+  useShortcut(
+    "/",
+    () => {
+      searchInputRef.current?.focus();
+    },
+    "Focus search",
+    "Candidates"
+  );
+
+  // Escape = Clear focus and selection
+  useShortcut(
+    "escape",
+    () => {
+      if (drawerCandidateId) {
+        setDrawerCandidateId(null);
+      } else if (selectedIds.size > 0) {
+        setSelectedIds(new Set());
+      } else if (focusedIndex >= 0) {
+        setFocusedIndex(-1);
+      }
+    },
+    "Clear focus/selection",
+    "Candidates",
+    [drawerCandidateId, selectedIds.size, focusedIndex]
+  );
+
+  // Reset focused index when page or filters change
+  useEffect(() => {
+    setFocusedIndex(-1);
+  }, [currentPage, searchQuery, filters]);
 
   useEffect(() => {
     fetchCandidates();
@@ -545,6 +661,7 @@ export default function TalentCandidates() {
         activeFilterCount={activeFilterCount}
         placeholder="Search by name, title, company, skills..."
         showIntelFilters={true}
+        searchInputRef={searchInputRef}
       />
 
       {/* Results summary and view controls */}
@@ -619,11 +736,12 @@ export default function TalentCandidates() {
           animate="visible"
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
         >
-          {paginatedCandidates.map((candidate) => (
+          {paginatedCandidates.map((candidate, index) => (
             <CandidateCard
               key={candidate.id}
               candidate={candidate}
               isSelected={selectedIds.has(candidate.id)}
+              isFocused={focusedIndex === index}
               onToggle={toggleCandidate}
               onClick={() => handleCandidateClick(candidate)}
               onEdit={setEditingCandidate}
@@ -632,7 +750,7 @@ export default function TalentCandidates() {
         </motion.div>
       ) : (
         <GlassCard className="overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" ref={tableRef}>
             <table className="w-full">
               <thead>
                 <tr className="border-b border-white/10">
@@ -656,11 +774,12 @@ export default function TalentCandidates() {
                 </tr>
               </thead>
               <motion.tbody variants={containerVariants} initial="hidden" animate="visible">
-                {paginatedCandidates.map((candidate) => (
+                {paginatedCandidates.map((candidate, index) => (
                   <CandidateRow
                     key={candidate.id}
                     candidate={candidate}
                     isSelected={selectedIds.has(candidate.id)}
+                    isFocused={focusedIndex === index}
                     onToggle={toggleCandidate}
                     onClick={() => handleCandidateClick(candidate)}
                     onEdit={setEditingCandidate}

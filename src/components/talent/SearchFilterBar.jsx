@@ -297,6 +297,7 @@ export default function SearchFilterBar({
   placeholder = "Search by name, title, company, skills...",
   showIntelFilters = true,
   compact = false,
+  searchInputRef,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
@@ -378,6 +379,7 @@ export default function SearchFilterBar({
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
           <input
+            ref={searchInputRef}
             type="text"
             value={searchQuery}
             onChange={handleSearchChange}
