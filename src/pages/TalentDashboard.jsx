@@ -7,6 +7,7 @@ import { GlassCard, StatCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -38,8 +39,15 @@ import {
   Upload,
   FileText,
   Activity,
+  Package,
+  Sparkles,
+  FolderPlus,
+  ArrowRight,
+  Eye,
+  Brain,
+  Zap,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { AddCandidateModal } from "@/components/talent";
 
@@ -97,6 +105,68 @@ const MetricCard = ({ title, value, subtitle, icon: Icon, color = "red", trend }
           <p className="text-xs text-white/70 font-medium">{title}</p>
           {subtitle && <p className="text-[10px] text-white/50 mt-0.5">{subtitle}</p>}
         </div>
+      </GlassCard>
+    </motion.div>
+  );
+};
+
+// Workflow Quick Action Card
+const WorkflowActionCard = ({ icon: Icon, title, description, action, actionLabel, color, stepNumber }) => {
+  const colorStyles = {
+    blue: {
+      card: "border-blue-500/20 hover:border-blue-500/40",
+      iconBg: "bg-blue-500/20",
+      icon: "text-blue-400",
+      button: "bg-blue-500 hover:bg-blue-600",
+    },
+    cyan: {
+      card: "border-cyan-500/20 hover:border-cyan-500/40",
+      iconBg: "bg-cyan-500/20",
+      icon: "text-cyan-400",
+      button: "bg-cyan-500 hover:bg-cyan-600",
+    },
+    red: {
+      card: "border-red-500/20 hover:border-red-500/40",
+      iconBg: "bg-red-500/20",
+      icon: "text-red-400",
+      button: "bg-red-500 hover:bg-red-600",
+    },
+    green: {
+      card: "border-green-500/20 hover:border-green-500/40",
+      iconBg: "bg-green-500/20",
+      icon: "text-green-400",
+      button: "bg-green-500 hover:bg-green-600",
+    },
+    purple: {
+      card: "border-purple-500/20 hover:border-purple-500/40",
+      iconBg: "bg-purple-500/20",
+      icon: "text-purple-400",
+      button: "bg-purple-500 hover:bg-purple-600",
+    },
+  };
+
+  const styles = colorStyles[color] || colorStyles.red;
+
+  return (
+    <motion.div
+      whileHover={{ scale: 1.02, y: -4 }}
+      className="cursor-pointer"
+      onClick={action}
+    >
+      <GlassCard className={`p-4 h-full ${styles.card} transition-all relative overflow-hidden`}>
+        {/* Step number badge */}
+        <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center">
+          <span className="text-xs font-bold text-zinc-400">{stepNumber}</span>
+        </div>
+
+        <div className={`w-10 h-10 rounded-lg ${styles.iconBg} flex items-center justify-center mb-3`}>
+          <Icon className={`w-5 h-5 ${styles.icon}`} />
+        </div>
+        <h3 className="font-medium text-white mb-1">{title}</h3>
+        <p className="text-sm text-zinc-400 mb-3 line-clamp-2">{description}</p>
+        <Button size="sm" className={styles.button}>
+          {actionLabel}
+        </Button>
       </GlassCard>
     </motion.div>
   );
@@ -198,11 +268,12 @@ const PipelineStages = ({ candidates }) => {
 // Campaign Performance Table
 const CampaignPerformanceTable = ({ campaigns, outreachTasks }) => {
   const campaignStats = useMemo(() => {
-    return campaigns.map((campaign) => {
+    return campaigns.slice(0, 5).map((campaign) => {
       const tasks = outreachTasks.filter((t) => t.campaign_id === campaign.id);
       const sent = tasks.filter((t) => t.status === "sent" || t.status === "replied").length;
       const replied = tasks.filter((t) => t.status === "replied").length;
       const responseRate = sent > 0 ? Math.round((replied / sent) * 100) : 0;
+      const matchedCount = campaign.matched_candidates?.length || 0;
 
       return {
         ...campaign,
@@ -210,50 +281,60 @@ const CampaignPerformanceTable = ({ campaigns, outreachTasks }) => {
         sent,
         replied,
         responseRate,
+        matchedCount,
       };
     });
   }, [campaigns, outreachTasks]);
 
   return (
     <GlassCard className="p-6">
-      <h3 className="text-lg font-semibold text-white mb-4">Campaign Performance</h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-white">Campaign Performance</h3>
+        <Link to={createPageUrl("TalentCampaigns")}>
+          <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300">
+            View All <ArrowRight className="w-4 h-4 ml-1" />
+          </Button>
+        </Link>
+      </div>
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="text-left text-sm text-white/50 border-b border-white/10">
               <th className="pb-3 font-medium">Campaign</th>
-              <th className="pb-3 font-medium text-right">Tasks</th>
+              <th className="pb-3 font-medium text-right">Matches</th>
               <th className="pb-3 font-medium text-right">Sent</th>
               <th className="pb-3 font-medium text-right">Replied</th>
-              <th className="pb-3 font-medium text-right">Response Rate</th>
+              <th className="pb-3 font-medium text-right">Rate</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
             {campaignStats.length === 0 ? (
               <tr>
                 <td colSpan={5} className="py-8 text-center text-white/40">
-                  No campaigns found
+                  No campaigns found. Create one to get started!
                 </td>
               </tr>
             ) : (
               campaignStats.map((campaign) => (
                 <tr key={campaign.id} className="hover:bg-white/5">
                   <td className="py-3">
-                    <div>
-                      <p className="font-medium text-white">{campaign.name}</p>
-                      <p className="text-xs text-white/50">{campaign.status}</p>
-                    </div>
+                    <Link to={`${createPageUrl("TalentCampaignDetail")}?id=${campaign.id}`}>
+                      <div>
+                        <p className="font-medium text-white hover:text-red-400 transition-colors">{campaign.name}</p>
+                        <p className="text-xs text-white/50">{campaign.status}</p>
+                      </div>
+                    </Link>
                   </td>
-                  <td className="py-3 text-right text-white/70">{campaign.totalTasks}</td>
+                  <td className="py-3 text-right text-white/70">{campaign.matchedCount}</td>
                   <td className="py-3 text-right text-white/70">{campaign.sent}</td>
                   <td className="py-3 text-right text-white/70">{campaign.replied}</td>
                   <td className="py-3 text-right">
                     <span
                       className={`font-medium ${
                         campaign.responseRate >= 20
-                          ? "text-red-400"
+                          ? "text-green-400"
                           : campaign.responseRate >= 10
-                          ? "text-red-300"
+                          ? "text-yellow-400"
                           : "text-white/50"
                       }`}
                     >
@@ -270,26 +351,13 @@ const CampaignPerformanceTable = ({ campaigns, outreachTasks }) => {
   );
 };
 
-// Recent Activity Component
-const RecentActivity = ({ outreachTasks }) => {
-  const recentTasks = useMemo(() => {
-    return [...outreachTasks]
-      .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
-      .slice(0, 10);
-  }, [outreachTasks]);
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case "sent":
-        return <Send className="w-4 h-4 text-red-400" />;
-      case "replied":
-        return <MessageSquare className="w-4 h-4 text-red-400" />;
-      case "failed":
-        return <XCircle className="w-4 h-4 text-red-400" />;
-      default:
-        return <Clock className="w-4 h-4 text-red-300" />;
-    }
-  };
+// Recent Campaign Activity Component
+const RecentCampaignActivity = ({ campaigns }) => {
+  const recentCampaigns = useMemo(() => {
+    return [...campaigns]
+      .sort((a, b) => new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at))
+      .slice(0, 8);
+  }, [campaigns]);
 
   const formatTime = (date) => {
     const now = new Date();
@@ -305,31 +373,54 @@ const RecentActivity = ({ outreachTasks }) => {
     return d.toLocaleDateString();
   };
 
+  const getStatusStyle = (status) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-500/20 text-green-400';
+      case 'draft':
+        return 'bg-zinc-500/20 text-zinc-400';
+      case 'paused':
+        return 'bg-yellow-500/20 text-yellow-400';
+      case 'completed':
+        return 'bg-blue-500/20 text-blue-400';
+      default:
+        return 'bg-zinc-500/20 text-zinc-400';
+    }
+  };
+
   return (
     <GlassCard className="p-6">
       <h3 className="text-lg font-semibold text-white mb-4">Recent Activity</h3>
-      <div className="space-y-3">
-        {recentTasks.length === 0 ? (
+      <div className="space-y-2">
+        {recentCampaigns.length === 0 ? (
           <p className="text-center text-white/40 py-4">No recent activity</p>
         ) : (
-          recentTasks.map((task) => (
-            <div
-              key={task.id}
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors"
+          recentCampaigns.map((campaign) => (
+            <Link
+              key={campaign.id}
+              to={`${createPageUrl("TalentCampaignDetail")}?id=${campaign.id}`}
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 transition-colors group"
             >
-              <div className="p-2 rounded-lg bg-zinc-800/50">
-                {getStatusIcon(task.status)}
+              <div className="p-2 rounded-lg bg-red-500/20 group-hover:bg-red-500/30 transition-colors">
+                <Megaphone className="w-4 h-4 text-red-400" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-white truncate">
-                  {task.candidate_name || "Unknown Candidate"}
+                <p className="text-sm text-white truncate group-hover:text-red-400 transition-colors">
+                  {campaign.name}
                 </p>
                 <p className="text-xs text-white/50">
-                  {task.task_type?.replace(/_/g, " ")} - {task.status}
+                  {campaign.matched_candidates?.length || 0} matches
                 </p>
               </div>
-              <span className="text-xs text-white/40">{formatTime(task.updated_at)}</span>
-            </div>
+              <div className="text-right shrink-0">
+                <Badge className={getStatusStyle(campaign.status)}>
+                  {campaign.status}
+                </Badge>
+                <p className="text-[10px] text-white/40 mt-1">
+                  {formatTime(campaign.updated_at || campaign.created_at)}
+                </p>
+              </div>
+            </Link>
           ))
         )}
       </div>
@@ -337,95 +428,119 @@ const RecentActivity = ({ outreachTasks }) => {
   );
 };
 
-// Quick Actions Component
-const QuickActions = ({ onAddCandidate }) => {
+// Recommended Nests Section
+const RecommendedNests = ({ nests, loading }) => {
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[...Array(4)].map((_, i) => (
+          <Skeleton key={i} className="h-48 rounded-xl" />
+        ))}
+      </div>
+    );
+  }
+
+  if (nests.length === 0) {
+    return (
+      <GlassCard className="p-8 text-center">
+        <Package className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
+        <p className="text-zinc-400 mb-2">No nests available yet</p>
+        <p className="text-sm text-zinc-500">Check the marketplace for curated candidate pools</p>
+        <Link to="/marketplace/nests">
+          <Button className="mt-4 bg-cyan-500 hover:bg-cyan-600">
+            Browse Marketplace
+          </Button>
+        </Link>
+      </GlassCard>
+    );
+  }
+
   return (
-    <GlassCard className="p-6">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 rounded-lg bg-red-500/10">
-          <Target className="w-5 h-5 text-red-400" />
-        </div>
-        <h2 className="text-lg font-semibold text-zinc-200">Quick Actions</h2>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={onAddCandidate}
-          className="flex items-center gap-4 p-4 bg-gradient-to-r from-red-500/10 to-red-600/10 hover:from-red-500/20 hover:to-red-600/20 rounded-xl border border-red-500/20 hover:border-red-500/40 transition-all duration-200 group"
-        >
-          <div className="p-3 rounded-lg bg-red-500/20 group-hover:bg-red-500/30 transition-colors">
-            <Plus className="w-6 h-6 text-red-400" />
-          </div>
-          <div className="text-left">
-            <h3 className="text-sm font-medium text-zinc-200 group-hover:text-red-300 transition-colors">
-              Add Candidate
-            </h3>
-            <p className="text-xs text-zinc-500">Add manually</p>
-          </div>
-        </motion.button>
-
-        <Link to={`${createPageUrl("TalentCampaignDetail")}?new=true`}>
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="flex items-center gap-4 p-4 bg-zinc-800/50 hover:bg-zinc-800/70 rounded-xl border border-zinc-700/50 hover:border-red-500/30 transition-all duration-200 group h-full"
-          >
-            <div className="p-3 rounded-lg bg-zinc-700/50 group-hover:bg-red-500/20 transition-colors">
-              <Megaphone className="w-6 h-6 text-zinc-400 group-hover:text-red-400 transition-colors" />
-            </div>
-            <div className="text-left">
-              <h3 className="text-sm font-medium text-zinc-200 group-hover:text-red-300 transition-colors">
-                Create Campaign
-              </h3>
-              <p className="text-xs text-zinc-500">Launch outreach</p>
-            </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {nests.map(nest => (
+        <Link key={nest.id} to={`/marketplace/nests/${nest.id}`}>
+          <motion.div whileHover={{ y: -4 }} className="h-full">
+            <GlassCard className="p-4 h-full hover:border-cyan-500/30 transition-all flex flex-col">
+              <div className="flex items-start justify-between mb-2">
+                <Badge className="bg-cyan-500/20 text-cyan-400 text-xs">
+                  {nest.category || nest.nest_type || 'General'}
+                </Badge>
+                {nest.price === 0 && (
+                  <Badge className="bg-green-500/20 text-green-400 text-xs">Free</Badge>
+                )}
+              </div>
+              <h3 className="font-medium text-white mb-1 line-clamp-1">{nest.name}</h3>
+              <p className="text-sm text-zinc-400 line-clamp-2 mb-3 flex-1">{nest.description}</p>
+              <div className="flex items-center justify-between text-sm pt-2 border-t border-zinc-800">
+                <span className="text-zinc-500 flex items-center gap-1">
+                  <Users className="w-3 h-3" />
+                  {nest.item_count || 0}
+                </span>
+                <span className={nest.price === 0 ? "text-green-400" : "text-white font-medium"}>
+                  {nest.price === 0 ? "Free" : `$${nest.price}`}
+                </span>
+              </div>
+            </GlassCard>
           </motion.div>
         </Link>
+      ))}
+    </div>
+  );
+};
 
-        <Link to={createPageUrl("TalentCandidates")}>
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="flex items-center gap-4 p-4 bg-zinc-800/50 hover:bg-zinc-800/70 rounded-xl border border-zinc-700/50 hover:border-red-500/30 transition-all duration-200 group h-full"
-          >
-            <div className="p-3 rounded-lg bg-zinc-700/50 group-hover:bg-red-500/20 transition-colors">
-              <Users className="w-6 h-6 text-zinc-400 group-hover:text-red-400 transition-colors" />
-            </div>
-            <div className="text-left">
-              <h3 className="text-sm font-medium text-zinc-200 group-hover:text-red-300 transition-colors">
-                View Candidates
-              </h3>
-              <p className="text-xs text-zinc-500">Browse talent pool</p>
-            </div>
-          </motion.div>
-        </Link>
+// Workflow Quick Actions Section
+const WorkflowQuickActions = ({ navigate }) => {
+  const quickActions = [
+    {
+      icon: FolderPlus,
+      title: "Create Role",
+      description: "Define a new position you're hiring for",
+      action: () => navigate(createPageUrl("TalentProjects")),
+      actionLabel: "New Role",
+      color: "blue",
+      stepNumber: 1,
+    },
+    {
+      icon: Package,
+      title: "Browse Nests",
+      description: "Find curated talent pools to source from",
+      action: () => navigate("/marketplace/nests"),
+      actionLabel: "Marketplace",
+      color: "cyan",
+      stepNumber: 2,
+    },
+    {
+      icon: Sparkles,
+      title: "Run Matching",
+      description: "AI-match candidates to your open roles",
+      action: () => navigate(`${createPageUrl("TalentCampaignDetail")}?new=true`),
+      actionLabel: "New Campaign",
+      color: "red",
+      stepNumber: 3,
+    },
+    {
+      icon: Mail,
+      title: "Launch Outreach",
+      description: "Send personalized messages to candidates",
+      action: () => navigate(createPageUrl("TalentCampaigns")),
+      actionLabel: "View Campaigns",
+      color: "green",
+      stepNumber: 4,
+    },
+  ];
 
-        <Link to={createPageUrl("ContactsImport")}>
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="flex items-center gap-4 p-4 bg-zinc-800/50 hover:bg-zinc-800/70 rounded-xl border border-zinc-700/50 hover:border-red-500/30 transition-all duration-200 group h-full"
-          >
-            <div className="p-3 rounded-lg bg-zinc-700/50 group-hover:bg-red-500/20 transition-colors">
-              <Upload className="w-6 h-6 text-zinc-400 group-hover:text-red-400 transition-colors" />
-            </div>
-            <div className="text-left">
-              <h3 className="text-sm font-medium text-zinc-200 group-hover:text-red-300 transition-colors">
-                Import CSV
-              </h3>
-              <p className="text-xs text-zinc-500">Bulk upload</p>
-            </div>
-          </motion.div>
-        </Link>
-      </div>
-    </GlassCard>
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {quickActions.map((action, index) => (
+        <WorkflowActionCard key={index} {...action} />
+      ))}
+    </div>
   );
 };
 
 export default function TalentDashboard() {
   const { user } = useUser();
+  const navigate = useNavigate();
 
   const [candidates, setCandidates] = useState([]);
   const [campaigns, setCampaigns] = useState([]);
@@ -436,9 +551,14 @@ export default function TalentDashboard() {
   const [timeRange, setTimeRange] = useState("30d");
   const [showAddCandidate, setShowAddCandidate] = useState(false);
 
+  // Recommended nests state
+  const [recommendedNests, setRecommendedNests] = useState([]);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
+
   useEffect(() => {
     if (user?.organization_id) {
       fetchData();
+      fetchRecommendedNests();
     }
   }, [user, timeRange]);
 
@@ -471,7 +591,8 @@ export default function TalentDashboard() {
         supabase
           .from("campaigns")
           .select("*")
-          .eq("organization_id", user.organization_id),
+          .eq("organization_id", user.organization_id)
+          .order("updated_at", { ascending: false }),
         supabase
           .from("outreach_tasks")
           .select("*, candidates(first_name, last_name)")
@@ -513,6 +634,42 @@ export default function TalentDashboard() {
     }
   };
 
+  const fetchRecommendedNests = async () => {
+    setLoadingRecommendations(true);
+    try {
+      // Get nests user hasn't purchased yet
+      const { data: purchases } = await supabase
+        .from('nest_purchases')
+        .select('nest_id')
+        .eq('organization_id', user.organization_id)
+        .eq('status', 'completed');
+
+      const purchasedIds = purchases?.map(p => p.nest_id) || [];
+
+      // Build query for available nests
+      let query = supabase
+        .from('nests')
+        .select('*')
+        .eq('is_active', true)
+        .order('purchase_count', { ascending: false })
+        .limit(4);
+
+      // Exclude purchased nests if any
+      if (purchasedIds.length > 0) {
+        query = query.not('id', 'in', `(${purchasedIds.join(',')})`);
+      }
+
+      const { data: nests, error } = await query;
+      if (error) throw error;
+
+      setRecommendedNests(nests || []);
+    } catch (err) {
+      console.error('Failed to fetch recommendations:', err);
+    } finally {
+      setLoadingRecommendations(false);
+    }
+  };
+
   // Calculate metrics
   const metrics = useMemo(() => {
     const totalCandidates = candidates.length;
@@ -521,6 +678,9 @@ export default function TalentDashboard() {
     const sentOutreach = outreachTasks.filter((t) => t.status === "sent" || t.status === "replied").length;
     const repliedOutreach = outreachTasks.filter((t) => t.status === "replied").length;
     const responseRate = sentOutreach > 0 ? Math.round((repliedOutreach / sentOutreach) * 100) : 0;
+
+    // Intel-ready candidates
+    const intelReady = candidates.filter((c) => c.last_intelligence_update && c.intelligence_score != null).length;
 
     // High-risk candidates (score >= 60)
     const highRiskCandidates = candidates.filter((c) => (c.intelligence_score || 0) >= 60).length;
@@ -537,8 +697,11 @@ export default function TalentDashboard() {
 
     // Active projects and roles
     const activeProjects = projects.filter((p) => p.status === "active").length;
-    const activeRoles = roles.filter((r) => r.status === "active").length;
+    const activeRoles = roles.filter((r) => r.status === "active" || r.status === "open").length;
     const filledRoles = roles.filter((r) => r.status === "filled").length;
+
+    // Total matches across campaigns
+    const totalMatches = campaigns.reduce((sum, c) => sum + (c.matched_candidates?.length || 0), 0);
 
     return {
       totalCandidates,
@@ -548,10 +711,12 @@ export default function TalentDashboard() {
       repliedOutreach,
       responseRate,
       highRiskCandidates,
+      intelReady,
       intelligenceDistribution,
       activeProjects,
       activeRoles,
       filledRoles,
+      totalMatches,
     };
   }, [candidates, campaigns, outreachTasks, projects, roles]);
 
@@ -561,6 +726,11 @@ export default function TalentDashboard() {
         <div className="relative z-10 w-full px-4 lg:px-6 py-4">
           <Skeleton className="h-8 w-48 mb-4" />
           <div className="grid grid-cols-4 gap-3 mb-4">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} className="h-32" />
+            ))}
+          </div>
+          <div className="grid grid-cols-4 gap-4 mb-4">
             {[...Array(4)].map((_, i) => (
               <Skeleton key={i} className="h-24" />
             ))}
@@ -577,10 +747,10 @@ export default function TalentDashboard() {
 
   return (
     <div className="min-h-screen bg-black relative">
-      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
+      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-6">
         <PageHeader
           title="Talent Dashboard"
-          subtitle="Pipeline metrics and recruitment performance"
+          subtitle="Your recruitment command center"
           color="red"
           actions={
             <div className="flex items-center gap-3">
@@ -606,9 +776,26 @@ export default function TalentDashboard() {
           }
         />
 
-        {/* Quick Actions */}
-        <motion.div variants={itemVariants} initial="hidden" animate="visible">
-          <QuickActions onAddCandidate={() => setShowAddCandidate(true)} />
+        {/* Workflow Quick Actions */}
+        <motion.div variants={containerVariants} initial="hidden" animate="visible">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                <Zap className="w-5 h-5 text-yellow-400" />
+                Quick Workflow
+              </h2>
+              <p className="text-sm text-zinc-400">Follow these steps to source and engage talent</p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => setShowAddCandidate(true)}
+              className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Candidate
+            </Button>
+          </div>
+          <WorkflowQuickActions navigate={navigate} />
         </motion.div>
 
         {/* Key Metrics */}
@@ -621,13 +808,13 @@ export default function TalentDashboard() {
           <MetricCard
             title="Total Candidates"
             value={metrics.totalCandidates}
-            subtitle={`${metrics.highRiskCandidates} high-risk`}
+            subtitle={`${metrics.intelReady} intel-ready`}
             icon={Users}
           />
           <MetricCard
             title="Active Campaigns"
             value={metrics.activeCampaigns}
-            subtitle={`${campaigns.length} total`}
+            subtitle={`${metrics.totalMatches} total matches`}
             icon={Megaphone}
           />
           <MetricCard
@@ -649,7 +836,7 @@ export default function TalentDashboard() {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 md:grid-cols-3 gap-3"
+          className="grid grid-cols-1 md:grid-cols-4 gap-3"
         >
           <MetricCard
             title="Active Projects"
@@ -669,6 +856,31 @@ export default function TalentDashboard() {
             subtitle={`${Math.round((metrics.filledRoles / Math.max(roles.length, 1)) * 100)}% success`}
             icon={CheckCircle2}
           />
+          <MetricCard
+            title="High Intel Candidates"
+            value={metrics.highRiskCandidates}
+            subtitle="Score 60+"
+            icon={Brain}
+          />
+        </motion.div>
+
+        {/* Recommended Nests Section */}
+        <motion.div variants={itemVariants} initial="hidden" animate="visible">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                <Package className="w-5 h-5 text-cyan-400" />
+                Recommended Nests
+              </h2>
+              <p className="text-sm text-zinc-400">Curated talent pools for your hiring needs</p>
+            </div>
+            <Link to="/marketplace/nests">
+              <Button variant="ghost" className="text-cyan-400 hover:text-cyan-300">
+                View All <ArrowRight className="w-4 h-4 ml-1" />
+              </Button>
+            </Link>
+          </div>
+          <RecommendedNests nests={recommendedNests} loading={loadingRecommendations} />
         </motion.div>
 
         {/* Charts Row */}
@@ -697,7 +909,7 @@ export default function TalentDashboard() {
             <CampaignPerformanceTable campaigns={campaigns} outreachTasks={outreachTasks} />
           </motion.div>
           <motion.div variants={itemVariants}>
-            <RecentActivity outreachTasks={outreachTasks} />
+            <RecentCampaignActivity campaigns={campaigns} />
           </motion.div>
         </motion.div>
       </div>
