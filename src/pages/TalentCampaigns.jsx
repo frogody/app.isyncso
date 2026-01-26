@@ -4,6 +4,7 @@ import { supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
 import { toast } from "sonner";
 import { GlassCard, StatCard } from "@/components/ui/GlassCard";
+import CampaignWizard from "@/components/talent/CampaignWizard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -803,17 +804,15 @@ export default function TalentCampaigns() {
         </GlassCard>
       )}
 
-      {/* Create Campaign Modal */}
-      <AnimatePresence>
-        {showCreateModal && (
-          <CreateCampaignModal
-            isOpen={showCreateModal}
-            onClose={() => setShowCreateModal(false)}
-            onSubmit={handleCreateCampaign}
-            isSubmitting={isSubmitting}
-          />
-        )}
-      </AnimatePresence>
+      {/* Campaign Creation Wizard */}
+      <CampaignWizard
+        open={showCreateModal}
+        onOpenChange={setShowCreateModal}
+        onComplete={(campaign) => {
+          fetchCampaigns();
+          navigate(`/TalentCampaignDetail?id=${campaign.id}`);
+        }}
+      />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deletingCampaign} onOpenChange={() => setDeletingCampaign(null)}>

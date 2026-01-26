@@ -411,10 +411,13 @@ export default function TalentSMSOutreach() {
   const stats = useMemo(() => ({
     total: conversations.length,
     queued: conversations.filter((c) => c.status === "queued").length,
-    sent: conversations.filter((c) => ["sent", "delivered"].includes(c.status)).length,
+    sent: conversations.filter((c) => c.status === "sent").length,
+    delivered: conversations.filter((c) => c.status === "delivered").length,
     responded: conversations.filter((c) => c.status === "responded").length,
     interested: conversations.filter((c) => c.status === "interested").length,
     scheduled: conversations.filter((c) => c.status === "scheduled").length,
+    declined: conversations.filter((c) => c.status === "declined").length,
+    opted_out: conversations.filter((c) => c.status === "opted_out").length,
   }), [conversations]);
 
   if (loading) {
@@ -515,75 +518,111 @@ export default function TalentSMSOutreach() {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-        <GlassCard className="p-3">
+      <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-2">
+        <GlassCard className="p-2">
           <div className="flex items-center gap-2">
-            <div className="p-2 bg-zinc-500/20 rounded-lg">
-              <MessageSquare className="w-4 h-4 text-zinc-400" />
+            <div className="p-1.5 bg-zinc-500/20 rounded-lg">
+              <MessageSquare className="w-3 h-3 text-zinc-400" />
             </div>
             <div>
-              <p className="text-lg font-bold text-white">{stats.total}</p>
-              <p className="text-[10px] text-zinc-500">Total</p>
+              <p className="text-base font-bold text-white">{stats.total}</p>
+              <p className="text-[9px] text-zinc-500">Total</p>
             </div>
           </div>
         </GlassCard>
 
-        <GlassCard className="p-3">
+        <GlassCard className="p-2">
           <div className="flex items-center gap-2">
-            <div className="p-2 bg-blue-500/20 rounded-lg">
-              <Send className="w-4 h-4 text-blue-400" />
+            <div className="p-1.5 bg-zinc-500/20 rounded-lg">
+              <Clock className="w-3 h-3 text-zinc-400" />
             </div>
             <div>
-              <p className="text-lg font-bold text-white">{stats.sent}</p>
-              <p className="text-[10px] text-zinc-500">Sent</p>
+              <p className="text-base font-bold text-white">{stats.queued}</p>
+              <p className="text-[9px] text-zinc-500">Queued</p>
             </div>
           </div>
         </GlassCard>
 
-        <GlassCard className="p-3">
+        <GlassCard className="p-2">
           <div className="flex items-center gap-2">
-            <div className="p-2 bg-yellow-500/20 rounded-lg">
-              <MessageCircle className="w-4 h-4 text-yellow-400" />
+            <div className="p-1.5 bg-blue-500/20 rounded-lg">
+              <Send className="w-3 h-3 text-blue-400" />
             </div>
             <div>
-              <p className="text-lg font-bold text-white">{stats.responded}</p>
-              <p className="text-[10px] text-zinc-500">Responded</p>
+              <p className="text-base font-bold text-white">{stats.sent}</p>
+              <p className="text-[9px] text-zinc-500">Sent</p>
             </div>
           </div>
         </GlassCard>
 
-        <GlassCard className="p-3">
+        <GlassCard className="p-2">
           <div className="flex items-center gap-2">
-            <div className="p-2 bg-green-500/20 rounded-lg">
-              <Sparkles className="w-4 h-4 text-green-400" />
+            <div className="p-1.5 bg-cyan-500/20 rounded-lg">
+              <CheckCircle className="w-3 h-3 text-cyan-400" />
             </div>
             <div>
-              <p className="text-lg font-bold text-white">{stats.interested}</p>
-              <p className="text-[10px] text-zinc-500">Interested</p>
+              <p className="text-base font-bold text-white">{stats.delivered}</p>
+              <p className="text-[9px] text-zinc-500">Delivered</p>
             </div>
           </div>
         </GlassCard>
 
-        <GlassCard className="p-3">
+        <GlassCard className="p-2">
           <div className="flex items-center gap-2">
-            <div className="p-2 bg-purple-500/20 rounded-lg">
-              <Calendar className="w-4 h-4 text-purple-400" />
+            <div className="p-1.5 bg-yellow-500/20 rounded-lg">
+              <MessageCircle className="w-3 h-3 text-yellow-400" />
             </div>
             <div>
-              <p className="text-lg font-bold text-white">{stats.scheduled}</p>
-              <p className="text-[10px] text-zinc-500">Scheduled</p>
+              <p className="text-base font-bold text-white">{stats.responded}</p>
+              <p className="text-[9px] text-zinc-500">Responded</p>
             </div>
           </div>
         </GlassCard>
 
-        <GlassCard className="p-3">
+        <GlassCard className="p-2">
           <div className="flex items-center gap-2">
-            <div className="p-2 bg-zinc-500/20 rounded-lg">
-              <Clock className="w-4 h-4 text-zinc-400" />
+            <div className="p-1.5 bg-green-500/20 rounded-lg">
+              <Sparkles className="w-3 h-3 text-green-400" />
             </div>
             <div>
-              <p className="text-lg font-bold text-white">{stats.queued}</p>
-              <p className="text-[10px] text-zinc-500">Queued</p>
+              <p className="text-base font-bold text-white">{stats.interested}</p>
+              <p className="text-[9px] text-zinc-500">Interested</p>
+            </div>
+          </div>
+        </GlassCard>
+
+        <GlassCard className="p-2">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-purple-500/20 rounded-lg">
+              <Calendar className="w-3 h-3 text-purple-400" />
+            </div>
+            <div>
+              <p className="text-base font-bold text-white">{stats.scheduled}</p>
+              <p className="text-[9px] text-zinc-500">Scheduled</p>
+            </div>
+          </div>
+        </GlassCard>
+
+        <GlassCard className="p-2">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-red-500/20 rounded-lg">
+              <XCircle className="w-3 h-3 text-red-400" />
+            </div>
+            <div>
+              <p className="text-base font-bold text-white">{stats.declined}</p>
+              <p className="text-[9px] text-zinc-500">Declined</p>
+            </div>
+          </div>
+        </GlassCard>
+
+        <GlassCard className="p-2">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-zinc-600/20 rounded-lg">
+              <Ban className="w-3 h-3 text-zinc-500" />
+            </div>
+            <div>
+              <p className="text-base font-bold text-white">{stats.opted_out}</p>
+              <p className="text-[9px] text-zinc-500">Opted Out</p>
             </div>
           </div>
         </GlassCard>

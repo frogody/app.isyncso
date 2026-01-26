@@ -54,7 +54,22 @@ import {
   CheckCircle2,
   Percent,
   Coins,
+  X,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Link, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -270,6 +285,14 @@ export default function TalentCandidateProfile() {
   const [generatingIntelligence, setGeneratingIntelligence] = useState(false);
   const [syncStatus, setSyncStatus] = useState(""); // "company" | "candidate" | ""
   const [enrichingContact, setEnrichingContact] = useState(false);
+
+  // SMS Modal State
+  const [showSMSModal, setShowSMSModal] = useState(false);
+  const [smsMessage, setSmsMessage] = useState("");
+  const [sendingFromNumber, setSendingFromNumber] = useState("");
+  const [availableNumbers, setAvailableNumbers] = useState([]);
+  const [sendingSMS, setSendingSMS] = useState(false);
+  const [generatingMessage, setGeneratingMessage] = useState(false);
 
   useEffect(() => {
     if (candidateId) {
@@ -496,6 +519,158 @@ export default function TalentCandidateProfile() {
     }
   };
 
+  // Fetch available phone numbers for SMS
+  const fetchAvailableNumbers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("twilio_phone_numbers")
+        .select("*")
+        .eq("organization_id", user.organization_id)
+        .eq("status", "active")
+        .order("purchased_at", { ascending: false });
+
+      if (error) throw error;
+      setAvailableNumbers(data || []);
+      if (data?.length > 0 && !sendingFromNumber) {
+        setSendingFromNumber(data[0].phone_number);
+      }
+    } catch (err) {
+      console.error("Error fetching phone numbers:", err);
+    }
+  };
+
+  // Generate personalized SMS using AI
+  const generatePersonalizedSMS = async () => {
+    if (!candidate) return;
+
+    setGeneratingMessage(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generateCampaignOutreach`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            candidate_name: `${candidate.first_name || ""} ${candidate.last_name || ""}`.trim(),
+            current_title: candidate.job_title,
+            current_company: candidate.company_name,
+            skills: candidate.skills || [],
+            campaign_name: "Direct Outreach",
+            channel: "sms",
+            // Use all available intelligence
+            outreach_hooks: candidate.outreach_hooks,
+            timing_signals: candidate.timing_signals,
+            company_pain_points: candidate.company_pain_points,
+            recommended_approach: candidate.recommended_approach,
+            best_outreach_angle: candidate.best_outreach_angle,
+            intelligence_score: candidate.intelligence_score,
+            intelligence_factors: candidate.intelligence_factors,
+            key_insights: candidate.key_insights,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setSmsMessage(data.message || "");
+        toast.success("Message generated!", {
+          description: data.personalization_score
+            ? `Personalization: ${data.personalization_score}%`
+            : undefined,
+        });
+      } else {
+        toast.error("Failed to generate message");
+      }
+    } catch (err) {
+      console.error("Error generating SMS:", err);
+      toast.error("Failed to generate message");
+    } finally {
+      setGeneratingMessage(false);
+    }
+  };
+
+  // Send SMS to candidate
+  const sendSMS = async () => {
+    const recipientPhone = candidate.verified_phone || candidate.phone;
+    if (!recipientPhone) {
+      toast.error("No phone number available", {
+        description: "Enrich this candidate's contact info first",
+      });
+      return;
+    }
+
+    if (!sendingFromNumber) {
+      toast.error("No sending number selected", {
+        description: "Purchase a phone number in SMS Outreach settings",
+      });
+      return;
+    }
+
+    if (!smsMessage.trim()) {
+      toast.error("Message cannot be empty");
+      return;
+    }
+
+    setSendingSMS(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/twilio-sms`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            action: "send_sms",
+            from_number: sendingFromNumber,
+            to_number: recipientPhone,
+            message: smsMessage,
+            organization_id: user.organization_id,
+            metadata: {
+              candidate_id: candidate.id,
+              candidate_name: `${candidate.first_name || ""} ${candidate.last_name || ""}`.trim(),
+              source: "candidate_profile",
+            },
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success("SMS sent successfully!", {
+          description: `Message delivered to ${recipientPhone}`,
+        });
+        setShowSMSModal(false);
+        setSmsMessage("");
+        // Refresh outreach tasks
+        fetchOutreachTasks();
+      } else {
+        toast.error("Failed to send SMS", {
+          description: result.error || "Please try again",
+        });
+      }
+    } catch (err) {
+      console.error("Error sending SMS:", err);
+      toast.error("Network error", {
+        description: "Failed to send SMS. Please try again.",
+      });
+    } finally {
+      setSendingSMS(false);
+    }
+  };
+
+  // Fetch phone numbers when SMS modal opens
+  useEffect(() => {
+    if (showSMSModal && user?.organization_id) {
+      fetchAvailableNumbers();
+    }
+  }, [showSMSModal, user?.organization_id]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black">
@@ -626,9 +801,14 @@ export default function TalentCandidateProfile() {
                      syncStatus === "candidate" ? "ANALYZING..." :
                      "SYNC INTEL"}
                   </Button>
-                  <Button variant="outline" size="sm" className="border-white/10 text-white/70 hover:bg-white/5">
-                    <Send className="w-3 h-3 mr-1.5" />
-                    Outreach
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                    onClick={() => setShowSMSModal(true)}
+                  >
+                    <MessageSquare className="w-3 h-3 mr-1.5" />
+                    Send SMS
                   </Button>
                   {candidate.linkedin_profile && !candidate.enriched_at ? (
                     <Button
@@ -1094,6 +1274,142 @@ export default function TalentCandidateProfile() {
             </div>
           )}
         </motion.div>
+
+        {/* SMS Modal */}
+        <Dialog open={showSMSModal} onOpenChange={setShowSMSModal}>
+          <DialogContent className="bg-zinc-900 border-white/10 max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="text-white flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-red-400" />
+                Send SMS to {fullName}
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4 pt-2">
+              {/* Recipient Info */}
+              <div className="bg-white/[0.03] rounded-lg p-3 border border-white/[0.06]">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-sm font-bold text-white">
+                    {initials}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-white">{fullName}</p>
+                    <p className="text-xs text-white/50">
+                      {candidate.verified_phone || candidate.phone || "No phone number"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* From Number Selection */}
+              <div>
+                <label className="block text-xs text-white/50 mb-1.5">From Number</label>
+                {availableNumbers.length > 0 ? (
+                  <Select value={sendingFromNumber} onValueChange={setSendingFromNumber}>
+                    <SelectTrigger className="bg-white/[0.03] border-white/[0.08] text-white">
+                      <SelectValue placeholder="Select a number" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-900 border-white/10">
+                      {availableNumbers.map((num) => (
+                        <SelectItem
+                          key={num.id}
+                          value={num.phone_number}
+                          className="text-white hover:bg-white/[0.05]"
+                        >
+                          {num.phone_number} {num.friendly_name && `(${num.friendly_name})`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <div className="bg-white/[0.03] rounded-lg p-3 border border-white/[0.06] text-center">
+                    <Phone className="w-5 h-5 text-white/20 mx-auto mb-1" />
+                    <p className="text-xs text-white/50">No phone numbers available</p>
+                    <Link
+                      to={createPageUrl("TalentSMSOutreach")}
+                      className="text-xs text-red-400 hover:text-red-300"
+                    >
+                      Purchase a number
+                    </Link>
+                  </div>
+                )}
+              </div>
+
+              {/* Message Input */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs text-white/50">Message</label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={generatePersonalizedSMS}
+                    disabled={generatingMessage}
+                    className="h-6 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 px-2"
+                  >
+                    {generatingMessage ? (
+                      <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                    ) : (
+                      <Sparkles className="w-3 h-3 mr-1" />
+                    )}
+                    {generatingMessage ? "Generating..." : "AI Generate"}
+                  </Button>
+                </div>
+                <Textarea
+                  value={smsMessage}
+                  onChange={(e) => setSmsMessage(e.target.value)}
+                  placeholder="Type your message or click AI Generate for a personalized message..."
+                  className="bg-white/[0.03] border-white/[0.08] text-white placeholder:text-white/30 min-h-[120px] resize-none"
+                />
+                <div className="flex items-center justify-between mt-1.5">
+                  <span className="text-xs text-white/30">
+                    {smsMessage.length} characters
+                    {smsMessage.length > 160 && (
+                      <span className="text-yellow-400/70 ml-1">
+                        ({Math.ceil(smsMessage.length / 160)} SMS segments)
+                      </span>
+                    )}
+                  </span>
+                </div>
+              </div>
+
+              {/* No Phone Warning */}
+              {!candidate.verified_phone && !candidate.phone && (
+                <div className="bg-yellow-500/10 rounded-lg p-3 border border-yellow-500/20">
+                  <div className="flex items-center gap-2 text-yellow-400">
+                    <AlertTriangle className="w-4 h-4" />
+                    <span className="text-xs font-medium">No phone number available</span>
+                  </div>
+                  <p className="text-xs text-white/50 mt-1">
+                    Click "Enrich" on the profile to find this candidate's phone number.
+                  </p>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex items-center gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowSMSModal(false)}
+                  className="flex-1 border-white/10 text-white/70 hover:bg-white/5"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={sendSMS}
+                  disabled={sendingSMS || !smsMessage.trim() || !sendingFromNumber || (!candidate.verified_phone && !candidate.phone)}
+                  className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
+                >
+                  {sendingSMS ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <Send className="w-4 h-4 mr-2" />
+                  )}
+                  {sendingSMS ? "Sending..." : "Send SMS"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </motion.div>
     </div>
   );

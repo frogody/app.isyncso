@@ -410,9 +410,6 @@ export default function PhoneNumberManager({ onNumberSelected }) {
                         <div className="text-sm font-medium" style={{ color: "var(--txt)" }}>
                           ${num.monthly_cost}/mo
                         </div>
-                        <div className="text-xs" style={{ color: "var(--muted)" }}>
-                          + ${num.setup_cost} setup
-                        </div>
                       </div>
                       <Button
                         size="sm"

@@ -128,7 +128,6 @@ async function searchAvailableNumbers(
     },
     // Pricing (iSyncSO markup)
     monthly_cost: 2.00, // $2/month
-    setup_cost: 1.00, // $1 setup
   })) || [];
 
   return new Response(
@@ -204,38 +203,93 @@ async function purchaseNumber(
 
   const twilioNumber = await response.json();
 
+  // Validate Twilio response has required fields
+  if (!twilioNumber.sid || !twilioNumber.phone_number) {
+    console.error("Incomplete Twilio response:", {
+      hasSid: !!twilioNumber.sid,
+      hasPhoneNumber: !!twilioNumber.phone_number,
+      responseKeys: Object.keys(twilioNumber),
+    });
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: "Twilio returned incomplete data. Number may have been purchased - contact support.",
+      }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  // Validate organization_id is valid UUID format
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!organization_id || !uuidRegex.test(organization_id)) {
+    console.error("Invalid organization_id:", organization_id);
+    return new Response(
+      JSON.stringify({ success: false, error: "Invalid organization ID format" }),
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  // Build insert data with explicit types
+  const insertData = {
+    organization_id,
+    phone_number: twilioNumber.phone_number,
+    friendly_name: friendly_name || twilioNumber.friendly_name || null,
+    twilio_sid: twilioNumber.sid,
+    twilio_account_sid: accountSid,
+    capabilities: {
+      sms: twilioNumber.capabilities?.sms ?? true,
+      mms: twilioNumber.capabilities?.mms ?? false,
+      voice: twilioNumber.capabilities?.voice ?? false,
+    },
+    country_code: twilioNumber.iso_country || "US",
+    region: twilioNumber.region || null,
+    locality: twilioNumber.locality || null,
+    monthly_cost_cents: 200,
+    setup_cost_cents: 100,
+    status: "active",
+  };
+
+  console.log("Attempting to save phone number:", {
+    org_id: organization_id,
+    phone: twilioNumber.phone_number,
+    twilio_sid: twilioNumber.sid,
+  });
+
   // Save to database
   const { data: savedNumber, error: saveError } = await supabase
     .from("organization_phone_numbers")
-    .insert({
-      organization_id,
-      phone_number: twilioNumber.phone_number,
-      friendly_name: friendly_name || twilioNumber.friendly_name,
-      twilio_sid: twilioNumber.sid,
-      twilio_account_sid: accountSid,
-      capabilities: {
-        sms: twilioNumber.capabilities?.sms || true,
-        mms: twilioNumber.capabilities?.mms || false,
-        voice: twilioNumber.capabilities?.voice || false,
-      },
-      country_code: twilioNumber.iso_country,
-      region: twilioNumber.region,
-      locality: twilioNumber.locality,
-      monthly_cost_cents: 200,
-      setup_cost_cents: 100,
-      status: "active",
-    })
+    .insert(insertData)
     .select()
     .single();
 
   if (saveError) {
-    console.error("Failed to save number:", saveError);
-    // Note: Number was purchased but not saved - admin may need to reconcile
+    console.error("Failed to save number to database:", {
+      error: saveError,
+      code: saveError.code,
+      message: saveError.message,
+      details: saveError.details,
+      hint: saveError.hint,
+      twilioSid: twilioNumber.sid,
+      phoneNumber: twilioNumber.phone_number,
+      organizationId: organization_id,
+    });
+
+    // Provide more specific error message based on error code
+    let userMessage = "Number purchased but failed to save. Contact support.";
+    if (saveError.code === "23502") {
+      userMessage = "Database error: Missing required field. Contact support.";
+    } else if (saveError.code === "23505") {
+      userMessage = "This number is already registered in the system.";
+    } else if (saveError.code === "23503") {
+      userMessage = "Invalid organization. Please refresh and try again.";
+    }
+
     return new Response(
       JSON.stringify({
         success: false,
-        error: "Number purchased but failed to save. Contact support.",
+        error: userMessage,
         twilio_sid: twilioNumber.sid,
+        debug_code: saveError.code,
       }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
