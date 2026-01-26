@@ -28,6 +28,7 @@ import {
   Zap,
   Search,
   Sparkles,
+  FolderPlus,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";

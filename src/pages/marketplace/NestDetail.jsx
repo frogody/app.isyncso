@@ -191,7 +191,7 @@ export default function NestDetail() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
 
-      const response = await fetch(`${SUPABASE_URL}/functions/v1/purchase-nest`, {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/purchase-nest`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
