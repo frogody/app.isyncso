@@ -39,6 +39,7 @@ interface Campaign {
   role_context?: RoleContext;
   role_title?: string;
   company_name?: string;
+  nest_id?: string;
 }
 
 interface Candidate {
@@ -513,6 +514,8 @@ serve(async (req) => {
       organization_id,
       role_id,
       role_context,
+      nest_id,           // NEW: Filter candidates from specific nest
+      candidate_ids,     // NEW: Analyze specific candidates
       min_score = 30,
       limit = 50,
       use_ai = true,
@@ -529,11 +532,12 @@ serve(async (req) => {
     // Get campaign with role_context if campaign_id provided
     let campaign: Campaign | null = null;
     let effectiveRoleContext = role_context;
+    let campaignNestId = nest_id;
 
     if (campaign_id) {
       const { data: campaignData } = await supabase
         .from("campaigns")
-        .select("id, name, role_context, role_title, company_name")
+        .select("id, name, role_context, role_title, company_name, nest_id")
         .eq("id", campaign_id)
         .single();
 
@@ -542,10 +546,14 @@ serve(async (req) => {
         if (!effectiveRoleContext && campaignData.role_context) {
           effectiveRoleContext = campaignData.role_context;
         }
+        // Use campaign's nest_id if not provided in request
+        if (!campaignNestId && campaignData.nest_id) {
+          campaignNestId = campaignData.nest_id;
+        }
       }
     }
 
-    // Get roles to match against
+    // Get roles to match against - be more flexible with role_context
     let roles: Role[] = [];
 
     if (role_id) {
@@ -569,14 +577,29 @@ serve(async (req) => {
       if (error) throw error;
       roles = data || [];
     } else if (campaign?.role_title) {
+      // Create synthetic role from campaign's role_title
       roles = [{
         id: "campaign-role",
         title: campaign.role_title,
         requirements: effectiveRoleContext?.must_haves?.join(", ") || "",
+        responsibilities: effectiveRoleContext?.perfect_fit_criteria || "",
       }];
+    } else if (effectiveRoleContext) {
+      // NEW: Create synthetic role purely from role_context (for nest-based matching)
+      const roleTitle = effectiveRoleContext.ideal_background ||
+                        effectiveRoleContext.experience_level ||
+                        "Target Role";
+      roles = [{
+        id: "context-role",
+        title: roleTitle,
+        requirements: effectiveRoleContext.must_haves?.join(", ") || effectiveRoleContext.perfect_fit_criteria || "",
+        responsibilities: effectiveRoleContext.perfect_fit_criteria || "",
+        location: effectiveRoleContext.remote_ok ? "Remote" : undefined,
+      }];
+      console.log(`Created synthetic role from role_context: "${roleTitle}"`);
     } else {
       return new Response(
-        JSON.stringify({ error: "Either project_id, role_id, or campaign with role_title is required" }),
+        JSON.stringify({ error: "Either project_id, role_id, role_context, or campaign with role_title is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -588,12 +611,25 @@ serve(async (req) => {
       );
     }
 
-    // Get ALL candidates (we'll filter smartly)
-    const { data: allCandidates, error: candidatesError } = await supabase
+    // Get candidates - with intelligent filtering based on params
+    let candidateQuery = supabase
       .from("candidates")
       .select("*")
       .eq("organization_id", organization_id)
       .not("stage", "in", '("hired","rejected")');
+
+    // NEW: Filter by specific candidate_ids if provided
+    if (candidate_ids && Array.isArray(candidate_ids) && candidate_ids.length > 0) {
+      candidateQuery = candidateQuery.in("id", candidate_ids);
+      console.log(`Filtering to ${candidate_ids.length} specific candidates`);
+    }
+    // NEW: Filter by nest if nest_id provided
+    else if (campaignNestId) {
+      candidateQuery = candidateQuery.eq("import_source", `nest:${campaignNestId}`);
+      console.log(`Filtering to candidates from nest: ${campaignNestId}`);
+    }
+
+    const { data: allCandidates, error: candidatesError } = await candidateQuery;
 
     if (candidatesError) throw candidatesError;
     if (!allCandidates || allCandidates.length === 0) {
@@ -728,7 +764,10 @@ serve(async (req) => {
 
       const { error: updateError } = await supabase
         .from("campaigns")
-        .update({ matched_candidates: matchedCandidatesData })
+        .update({
+          matched_candidates: matchedCandidatesData,
+          last_matched_at: new Date().toISOString(),
+        })
         .eq("id", campaign_id);
 
       if (updateError) {
@@ -779,6 +818,13 @@ serve(async (req) => {
         ai_powered: shouldUseAI,
         role_context_used: !!effectiveRoleContext,
         analysis_method: shouldUseAI ? "multi-stage-ai" : "rule-based",
+        // NEW: Include source info for transparency
+        source: {
+          nest_id: campaignNestId || null,
+          candidate_ids_provided: !!(candidate_ids && candidate_ids.length > 0),
+          filtered_by_nest: !!campaignNestId,
+        },
+        matched_at: new Date().toISOString(),
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
