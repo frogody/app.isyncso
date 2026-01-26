@@ -497,16 +497,47 @@ function priorityRank(matches: MatchResult[]): MatchResult[] {
 }
 
 serve(async (req) => {
+  console.log("=== analyzeCampaignProject started ===");
+  console.log("Request received at:", new Date().toISOString());
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    // Check environment variables first
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const groqApiKey = Deno.env.get("GROQ_API_KEY") || "";
 
+    console.log("Environment check:", {
+      hasSupabaseUrl: !!supabaseUrl,
+      hasServiceKey: !!supabaseServiceKey,
+      hasGroqApiKey: !!groqApiKey,
+      groqKeyLength: groqApiKey?.length || 0
+    });
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error("Missing required Supabase environment variables");
+      return new Response(
+        JSON.stringify({ error: "Missing required Supabase environment variables" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Parse request body
+    let requestBody;
+    try {
+      requestBody = await req.json();
+    } catch (parseError) {
+      console.error("Failed to parse request body:", parseError);
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON in request body" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const {
       project_id,
@@ -520,7 +551,19 @@ serve(async (req) => {
       limit = 50,
       use_ai = true,
       deep_analysis = true, // Enable multi-stage analysis
-    } = await req.json();
+    } = requestBody;
+
+    console.log("Request params:", JSON.stringify({
+      campaign_id,
+      organization_id,
+      project_id,
+      role_id,
+      nest_id,
+      candidate_ids_count: candidate_ids?.length || 0,
+      min_score,
+      limit,
+      has_role_context: !!role_context
+    }));
 
     if (!organization_id) {
       return new Response(
@@ -535,60 +578,110 @@ serve(async (req) => {
     let campaignNestId = nest_id;
 
     if (campaign_id) {
-      const { data: campaignData } = await supabase
-        .from("campaigns")
-        .select("id, name, role_context, role_title, company_name, nest_id")
-        .eq("id", campaign_id)
-        .single();
+      console.log("Fetching campaign:", campaign_id);
+      try {
+        const { data: campaignData, error: campaignError } = await supabase
+          .from("campaigns")
+          .select("id, name, role_context, role_id, project_id, nest_id")
+          .eq("id", campaign_id)
+          .single();
 
-      if (campaignData) {
-        campaign = campaignData;
-        if (!effectiveRoleContext && campaignData.role_context) {
-          effectiveRoleContext = campaignData.role_context;
+        if (campaignError) {
+          console.error("Campaign query error:", campaignError);
+          throw new Error(`Failed to fetch campaign: ${campaignError.message}`);
         }
-        // Use campaign's nest_id if not provided in request
-        if (!campaignNestId && campaignData.nest_id) {
-          campaignNestId = campaignData.nest_id;
+
+        console.log("Campaign data:", JSON.stringify({
+          id: campaignData?.id,
+          name: campaignData?.name,
+          has_role_context: !!campaignData?.role_context,
+          role_id: campaignData?.role_id,
+          project_id: campaignData?.project_id,
+          nest_id: campaignData?.nest_id
+        }));
+
+        if (campaignData) {
+          campaign = campaignData;
+          if (!effectiveRoleContext && campaignData.role_context) {
+            effectiveRoleContext = campaignData.role_context;
+          }
+          // Use campaign's nest_id if not provided in request
+          if (!campaignNestId && campaignData.nest_id) {
+            campaignNestId = campaignData.nest_id;
+          }
         }
+      } catch (err) {
+        console.error("Error fetching campaign:", err);
+        throw err;
       }
     }
 
     // Get roles to match against - be more flexible with role_context
     let roles: Role[] = [];
 
+    console.log("Fetching roles - role_id:", role_id, "project_id:", project_id);
+
     if (role_id) {
-      const { data, error } = await supabase
-        .from("roles")
-        .select("*")
-        .eq("id", role_id)
-        .eq("organization_id", organization_id)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from("roles")
+          .select("*")
+          .eq("id", role_id)
+          .eq("organization_id", organization_id)
+          .single();
 
-      if (error) throw error;
-      if (data) roles = [data];
-    } else if (project_id) {
-      const { data, error } = await supabase
-        .from("roles")
-        .select("*")
-        .eq("project_id", project_id)
-        .eq("organization_id", organization_id)
-        .eq("status", "active");
+        if (error) {
+          console.error("Role query error (by role_id):", error);
+          // Don't throw - role might not exist yet, try other methods
+        }
+        if (data) {
+          roles = [data];
+          console.log("Found role by role_id:", data.id, data.title);
+        }
+      } catch (err) {
+        console.error("Error fetching role by ID:", err);
+      }
+    }
 
-      if (error) throw error;
-      roles = data || [];
-    } else if (campaign?.role_title) {
+    if (roles.length === 0 && project_id) {
+      try {
+        const { data, error } = await supabase
+          .from("roles")
+          .select("*")
+          .eq("project_id", project_id)
+          .eq("organization_id", organization_id)
+          .in("status", ["open", "active"]);
+
+        if (error) {
+          console.error("Roles query error (by project_id):", error);
+        }
+        roles = data || [];
+        console.log("Found", roles.length, "roles by project_id");
+      } catch (err) {
+        console.error("Error fetching roles by project_id:", err);
+      }
+    }
+
+    // If still no roles, try campaign role_title or role_context
+    if (roles.length === 0 && campaign?.role_title) {
       // Create synthetic role from campaign's role_title
+      console.log("Creating synthetic role from campaign role_title:", campaign.role_title);
       roles = [{
         id: "campaign-role",
         title: campaign.role_title,
         requirements: effectiveRoleContext?.must_haves?.join(", ") || "",
         responsibilities: effectiveRoleContext?.perfect_fit_criteria || "",
       }];
-    } else if (effectiveRoleContext) {
-      // NEW: Create synthetic role purely from role_context (for nest-based matching)
+    }
+
+    // If still no roles, try role_context
+    if (roles.length === 0 && effectiveRoleContext) {
+      // Create synthetic role purely from role_context (for nest-based matching)
       const roleTitle = effectiveRoleContext.ideal_background ||
                         effectiveRoleContext.experience_level ||
+                        effectiveRoleContext.perfect_fit_criteria?.substring(0, 50) ||
                         "Target Role";
+      console.log("Creating synthetic role from role_context:", roleTitle);
       roles = [{
         id: "context-role",
         title: roleTitle,
@@ -596,20 +689,18 @@ serve(async (req) => {
         responsibilities: effectiveRoleContext.perfect_fit_criteria || "",
         location: effectiveRoleContext.remote_ok ? "Remote" : undefined,
       }];
-      console.log(`Created synthetic role from role_context: "${roleTitle}"`);
-    } else {
+    }
+
+    // If still no roles and no way to create one, return error
+    if (roles.length === 0) {
+      console.log("No roles found and no role_context provided");
       return new Response(
         JSON.stringify({ error: "Either project_id, role_id, role_context, or campaign with role_title is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    if (roles.length === 0) {
-      return new Response(
-        JSON.stringify({ success: true, matched_candidates: [], message: "No active roles found" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    console.log("Using roles:", roles.map(r => ({ id: r.id, title: r.title })));
 
     // Get candidates - with intelligent filtering based on params
     let candidateQuery = supabase
@@ -807,6 +898,16 @@ serve(async (req) => {
       }
     }
 
+    console.log("=== analyzeCampaignProject completed successfully ===");
+    console.log("Results:", {
+      roles_analyzed: roles.length,
+      candidates_total: allCandidates.length,
+      candidates_pre_filtered: preFilterResults.length,
+      candidates_ai_analyzed: topCandidatesForAI.length,
+      matched_count: finalMatches.length,
+      ai_powered: shouldUseAI
+    });
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -830,9 +931,17 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error("Error:", error);
+    console.error("=== analyzeCampaignProject FAILED ===");
+    console.error("Error type:", error?.constructor?.name || "Unknown");
+    console.error("Error message:", error?.message || String(error));
+    console.error("Error stack:", error?.stack || "No stack trace");
+
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({
+        error: error?.message || "Unknown error occurred",
+        error_type: error?.constructor?.name || "Unknown",
+        timestamp: new Date().toISOString()
+      }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
