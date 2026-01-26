@@ -100,7 +100,7 @@ export default function CampaignWizard({ open, onOpenChange, onComplete }) {
       const { data, error } = await supabase
         .from("projects")
         .select("*, client:client_id(name)")
-        .eq("organization_id", user.company_id)
+        .eq("organization_id", user.organization_id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -168,7 +168,7 @@ export default function CampaignWizard({ open, onOpenChange, onComplete }) {
       const { data, error } = await supabase
         .from("projects")
         .insert({
-          organization_id: user.company_id,
+          organization_id: user.organization_id,
           name: newProject.name,
           client_name: newProject.client_name || null,
           description: newProject.description || null,
@@ -205,7 +205,7 @@ export default function CampaignWizard({ open, onOpenChange, onComplete }) {
         .from("roles")
         .insert({
           project_id: selectedProject.id,
-          organization_id: user.company_id,
+          organization_id: user.organization_id,
           title: newRole.title,
           department: newRole.department || null,
           location: newRole.location || null,
@@ -242,7 +242,7 @@ export default function CampaignWizard({ open, onOpenChange, onComplete }) {
       const { data, error } = await supabase
         .from("campaigns")
         .insert({
-          organization_id: user.company_id,
+          organization_id: user.organization_id,
           created_by: user.id,
           name: campaignName,
           project_id: selectedProject?.id,

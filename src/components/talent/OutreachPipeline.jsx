@@ -332,15 +332,38 @@ export default function OutreachPipeline({ campaign, onUpdate }) {
           body: JSON.stringify({
             campaign_id: campaign.id,
             candidate_id: candidateId,
-            candidate_name: candidate.name,
-            candidate_title: candidate.current_title,
-            candidate_company: candidate.current_company,
+            organization_id: user.organization_id,
+
+            // Basic candidate info
+            candidate_name: candidate.name || `${candidate.first_name || ""} ${candidate.last_name || ""}`.trim(),
+            candidate_title: candidate.current_title || candidate.job_title,
+            candidate_company: candidate.current_company || candidate.company_name,
             candidate_skills: candidate.skills,
+
+            // Match data
             match_score: match.match_score,
             match_reasons: match.match_reasons,
+            match_details: match.match_details,
+
+            // === CANDIDATE INTELLIGENCE (The Gold Mine!) ===
+            intelligence_score: candidate.intelligence_score,
+            recommended_approach: candidate.recommended_approach,
+            outreach_hooks: candidate.outreach_hooks,
+            best_outreach_angle: candidate.best_outreach_angle,
+            timing_signals: candidate.timing_signals,
+            company_pain_points: candidate.company_pain_points,
+            key_insights: candidate.key_insights,
+            lateral_opportunities: candidate.lateral_opportunities,
+            intelligence_factors: candidate.intelligence_factors,
+
+            // === ROLE CONTEXT (From Campaign Wizard) ===
+            role_context: campaign.role_context,
+            role_title: campaign.role?.title || campaign.role_title,
+            company_name: campaign.company_name,
+
+            // Outreach settings
             stage: activeStage,
             campaign_type: campaign.campaign_type,
-            organization_id: user.organization_id,
           }),
         }
       );
