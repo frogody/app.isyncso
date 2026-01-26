@@ -35,13 +35,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useUser } from "@/components/context/UserContext";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/api/supabaseClient";
 import { toast } from "sonner";
 import Layout from "@/pages/Layout";
-
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Nest type config
 const NEST_TYPE_CONFIG = {

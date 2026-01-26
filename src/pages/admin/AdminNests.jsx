@@ -62,13 +62,9 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/api/supabaseClient';
 import { BUTTON_STYLES } from '@/lib/adminTheme';
 import { NestUploadWizard } from '@/components/admin/NestUploadWizard';
-
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Nest type icons
 const NEST_TYPE_ICONS = {
