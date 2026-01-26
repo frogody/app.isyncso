@@ -214,9 +214,9 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
           project_id: selectedProject.id,
           organization_id: user.organization_id,
           title: newRole.title,
-          department: newRole.department || null,
-          location: newRole.location || null,
-          job_type: newRole.job_type,
+          description: newRole.department || null, // Using department input as description
+          location_requirements: newRole.location || null,
+          employment_type: newRole.job_type,
           status: "open",
         })
         .select()
