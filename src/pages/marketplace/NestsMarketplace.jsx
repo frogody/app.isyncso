@@ -394,7 +394,7 @@ function FilterSidebar({ filters, setFilters, activeFiltersCount }) {
               <SelectValue placeholder="All Industries" />
             </SelectTrigger>
             <SelectContent className="bg-zinc-800 border-zinc-700">
-              <SelectItem value="" className="text-white">All Industries</SelectItem>
+              <SelectItem value="all" className="text-white">All Industries</SelectItem>
               {industries.map(i => (
                 <SelectItem key={i} value={i.toLowerCase()} className="text-white">{i}</SelectItem>
               ))}
@@ -413,7 +413,7 @@ function FilterSidebar({ filters, setFilters, activeFiltersCount }) {
               <SelectValue placeholder="All Locations" />
             </SelectTrigger>
             <SelectContent className="bg-zinc-800 border-zinc-700">
-              <SelectItem value="" className="text-white">All Locations</SelectItem>
+              <SelectItem value="all" className="text-white">All Locations</SelectItem>
               {locations.map(l => (
                 <SelectItem key={l} value={l.toLowerCase()} className="text-white">{l}</SelectItem>
               ))}
@@ -465,7 +465,7 @@ function FilterSidebar({ filters, setFilters, activeFiltersCount }) {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setFilters({ industry: '', location: '', skills: [], priceRange: 'all', size: 'all' })}
+          onClick={() => setFilters({ industry: 'all', location: 'all', skills: [], priceRange: 'all', size: 'all' })}
           className="w-full mt-4 text-zinc-400 hover:text-white"
         >
           <X className="w-4 h-4 mr-2" />
@@ -513,8 +513,8 @@ export default function NestsMarketplace() {
 
   // Filters
   const [filters, setFilters] = useState({
-    industry: '',
-    location: '',
+    industry: 'all',
+    location: 'all',
     skills: [],
     priceRange: 'all',
     size: 'all',
@@ -523,8 +523,8 @@ export default function NestsMarketplace() {
   // Count active filters
   const activeFiltersCount = useMemo(() => {
     let count = 0;
-    if (filters.industry) count++;
-    if (filters.location) count++;
+    if (filters.industry && filters.industry !== 'all') count++;
+    if (filters.location && filters.location !== 'all') count++;
     if (filters.priceRange !== 'all') count++;
     if (filters.size !== 'all') count++;
     if (filters.skills.length > 0) count++;
@@ -582,12 +582,12 @@ export default function NestsMarketplace() {
   const filteredNests = useMemo(() => {
     return nests.filter(nest => {
       // Industry filter
-      if (filters.industry && nest.category?.toLowerCase() !== filters.industry) {
+      if (filters.industry && filters.industry !== 'all' && nest.category?.toLowerCase() !== filters.industry) {
         return false;
       }
 
       // Location filter
-      if (filters.location && !nest.location?.toLowerCase().includes(filters.location)) {
+      if (filters.location && filters.location !== 'all' && !nest.location?.toLowerCase().includes(filters.location)) {
         return false;
       }
 
