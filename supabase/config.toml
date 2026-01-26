@@ -84,3 +84,6 @@ verify_jwt = false
 
 [functions.map-nest-columns]
 verify_jwt = false
+
+[functions.process-sync-intel-queue]
+verify_jwt = false

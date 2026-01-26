@@ -133,13 +133,34 @@ const PurchaseDialog = ({ isOpen, onClose, nest, onPurchase, user }) => {
           });
 
         if (candidatesToCopy.length > 0) {
-          const { error: copyError } = await supabase
+          const { data: insertedCandidates, error: copyError } = await supabase
             .from('candidates')
-            .insert(candidatesToCopy);
+            .insert(candidatesToCopy)
+            .select('id');
 
           if (copyError) {
             console.error('Error copying candidates:', copyError);
             // Don't fail the purchase, just log the error
+          } else if (insertedCandidates && insertedCandidates.length > 0) {
+            // Queue all copied candidates for SYNC Intel processing (FREE for nest purchases)
+            const queueItems = insertedCandidates.map(candidate => ({
+              candidate_id: candidate.id,
+              organization_id: user.organization_id,
+              source: 'nest_purchase',
+              priority: 2, // Lower priority (1=highest, 3=lowest) for batch processing
+              status: 'pending',
+            }));
+
+            const { error: queueError } = await supabase
+              .from('sync_intel_queue')
+              .insert(queueItems);
+
+            if (queueError) {
+              console.error('Error queueing SYNC Intel:', queueError);
+              // Don't fail the purchase, intel can be triggered manually later
+            } else {
+              console.log(`Queued ${insertedCandidates.length} candidates for SYNC Intel`);
+            }
           }
         }
 
@@ -382,6 +403,27 @@ export default function TalentNestDetail() {
           toast.error('Failed to sync some candidates');
         } else {
           addedCount = inserted?.length || candidatesToCopy.length;
+
+          // Queue newly synced candidates for SYNC Intel (FREE for nest purchases)
+          if (inserted && inserted.length > 0) {
+            const queueItems = inserted.map(candidate => ({
+              candidate_id: candidate.id,
+              organization_id: user.organization_id,
+              source: 'nest_purchase',
+              priority: 2,
+              status: 'pending',
+            }));
+
+            const { error: queueError } = await supabase
+              .from('sync_intel_queue')
+              .insert(queueItems);
+
+            if (queueError) {
+              console.error('Error queueing SYNC Intel:', queueError);
+            } else {
+              console.log(`Queued ${inserted.length} new candidates for SYNC Intel`);
+            }
+          }
         }
       }
 

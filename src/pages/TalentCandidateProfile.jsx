@@ -53,6 +53,7 @@ import {
   Activity,
   CheckCircle2,
   Percent,
+  Coins,
 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -340,7 +341,23 @@ export default function TalentCandidateProfile() {
     }
   };
 
+  const SYNC_INTEL_CREDIT_COST = 10;
+
   const syncIntel = async () => {
+    // Check if this candidate was from a nest purchase (free SYNC Intel)
+    const isFromNestPurchase = candidate.source === 'nest_purchase';
+
+    // For manual SYNC Intel, check if user has enough credits
+    if (!isFromNestPurchase) {
+      const currentCredits = user?.credits || 0;
+      if (currentCredits < SYNC_INTEL_CREDIT_COST) {
+        toast.error("Insufficient credits", {
+          description: `SYNC Intel requires ${SYNC_INTEL_CREDIT_COST} credits. You have ${currentCredits} credits.`,
+        });
+        return;
+      }
+    }
+
     setGeneratingIntelligence(true);
     try {
       let companyIntel = candidate.company_intelligence;
@@ -391,9 +408,27 @@ export default function TalentCandidateProfile() {
       );
 
       if (response.ok) {
+        // Deduct credits for manual SYNC Intel (not from nest purchase)
+        if (!isFromNestPurchase) {
+          const { error: creditError } = await supabase
+            .from('users')
+            .update({ credits: (user?.credits || 0) - SYNC_INTEL_CREDIT_COST })
+            .eq('id', user.id);
+
+          if (creditError) {
+            console.error('Failed to deduct credits:', creditError);
+          } else {
+            // Update local user credits
+            toast.success("Intelligence synced successfully", {
+              description: `${SYNC_INTEL_CREDIT_COST} credits deducted`,
+            });
+          }
+        } else {
+          toast.success("Intelligence synced successfully");
+        }
+
         await fetchCandidate();
         setActiveTab("intelligence");
-        toast.success("Intelligence synced successfully");
       } else {
         toast.error("Failed to sync intelligence");
       }
