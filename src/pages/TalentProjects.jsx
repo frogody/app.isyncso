@@ -88,7 +88,7 @@ import {
   AlertCircle,
   Rocket,
 } from "lucide-react";
-import { TalentOnboardingChecklist, ReadyForOutreachWidget } from "@/components/talent";
+import { TalentOnboardingChecklist, ReadyForOutreachWidget, TalentActivityFeed } from "@/components/talent";
 
 
 // ============================================================================
@@ -2092,12 +2092,16 @@ export default function TalentProjects() {
         </motion.div>
           </div>
 
-          {/* Right Column - Ready for Outreach Widget */}
+          {/* Right Column - Dashboard Widgets */}
           <div className="lg:w-80 flex-shrink-0">
-            <div className="lg:sticky lg:top-4">
+            <div className="lg:sticky lg:top-4 space-y-4">
               <ReadyForOutreachWidget
                 organizationId={user?.organization_id}
                 onRefresh={fetchData}
+              />
+              <TalentActivityFeed
+                organizationId={user?.organization_id}
+                limit={10}
               />
             </div>
           </div>
