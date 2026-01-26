@@ -94,7 +94,7 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
 
   // Campaign details
   const [campaignName, setCampaignName] = useState("");
-  const [campaignType, setCampaignType] = useState("email");
+  const [outreachChannel, setOutreachChannel] = useState("email"); // email, linkedin, multi_channel, sms
 
   // Search
   const [projectSearch, setProjectSearch] = useState("");
@@ -285,13 +285,15 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
         name: campaignName,
         project_id: selectedProject?.id || null,
         role_id: selectedRole?.id || null,
-        campaign_type: campaignType,
+        campaign_type: "recruitment", // Must be 'growth' or 'recruitment' per DB constraint
         status: "draft",
         role_context: {
           ...roleContext,
           // Store role info in context as well for reference
           role_title: selectedRole?.title,
           project_name: selectedProject?.name,
+          // Store outreach channel preference
+          outreach_channel: outreachChannel,
         },
         auto_match_enabled: true,
         min_match_score: 30,
@@ -897,7 +899,7 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
 
                   <div>
                     <Label className="text-xs text-zinc-400">Outreach Channel</Label>
-                    <Select value={campaignType} onValueChange={setCampaignType}>
+                    <Select value={outreachChannel} onValueChange={setOutreachChannel}>
                       <SelectTrigger className="bg-zinc-900 border-zinc-700 text-white mt-1">
                         <SelectValue />
                       </SelectTrigger>
