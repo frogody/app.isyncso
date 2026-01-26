@@ -478,14 +478,22 @@ serve(async (req) => {
   try {
     const request: OutreachRequest = await req.json();
 
-    // Validate required fields
-    if (!request.campaign_id || !request.candidate_id || !request.candidate_name) {
+    // Validate required fields (campaign_id optional for direct outreach)
+    if (!request.candidate_name) {
       return new Response(
         JSON.stringify({
-          error: "Missing required fields: campaign_id, candidate_id, and candidate_name are required"
+          error: "Missing required field: candidate_name is required"
         }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Set defaults for direct outreach (no campaign)
+    if (!request.campaign_id) {
+      request.campaign_id = "direct-outreach";
+    }
+    if (!request.candidate_id) {
+      request.candidate_id = "direct";
     }
 
     // Default stage to initial

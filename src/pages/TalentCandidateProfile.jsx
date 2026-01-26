@@ -554,28 +554,33 @@ export default function TalentCandidateProfile() {
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           },
           body: JSON.stringify({
+            // Basic candidate info
             candidate_name: `${candidate.first_name || ""} ${candidate.last_name || ""}`.trim(),
-            current_title: candidate.job_title,
-            current_company: candidate.company_name,
-            skills: candidate.skills || [],
-            campaign_name: "Direct Outreach",
-            channel: "sms",
-            // Use all available intelligence
+            candidate_title: candidate.job_title,
+            candidate_company: candidate.company_name,
+            candidate_skills: candidate.skills || [],
+
+            // Outreach settings
+            campaign_type: "sms",
+            stage: "initial",
+
+            // === CANDIDATE INTELLIGENCE (The Gold Mine!) ===
+            intelligence_score: candidate.intelligence_score,
+            recommended_approach: candidate.recommended_approach,
             outreach_hooks: candidate.outreach_hooks,
+            best_outreach_angle: candidate.best_outreach_angle,
             timing_signals: candidate.timing_signals,
             company_pain_points: candidate.company_pain_points,
-            recommended_approach: candidate.recommended_approach,
-            best_outreach_angle: candidate.best_outreach_angle,
-            intelligence_score: candidate.intelligence_score,
-            intelligence_factors: candidate.intelligence_factors,
             key_insights: candidate.key_insights,
+            lateral_opportunities: candidate.lateral_opportunities,
+            intelligence_factors: candidate.intelligence_factors,
           }),
         }
       );
 
       if (response.ok) {
         const data = await response.json();
-        setSmsMessage(data.message || "");
+        setSmsMessage(data.content || data.message || "");
         toast.success("Message generated!", {
           description: data.personalization_score
             ? `Personalization: ${data.personalization_score}%`
