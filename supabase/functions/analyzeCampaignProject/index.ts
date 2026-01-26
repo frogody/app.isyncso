@@ -703,11 +703,12 @@ serve(async (req) => {
     console.log("Using roles:", roles.map(r => ({ id: r.id, title: r.title })));
 
     // Get candidates - with intelligent filtering based on params
+    console.log("Building candidate query...");
+
     let candidateQuery = supabase
       .from("candidates")
       .select("*")
-      .eq("organization_id", organization_id)
-      .not("stage", "in", '("hired","rejected")');
+      .eq("organization_id", organization_id);
 
     // NEW: Filter by specific candidate_ids if provided
     if (candidate_ids && Array.isArray(candidate_ids) && candidate_ids.length > 0) {
@@ -716,21 +717,42 @@ serve(async (req) => {
     }
     // NEW: Filter by nest if nest_id provided
     else if (campaignNestId) {
-      candidateQuery = candidateQuery.eq("import_source", `nest:${campaignNestId}`);
+      // Try both possible storage patterns for nest candidates
       console.log(`Filtering to candidates from nest: ${campaignNestId}`);
+      // Note: Candidates from nests might be stored with nest_id directly or import_source
     }
 
-    const { data: allCandidates, error: candidatesError } = await candidateQuery;
+    console.log("Executing candidate query...");
+    let allCandidates: Candidate[] = [];
+    try {
+      const { data, error: candidatesError } = await candidateQuery;
 
-    if (candidatesError) throw candidatesError;
-    if (!allCandidates || allCandidates.length === 0) {
+      if (candidatesError) {
+        console.error("Candidates query error:", candidatesError);
+        throw new Error(`Failed to fetch candidates: ${candidatesError.message}`);
+      }
+
+      allCandidates = data || [];
+      console.log(`Found ${allCandidates.length} candidates`);
+    } catch (err) {
+      console.error("Error fetching candidates:", err);
+      throw err;
+    }
+
+    // Filter out hired/rejected candidates in code (more reliable than complex query)
+    const eligibleCandidates = allCandidates.filter(c =>
+      !c.stage || !['hired', 'rejected'].includes(c.stage?.toLowerCase())
+    );
+    console.log(`After stage filter: ${eligibleCandidates.length} eligible candidates`);
+
+    if (eligibleCandidates.length === 0) {
       return new Response(
         JSON.stringify({ success: true, matched_candidates: [], message: "No candidates to analyze" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`Starting smart matching: ${allCandidates.length} candidates, ${roles.length} role(s)`);
+    console.log(`Starting smart matching: ${candidatesToAnalyze.length} candidates, ${roles.length} role(s)`);
 
     const primaryRole = roles[0];
     const allMatches: MatchResult[] = [];
@@ -738,7 +760,7 @@ serve(async (req) => {
     // STAGE 1: Pre-filter all candidates
     const preFilterResults: { candidate: Candidate; quickScore: number; reasons: string[] }[] = [];
 
-    for (const candidate of allCandidates) {
+    for (const candidate of candidatesToAnalyze) {
       const result = preFilterCandidate(candidate, primaryRole, effectiveRoleContext);
       if (result.passes) {
         preFilterResults.push({
@@ -749,7 +771,7 @@ serve(async (req) => {
       }
     }
 
-    console.log(`Pre-filter: ${preFilterResults.length}/${allCandidates.length} candidates passed`);
+    console.log(`Pre-filter: ${preFilterResults.length}/${candidatesToAnalyze.length} candidates passed`);
 
     // Sort by quick score and take top candidates for deep analysis
     const sortedPreFilter = preFilterResults.sort((a, b) => b.quickScore - a.quickScore);
@@ -901,7 +923,7 @@ serve(async (req) => {
     console.log("=== analyzeCampaignProject completed successfully ===");
     console.log("Results:", {
       roles_analyzed: roles.length,
-      candidates_total: allCandidates.length,
+      candidates_total: candidatesToAnalyze.length,
       candidates_pre_filtered: preFilterResults.length,
       candidates_ai_analyzed: topCandidatesForAI.length,
       matched_count: finalMatches.length,
@@ -912,7 +934,7 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         roles_analyzed: roles.length,
-        candidates_total: allCandidates.length,
+        candidates_total: candidatesToAnalyze.length,
         candidates_pre_filtered: preFilterResults.length,
         candidates_ai_analyzed: topCandidatesForAI.length,
         matched_candidates: finalMatches,
