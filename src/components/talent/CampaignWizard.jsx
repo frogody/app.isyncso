@@ -239,8 +239,24 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
 
   // Create campaign and navigate
   const handleCreateCampaign = async () => {
+    console.log("[CampaignWizard] handleCreateCampaign triggered");
+    console.log("[CampaignWizard] State:", {
+      campaignName,
+      creating,
+      selectedProject: selectedProject?.id,
+      selectedRole: selectedRole?.id,
+      user: user?.id,
+      organizationId: user?.organization_id
+    });
+
     if (!campaignName.trim()) {
       toast.error("Campaign name is required");
+      return;
+    }
+
+    if (!user?.organization_id) {
+      toast.error("User organization not found. Please refresh and try again.");
+      console.error("[CampaignWizard] Missing organization_id");
       return;
     }
 
@@ -250,11 +266,16 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
         organization_id: user.organization_id,
         created_by: user.id,
         name: campaignName,
-        project_id: selectedProject?.id,
-        role_id: selectedRole?.id,
+        project_id: selectedProject?.id || null,
+        role_id: selectedRole?.id || null,
         campaign_type: campaignType,
         status: "draft",
-        role_context: roleContext,
+        role_context: {
+          ...roleContext,
+          // Store role info in context as well for reference
+          role_title: selectedRole?.title,
+          project_name: selectedProject?.name,
+        },
         auto_match_enabled: true,
         min_match_score: 30,
       };
@@ -264,14 +285,20 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
         campaignData.nest_id = nestContext.id;
       }
 
+      console.log("[CampaignWizard] Inserting campaign:", campaignData);
+
       const { data, error } = await supabase
         .from("campaigns")
         .insert(campaignData)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("[CampaignWizard] Supabase error:", error);
+        throw error;
+      }
 
+      console.log("[CampaignWizard] Campaign created successfully:", data);
       toast.success("Campaign created!");
       onOpenChange(false);
 
@@ -281,8 +308,8 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
         navigate(`/TalentCampaignDetail?id=${data.id}`);
       }
     } catch (err) {
-      console.error("Failed to create campaign:", err);
-      toast.error("Failed to create campaign");
+      console.error("[CampaignWizard] Failed to create campaign:", err);
+      toast.error(err.message || "Failed to create campaign");
     } finally {
       setCreating(false);
     }
@@ -891,6 +918,7 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
 
           {step < 4 ? (
             <Button
+              type="button"
               onClick={handleNext}
               disabled={!canProceed()}
               className="bg-red-500 hover:bg-red-600"
@@ -900,7 +928,11 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
             </Button>
           ) : (
             <Button
-              onClick={handleCreateCampaign}
+              type="button"
+              onClick={() => {
+                console.log("[CampaignWizard] Button clicked! campaignName:", campaignName, "creating:", creating);
+                handleCreateCampaign();
+              }}
               disabled={creating || !campaignName.trim()}
               className="bg-red-500 hover:bg-red-600"
             >
