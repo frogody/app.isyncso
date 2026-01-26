@@ -69,6 +69,8 @@ import {
   Filter,
   Edit2,
   FileText,
+  PartyPopper,
+  RefreshCw,
 } from "lucide-react";
 import { createPageUrl } from "@/utils";
 
@@ -483,6 +485,256 @@ const OutreachPreviewModal = ({ open, onOpenChange, messages, onApprove, onEdit,
         </div>
       </DialogContent>
     </Dialog>
+  );
+};
+
+// Outreach Success Dialog - Shows after tasks are created
+const OutreachSuccessDialog = ({ open, onOpenChange, taskCount, onViewQueue }) => (
+  <Dialog open={open} onOpenChange={onOpenChange}>
+    <DialogContent className="max-w-md bg-zinc-900 border-zinc-800 text-center">
+      <div className="py-4">
+        <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-4">
+          <PartyPopper className="w-8 h-8 text-green-400" />
+        </div>
+        <h2 className="text-xl font-semibold text-white mb-2">
+          Outreach Ready!
+        </h2>
+        <p className="text-zinc-400 mb-6">
+          {taskCount} personalized messages are queued and ready to send.
+        </p>
+
+        <div className="p-4 rounded-lg bg-zinc-800/50 text-left mb-6">
+          <h3 className="text-sm font-medium text-white mb-2">Next Steps:</h3>
+          <ul className="space-y-2 text-sm text-zinc-400">
+            <li className="flex items-center gap-2">
+              <Check className="w-4 h-4 text-green-400 shrink-0" />
+              Review messages in the Outreach Queue
+            </li>
+            <li className="flex items-center gap-2">
+              <Check className="w-4 h-4 text-green-400 shrink-0" />
+              Click "Send" on each message when ready
+            </li>
+            <li className="flex items-center gap-2">
+              <Check className="w-4 h-4 text-green-400 shrink-0" />
+              Track responses and follow up
+            </li>
+          </ul>
+        </div>
+
+        <div className="flex gap-3 justify-center">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="border-zinc-700"
+          >
+            Close
+          </Button>
+          <Button
+            onClick={onViewQueue}
+            className="bg-red-500 hover:bg-red-600"
+          >
+            <Send className="w-4 h-4 mr-2" />
+            View Outreach Queue
+          </Button>
+        </div>
+      </div>
+    </DialogContent>
+  </Dialog>
+);
+
+// Outreach Queue Tab - Manage outreach tasks
+const OutreachQueueTab = ({ campaign, tasks, onRefresh, onSendTask, onCancelTask }) => {
+  const [filter, setFilter] = useState('all');
+  const [sending, setSending] = useState(null);
+
+  const filteredTasks = tasks.filter(t => {
+    if (filter === 'all') return true;
+    return t.status === filter;
+  });
+
+  const statusColors = {
+    pending: 'bg-zinc-500/20 text-zinc-400',
+    approved_ready: 'bg-green-500/20 text-green-400',
+    sent: 'bg-blue-500/20 text-blue-400',
+    replied: 'bg-cyan-500/20 text-cyan-400',
+    completed: 'bg-purple-500/20 text-purple-400',
+    cancelled: 'bg-red-500/20 text-red-400',
+  };
+
+  const handleSend = async (task) => {
+    setSending(task.id);
+    try {
+      await onSendTask(task.id);
+    } finally {
+      setSending(null);
+    }
+  };
+
+  const taskCounts = {
+    all: tasks.length,
+    approved_ready: tasks.filter(t => t.status === 'approved_ready').length,
+    sent: tasks.filter(t => t.status === 'sent').length,
+    replied: tasks.filter(t => t.status === 'replied').length,
+    completed: tasks.filter(t => t.status === 'completed').length,
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Filter Tabs */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex gap-2 flex-wrap">
+          {[
+            { key: 'all', label: 'All' },
+            { key: 'approved_ready', label: 'Ready' },
+            { key: 'sent', label: 'Sent' },
+            { key: 'replied', label: 'Replied' },
+          ].map(({ key, label }) => (
+            <Button
+              key={key}
+              size="sm"
+              variant={filter === key ? 'default' : 'ghost'}
+              onClick={() => setFilter(key)}
+              className={filter === key ? 'bg-red-500 hover:bg-red-600' : 'text-zinc-400 hover:text-white'}
+            >
+              {label}
+              <Badge className="ml-2 bg-zinc-700/50 text-zinc-300">
+                {taskCounts[key] || 0}
+              </Badge>
+            </Button>
+          ))}
+        </div>
+        <Button variant="ghost" onClick={onRefresh} className="text-zinc-400 hover:text-white">
+          <RefreshCw className="w-4 h-4" />
+        </Button>
+      </div>
+
+      {/* Task List */}
+      {filteredTasks.length > 0 ? (
+        <div className="space-y-3">
+          {filteredTasks.map(task => (
+            <GlassCard key={task.id} className="p-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                    {task.candidate?.first_name?.[0]}{task.candidate?.last_name?.[0]}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-medium text-white truncate">
+                      {task.candidate?.first_name} {task.candidate?.last_name}
+                    </p>
+                    <p className="text-sm text-zinc-400 truncate">
+                      {task.candidate?.current_title || task.candidate?.job_title}
+                      {task.candidate?.current_company && ` at ${task.candidate.current_company}`}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Badge className={statusColors[task.status] || statusColors.pending}>
+                    {task.status?.replace('_', ' ')}
+                  </Badge>
+                  {task.metadata?.match_score && (
+                    <Badge className="bg-cyan-500/20 text-cyan-400">
+                      {task.metadata.match_score}% match
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Message Preview */}
+              <div className="mt-3 p-3 rounded-lg bg-zinc-800/50">
+                {task.metadata?.subject && (
+                  <p className="text-xs text-zinc-500 mb-1">
+                    <span className="font-medium">Subject:</span> {task.metadata.subject}
+                  </p>
+                )}
+                <p className="text-sm text-zinc-300 line-clamp-2">{task.message_content}</p>
+              </div>
+
+              {/* Actions */}
+              <div className="mt-3 flex items-center justify-between">
+                <p className="text-xs text-zinc-500">
+                  Created {new Date(task.created_at).toLocaleDateString()}
+                  {task.sent_at && ` • Sent ${new Date(task.sent_at).toLocaleDateString()}`}
+                </p>
+                <div className="flex gap-2">
+                  {task.status === 'approved_ready' && (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => onCancelTask(task.id)}
+                        className="border-zinc-700 text-zinc-400 hover:text-white"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => handleSend(task)}
+                        disabled={sending === task.id}
+                        className="bg-green-500 hover:bg-green-600"
+                      >
+                        {sending === task.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Send className="w-4 h-4 mr-1" />
+                            Send
+                          </>
+                        )}
+                      </Button>
+                    </>
+                  )}
+                  {task.status === 'sent' && (
+                    <Button size="sm" variant="outline" className="border-zinc-700 text-zinc-400">
+                      <MessageSquare className="w-4 h-4 mr-1" />
+                      View Thread
+                    </Button>
+                  )}
+                  {task.status === 'replied' && (
+                    <Button size="sm" className="bg-cyan-500 hover:bg-cyan-600">
+                      <MessageSquare className="w-4 h-4 mr-1" />
+                      Respond
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </GlassCard>
+          ))}
+        </div>
+      ) : (
+        <GlassCard className="p-8 text-center">
+          <Send className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
+          <p className="text-zinc-400">No outreach tasks yet</p>
+          <p className="text-sm text-zinc-500 mt-1">
+            Generate and approve outreach messages to see them here
+          </p>
+        </GlassCard>
+      )}
+
+      {/* Summary Stats */}
+      {tasks.length > 0 && (
+        <GlassCard className="p-4">
+          <div className="grid grid-cols-4 gap-4 text-center">
+            <div>
+              <p className="text-2xl font-bold text-white">{taskCounts.all}</p>
+              <p className="text-xs text-zinc-500">Total</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-green-400">{taskCounts.approved_ready}</p>
+              <p className="text-xs text-zinc-500">Ready</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-blue-400">{taskCounts.sent}</p>
+              <p className="text-xs text-zinc-500">Sent</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-cyan-400">{taskCounts.replied}</p>
+              <p className="text-xs text-zinc-500">Replied</p>
+            </div>
+          </div>
+        </GlassCard>
+      )}
+    </div>
   );
 };
 
@@ -1353,6 +1605,10 @@ export default function TalentCampaignDetail() {
   const [generatingOutreach, setGeneratingOutreach] = useState(false);
   const [outreachMessages, setOutreachMessages] = useState([]);
   const [showOutreachPreview, setShowOutreachPreview] = useState(false);
+  const [creatingTasks, setCreatingTasks] = useState(false);
+  const [showOutreachSuccess, setShowOutreachSuccess] = useState(false);
+  const [createdTaskCount, setCreatedTaskCount] = useState(0);
+  const [outreachTasks, setOutreachTasks] = useState([]);
 
   // Handle individual candidate selection toggle
   const handleToggleCandidateSelect = (candidateId) => {
@@ -1510,10 +1766,38 @@ export default function TalentCampaignDetail() {
     }
   };
 
-  // Handle approving outreach messages
+  // Handle approving outreach messages - creates actual outreach_tasks
   const handleApproveOutreach = async (messages) => {
+    setCreatingTasks(true);
     try {
-      // Update campaign with approved messages
+      // Create outreach tasks for each message
+      const tasks = messages.map(msg => ({
+        organization_id: user.organization_id,
+        campaign_id: campaign.id,
+        candidate_id: msg.candidate_id,
+        task_type: 'initial_outreach',
+        message_content: msg.content,
+        status: 'approved_ready',
+        stage: 'first_message',
+        attempt_number: 1,
+        metadata: {
+          subject: msg.subject,
+          personalization_points: msg.intelligence_used,
+          match_score: msg.match_score,
+          outreach_angle: msg.outreach_angle,
+          personalization_score: msg.personalization_score,
+          generated_at: new Date().toISOString(),
+        },
+      }));
+
+      const { data, error } = await supabase
+        .from('outreach_tasks')
+        .insert(tasks)
+        .select();
+
+      if (error) throw error;
+
+      // Update campaign with approved messages and set to active
       const updatedMatches = (campaign?.matched_candidates || []).map(m => {
         const msg = messages.find(msg => msg.candidate_id === m.candidate_id);
         if (msg) {
@@ -1531,19 +1815,87 @@ export default function TalentCampaignDetail() {
         return m;
       });
 
-      const { error } = await supabase
+      await supabase
         .from('campaigns')
-        .update({ matched_candidates: updatedMatches })
+        .update({
+          matched_candidates: updatedMatches,
+          status: 'active',
+          updated_at: new Date().toISOString(),
+        })
         .eq('id', campaign.id);
+
+      setCampaign(prev => prev ? { ...prev, matched_candidates: updatedMatches, status: 'active' } : null);
+      setShowOutreachPreview(false);
+      setOutreachMessages([]);
+
+      // Show success dialog
+      setCreatedTaskCount(data.length);
+      setShowOutreachSuccess(true);
+
+      // Refresh outreach tasks
+      fetchOutreachTasks();
+    } catch (err) {
+      console.error("Approve outreach error:", err);
+      toast.error("Failed to create outreach tasks");
+    } finally {
+      setCreatingTasks(false);
+    }
+  };
+
+  // Fetch outreach tasks for this campaign
+  const fetchOutreachTasks = async () => {
+    if (!campaign?.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('outreach_tasks')
+        .select('*, candidate:candidate_id(id, first_name, last_name, job_title, email, current_title, current_company)')
+        .eq('campaign_id', campaign.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setOutreachTasks(data || []);
+    } catch (err) {
+      console.error('Failed to fetch outreach tasks:', err);
+    }
+  };
+
+  // Handle sending an outreach task
+  const handleSendTask = async (taskId) => {
+    try {
+      const { error } = await supabase
+        .from('outreach_tasks')
+        .update({
+          status: 'sent',
+          sent_at: new Date().toISOString(),
+        })
+        .eq('id', taskId);
 
       if (error) throw error;
 
-      setCampaign(prev => prev ? { ...prev, matched_candidates: updatedMatches } : null);
-      setShowOutreachPreview(false);
-      toast.success(`${messages.length} messages approved and ready to send!`);
+      toast.success('Message marked as sent!');
+      fetchOutreachTasks();
     } catch (err) {
-      console.error("Approve outreach error:", err);
-      toast.error("Failed to approve messages");
+      console.error('Failed to send task:', err);
+      toast.error('Failed to update task status');
+    }
+  };
+
+  // Handle canceling an outreach task
+  const handleCancelTask = async (taskId) => {
+    try {
+      const { error } = await supabase
+        .from('outreach_tasks')
+        .update({ status: 'cancelled' })
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      toast.success('Task cancelled');
+      fetchOutreachTasks();
+    } catch (err) {
+      console.error('Failed to cancel task:', err);
+      toast.error('Failed to cancel task');
     }
   };
 
@@ -1636,6 +1988,13 @@ export default function TalentCampaignDetail() {
       fetchCampaign();
     }
   }, [campaignId, isNew]);
+
+  // Fetch outreach tasks when campaign is loaded
+  useEffect(() => {
+    if (campaign?.id) {
+      fetchOutreachTasks();
+    }
+  }, [campaign?.id]);
 
   const fetchCampaign = async () => {
     setLoading(true);
@@ -2101,7 +2460,13 @@ export default function TalentCampaignDetail() {
           {/* Outreach Tab */}
           {!isNew && (
             <TabsContent value="outreach" className="m-0">
-              <OutreachPipeline campaign={campaign} onUpdate={handleCampaignUpdate} />
+              <OutreachQueueTab
+                campaign={campaign}
+                tasks={outreachTasks}
+                onRefresh={fetchOutreachTasks}
+                onSendTask={handleSendTask}
+                onCancelTask={handleCancelTask}
+              />
             </TabsContent>
           )}
 
@@ -2121,6 +2486,17 @@ export default function TalentCampaignDetail() {
         messages={outreachMessages}
         onApprove={handleApproveOutreach}
         campaignType={campaign?.campaign_type || 'email'}
+      />
+
+      {/* Outreach Success Dialog */}
+      <OutreachSuccessDialog
+        open={showOutreachSuccess}
+        onOpenChange={setShowOutreachSuccess}
+        taskCount={createdTaskCount}
+        onViewQueue={() => {
+          setShowOutreachSuccess(false);
+          setActiveTab("outreach");
+        }}
       />
       </motion.div>
     </div>
