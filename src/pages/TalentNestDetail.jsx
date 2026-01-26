@@ -118,9 +118,30 @@ const PurchaseDialog = ({ isOpen, onClose, nest, onPurchase, user }) => {
       if (itemsError) {
         console.error('Error fetching nest items:', itemsError);
       } else if (nestItems && nestItems.length > 0) {
-        // Copy candidates to buyer's organization
+        // Get existing candidates in the organization to avoid duplicates
+        const { data: existingCandidates } = await supabase
+          .from('candidates')
+          .select('email, linkedin_profile')
+          .eq('organization_id', user.organization_id);
+
+        const existingEmails = new Set(
+          existingCandidates?.map(c => c.email?.toLowerCase()).filter(Boolean) || []
+        );
+        const existingLinkedins = new Set(
+          existingCandidates?.map(c => c.linkedin_profile?.toLowerCase()).filter(Boolean) || []
+        );
+
+        // Copy candidates to buyer's organization (with deduplication)
         const candidatesToCopy = nestItems
           .filter(item => item.candidate_id && item.candidates)
+          .filter(item => {
+            // Skip if already exists by email or linkedin
+            const email = item.candidates.email?.toLowerCase();
+            const linkedin = item.candidates.linkedin_profile?.toLowerCase();
+            if (email && existingEmails.has(email)) return false;
+            if (linkedin && existingLinkedins.has(linkedin)) return false;
+            return true;
+          })
           .map(item => {
             // Remove id and dates so new ones are generated
             const { id, created_date, updated_date, organization_id, ...candidateData } = item.candidates;
@@ -311,7 +332,7 @@ export default function TalentNestDetail() {
         .eq('nest_id', nestId)
         .eq('organization_id', user.organization_id)
         .eq('status', 'completed')
-        .single();
+        .maybeSingle();
 
       setHasPurchased(!!data);
       setPurchase(data);
