@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/api/supabaseClient";
@@ -149,6 +149,54 @@ const MatchLevelBadge = ({ level, score }) => {
   );
 };
 
+// Intelligence Status Indicator
+const IntelligenceStatus = ({ candidate }) => {
+  // Check for intelligence data - could be in various fields
+  const hasIntelligence = candidate.intelligence_generated ||
+    candidate.intelligence_score > 0 ||
+    candidate.best_outreach_angle ||
+    candidate.timing_signals?.length > 0;
+
+  const isProcessing = candidate.intelligence_status === 'processing';
+
+  if (hasIntelligence) {
+    return (
+      <div className="flex items-center gap-1 text-xs text-green-400" title="Intelligence profile ready">
+        <Brain className="w-3 h-3" />
+        <span>Intel Ready</span>
+      </div>
+    );
+  }
+
+  if (isProcessing) {
+    return (
+      <div className="flex items-center gap-1 text-xs text-yellow-400 animate-pulse" title="Generating intelligence...">
+        <Loader2 className="w-3 h-3 animate-spin" />
+        <span>Processing</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1 text-xs text-zinc-500" title="Intelligence pending">
+      <Clock className="w-3 h-3" />
+      <span>Pending</span>
+    </div>
+  );
+};
+
+// Nest Source Badge - Shows which nest a candidate came from
+const NestSourceBadge = ({ nestName }) => {
+  if (!nestName) return null;
+
+  return (
+    <div className="flex items-center gap-1 text-xs text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-full" title={`From nest: ${nestName}`}>
+      <Package className="w-3 h-3" />
+      <span className="truncate max-w-[120px]">{nestName}</span>
+    </div>
+  );
+};
+
 // CandidateMatchResultCard - Detailed match display with AI reasoning
 const CandidateMatchResultCard = ({ match, isSelected, onToggleSelect, onClick }) => {
   const [expanded, setExpanded] = useState(false);
@@ -210,6 +258,10 @@ const CandidateMatchResultCard = ({ match, isSelected, onToggleSelect, onClick }
               {match.candidate_name || "Unknown Candidate"}
             </button>
             <p className="text-sm text-zinc-400 truncate">{currentRole}</p>
+            <div className="flex items-center gap-2 flex-wrap mt-1">
+              <IntelligenceStatus candidate={match} />
+              <NestSourceBadge nestName={match.nest_source} />
+            </div>
           </div>
         </div>
 
@@ -794,9 +846,40 @@ const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching, lin
               <div>
                 <p className="text-xs text-cyan-400 uppercase tracking-wider font-medium">Sourcing from Nest</p>
                 <p className="text-lg font-semibold text-white">{linkedNest.name}</p>
-                <p className="text-sm text-zinc-400">
-                  {nestCandidates.length} candidates available for matching
-                </p>
+                <div className="flex items-center gap-4 mt-1">
+                  <span className="text-sm text-zinc-400">
+                    {nestCandidates.length} candidates
+                  </span>
+                  {(() => {
+                    const intelReady = nestCandidates.filter(c =>
+                      c.intelligence_generated || c.intelligence_score > 0 || c.best_outreach_angle
+                    ).length;
+                    const processing = nestCandidates.filter(c => c.intelligence_status === 'processing').length;
+                    const pending = nestCandidates.length - intelReady - processing;
+                    return (
+                      <>
+                        {intelReady > 0 && (
+                          <span className="flex items-center gap-1 text-xs text-green-400">
+                            <Brain className="w-3 h-3" />
+                            {intelReady} ready
+                          </span>
+                        )}
+                        {processing > 0 && (
+                          <span className="flex items-center gap-1 text-xs text-yellow-400">
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            {processing} processing
+                          </span>
+                        )}
+                        {pending > 0 && (
+                          <span className="flex items-center gap-1 text-xs text-zinc-500">
+                            <Clock className="w-3 h-3" />
+                            {pending} pending
+                          </span>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -1265,7 +1348,7 @@ const SettingsTab = ({ formData, handleChange, handleStatusChange, isNew, projec
                 <SelectItem value="__none__">No Project</SelectItem>
                 {projects.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
-                    {p.name}
+                    {p.title || p.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -1428,6 +1511,9 @@ export default function TalentCampaignDetail() {
   const [searchParams] = useSearchParams();
   const campaignId = searchParams.get("id");
   const isNew = searchParams.get("new") === "true";
+  const preSelectedProjectId = searchParams.get("projectId");
+  const preSelectedRoleId = searchParams.get("roleId");
+  const autoMatch = searchParams.get("autoMatch") === "true";
 
   const [campaign, setCampaign] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -1469,6 +1555,11 @@ export default function TalentCampaignDetail() {
   // Drawer state for candidate detail
   const [drawerCandidateId, setDrawerCandidateId] = useState(null);
   const [drawerMatchData, setDrawerMatchData] = useState(null);
+
+  // Ref to track if URL params have been pre-populated
+  const prepopulatedRef = useRef(false);
+  // Ref to track if auto-matching has been triggered (for autoMatch URL param)
+  const autoMatchTriggeredRef = useRef(false);
 
   // Handle individual candidate selection toggle
   const handleToggleCandidateSelect = (candidateId) => {
@@ -1768,25 +1859,43 @@ export default function TalentCampaignDetail() {
 
   const fetchProjectsAndRoles = async () => {
     try {
+      console.log('[fetchProjectsAndRoles] Starting fetch for org:', user.organization_id);
+
+      // Use exact same query structure as TalentProjects.jsx
       const [projectsRes, rolesRes] = await Promise.all([
         supabase
           .from("projects")
-          .select("id, name")
+          .select("*")
           .eq("organization_id", user.organization_id)
-          .eq("status", "active")
-          .order("name"),
+          .order("created_date", { ascending: false }),
         supabase
           .from("roles")
-          .select("id, title, project_id")
+          .select("*")
           .eq("organization_id", user.organization_id)
-          .eq("status", "active")
-          .order("title"),
+          .order("created_date", { ascending: false }),
       ]);
 
-      if (projectsRes.data) setProjects(projectsRes.data);
-      if (rolesRes.data) setRoles(rolesRes.data);
+      console.log('[fetchProjectsAndRoles] Results:', {
+        projectsCount: projectsRes.data?.length || 0,
+        rolesCount: rolesRes.data?.length || 0,
+        projectsError: projectsRes.error ? JSON.stringify(projectsRes.error) : null,
+        rolesError: rolesRes.error ? JSON.stringify(rolesRes.error) : null,
+        sampleProjects: projectsRes.data?.slice(0, 2).map(p => ({ id: p.id, title: p.title, name: p.name })),
+        sampleRoles: rolesRes.data?.slice(0, 2).map(r => ({ id: r.id, title: r.title, project_id: r.project_id }))
+      });
+
+      if (projectsRes.error) {
+        console.error('[fetchProjectsAndRoles] Projects error:', JSON.stringify(projectsRes.error, null, 2));
+      }
+      if (rolesRes.error) {
+        console.error('[fetchProjectsAndRoles] Roles error:', JSON.stringify(rolesRes.error, null, 2));
+      }
+
+      // Always set state, even if empty
+      setProjects(projectsRes.data || []);
+      setRoles(rolesRes.data || []);
     } catch (error) {
-      console.error("Error fetching projects/roles:", error);
+      console.error("[fetchProjectsAndRoles] Unexpected error:", error);
     }
   };
 
@@ -1820,7 +1929,13 @@ export default function TalentCampaignDetail() {
       // Candidates from nest purchases have import_source: 'nest:{nestId}'
       const { data: candidates, error: candidatesError } = await supabase
         .from("candidates")
-        .select("id, name, first_name, last_name, current_title, job_title, current_company, company_name, skills, intelligence_score, intelligence_level")
+        .select(`
+          id, name, first_name, last_name, current_title, job_title,
+          current_company, company_name, skills, email, linkedin_url,
+          intelligence_score, intelligence_level, intelligence_status,
+          intelligence_generated, best_outreach_angle, timing_signals,
+          outreach_hooks, recommended_approach, import_source
+        `)
         .eq("organization_id", user.organization_id)
         .eq("import_source", `nest:${nestId}`)
         .limit(500);
@@ -1831,11 +1946,96 @@ export default function TalentCampaignDetail() {
         return;
       }
 
-      setNestCandidates(candidates || []);
+      // Add nest name to each candidate for display
+      const candidatesWithNest = (candidates || []).map(c => ({
+        ...c,
+        nest_source: nest?.name || 'Unknown Nest'
+      }));
+
+      setNestCandidates(candidatesWithNest);
     } catch (error) {
       console.error("Error fetching linked nest:", error);
     }
   };
+
+  // Pre-populate form when projectId and roleId are passed via URL params
+  useEffect(() => {
+    console.log('[Pre-populate] Check:', {
+      isNew,
+      preSelectedProjectId,
+      preSelectedRoleId,
+      projectsLength: projects.length,
+      rolesLength: roles.length,
+      prepopulated: prepopulatedRef.current
+    });
+
+    // Skip if not creating new campaign
+    if (!isNew) {
+      console.log('[Pre-populate] Not a new campaign, skipping');
+      return;
+    }
+
+    // Skip if no URL params
+    if (!preSelectedProjectId && !preSelectedRoleId) {
+      console.log('[Pre-populate] No URL params, skipping');
+      return;
+    }
+
+    // Skip if already done
+    if (prepopulatedRef.current) {
+      console.log('[Pre-populate] Already done, skipping');
+      return;
+    }
+
+    // Check if we have the data we need
+    const needProject = !!preSelectedProjectId;
+    const needRole = !!preSelectedRoleId;
+    const hasProjectData = projects.length > 0;
+    const hasRoleData = roles.length > 0;
+
+    console.log('[Pre-populate] Data check:', { needProject, needRole, hasProjectData, hasRoleData });
+
+    // Wait for required data
+    if ((needProject && !hasProjectData) || (needRole && !hasRoleData)) {
+      console.log('[Pre-populate] Waiting for data to load...');
+      return;
+    }
+
+    // Find the project and role
+    const foundProject = preSelectedProjectId ? projects.find(p => p.id === preSelectedProjectId) : null;
+    const foundRole = preSelectedRoleId ? roles.find(r => r.id === preSelectedRoleId) : null;
+
+    const projectName = foundProject?.title || foundProject?.name;
+    console.log('[Pre-populate] Lookup results:', {
+      projectId: preSelectedProjectId,
+      foundProject: foundProject ? { id: foundProject.id, name: projectName } : null,
+      roleId: preSelectedRoleId,
+      foundRole: foundRole ? { id: foundRole.id, title: foundRole.title } : null
+    });
+
+    // Auto-generate campaign name based on role title
+    const autoName = foundRole?.title
+      ? `${foundRole.title} Outreach Campaign`
+      : projectName
+        ? `${projectName} Campaign`
+        : "";
+
+    // Set form data with the pre-selected values
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        project_id: preSelectedProjectId || prev.project_id,
+        role_id: preSelectedRoleId || prev.role_id,
+        name: prev.name || autoName,
+      };
+      console.log('[Pre-populate] Setting formData:', newData);
+      return newData;
+    });
+
+    // Mark as done
+    prepopulatedRef.current = true;
+    console.log('[Pre-populate] Completed!');
+  }, [isNew, preSelectedProjectId, preSelectedRoleId, projects, roles]);
 
   // Fetch campaign data
   useEffect(() => {
@@ -1855,6 +2055,35 @@ export default function TalentCampaignDetail() {
       fetchOutreachTasks();
     }
   }, [campaign?.id]);
+
+  // Auto-trigger matching when navigated from nest purchase with autoMatch=true
+  useEffect(() => {
+    // Only trigger if:
+    // 1. autoMatch URL param is true
+    // 2. Campaign is loaded and has a nest_id (from nest purchase flow)
+    // 3. Haven't triggered yet
+    // 4. Not currently matching
+    // 5. Not a new campaign (need existing campaign)
+    if (
+      autoMatch &&
+      campaign?.id &&
+      campaign?.nest_id &&
+      !autoMatchTriggeredRef.current &&
+      !isMatching &&
+      !isNew
+    ) {
+      console.log('[Auto-Match] Triggering matching for campaign:', campaign.id);
+      autoMatchTriggeredRef.current = true;
+
+      // Show a toast to let user know matching is starting
+      toast.info('Starting AI candidate matching...', { duration: 3000 });
+
+      // Give a brief delay to let nest candidates load
+      setTimeout(() => {
+        runAutoMatching(campaign);
+      }, 500);
+    }
+  }, [autoMatch, campaign?.id, campaign?.nest_id, isMatching, isNew]);
 
   const fetchCampaign = async () => {
     setLoading(true);
@@ -1996,25 +2225,31 @@ export default function TalentCampaignDetail() {
 
       if (result.success && result.matched_candidates?.length > 0) {
         // Update local state with matched candidates - include ALL fields from smart AI matching
-        const updatedMatches = result.matched_candidates.map((m) => ({
-          candidate_id: m.candidate_id,
-          candidate_name: m.candidate_name,
-          match_score: m.match_score,
-          match_reasons: m.match_reasons,
-          // AI analysis from smart multi-stage matching
-          ai_analysis: m.ai_analysis,
-          match_factors: m.match_factors,
-          priority_rank: m.priority_rank,
-          // Intelligence fields for "Best Approach" UI
-          intelligence_score: m.intelligence_score,
-          recommended_approach: m.recommended_approach,
-          best_outreach_angle: m.best_outreach_angle,
-          timing_signals: m.timing_signals,
-          outreach_hooks: m.outreach_hooks,
-          company_pain_points: m.company_pain_points,
-          status: "matched",
-          added_at: new Date().toISOString(),
-        }));
+        const updatedMatches = result.matched_candidates.map((m) => {
+          // Look up nest source from nestCandidates
+          const nestCandidate = nestCandidates.find(nc => nc.id === m.candidate_id);
+          return {
+            candidate_id: m.candidate_id,
+            candidate_name: m.candidate_name,
+            match_score: m.match_score,
+            match_reasons: m.match_reasons,
+            // AI analysis from smart multi-stage matching
+            ai_analysis: m.ai_analysis,
+            match_factors: m.match_factors,
+            priority_rank: m.priority_rank,
+            // Intelligence fields for "Best Approach" UI
+            intelligence_score: m.intelligence_score,
+            recommended_approach: m.recommended_approach,
+            best_outreach_angle: m.best_outreach_angle,
+            timing_signals: m.timing_signals,
+            outreach_hooks: m.outreach_hooks,
+            company_pain_points: m.company_pain_points,
+            // Nest source for display
+            nest_source: nestCandidate?.nest_source || linkedNest?.name || null,
+            status: "matched",
+            added_at: new Date().toISOString(),
+          };
+        });
 
         setCampaign((prev) => prev ? { ...prev, matched_candidates: updatedMatches } : null);
         setFormData((prev) => ({ ...prev, matched_candidates: updatedMatches }));

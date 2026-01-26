@@ -86,7 +86,9 @@ import {
   Wand2,
   FileEdit,
   AlertCircle,
+  Rocket,
 } from "lucide-react";
+import { TalentOnboardingChecklist } from "@/components/talent";
 
 
 // ============================================================================
@@ -869,14 +871,14 @@ const ProgressRing = ({ filled, total, size = 40, strokeWidth = 3 }) => {
 };
 
 // Role Card Component
-const RoleCard = ({ role, onEdit, onDelete }) => {
+const RoleCard = ({ role, onEdit, onDelete, onStartCampaign }) => {
   // Map DB fields to display: notes contains department, location_requirements is location
   const displayStatus = role.status === 'open' ? 'active' : role.status;
 
   return (
     <motion.div
       variants={itemVariants}
-      className="p-3 bg-zinc-800/30 rounded-lg border border-zinc-700/30 hover:border-red-500/20 transition-all"
+      className="group p-3 bg-zinc-800/30 rounded-lg border border-zinc-700/30 hover:border-red-500/20 transition-all"
     >
       <div className="flex items-start justify-between mb-2">
         <div>
@@ -909,6 +911,16 @@ const RoleCard = ({ role, onEdit, onDelete }) => {
           </span>
         </div>
         <div className="flex items-center gap-0.5">
+          {/* Start Campaign button - appears on hover */}
+          {onStartCampaign && (
+            <button
+              onClick={() => onStartCampaign(role)}
+              className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-red-500/20 text-white/50 hover:text-red-400 transition-all"
+              title="Start Campaign"
+            >
+              <Rocket className="w-3 h-3" />
+            </button>
+          )}
           <button
             onClick={() => onEdit(role)}
             className="p-1 rounded hover:bg-white/10 text-white/50 hover:text-white transition-colors"
@@ -1475,7 +1487,7 @@ const RoleModal = ({ isOpen, onClose, role, projectId, onSave }) => {
 };
 
 // Roles Panel Component
-const RolesPanel = ({ project, roles, onClose, onEditRole, onDeleteRole, onAddRole }) => {
+const RolesPanel = ({ project, roles, onClose, onEditRole, onDeleteRole, onAddRole, onStartCampaign }) => {
   const projectRoles = roles.filter(r => r.project_id === project?.id);
 
   return (
@@ -1523,6 +1535,7 @@ const RolesPanel = ({ project, roles, onClose, onEditRole, onDeleteRole, onAddRo
                     role={role}
                     onEdit={onEditRole}
                     onDelete={onDeleteRole}
+                    onStartCampaign={onStartCampaign}
                   />
                 ))
               )}
@@ -1885,6 +1898,28 @@ export default function TalentProjects() {
           }
         />
 
+        {/* Onboarding Checklist - shows for new users */}
+        <TalentOnboardingChecklist
+          organizationId={user?.organization_id}
+          onCreateProject={() => {
+            setEditingProject(null);
+            setProjectModalOpen(true);
+          }}
+          onAddRole={() => {
+            // If we have a project, open role modal for first project
+            if (projects.length > 0) {
+              setSelectedProjectForRole(projects[0]);
+              setEditingRole(null);
+              setRoleModalOpen(true);
+            } else {
+              // Otherwise, open project modal first
+              toast.info('Create a project first, then you can add roles to it');
+              setEditingProject(null);
+              setProjectModalOpen(true);
+            }
+          }}
+        />
+
         {/* Stats */}
         <motion.div
           variants={containerVariants}
@@ -2067,6 +2102,9 @@ export default function TalentProjects() {
             setSelectedProjectForRole(project);
             setEditingRole(null);
             setRoleModalOpen(true);
+          }}
+          onStartCampaign={(role) => {
+            navigate(`/TalentCampaignDetail?new=true&projectId=${role.project_id}&roleId=${role.id}`);
           }}
         />
 

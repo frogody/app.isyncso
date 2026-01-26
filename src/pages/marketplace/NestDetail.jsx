@@ -22,6 +22,7 @@ import {
   MapPin,
   Linkedin,
   DollarSign,
+  Rocket,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +39,7 @@ import { useUser } from "@/components/context/UserContext";
 import { supabase } from "@/api/supabaseClient";
 import { toast } from "sonner";
 import Layout from "@/pages/Layout";
+import { LinkNestToRoleModal } from "@/components/talent";
 
 // Nest type config
 const NEST_TYPE_CONFIG = {
@@ -117,6 +119,8 @@ export default function NestDetail() {
   const [isPurchased, setIsPurchased] = useState(false);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
+  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [linkModalMode, setLinkModalMode] = useState('link'); // 'link' or 'quickstart'
 
   // Fetch nest and items
   const fetchData = useCallback(async () => {
@@ -219,6 +223,12 @@ export default function NestDetail() {
       toast.success('Purchase successful! Data has been added to your account.');
       setIsPurchased(true);
       fetchData();
+
+      // Show modal to link nest to a role (for candidate nests)
+      if (nest?.nest_type === 'candidates') {
+        setLinkModalMode('link');
+        setShowLinkModal(true);
+      }
     } catch (err) {
       console.error('Purchase failed:', err);
       toast.error(err.message || 'Failed to complete purchase');
@@ -318,13 +328,28 @@ export default function NestDetail() {
               </div>
 
               {isPurchased ? (
-                <Button
-                  onClick={() => navigate(config.destination)}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  View in {config.label}
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => navigate(config.destination)}
+                    variant="outline"
+                    className="border-zinc-700 text-zinc-300 hover:text-white hover:border-zinc-600"
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    View in {config.label}
+                  </Button>
+                  {nest?.nest_type === 'candidates' && (
+                    <Button
+                      onClick={() => {
+                        setLinkModalMode('quickstart');
+                        setShowLinkModal(true);
+                      }}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      <Rocket className="w-4 h-4 mr-2" />
+                      Quick Start Campaign
+                    </Button>
+                  )}
+                </div>
               ) : (
                 <Button
                   onClick={handlePurchase}
@@ -490,6 +515,26 @@ export default function NestDetail() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Link Nest to Role Modal */}
+      <LinkNestToRoleModal
+        isOpen={showLinkModal}
+        onClose={(linked, campaignId, autoMatch) => {
+          setShowLinkModal(false);
+          if (linked && campaignId) {
+            // Navigate to the campaign, optionally with autoMatch to trigger matching immediately
+            const url = autoMatch
+              ? `/TalentCampaignDetail?id=${campaignId}&autoMatch=true`
+              : `/TalentCampaignDetail?id=${campaignId}`;
+            navigate(url);
+          }
+        }}
+        nestId={nestId}
+        nestName={nest?.name}
+        organizationId={company?.id}
+        mode={linkModalMode}
+        candidateCount={nest?.item_count || 0}
+      />
     </Layout>
   );
 }

@@ -45,3 +45,9 @@ export { default as SearchFilterBar } from './SearchFilterBar';
 
 // Activity Feed
 export { default as ActivityFeed } from './ActivityFeed';
+
+// Nest Integration
+export { default as LinkNestToRoleModal } from './LinkNestToRoleModal';
+
+// Onboarding
+export { default as TalentOnboardingChecklist } from './TalentOnboardingChecklist';
