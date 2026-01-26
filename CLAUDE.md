@@ -1146,3 +1146,312 @@ SUPABASE_ACCESS_TOKEN="sbp_xxx" npx supabase functions deploy composio-webhooks 
 - **Auto token refresh** - Composio handles token refresh automatically
 - **Poll for connection** - Wait for OAuth completion with 2s interval, 2min timeout
 - **User isolation** - Each user's connections are isolated via RLS
+
+---
+
+## Talent Outreach System (Jan 26, 2026)
+
+### Overview
+
+Complete recruiter workflow for internal corporate recruiters to find and reach out to candidates. The user persona is someone doing internal recruitment for a ~300 person software company.
+
+**User Flow:**
+```
+Create Role → Browse Nests → Buy Nest → Auto-Intel → Match → Personalized Outreach
+```
+
+### Key Components
+
+#### 1. Nests (Candidate Pools)
+- **NestsMarketplace** (`src/pages/NestsMarketplace.jsx`) - Browse/buy candidate pools
+- **TalentNestDetail** (`src/pages/TalentNestDetail.jsx`) - View owned nest details
+- **NestDetail** (`src/pages/NestDetail.jsx`) - Marketplace nest preview + purchase
+
+#### 2. SYNC Intel (Candidate Intelligence)
+- **sync_intel_queue** table - Queue candidates for background intel processing
+- **generateCandidateIntelligence** edge function - Generates intelligence data
+
+**Intelligence Fields:**
+```javascript
+{
+  intelligence_score: number,     // 0-100 "flight risk" score
+  intelligence_level: string,     // 'Low', 'Medium', 'High', 'Critical'
+  best_outreach_angle: string,    // THE key hook to use
+  timing_signals: [{              // Why NOW is the right time
+    trigger: string,
+    urgency: 'high' | 'medium' | 'low'
+  }],
+  outreach_hooks: string[],       // Specific angles that work
+  company_pain_points: array,     // Their employer's issues
+  key_insights: string[],
+  career_trajectory: string,
+  recommended_approach: string    // 'aggressive', 'nurture', 'network'
+}
+```
+
+#### 3. Campaign Wizard
+**File:** `src/components/talent/CampaignWizard.jsx`
+
+4-step wizard for creating campaigns:
+1. **Project Selection** - Pick or create a project
+2. **Role Selection** - Pick role from project
+3. **Role Context** - Define perfect fit criteria
+4. **Campaign Settings** - Name, type, channels
+
+**Role Context (saved to campaign.role_context):**
+```javascript
+{
+  perfect_fit_criteria: string,   // What makes someone perfect
+  selling_points: string,         // Why join us
+  must_haves: string[],           // Required skills/experience
+  deal_breakers: string[],        // Instant disqualifiers
+  target_companies: string[],     // Companies to poach from
+  ideal_background: string,
+  experience_level: string        // 'entry', 'mid', 'senior', 'lead'
+}
+```
+
+#### 4. Smart AI Matching
+**File:** `supabase/functions/analyzeCampaignProject/index.ts`
+
+Multi-stage AI-powered matching:
+
+**Stage 1: Pre-Filter (Rule-based)**
+- Deal breakers check (instant disqualification)
+- Must-haves coverage check
+- Target company bonus
+- Intelligence/timing bonus
+
+**Stage 2: Deep AI Analysis (Groq LLM)**
+- Batch processing (5 candidates per API call)
+- Model: `llama-3.3-70b-versatile`
+- 6 scoring dimensions:
+  - Skills Fit (25% weight)
+  - Experience Fit (20% weight)
+  - Title Fit (15% weight)
+  - Timing Score (20% weight) - from intelligence
+  - Location Fit (10% weight)
+  - Culture Fit (10% weight)
+
+**Stage 3: Priority Ranking**
+- Timing urgency boost (+5 for high-urgency signals)
+- Outreach hooks bonus (+2 per hook, max +5)
+
+**Response includes:**
+```javascript
+{
+  matched_candidates: [{
+    candidate_id,
+    match_score,
+    match_reasons: [],
+    ai_analysis: string,          // Expert assessment
+    match_factors: {              // Detailed breakdown
+      skills_fit, experience_fit, title_fit,
+      location_fit, timing_score, culture_fit
+    },
+    priority_rank: number,
+    // + all intelligence fields
+  }],
+  ai_powered: boolean,
+  role_context_used: boolean
+}
+```
+
+#### 5. Match Display
+**File:** `src/components/talent/CandidateMatchCard.jsx`
+
+Shows for each matched candidate:
+- **Match Score Ring** - Visual percentage
+- **AI Analysis** - Expert assessment (purple gradient)
+- **Match Breakdown** - Bar chart of 5 factors
+- **Why They Match** - List of match reasons
+- **Best Approach** - Intelligence insight (amber)
+- **Act Now** - High-urgency timing alert (red)
+- **Hook** - First outreach hook (green)
+
+#### 6. Outreach Message Generation
+**File:** `supabase/functions/generateCampaignOutreach/index.ts`
+
+Generates hyper-personalized outreach messages using ALL intelligence data:
+
+**Input:**
+```javascript
+{
+  campaign_id,
+  candidate_id,
+  candidate_name, candidate_title, candidate_company,
+  // Match data
+  match_score, match_reasons,
+  // Intelligence (the gold)
+  intelligence_score, best_outreach_angle, timing_signals,
+  outreach_hooks, company_pain_points, key_insights,
+  // Role context
+  role_context: { perfect_fit_criteria, selling_points, ... },
+  role_title, company_name,
+  // Settings
+  stage: 'initial' | 'follow_up_1' | 'follow_up_2',
+  campaign_type: 'email' | 'linkedin' | 'sms'
+}
+```
+
+### Critical Integration Points
+
+#### Auto-Intel on Nest Purchase
+**File:** `supabase/migrations/20260126200000_fix_nest_purchase_intel.sql`
+
+When user buys a nest from marketplace:
+1. `stripe-webhook` → calls `copy_nest_to_organization` RPC
+2. RPC copies candidates AND queues them for intel:
+```sql
+INSERT INTO sync_intel_queue (candidate_id, organization_id, source, priority, status)
+SELECT unnest(v_new_candidate_ids), p_organization_id, 'nest_purchase', 2, 'pending'
+ON CONFLICT DO NOTHING;
+```
+
+#### OutreachPipeline Intelligence Passing
+**File:** `src/components/talent/OutreachPipeline.jsx`
+
+When generating messages, passes ALL intelligence fields:
+```javascript
+body: JSON.stringify({
+  // Basic info
+  candidate_name, candidate_title, candidate_company, candidate_skills,
+  // Match data
+  match_score, match_reasons, match_details,
+  // INTELLIGENCE (critical!)
+  intelligence_score, recommended_approach, outreach_hooks,
+  best_outreach_angle, timing_signals, company_pain_points,
+  key_insights, lateral_opportunities, intelligence_factors,
+  // Role context
+  role_context, role_title, company_name,
+  // Settings
+  stage, campaign_type
+})
+```
+
+### Database Tables
+
+```sql
+-- Campaigns
+campaigns (
+  id, organization_id, name, status,
+  campaign_type,            -- 'email', 'linkedin', 'sms'
+  role_context JSONB,       -- From CampaignWizard step 3
+  matched_candidates JSONB, -- Array of match results
+  project_id, role_id
+)
+
+-- Individual matches (for candidate-side viewing)
+candidate_campaign_matches (
+  candidate_id, campaign_id, organization_id,
+  match_score, match_reasons,
+  best_outreach_angle, timing_signals, outreach_hooks,
+  intelligence_score, recommended_approach,
+  status, matched_at
+)
+
+-- Intel queue
+sync_intel_queue (
+  candidate_id, organization_id,
+  source,     -- 'manual', 'nest_purchase', 'import'
+  priority,   -- 1=high, 2=normal, 3=low
+  status      -- 'pending', 'processing', 'completed', 'failed'
+)
+```
+
+### Key Files Reference
+
+| File | Purpose |
+|------|---------|
+| `CampaignWizard.jsx` | 4-step campaign creation |
+| `TalentCampaignDetail.jsx` | Campaign detail + run matching |
+| `OutreachPipeline.jsx` | Message generation pipeline |
+| `CandidateMatchCard.jsx` | Match result display |
+| `analyzeCampaignProject/index.ts` | Smart AI matching |
+| `generateCampaignOutreach/index.ts` | Message generation |
+| `20260126200000_fix_nest_purchase_intel.sql` | Auto-queue intel |
+
+### Troubleshooting
+
+| Issue | Cause | Fix |
+|-------|-------|-----|
+| No intelligence on purchased nest | Old `copy_nest_to_organization` | Apply migration, verify function queues intel |
+| Match cards show no "Best Approach" | Missing `best_outreach_angle` | Check candidate has intel, check field passing |
+| AI matching not running | No GROQ_API_KEY | Set secret and redeploy function |
+| Messages not personalized | Missing intelligence fields | Check OutreachPipeline passes all fields |
+| CampaignWizard errors | Wrong org ID field | Use `user.organization_id` not `company_id` |
+
+### Deployment Commands
+
+```bash
+# Deploy smart matching
+SUPABASE_ACCESS_TOKEN="sbp_b998952de7493074e84b50702e83f1db14be1479" \
+npx supabase functions deploy analyzeCampaignProject --project-ref sfxpmzicgpaxfntqleig --no-verify-jwt
+
+# Deploy message generation
+SUPABASE_ACCESS_TOKEN="sbp_b998952de7493074e84b50702e83f1db14be1479" \
+npx supabase functions deploy generateCampaignOutreach --project-ref sfxpmzicgpaxfntqleig --no-verify-jwt
+
+# Apply SQL via Management API
+curl -s -X POST 'https://api.supabase.com/v1/projects/sfxpmzicgpaxfntqleig/database/query' \
+  -H 'Authorization: Bearer sbp_b998952de7493074e84b50702e83f1db14be1479' \
+  -H 'Content-Type: application/json' \
+  -d '{"query": "YOUR SQL"}'
+```
+
+---
+
+## SMS Outreach (Twilio Integration)
+
+### Overview
+Direct SMS outreach to candidates using Twilio.
+
+**Files:**
+- `TalentSMSOutreach.jsx` - SMS campaign management
+- `TalentCandidateProfile.jsx` - Direct SMS from profile
+- `PhoneNumberManager.jsx` - Purchase/manage phone numbers
+- `supabase/functions/twilio-*` - Twilio edge functions
+
+### Edge Functions
+
+| Function | Purpose |
+|----------|---------|
+| `twilio-numbers` | List/purchase phone numbers |
+| `twilio-send-sms` | Send SMS messages |
+| `twilio-webhooks` | Handle incoming SMS |
+
+### Key Tables
+
+```sql
+twilio_phone_numbers (
+  id, organization_id, phone_number, friendly_name,
+  capabilities JSONB, status, monthly_cost
+)
+
+sms_messages (
+  id, organization_id, campaign_id, candidate_id,
+  from_number, to_number, body, status,
+  direction, twilio_sid
+)
+```
+
+### SMS from Candidate Profile
+
+The candidate profile has a "Send SMS" button that:
+1. Opens modal with message input
+2. Can generate AI message using `generateCampaignOutreach`
+3. Uses ALL candidate intelligence for personalization
+4. Sends via `twilio-send-sms`
+
+```javascript
+// Direct SMS (no campaign context)
+body: JSON.stringify({
+  candidate_name, candidate_title, candidate_company,
+  candidate_skills: candidate.skills || [],
+  campaign_type: "sms",
+  stage: "initial",
+  // Intelligence fields
+  intelligence_score, best_outreach_angle, timing_signals,
+  outreach_hooks, company_pain_points, key_insights
+})
+```
