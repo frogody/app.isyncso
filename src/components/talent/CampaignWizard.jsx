@@ -159,7 +159,7 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
   // Auto-generate campaign name
   useEffect(() => {
     if (selectedProject && selectedRole) {
-      setCampaignName(`${selectedRole.title} - ${selectedProject.name || selectedProject.client?.name || "Outreach"}`);
+      setCampaignName(`${selectedRole.title} - ${selectedProject.title || selectedProject.name || "Outreach"}`);
     }
   }, [selectedProject, selectedRole]);
 
@@ -176,15 +176,24 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
         .from("projects")
         .insert({
           organization_id: user.organization_id,
-          name: newProject.name,
-          client_name: newProject.client_name || null,
+          created_by: user.id,
+          title: newProject.name, // Column is 'title', not 'name'
+          client_company: newProject.client_name || null, // Column is 'client_company', not 'client_name'
           description: newProject.description || null,
           status: "active",
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("[CampaignWizard] Project creation error:", {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        });
+        throw error;
+      }
 
       setProjects([data, ...projects]);
       setSelectedProject(data);
@@ -193,7 +202,7 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
       toast.success("Project created!");
     } catch (err) {
       console.error("Failed to create project:", err);
-      toast.error("Failed to create project");
+      toast.error(err.message || "Failed to create project");
     } finally {
       setLoading(false);
     }
@@ -291,7 +300,7 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
           ...roleContext,
           // Store role info in context as well for reference
           role_title: selectedRole?.title,
-          project_name: selectedProject?.name,
+          project_name: selectedProject?.title || selectedProject?.name,
           // Store outreach channel preference
           outreach_channel: outreachChannel,
         },
@@ -468,7 +477,7 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
                     {/* Project List */}
                     {(() => {
                       const filteredProjects = projects.filter(project =>
-                        (project.name || project.title || '').toLowerCase().includes(projectSearch.toLowerCase()) ||
+                        (project.title || project.name || '').toLowerCase().includes(projectSearch.toLowerCase()) ||
                         (project.client_company || '').toLowerCase().includes(projectSearch.toLowerCase())
                       );
 
@@ -504,7 +513,7 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
                               }`} />
                             </div>
                             <div className="flex-1">
-                              <p className="font-medium text-white text-sm">{project.name || project.title}</p>
+                              <p className="font-medium text-white text-sm">{project.title || project.name}</p>
                               <p className="text-xs text-zinc-500">
                                 {project.client_company || "Internal"}
                               </p>
@@ -584,7 +593,7 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
                 <div>
                   <h2 className="text-lg font-semibold text-white">Which role are you filling?</h2>
                   <p className="text-sm text-zinc-400">
-                    Project: <span className="text-white">{selectedProject?.name || selectedProject?.title}</span>
+                    Project: <span className="text-white">{selectedProject?.title || selectedProject?.name}</span>
                   </p>
                 </div>
 
@@ -851,7 +860,7 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
                       <FolderOpen className="w-4 h-4 text-zinc-400" />
                       <span className="text-xs text-zinc-500">Project</span>
                     </div>
-                    <p className="font-medium text-white text-sm">{selectedProject?.name || selectedProject?.title}</p>
+                    <p className="font-medium text-white text-sm">{selectedProject?.title || selectedProject?.name}</p>
                     <p className="text-xs text-zinc-500">{selectedProject?.client_company || "Internal"}</p>
                   </GlassCard>
 
