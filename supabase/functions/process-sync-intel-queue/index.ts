@@ -10,7 +10,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const TOGETHER_API_KEY = Deno.env.get("TOGETHER_API_KEY")!;
 
-const BATCH_SIZE = 5; // Process 5 candidates at a time
+const BATCH_SIZE = 3; // Process 3 candidates at a time (reduced due to company intel calls)
 const MAX_RETRIES = 3;
 
 interface QueueItem {
@@ -22,7 +22,7 @@ interface QueueItem {
   status: string;
 }
 
-// Process a single candidate's SYNC Intel
+// Process a single candidate's SYNC Intel (Company Intel first, then Candidate Intel)
 async function processCandidateIntel(
   supabase: any,
   candidateId: string,
@@ -50,7 +50,56 @@ async function processCandidateIntel(
       }
     }
 
-    // Call the generateCandidateIntelligence function internally
+    // Step 1: Generate Company Intelligence (Explorium) first
+    // This enriches the company data so SYNC Intel can use it
+    const companyName = candidate.company_name || candidate.current_company;
+    const companyDomain = candidate.company_domain || candidate.company_website;
+
+    // Skip company intel if already enriched (within 7 days)
+    const hasRecentCompanyIntel = candidate.company_intelligence &&
+      candidate.company_intelligence_updated_at &&
+      ((Date.now() - new Date(candidate.company_intelligence_updated_at).getTime()) / (1000 * 60 * 60 * 24)) < 7;
+
+    if (companyName && !hasRecentCompanyIntel) {
+      console.log(`Generating company intel for ${companyName} (candidate: ${candidateId})`);
+
+      const companyIntelResponse = await fetch(
+        `${SUPABASE_URL}/functions/v1/generateCompanyIntelligence`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          },
+          body: JSON.stringify({
+            companyName: companyName,
+            companyDomain: companyDomain,
+            entityType: 'candidate',
+            entityId: candidateId,
+          }),
+        }
+      );
+
+      if (companyIntelResponse.ok) {
+        const companyResult = await companyIntelResponse.json();
+        console.log(`Company intel completed: ${companyResult.success ? 'success' : 'no match'}`);
+      } else {
+        console.log(`Company intel failed (non-blocking): ${await companyIntelResponse.text()}`);
+        // Don't fail the whole process if company intel fails
+      }
+
+      // Small delay to let the DB update propagate
+      await new Promise(resolve => setTimeout(resolve, 500));
+    } else if (hasRecentCompanyIntel) {
+      console.log(`Company intel already exists for candidate ${candidateId}, skipping`);
+    } else {
+      console.log(`No company name for candidate ${candidateId}, skipping company intel`);
+    }
+
+    // Step 2: Generate Candidate Intelligence (SYNC Intel)
+    // This will now have access to the enriched company data
+    console.log(`Generating candidate intel for ${candidateId}`);
+
     const intelResponse = await fetch(
       `${SUPABASE_URL}/functions/v1/generateCandidateIntelligence`,
       {
@@ -62,7 +111,7 @@ async function processCandidateIntel(
         body: JSON.stringify({
           candidate_id: candidateId,
           organization_id: organizationId,
-          skip_company: false, // Also generate company intel if available
+          skip_company: false,
         }),
       }
     );
@@ -148,8 +197,8 @@ serve(async (req) => {
         failCount++;
       }
 
-      // Small delay between candidates to avoid rate limiting
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Delay between candidates to avoid rate limiting (increased due to company intel calls)
+      await new Promise(resolve => setTimeout(resolve, 2000));
     }
 
     console.log(`Processed: ${successCount} success, ${failCount} failed`);
