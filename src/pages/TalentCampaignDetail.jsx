@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/dialog";
 import CampaignSequenceEditor from "@/components/campaigns/CampaignSequenceEditor";
 import CampaignMetricsPanel from "@/components/campaigns/CampaignMetricsPanel";
-import { OutreachPipeline, OutreachQueue } from "@/components/talent";
+import { OutreachPipeline, OutreachQueue, AnalyticsTab } from "@/components/talent";
 import {
   Megaphone,
   Settings,
@@ -1421,151 +1421,6 @@ const SettingsTab = ({ formData, handleChange, handleStatusChange, isNew, projec
   );
 };
 
-// Analytics Tab Component
-const AnalyticsTab = ({ campaign }) => {
-  const matchedCandidates = campaign?.matched_candidates || [];
-
-  // Calculate metrics
-  const metrics = useMemo(() => {
-    const total = matchedCandidates.length;
-    const statusCounts = matchedCandidates.reduce((acc, m) => {
-      const status = m.status || "matched";
-      acc[status] = (acc[status] || 0) + 1;
-      return acc;
-    }, {});
-
-    const scoreDistribution = {
-      high: matchedCandidates.filter((m) => m.match_score >= 70).length,
-      medium: matchedCandidates.filter((m) => m.match_score >= 40 && m.match_score < 70).length,
-      low: matchedCandidates.filter((m) => m.match_score < 40).length,
-    };
-
-    return { total, statusCounts, scoreDistribution };
-  }, [matchedCandidates]);
-
-  return (
-    <div className="space-y-6">
-      {/* Pipeline Funnel */}
-      <GlassCard className="p-6">
-        <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-red-400" />
-          Pipeline Funnel
-        </h3>
-        <div className="grid grid-cols-5 gap-4">
-          {[
-            { label: "Matched", count: metrics.statusCounts.matched || 0, color: "red" },
-            { label: "Pending", count: metrics.statusCounts.pending || 0, color: "red" },
-            { label: "Contacted", count: (metrics.statusCounts.contacted || 0) + (metrics.statusCounts.sent || 0), color: "red" },
-            { label: "Replied", count: metrics.statusCounts.replied || 0, color: "red" },
-            { label: "Scheduled", count: metrics.statusCounts.scheduled || 0, color: "red" },
-          ].map((stage, idx) => (
-            <div key={idx} className="text-center">
-              <div className={`text-3xl font-bold text-${stage.color}-400 mb-1`}>
-                {stage.count}
-              </div>
-              <p className="text-xs text-zinc-500">{stage.label}</p>
-              <div className="mt-2 h-2 bg-zinc-800 rounded-full overflow-hidden">
-                <div
-                  className={`h-full bg-${stage.color}-500`}
-                  style={{
-                    width: `${Math.min((stage.count / Math.max(metrics.total, 1)) * 100, 100)}%`,
-                  }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </GlassCard>
-
-      {/* Match Score Distribution */}
-      <div className="grid grid-cols-2 gap-6">
-        <GlassCard className="p-6">
-          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <Target className="w-5 h-5 text-red-400" />
-            Match Score Distribution
-          </h3>
-          <div className="space-y-4">
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-zinc-400">High Match (70%+)</span>
-                <span className="text-red-400 font-medium">{metrics.scoreDistribution.high}</span>
-              </div>
-              <div className="h-3 bg-zinc-800 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-red-500"
-                  style={{
-                    width: `${(metrics.scoreDistribution.high / Math.max(metrics.total, 1)) * 100}%`,
-                  }}
-                />
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-zinc-400">Medium Match (40-70%)</span>
-                <span className="text-red-300 font-medium">{metrics.scoreDistribution.medium}</span>
-              </div>
-              <div className="h-3 bg-zinc-800 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-red-400"
-                  style={{
-                    width: `${(metrics.scoreDistribution.medium / Math.max(metrics.total, 1)) * 100}%`,
-                  }}
-                />
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-zinc-400">Low Match (&lt;40%)</span>
-                <span className="text-zinc-400 font-medium">{metrics.scoreDistribution.low}</span>
-              </div>
-              <div className="h-3 bg-zinc-800 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-zinc-600"
-                  style={{
-                    width: `${(metrics.scoreDistribution.low / Math.max(metrics.total, 1)) * 100}%`,
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        </GlassCard>
-
-        <GlassCard className="p-6">
-          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-red-400" />
-            Campaign Performance
-          </h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-zinc-800/30 rounded-lg">
-              <span className="text-zinc-400">Total Candidates</span>
-              <span className="text-xl font-bold text-white">{metrics.total}</span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-zinc-800/30 rounded-lg">
-              <span className="text-zinc-400">Conversion Rate</span>
-              <span className="text-xl font-bold text-red-400">
-                {metrics.total > 0
-                  ? Math.round(((metrics.statusCounts.replied || 0) / metrics.total) * 100)
-                  : 0}%
-              </span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-zinc-800/30 rounded-lg">
-              <span className="text-zinc-400">Avg Match Score</span>
-              <span className="text-xl font-bold text-red-400">
-                {metrics.total > 0
-                  ? Math.round(
-                      matchedCandidates.reduce((sum, m) => sum + (m.match_score || 0), 0) /
-                        metrics.total
-                    )
-                  : 0}%
-              </span>
-            </div>
-          </div>
-        </GlassCard>
-      </div>
-    </div>
-  );
-};
-
 export default function TalentCampaignDetail() {
   const { user } = useUser();
   const navigate = useNavigate();
@@ -2473,7 +2328,11 @@ export default function TalentCampaignDetail() {
           {/* Analytics Tab */}
           {!isNew && (
             <TabsContent value="analytics" className="m-0">
-              <AnalyticsTab campaign={campaign} />
+              <AnalyticsTab
+                campaign={campaign}
+                outreachTasks={outreachTasks}
+                matchedCandidates={campaign?.matched_candidates || []}
+              />
             </TabsContent>
           )}
         </Tabs>

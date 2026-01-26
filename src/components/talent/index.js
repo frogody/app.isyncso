@@ -22,3 +22,13 @@ export { CandidateMatchCard, CandidateMatchList } from './CandidateMatchCard';
 export { default as OutreachMessageModal } from './OutreachMessageModal';
 export { default as OutreachPipeline } from './OutreachPipeline';
 export { default as OutreachQueue } from './OutreachQueue';
+
+// Analytics Components
+export {
+  AnalyticsTab,
+  MetricCard,
+  CampaignFunnel,
+  ResponseTimeline,
+  SourceBreakdown,
+  RateGauge,
+} from './CampaignAnalytics';

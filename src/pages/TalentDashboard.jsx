@@ -46,6 +46,7 @@ import {
   Eye,
   Brain,
   Zap,
+  Award,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -538,6 +539,226 @@ const WorkflowQuickActions = ({ navigate }) => {
   );
 };
 
+// Analytics Overview Component
+const AnalyticsOverview = ({ campaigns, outreachTasks, metrics }) => {
+  // Find best performing campaign
+  const bestCampaign = useMemo(() => {
+    if (!campaigns || campaigns.length === 0) return null;
+
+    return campaigns.reduce((best, campaign) => {
+      const tasks = outreachTasks.filter(t => t.campaign_id === campaign.id);
+      const sent = tasks.filter(t => ['sent', 'replied'].includes(t.status)).length;
+      const replied = tasks.filter(t => t.status === 'replied').length;
+      const responseRate = sent > 0 ? (replied / sent) * 100 : 0;
+
+      const bestTasks = outreachTasks.filter(t => t.campaign_id === best?.id);
+      const bestSent = bestTasks.filter(t => ['sent', 'replied'].includes(t.status)).length;
+      const bestReplied = bestTasks.filter(t => t.status === 'replied').length;
+      const bestResponseRate = bestSent > 0 ? (bestReplied / bestSent) * 100 : 0;
+
+      return responseRate > bestResponseRate ? { ...campaign, responseRate, sent, replied } : (best || { ...campaign, responseRate, sent, replied });
+    }, null);
+  }, [campaigns, outreachTasks]);
+
+  // Generate smart recommendations
+  const recommendations = useMemo(() => {
+    const recs = [];
+
+    // Check response rate
+    if (metrics.responseRate < 10 && metrics.sentOutreach > 5) {
+      recs.push({
+        type: 'warning',
+        icon: AlertTriangle,
+        title: 'Low Response Rate',
+        description: 'Consider refining your messaging or targeting higher-intel candidates',
+        action: { label: 'View Campaigns', url: createPageUrl('TalentCampaigns') },
+      });
+    }
+
+    // Check for inactive campaigns
+    const activeCampaignsCount = campaigns.filter(c => c.status === 'active').length;
+    if (activeCampaignsCount === 0 && campaigns.length > 0) {
+      recs.push({
+        type: 'info',
+        icon: Megaphone,
+        title: 'No Active Campaigns',
+        description: 'Restart paused campaigns or create new ones to continue outreach',
+        action: { label: 'New Campaign', url: `${createPageUrl('TalentCampaignDetail')}?new=true` },
+      });
+    }
+
+    // High intel candidates not in campaigns
+    if (metrics.highRiskCandidates > 5 && metrics.activeCampaigns === 0) {
+      recs.push({
+        type: 'success',
+        icon: Brain,
+        title: 'High-Intel Candidates Available',
+        description: `${metrics.highRiskCandidates} candidates with high flight risk scores ready to target`,
+        action: { label: 'Start Campaign', url: `${createPageUrl('TalentCampaignDetail')}?new=true` },
+      });
+    }
+
+    // Pending outreach
+    const pendingTasks = outreachTasks.filter(t => t.status === 'approved_ready').length;
+    if (pendingTasks > 0) {
+      recs.push({
+        type: 'action',
+        icon: Send,
+        title: `${pendingTasks} Messages Ready to Send`,
+        description: 'Approved outreach messages are waiting to be sent',
+        action: { label: 'View Queue', url: createPageUrl('TalentCampaigns') },
+      });
+    }
+
+    return recs.slice(0, 3); // Max 3 recommendations
+  }, [metrics, campaigns, outreachTasks]);
+
+  const typeStyles = {
+    warning: { bg: 'bg-amber-500/10', border: 'border-amber-500/20', icon: 'text-amber-400' },
+    info: { bg: 'bg-blue-500/10', border: 'border-blue-500/20', icon: 'text-blue-400' },
+    success: { bg: 'bg-green-500/10', border: 'border-green-500/20', icon: 'text-green-400' },
+    action: { bg: 'bg-red-500/10', border: 'border-red-500/20', icon: 'text-red-400' },
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      {/* Response Rate Gauge */}
+      <GlassCard className="p-5 bg-gradient-to-br from-purple-500/10 to-purple-600/10 border-purple-500/20">
+        <div className="text-center">
+          <div className="relative inline-flex items-center justify-center mb-3">
+            <svg width="120" height="120" className="-rotate-90">
+              <circle
+                cx="60"
+                cy="60"
+                r="50"
+                fill="none"
+                stroke="rgba(255,255,255,0.1)"
+                strokeWidth="10"
+              />
+              <motion.circle
+                cx="60"
+                cy="60"
+                r="50"
+                fill="none"
+                stroke={metrics.responseRate >= 20 ? '#22c55e' : metrics.responseRate >= 10 ? '#f59e0b' : '#ef4444'}
+                strokeWidth="10"
+                strokeLinecap="round"
+                strokeDasharray={2 * Math.PI * 50}
+                initial={{ strokeDashoffset: 2 * Math.PI * 50 }}
+                animate={{ strokeDashoffset: 2 * Math.PI * 50 * (1 - metrics.responseRate / 100) }}
+                transition={{ duration: 1, ease: "easeOut" }}
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-3xl font-bold text-white">{metrics.responseRate}%</span>
+              <span className="text-xs text-zinc-400">Response Rate</span>
+            </div>
+          </div>
+          <div className="flex items-center justify-center gap-4 text-sm">
+            <div>
+              <span className="text-zinc-400">Sent:</span>{' '}
+              <span className="text-white font-medium">{metrics.sentOutreach}</span>
+            </div>
+            <div>
+              <span className="text-zinc-400">Replied:</span>{' '}
+              <span className="text-green-400 font-medium">{metrics.repliedOutreach}</span>
+            </div>
+          </div>
+        </div>
+      </GlassCard>
+
+      {/* Best Performing Campaign */}
+      <GlassCard className="p-5 bg-gradient-to-br from-cyan-500/10 to-cyan-600/10 border-cyan-500/20">
+        <div className="flex items-center gap-2 text-cyan-400 text-sm font-medium mb-3">
+          <Award className="w-4 h-4" />
+          Best Performing Campaign
+        </div>
+        {bestCampaign ? (
+          <div>
+            <h4 className="text-lg font-semibold text-white mb-2 truncate">{bestCampaign.name}</h4>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-zinc-400">Response Rate</span>
+                <span className={`font-medium ${bestCampaign.responseRate >= 20 ? 'text-green-400' : 'text-zinc-300'}`}>
+                  {bestCampaign.responseRate?.toFixed(1) || 0}%
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-zinc-400">Messages Sent</span>
+                <span className="text-white">{bestCampaign.sent || 0}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-zinc-400">Replies</span>
+                <span className="text-green-400">{bestCampaign.replied || 0}</span>
+              </div>
+            </div>
+            <Link
+              to={`${createPageUrl('TalentCampaignDetail')}?id=${bestCampaign.id}`}
+              className="mt-3 inline-flex items-center text-xs text-cyan-400 hover:text-cyan-300"
+            >
+              View Campaign <ArrowRight className="w-3 h-3 ml-1" />
+            </Link>
+          </div>
+        ) : (
+          <div className="text-center py-4">
+            <Megaphone className="w-10 h-10 text-zinc-600 mx-auto mb-2" />
+            <p className="text-zinc-500 text-sm">No campaigns yet</p>
+            <Link
+              to={`${createPageUrl('TalentCampaignDetail')}?new=true`}
+              className="mt-2 inline-flex items-center text-xs text-cyan-400 hover:text-cyan-300"
+            >
+              Create First Campaign <ArrowRight className="w-3 h-3 ml-1" />
+            </Link>
+          </div>
+        )}
+      </GlassCard>
+
+      {/* Smart Recommendations */}
+      <GlassCard className="p-5 bg-gradient-to-br from-amber-500/10 to-amber-600/10 border-amber-500/20">
+        <div className="flex items-center gap-2 text-amber-400 text-sm font-medium mb-3">
+          <Sparkles className="w-4 h-4" />
+          Recommendations
+        </div>
+        {recommendations.length > 0 ? (
+          <div className="space-y-3">
+            {recommendations.map((rec, idx) => {
+              const styles = typeStyles[rec.type];
+              return (
+                <div
+                  key={idx}
+                  className={`p-2.5 rounded-lg ${styles.bg} border ${styles.border}`}
+                >
+                  <div className="flex items-start gap-2">
+                    <rec.icon className={`w-4 h-4 ${styles.icon} flex-shrink-0 mt-0.5`} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-white font-medium">{rec.title}</p>
+                      <p className="text-xs text-zinc-400 mt-0.5">{rec.description}</p>
+                      {rec.action && (
+                        <Link
+                          to={rec.action.url}
+                          className={`mt-1 inline-flex items-center text-xs ${styles.icon} hover:underline`}
+                        >
+                          {rec.action.label} <ArrowRight className="w-3 h-3 ml-1" />
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-4">
+            <CheckCircle2 className="w-10 h-10 text-green-500 mx-auto mb-2" />
+            <p className="text-zinc-400 text-sm">All looking good!</p>
+            <p className="text-zinc-500 text-xs mt-1">No recommendations at this time</p>
+          </div>
+        )}
+      </GlassCard>
+    </div>
+  );
+};
+
 export default function TalentDashboard() {
   const { user } = useUser();
   const navigate = useNavigate();
@@ -861,6 +1082,28 @@ export default function TalentDashboard() {
             value={metrics.highRiskCandidates}
             subtitle="Score 60+"
             icon={Brain}
+          />
+        </motion.div>
+
+        {/* Analytics Overview Section */}
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-purple-400" />
+                Analytics Overview
+              </h2>
+              <p className="text-sm text-zinc-400">Performance metrics across all campaigns</p>
+            </div>
+          </div>
+          <AnalyticsOverview
+            campaigns={campaigns}
+            outreachTasks={outreachTasks}
+            metrics={metrics}
           />
         </motion.div>
 
