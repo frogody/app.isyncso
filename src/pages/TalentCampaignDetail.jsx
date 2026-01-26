@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/dialog";
 import CampaignSequenceEditor from "@/components/campaigns/CampaignSequenceEditor";
 import CampaignMetricsPanel from "@/components/campaigns/CampaignMetricsPanel";
-import { OutreachPipeline, OutreachQueue, AnalyticsTab } from "@/components/talent";
+import { OutreachPipeline, OutreachQueue, AnalyticsTab, CandidateDetailDrawer } from "@/components/talent";
 import {
   Megaphone,
   Settings,
@@ -150,7 +150,7 @@ const MatchLevelBadge = ({ level, score }) => {
 };
 
 // CandidateMatchResultCard - Detailed match display with AI reasoning
-const CandidateMatchResultCard = ({ match, isSelected, onToggleSelect }) => {
+const CandidateMatchResultCard = ({ match, isSelected, onToggleSelect, onClick }) => {
   const [expanded, setExpanded] = useState(false);
 
   const scoreColor = match.match_score >= 80 ? "text-green-400"
@@ -203,12 +203,12 @@ const CandidateMatchResultCard = ({ match, isSelected, onToggleSelect }) => {
           </div>
 
           <div className="min-w-0 flex-1">
-            <Link
-              to={`${createPageUrl("TalentCandidateProfile")}?id=${match.candidate_id}`}
-              className="font-medium text-white hover:text-red-400 transition-colors block truncate"
+            <button
+              onClick={onClick}
+              className="font-medium text-white hover:text-red-400 transition-colors block truncate text-left"
             >
               {match.candidate_name || "Unknown Candidate"}
-            </Link>
+            </button>
             <p className="text-sm text-zinc-400 truncate">{currentRole}</p>
           </div>
         </div>
@@ -739,7 +739,7 @@ const OutreachQueueTab = ({ campaign, tasks, onRefresh, onSendTask, onCancelTask
 };
 
 // Overview Tab Component
-const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching, linkedNest, nestCandidates, selectedCandidates, onToggleCandidateSelect, onSelectAllExcellent, onSaveSelection, onGenerateOutreach, savingSelection, generatingOutreach }) => {
+const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching, linkedNest, nestCandidates, selectedCandidates, onToggleCandidateSelect, onSelectAllExcellent, onSaveSelection, onGenerateOutreach, savingSelection, generatingOutreach, onCandidateClick }) => {
   const matchedCandidates = campaign?.matched_candidates || [];
   const [showAllCandidates, setShowAllCandidates] = useState(false);
   const [matchFilter, setMatchFilter] = useState("All");
@@ -1021,6 +1021,7 @@ const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching, lin
                       match={match}
                       isSelected={selectedCandidates?.has(match.candidate_id)}
                       onToggleSelect={onToggleCandidateSelect}
+                      onClick={() => onCandidateClick?.(match)}
                     />
                   ))}
                 </div>
@@ -1464,6 +1465,10 @@ export default function TalentCampaignDetail() {
   const [showOutreachSuccess, setShowOutreachSuccess] = useState(false);
   const [createdTaskCount, setCreatedTaskCount] = useState(0);
   const [outreachTasks, setOutreachTasks] = useState([]);
+
+  // Drawer state for candidate detail
+  const [drawerCandidateId, setDrawerCandidateId] = useState(null);
+  const [drawerMatchData, setDrawerMatchData] = useState(null);
 
   // Handle individual candidate selection toggle
   const handleToggleCandidateSelect = (candidateId) => {
@@ -2287,6 +2292,10 @@ export default function TalentCampaignDetail() {
                 onGenerateOutreach={handleGenerateOutreach}
                 savingSelection={savingSelection}
                 generatingOutreach={generatingOutreach}
+                onCandidateClick={(match) => {
+                  setDrawerCandidateId(match.candidate_id);
+                  setDrawerMatchData(match);
+                }}
               />
             </TabsContent>
           )}
@@ -2356,6 +2365,21 @@ export default function TalentCampaignDetail() {
           setShowOutreachSuccess(false);
           setActiveTab("outreach");
         }}
+      />
+
+      {/* Candidate Detail Drawer */}
+      <CandidateDetailDrawer
+        open={!!drawerCandidateId}
+        onClose={() => {
+          setDrawerCandidateId(null);
+          setDrawerMatchData(null);
+        }}
+        candidateId={drawerCandidateId}
+        campaignContext={drawerMatchData ? {
+          campaignId: campaign?.id,
+          roleName: campaign?.role_context?.role_title || campaign?.name,
+          matchData: drawerMatchData,
+        } : undefined}
       />
       </motion.div>
     </div>

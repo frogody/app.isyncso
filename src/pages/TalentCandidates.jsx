@@ -54,7 +54,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { AddCandidateModal, EditCandidateModal, CandidateImportModal } from "@/components/talent";
+import { AddCandidateModal, EditCandidateModal, CandidateImportModal, CandidateDetailDrawer } from "@/components/talent";
 import { IntelligenceGauge, IntelligenceLevelBadge, ApproachBadge, IntelStatusBadge } from "@/components/talent/IntelligenceGauge";
 
 // Animation variants
@@ -332,6 +332,9 @@ export default function TalentCandidates() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [editingCandidate, setEditingCandidate] = useState(null);
 
+  // Drawer state
+  const [drawerCandidateId, setDrawerCandidateId] = useState(null);
+
   useEffect(() => {
     fetchCandidates();
   }, [user]);
@@ -415,7 +418,7 @@ export default function TalentCandidates() {
   const totalPages = Math.ceil(filteredCandidates.length / itemsPerPage);
 
   const handleCandidateClick = (candidate) => {
-    navigate(createPageUrl("TalentCandidateProfile") + `?id=${candidate.id}`);
+    setDrawerCandidateId(candidate.id);
   };
 
   const toggleCandidate = (id) => {
@@ -942,6 +945,13 @@ export default function TalentCandidates() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Candidate Detail Drawer */}
+      <CandidateDetailDrawer
+        open={!!drawerCandidateId}
+        onClose={() => setDrawerCandidateId(null)}
+        candidateId={drawerCandidateId}
+      />
       </div>
     </div>
   );

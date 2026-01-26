@@ -32,3 +32,6 @@ export {
   SourceBreakdown,
   RateGauge,
 } from './CampaignAnalytics';
+
+// Detail Drawer
+export { default as CandidateDetailDrawer } from './CandidateDetailDrawer';
