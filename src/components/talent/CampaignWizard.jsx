@@ -262,6 +262,23 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
 
     setCreating(true);
     try {
+      // Debug: Verify user's organization in database matches what we're sending
+      const { data: dbUser, error: userError } = await supabase
+        .from("users")
+        .select("id, organization_id")
+        .eq("id", user.id)
+        .single();
+
+      console.log("[CampaignWizard] Database user check:", {
+        dbOrganizationId: dbUser?.organization_id,
+        clientOrganizationId: user.organization_id,
+        match: dbUser?.organization_id === user.organization_id
+      });
+
+      if (userError) {
+        console.error("[CampaignWizard] Error fetching user:", userError);
+      }
+
       const campaignData = {
         organization_id: user.organization_id,
         created_by: user.id,
@@ -285,7 +302,7 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
         campaignData.nest_id = nestContext.id;
       }
 
-      console.log("[CampaignWizard] Inserting campaign:", campaignData);
+      console.log("[CampaignWizard] Inserting campaign:", JSON.stringify(campaignData, null, 2));
 
       const { data, error } = await supabase
         .from("campaigns")
@@ -294,7 +311,13 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
         .single();
 
       if (error) {
-        console.error("[CampaignWizard] Supabase error:", error);
+        console.error("[CampaignWizard] Supabase error details:", {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+          full: JSON.stringify(error)
+        });
         throw error;
       }
 
@@ -308,8 +331,9 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
         navigate(`/TalentCampaignDetail?id=${data.id}`);
       }
     } catch (err) {
-      console.error("[CampaignWizard] Failed to create campaign:", err);
-      toast.error(err.message || "Failed to create campaign");
+      console.error("[CampaignWizard] Failed to create campaign - full error:", JSON.stringify(err, null, 2));
+      const errorMsg = err.message || err.details || "Failed to create campaign";
+      toast.error(errorMsg);
     } finally {
       setCreating(false);
     }
