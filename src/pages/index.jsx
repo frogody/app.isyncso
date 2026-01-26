@@ -245,6 +245,8 @@ import TalentNests from "./TalentNests";
 
 import TalentNestDetail from "./TalentNestDetail";
 
+import TalentSMSOutreach from "./TalentSMSOutreach";
+
 // Admin Panel Pages
 import AdminLayout from "@/components/admin/AdminLayout";
 import PlatformAdminDashboard from "./admin/AdminDashboard";
@@ -511,6 +513,8 @@ const PAGES = {
     TalentNests: TalentNests,
 
     TalentNestDetail: TalentNestDetail,
+
+    TalentSMSOutreach: TalentSMSOutreach,
 
 }
 
@@ -820,6 +824,8 @@ function PagesContent() {
                 <Route path="/TalentNests" element={<TalentNests />} />
 
                 <Route path="/TalentNestDetail" element={<TalentNestDetail />} />
+
+                <Route path="/TalentSMSOutreach" element={<TalentSMSOutreach />} />
 
                 {/* 404 catch-all route */}
                 <Route path="*" element={

@@ -87,3 +87,12 @@ verify_jwt = false
 
 [functions.process-sync-intel-queue]
 verify_jwt = false
+
+[functions.sms-send]
+verify_jwt = false
+
+[functions.sms-webhook]
+verify_jwt = false
+
+[functions.sms-ai-respond]
+verify_jwt = false

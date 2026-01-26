@@ -580,26 +580,26 @@ export default function TalentCandidateProfile() {
 
         {/* Hero Section */}
         <motion.div variants={itemVariants}>
-          <div className="bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-white/[0.06] rounded-3xl p-8">
-            <div className="flex flex-col lg:flex-row lg:items-center gap-6">
+          <div className="bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-white/[0.06] rounded-xl p-6">
+            <div className="flex flex-col lg:flex-row lg:items-center gap-4">
               {/* Avatar & Basic Info */}
-              <div className="flex items-center gap-5 flex-1">
-                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-3xl font-bold text-white shadow-lg shadow-red-500/20">
+              <div className="flex items-center gap-4 flex-1">
+                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-xl font-bold text-white shadow-lg shadow-red-500/20">
                   {initials}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h1 className="text-2xl font-bold text-white mb-1">{fullName}</h1>
-                  <p className="text-white/60 text-lg mb-3">{candidate.job_title || "—"}</p>
-                  <div className="flex flex-wrap items-center gap-3">
+                  <h1 className="text-lg font-semibold text-white">{fullName}</h1>
+                  <p className="text-white/60 text-sm mb-1">{candidate.job_title || "—"}</p>
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-white/40">
                     {candidate.company_name && (
-                      <span className="inline-flex items-center gap-1.5 text-sm text-white/50">
-                        <Building2 className="w-4 h-4" />
+                      <span className="inline-flex items-center gap-1">
+                        <Building2 className="w-3 h-3" />
                         {candidate.company_name}
                       </span>
                     )}
                     {candidate.person_home_location && (
-                      <span className="inline-flex items-center gap-1.5 text-sm text-white/50">
-                        <MapPin className="w-4 h-4" />
+                      <span className="inline-flex items-center gap-1">
+                        <MapPin className="w-3 h-3" />
                         {candidate.person_home_location}
                       </span>
                     )}
@@ -608,48 +608,47 @@ export default function TalentCandidateProfile() {
               </div>
 
               {/* Intelligence Score & Actions */}
-              <div className="flex items-center gap-6">
-                <div className="text-center">
-                  <IntelligenceGauge score={candidate.intelligence_score || 0} size="lg" showLabel />
-                </div>
-                <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-4">
+                <IntelligenceGauge score={candidate.intelligence_score || 0} size="md" />
+                <div className="flex flex-col gap-1.5">
                   <Button
                     onClick={syncIntel}
                     disabled={generatingIntelligence}
-                    className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-6"
+                    size="sm"
+                    className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
                   >
                     {generatingIntelligence ? (
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      <Loader2 className="w-3 h-3 animate-spin mr-1.5" />
                     ) : (
-                      <Sparkles className="w-4 h-4 mr-2" />
+                      <Sparkles className="w-3 h-3 mr-1.5" />
                     )}
-                    {syncStatus === "company" ? "SYNCING COMPANY..." :
-                     syncStatus === "candidate" ? "ANALYZING CANDIDATE..." :
+                    {syncStatus === "company" ? "SYNCING..." :
+                     syncStatus === "candidate" ? "ANALYZING..." :
                      "SYNC INTEL"}
                   </Button>
-                  <Button variant="outline" className="border-white/10 text-white/70 hover:bg-white/5 px-6">
-                    <Send className="w-4 h-4 mr-2" />
-                    Start Outreach
+                  <Button variant="outline" size="sm" className="border-white/10 text-white/70 hover:bg-white/5">
+                    <Send className="w-3 h-3 mr-1.5" />
+                    Outreach
                   </Button>
-                  {/* Enrich Contact Button */}
                   {candidate.linkedin_profile && !candidate.enriched_at ? (
                     <Button
                       variant="outline"
+                      size="sm"
                       onClick={enrichContact}
                       disabled={enrichingContact}
-                      className="border-red-500/30 text-red-400 hover:bg-red-500/10 px-6"
+                      className="border-red-500/30 text-red-400 hover:bg-red-500/10"
                     >
                       {enrichingContact ? (
-                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        <Loader2 className="w-3 h-3 animate-spin mr-1.5" />
                       ) : (
-                        <Zap className="w-4 h-4 mr-2" />
+                        <Zap className="w-3 h-3 mr-1.5" />
                       )}
-                      {enrichingContact ? "Enriching..." : "Enrich Contact"}
+                      {enrichingContact ? "Enriching..." : "Enrich"}
                     </Button>
                   ) : candidate.enriched_at ? (
-                    <div className="flex items-center gap-1.5 text-xs text-red-400 px-3 py-1.5 bg-red-500/10 rounded-lg border border-red-500/20">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      Enriched {new Date(candidate.enriched_at).toLocaleDateString()}
+                    <div className="flex items-center gap-1 text-[10px] text-red-400 px-2 py-1 bg-red-500/10 rounded border border-red-500/20">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Enriched
                     </div>
                   ) : null}
                 </div>
@@ -657,32 +656,32 @@ export default function TalentCandidateProfile() {
             </div>
 
             {/* Quick Stats Bar */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4 mt-8 pt-8 border-t border-white/[0.06]">
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mt-4 pt-4 border-t border-white/[0.06]">
               <div>
-                <p className="text-xs text-white/40 mb-1">Urgency</p>
-                <UrgencyBadge level={candidate.recruitment_urgency} />
+                <p className="text-[10px] text-white/40 mb-0.5">Urgency</p>
+                <UrgencyBadge level={candidate.recruitment_urgency} size="xs" />
               </div>
               <div>
-                <p className="text-xs text-white/40 mb-1">Satisfaction</p>
-                <SatisfactionBadge level={candidate.job_satisfaction} />
+                <p className="text-[10px] text-white/40 mb-0.5">Satisfaction</p>
+                <SatisfactionBadge level={candidate.job_satisfaction} size="xs" />
               </div>
               <div>
-                <p className="text-xs text-white/40 mb-1">Salary Range</p>
-                <p className="text-lg font-semibold text-red-400">
+                <p className="text-[10px] text-white/40 mb-0.5">Salary</p>
+                <p className="text-sm font-semibold text-red-400">
                   {candidate.salary_range ? `$${Number(candidate.salary_range).toLocaleString()}` : "—"}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-white/40 mb-1">Years at Company</p>
-                <p className="text-lg font-semibold text-white">{candidate.years_at_company || 0}</p>
+                <p className="text-[10px] text-white/40 mb-0.5">Tenure</p>
+                <p className="text-sm font-semibold text-white">{candidate.years_at_company || 0}y</p>
               </div>
               <div>
-                <p className="text-xs text-white/40 mb-1">Promotions</p>
-                <p className="text-lg font-semibold text-white">{candidate.times_promoted || 0}</p>
+                <p className="text-[10px] text-white/40 mb-0.5">Promos</p>
+                <p className="text-sm font-semibold text-white">{candidate.times_promoted || 0}</p>
               </div>
               <div>
-                <p className="text-xs text-white/40 mb-1">Company Changes</p>
-                <p className="text-lg font-semibold text-white">{candidate.times_company_hopped || 0}</p>
+                <p className="text-[10px] text-white/40 mb-0.5">Job Changes</p>
+                <p className="text-sm font-semibold text-white">{candidate.times_company_hopped || 0}</p>
               </div>
             </div>
           </div>
@@ -690,12 +689,12 @@ export default function TalentCandidateProfile() {
 
         {/* Tab Navigation */}
         <motion.div variants={itemVariants}>
-          <div className="flex gap-1 p-1 bg-white/[0.03] border border-white/[0.06] rounded-2xl">
+          <div className="flex gap-1 p-1 bg-white/[0.03] border border-white/[0.06] rounded-xl">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 px-6 py-3 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                className={`flex-1 px-4 py-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${
                   activeTab === tab.id
                     ? "bg-red-500 text-white shadow-lg shadow-red-500/20"
                     : "text-white/50 hover:text-white hover:bg-white/[0.04]"
@@ -703,7 +702,7 @@ export default function TalentCandidateProfile() {
               >
                 {tab.label}
                 {tab.count > 0 && (
-                  <span className={`px-1.5 py-0.5 text-xs rounded-full ${
+                  <span className={`px-1.5 py-0.5 text-[10px] rounded-full ${
                     activeTab === tab.id
                       ? "bg-white/20"
                       : "bg-red-500/20 text-red-400"

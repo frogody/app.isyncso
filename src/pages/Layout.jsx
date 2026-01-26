@@ -321,6 +321,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
         { label: 'Campaigns', path: createPageUrl('TalentCampaigns'), icon: Megaphone },
         { label: 'Clients', path: createPageUrl('TalentClients'), icon: Building2 },
         { label: 'Deals', path: createPageUrl('TalentDeals'), icon: Handshake },
+        { label: 'SMS Outreach', path: createPageUrl('TalentSMSOutreach'), icon: MessageSquare },
         { label: 'Nests', path: createPageUrl('TalentNests'), icon: Package },
       ]
     };

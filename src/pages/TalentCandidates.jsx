@@ -72,6 +72,20 @@ const itemVariants = {
   },
 };
 
+// Smart pagination helper - shows pages around current page
+const getVisiblePages = (current, total, maxVisible = 5) => {
+  const pages = [];
+  let start = Math.max(1, current - Math.floor(maxVisible / 2));
+  let end = Math.min(total, start + maxVisible - 1);
+
+  if (end - start + 1 < maxVisible) {
+    start = Math.max(1, end - maxVisible + 1);
+  }
+
+  for (let i = start; i <= end; i++) pages.push(i);
+  return pages;
+};
+
 // Candidate Avatar
 const CandidateAvatar = ({ name, image, size = "md" }) => {
   const sizes = {
@@ -567,8 +581,8 @@ export default function TalentCandidates() {
       </div>
 
       {/* Filters Bar */}
-      <GlassCard className="p-4">
-        <div className="flex flex-wrap items-center gap-4">
+      <GlassCard className="p-3">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Search */}
           <div className="flex-1 min-w-[200px]">
             <div className="relative">
@@ -578,7 +592,7 @@ export default function TalentCandidates() {
                 placeholder="Search candidates..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-red-500/50"
+                className="w-full pl-10 pr-4 py-1.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-white/40 focus:outline-none focus:border-red-500/50"
               />
             </div>
           </div>
@@ -629,12 +643,14 @@ export default function TalentCandidates() {
           </div>
 
           {/* Refresh */}
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={fetchCandidates}
-            className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+            className="h-8 w-8 text-white/60 hover:text-white hover:bg-white/10"
           >
             <RefreshCw className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
 
         {/* Bulk Actions */}
@@ -787,22 +803,19 @@ export default function TalentCandidates() {
             >
               Previous
             </button>
-            {[...Array(Math.min(totalPages, 5))].map((_, i) => {
-              const page = i + 1;
-              return (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`w-8 h-8 rounded-lg transition-colors ${
-                    currentPage === page
-                      ? "bg-red-500/20 text-red-400"
-                      : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
-                  }`}
-                >
-                  {page}
-                </button>
-              );
-            })}
+            {getVisiblePages(currentPage, totalPages).map((page) => (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`w-8 h-8 rounded-lg transition-colors ${
+                  currentPage === page
+                    ? "bg-red-500/20 text-red-400"
+                    : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                {page}
+              </button>
+            ))}
             <button
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
