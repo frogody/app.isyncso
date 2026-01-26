@@ -1617,6 +1617,11 @@ export default function Layout({ children, currentPageName }) {
             </div>
           </div>
 
+          {/* Desktop Top Bar - Only visible on md+ */}
+          <div className="hidden md:flex fixed top-0 right-0 z-40 items-center gap-2 p-3 pr-4">
+            <NotificationsDropdown />
+          </div>
+
           {/* Main Content - Mobile optimized with safe areas */}
           <main
             id="main-content"
