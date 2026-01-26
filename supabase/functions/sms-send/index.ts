@@ -1,5 +1,6 @@
 // Supabase Edge Function: sms-send
 // Sends SMS messages via Twilio
+// Supports both iSyncSO-managed numbers and user's own Twilio accounts
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -17,6 +18,7 @@ interface SMSSendRequest {
   phone_number: string;
   message: string;
   scheduled_at?: string;
+  from_number_id?: string; // Optional: specific org phone number to use
 }
 
 interface SMSSendResponse {
@@ -24,6 +26,13 @@ interface SMSSendResponse {
   conversation_id?: string;
   message_sid?: string;
   error?: string;
+}
+
+interface TwilioCredentials {
+  account_sid: string;
+  auth_token: string;
+  from_number: string;
+  is_managed: boolean; // true = iSyncSO managed, false = user's own
 }
 
 serve(async (req) => {
@@ -39,7 +48,7 @@ serve(async (req) => {
     );
 
     const body: SMSSendRequest = await req.json();
-    const { candidate_id, organization_id, campaign_id, phone_number, message, scheduled_at, conversation_id } = body;
+    const { candidate_id, organization_id, campaign_id, phone_number, message, scheduled_at, conversation_id, from_number_id } = body;
 
     // Validate required fields
     if (!phone_number || !message || !organization_id || !candidate_id) {
@@ -49,32 +58,93 @@ serve(async (req) => {
       );
     }
 
-    // Get Twilio credentials from company_integrations
-    const { data: integration, error: integrationError } = await supabase
-      .from("company_integrations")
-      .select("credentials, status")
-      .eq("organization_id", organization_id)
-      .eq("toolkit_slug", "twilio")
-      .eq("status", "connected")
-      .single();
+    // Get Twilio credentials - try organization phone numbers first, then company integrations
+    let credentials: TwilioCredentials | null = null;
 
-    if (integrationError || !integration) {
+    // Option 1: Specific org phone number requested
+    if (from_number_id) {
+      const { data: orgNumber } = await supabase
+        .from("organization_phone_numbers")
+        .select("*")
+        .eq("id", from_number_id)
+        .eq("organization_id", organization_id)
+        .eq("status", "active")
+        .single();
+
+      if (orgNumber) {
+        credentials = {
+          account_sid: Deno.env.get("TWILIO_MASTER_ACCOUNT_SID")!,
+          auth_token: Deno.env.get("TWILIO_MASTER_AUTH_TOKEN")!,
+          from_number: orgNumber.phone_number,
+          is_managed: true,
+        };
+      }
+    }
+
+    // Option 2: Any active org phone number
+    if (!credentials) {
+      const { data: orgNumbers } = await supabase
+        .from("organization_phone_numbers")
+        .select("*")
+        .eq("organization_id", organization_id)
+        .eq("status", "active")
+        .limit(1);
+
+      if (orgNumbers && orgNumbers.length > 0) {
+        credentials = {
+          account_sid: Deno.env.get("TWILIO_MASTER_ACCOUNT_SID")!,
+          auth_token: Deno.env.get("TWILIO_MASTER_AUTH_TOKEN")!,
+          from_number: orgNumbers[0].phone_number,
+          is_managed: true,
+        };
+      }
+    }
+
+    // Option 3: User's own Twilio integration (legacy)
+    if (!credentials) {
+      const { data: integration } = await supabase
+        .from("company_integrations")
+        .select("credentials, status")
+        .eq("organization_id", organization_id)
+        .eq("toolkit_slug", "twilio")
+        .eq("status", "connected")
+        .single();
+
+      if (integration?.credentials) {
+        const creds = integration.credentials as {
+          account_sid: string;
+          auth_token: string;
+          phone_number: string;
+        };
+
+        if (creds.account_sid && creds.auth_token && creds.phone_number) {
+          credentials = {
+            account_sid: creds.account_sid,
+            auth_token: creds.auth_token,
+            from_number: creds.phone_number,
+            is_managed: false,
+          };
+        }
+      }
+    }
+
+    // No credentials found
+    if (!credentials) {
       return new Response(
-        JSON.stringify({ success: false, error: "Twilio integration not found. Please connect Twilio in settings." }),
+        JSON.stringify({
+          success: false,
+          error: "No phone number configured. Please purchase a number in Settings → Phone Numbers.",
+        }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const credentials = integration.credentials as {
-      account_sid: string;
-      auth_token: string;
-      phone_number: string;
-    };
-
-    if (!credentials?.account_sid || !credentials?.auth_token || !credentials?.phone_number) {
+    // Validate master credentials if using managed numbers
+    if (credentials.is_managed && (!credentials.account_sid || !credentials.auth_token)) {
+      console.error("Master Twilio credentials not configured");
       return new Response(
-        JSON.stringify({ success: false, error: "Invalid Twilio credentials" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ success: false, error: "SMS service temporarily unavailable" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -88,7 +158,7 @@ serve(async (req) => {
           candidate_id,
           campaign_id,
           phone_number,
-          twilio_from_number: credentials.phone_number,
+          twilio_from_number: credentials.from_number,
           status: scheduled_at ? "queued" : "sent",
           scheduled_send_at: scheduled_at || null,
           messages: [{
@@ -108,6 +178,29 @@ serve(async (req) => {
         );
       }
       conversationId = newConversation.id;
+    } else {
+      // Append message to existing conversation
+      const { data: existingConv } = await supabase
+        .from("sms_conversations")
+        .select("messages")
+        .eq("id", conversationId)
+        .single();
+
+      if (existingConv) {
+        const updatedMessages = [
+          ...(existingConv.messages || []),
+          {
+            role: "assistant",
+            content: message,
+            timestamp: new Date().toISOString(),
+          },
+        ];
+
+        await supabase
+          .from("sms_conversations")
+          .update({ messages: updatedMessages })
+          .eq("id", conversationId);
+      }
     }
 
     // If scheduled for later, don't send now
@@ -129,7 +222,7 @@ serve(async (req) => {
 
     const twilioBody = new URLSearchParams({
       To: phone_number,
-      From: credentials.phone_number,
+      From: credentials.from_number,
       Body: message,
       StatusCallback: `${Deno.env.get("SUPABASE_URL")}/functions/v1/sms-webhook`,
     });
@@ -170,6 +263,16 @@ serve(async (req) => {
       })
       .eq("id", conversationId);
 
+    // Update usage stats for managed numbers
+    if (credentials.is_managed) {
+      await supabase.rpc("increment_sms_sent", {
+        p_phone_number: credentials.from_number,
+      }).catch(() => {
+        // Non-critical, just log
+        console.log("Failed to update message count");
+      });
+    }
+
     // Log to integration_sync_logs
     await supabase.from("integration_sync_logs").insert({
       organization_id,
@@ -177,7 +280,12 @@ serve(async (req) => {
       sync_type: "sms_send",
       status: "success",
       records_synced: 1,
-      details: { message_sid: twilioResult.sid, to: phone_number },
+      details: {
+        message_sid: twilioResult.sid,
+        to: phone_number,
+        from: credentials.from_number,
+        managed: credentials.is_managed,
+      },
     });
 
     return new Response(

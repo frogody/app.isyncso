@@ -96,3 +96,6 @@ verify_jwt = false
 
 [functions.sms-ai-respond]
 verify_jwt = false
+
+[functions.twilio-numbers]
+verify_jwt = false

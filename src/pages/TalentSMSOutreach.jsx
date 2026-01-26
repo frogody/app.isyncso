@@ -45,6 +45,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+import PhoneNumberManager from "@/components/integrations/PhoneNumberManager";
 
 // Status configuration
 const STATUS_CONFIG = {
@@ -321,6 +322,25 @@ export default function TalentSMSOutreach() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedConversation, setSelectedConversation] = useState(null);
+  const [phoneNumbers, setPhoneNumbers] = useState([]);
+  const [showPhoneSetup, setShowPhoneSetup] = useState(false);
+
+  // Fetch phone numbers first
+  const fetchPhoneNumbers = useCallback(async () => {
+    if (!user?.organization_id) return;
+
+    try {
+      const { data } = await supabase
+        .from("organization_phone_numbers")
+        .select("*")
+        .eq("organization_id", user.organization_id)
+        .eq("status", "active");
+
+      setPhoneNumbers(data || []);
+    } catch (err) {
+      console.error("Failed to fetch phone numbers:", err);
+    }
+  }, [user?.organization_id]);
 
   // Fetch conversations
   const fetchConversations = useCallback(async () => {
@@ -328,6 +348,9 @@ export default function TalentSMSOutreach() {
 
     setLoading(true);
     try {
+      // Fetch phone numbers and conversations in parallel
+      await fetchPhoneNumbers();
+
       const { data, error } = await supabase
         .from("sms_conversations")
         .select("*, candidates(id, first_name, last_name, job_title, company_name)")
@@ -352,7 +375,7 @@ export default function TalentSMSOutreach() {
     } finally {
       setLoading(false);
     }
-  }, [user?.organization_id]);
+  }, [user?.organization_id, fetchPhoneNumbers]);
 
   useEffect(() => {
     fetchConversations();
@@ -412,6 +435,9 @@ export default function TalentSMSOutreach() {
     );
   }
 
+  // Check if setup is needed
+  const needsSetup = phoneNumbers.length === 0;
+
   return (
     <div className="min-h-screen bg-black px-6 py-6 space-y-6">
       {/* Header */}
@@ -420,15 +446,73 @@ export default function TalentSMSOutreach() {
           <h1 className="text-lg font-semibold text-white">SMS Outreach</h1>
           <p className="text-xs text-zinc-500">{conversations.length} conversations</p>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={fetchConversations}
-          className="text-zinc-400 hover:text-white"
-        >
-          <RefreshCw className="w-4 h-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowPhoneSetup(true)}
+            className="border-zinc-700 text-zinc-400 hover:text-white gap-2"
+          >
+            <Phone className="w-4 h-4" />
+            {phoneNumbers.length > 0 ? `${phoneNumbers.length} Number${phoneNumbers.length > 1 ? 's' : ''}` : 'Get Number'}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={fetchConversations}
+            className="text-zinc-400 hover:text-white"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
+
+      {/* Phone Setup Banner */}
+      {needsSetup && !showPhoneSetup && (
+        <GlassCard className="p-4 border-red-500/30 bg-red-500/5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-500/20 rounded-lg">
+                <Phone className="w-5 h-5 text-red-400" />
+              </div>
+              <div>
+                <h4 className="font-medium text-white">Get a Phone Number</h4>
+                <p className="text-xs text-zinc-400">Purchase a phone number to start sending SMS</p>
+              </div>
+            </div>
+            <Button
+              onClick={() => setShowPhoneSetup(true)}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Get Number
+            </Button>
+          </div>
+        </GlassCard>
+      )}
+
+      {/* Phone Number Setup Modal */}
+      {showPhoneSetup && (
+        <GlassCard className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white">Phone Numbers</h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowPhoneSetup(false)}
+              className="text-zinc-400"
+            >
+              Close
+            </Button>
+          </div>
+          <PhoneNumberManager
+            onNumberSelected={(num) => {
+              toast.success(`Selected ${num.phone_number}`);
+              setShowPhoneSetup(false);
+              fetchPhoneNumbers();
+            }}
+          />
+        </GlassCard>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
