@@ -50,7 +50,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { AddCandidateModal } from "@/components/talent";
+import { AddCandidateModal, ActivityFeed } from "@/components/talent";
 
 // Animation variants
 const containerVariants = {
@@ -1152,7 +1152,9 @@ export default function TalentDashboard() {
             <CampaignPerformanceTable campaigns={campaigns} outreachTasks={outreachTasks} />
           </motion.div>
           <motion.div variants={itemVariants}>
-            <RecentCampaignActivity campaigns={campaigns} />
+            <GlassCard className="p-6">
+              <ActivityFeed limit={8} showHeader={true} compact={false} />
+            </GlassCard>
           </motion.div>
         </motion.div>
       </div>

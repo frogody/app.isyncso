@@ -42,3 +42,6 @@ export { default as AddToCampaignModal } from './AddToCampaignModal';
 
 // Search & Filtering
 export { default as SearchFilterBar } from './SearchFilterBar';
+
+// Activity Feed
+export { default as ActivityFeed } from './ActivityFeed';

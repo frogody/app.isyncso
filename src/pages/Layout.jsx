@@ -118,6 +118,10 @@ import SyncVoiceMode from "@/components/sync/SyncVoiceMode";
 import { KeyboardShortcutsProvider } from "@/contexts/KeyboardShortcutsContext";
 import GlobalShortcuts from "@/components/GlobalShortcuts";
 
+// Import Notifications
+import { NotificationsProvider } from "@/contexts/NotificationsContext";
+import NotificationsDropdown from "@/components/NotificationsDropdown";
+
 // Navigation items with permission requirements
 // permission: null = always visible, string = requires that permission
 const navigationItems = [
@@ -1372,6 +1376,7 @@ export default function Layout({ children, currentPageName }) {
           <AnimationProvider>
           <PermissionProvider>
           <KeyboardShortcutsProvider>
+          <NotificationsProvider>
             <AchievementProvider>
               <Toaster />
               <GlobalShortcuts />
@@ -1584,6 +1589,8 @@ export default function Layout({ children, currentPageName }) {
                   {secondaryNavConfig.title}
                 </div>
               )}
+              <div className="flex items-center gap-1">
+                <NotificationsDropdown />
               <Sheet>
                 <SheetTrigger asChild>
                   <Button
@@ -1606,6 +1613,7 @@ export default function Layout({ children, currentPageName }) {
                   />
                 </SheetContent>
               </Sheet>
+              </div>
             </div>
           </div>
 
@@ -1648,6 +1656,7 @@ export default function Layout({ children, currentPageName }) {
         />
         </div>
           </AchievementProvider>
+          </NotificationsProvider>
           </KeyboardShortcutsProvider>
           </PermissionProvider>
           </AnimationProvider>
