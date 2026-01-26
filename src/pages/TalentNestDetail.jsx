@@ -43,6 +43,9 @@ import {
   ExternalLink,
   RefreshCw,
   Bell,
+  Megaphone,
+  PartyPopper,
+  ChevronRight,
 } from "lucide-react";
 import { createPageUrl } from "@/utils";
 
@@ -475,6 +478,10 @@ export default function TalentNestDetail() {
     }
   };
 
+  // State for post-purchase success dialog
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [purchasedNestInfo, setPurchasedNestInfo] = useState(null);
+
   const handlePurchase = (purchaseRecord) => {
     setShowPurchaseDialog(false);
     setHasPurchased(true);
@@ -482,13 +489,26 @@ export default function TalentNestDetail() {
       ...purchaseRecord,
       last_synced_at: purchaseRecord.completed_at || new Date().toISOString()
     });
-    toast.success(`Purchased "${nest.name}"`, {
-      description: `${(nest.item_count || 0).toLocaleString()} candidates added to your talent pool`,
+    // Store nest info for success dialog
+    setPurchasedNestInfo({
+      name: nest.name,
+      itemCount: nest.item_count || 0,
+      nestId: nest.id,
     });
-    // Navigate to candidates page after short delay
-    setTimeout(() => {
-      navigate(createPageUrl("TalentCandidates"));
-    }, 1500);
+    // Show success dialog instead of toast + auto-navigate
+    setShowSuccessDialog(true);
+  };
+
+  // Navigate to create campaign with nest pre-selected
+  const handleCreateCampaign = () => {
+    setShowSuccessDialog(false);
+    navigate(createPageUrl("TalentCampaigns") + `?action=new&nestId=${nest.id}&nestName=${encodeURIComponent(nest.name)}`);
+  };
+
+  // Navigate to view candidates
+  const handleViewCandidatesFromSuccess = () => {
+    setShowSuccessDialog(false);
+    navigate(createPageUrl("TalentCandidates") + `?source=nest&nestId=${nest.id}`);
   };
 
   const goToCandidates = () => {
@@ -799,15 +819,28 @@ export default function TalentNestDetail() {
                       </Button>
                     </div>
                   )}
+
+                  {/* Primary: Create Campaign */}
+                  <Button
+                    onClick={handleCreateCampaign}
+                    className="w-full h-11 bg-red-500 hover:bg-red-600 text-white font-medium mb-2"
+                  >
+                    <Megaphone className="w-4 h-4 mr-2" />
+                    Create Campaign
+                  </Button>
+
+                  {/* Secondary: View Candidates */}
                   <Button
                     onClick={goToCandidates}
-                    className="w-full h-11 bg-green-600 hover:bg-green-700 text-white font-medium"
+                    variant="outline"
+                    className="w-full h-10 border-green-600/50 text-green-400 hover:bg-green-600/10"
                   >
-                    <Check className="w-4 h-4 mr-2" />
+                    <Users className="w-4 h-4 mr-2" />
                     View Candidates
                   </Button>
+
                   <p className="text-xs text-green-500 text-center mt-3">
-                    You own this nest
+                    ✓ You own this nest
                   </p>
                 </>
               ) : (
@@ -928,6 +961,78 @@ export default function TalentNestDetail() {
         onPurchase={handlePurchase}
         user={user}
       />
+
+      {/* Post-Purchase Success Dialog */}
+      <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 max-w-lg">
+          <div className="text-center py-4">
+            {/* Success Animation */}
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-green-500/20 to-green-600/10 border border-green-500/30 flex items-center justify-center">
+              <PartyPopper className="w-10 h-10 text-green-400" />
+            </div>
+
+            <h2 className="text-2xl font-bold text-white mb-2">
+              Nest Purchased! 🎉
+            </h2>
+            <p className="text-zinc-400 mb-6">
+              <span className="text-white font-medium">{purchasedNestInfo?.itemCount?.toLocaleString()}</span> candidates
+              from <span className="text-white font-medium">{purchasedNestInfo?.name}</span> have been added to your talent pool.
+            </p>
+
+            {/* Intel Processing Notice */}
+            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 mb-6 text-left">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-amber-500/20 flex-shrink-0">
+                  <Brain className="w-5 h-5 text-amber-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-amber-400 mb-1">SYNC Intel Processing</p>
+                  <p className="text-xs text-zinc-400">
+                    We're analyzing each candidate's profile to generate intelligence insights,
+                    match scores, and personalized outreach angles. This runs in the background.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Next Steps */}
+            <div className="space-y-3">
+              <p className="text-sm text-zinc-500 font-medium mb-3">What would you like to do next?</p>
+
+              {/* Primary CTA - Create Campaign */}
+              <Button
+                onClick={handleCreateCampaign}
+                className="w-full h-12 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium"
+              >
+                <Megaphone className="w-5 h-5 mr-2" />
+                Create Matching Campaign
+                <ChevronRight className="w-4 h-4 ml-2" />
+              </Button>
+              <p className="text-xs text-zinc-500">
+                Match these candidates to your open roles and generate personalized outreach
+              </p>
+
+              {/* Secondary CTA - View Candidates */}
+              <Button
+                onClick={handleViewCandidatesFromSuccess}
+                variant="outline"
+                className="w-full h-11 border-zinc-700 text-white hover:bg-zinc-800"
+              >
+                <Users className="w-4 h-4 mr-2" />
+                View Candidates First
+              </Button>
+
+              {/* Skip for now */}
+              <button
+                onClick={() => setShowSuccessDialog(false)}
+                className="text-sm text-zinc-500 hover:text-zinc-400 mt-2"
+              >
+                I'll do this later
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -48,11 +48,14 @@ import {
   Download,
   Loader2,
   Upload,
+  Megaphone,
+  Package,
+  Zap,
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { AddCandidateModal, EditCandidateModal, CandidateImportModal } from "@/components/talent";
-import { IntelligenceGauge, IntelligenceLevelBadge, ApproachBadge } from "@/components/talent/IntelligenceGauge";
+import { IntelligenceGauge, IntelligenceLevelBadge, ApproachBadge, IntelStatusBadge } from "@/components/talent/IntelligenceGauge";
 
 // Animation variants
 const containerVariants = {
@@ -211,6 +214,11 @@ const CandidateCard = ({ candidate, isSelected, onToggle, onClick, onEdit }) => 
           <div className="flex items-center gap-2">
             <IntelligenceLevelBadge level={candidate.intelligence_level || "Low"} />
             <ApproachBadge approach={candidate.recommended_approach || "nurture"} />
+            <IntelStatusBadge
+              lastIntelUpdate={candidate.last_intelligence_update}
+              intelligenceScore={candidate.intelligence_score}
+              size="sm"
+            />
           </div>
           <button
             onClick={(e) => {
@@ -260,6 +268,13 @@ const CandidateRow = ({ candidate, isSelected, onToggle, onClick, onEdit }) => {
       </td>
       <td className="py-1 px-2" onClick={onClick}>
         <ApproachBadge approach={candidate.recommended_approach || "nurture"} size="xs" />
+      </td>
+      <td className="py-1 px-2" onClick={onClick}>
+        <IntelStatusBadge
+          lastIntelUpdate={candidate.last_intelligence_update}
+          intelligenceScore={candidate.intelligence_score}
+          size="xs"
+        />
       </td>
       <td className="py-1 px-2 text-white/50 text-[11px] truncate max-w-[150px]" onClick={onClick}>
         {candidate.person_home_location || "—"}
@@ -749,6 +764,7 @@ export default function TalentCandidates() {
                   <th className="text-left py-1.5 px-2 text-[10px] font-medium text-white/40 uppercase tracking-wider">Position</th>
                   <th className="text-left py-1.5 px-2 text-[10px] font-medium text-white/40 uppercase tracking-wider">Score</th>
                   <th className="text-left py-1.5 px-2 text-[10px] font-medium text-white/40 uppercase tracking-wider">Approach</th>
+                  <th className="text-left py-1.5 px-2 text-[10px] font-medium text-white/40 uppercase tracking-wider">Intel</th>
                   <th className="text-left py-1.5 px-2 text-[10px] font-medium text-white/40 uppercase tracking-wider">Location</th>
                   <th className="text-left py-1.5 px-2 text-[10px] font-medium text-white/40 uppercase tracking-wider w-12"></th>
                 </tr>
@@ -778,13 +794,55 @@ export default function TalentCandidates() {
           <p className="text-white/60 mb-6">
             {searchQuery || Object.values(filters).some(Boolean)
               ? "Try adjusting your filters or search query"
-              : "Start building your talent pool by adding candidates"}
+              : "Start building your talent pool by purchasing a talent nest"}
           </p>
-          <Button onClick={() => setShowAddModal(true)} className="bg-red-500 hover:bg-red-600">
-            <Plus className="w-4 h-4 mr-2" />
-            Add First Candidate
-          </Button>
+          <div className="flex justify-center gap-3">
+            <Button onClick={() => setShowAddModal(true)} variant="outline" className="border-zinc-700">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Manually
+            </Button>
+            <Button onClick={() => navigate(createPageUrl("TalentNests"))} className="bg-red-500 hover:bg-red-600">
+              <Package className="w-4 h-4 mr-2" />
+              Browse Talent Nests
+            </Button>
+          </div>
         </GlassCard>
+      )}
+
+      {/* Flow Continuity CTA - Show campaign suggestion when candidates with intel exist */}
+      {filteredCandidates.length > 0 && (
+        (() => {
+          const readyCandidates = candidates.filter(c => c.last_intelligence_update && c.intelligence_score != null);
+          if (readyCandidates.length >= 3) {
+            return (
+              <div className="p-4 rounded-xl bg-gradient-to-r from-cyan-500/10 to-red-500/10 border border-cyan-500/20">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-cyan-500/20">
+                      <Zap className="w-5 h-5 text-cyan-400" />
+                    </div>
+                    <div>
+                      <p className="text-white font-medium">
+                        {readyCandidates.length} candidates with Intel Ready
+                      </p>
+                      <p className="text-zinc-400 text-sm">
+                        Launch a campaign to match these candidates to your open roles
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => navigate(createPageUrl("TalentCampaigns") + "?action=new")}
+                    className="bg-red-500 hover:bg-red-600"
+                  >
+                    <Megaphone className="w-4 h-4 mr-2" />
+                    Create Campaign
+                  </Button>
+                </div>
+              </div>
+            );
+          }
+          return null;
+        })()
       )}
 
       {/* Pagination */}

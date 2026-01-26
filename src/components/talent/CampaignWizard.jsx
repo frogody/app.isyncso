@@ -43,6 +43,8 @@ import {
   Star,
   Building,
   MapPin,
+  Package,
+  Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -53,7 +55,7 @@ const STEPS = [
   { id: 4, title: "Review & Launch", icon: Sparkles },
 ];
 
-export default function CampaignWizard({ open, onOpenChange, onComplete }) {
+export default function CampaignWizard({ open, onOpenChange, onComplete, nestContext }) {
   const { user } = useUser();
   const navigate = useNavigate();
 
@@ -239,20 +241,27 @@ export default function CampaignWizard({ open, onOpenChange, onComplete }) {
 
     setCreating(true);
     try {
+      const campaignData = {
+        organization_id: user.organization_id,
+        created_by: user.id,
+        name: campaignName,
+        project_id: selectedProject?.id,
+        role_id: selectedRole?.id,
+        campaign_type: campaignType,
+        status: "draft",
+        role_context: roleContext,
+        auto_match_enabled: true,
+        min_match_score: 30,
+      };
+
+      // If coming from a nest purchase, link the nest
+      if (nestContext?.id) {
+        campaignData.nest_id = nestContext.id;
+      }
+
       const { data, error } = await supabase
         .from("campaigns")
-        .insert({
-          organization_id: user.organization_id,
-          created_by: user.id,
-          name: campaignName,
-          project_id: selectedProject?.id,
-          role_id: selectedRole?.id,
-          campaign_type: campaignType,
-          status: "draft",
-          role_context: roleContext,
-          auto_match_enabled: true,
-          min_match_score: 30,
-        })
+        .insert(campaignData)
         .select()
         .single();
 
@@ -713,6 +722,27 @@ export default function CampaignWizard({ open, onOpenChange, onComplete }) {
                     Ready to find perfect matches for this role
                   </p>
                 </div>
+
+                {/* Nest Context Banner - shown when coming from nest purchase */}
+                {nestContext && (
+                  <div className="p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/30">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-cyan-500/20">
+                        <Package className="w-5 h-5 text-cyan-400" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-cyan-400">Sourcing from Nest</span>
+                          <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 text-[10px]">
+                            <Zap className="w-3 h-3 mr-1" />
+                            Intel Active
+                          </Badge>
+                        </div>
+                        <p className="text-white text-sm font-medium">{nestContext.name}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Summary */}
                 <div className="grid grid-cols-2 gap-3">

@@ -50,7 +50,7 @@ import {
   ArrowRight,
   Loader2,
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
 // Animation variants
@@ -429,6 +429,7 @@ const CreateCampaignModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
 export default function TalentCampaigns() {
   const { user } = useUser();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -438,6 +439,30 @@ export default function TalentCampaigns() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deletingCampaign, setDeletingCampaign] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Nest context from URL params (when coming from nest purchase)
+  const [nestContext, setNestContext] = useState(null);
+
+  // Check for action=new URL param to auto-open wizard with nest context
+  useEffect(() => {
+    const action = searchParams.get("action");
+    const nestId = searchParams.get("nestId");
+    const nestName = searchParams.get("nestName");
+
+    if (action === "new") {
+      // If coming from a nest, set the context
+      if (nestId && nestName) {
+        setNestContext({
+          id: nestId,
+          name: decodeURIComponent(nestName),
+        });
+      }
+      // Auto-open the wizard
+      setShowCreateModal(true);
+      // Clear the URL params to prevent re-opening on refresh
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     fetchCampaigns();
@@ -807,9 +832,17 @@ export default function TalentCampaigns() {
       {/* Campaign Creation Wizard */}
       <CampaignWizard
         open={showCreateModal}
-        onOpenChange={setShowCreateModal}
+        onOpenChange={(open) => {
+          setShowCreateModal(open);
+          if (!open) {
+            // Clear nest context when wizard closes
+            setNestContext(null);
+          }
+        }}
+        nestContext={nestContext}
         onComplete={(campaign) => {
           fetchCampaigns();
+          setNestContext(null);
           navigate(`/TalentCampaignDetail?id=${campaign.id}`);
         }}
       />

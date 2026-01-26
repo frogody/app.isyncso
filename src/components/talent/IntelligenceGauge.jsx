@@ -203,4 +203,49 @@ export const ApproachBadge = ({ approach, size = "sm" }) => {
   );
 };
 
+/**
+ * IntelStatusBadge - Shows SYNC Intel processing status for a candidate
+ *
+ * @param {string} lastIntelUpdate - ISO timestamp of last intelligence update
+ * @param {number} intelligenceScore - The candidate's intelligence score (if processed)
+ * @param {string} size - Size variant: 'xs' | 'sm' | 'md'
+ */
+export const IntelStatusBadge = ({ lastIntelUpdate, intelligenceScore, size = "sm" }) => {
+  const hasIntel = !!lastIntelUpdate && intelligenceScore != null;
+
+  const sizeStyles = {
+    xs: "px-1.5 py-px text-[10px] gap-1",
+    sm: "px-2 py-0.5 text-xs gap-1.5",
+    md: "px-2.5 py-1 text-sm gap-2",
+  };
+
+  const iconSizes = {
+    xs: "w-2.5 h-2.5",
+    sm: "w-3 h-3",
+    md: "w-3.5 h-3.5",
+  };
+
+  if (hasIntel) {
+    return (
+      <span className={`inline-flex items-center rounded font-medium bg-cyan-500/20 text-cyan-400 ${sizeStyles[size]}`}>
+        <svg className={iconSizes[size]} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" strokeLinecap="round" strokeLinejoin="round"/>
+          <polyline points="22 4 12 14.01 9 11.01" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        Intel Ready
+      </span>
+    );
+  }
+
+  return (
+    <span className={`inline-flex items-center rounded font-medium bg-zinc-500/20 text-zinc-400 ${sizeStyles[size]}`}>
+      <svg className={`${iconSizes[size]} animate-pulse`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="12" cy="12" r="10" strokeLinecap="round" strokeLinejoin="round"/>
+        <polyline points="12 6 12 12 16 14" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+      Pending
+    </span>
+  );
+};
+
 export default IntelligenceGauge;
