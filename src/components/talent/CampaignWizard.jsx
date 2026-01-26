@@ -96,14 +96,14 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
 
   // Fetch projects
   const fetchProjects = useCallback(async () => {
-    if (!user?.company_id) return;
+    if (!user?.organization_id) return;
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from("projects")
-        .select("*, client:client_id(name)")
+        .select("*")
         .eq("organization_id", user.organization_id)
-        .order("created_at", { ascending: false });
+        .order("created_date", { ascending: false });
 
       if (error) throw error;
       setProjects(data || []);
@@ -113,7 +113,7 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
     } finally {
       setLoading(false);
     }
-  }, [user?.company_id]);
+  }, [user?.organization_id]);
 
   // Fetch roles for selected project
   const fetchRoles = useCallback(async () => {
@@ -127,7 +127,7 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
         .from("roles")
         .select("*")
         .eq("project_id", selectedProject.id)
-        .order("created_at", { ascending: false });
+        .order("created_date", { ascending: false });
 
       if (error) throw error;
       setRoles(data || []);
