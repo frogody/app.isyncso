@@ -39,3 +39,6 @@ export { default as CandidateDetailDrawer } from './CandidateDetailDrawer';
 // Bulk Operations
 export { default as BulkActionBar } from './BulkActionBar';
 export { default as AddToCampaignModal } from './AddToCampaignModal';
+
+// Search & Filtering
+export { default as SearchFilterBar } from './SearchFilterBar';

@@ -20,27 +20,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Users,
-  Search,
-  Filter,
-  ChevronDown,
-  ChevronUp,
   Grid3X3,
   List,
   Building2,
   MapPin,
-  Mail,
-  Phone,
-  Calendar,
-  TrendingUp,
-  AlertTriangle,
-  Clock,
-  ArrowRight,
-  ExternalLink,
-  MoreHorizontal,
   Eye,
-  MessageSquare,
-  Star,
-  StarOff,
   RefreshCw,
   Plus,
   Edit,
@@ -51,11 +35,13 @@ import {
   Megaphone,
   Package,
   Zap,
+  AlertTriangle,
 } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { AddCandidateModal, EditCandidateModal, CandidateImportModal, CandidateDetailDrawer, BulkActionBar, AddToCampaignModal } from "@/components/talent";
+import { AddCandidateModal, EditCandidateModal, CandidateImportModal, CandidateDetailDrawer, BulkActionBar, AddToCampaignModal, SearchFilterBar } from "@/components/talent";
 import { IntelligenceGauge, IntelligenceLevelBadge, ApproachBadge, IntelStatusBadge } from "@/components/talent/IntelligenceGauge";
+import { useCandidateFilters, extractFilterOptions, countActiveFilters, getDefaultFilters } from "@/hooks/useCandidateFilters";
 
 // Animation variants
 const containerVariants = {
@@ -120,53 +106,6 @@ const CandidateAvatar = ({ name, image, size = "md" }) => {
       className={`${sizes[size]} rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center font-medium text-white ring-2 ring-white/10`}
     >
       {initials}
-    </div>
-  );
-};
-
-// Filter Dropdown
-const FilterDropdown = ({ label, value, options, onChange, icon: Icon }) => {
-  const [isOpen, setIsOpen] = useState(false);
-
-  return (
-    <div className="relative">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white/70 hover:bg-white/10 transition-colors"
-      >
-        {Icon && <Icon className="w-4 h-4" />}
-        <span>{value || label}</span>
-        <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
-      </button>
-
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="absolute top-full left-0 mt-1 w-48 bg-slate-800 border border-white/10 rounded-lg shadow-xl z-20 overflow-hidden"
-            >
-              {options.map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => {
-                    onChange(option.value);
-                    setIsOpen(false);
-                  }}
-                  className={`w-full px-4 py-2 text-left text-sm hover:bg-white/10 transition-colors ${
-                    value === option.value ? "bg-red-500/20 text-red-400" : "text-white/70"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
     </div>
   );
 };
@@ -312,15 +251,15 @@ export default function TalentCandidates() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState("table");
-  const [filters, setFilters] = useState({
-    intelligenceLevel: "",
-    approach: "",
-    urgency: "",
-  });
+  const [filters, setFilters] = useState(getDefaultFilters());
   const [sortBy, setSortBy] = useState("intelligence_score");
   const [sortOrder, setSortOrder] = useState("desc");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 12;
+  const itemsPerPage = 24;
+
+  // Extract filter options from candidates
+  const filterOptions = useMemo(() => extractFilterOptions(candidates), [candidates]);
+  const activeFilterCount = countActiveFilters(filters);
 
   // Selection state
   const [selectedIds, setSelectedIds] = useState(new Set());
@@ -369,39 +308,12 @@ export default function TalentCandidates() {
     }
   };
 
+  // Use the smart filtering hook
+  const baseFilteredCandidates = useCandidateFilters(candidates, searchQuery, filters);
+
+  // Apply sorting to filtered results
   const filteredCandidates = useMemo(() => {
-    let result = [...candidates];
-
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
-        (c) =>
-          `${c.first_name} ${c.last_name}`.toLowerCase().includes(query) ||
-          c.email?.toLowerCase().includes(query) ||
-          c.company_name?.toLowerCase().includes(query) ||
-          c.job_title?.toLowerCase().includes(query)
-      );
-    }
-
-    // Intelligence level filter
-    if (filters.intelligenceLevel) {
-      result = result.filter((c) => 
-        c.intelligence_level?.toLowerCase() === filters.intelligenceLevel.toLowerCase()
-      );
-    }
-
-    // Approach filter
-    if (filters.approach) {
-      result = result.filter((c) => c.recommended_approach === filters.approach);
-    }
-
-    // Urgency filter
-    if (filters.urgency) {
-      result = result.filter((c) => 
-        c.urgency?.toLowerCase() === filters.urgency.toLowerCase()
-      );
-    }
+    const result = [...baseFilteredCandidates];
 
     // Sorting
     result.sort((a, b) => {
@@ -417,7 +329,12 @@ export default function TalentCandidates() {
     });
 
     return result;
-  }, [candidates, searchQuery, filters, sortBy, sortOrder]);
+  }, [baseFilteredCandidates, sortBy, sortOrder]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filters]);
 
   const paginatedCandidates = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
@@ -573,31 +490,6 @@ export default function TalentCandidates() {
     setCandidates((prev) => prev.filter((c) => c.id !== deletedId));
   };
 
-  const intelligenceLevelOptions = [
-    { value: "", label: "All Levels" },
-    { value: "critical", label: "Critical" },
-    { value: "high", label: "High" },
-    { value: "medium", label: "Medium" },
-    { value: "low", label: "Low" },
-  ];
-
-  const approachOptions = [
-    { value: "", label: "All Approaches" },
-    { value: "direct", label: "Direct" },
-    { value: "warm_intro", label: "Warm Intro" },
-    { value: "referral", label: "Referral" },
-    { value: "inbound", label: "Inbound" },
-    { value: "event", label: "Event" },
-  ];
-
-  const urgencyOptions = [
-    { value: "", label: "All Urgency" },
-    { value: "urgent", label: "Urgent" },
-    { value: "high", label: "High" },
-    { value: "medium", label: "Medium" },
-    { value: "low", label: "Low" },
-  ];
-
   if (loading) {
     return (
       <div className="min-h-screen bg-black relative">
@@ -645,54 +537,54 @@ export default function TalentCandidates() {
         </div>
       </div>
 
-      {/* Filters Bar */}
-      <GlassCard className="p-3">
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Search */}
-          <div className="flex-1 min-w-[200px]">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
-              <input
-                type="text"
-                placeholder="Search candidates..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-1.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-white/40 focus:outline-none focus:border-red-500/50"
-              />
-            </div>
+      {/* Smart Search & Filters */}
+      <SearchFilterBar
+        onSearch={setSearchQuery}
+        onFiltersChange={setFilters}
+        availableFilters={filterOptions}
+        activeFilterCount={activeFilterCount}
+        placeholder="Search by name, title, company, skills..."
+        showIntelFilters={true}
+      />
+
+      {/* Results summary and view controls */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <p className="text-sm text-zinc-400">
+            Showing {filteredCandidates.length} of {candidates.length} candidates
+            {activeFilterCount > 0 && (
+              <button
+                onClick={() => setFilters(getDefaultFilters())}
+                className="ml-2 text-red-400 hover:text-red-300"
+              >
+                Clear filters
+              </button>
+            )}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={selectAllVisible}
+              className="text-zinc-400 hover:text-white"
+            >
+              Select Page
+            </Button>
+            {selectedIds.size > 0 && (
+              <span className="text-sm text-red-400">
+                {selectedIds.size} selected
+              </span>
+            )}
           </div>
+        </div>
 
-          {/* Filters */}
-          <FilterDropdown
-            label="Intelligence Level"
-            value={filters.intelligenceLevel || "All Levels"}
-            options={intelligenceLevelOptions}
-            onChange={(val) => setFilters((f) => ({ ...f, intelligenceLevel: val }))}
-            icon={AlertTriangle}
-          />
-
-          <FilterDropdown
-            label="Approach"
-            value={filters.approach || "All Approaches"}
-            options={approachOptions}
-            onChange={(val) => setFilters((f) => ({ ...f, approach: val }))}
-            icon={TrendingUp}
-          />
-
-          <FilterDropdown
-            label="Urgency"
-            value={filters.urgency || "All Urgency"}
-            options={urgencyOptions}
-            onChange={(val) => setFilters((f) => ({ ...f, urgency: val }))}
-            icon={Clock}
-          />
-
+        <div className="flex items-center gap-2">
           {/* View Toggle */}
-          <div className="flex items-center gap-1 bg-white/5 rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-zinc-800 rounded-lg p-1">
             <button
               onClick={() => setViewMode("grid")}
               className={`p-2 rounded-lg transition-colors ${
-                viewMode === "grid" ? "bg-red-500/20 text-red-400" : "text-white/60 hover:text-white"
+                viewMode === "grid" ? "bg-red-500/20 text-red-400" : "text-zinc-400 hover:text-white"
               }`}
             >
               <Grid3X3 className="w-4 h-4" />
@@ -700,7 +592,7 @@ export default function TalentCandidates() {
             <button
               onClick={() => setViewMode("table")}
               className={`p-2 rounded-lg transition-colors ${
-                viewMode === "table" ? "bg-red-500/20 text-red-400" : "text-white/60 hover:text-white"
+                viewMode === "table" ? "bg-red-500/20 text-red-400" : "text-zinc-400 hover:text-white"
               }`}
             >
               <List className="w-4 h-4" />
@@ -712,67 +604,11 @@ export default function TalentCandidates() {
             variant="ghost"
             size="icon"
             onClick={fetchCandidates}
-            className="h-8 w-8 text-white/60 hover:text-white hover:bg-white/10"
+            className="h-9 w-9 text-zinc-400 hover:text-white hover:bg-zinc-800"
           >
             <RefreshCw className="w-4 h-4" />
           </Button>
         </div>
-
-        {/* Bulk Actions */}
-        {selectedIds.size > 0 && (
-          <div className="flex items-center gap-3 mt-4 pt-4 border-t border-white/10">
-            <span className="text-sm text-white/60">
-              {selectedIds.size} selected
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={deselectAll}
-              className="border-zinc-700"
-            >
-              Deselect
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportCSV}
-              className="border-zinc-700"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Export
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowDeleteDialog(true)}
-              className="border-red-500/30 text-red-400 hover:bg-red-500/10"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete
-            </Button>
-          </div>
-        )}
-      </GlassCard>
-
-      {/* Quick Actions */}
-      <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={selectAllVisible}
-          className="text-zinc-400 hover:text-white"
-        >
-          Select Page
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleExportCSV}
-          className="text-zinc-400 hover:text-white"
-        >
-          <Download className="w-4 h-4 mr-2" />
-          Export All
-        </Button>
       </div>
 
       {/* Candidates Display */}
