@@ -50,6 +50,8 @@ import {
   Send,
   Eye,
   Sparkles,
+  Package,
+  ExternalLink,
 } from "lucide-react";
 import { createPageUrl } from "@/utils";
 
@@ -106,7 +108,7 @@ const TypeBadge = ({ type }) => {
 };
 
 // Overview Tab Component
-const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching }) => {
+const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching, linkedNest, nestCandidates }) => {
   const matchedCandidates = campaign?.matched_candidates || [];
   const [showAllCandidates, setShowAllCandidates] = useState(false);
 
@@ -118,6 +120,60 @@ const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching }) =
 
   return (
     <div className="space-y-6">
+      {/* Linked Nest Banner */}
+      {linkedNest && (
+        <div className="p-4 rounded-xl bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-cyan-500/20 rounded-xl">
+                <Package className="w-6 h-6 text-cyan-400" />
+              </div>
+              <div>
+                <p className="text-xs text-cyan-400 uppercase tracking-wider font-medium">Sourcing from Nest</p>
+                <p className="text-lg font-semibold text-white">{linkedNest.name}</p>
+                <p className="text-sm text-zinc-400">
+                  {nestCandidates.length} candidates available for matching
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Link
+                to={`${createPageUrl("TalentNestDetail")}?id=${linkedNest.id}`}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 text-zinc-300 hover:text-white transition-colors text-sm"
+              >
+                <ExternalLink className="w-4 h-4" />
+                View Nest
+              </Link>
+              <Button
+                onClick={onRunMatching}
+                disabled={isMatching || nestCandidates.length === 0}
+                className="bg-red-500 hover:bg-red-600"
+              >
+                {isMatching ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Matching...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Run AI Matching
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+          {nestCandidates.length > 0 && matchedCandidates.length === 0 && (
+            <div className="mt-3 p-3 rounded-lg bg-zinc-800/30 border border-zinc-700/50">
+              <p className="text-sm text-zinc-400">
+                <Sparkles className="w-4 h-4 inline mr-2 text-red-400" />
+                Click "Run AI Matching" to analyze {nestCandidates.length} candidates against your role context and find the best fits.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Campaign Summary */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Campaign Info */}
@@ -174,7 +230,8 @@ const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching }) =
                 <Sparkles className="w-5 h-5 text-red-400" />
                 Matched Candidates ({matchedCandidates.length})
               </h3>
-              {(formData.project_id || formData.role_id) && (
+              {/* Show button if we have something to match against (not shown if nest banner already has button) */}
+              {!linkedNest && (formData.project_id || formData.role_id || campaign?.role_context) && (
                 <Button
                   size="sm"
                   variant="outline"
@@ -255,7 +312,11 @@ const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching }) =
               <div className="text-center py-8">
                 <Users className="w-10 h-10 text-zinc-700 mx-auto mb-3" />
                 <p className="text-zinc-500 mb-2">No matched candidates yet</p>
-                {formData.project_id || formData.role_id ? (
+                {linkedNest ? (
+                  <p className="text-xs text-zinc-600">
+                    Click "Run AI Matching" above to analyze {nestCandidates.length} candidates from your nest
+                  </p>
+                ) : formData.project_id || formData.role_id || campaign?.role_context ? (
                   <p className="text-xs text-zinc-600">
                     Click "Run Matching" or activate the campaign to find matches
                   </p>
@@ -800,11 +861,14 @@ export default function TalentCampaignDetail() {
     matched_candidates: [],
     project_id: null,
     role_id: null,
+    nest_id: null,
     auto_match_enabled: true,
     min_match_score: 30,
   });
 
   const [isMatching, setIsMatching] = useState(false);
+  const [linkedNest, setLinkedNest] = useState(null);
+  const [nestCandidates, setNestCandidates] = useState([]);
 
   // Fetch projects and roles for selection
   useEffect(() => {
@@ -834,6 +898,53 @@ export default function TalentCampaignDetail() {
       if (rolesRes.data) setRoles(rolesRes.data);
     } catch (error) {
       console.error("Error fetching projects/roles:", error);
+    }
+  };
+
+  // Fetch linked nest when campaign has nest_id
+  useEffect(() => {
+    if (campaign?.nest_id && user?.organization_id) {
+      fetchLinkedNest(campaign.nest_id);
+    } else {
+      setLinkedNest(null);
+      setNestCandidates([]);
+    }
+  }, [campaign?.nest_id, user?.organization_id]);
+
+  const fetchLinkedNest = async (nestId) => {
+    try {
+      // Fetch the nest details
+      const { data: nest, error: nestError } = await supabase
+        .from("nests")
+        .select("id, name, description, nest_type, category")
+        .eq("id", nestId)
+        .single();
+
+      if (nestError) {
+        console.error("Error fetching nest:", nestError);
+        return;
+      }
+
+      setLinkedNest(nest);
+
+      // Fetch candidates from this nest that belong to the organization
+      // Candidates from nest purchases have import_source: 'nest:{nestId}'
+      const { data: candidates, error: candidatesError } = await supabase
+        .from("candidates")
+        .select("id, name, first_name, last_name, current_title, job_title, current_company, company_name, skills, intelligence_score, intelligence_level")
+        .eq("organization_id", user.organization_id)
+        .eq("import_source", `nest:${nestId}`)
+        .limit(500);
+
+      if (candidatesError) {
+        console.error("Error fetching nest candidates:", candidatesError);
+        setNestCandidates([]);
+        return;
+      }
+
+      setNestCandidates(candidates || []);
+    } catch (error) {
+      console.error("Error fetching linked nest:", error);
     }
   };
 
@@ -873,6 +984,7 @@ export default function TalentCampaignDetail() {
         matched_candidates: data.matched_candidates || [],
         project_id: data.project_id || null,
         role_id: data.role_id || null,
+        nest_id: data.nest_id || null,
         auto_match_enabled: data.auto_match_enabled !== false, // Default true
         min_match_score: data.min_match_score || 30,
       });
@@ -941,14 +1053,22 @@ export default function TalentCampaignDetail() {
     }
   };
 
-  // Run auto-matching against linked project/role
+  // Run auto-matching against linked project/role or nest candidates
   const runAutoMatching = async (campaignData) => {
     const targetCampaign = campaignData || campaign;
     if (!targetCampaign?.id) return;
 
-    // Must have project or role to match against
-    if (!targetCampaign.project_id && !targetCampaign.role_id) {
-      console.log("No project/role linked - skipping auto-match");
+    // Must have something to match against (project, role, or role_context from campaign wizard)
+    const hasMatchTarget = targetCampaign.project_id || targetCampaign.role_id || targetCampaign.role_context;
+
+    if (!hasMatchTarget) {
+      toast.error("Please configure role context in Settings before running matching");
+      return;
+    }
+
+    // If we have nest candidates but none are loaded yet, show a message
+    if (targetCampaign.nest_id && nestCandidates.length === 0) {
+      toast.info("No candidates found from the linked nest. Please sync the nest first.");
       return;
     }
 
@@ -967,8 +1087,11 @@ export default function TalentCampaignDetail() {
             organization_id: user.organization_id,
             project_id: targetCampaign.project_id || undefined,
             role_id: targetCampaign.role_id || undefined,
+            role_context: targetCampaign.role_context || undefined,
             min_score: targetCampaign.min_match_score || 30,
             limit: 100,
+            // Pass nest info for logging/context
+            nest_id: targetCampaign.nest_id || undefined,
           }),
         }
       );
@@ -1000,13 +1123,14 @@ export default function TalentCampaignDetail() {
         setCampaign((prev) => prev ? { ...prev, matched_candidates: updatedMatches } : null);
         setFormData((prev) => ({ ...prev, matched_candidates: updatedMatches }));
 
-        toast.success(`Auto-matched ${result.matched_candidates.length} candidates`);
+        const sourceInfo = linkedNest ? ` from "${linkedNest.name}"` : "";
+        toast.success(`Found ${result.matched_candidates.length} matching candidates${sourceInfo}!`);
       } else {
-        toast.info("No matching candidates found");
+        toast.info("No matching candidates found. Try adjusting your role context criteria.");
       }
     } catch (error) {
       console.error("Auto-matching error:", error);
-      // Don't show error toast for background matching
+      toast.error("Matching failed. Please try again.");
     } finally {
       setIsMatching(false);
     }
@@ -1263,6 +1387,8 @@ export default function TalentCampaignDetail() {
                 stats={stats}
                 onRunMatching={() => runAutoMatching(campaign)}
                 isMatching={isMatching}
+                linkedNest={linkedNest}
+                nestCandidates={nestCandidates}
               />
             </TabsContent>
           )}
