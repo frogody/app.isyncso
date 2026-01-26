@@ -293,6 +293,37 @@ export default function TalentCandidates() {
     remove: false,
   });
 
+  // Use the smart filtering hook - MUST be defined before useShortcut hooks that depend on paginatedCandidates
+  const baseFilteredCandidates = useCandidateFilters(candidates, searchQuery, filters);
+
+  // Apply sorting to filtered results
+  const filteredCandidates = useMemo(() => {
+    const result = [...baseFilteredCandidates];
+
+    // Sorting
+    result.sort((a, b) => {
+      let aVal = a[sortBy];
+      let bVal = b[sortBy];
+
+      if (typeof aVal === "string") aVal = aVal?.toLowerCase() || "";
+      if (typeof bVal === "string") bVal = bVal?.toLowerCase() || "";
+
+      if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return result;
+  }, [baseFilteredCandidates, sortBy, sortOrder]);
+
+  // Paginated candidates - MUST be defined before useShortcut hooks
+  const paginatedCandidates = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredCandidates.slice(start, start + itemsPerPage);
+  }, [filteredCandidates, currentPage]);
+
+  const totalPages = Math.ceil(filteredCandidates.length / itemsPerPage);
+
   // Scroll focused item into view
   const scrollFocusedIntoView = useCallback((index) => {
     if (index < 0) return;
@@ -424,40 +455,10 @@ export default function TalentCandidates() {
     }
   };
 
-  // Use the smart filtering hook
-  const baseFilteredCandidates = useCandidateFilters(candidates, searchQuery, filters);
-
-  // Apply sorting to filtered results
-  const filteredCandidates = useMemo(() => {
-    const result = [...baseFilteredCandidates];
-
-    // Sorting
-    result.sort((a, b) => {
-      let aVal = a[sortBy];
-      let bVal = b[sortBy];
-
-      if (typeof aVal === "string") aVal = aVal?.toLowerCase() || "";
-      if (typeof bVal === "string") bVal = bVal?.toLowerCase() || "";
-
-      if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
-      if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
-      return 0;
-    });
-
-    return result;
-  }, [baseFilteredCandidates, sortBy, sortOrder]);
-
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, filters]);
-
-  const paginatedCandidates = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredCandidates.slice(start, start + itemsPerPage);
-  }, [filteredCandidates, currentPage]);
-
-  const totalPages = Math.ceil(filteredCandidates.length / itemsPerPage);
 
   const handleCandidateClick = (candidate) => {
     setDrawerCandidateId(candidate.id);
