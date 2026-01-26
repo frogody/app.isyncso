@@ -55,3 +55,4 @@ export { default as TalentOnboardingChecklist } from './TalentOnboardingChecklis
 // Dashboard Widgets
 export { default as ReadyForOutreachWidget } from './ReadyForOutreachWidget';
 export { default as TalentActivityFeed } from './TalentActivityFeed';
+export { default as IntelligenceQueueWidget } from './IntelligenceQueueWidget';

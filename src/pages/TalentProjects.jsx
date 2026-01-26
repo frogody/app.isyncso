@@ -88,7 +88,7 @@ import {
   AlertCircle,
   Rocket,
 } from "lucide-react";
-import { TalentOnboardingChecklist, ReadyForOutreachWidget, TalentActivityFeed } from "@/components/talent";
+import { TalentOnboardingChecklist, ReadyForOutreachWidget, TalentActivityFeed, IntelligenceQueueWidget } from "@/components/talent";
 
 
 // ============================================================================
@@ -2098,6 +2098,9 @@ export default function TalentProjects() {
               <ReadyForOutreachWidget
                 organizationId={user?.organization_id}
                 onRefresh={fetchData}
+              />
+              <IntelligenceQueueWidget
+                organizationId={user?.organization_id}
               />
               <TalentActivityFeed
                 organizationId={user?.organization_id}
