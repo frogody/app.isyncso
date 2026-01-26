@@ -51,3 +51,6 @@ export { default as LinkNestToRoleModal } from './LinkNestToRoleModal';
 
 // Onboarding
 export { default as TalentOnboardingChecklist } from './TalentOnboardingChecklist';
+
+// Dashboard Widgets
+export { default as ReadyForOutreachWidget } from './ReadyForOutreachWidget';

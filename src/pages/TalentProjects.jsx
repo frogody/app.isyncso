@@ -88,7 +88,7 @@ import {
   AlertCircle,
   Rocket,
 } from "lucide-react";
-import { TalentOnboardingChecklist } from "@/components/talent";
+import { TalentOnboardingChecklist, ReadyForOutreachWidget } from "@/components/talent";
 
 
 // ============================================================================
@@ -1961,8 +1961,12 @@ export default function TalentProjects() {
           </motion.div>
         </motion.div>
 
-        {/* Enhanced Filters */}
-        <div className="space-y-2">
+        {/* Main Content with Sidebar */}
+        <div className="flex flex-col lg:flex-row gap-4">
+          {/* Left Column - Filters and Projects */}
+          <div className="flex-1 min-w-0 space-y-4">
+            {/* Enhanced Filters */}
+            <div className="space-y-2">
           {/* Quick Filter Chips - Click to filter by client */}
           {clients.length > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
@@ -2086,6 +2090,18 @@ export default function TalentProjects() {
             ))
           )}
         </motion.div>
+          </div>
+
+          {/* Right Column - Ready for Outreach Widget */}
+          <div className="lg:w-80 flex-shrink-0">
+            <div className="lg:sticky lg:top-4">
+              <ReadyForOutreachWidget
+                organizationId={user?.organization_id}
+                onRefresh={fetchData}
+              />
+            </div>
+          </div>
+        </div>
 
         {/* Roles Panel */}
         <RolesPanel
