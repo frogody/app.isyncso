@@ -54,7 +54,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { AddCandidateModal, EditCandidateModal, CandidateImportModal, CandidateDetailDrawer } from "@/components/talent";
+import { AddCandidateModal, EditCandidateModal, CandidateImportModal, CandidateDetailDrawer, BulkActionBar, AddToCampaignModal } from "@/components/talent";
 import { IntelligenceGauge, IntelligenceLevelBadge, ApproachBadge, IntelStatusBadge } from "@/components/talent/IntelligenceGauge";
 
 // Animation variants
@@ -331,9 +331,18 @@ export default function TalentCandidates() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [editingCandidate, setEditingCandidate] = useState(null);
+  const [showAddToCampaignModal, setShowAddToCampaignModal] = useState(false);
 
   // Drawer state
   const [drawerCandidateId, setDrawerCandidateId] = useState(null);
+
+  // Bulk operations loading state
+  const [bulkLoading, setBulkLoading] = useState({
+    addToCampaign: false,
+    runIntel: false,
+    export: false,
+    remove: false,
+  });
 
   useEffect(() => {
     fetchCandidates();
@@ -510,6 +519,44 @@ export default function TalentCandidates() {
     a.click();
     URL.revokeObjectURL(url);
     toast.success(`Exported ${dataToExport.length} candidate(s)`);
+  };
+
+  const handleBulkRunIntel = async () => {
+    if (selectedIds.size === 0) return;
+
+    setBulkLoading((prev) => ({ ...prev, runIntel: true }));
+    try {
+      const candidateIds = Array.from(selectedIds);
+
+      // Queue all selected candidates for intel processing
+      const { error } = await supabase
+        .from("sync_intel_queue")
+        .upsert(
+          candidateIds.map((id) => ({
+            candidate_id: id,
+            organization_id: user.organization_id,
+            source: "bulk_action",
+            priority: 2,
+            status: "pending",
+          })),
+          { onConflict: "candidate_id" }
+        );
+
+      if (error) throw error;
+
+      toast.success(`Queued ${candidateIds.length} candidates for Intel processing`);
+      setSelectedIds(new Set());
+    } catch (error) {
+      console.error("Error queuing intel:", error);
+      toast.error("Failed to queue candidates for Intel");
+    } finally {
+      setBulkLoading((prev) => ({ ...prev, runIntel: false }));
+    }
+  };
+
+  const handleBulkAddToCampaignSuccess = (campaignId, count) => {
+    toast.success(`Added ${count} candidates to campaign`);
+    setSelectedIds(new Set());
   };
 
   const handleAddSuccess = (newCandidate) => {
@@ -951,6 +998,28 @@ export default function TalentCandidates() {
         open={!!drawerCandidateId}
         onClose={() => setDrawerCandidateId(null)}
         candidateId={drawerCandidateId}
+      />
+
+      {/* Add to Campaign Modal */}
+      <AddToCampaignModal
+        open={showAddToCampaignModal}
+        onClose={() => setShowAddToCampaignModal(false)}
+        selectedCandidateIds={Array.from(selectedIds)}
+        onSuccess={handleBulkAddToCampaignSuccess}
+      />
+
+      {/* Bulk Action Bar */}
+      <BulkActionBar
+        selectedCount={selectedIds.size}
+        onClear={() => {
+          setSelectedIds(new Set());
+        }}
+        onAddToCampaign={() => setShowAddToCampaignModal(true)}
+        onRunIntel={handleBulkRunIntel}
+        onExport={handleExportCSV}
+        onRemove={() => setShowDeleteDialog(true)}
+        context="candidates"
+        loading={bulkLoading}
       />
       </div>
     </div>

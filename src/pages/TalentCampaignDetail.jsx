@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/dialog";
 import CampaignSequenceEditor from "@/components/campaigns/CampaignSequenceEditor";
 import CampaignMetricsPanel from "@/components/campaigns/CampaignMetricsPanel";
-import { OutreachPipeline, OutreachQueue, AnalyticsTab, CandidateDetailDrawer } from "@/components/talent";
+import { OutreachPipeline, OutreachQueue, AnalyticsTab, CandidateDetailDrawer, BulkActionBar } from "@/components/talent";
 import {
   Megaphone,
   Settings,
@@ -2380,6 +2380,38 @@ export default function TalentCampaignDetail() {
           roleName: campaign?.role_context?.role_title || campaign?.name,
           matchData: drawerMatchData,
         } : undefined}
+      />
+
+      {/* Bulk Action Bar for Match Results */}
+      <BulkActionBar
+        selectedCount={selectedCandidates.size}
+        onClear={() => setSelectedCandidates(new Set())}
+        onGenerateOutreach={handleGenerateOutreach}
+        onExport={() => {
+          const selected = (campaign?.matched_candidates || []).filter(m => selectedCandidates.has(m.candidate_id));
+          const headers = ["Name", "Title", "Company", "Match Score", "Intelligence Score", "Approach"];
+          const rows = selected.map(m => [
+            m.candidate_name,
+            m.current_title || "",
+            m.current_company || "",
+            m.match_score || "",
+            m.intelligence_score || "",
+            m.recommended_approach || "",
+          ]);
+          const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(",")).join("\n");
+          const blob = new Blob([csv], { type: "text/csv" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `campaign-matches-${campaign?.name || "export"}-${Date.now()}.csv`;
+          a.click();
+          URL.revokeObjectURL(url);
+          toast.success(`Exported ${selected.length} matches`);
+        }}
+        context="campaign_matches"
+        loading={{
+          generateOutreach: generatingOutreach,
+        }}
       />
       </motion.div>
     </div>

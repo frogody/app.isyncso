@@ -35,3 +35,7 @@ export {
 
 // Detail Drawer
 export { default as CandidateDetailDrawer } from './CandidateDetailDrawer';
+
+// Bulk Operations
+export { default as BulkActionBar } from './BulkActionBar';
+export { default as AddToCampaignModal } from './AddToCampaignModal';
