@@ -406,9 +406,9 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
                               }`} />
                             </div>
                             <div className="flex-1">
-                              <p className="font-medium text-white text-sm">{project.name}</p>
+                              <p className="font-medium text-white text-sm">{project.name || project.title}</p>
                               <p className="text-xs text-zinc-500">
-                                {project.client?.name || project.client_name || "Internal"}
+                                {project.client_company || "Internal"}
                               </p>
                             </div>
                             {selectedProject?.id === project.id && (
@@ -484,7 +484,7 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
                 <div>
                   <h2 className="text-lg font-semibold text-white">Which role are you filling?</h2>
                   <p className="text-sm text-zinc-400">
-                    Project: <span className="text-white">{selectedProject?.name}</span>
+                    Project: <span className="text-white">{selectedProject?.name || selectedProject?.title}</span>
                   </p>
                 </div>
 
@@ -751,8 +751,8 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
                       <FolderOpen className="w-4 h-4 text-zinc-400" />
                       <span className="text-xs text-zinc-500">Project</span>
                     </div>
-                    <p className="font-medium text-white text-sm">{selectedProject?.name}</p>
-                    <p className="text-xs text-zinc-500">{selectedProject?.client?.name || selectedProject?.client_name || "Internal"}</p>
+                    <p className="font-medium text-white text-sm">{selectedProject?.name || selectedProject?.title}</p>
+                    <p className="text-xs text-zinc-500">{selectedProject?.client_company || "Internal"}</p>
                   </GlassCard>
 
                   <GlassCard className="p-3">
