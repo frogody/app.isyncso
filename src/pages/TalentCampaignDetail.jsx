@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
@@ -52,6 +52,13 @@ import {
   Sparkles,
   Package,
   ExternalLink,
+  ChevronDown,
+  Plus,
+  Check,
+  AlertCircle,
+  Lightbulb,
+  Brain,
+  Filter,
 } from "lucide-react";
 import { createPageUrl } from "@/utils";
 
@@ -107,16 +114,282 @@ const TypeBadge = ({ type }) => {
   );
 };
 
+// Match Level Badge with colors
+const MatchLevelBadge = ({ level, score }) => {
+  const levelColors = {
+    Excellent: "bg-green-500/20 text-green-400 border-green-500/30",
+    Good: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+    Fair: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+    Poor: "bg-red-500/20 text-red-400 border-red-500/30",
+  };
+
+  // Derive level from score if not provided
+  const derivedLevel = level || (
+    score >= 80 ? "Excellent" :
+    score >= 60 ? "Good" :
+    score >= 40 ? "Fair" : "Poor"
+  );
+
+  return (
+    <Badge className={`border ${levelColors[derivedLevel] || levelColors.Fair}`}>
+      {derivedLevel}
+    </Badge>
+  );
+};
+
+// CandidateMatchResultCard - Detailed match display with AI reasoning
+const CandidateMatchResultCard = ({ match, isSelected, onToggleSelect }) => {
+  const [expanded, setExpanded] = useState(false);
+
+  const scoreColor = match.match_score >= 80 ? "text-green-400"
+    : match.match_score >= 60 ? "text-blue-400"
+    : match.match_score >= 40 ? "text-yellow-400"
+    : "text-red-400";
+
+  const scoreBgColor = match.match_score >= 80 ? "from-green-500 to-green-600"
+    : match.match_score >= 60 ? "from-blue-500 to-blue-600"
+    : match.match_score >= 40 ? "from-yellow-500 to-yellow-600"
+    : "from-red-500 to-red-600";
+
+  // Get current role from various possible fields
+  const currentRole = match.current_role ||
+    (match.current_title && match.current_company ? `${match.current_title} at ${match.current_company}` : null) ||
+    match.ai_analysis?.split('.')[0] ||
+    "Role not specified";
+
+  // Get key strengths - could be from match_reasons or key_strengths
+  const strengths = match.key_strengths || match.match_reasons?.slice(0, 3) || [];
+
+  // Get concerns - from potential_concerns or match_factors
+  const concerns = match.potential_concerns || [];
+
+  // Get reasoning - from reasoning field or ai_analysis
+  const reasoning = match.reasoning || match.ai_analysis || "";
+
+  // Get outreach angle - from outreach_angle or best_outreach_angle
+  const outreachAngle = match.outreach_angle || match.best_outreach_angle || "";
+
+  return (
+    <motion.div
+      layout
+      className={`p-4 rounded-xl border transition-all ${
+        isSelected
+          ? "bg-red-500/10 border-red-500/30"
+          : "bg-zinc-900/50 border-zinc-800 hover:border-zinc-700"
+      }`}
+    >
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-3">
+          {/* Avatar with score overlay */}
+          <div className="relative">
+            <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${scoreBgColor} flex items-center justify-center text-white font-bold text-sm`}>
+              {match.candidate_name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || '??'}
+            </div>
+            <div className={`absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${scoreColor} bg-zinc-900 border-2 border-zinc-800`}>
+              {match.match_score || 0}
+            </div>
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <Link
+              to={`${createPageUrl("TalentCandidateProfile")}?id=${match.candidate_id}`}
+              className="font-medium text-white hover:text-red-400 transition-colors block truncate"
+            >
+              {match.candidate_name || "Unknown Candidate"}
+            </Link>
+            <p className="text-sm text-zinc-400 truncate">{currentRole}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+          <MatchLevelBadge score={match.match_score} level={match.match_level} />
+          <Button
+            size="sm"
+            variant={isSelected ? "default" : "outline"}
+            onClick={(e) => {
+              e.preventDefault();
+              onToggleSelect(match.candidate_id);
+            }}
+            className={isSelected ? "bg-red-500 hover:bg-red-600" : "border-zinc-700 hover:border-zinc-600"}
+          >
+            {isSelected ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+          </Button>
+        </div>
+      </div>
+
+      {/* Match Factors Quick View */}
+      {match.match_factors && (
+        <div className="mt-3 flex gap-2 flex-wrap">
+          {Object.entries(match.match_factors).slice(0, 4).map(([key, value]) => (
+            <div key={key} className="flex items-center gap-1 text-xs">
+              <span className="text-zinc-500">{key.replace('_', ' ')}:</span>
+              <span className={value >= 70 ? "text-green-400" : value >= 50 ? "text-yellow-400" : "text-zinc-400"}>
+                {value}%
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Expandable Details Toggle */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="mt-3 flex items-center gap-1 text-sm text-zinc-400 hover:text-white transition-colors"
+      >
+        <ChevronDown className={`w-4 h-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
+        {expanded ? "Hide" : "Show"} AI Analysis
+      </button>
+
+      {/* Expandable Details Content */}
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="mt-3 pt-3 border-t border-zinc-800 space-y-3">
+              {/* Key Strengths */}
+              {strengths.length > 0 && (
+                <div>
+                  <p className="text-xs text-zinc-500 mb-1.5 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-green-400" />
+                    Key Strengths
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {strengths.map((s, i) => (
+                      <Badge key={i} className="bg-green-500/20 text-green-400 border-green-500/20 text-xs">
+                        {s}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Potential Concerns */}
+              {concerns.length > 0 && (
+                <div>
+                  <p className="text-xs text-zinc-500 mb-1.5 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3 text-amber-400" />
+                    Potential Concerns
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {concerns.map((c, i) => (
+                      <Badge key={i} className="bg-amber-500/20 text-amber-400 border-amber-500/20 text-xs">
+                        {c}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* AI Reasoning */}
+              {reasoning && (
+                <div>
+                  <p className="text-xs text-zinc-500 mb-1.5 flex items-center gap-1">
+                    <Brain className="w-3 h-3 text-purple-400" />
+                    AI Analysis
+                  </p>
+                  <p className="text-sm text-zinc-300 leading-relaxed">{reasoning}</p>
+                </div>
+              )}
+
+              {/* Intelligence Score */}
+              {match.intelligence_score > 0 && (
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                  <Sparkles className="w-4 h-4 text-purple-400" />
+                  <div>
+                    <p className="text-xs text-purple-400">Flight Risk / Timing Score</p>
+                    <p className="text-sm text-white font-medium">
+                      {match.intelligence_score}% - {match.recommended_approach === 'aggressive' ? 'Act Now!' : match.recommended_approach || 'Standard'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Outreach Angle */}
+              {outreachAngle && (
+                <div className="p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+                  <p className="text-xs text-cyan-400 mb-1 flex items-center gap-1">
+                    <Lightbulb className="w-3 h-3" />
+                    Suggested Outreach Angle
+                  </p>
+                  <p className="text-sm text-white leading-relaxed">{outreachAngle}</p>
+                </div>
+              )}
+
+              {/* Timing Signals */}
+              {match.timing_signals?.length > 0 && (
+                <div>
+                  <p className="text-xs text-zinc-500 mb-1.5 flex items-center gap-1">
+                    <Clock className="w-3 h-3 text-red-400" />
+                    Timing Signals
+                  </p>
+                  <div className="space-y-1">
+                    {match.timing_signals.slice(0, 3).map((signal, i) => (
+                      <div key={i} className={`text-xs px-2 py-1 rounded ${
+                        signal.urgency === 'high' ? 'bg-red-500/20 text-red-300' :
+                        signal.urgency === 'medium' ? 'bg-yellow-500/20 text-yellow-300' :
+                        'bg-zinc-700/50 text-zinc-400'
+                      }`}>
+                        {signal.trigger}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+};
+
 // Overview Tab Component
-const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching, linkedNest, nestCandidates }) => {
+const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching, linkedNest, nestCandidates, selectedCandidates, onToggleCandidateSelect, onSelectAllExcellent }) => {
   const matchedCandidates = campaign?.matched_candidates || [];
   const [showAllCandidates, setShowAllCandidates] = useState(false);
+  const [matchFilter, setMatchFilter] = useState("All");
+  const [viewMode, setViewMode] = useState("detailed"); // "detailed" or "compact"
 
+  // Sort and derive match levels
   const sortedCandidates = useMemo(() => {
-    return [...matchedCandidates].sort((a, b) => (b.match_score || 0) - (a.match_score || 0));
+    return [...matchedCandidates]
+      .map(m => ({
+        ...m,
+        match_level: m.match_level || (
+          m.match_score >= 80 ? "Excellent" :
+          m.match_score >= 60 ? "Good" :
+          m.match_score >= 40 ? "Fair" : "Poor"
+        ),
+      }))
+      .sort((a, b) => (b.match_score || 0) - (a.match_score || 0));
   }, [matchedCandidates]);
 
-  const displayedCandidates = showAllCandidates ? sortedCandidates : sortedCandidates.slice(0, 10);
+  // Filter by match level
+  const filteredMatches = useMemo(() => {
+    if (matchFilter === "All") return sortedCandidates;
+    return sortedCandidates.filter(m => m.match_level === matchFilter);
+  }, [sortedCandidates, matchFilter]);
+
+  // Calculate stats by level
+  const levelCounts = useMemo(() => ({
+    All: sortedCandidates.length,
+    Excellent: sortedCandidates.filter(m => m.match_level === "Excellent").length,
+    Good: sortedCandidates.filter(m => m.match_level === "Good").length,
+    Fair: sortedCandidates.filter(m => m.match_level === "Fair").length,
+    Poor: sortedCandidates.filter(m => m.match_level === "Poor").length,
+  }), [sortedCandidates]);
+
+  // Calculate average score
+  const avgScore = sortedCandidates.length > 0
+    ? Math.round(sortedCandidates.reduce((sum, m) => sum + (m.match_score || 0), 0) / sortedCandidates.length)
+    : 0;
+
+  const displayedCandidates = showAllCandidates ? filteredMatches : filteredMatches.slice(0, 10);
 
   return (
     <div className="space-y-6">
@@ -223,79 +496,107 @@ const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching, lin
             </div>
           </GlassCard>
 
-          {/* Matched Candidates */}
+          {/* Matched Candidates - Enhanced with AI Reasoning */}
           <GlassCard className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-red-400" />
-                Matched Candidates ({matchedCandidates.length})
-              </h3>
-              {/* Show button if we have something to match against (not shown if nest banner already has button) */}
-              {!linkedNest && (formData.project_id || formData.role_id || campaign?.role_context) && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={onRunMatching}
-                  disabled={isMatching}
-                  className="border-red-500/30 text-red-400 hover:bg-red-500/10"
-                >
-                  {isMatching ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Matching...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      Run Matching
-                    </>
-                  )}
-                </Button>
-              )}
+            {/* Header with Stats */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-red-400" />
+                  Match Results
+                </h3>
+                {matchedCandidates.length > 0 && (
+                  <p className="text-sm text-zinc-400 mt-1">
+                    {matchedCandidates.length} candidates analyzed • Avg Score: {avgScore}
+                    {selectedCandidates?.size > 0 && (
+                      <span className="text-red-400 ml-2">• {selectedCandidates.size} selected</span>
+                    )}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                {/* Bulk Add Excellent */}
+                {levelCounts.Excellent > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={onSelectAllExcellent}
+                    className="border-green-500/30 text-green-400 hover:bg-green-500/10"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add Excellent ({levelCounts.Excellent})
+                  </Button>
+                )}
+
+                {/* Run Matching (when not using nest banner) */}
+                {!linkedNest && (formData.project_id || formData.role_id || campaign?.role_context) && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={onRunMatching}
+                    disabled={isMatching}
+                    className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                  >
+                    {isMatching ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Matching...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        Run Matching
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
             </div>
 
             {matchedCandidates.length > 0 ? (
-              <div className="space-y-2">
-                {displayedCandidates.map((match, idx) => (
-                  <Link
-                    key={match.candidate_id || idx}
-                    to={`${createPageUrl("TalentCandidateProfile")}?id=${match.candidate_id}`}
-                    className="flex items-center justify-between p-3 bg-zinc-800/30 rounded-lg hover:bg-zinc-800/50 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
-                        match.match_score >= 70 ? "bg-red-500/20 text-red-400" :
-                        match.match_score >= 40 ? "bg-red-400/20 text-red-300" :
-                        "bg-zinc-700/50 text-zinc-400"
-                      }`}>
-                        {match.match_score || 0}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-white">
-                          {match.candidate_name || "Unknown"}
-                        </p>
-                        {match.match_reasons && (
-                          <p className="text-xs text-zinc-500 truncate max-w-xs">
-                            {Array.isArray(match.match_reasons)
-                              ? match.match_reasons.slice(0, 2).join(", ")
-                              : match.match_reasons}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge className={`text-xs ${
-                        match.status === "contacted" || match.status === "sent" ? "bg-red-500/20 text-red-400" :
-                        match.status === "replied" ? "bg-red-400/20 text-red-300" :
-                        match.status === "scheduled" ? "bg-red-600/20 text-red-400" :
-                        "bg-zinc-700/50 text-zinc-400"
-                      }`}>
-                        {match.status || "matched"}
-                      </Badge>
-                    </div>
-                  </Link>
-                ))}
-                {sortedCandidates.length > 10 && (
+              <div className="space-y-4">
+                {/* Filter Tabs */}
+                <div className="flex flex-wrap gap-2">
+                  {["All", "Excellent", "Good", "Fair"].map((level) => {
+                    const count = levelCounts[level] || 0;
+                    const isActive = matchFilter === level;
+                    const levelStyles = {
+                      All: isActive ? "bg-zinc-700 text-white" : "text-zinc-400 hover:text-white",
+                      Excellent: isActive ? "bg-green-500/20 text-green-400" : "text-zinc-400 hover:text-green-400",
+                      Good: isActive ? "bg-blue-500/20 text-blue-400" : "text-zinc-400 hover:text-blue-400",
+                      Fair: isActive ? "bg-yellow-500/20 text-yellow-400" : "text-zinc-400 hover:text-yellow-400",
+                    };
+
+                    return (
+                      <button
+                        key={level}
+                        onClick={() => setMatchFilter(level)}
+                        disabled={count === 0 && level !== "All"}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${levelStyles[level]} ${
+                          count === 0 && level !== "All" ? "opacity-50 cursor-not-allowed" : ""
+                        }`}
+                      >
+                        {level} ({count})
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Match Cards Grid */}
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                  {displayedCandidates.map((match, idx) => (
+                    <CandidateMatchResultCard
+                      key={match.candidate_id || idx}
+                      match={match}
+                      isSelected={selectedCandidates?.has(match.candidate_id)}
+                      onToggleSelect={onToggleCandidateSelect}
+                    />
+                  ))}
+                </div>
+
+                {/* Show More/Less */}
+                {filteredMatches.length > 10 && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -304,13 +605,13 @@ const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching, lin
                   >
                     {showAllCandidates
                       ? "Show less"
-                      : `Show all ${sortedCandidates.length} candidates`}
+                      : `Show all ${filteredMatches.length} ${matchFilter !== "All" ? matchFilter.toLowerCase() : ""} matches`}
                   </Button>
                 )}
               </div>
             ) : (
               <div className="text-center py-8">
-                <Users className="w-10 h-10 text-zinc-700 mx-auto mb-3" />
+                <Brain className="w-10 h-10 text-zinc-700 mx-auto mb-3" />
                 <p className="text-zinc-500 mb-2">No matched candidates yet</p>
                 {linkedNest ? (
                   <p className="text-xs text-zinc-600">
@@ -318,7 +619,7 @@ const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching, lin
                   </p>
                 ) : formData.project_id || formData.role_id || campaign?.role_context ? (
                   <p className="text-xs text-zinc-600">
-                    Click "Run Matching" or activate the campaign to find matches
+                    Click "Run Matching" to analyze candidates with AI-powered scoring
                   </p>
                 ) : (
                   <p className="text-xs text-zinc-600">
@@ -869,6 +1170,42 @@ export default function TalentCampaignDetail() {
   const [isMatching, setIsMatching] = useState(false);
   const [linkedNest, setLinkedNest] = useState(null);
   const [nestCandidates, setNestCandidates] = useState([]);
+  const [selectedCandidates, setSelectedCandidates] = useState(new Set());
+
+  // Handle individual candidate selection toggle
+  const handleToggleCandidateSelect = (candidateId) => {
+    setSelectedCandidates(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(candidateId)) {
+        newSet.delete(candidateId);
+      } else {
+        newSet.add(candidateId);
+      }
+      return newSet;
+    });
+  };
+
+  // Handle "Add All Excellent" bulk action
+  const handleSelectAllExcellent = () => {
+    const excellentCandidates = (campaign?.matched_candidates || [])
+      .filter(m => {
+        const level = m.match_level || (
+          m.match_score >= 80 ? "Excellent" :
+          m.match_score >= 60 ? "Good" :
+          m.match_score >= 40 ? "Fair" : "Poor"
+        );
+        return level === "Excellent";
+      })
+      .map(m => m.candidate_id);
+
+    setSelectedCandidates(prev => {
+      const newSet = new Set(prev);
+      excellentCandidates.forEach(id => newSet.add(id));
+      return newSet;
+    });
+
+    toast.success(`Added ${excellentCandidates.length} excellent matches to selection`);
+  };
 
   // Fetch projects and roles for selection
   useEffect(() => {
@@ -1389,6 +1726,9 @@ export default function TalentCampaignDetail() {
                 isMatching={isMatching}
                 linkedNest={linkedNest}
                 nestCandidates={nestCandidates}
+                selectedCandidates={selectedCandidates}
+                onToggleCandidateSelect={handleToggleCandidateSelect}
+                onSelectAllExcellent={handleSelectAllExcellent}
               />
             </TabsContent>
           )}
