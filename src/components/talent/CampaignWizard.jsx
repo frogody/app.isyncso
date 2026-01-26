@@ -45,6 +45,8 @@ import {
   MapPin,
   Package,
   Zap,
+  Search,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -93,6 +95,9 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
   // Campaign details
   const [campaignName, setCampaignName] = useState("");
   const [campaignType, setCampaignType] = useState("email");
+
+  // Search
+  const [projectSearch, setProjectSearch] = useState("");
 
   // Fetch projects
   const fetchProjects = useCallback(async () => {
@@ -312,6 +317,7 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
       setStep(1);
       setSelectedProject(null);
       setSelectedRole(null);
+      setProjectSearch("");
       setRoleContext({
         perfect_fit_criteria: "",
         selling_points: "",
@@ -386,8 +392,47 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
                   </div>
                 ) : (
                   <>
-                    <div className="grid grid-cols-1 gap-2 max-h-[250px] overflow-y-auto pr-2">
-                      {projects.map((project) => (
+                    {/* Search Bar */}
+                    <div className="relative mb-3">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                      <input
+                        type="text"
+                        placeholder="Search projects..."
+                        value={projectSearch}
+                        onChange={(e) => setProjectSearch(e.target.value)}
+                        className="w-full pl-10 pr-10 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 text-sm"
+                      />
+                      {projectSearch && (
+                        <button
+                          onClick={() => setProjectSearch("")}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Project List */}
+                    {(() => {
+                      const filteredProjects = projects.filter(project =>
+                        (project.name || project.title || '').toLowerCase().includes(projectSearch.toLowerCase()) ||
+                        (project.client_company || '').toLowerCase().includes(projectSearch.toLowerCase())
+                      );
+
+                      if (filteredProjects.length === 0) {
+                        return (
+                          <div className="text-center py-6">
+                            <FolderOpen className="w-8 h-8 mx-auto mb-2 text-zinc-600" />
+                            <p className="text-zinc-500 text-sm">
+                              {projectSearch ? `No projects found matching "${projectSearch}"` : "No projects yet"}
+                            </p>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div className="grid grid-cols-1 gap-2 max-h-[250px] overflow-y-auto pr-2">
+                          {filteredProjects.map((project) => (
                         <div
                           key={project.id}
                           onClick={() => setSelectedProject(project)}
@@ -416,8 +461,10 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
                             )}
                           </div>
                         </div>
-                      ))}
-                    </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
 
                     {/* New Project Form */}
                     {showNewProject ? (
