@@ -976,14 +976,23 @@ export default function TalentCampaignDetail() {
       const result = await response.json();
 
       if (result.success && result.matched_candidates?.length > 0) {
-        // Update local state with matched candidates
+        // Update local state with matched candidates - include ALL fields from smart AI matching
         const updatedMatches = result.matched_candidates.map((m) => ({
           candidate_id: m.candidate_id,
           candidate_name: m.candidate_name,
           match_score: m.match_score,
           match_reasons: m.match_reasons,
+          // AI analysis from smart multi-stage matching
+          ai_analysis: m.ai_analysis,
+          match_factors: m.match_factors,
+          priority_rank: m.priority_rank,
+          // Intelligence fields for "Best Approach" UI
           intelligence_score: m.intelligence_score,
           recommended_approach: m.recommended_approach,
+          best_outreach_angle: m.best_outreach_angle,
+          timing_signals: m.timing_signals,
+          outreach_hooks: m.outreach_hooks,
+          company_pain_points: m.company_pain_points,
           status: "matched",
           added_at: new Date().toISOString(),
         }));

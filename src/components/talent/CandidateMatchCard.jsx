@@ -13,6 +13,10 @@ import {
   Sparkles,
   TrendingUp,
   AlertTriangle,
+  Lightbulb,
+  Target,
+  Brain,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { IntelligenceGauge, IntelligenceLevelBadge, ApproachBadge } from "./IntelligenceGauge";
@@ -70,6 +74,40 @@ const MatchScoreRing = ({ score, size = "md" }) => {
       <div className="absolute flex flex-col items-center">
         <span className={`${fontSize} font-bold ${config.text}`}>{score}%</span>
       </div>
+    </div>
+  );
+};
+
+/**
+ * MatchFactorsBar - Mini visualization of match factors
+ */
+const MatchFactorsBar = ({ factors }) => {
+  if (!factors) return null;
+
+  const factorData = [
+    { key: "skills_fit", label: "Skills", value: factors.skills_fit || 0, color: "bg-blue-500" },
+    { key: "experience_fit", label: "Experience", value: factors.experience_fit || 0, color: "bg-purple-500" },
+    { key: "title_fit", label: "Title", value: factors.title_fit || 0, color: "bg-cyan-500" },
+    { key: "timing_score", label: "Timing", value: factors.timing_score || 0, color: "bg-amber-500" },
+    { key: "culture_fit", label: "Culture", value: factors.culture_fit || 0, color: "bg-emerald-500" },
+  ];
+
+  return (
+    <div className="grid grid-cols-5 gap-2">
+      {factorData.map(({ key, label, value, color }) => (
+        <div key={key} className="text-center">
+          <div className="h-8 w-full bg-zinc-800 rounded-sm overflow-hidden relative">
+            <motion.div
+              className={`absolute bottom-0 left-0 right-0 ${color}`}
+              initial={{ height: 0 }}
+              animate={{ height: `${value}%` }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            />
+          </div>
+          <span className="text-[10px] text-zinc-500 mt-1 block">{label}</span>
+          <span className="text-xs font-medium text-white">{value}</span>
+        </div>
+      ))}
     </div>
   );
 };
@@ -241,6 +279,28 @@ export const CandidateMatchCard = ({
         </div>
       </div>
 
+      {/* AI Analysis Summary */}
+      {match?.ai_analysis && match.ai_analysis !== "Quick match (not AI-analyzed)" && (
+        <div className="mb-4 p-3 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-lg border border-purple-500/20">
+          <div className="flex items-center gap-2 text-purple-400 text-xs font-medium mb-2">
+            <Brain className="w-3.5 h-3.5" />
+            AI Analysis
+          </div>
+          <p className="text-white text-sm leading-relaxed">{match.ai_analysis}</p>
+        </div>
+      )}
+
+      {/* Match Factors Visualization */}
+      {match?.match_factors && (
+        <div className="mb-4 p-3 bg-zinc-900/50 rounded-lg border border-zinc-700/30">
+          <div className="flex items-center gap-2 text-zinc-400 text-xs font-medium mb-3">
+            <BarChart3 className="w-3.5 h-3.5" />
+            Match Breakdown
+          </div>
+          <MatchFactorsBar factors={match.match_factors} />
+        </div>
+      )}
+
       {/* Match Reasons */}
       {matchReasons.length > 0 && (
         <div className="mb-4 p-3 bg-zinc-900/50 rounded-lg border border-zinc-700/30">
@@ -252,6 +312,44 @@ export const CandidateMatchCard = ({
               <MatchReasonBadge key={idx} reason={reason} />
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Best Approach - Intelligence insights for outreach */}
+      {(data?.best_outreach_angle || match?.best_outreach_angle) && (
+        <div className="mb-4 p-3 bg-amber-500/10 rounded-lg border border-amber-500/20">
+          <div className="flex items-center gap-2 text-amber-400 text-xs font-medium mb-2">
+            <Lightbulb className="w-3.5 h-3.5" />
+            Best Approach
+          </div>
+          <p className="text-white text-sm leading-relaxed">
+            {data?.best_outreach_angle || match?.best_outreach_angle}
+          </p>
+
+          {/* Timing hint if urgent */}
+          {(data?.timing_signals?.[0]?.urgency === 'high' ||
+            match?.timing_signals?.[0]?.urgency === 'high') && (
+            <div className="mt-2 pt-2 border-t border-amber-500/20">
+              <p className="text-xs text-red-400 flex items-center gap-1.5">
+                <Clock className="w-3 h-3" />
+                <span className="font-medium">Act Now:</span>
+                {data?.timing_signals?.[0]?.trigger || match?.timing_signals?.[0]?.trigger}
+              </p>
+            </div>
+          )}
+
+          {/* Key outreach hook if available */}
+          {(data?.outreach_hooks?.[0] || match?.outreach_hooks?.[0]) && (
+            <div className="mt-2 pt-2 border-t border-amber-500/20">
+              <p className="text-xs text-emerald-400 flex items-start gap-1.5">
+                <Target className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                <span>
+                  <span className="font-medium">Hook:</span>{" "}
+                  {data?.outreach_hooks?.[0] || match?.outreach_hooks?.[0]}
+                </span>
+              </p>
+            </div>
+          )}
         </div>
       )}
 

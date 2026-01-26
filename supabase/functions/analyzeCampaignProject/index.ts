@@ -1,5 +1,6 @@
 // Supabase Edge Function: analyzeCampaignProject
-// Matches candidates to project requirements using AI analysis
+// Advanced AI-powered candidate matching with multi-stage ranking
+// Uses: Career trajectory analysis, timing signals, semantic matching, culture fit
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -8,6 +9,18 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+interface RoleContext {
+  perfect_fit_criteria?: string;
+  selling_points?: string;
+  must_haves?: string[];
+  deal_breakers?: string[];
+  target_companies?: string[];
+  ideal_background?: string;
+  salary_range?: string;
+  remote_ok?: boolean;
+  experience_level?: string; // 'entry', 'mid', 'senior', 'lead', 'executive'
+}
 
 interface Role {
   id: string;
@@ -20,19 +33,55 @@ interface Role {
   employment_type?: string;
 }
 
-interface Candidate {
+interface Campaign {
   id: string;
   name: string;
+  role_context?: RoleContext;
+  role_title?: string;
+  company_name?: string;
+}
+
+interface Candidate {
+  id: string;
+  name?: string;
+  first_name?: string;
+  last_name?: string;
   email?: string;
   current_title?: string;
+  job_title?: string;
   current_company?: string;
+  company_name?: string;
   location?: string;
+  person_home_location?: string;
   skills?: string[];
   tags?: string[];
+  years_experience?: number;
+  education?: any;
+  certifications?: string[];
+  salary_expectation?: number;
+  // Intelligence data from SYNC Intel
   intelligence_score?: number;
   intelligence_level?: string;
   recommended_approach?: string;
+  best_outreach_angle?: string;
+  timing_signals?: TimingSignal[];
+  outreach_hooks?: string[];
+  company_pain_points?: PainPoint[];
+  key_insights?: string[];
+  career_trajectory?: string;
+  flight_risk_factors?: string[];
   notes?: string;
+}
+
+interface TimingSignal {
+  trigger: string;
+  urgency: 'high' | 'medium' | 'low';
+  explanation?: string;
+}
+
+interface PainPoint {
+  pain: string;
+  opportunity?: string;
 }
 
 interface MatchResult {
@@ -40,113 +89,413 @@ interface MatchResult {
   candidate_name: string;
   match_score: number;
   match_reasons: string[];
+  ai_analysis?: string;
+  priority_rank?: number;
   intelligence_score: number;
   recommended_approach: string;
+  best_outreach_angle?: string;
+  timing_signals?: TimingSignal[];
+  outreach_hooks?: string[];
+  company_pain_points?: PainPoint[];
+  match_factors?: MatchFactors;
 }
 
-// Calculate match score between a candidate and role
-function calculateMatchScore(candidate: Candidate, role: Role): { score: number; reasons: string[] } {
-  let score = 0;
+interface MatchFactors {
+  skills_fit: number;
+  experience_fit: number;
+  title_fit: number;
+  location_fit: number;
+  timing_score: number;
+  culture_fit: number;
+  overall_confidence: number;
+}
+
+// ============================================
+// STAGE 1: Quick Pre-Filter (Rule-based)
+// Eliminates obviously unqualified candidates
+// ============================================
+function preFilterCandidate(
+  candidate: Candidate,
+  role: Role,
+  roleContext: RoleContext | undefined
+): { passes: boolean; quickScore: number; reasons: string[] } {
+  const candidateTitle = (candidate.current_title || candidate.job_title || "").toLowerCase();
+  const roleTitle = role.title.toLowerCase();
   const reasons: string[] = [];
+  let quickScore = 0;
 
-  // Title match
-  if (candidate.current_title && role.title) {
-    const candidateTitle = candidate.current_title.toLowerCase();
-    const roleTitle = role.title.toLowerCase();
-    
-    // Extract key words from titles
-    const roleTitleWords = roleTitle.split(/\s+/).filter(w => w.length > 2);
-    const matchedWords = roleTitleWords.filter(word => candidateTitle.includes(word));
-    
-    if (matchedWords.length > 0) {
-      const titleMatchScore = Math.round((matchedWords.length / roleTitleWords.length) * 25);
-      score += titleMatchScore;
-      reasons.push(`Title alignment: ${matchedWords.join(", ")}`);
-    }
-  }
-
-  // Location match
-  if (candidate.location && role.location) {
-    const candidateLoc = candidate.location.toLowerCase();
-    const roleLoc = role.location.toLowerCase();
-    
-    if (candidateLoc.includes(roleLoc) || roleLoc.includes(candidateLoc) || roleLoc.includes("remote")) {
-      score += 15;
-      reasons.push("Location compatible");
-    }
-  }
-
-  // Skills/Requirements match
-  if (candidate.skills && role.requirements) {
-    const requirementsLower = role.requirements.toLowerCase();
-    const matchedSkills = candidate.skills.filter(skill => 
-      requirementsLower.includes(skill.toLowerCase())
-    );
-    
-    if (matchedSkills.length > 0) {
-      const skillScore = Math.min(matchedSkills.length * 8, 30);
-      score += skillScore;
-      reasons.push(`Skills match: ${matchedSkills.slice(0, 3).join(", ")}`);
-    }
-  }
-
-  // Tags match with requirements
-  if (candidate.tags && role.requirements) {
-    const requirementsLower = role.requirements.toLowerCase();
-    const matchedTags = candidate.tags.filter(tag => 
-      requirementsLower.includes(tag.toLowerCase())
-    );
-    
-    if (matchedTags.length > 0) {
-      score += matchedTags.length * 5;
-      reasons.push(`Tags match: ${matchedTags.join(", ")}`);
-    }
-  }
-
-  // Intelligence score bonus
-  if (candidate.intelligence_score) {
-    if (candidate.intelligence_score >= 70) {
-      score += 15;
-      reasons.push("High flight risk - good timing for outreach");
-    } else if (candidate.intelligence_score >= 50) {
-      score += 8;
-      reasons.push("Moderate flight risk - worth exploring");
-    }
-  }
-
-  // Department match (if both have it)
-  if (role.department && candidate.current_title) {
-    const deptLower = role.department.toLowerCase();
-    const titleLower = candidate.current_title.toLowerCase();
-    
-    const deptKeywords: Record<string, string[]> = {
-      engineering: ["engineer", "developer", "software", "tech"],
-      marketing: ["marketing", "growth", "brand", "content"],
-      sales: ["sales", "account", "business development"],
-      design: ["designer", "ux", "ui", "creative"],
-      product: ["product", "pm", "manager"],
-      finance: ["finance", "accounting", "analyst"],
-      hr: ["hr", "human resources", "recruiter", "talent"],
-    };
-
-    for (const [dept, keywords] of Object.entries(deptKeywords)) {
-      if (deptLower.includes(dept)) {
-        const matched = keywords.some(kw => titleLower.includes(kw));
-        if (matched) {
-          score += 10;
-          reasons.push(`Department alignment: ${role.department}`);
-          break;
-        }
+  // Check deal breakers first (instant disqualification)
+  if (roleContext?.deal_breakers && roleContext.deal_breakers.length > 0) {
+    const candidateText = `${candidateTitle} ${candidate.notes || ''} ${candidate.current_company || ''}`.toLowerCase();
+    for (const breaker of roleContext.deal_breakers) {
+      if (candidateText.includes(breaker.toLowerCase())) {
+        return { passes: false, quickScore: 0, reasons: [`Deal breaker: ${breaker}`] };
       }
     }
   }
 
-  // Cap score at 100
-  return { score: Math.min(score, 100), reasons };
+  // Title relevance check (must have SOME relevance)
+  const titleWords = roleTitle.split(/\s+/).filter(w => w.length > 2);
+  const titleMatches = titleWords.filter(w => candidateTitle.includes(w)).length;
+  const titleRelevance = titleMatches / Math.max(titleWords.length, 1);
+
+  if (titleRelevance > 0) {
+    quickScore += 20;
+    reasons.push("Title relevant");
+  }
+
+  // Skills check (basic)
+  if (candidate.skills && role.requirements) {
+    const reqLower = role.requirements.toLowerCase();
+    const matchedSkills = candidate.skills.filter(s => reqLower.includes(s.toLowerCase()));
+    if (matchedSkills.length > 0) {
+      quickScore += Math.min(matchedSkills.length * 5, 25);
+      reasons.push(`${matchedSkills.length} skills match`);
+    }
+  }
+
+  // Must-haves check (critical)
+  if (roleContext?.must_haves && roleContext.must_haves.length > 0) {
+    const candidateText = `${candidateTitle} ${candidate.skills?.join(' ') || ''} ${candidate.certifications?.join(' ') || ''}`.toLowerCase();
+    const matchedMustHaves = roleContext.must_haves.filter(mh => candidateText.includes(mh.toLowerCase()));
+    const coverage = matchedMustHaves.length / roleContext.must_haves.length;
+
+    if (coverage >= 0.5) {
+      quickScore += 15;
+      reasons.push(`${matchedMustHaves.length}/${roleContext.must_haves.length} must-haves`);
+    }
+  }
+
+  // Intelligence/timing bonus (high value candidates)
+  if (candidate.intelligence_score && candidate.intelligence_score >= 60) {
+    quickScore += 15;
+    reasons.push("High timing score");
+  }
+
+  // Target company bonus
+  if (roleContext?.target_companies && candidate.current_company) {
+    const isTarget = roleContext.target_companies.some(tc =>
+      (candidate.current_company || '').toLowerCase().includes(tc.toLowerCase())
+    );
+    if (isTarget) {
+      quickScore += 20;
+      reasons.push("From target company");
+    }
+  }
+
+  // Pass if score is above threshold OR has high intelligence score (good timing)
+  const passes = quickScore >= 20 || (candidate.intelligence_score || 0) >= 70;
+
+  return { passes, quickScore, reasons };
+}
+
+// ============================================
+// STAGE 2: Deep AI Analysis
+// Sophisticated matching for shortlisted candidates
+// ============================================
+async function deepAIAnalysis(
+  candidates: Candidate[],
+  role: Role,
+  roleContext: RoleContext | undefined,
+  groqApiKey: string
+): Promise<Map<string, { score: number; reasons: string[]; analysis: string; factors: MatchFactors }>> {
+  const results = new Map();
+
+  // Batch candidates for efficiency (analyze up to 5 at a time in prompt context)
+  const batchSize = 5;
+
+  for (let i = 0; i < candidates.length; i += batchSize) {
+    const batch = candidates.slice(i, i + batchSize);
+
+    const candidateProfiles = batch.map((c, idx) => `
+--- CANDIDATE ${idx + 1} (ID: ${c.id}) ---
+Name: ${c.name || `${c.first_name || ''} ${c.last_name || ''}`.trim() || 'Unknown'}
+Title: ${c.current_title || c.job_title || 'Unknown'}
+Company: ${c.current_company || c.company_name || 'Unknown'}
+Location: ${c.location || c.person_home_location || 'Unknown'}
+Experience: ${c.years_experience || 'Unknown'} years
+Skills: ${c.skills?.join(', ') || 'Not specified'}
+Certifications: ${c.certifications?.join(', ') || 'None'}
+
+INTELLIGENCE DATA:
+- Flight Risk: ${c.intelligence_score || 0}% ${c.intelligence_level ? `(${c.intelligence_level})` : ''}
+- Career Trajectory: ${c.career_trajectory || 'Unknown'}
+- Best Outreach Angle: ${c.best_outreach_angle || 'Not analyzed'}
+- Timing Signals: ${c.timing_signals?.map(t => `${t.trigger} (${t.urgency})`).join('; ') || 'None'}
+- Key Insights: ${c.key_insights?.slice(0, 3).join('; ') || 'None'}
+- Outreach Hooks: ${c.outreach_hooks?.slice(0, 2).join('; ') || 'None'}
+`).join('\n');
+
+    const roleProfile = `
+ROLE: ${role.title}
+Department: ${role.department || 'Not specified'}
+Location: ${role.location || 'Remote/Flexible'}
+
+REQUIREMENTS:
+${role.requirements || 'Not specified'}
+
+RESPONSIBILITIES:
+${role.responsibilities || 'Not specified'}
+
+${roleContext ? `
+RECRUITER'S CONTEXT:
+- Perfect Candidate: ${roleContext.perfect_fit_criteria || 'Not specified'}
+- Must-Have Skills/Experience: ${roleContext.must_haves?.join(', ') || 'Not specified'}
+- Deal Breakers: ${roleContext.deal_breakers?.join(', ') || 'None'}
+- Target Companies to Poach From: ${roleContext.target_companies?.join(', ') || 'Any'}
+- Ideal Background: ${roleContext.ideal_background || 'Not specified'}
+- Experience Level: ${roleContext.experience_level || 'Not specified'}
+- Remote OK: ${roleContext.remote_ok !== false ? 'Yes' : 'No'}
+` : ''}
+`;
+
+    const prompt = `You are an elite executive recruiter with 20+ years of experience. Analyze these candidates for the role.
+
+${roleProfile}
+
+CANDIDATES TO ANALYZE:
+${candidateProfiles}
+
+For EACH candidate, provide a comprehensive analysis considering:
+
+1. **SKILLS FIT (0-100)**: How well do their skills match requirements? Consider both explicit matches and transferable skills.
+
+2. **EXPERIENCE FIT (0-100)**: Is their seniority level appropriate? Too junior/senior is a problem.
+
+3. **TITLE FIT (0-100)**: Does their current title align with this role? Consider lateral moves and step-ups.
+
+4. **LOCATION FIT (0-100)**: Are they in the right location or is remote work viable?
+
+5. **TIMING SCORE (0-100)**: Based on flight risk, timing signals - how likely are they to be open to this NOW? This is CRITICAL.
+
+6. **CULTURE FIT (0-100)**: Based on company background, career trajectory - would they thrive here?
+
+7. **OVERALL MATCH**: Weighted combination (Skills 25%, Experience 20%, Title 15%, Location 10%, Timing 20%, Culture 10%)
+
+Respond with JSON array for ALL candidates:
+[
+  {
+    "candidate_id": "<id>",
+    "overall_score": <0-100>,
+    "factors": {
+      "skills_fit": <0-100>,
+      "experience_fit": <0-100>,
+      "title_fit": <0-100>,
+      "location_fit": <0-100>,
+      "timing_score": <0-100>,
+      "culture_fit": <0-100>,
+      "overall_confidence": <0-100>
+    },
+    "reasons": ["<key reason 1>", "<key reason 2>", "<key reason 3>"],
+    "analysis": "<1-2 sentence expert assessment>",
+    "red_flags": ["<any concerns>"] or [],
+    "why_now": "<why this candidate might be open NOW based on timing signals>"
+  }
+]
+
+Be discriminating. Most candidates are 40-60. Only truly great fits score 70+. Score 80+ is exceptional.`;
+
+    try {
+      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${groqApiKey}`,
+        },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          messages: [
+            {
+              role: "system",
+              content: "You are an elite executive recruiter. Respond ONLY with valid JSON array. No markdown, no explanation outside JSON. Be critical and discriminating in your analysis.",
+            },
+            { role: "user", content: prompt },
+          ],
+          temperature: 0.2,
+          max_tokens: 2000,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error("Groq API error:", await response.text());
+        // Fall back to rule-based for this batch
+        for (const c of batch) {
+          const fallback = fallbackDeepAnalysis(c, role, roleContext);
+          results.set(c.id, fallback);
+        }
+        continue;
+      }
+
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content || "";
+
+      // Parse JSON array from response
+      const jsonMatch = content.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        try {
+          const analyses = JSON.parse(jsonMatch[0]);
+          for (const analysis of analyses) {
+            results.set(analysis.candidate_id, {
+              score: Math.min(Math.max(analysis.overall_score || 0, 0), 100),
+              reasons: [...(analysis.reasons || []), analysis.why_now].filter(Boolean),
+              analysis: analysis.analysis || "",
+              factors: analysis.factors || getDefaultFactors(),
+            });
+          }
+        } catch (parseError) {
+          console.error("JSON parse error:", parseError);
+        }
+      }
+
+      // Add fallback for any candidates not in response
+      for (const c of batch) {
+        if (!results.has(c.id)) {
+          results.set(c.id, fallbackDeepAnalysis(c, role, roleContext));
+        }
+      }
+    } catch (error) {
+      console.error("AI batch analysis error:", error);
+      for (const c of batch) {
+        results.set(c.id, fallbackDeepAnalysis(c, role, roleContext));
+      }
+    }
+  }
+
+  return results;
+}
+
+function getDefaultFactors(): MatchFactors {
+  return {
+    skills_fit: 50,
+    experience_fit: 50,
+    title_fit: 50,
+    location_fit: 50,
+    timing_score: 50,
+    culture_fit: 50,
+    overall_confidence: 50,
+  };
+}
+
+function fallbackDeepAnalysis(
+  candidate: Candidate,
+  role: Role,
+  roleContext: RoleContext | undefined
+): { score: number; reasons: string[]; analysis: string; factors: MatchFactors } {
+  const factors: MatchFactors = getDefaultFactors();
+  const reasons: string[] = [];
+
+  const candidateTitle = (candidate.current_title || candidate.job_title || "").toLowerCase();
+  const roleTitle = role.title.toLowerCase();
+
+  // Skills fit
+  if (candidate.skills && role.requirements) {
+    const reqLower = role.requirements.toLowerCase();
+    const matchedSkills = candidate.skills.filter(s => reqLower.includes(s.toLowerCase()));
+    factors.skills_fit = Math.min(30 + (matchedSkills.length * 15), 100);
+    if (matchedSkills.length > 0) {
+      reasons.push(`Skills: ${matchedSkills.slice(0, 3).join(", ")}`);
+    }
+  }
+
+  // Title fit
+  const titleWords = roleTitle.split(/\s+/).filter(w => w.length > 2);
+  const matchedWords = titleWords.filter(w => candidateTitle.includes(w));
+  factors.title_fit = Math.min(30 + (matchedWords.length / Math.max(titleWords.length, 1)) * 70, 100);
+  if (matchedWords.length > 0) {
+    reasons.push(`Title alignment: ${matchedWords.join(", ")}`);
+  }
+
+  // Experience fit
+  if (candidate.years_experience) {
+    if (candidate.years_experience >= 3 && candidate.years_experience <= 15) {
+      factors.experience_fit = 70;
+    } else if (candidate.years_experience > 15) {
+      factors.experience_fit = 60; // Might be overqualified
+    } else {
+      factors.experience_fit = 40; // Junior
+    }
+  }
+
+  // Location fit
+  const candidateLoc = (candidate.location || candidate.person_home_location || "").toLowerCase();
+  const roleLoc = (role.location || "").toLowerCase();
+  if (candidateLoc && roleLoc) {
+    if (candidateLoc.includes(roleLoc) || roleLoc.includes(candidateLoc) ||
+        roleLoc.includes("remote") || roleContext?.remote_ok) {
+      factors.location_fit = 90;
+      reasons.push("Location compatible");
+    } else {
+      factors.location_fit = 40;
+    }
+  } else {
+    factors.location_fit = 70; // Unknown = neutral
+  }
+
+  // Timing score (based on intelligence)
+  factors.timing_score = candidate.intelligence_score || 50;
+  if (factors.timing_score >= 70) {
+    reasons.push("Excellent timing - high flight risk");
+  } else if (factors.timing_score >= 50) {
+    reasons.push("Good timing signals");
+  }
+
+  // Culture fit (based on company tier)
+  if (roleContext?.target_companies && candidate.current_company) {
+    const isTarget = roleContext.target_companies.some(tc =>
+      (candidate.current_company || '').toLowerCase().includes(tc.toLowerCase())
+    );
+    if (isTarget) {
+      factors.culture_fit = 85;
+      reasons.push(`From target company: ${candidate.current_company}`);
+    } else {
+      factors.culture_fit = 60;
+    }
+  }
+
+  // Calculate overall score (weighted)
+  const score = Math.round(
+    factors.skills_fit * 0.25 +
+    factors.experience_fit * 0.20 +
+    factors.title_fit * 0.15 +
+    factors.location_fit * 0.10 +
+    factors.timing_score * 0.20 +
+    factors.culture_fit * 0.10
+  );
+
+  factors.overall_confidence = 60; // Rule-based = lower confidence
+
+  return {
+    score,
+    reasons,
+    analysis: reasons.length > 0 ? reasons.slice(0, 2).join(". ") : "Basic match analysis",
+    factors,
+  };
+}
+
+// ============================================
+// STAGE 3: Priority Ranking
+// Re-rank top candidates considering timing urgency
+// ============================================
+function priorityRank(matches: MatchResult[]): MatchResult[] {
+  return matches.map((m, idx) => {
+    // Boost score for high-urgency timing signals
+    let timingBoost = 0;
+    if (m.timing_signals?.some(t => t.urgency === 'high')) {
+      timingBoost = 5;
+    }
+
+    // Boost for having outreach hooks (easier to engage)
+    const hookBoost = m.outreach_hooks?.length ? Math.min(m.outreach_hooks.length * 2, 5) : 0;
+
+    return {
+      ...m,
+      match_score: Math.min(m.match_score + timingBoost + hookBoost, 100),
+      priority_rank: idx + 1,
+    };
+  }).sort((a, b) => b.match_score - a.match_score);
 }
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -154,16 +503,20 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    
+    const groqApiKey = Deno.env.get("GROQ_API_KEY") || "";
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { 
-      project_id, 
-      campaign_id, 
+    const {
+      project_id,
+      campaign_id,
       organization_id,
       role_id,
+      role_context,
       min_score = 30,
-      limit = 50 
+      limit = 50,
+      use_ai = true,
+      deep_analysis = true, // Enable multi-stage analysis
     } = await req.json();
 
     if (!organization_id) {
@@ -173,34 +526,57 @@ serve(async (req) => {
       );
     }
 
+    // Get campaign with role_context if campaign_id provided
+    let campaign: Campaign | null = null;
+    let effectiveRoleContext = role_context;
+
+    if (campaign_id) {
+      const { data: campaignData } = await supabase
+        .from("campaigns")
+        .select("id, name, role_context, role_title, company_name")
+        .eq("id", campaign_id)
+        .single();
+
+      if (campaignData) {
+        campaign = campaignData;
+        if (!effectiveRoleContext && campaignData.role_context) {
+          effectiveRoleContext = campaignData.role_context;
+        }
+      }
+    }
+
     // Get roles to match against
     let roles: Role[] = [];
 
     if (role_id) {
-      // Single role
       const { data, error } = await supabase
         .from("roles")
         .select("*")
         .eq("id", role_id)
         .eq("organization_id", organization_id)
         .single();
-      
+
       if (error) throw error;
       if (data) roles = [data];
     } else if (project_id) {
-      // All roles for a project
       const { data, error } = await supabase
         .from("roles")
         .select("*")
         .eq("project_id", project_id)
         .eq("organization_id", organization_id)
         .eq("status", "active");
-      
+
       if (error) throw error;
       roles = data || [];
+    } else if (campaign?.role_title) {
+      roles = [{
+        id: "campaign-role",
+        title: campaign.role_title,
+        requirements: effectiveRoleContext?.must_haves?.join(", ") || "",
+      }];
     } else {
       return new Response(
-        JSON.stringify({ error: "Either project_id or role_id is required" }),
+        JSON.stringify({ error: "Either project_id, role_id, or campaign with role_title is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -212,48 +588,115 @@ serve(async (req) => {
       );
     }
 
-    // Get candidates to analyze
-    const { data: candidates, error: candidatesError } = await supabase
+    // Get ALL candidates (we'll filter smartly)
+    const { data: allCandidates, error: candidatesError } = await supabase
       .from("candidates")
       .select("*")
       .eq("organization_id", organization_id)
-      .in("status", ["active", "passive"])
       .not("stage", "in", '("hired","rejected")');
 
     if (candidatesError) throw candidatesError;
+    if (!allCandidates || allCandidates.length === 0) {
+      return new Response(
+        JSON.stringify({ success: true, matched_candidates: [], message: "No candidates to analyze" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    // Match candidates against roles
+    console.log(`Starting smart matching: ${allCandidates.length} candidates, ${roles.length} role(s)`);
+
+    const primaryRole = roles[0];
     const allMatches: MatchResult[] = [];
 
-    for (const candidate of candidates || []) {
-      let bestMatch = { score: 0, reasons: [] as string[] };
-      
-      // Find best match across all roles
-      for (const role of roles) {
-        const match = calculateMatchScore(candidate, role);
-        if (match.score > bestMatch.score) {
-          bestMatch = match;
-        }
-      }
+    // STAGE 1: Pre-filter all candidates
+    const preFilterResults: { candidate: Candidate; quickScore: number; reasons: string[] }[] = [];
 
-      if (bestMatch.score >= min_score) {
-        allMatches.push({
-          candidate_id: candidate.id,
-          candidate_name: candidate.name,
-          match_score: bestMatch.score,
-          match_reasons: bestMatch.reasons,
-          intelligence_score: candidate.intelligence_score || 0,
-          recommended_approach: candidate.recommended_approach || "nurture",
+    for (const candidate of allCandidates) {
+      const result = preFilterCandidate(candidate, primaryRole, effectiveRoleContext);
+      if (result.passes) {
+        preFilterResults.push({
+          candidate,
+          quickScore: result.quickScore,
+          reasons: result.reasons,
         });
       }
     }
 
-    // Sort by match score (descending) and limit results
-    const sortedMatches = allMatches
-      .sort((a, b) => b.match_score - a.match_score)
-      .slice(0, limit);
+    console.log(`Pre-filter: ${preFilterResults.length}/${allCandidates.length} candidates passed`);
 
-    // Get project name if we have project_id
+    // Sort by quick score and take top candidates for deep analysis
+    const sortedPreFilter = preFilterResults.sort((a, b) => b.quickScore - a.quickScore);
+    const topCandidatesForAI = sortedPreFilter.slice(0, Math.min(50, sortedPreFilter.length));
+    const remainingCandidates = sortedPreFilter.slice(50);
+
+    // STAGE 2: Deep AI Analysis on top candidates (if API available)
+    const shouldUseAI = use_ai && deep_analysis && groqApiKey && topCandidatesForAI.length > 0;
+
+    let aiResults: Map<string, { score: number; reasons: string[]; analysis: string; factors: MatchFactors }>;
+
+    if (shouldUseAI) {
+      console.log(`Running deep AI analysis on ${topCandidatesForAI.length} top candidates`);
+      aiResults = await deepAIAnalysis(
+        topCandidatesForAI.map(r => r.candidate),
+        primaryRole,
+        effectiveRoleContext,
+        groqApiKey
+      );
+    } else {
+      // Fallback to rule-based deep analysis
+      aiResults = new Map();
+      for (const { candidate } of topCandidatesForAI) {
+        aiResults.set(candidate.id, fallbackDeepAnalysis(candidate, primaryRole, effectiveRoleContext));
+      }
+    }
+
+    // Build match results from AI analysis
+    for (const { candidate, reasons: preReasons } of topCandidatesForAI) {
+      const aiResult = aiResults.get(candidate.id);
+      if (aiResult && aiResult.score >= min_score) {
+        allMatches.push({
+          candidate_id: candidate.id,
+          candidate_name: candidate.name || `${candidate.first_name || ''} ${candidate.last_name || ''}`.trim(),
+          match_score: aiResult.score,
+          match_reasons: aiResult.reasons,
+          ai_analysis: aiResult.analysis,
+          match_factors: aiResult.factors,
+          intelligence_score: candidate.intelligence_score || 0,
+          recommended_approach: candidate.recommended_approach || "nurture",
+          best_outreach_angle: candidate.best_outreach_angle,
+          timing_signals: candidate.timing_signals,
+          outreach_hooks: candidate.outreach_hooks,
+          company_pain_points: candidate.company_pain_points,
+        });
+      }
+    }
+
+    // Add remaining candidates with quick scores (for completeness)
+    for (const { candidate, quickScore, reasons } of remainingCandidates) {
+      if (quickScore >= min_score) {
+        allMatches.push({
+          candidate_id: candidate.id,
+          candidate_name: candidate.name || `${candidate.first_name || ''} ${candidate.last_name || ''}`.trim(),
+          match_score: quickScore,
+          match_reasons: reasons,
+          ai_analysis: "Quick match (not AI-analyzed)",
+          intelligence_score: candidate.intelligence_score || 0,
+          recommended_approach: candidate.recommended_approach || "nurture",
+          best_outreach_angle: candidate.best_outreach_angle,
+          timing_signals: candidate.timing_signals,
+          outreach_hooks: candidate.outreach_hooks,
+          company_pain_points: candidate.company_pain_points,
+        });
+      }
+    }
+
+    // STAGE 3: Priority ranking
+    const rankedMatches = priorityRank(allMatches);
+    const finalMatches = rankedMatches.slice(0, limit);
+
+    console.log(`Final results: ${finalMatches.length} matches (${shouldUseAI ? 'AI-powered' : 'rule-based'})`);
+
+    // Get project name
     let projectName: string | null = null;
     if (project_id) {
       const { data: projectData } = await supabase
@@ -264,15 +707,21 @@ serve(async (req) => {
       projectName = projectData?.title || projectData?.name || null;
     }
 
-    // Get the primary role for reference
-    const primaryRole = roles[0];
-
-    // If campaign_id provided, update the campaign with matched candidates
-    if (campaign_id && sortedMatches.length > 0) {
-      const matchedCandidatesData = sortedMatches.map(m => ({
+    // Update campaign with matches
+    if (campaign_id && finalMatches.length > 0) {
+      const matchedCandidatesData = finalMatches.map(m => ({
         candidate_id: m.candidate_id,
+        candidate_name: m.candidate_name,
         match_score: m.match_score,
         match_reasons: m.match_reasons,
+        ai_analysis: m.ai_analysis,
+        match_factors: m.match_factors,
+        intelligence_score: m.intelligence_score,
+        recommended_approach: m.recommended_approach,
+        best_outreach_angle: m.best_outreach_angle,
+        timing_signals: m.timing_signals,
+        outreach_hooks: m.outreach_hooks,
+        priority_rank: m.priority_rank,
         status: "matched",
         added_at: new Date().toISOString(),
       }));
@@ -286,8 +735,8 @@ serve(async (req) => {
         console.error("Error updating campaign:", updateError);
       }
 
-      // Also store matches in candidate_campaign_matches table for candidate-side viewing
-      const candidateMatchRecords = sortedMatches.map(m => ({
+      // Store in candidate_campaign_matches table
+      const candidateMatchRecords = finalMatches.map(m => ({
         candidate_id: m.candidate_id,
         campaign_id: campaign_id,
         organization_id: organization_id,
@@ -295,15 +744,18 @@ serve(async (req) => {
         match_reasons: m.match_reasons,
         intelligence_score: m.intelligence_score,
         recommended_approach: m.recommended_approach,
+        best_outreach_angle: m.best_outreach_angle,
+        timing_signals: m.timing_signals,
+        outreach_hooks: m.outreach_hooks,
+        company_pain_points: m.company_pain_points,
         status: "matched",
         role_id: role_id || primaryRole?.id || null,
-        role_title: primaryRole?.title || null,
+        role_title: primaryRole?.title || campaign?.role_title || null,
         project_id: project_id || null,
         project_name: projectName,
         matched_at: new Date().toISOString(),
       }));
 
-      // Use upsert to update existing matches or insert new ones
       const { error: matchesError } = await supabase
         .from("candidate_campaign_matches")
         .upsert(candidateMatchRecords, {
@@ -313,8 +765,6 @@ serve(async (req) => {
 
       if (matchesError) {
         console.error("Error storing candidate matches:", matchesError);
-      } else {
-        console.log(`Stored ${candidateMatchRecords.length} candidate-campaign matches`);
       }
     }
 
@@ -322,8 +772,13 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         roles_analyzed: roles.length,
-        candidates_analyzed: candidates?.length || 0,
-        matched_candidates: sortedMatches,
+        candidates_total: allCandidates.length,
+        candidates_pre_filtered: preFilterResults.length,
+        candidates_ai_analyzed: topCandidatesForAI.length,
+        matched_candidates: finalMatches,
+        ai_powered: shouldUseAI,
+        role_context_used: !!effectiveRoleContext,
+        analysis_method: shouldUseAI ? "multi-stage-ai" : "rule-based",
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
