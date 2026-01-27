@@ -1401,6 +1401,173 @@ curl -s -X POST 'https://api.supabase.com/v1/projects/sfxpmzicgpaxfntqleig/datab
 
 ---
 
+## Candidate Detail Drawer Enhancements (Jan 27, 2026)
+
+### Overview
+
+Major enhancements to the `CandidateDetailDrawer.jsx` component for displaying richer candidate intelligence and company data.
+
+### New Features Added
+
+#### 1. Quick Stats Header
+Displays key metrics at the top of the candidate drawer:
+- **Years at Company** - Tenure at current employer
+- **Times Promoted** - Internal promotions
+- **Company Changes** - Job hopping indicator
+
+```jsx
+const QuickStats = ({ candidate }) => (
+  <div className="flex items-center gap-4">
+    <div className="flex items-center gap-1.5">
+      <Calendar className="w-4 h-4 text-zinc-500" />
+      <span className="text-sm text-zinc-400">{candidate.years_at_company || '?'} yrs</span>
+    </div>
+    <div className="flex items-center gap-1.5">
+      <TrendingUp className="w-4 h-4 text-green-400" />
+      <span className="text-sm text-zinc-400">{candidate.times_promoted || 0} promos</span>
+    </div>
+    <div className="flex items-center gap-1.5">
+      <Building2 className="w-4 h-4 text-blue-400" />
+      <span className="text-sm text-zinc-400">{candidate.times_company_hopped || 0} changes</span>
+    </div>
+  </div>
+);
+```
+
+#### 2. Company Tab
+New tab showing company intelligence:
+- **Company Info** - Industry, size, headquarters, description
+- **Technology Stack** - Tech used at candidate's company
+- **Employee Ratings** - Glassdoor/review data
+- **Funding Information** - Latest funding rounds
+- **M&A News** - Recent mergers & acquisitions
+- **Growth Signals** - Hiring/revenue growth indicators
+
+#### 3. Enhanced Intelligence Tab
+Added three new sections:
+- **Inferred Skills** - AI-detected skills not explicitly listed
+- **Lateral Opportunities** - Alternative roles the candidate could fill
+- **Company Correlations** - Insights about their employer patterns
+
+### User Panel Customization Feature
+
+Users can now customize which sections/tabs are visible in the drawer.
+
+#### Database Table
+```sql
+CREATE TABLE user_panel_preferences (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  organization_id UUID,
+  panel_config JSONB NOT NULL DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(user_id)
+);
+```
+
+#### Hook: `usePanelPreferences.js`
+```javascript
+const {
+  preferences,         // Current config
+  loading, saving,
+  savePreferences,     // Persist to DB
+  resetToDefaults,     // Reset all
+  isSectionEnabled,    // Check if section visible
+  isTabEnabled,        // Check if tab visible
+  getSectionOrder,     // Get ordered enabled sections
+} = usePanelPreferences();
+```
+
+#### Modal: `PanelCustomizationModal.jsx`
+- Expandable tab sections with toggle switches
+- Section-level toggles within each tab
+- Reset to Defaults button
+- Save/Cancel actions
+
+#### Files Created/Modified
+| File | Purpose |
+|------|---------|
+| `src/hooks/usePanelPreferences.js` | Hook for preferences management |
+| `src/components/talent/PanelCustomizationModal.jsx` | Settings modal UI |
+| `src/components/talent/CandidateDetailDrawer.jsx` | Added Company tab, Quick Stats, enhanced Intel |
+
+### Data Normalization Fixes
+
+Fixed field name mismatches between database schema and component expectations.
+
+#### Problem
+Database columns didn't match what the component expected:
+- `job_title` vs `current_title`
+- `company_name` vs `current_company`
+- `person_home_location` vs `location`
+- `linkedin_profile` vs `linkedin_url`
+- `intelligence_timing` vs `timing_signals`
+
+#### Solution
+Added normalization in `fetchCandidateDetails()`:
+
+```javascript
+const normalizedCandidate = {
+  ...data,
+  // Profile fields
+  current_title: data.current_title || data.job_title || null,
+  current_company: data.current_company || data.company_name || null,
+  location: data.location || data.person_home_location || null,
+  linkedin_url: data.linkedin_url || data.linkedin_profile || null,
+
+  // Intelligence fields
+  timing_signals: data.timing_signals || data.intelligence_timing || [],
+  key_insights: data.key_insights || data.intelligence_data?.key_insights || [],
+
+  // Company intelligence - build from individual fields
+  company_intelligence: data.company_intelligence || {
+    industry: data.industry || data.company_industry || null,
+    employee_count: data.company_employee_count || null,
+    tech_stack: data.company_tech_stack || [],
+    funding: data.company_latest_funding || null,
+    ma_news: data.recent_ma_news ? [{ headline: data.recent_ma_news }] : [],
+  },
+};
+```
+
+### Polymorphic Data Handling
+
+Fixed display of `lateral_opportunities` and `company_correlations` which had varying data formats from AI generation.
+
+#### lateral_opportunities
+Could be strings OR objects:
+```javascript
+// Strings: ["Deloitte", "KPMG", "PwC"]
+// Objects: [{ role: "Senior Consultant", fit_score: 85 }]
+
+const displayText = typeof opp === 'string'
+  ? opp
+  : opp.role || opp.title || opp.name || opp.company || JSON.stringify(opp);
+```
+
+#### company_correlations
+Could be company names OR inference objects:
+```javascript
+// Strings: ["Google", "Meta"]
+// Objects: { inference: "...", observation: "...", outreach_angle: "..." }
+
+if (company.inference || company.observation || company.outreach_angle) {
+  // Render as insight card with observation, inference, outreach angle
+}
+```
+
+### Troubleshooting
+
+| Issue | Cause | Fix |
+|-------|-------|-----|
+| Empty Contact Info section | Field name mismatch | Normalize `job_title` → `current_title`, etc. |
+| Company tab shows "Unknown Company" | Missing company data fields | Build `company_intelligence` from individual columns |
+| Lateral Opportunities wrong format | AI stored company names instead of roles | Handle both string and object formats |
+| Company Correlations shows [object Object] | AI stored inference objects | Detect and render observation/inference/outreach_angle |
+
+---
+
 ## SMS Outreach (Twilio Integration)
 
 ### Overview
