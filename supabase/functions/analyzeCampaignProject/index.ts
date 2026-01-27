@@ -13,13 +13,17 @@ const corsHeaders = {
 interface RoleContext {
   perfect_fit_criteria?: string;
   selling_points?: string;
-  must_haves?: string[];
-  deal_breakers?: string[];
+  must_haves?: string | string[];  // Can be multiline string or array
+  nice_to_haves?: string | string[];  // Can be multiline string or array
+  deal_breakers?: string | string[];  // Can be multiline string or array
   target_companies?: string[];
   ideal_background?: string;
   salary_range?: string;
   remote_ok?: boolean;
   experience_level?: string; // 'entry', 'mid', 'senior', 'lead', 'executive'
+  role_title?: string;  // Denormalized from wizard
+  project_name?: string;  // Denormalized from wizard
+  outreach_channel?: string;
 }
 
 interface Role {
@@ -111,6 +115,20 @@ interface MatchFactors {
   overall_confidence: number;
 }
 
+// Helper function to normalize string or array values to array
+function normalizeToArray(value: string | string[] | undefined): string[] {
+  if (!value) return [];
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string') {
+    // Parse multiline string into array, removing bullet points
+    return value
+      .split('\n')
+      .map(line => line.replace(/^[-•*]\s*/, '').trim())
+      .filter(line => line.length > 0);
+  }
+  return [];
+}
+
 // ============================================
 // STAGE 1: Quick Pre-Filter (Rule-based)
 // Eliminates obviously unqualified candidates
@@ -126,9 +144,10 @@ function preFilterCandidate(
   let quickScore = 0;
 
   // Check deal breakers first (instant disqualification)
-  if (roleContext?.deal_breakers && roleContext.deal_breakers.length > 0) {
+  const dealBreakers = normalizeToArray(roleContext?.deal_breakers);
+  if (dealBreakers.length > 0) {
     const candidateText = `${candidateTitle} ${candidate.notes || ''} ${candidate.current_company || ''}`.toLowerCase();
-    for (const breaker of roleContext.deal_breakers) {
+    for (const breaker of dealBreakers) {
       if (candidateText.includes(breaker.toLowerCase())) {
         return { passes: false, quickScore: 0, reasons: [`Deal breaker: ${breaker}`] };
       }
@@ -156,14 +175,15 @@ function preFilterCandidate(
   }
 
   // Must-haves check (critical)
-  if (roleContext?.must_haves && roleContext.must_haves.length > 0) {
+  const mustHaves = normalizeToArray(roleContext?.must_haves);
+  if (mustHaves.length > 0) {
     const candidateText = `${candidateTitle} ${candidate.skills?.join(' ') || ''} ${candidate.certifications?.join(' ') || ''}`.toLowerCase();
-    const matchedMustHaves = roleContext.must_haves.filter(mh => candidateText.includes(mh.toLowerCase()));
-    const coverage = matchedMustHaves.length / roleContext.must_haves.length;
+    const matchedMustHaves = mustHaves.filter(mh => candidateText.includes(mh.toLowerCase()));
+    const coverage = matchedMustHaves.length / mustHaves.length;
 
     if (coverage >= 0.5) {
       quickScore += 15;
-      reasons.push(`${matchedMustHaves.length}/${roleContext.must_haves.length} must-haves`);
+      reasons.push(`${matchedMustHaves.length}/${mustHaves.length} must-haves`);
     }
   }
 
@@ -241,8 +261,8 @@ ${role.responsibilities || 'Not specified'}
 ${roleContext ? `
 RECRUITER'S CONTEXT:
 - Perfect Candidate: ${roleContext.perfect_fit_criteria || 'Not specified'}
-- Must-Have Skills/Experience: ${roleContext.must_haves?.join(', ') || 'Not specified'}
-- Deal Breakers: ${roleContext.deal_breakers?.join(', ') || 'None'}
+- Must-Have Skills/Experience: ${normalizeToArray(roleContext.must_haves).join(', ') || 'Not specified'}
+- Deal Breakers: ${normalizeToArray(roleContext.deal_breakers).join(', ') || 'None'}
 - Target Companies to Poach From: ${roleContext.target_companies?.join(', ') || 'Any'}
 - Ideal Background: ${roleContext.ideal_background || 'Not specified'}
 - Experience Level: ${roleContext.experience_level || 'Not specified'}
@@ -669,7 +689,7 @@ serve(async (req) => {
       roles = [{
         id: "campaign-role",
         title: campaign.role_title,
-        requirements: effectiveRoleContext?.must_haves?.join(", ") || "",
+        requirements: normalizeToArray(effectiveRoleContext?.must_haves).join(", ") || "",
         responsibilities: effectiveRoleContext?.perfect_fit_criteria || "",
       }];
     }
@@ -677,7 +697,9 @@ serve(async (req) => {
     // If still no roles, try role_context
     if (roles.length === 0 && effectiveRoleContext) {
       // Create synthetic role purely from role_context (for nest-based matching)
-      const roleTitle = effectiveRoleContext.ideal_background ||
+      // Try to get a good title from role_context
+      const roleTitle = effectiveRoleContext.role_title ||
+                        effectiveRoleContext.ideal_background ||
                         effectiveRoleContext.experience_level ||
                         effectiveRoleContext.perfect_fit_criteria?.substring(0, 50) ||
                         "Target Role";
@@ -685,7 +707,7 @@ serve(async (req) => {
       roles = [{
         id: "context-role",
         title: roleTitle,
-        requirements: effectiveRoleContext.must_haves?.join(", ") || effectiveRoleContext.perfect_fit_criteria || "",
+        requirements: normalizeToArray(effectiveRoleContext.must_haves).join(", ") || effectiveRoleContext.perfect_fit_criteria || "",
         responsibilities: effectiveRoleContext.perfect_fit_criteria || "",
         location: effectiveRoleContext.remote_ok ? "Remote" : undefined,
       }];
@@ -751,6 +773,9 @@ serve(async (req) => {
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Use eligibleCandidates for the matching process
+    const candidatesToAnalyze = eligibleCandidates;
 
     console.log(`Starting smart matching: ${candidatesToAnalyze.length} candidates, ${roles.length} role(s)`);
 
