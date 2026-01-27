@@ -827,20 +827,26 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
               <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
                 <div className="flex items-start gap-2 mb-3">
                   <ArrowUpRight className="w-5 h-5 text-green-400 flex-shrink-0" />
-                  <p className="text-xs text-zinc-400">Adjacent roles this candidate could excel in</p>
+                  <p className="text-xs text-zinc-400">Adjacent roles or companies this candidate could excel in</p>
                 </div>
                 <div className="space-y-2">
-                  {candidate.lateral_opportunities.map((opp, i) => (
-                    <div key={i} className="flex items-center gap-2 text-sm">
-                      <Briefcase className="w-4 h-4 text-green-400 flex-shrink-0" />
-                      <span className="text-zinc-300">{typeof opp === 'string' ? opp : opp.role || opp.title}</span>
-                      {typeof opp === 'object' && opp.fit_score && (
-                        <span className="ml-auto px-2 py-0.5 bg-green-500/20 text-green-400 rounded text-xs">
-                          {opp.fit_score}% fit
-                        </span>
-                      )}
-                    </div>
-                  ))}
+                  {candidate.lateral_opportunities.map((opp, i) => {
+                    // Handle various data formats
+                    const displayText = typeof opp === 'string'
+                      ? opp
+                      : opp.role || opp.title || opp.name || opp.company || JSON.stringify(opp);
+                    return (
+                      <div key={i} className="flex items-center gap-2 text-sm">
+                        <Briefcase className="w-4 h-4 text-green-400 flex-shrink-0" />
+                        <span className="text-zinc-300">{displayText}</span>
+                        {typeof opp === 'object' && opp.fit_score && (
+                          <span className="ml-auto px-2 py-0.5 bg-green-500/20 text-green-400 rounded text-xs">
+                            {opp.fit_score}% fit
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </Section>
@@ -852,22 +858,68 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
               <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-lg p-4">
                 <div className="flex items-start gap-2 mb-3">
                   <Network className="w-5 h-5 text-cyan-400 flex-shrink-0" />
-                  <p className="text-xs text-zinc-400">Companies with similar talent profiles and culture</p>
+                  <p className="text-xs text-zinc-400">Related companies and competitive insights</p>
                 </div>
                 <div className="space-y-2">
-                  {candidate.company_correlations.map((company, i) => (
-                    <div key={i} className="flex items-center justify-between p-2 bg-zinc-800/50 rounded-lg">
-                      <div className="flex items-center gap-2">
+                  {candidate.company_correlations.map((company, i) => {
+                    // Handle string format (company name)
+                    if (typeof company === 'string') {
+                      return (
+                        <div key={i} className="flex items-center justify-between p-2 bg-zinc-800/50 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <Building2 className="w-4 h-4 text-cyan-400" />
+                            <span className="text-sm text-zinc-300">{company}</span>
+                          </div>
+                        </div>
+                      );
+                    }
+                    // Handle object with name/similarity (expected format)
+                    if (company.name) {
+                      return (
+                        <div key={i} className="flex items-center justify-between p-2 bg-zinc-800/50 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <Building2 className="w-4 h-4 text-cyan-400" />
+                            <span className="text-sm text-zinc-300">{company.name}</span>
+                          </div>
+                          {company.similarity && (
+                            <span className="text-xs text-cyan-400">{company.similarity}% match</span>
+                          )}
+                        </div>
+                      );
+                    }
+                    // Handle inference object format (from AI)
+                    if (company.inference || company.observation || company.outreach_angle) {
+                      return (
+                        <div key={i} className="p-3 bg-zinc-800/50 rounded-lg space-y-2">
+                          {company.observation && (
+                            <div className="flex items-start gap-2">
+                              <Eye className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
+                              <span className="text-sm text-zinc-300">{company.observation}</span>
+                            </div>
+                          )}
+                          {company.inference && (
+                            <div className="flex items-start gap-2">
+                              <Sparkles className="w-4 h-4 text-purple-400 flex-shrink-0 mt-0.5" />
+                              <span className="text-sm text-zinc-400">{company.inference}</span>
+                            </div>
+                          )}
+                          {company.outreach_angle && (
+                            <div className="flex items-start gap-2">
+                              <Lightbulb className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                              <span className="text-sm text-amber-300">{company.outreach_angle}</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+                    // Fallback
+                    return (
+                      <div key={i} className="flex items-center gap-2 p-2 bg-zinc-800/50 rounded-lg">
                         <Building2 className="w-4 h-4 text-cyan-400" />
-                        <span className="text-sm text-zinc-300">
-                          {typeof company === 'string' ? company : company.name}
-                        </span>
+                        <span className="text-sm text-zinc-300">{JSON.stringify(company)}</span>
                       </div>
-                      {typeof company === 'object' && company.similarity && (
-                        <span className="text-xs text-cyan-400">{company.similarity}% match</span>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </Section>
