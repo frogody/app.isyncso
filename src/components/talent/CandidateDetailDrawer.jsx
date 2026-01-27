@@ -48,6 +48,9 @@ import { useUser } from "@/components/context/UserContext";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { IntelligenceGauge, IntelligenceLevelBadge, ApproachBadge } from "./IntelligenceGauge";
+import { usePanelPreferences } from "@/hooks/usePanelPreferences";
+import PanelCustomizationModal from "./PanelCustomizationModal";
+import { Settings } from "lucide-react";
 
 // Copy button with feedback
 const CopyButton = ({ value }) => {
@@ -301,7 +304,7 @@ const QuickStats = ({ candidate }) => {
 };
 
 // Company Tab
-const CompanyTab = ({ candidate }) => {
+const CompanyTab = ({ candidate, isSectionEnabled = () => true }) => {
   const companyIntel = candidate.company_intelligence || {};
   const hasCompanyData = companyIntel && Object.keys(companyIntel).length > 0;
 
@@ -320,37 +323,39 @@ const CompanyTab = ({ candidate }) => {
   return (
     <div className="space-y-6">
       {/* Company Basic Info Bar */}
-      <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-lg border border-blue-500/20">
-        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-lg font-bold text-white flex-shrink-0">
-          {candidate.current_company?.charAt(0)?.toUpperCase() || "?"}
-        </div>
-        <div className="flex-1">
-          <div className="text-lg font-medium text-white">{candidate.current_company || "Unknown Company"}</div>
-          <div className="flex items-center gap-3 mt-1 text-sm text-zinc-400">
-            {companyIntel.industry && (
-              <span className="flex items-center gap-1">
-                <Layers className="w-3.5 h-3.5" />
-                {companyIntel.industry}
-              </span>
-            )}
-            {companyIntel.employee_count && (
-              <span className="flex items-center gap-1">
-                <Users className="w-3.5 h-3.5" />
-                {companyIntel.employee_count.toLocaleString()} employees
-              </span>
-            )}
-            {companyIntel.headquarters && (
-              <span className="flex items-center gap-1">
-                <Globe className="w-3.5 h-3.5" />
-                {companyIntel.headquarters}
-              </span>
-            )}
+      {isSectionEnabled('company', 'company_info') && (
+        <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-lg border border-blue-500/20">
+          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-lg font-bold text-white flex-shrink-0">
+            {candidate.current_company?.charAt(0)?.toUpperCase() || "?"}
+          </div>
+          <div className="flex-1">
+            <div className="text-lg font-medium text-white">{candidate.current_company || "Unknown Company"}</div>
+            <div className="flex items-center gap-3 mt-1 text-sm text-zinc-400">
+              {companyIntel.industry && (
+                <span className="flex items-center gap-1">
+                  <Layers className="w-3.5 h-3.5" />
+                  {companyIntel.industry}
+                </span>
+              )}
+              {companyIntel.employee_count && (
+                <span className="flex items-center gap-1">
+                  <Users className="w-3.5 h-3.5" />
+                  {companyIntel.employee_count.toLocaleString()} employees
+                </span>
+              )}
+              {companyIntel.headquarters && (
+                <span className="flex items-center gap-1">
+                  <Globe className="w-3.5 h-3.5" />
+                  {companyIntel.headquarters}
+                </span>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Technology Stack */}
-      {companyIntel.tech_stack && companyIntel.tech_stack.length > 0 && (
+      {isSectionEnabled('company', 'tech_stack') && companyIntel.tech_stack && companyIntel.tech_stack.length > 0 && (
         <Section title="Technology Stack">
           <div className="bg-zinc-800/30 rounded-lg p-4 border border-zinc-700/30">
             <div className="flex flex-wrap gap-2">
@@ -369,7 +374,7 @@ const CompanyTab = ({ candidate }) => {
       )}
 
       {/* Employee Ratings */}
-      {companyIntel.employee_ratings && (
+      {isSectionEnabled('company', 'employee_ratings') && companyIntel.employee_ratings && (
         <Section title="Employee Ratings">
           <div className="bg-zinc-800/30 rounded-lg p-4 border border-zinc-700/30 space-y-3">
             {companyIntel.employee_ratings.overall && (
@@ -411,7 +416,7 @@ const CompanyTab = ({ candidate }) => {
       )}
 
       {/* Funding Information */}
-      {companyIntel.funding && (
+      {isSectionEnabled('company', 'funding_info') && companyIntel.funding && (
         <Section title="Funding Information">
           <div className="bg-zinc-800/30 rounded-lg p-4 border border-zinc-700/30 space-y-3">
             {companyIntel.funding.total_raised && (
@@ -455,7 +460,7 @@ const CompanyTab = ({ candidate }) => {
       )}
 
       {/* M&A News */}
-      {companyIntel.ma_news && companyIntel.ma_news.length > 0 && (
+      {isSectionEnabled('company', 'ma_news') && companyIntel.ma_news && companyIntel.ma_news.length > 0 && (
         <Section title="M&A News">
           <div className="space-y-2">
             {companyIntel.ma_news.map((news, i) => (
@@ -482,7 +487,7 @@ const CompanyTab = ({ candidate }) => {
       )}
 
       {/* Company Profile Summary */}
-      {companyIntel.description && (
+      {isSectionEnabled('company', 'company_profile') && companyIntel.description && (
         <Section title="Company Profile">
           <div className="bg-zinc-800/30 rounded-lg p-4 border border-zinc-700/30">
             <p className="text-sm text-zinc-300 leading-relaxed">{companyIntel.description}</p>
@@ -491,7 +496,7 @@ const CompanyTab = ({ candidate }) => {
       )}
 
       {/* Growth Signals */}
-      {companyIntel.growth_signals && companyIntel.growth_signals.length > 0 && (
+      {isSectionEnabled('company', 'growth_signals') && companyIntel.growth_signals && companyIntel.growth_signals.length > 0 && (
         <Section title="Growth Signals">
           <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700/30">
             <ul className="space-y-2">
@@ -560,22 +565,24 @@ const ActivityItem = ({ type, campaign_name, timestamp, details, message_preview
 };
 
 // Profile Tab
-const ProfileTab = ({ candidate }) => (
+const ProfileTab = ({ candidate, isSectionEnabled = () => true }) => (
   <div className="space-y-6">
     {/* Contact Information */}
-    <Section title="Contact Information">
-      <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700/30">
-        <InfoRow icon={Mail} label="Email" value={candidate.email} copyable />
-        <InfoRow icon={Phone} label="Phone" value={candidate.phone} copyable />
-        <InfoRow icon={Linkedin} label="LinkedIn" value={candidate.linkedin_url} link />
-        {candidate.website && (
-          <InfoRow icon={ExternalLink} label="Website" value={candidate.website} link />
-        )}
-      </div>
-    </Section>
+    {isSectionEnabled('profile', 'contact_info') && (
+      <Section title="Contact Information">
+        <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700/30">
+          <InfoRow icon={Mail} label="Email" value={candidate.email} copyable />
+          <InfoRow icon={Phone} label="Phone" value={candidate.phone} copyable />
+          <InfoRow icon={Linkedin} label="LinkedIn" value={candidate.linkedin_url} link />
+          {candidate.website && (
+            <InfoRow icon={ExternalLink} label="Website" value={candidate.website} link />
+          )}
+        </div>
+      </Section>
+    )}
 
     {/* Professional Summary */}
-    {candidate.summary && (
+    {isSectionEnabled('profile', 'professional_summary') && candidate.summary && (
       <Section title="Professional Summary">
         <div className="bg-zinc-800/30 rounded-lg p-4 border border-zinc-700/30">
           <p className="text-zinc-300 text-sm leading-relaxed">{candidate.summary}</p>
@@ -584,7 +591,7 @@ const ProfileTab = ({ candidate }) => (
     )}
 
     {/* Skills */}
-    {candidate.skills && candidate.skills.length > 0 && (
+    {isSectionEnabled('profile', 'skills') && candidate.skills && candidate.skills.length > 0 && (
       <Section title="Skills">
         <div className="flex flex-wrap gap-2">
           {candidate.skills.map((skill, i) => (
@@ -600,7 +607,7 @@ const ProfileTab = ({ candidate }) => (
     )}
 
     {/* Experience */}
-    {candidate.experience && candidate.experience.length > 0 && (
+    {isSectionEnabled('profile', 'experience') && candidate.experience && candidate.experience.length > 0 && (
       <Section title="Experience">
         <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700/30">
           {candidate.experience.map((exp, i) => (
@@ -611,7 +618,7 @@ const ProfileTab = ({ candidate }) => (
     )}
 
     {/* Education */}
-    {candidate.education && candidate.education.length > 0 && (
+    {isSectionEnabled('profile', 'education') && candidate.education && candidate.education.length > 0 && (
       <Section title="Education">
         <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700/30">
           {candidate.education.map((edu, i) => (
@@ -622,66 +629,70 @@ const ProfileTab = ({ candidate }) => (
     )}
 
     {/* Additional Info */}
-    <Section title="Additional Information">
-      <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700/30 space-y-2">
-        {candidate.years_experience && (
-          <div className="flex justify-between text-sm">
-            <span className="text-zinc-400">Years of Experience</span>
-            <span className="text-white">{candidate.years_experience}</span>
-          </div>
-        )}
-        {candidate.current_salary && (
-          <div className="flex justify-between text-sm">
-            <span className="text-zinc-400">Current Salary</span>
-            <span className="text-white">${candidate.current_salary.toLocaleString()}</span>
-          </div>
-        )}
-        {candidate.desired_salary && (
-          <div className="flex justify-between text-sm">
-            <span className="text-zinc-400">Desired Salary</span>
-            <span className="text-white">${candidate.desired_salary.toLocaleString()}</span>
-          </div>
-        )}
-        {candidate.notice_period && (
-          <div className="flex justify-between text-sm">
-            <span className="text-zinc-400">Notice Period</span>
-            <span className="text-white">{candidate.notice_period}</span>
-          </div>
-        )}
-      </div>
-    </Section>
+    {isSectionEnabled('profile', 'additional_info') && (
+      <Section title="Additional Information">
+        <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700/30 space-y-2">
+          {candidate.years_experience && (
+            <div className="flex justify-between text-sm">
+              <span className="text-zinc-400">Years of Experience</span>
+              <span className="text-white">{candidate.years_experience}</span>
+            </div>
+          )}
+          {candidate.current_salary && (
+            <div className="flex justify-between text-sm">
+              <span className="text-zinc-400">Current Salary</span>
+              <span className="text-white">${candidate.current_salary.toLocaleString()}</span>
+            </div>
+          )}
+          {candidate.desired_salary && (
+            <div className="flex justify-between text-sm">
+              <span className="text-zinc-400">Desired Salary</span>
+              <span className="text-white">${candidate.desired_salary.toLocaleString()}</span>
+            </div>
+          )}
+          {candidate.notice_period && (
+            <div className="flex justify-between text-sm">
+              <span className="text-zinc-400">Notice Period</span>
+              <span className="text-white">{candidate.notice_period}</span>
+            </div>
+          )}
+        </div>
+      </Section>
+    )}
   </div>
 );
 
 // Intelligence Tab
-const IntelligenceTab = ({ candidate, onRefresh, refreshing }) => {
+const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = () => true }) => {
   const hasIntel = candidate.intelligence_score != null;
 
   return (
     <div className="space-y-6">
       {/* Intel Score Header */}
-      <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 rounded-lg border border-cyan-500/20">
-        <IntelligenceGauge score={candidate.intelligence_score || 0} size="lg" />
-        <div className="flex-1">
-          <div className="text-lg font-medium text-white">Flight Risk Score</div>
-          <div className="flex items-center gap-2 mt-1">
-            <IntelligenceLevelBadge level={candidate.intelligence_level || "Low"} />
-            {candidate.recommended_approach && (
-              <ApproachBadge approach={candidate.recommended_approach} />
+      {isSectionEnabled('intelligence', 'flight_risk_score') && (
+        <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 rounded-lg border border-cyan-500/20">
+          <IntelligenceGauge score={candidate.intelligence_score || 0} size="lg" />
+          <div className="flex-1">
+            <div className="text-lg font-medium text-white">Flight Risk Score</div>
+            <div className="flex items-center gap-2 mt-1">
+              <IntelligenceLevelBadge level={candidate.intelligence_level || "Low"} />
+              {candidate.recommended_approach && (
+                <ApproachBadge approach={candidate.recommended_approach} />
+              )}
+            </div>
+            {candidate.last_intelligence_update && (
+              <div className="text-xs text-zinc-500 mt-2">
+                Last updated: {new Date(candidate.last_intelligence_update).toLocaleDateString()}
+              </div>
             )}
           </div>
-          {candidate.last_intelligence_update && (
-            <div className="text-xs text-zinc-500 mt-2">
-              Last updated: {new Date(candidate.last_intelligence_update).toLocaleDateString()}
-            </div>
-          )}
         </div>
-      </div>
+      )}
 
       {hasIntel ? (
         <>
           {/* Best Outreach Angle */}
-          {candidate.best_outreach_angle && (
+          {isSectionEnabled('intelligence', 'best_outreach_angle') && candidate.best_outreach_angle && (
             <Section title="Best Outreach Angle">
               <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4">
                 <div className="flex items-start gap-2">
@@ -695,7 +706,7 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing }) => {
           )}
 
           {/* Timing Signals */}
-          {candidate.timing_signals && candidate.timing_signals.length > 0 && (
+          {isSectionEnabled('intelligence', 'timing_signals') && candidate.timing_signals && candidate.timing_signals.length > 0 && (
             <Section title="Timing Signals">
               <div className="space-y-2">
                 {candidate.timing_signals.map((signal, i) => (
@@ -730,7 +741,7 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing }) => {
           )}
 
           {/* Outreach Hooks */}
-          {candidate.outreach_hooks && candidate.outreach_hooks.length > 0 && (
+          {isSectionEnabled('intelligence', 'outreach_hooks') && candidate.outreach_hooks && candidate.outreach_hooks.length > 0 && (
             <Section title="Outreach Hooks">
               <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700/30">
                 <ul className="space-y-2">
@@ -746,7 +757,7 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing }) => {
           )}
 
           {/* Key Insights */}
-          {candidate.key_insights && candidate.key_insights.length > 0 && (
+          {isSectionEnabled('intelligence', 'key_insights') && candidate.key_insights && candidate.key_insights.length > 0 && (
             <Section title="Key Insights">
               <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700/30">
                 <ul className="space-y-2">
@@ -762,7 +773,7 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing }) => {
           )}
 
           {/* Company Pain Points */}
-          {candidate.company_pain_points && candidate.company_pain_points.length > 0 && (
+          {isSectionEnabled('intelligence', 'employer_pain_points') && candidate.company_pain_points && candidate.company_pain_points.length > 0 && (
             <Section title="Employer Pain Points">
               <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700/30">
                 <ul className="space-y-2">
@@ -778,7 +789,7 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing }) => {
           )}
 
           {/* Inferred Skills */}
-          {candidate.inferred_skills && candidate.inferred_skills.length > 0 && (
+          {isSectionEnabled('intelligence', 'inferred_skills') && candidate.inferred_skills && candidate.inferred_skills.length > 0 && (
             <Section title="Inferred Skills">
               <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-4">
                 <div className="flex items-start gap-2 mb-3">
@@ -801,7 +812,7 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing }) => {
           )}
 
           {/* Lateral Opportunities */}
-          {candidate.lateral_opportunities && candidate.lateral_opportunities.length > 0 && (
+          {isSectionEnabled('intelligence', 'lateral_opportunities') && candidate.lateral_opportunities && candidate.lateral_opportunities.length > 0 && (
             <Section title="Lateral Opportunities">
               <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
                 <div className="flex items-start gap-2 mb-3">
@@ -826,7 +837,7 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing }) => {
           )}
 
           {/* Company Correlations */}
-          {candidate.company_correlations && candidate.company_correlations.length > 0 && (
+          {isSectionEnabled('intelligence', 'company_correlations') && candidate.company_correlations && candidate.company_correlations.length > 0 && (
             <Section title="Company Correlations">
               <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-lg p-4">
                 <div className="flex items-start gap-2 mb-3">
@@ -1015,6 +1026,17 @@ export default function CandidateDetailDrawer({
   const [activityHistory, setActivityHistory] = useState([]);
   const [activityLoading, setActivityLoading] = useState(false);
   const [refreshingIntel, setRefreshingIntel] = useState(false);
+  const [showCustomizationModal, setShowCustomizationModal] = useState(false);
+
+  // Panel preferences
+  const {
+    preferences,
+    loading: preferencesLoading,
+    saving: preferencesSaving,
+    savePreferences,
+    isSectionEnabled,
+    isTabEnabled
+  } = usePanelPreferences();
 
   // Fetch candidate details
   useEffect(() => {
@@ -1161,7 +1183,7 @@ export default function CandidateDetailDrawer({
       .toUpperCase();
   };
 
-  const tabs = [
+  const allTabs = [
     { id: "profile", label: "Profile", icon: User },
     { id: "intelligence", label: "Intelligence", icon: Brain },
     { id: "company", label: "Company", icon: Building2 },
@@ -1170,6 +1192,13 @@ export default function CandidateDetailDrawer({
       : []),
     { id: "activity", label: "Activity", icon: History },
   ];
+
+  // Filter tabs based on user preferences
+  const tabs = allTabs.filter(tab => {
+    // Match tab is always shown when there's campaign context
+    if (tab.id === "match") return true;
+    return isTabEnabled(tab.id);
+  });
 
   return (
     <AnimatePresence>
@@ -1240,13 +1269,24 @@ export default function CandidateDetailDrawer({
                       </div>
                     </div>
 
-                    {/* Close Button */}
-                    <button
-                      onClick={onClose}
-                      className="p-2 hover:bg-zinc-800 rounded-lg transition-colors"
-                    >
-                      <X className="w-5 h-5 text-zinc-400" />
-                    </button>
+                    {/* Header Buttons */}
+                    <div className="flex items-center gap-1">
+                      {/* Customize Button */}
+                      <button
+                        onClick={() => setShowCustomizationModal(true)}
+                        className="p-2 hover:bg-zinc-800 rounded-lg transition-colors"
+                        title="Customize panel"
+                      >
+                        <Settings className="w-5 h-5 text-zinc-400 hover:text-zinc-300" />
+                      </button>
+                      {/* Close Button */}
+                      <button
+                        onClick={onClose}
+                        className="p-2 hover:bg-zinc-800 rounded-lg transition-colors"
+                      >
+                        <X className="w-5 h-5 text-zinc-400" />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Quick Actions */}
@@ -1301,15 +1341,26 @@ export default function CandidateDetailDrawer({
 
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto p-6">
-                  {activeTab === "profile" && <ProfileTab candidate={candidate} />}
+                  {activeTab === "profile" && (
+                    <ProfileTab
+                      candidate={candidate}
+                      isSectionEnabled={isSectionEnabled}
+                    />
+                  )}
                   {activeTab === "intelligence" && (
                     <IntelligenceTab
                       candidate={candidate}
                       onRefresh={handleRefreshIntel}
                       refreshing={refreshingIntel}
+                      isSectionEnabled={isSectionEnabled}
                     />
                   )}
-                  {activeTab === "company" && <CompanyTab candidate={candidate} />}
+                  {activeTab === "company" && (
+                    <CompanyTab
+                      candidate={candidate}
+                      isSectionEnabled={isSectionEnabled}
+                    />
+                  )}
                   {activeTab === "match" && campaignContext && (
                     <MatchAnalysisTab
                       matchData={campaignContext.matchData}
@@ -1332,6 +1383,15 @@ export default function CandidateDetailDrawer({
           </motion.div>
         </>
       )}
+
+      {/* Panel Customization Modal */}
+      <PanelCustomizationModal
+        open={showCustomizationModal}
+        onClose={() => setShowCustomizationModal(false)}
+        preferences={preferences}
+        onSave={savePreferences}
+        saving={preferencesSaving}
+      />
     </AnimatePresence>
   );
 }
