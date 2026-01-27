@@ -223,8 +223,13 @@ const ReasoningBlock = ({ title, items, content, color = "cyan" }) => {
 
 // Quick Stats component for header
 const QuickStats = ({ candidate }) => {
-  // Calculate years at current company
+  // Use database fields if available, otherwise calculate from experience
   const calculateYearsAtCompany = () => {
+    // First try to use the database field
+    if (candidate.years_at_company != null) {
+      return Math.round(candidate.years_at_company);
+    }
+    // Fallback to calculation from experience
     if (!candidate.experience || candidate.experience.length === 0) return null;
     const currentJob = candidate.experience.find(exp => !exp.end_date || exp.end_date === 'Present');
     if (!currentJob || !currentJob.start_date) return null;
@@ -260,8 +265,13 @@ const QuickStats = ({ candidate }) => {
     return promotions;
   };
 
-  // Calculate company changes
+  // Use database field for company changes if available
   const calculateCompanyChanges = () => {
+    // First try to use the database field
+    if (candidate.times_company_hopped != null) {
+      return candidate.times_company_hopped;
+    }
+    // Fallback to calculation from experience
     if (!candidate.experience || candidate.experience.length === 0) return 0;
     const uniqueCompanies = new Set(
       candidate.experience
@@ -1063,7 +1073,61 @@ export default function CandidateDetailDrawer({
         .single();
 
       if (error) throw error;
-      setCandidate(data);
+
+      // Normalize data - map database column names to expected field names
+      const normalizedCandidate = {
+        ...data,
+        // Profile fields
+        name: data.name || `${data.first_name || ''} ${data.last_name || ''}`.trim() || null,
+        current_title: data.current_title || data.job_title || null,
+        current_company: data.current_company || data.company_name || null,
+        location: data.location || data.person_home_location || null,
+        linkedin_url: data.linkedin_url || data.linkedin_profile || null,
+        summary: data.summary || data.professional_summary || null,
+
+        // Intelligence fields - timing_signals from intelligence_timing
+        timing_signals: data.timing_signals || data.intelligence_timing || [],
+
+        // Key insights - may be in intelligence_data or intelligence_factors
+        key_insights: data.key_insights ||
+          (data.intelligence_data?.key_insights) ||
+          (Array.isArray(data.intelligence_factors) && data.intelligence_factors.length > 0
+            ? data.intelligence_factors.map(f => typeof f === 'string' ? f : f.description || f.factor)
+            : []),
+
+        // Outreach hooks normalization
+        outreach_hooks: Array.isArray(data.outreach_hooks) ? data.outreach_hooks : [],
+
+        // Company pain points normalization
+        company_pain_points: Array.isArray(data.company_pain_points) ? data.company_pain_points : [],
+
+        // Company correlations normalization
+        company_correlations: Array.isArray(data.company_correlations) ? data.company_correlations : [],
+
+        // Inferred skills - check intelligence_data
+        inferred_skills: data.inferred_skills || data.intelligence_data?.inferred_skills || [],
+
+        // Lateral opportunities - check intelligence_data
+        lateral_opportunities: data.lateral_opportunities || data.intelligence_data?.lateral_opportunities || [],
+
+        // Company intelligence - build from individual fields if not present
+        company_intelligence: data.company_intelligence || {
+          industry: data.industry || data.company_industry || null,
+          employee_count: data.company_employee_count || null,
+          headquarters: data.company_hq || data.company_hq_location || null,
+          description: data.company_description || null,
+          tech_stack: data.company_tech_stack || [],
+          funding: data.company_latest_funding || data.company_last_funding || null,
+          ma_news: data.recent_ma_news ? [{ headline: data.recent_ma_news }] : [],
+          growth_signals: data.company_growth_percentage ? [`${data.company_growth_percentage}% growth`] : []
+        },
+
+        // Quick stats fields
+        years_at_company: data.years_at_company || null,
+        times_company_hopped: data.times_company_hopped || null,
+      };
+
+      setCandidate(normalizedCandidate);
     } catch (error) {
       console.error("Error fetching candidate:", error);
       toast.error("Failed to load candidate details");
