@@ -30,6 +30,18 @@ import {
   Lightbulb,
   Loader2,
   ChevronRight,
+  DollarSign,
+  Users,
+  Star,
+  Code2,
+  Layers,
+  Zap,
+  ArrowUpRight,
+  Network,
+  Newspaper,
+  Shield,
+  Globe,
+  Percent,
 } from "lucide-react";
 import { supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
@@ -202,6 +214,297 @@ const ReasoningBlock = ({ title, items, content, color = "cyan" }) => {
       ) : content ? (
         <p className="text-sm text-zinc-300">{content}</p>
       ) : null}
+    </div>
+  );
+};
+
+// Quick Stats component for header
+const QuickStats = ({ candidate }) => {
+  // Calculate years at current company
+  const calculateYearsAtCompany = () => {
+    if (!candidate.experience || candidate.experience.length === 0) return null;
+    const currentJob = candidate.experience.find(exp => !exp.end_date || exp.end_date === 'Present');
+    if (!currentJob || !currentJob.start_date) return null;
+
+    const startYear = parseInt(currentJob.start_date.match(/\d{4}/)?.[0]);
+    if (!startYear) return null;
+    const years = new Date().getFullYear() - startYear;
+    return years;
+  };
+
+  // Calculate times promoted (count title changes at same company)
+  const calculatePromotions = () => {
+    if (!candidate.experience || candidate.experience.length < 2) return 0;
+    let promotions = 0;
+    const companiesWithMultipleRoles = {};
+
+    candidate.experience.forEach(exp => {
+      const company = exp.company?.toLowerCase();
+      if (company) {
+        if (!companiesWithMultipleRoles[company]) {
+          companiesWithMultipleRoles[company] = [];
+        }
+        companiesWithMultipleRoles[company].push(exp.title);
+      }
+    });
+
+    Object.values(companiesWithMultipleRoles).forEach(titles => {
+      if (titles.length > 1) {
+        promotions += titles.length - 1;
+      }
+    });
+
+    return promotions;
+  };
+
+  // Calculate company changes
+  const calculateCompanyChanges = () => {
+    if (!candidate.experience || candidate.experience.length === 0) return 0;
+    const uniqueCompanies = new Set(
+      candidate.experience
+        .map(exp => exp.company?.toLowerCase())
+        .filter(Boolean)
+    );
+    return Math.max(0, uniqueCompanies.size - 1);
+  };
+
+  const yearsAtCompany = calculateYearsAtCompany();
+  const timesPromoted = calculatePromotions();
+  const companyChanges = calculateCompanyChanges();
+
+  if (yearsAtCompany === null && timesPromoted === 0 && companyChanges === 0) {
+    return null;
+  }
+
+  return (
+    <div className="flex items-center gap-4 mt-3 text-xs">
+      {yearsAtCompany !== null && (
+        <div className="flex items-center gap-1.5 px-2 py-1 bg-zinc-800/50 rounded-lg">
+          <Calendar className="w-3 h-3 text-cyan-400" />
+          <span className="text-zinc-300">{yearsAtCompany}y at company</span>
+        </div>
+      )}
+      {timesPromoted > 0 && (
+        <div className="flex items-center gap-1.5 px-2 py-1 bg-zinc-800/50 rounded-lg">
+          <TrendingUp className="w-3 h-3 text-green-400" />
+          <span className="text-zinc-300">{timesPromoted}x promoted</span>
+        </div>
+      )}
+      {companyChanges > 0 && (
+        <div className="flex items-center gap-1.5 px-2 py-1 bg-zinc-800/50 rounded-lg">
+          <ArrowUpRight className="w-3 h-3 text-amber-400" />
+          <span className="text-zinc-300">{companyChanges} company changes</span>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Company Tab
+const CompanyTab = ({ candidate }) => {
+  const companyIntel = candidate.company_intelligence || {};
+  const hasCompanyData = companyIntel && Object.keys(companyIntel).length > 0;
+
+  if (!hasCompanyData && !candidate.current_company) {
+    return (
+      <div className="text-center py-8">
+        <Building2 className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
+        <p className="text-zinc-400">No company data available</p>
+        <p className="text-sm text-zinc-500 mt-1">
+          Company intelligence will appear here when available
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Company Basic Info Bar */}
+      <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-lg border border-blue-500/20">
+        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-lg font-bold text-white flex-shrink-0">
+          {candidate.current_company?.charAt(0)?.toUpperCase() || "?"}
+        </div>
+        <div className="flex-1">
+          <div className="text-lg font-medium text-white">{candidate.current_company || "Unknown Company"}</div>
+          <div className="flex items-center gap-3 mt-1 text-sm text-zinc-400">
+            {companyIntel.industry && (
+              <span className="flex items-center gap-1">
+                <Layers className="w-3.5 h-3.5" />
+                {companyIntel.industry}
+              </span>
+            )}
+            {companyIntel.employee_count && (
+              <span className="flex items-center gap-1">
+                <Users className="w-3.5 h-3.5" />
+                {companyIntel.employee_count.toLocaleString()} employees
+              </span>
+            )}
+            {companyIntel.headquarters && (
+              <span className="flex items-center gap-1">
+                <Globe className="w-3.5 h-3.5" />
+                {companyIntel.headquarters}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Technology Stack */}
+      {companyIntel.tech_stack && companyIntel.tech_stack.length > 0 && (
+        <Section title="Technology Stack">
+          <div className="bg-zinc-800/30 rounded-lg p-4 border border-zinc-700/30">
+            <div className="flex flex-wrap gap-2">
+              {companyIntel.tech_stack.map((tech, i) => (
+                <span
+                  key={i}
+                  className="px-2.5 py-1 bg-blue-500/10 text-blue-400 rounded-lg text-xs border border-blue-500/20 flex items-center gap-1"
+                >
+                  <Code2 className="w-3 h-3" />
+                  {tech}
+                </span>
+              ))}
+            </div>
+          </div>
+        </Section>
+      )}
+
+      {/* Employee Ratings */}
+      {companyIntel.employee_ratings && (
+        <Section title="Employee Ratings">
+          <div className="bg-zinc-800/30 rounded-lg p-4 border border-zinc-700/30 space-y-3">
+            {companyIntel.employee_ratings.overall && (
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-zinc-400">Overall Rating</span>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-0.5">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={`w-4 h-4 ${
+                          star <= Math.round(companyIntel.employee_ratings.overall)
+                            ? "text-amber-400 fill-amber-400"
+                            : "text-zinc-600"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-white font-medium">
+                    {companyIntel.employee_ratings.overall.toFixed(1)}
+                  </span>
+                </div>
+              </div>
+            )}
+            {companyIntel.employee_ratings.culture && (
+              <ScoreBar label="Culture & Values" score={companyIntel.employee_ratings.culture * 20} color="cyan" />
+            )}
+            {companyIntel.employee_ratings.work_life_balance && (
+              <ScoreBar label="Work-Life Balance" score={companyIntel.employee_ratings.work_life_balance * 20} color="green" />
+            )}
+            {companyIntel.employee_ratings.compensation && (
+              <ScoreBar label="Compensation" score={companyIntel.employee_ratings.compensation * 20} color="amber" />
+            )}
+            {companyIntel.employee_ratings.career_growth && (
+              <ScoreBar label="Career Growth" score={companyIntel.employee_ratings.career_growth * 20} color="purple" />
+            )}
+          </div>
+        </Section>
+      )}
+
+      {/* Funding Information */}
+      {companyIntel.funding && (
+        <Section title="Funding Information">
+          <div className="bg-zinc-800/30 rounded-lg p-4 border border-zinc-700/30 space-y-3">
+            {companyIntel.funding.total_raised && (
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-zinc-400 flex items-center gap-1">
+                  <DollarSign className="w-4 h-4" />
+                  Total Raised
+                </span>
+                <span className="text-white font-medium">{companyIntel.funding.total_raised}</span>
+              </div>
+            )}
+            {companyIntel.funding.last_round && (
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-zinc-400">Last Round</span>
+                <span className="text-white">{companyIntel.funding.last_round}</span>
+              </div>
+            )}
+            {companyIntel.funding.last_round_date && (
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-zinc-400">Round Date</span>
+                <span className="text-white">{companyIntel.funding.last_round_date}</span>
+              </div>
+            )}
+            {companyIntel.funding.investors && companyIntel.funding.investors.length > 0 && (
+              <div className="pt-2 border-t border-zinc-700/50">
+                <div className="text-xs text-zinc-500 mb-2">Key Investors</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {companyIntel.funding.investors.map((investor, i) => (
+                    <span
+                      key={i}
+                      className="px-2 py-0.5 bg-green-500/10 text-green-400 rounded text-xs border border-green-500/20"
+                    >
+                      {investor}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </Section>
+      )}
+
+      {/* M&A News */}
+      {companyIntel.ma_news && companyIntel.ma_news.length > 0 && (
+        <Section title="M&A News">
+          <div className="space-y-2">
+            {companyIntel.ma_news.map((news, i) => (
+              <div
+                key={i}
+                className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg"
+              >
+                <div className="flex items-start gap-2">
+                  <Newspaper className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <div className="text-sm text-white font-medium">{news.headline}</div>
+                    {news.date && (
+                      <div className="text-xs text-zinc-500 mt-1">{news.date}</div>
+                    )}
+                    {news.summary && (
+                      <p className="text-xs text-zinc-400 mt-1">{news.summary}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {/* Company Profile Summary */}
+      {companyIntel.description && (
+        <Section title="Company Profile">
+          <div className="bg-zinc-800/30 rounded-lg p-4 border border-zinc-700/30">
+            <p className="text-sm text-zinc-300 leading-relaxed">{companyIntel.description}</p>
+          </div>
+        </Section>
+      )}
+
+      {/* Growth Signals */}
+      {companyIntel.growth_signals && companyIntel.growth_signals.length > 0 && (
+        <Section title="Growth Signals">
+          <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700/30">
+            <ul className="space-y-2">
+              {companyIntel.growth_signals.map((signal, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm">
+                  <Zap className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
+                  <span className="text-zinc-300">{signal}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Section>
+      )}
     </div>
   );
 };
@@ -470,6 +773,81 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing }) => {
                     </li>
                   ))}
                 </ul>
+              </div>
+            </Section>
+          )}
+
+          {/* Inferred Skills */}
+          {candidate.inferred_skills && candidate.inferred_skills.length > 0 && (
+            <Section title="Inferred Skills">
+              <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-4">
+                <div className="flex items-start gap-2 mb-3">
+                  <Brain className="w-5 h-5 text-purple-400 flex-shrink-0" />
+                  <p className="text-xs text-zinc-400">Skills inferred from experience and background, even if not explicitly listed</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {candidate.inferred_skills.map((skill, i) => (
+                    <span
+                      key={i}
+                      className="px-2.5 py-1 bg-purple-500/20 text-purple-300 rounded-lg text-xs border border-purple-500/30 flex items-center gap-1"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </Section>
+          )}
+
+          {/* Lateral Opportunities */}
+          {candidate.lateral_opportunities && candidate.lateral_opportunities.length > 0 && (
+            <Section title="Lateral Opportunities">
+              <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
+                <div className="flex items-start gap-2 mb-3">
+                  <ArrowUpRight className="w-5 h-5 text-green-400 flex-shrink-0" />
+                  <p className="text-xs text-zinc-400">Adjacent roles this candidate could excel in</p>
+                </div>
+                <div className="space-y-2">
+                  {candidate.lateral_opportunities.map((opp, i) => (
+                    <div key={i} className="flex items-center gap-2 text-sm">
+                      <Briefcase className="w-4 h-4 text-green-400 flex-shrink-0" />
+                      <span className="text-zinc-300">{typeof opp === 'string' ? opp : opp.role || opp.title}</span>
+                      {typeof opp === 'object' && opp.fit_score && (
+                        <span className="ml-auto px-2 py-0.5 bg-green-500/20 text-green-400 rounded text-xs">
+                          {opp.fit_score}% fit
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Section>
+          )}
+
+          {/* Company Correlations */}
+          {candidate.company_correlations && candidate.company_correlations.length > 0 && (
+            <Section title="Company Correlations">
+              <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-lg p-4">
+                <div className="flex items-start gap-2 mb-3">
+                  <Network className="w-5 h-5 text-cyan-400 flex-shrink-0" />
+                  <p className="text-xs text-zinc-400">Companies with similar talent profiles and culture</p>
+                </div>
+                <div className="space-y-2">
+                  {candidate.company_correlations.map((company, i) => (
+                    <div key={i} className="flex items-center justify-between p-2 bg-zinc-800/50 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="w-4 h-4 text-cyan-400" />
+                        <span className="text-sm text-zinc-300">
+                          {typeof company === 'string' ? company : company.name}
+                        </span>
+                      </div>
+                      {typeof company === 'object' && company.similarity && (
+                        <span className="text-xs text-cyan-400">{company.similarity}% match</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             </Section>
           )}
@@ -786,6 +1164,7 @@ export default function CandidateDetailDrawer({
   const tabs = [
     { id: "profile", label: "Profile", icon: User },
     { id: "intelligence", label: "Intelligence", icon: Brain },
+    { id: "company", label: "Company", icon: Building2 },
     ...(campaignContext
       ? [{ id: "match", label: "Match Analysis", icon: Target }]
       : []),
@@ -856,6 +1235,8 @@ export default function CandidateDetailDrawer({
                             <span>{candidate.location}</span>
                           </div>
                         )}
+                        {/* Quick Stats */}
+                        <QuickStats candidate={candidate} />
                       </div>
                     </div>
 
@@ -928,6 +1309,7 @@ export default function CandidateDetailDrawer({
                       refreshing={refreshingIntel}
                     />
                   )}
+                  {activeTab === "company" && <CompanyTab candidate={candidate} />}
                   {activeTab === "match" && campaignContext && (
                     <MatchAnalysisTab
                       matchData={campaignContext.matchData}
