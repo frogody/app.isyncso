@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
-  User,
   Brain,
   Target,
   History,
@@ -46,14 +45,12 @@ import {
   CheckCircle2,
   Settings,
   BadgeCheck,
-  LayoutDashboard,
 } from "lucide-react";
 import { supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { IntelligenceGauge, IntelligenceLevelBadge, ApproachBadge } from "./IntelligenceGauge";
-import ProfileSummaryCard from "./ProfileSummaryCard";
 import SummaryTabContent from "./SummaryTabContent";
 import { IntelligenceReport } from "@/components/talent/IntelligenceReport";
 import { CompanyIntelligenceReport } from "@/components/shared/CompanyIntelligenceReport";
@@ -1913,15 +1910,15 @@ export default function CandidateDetailDrawer({
   };
 
   const allTabs = [
-    { id: "summary", label: "Summary", icon: LayoutDashboard },
-    { id: "profile", label: "Profile", icon: User },
-    { id: "intelligence", label: "Intelligence", icon: Brain },
-    { id: "company", label: "Company", icon: Building2 },
-    { id: "matches", label: "Matches", icon: Target, count: campaignMatches.length },
+    { id: "summary", label: "Summary" },
+    { id: "profile", label: "Profile" },
+    { id: "intelligence", label: "Intelligence" },
+    { id: "company", label: "Company" },
+    { id: "matches", label: "Matches", count: campaignMatches.length },
     ...(campaignContext
-      ? [{ id: "match", label: "Match Analysis", icon: Target }]
+      ? [{ id: "match", label: "Match Analysis" }]
       : []),
-    { id: "activity", label: "Activity", icon: History },
+    { id: "activity", label: "Activity" },
   ];
 
   // Filter tabs based on user preferences
@@ -2132,18 +2129,6 @@ export default function CandidateDetailDrawer({
                   </div>
                 </div>
 
-                {/* Profile Summary Card - Quick decision points */}
-                <ProfileSummaryCard
-                  candidate={candidate}
-                  preferences={preferences}
-                  saving={preferencesSaving}
-                  onSavePreferences={async (prefsToSave) => {
-                    // Accept the current preferences from the component to avoid stale closure
-                    const result = await savePreferences(prefsToSave);
-                    return result;
-                  }}
-                  onUpdatePreferences={updateLocalPreferences}
-                />
 
                 {/* Tabs */}
                 <div className="border-b border-zinc-800 px-6">
@@ -2152,13 +2137,12 @@ export default function CandidateDetailDrawer({
                       <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                        className={`flex items-center gap-1 px-3 py-2.5 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
                           activeTab === tab.id
                             ? "text-red-400 border-red-500"
                             : "text-zinc-400 border-transparent hover:text-zinc-300 hover:border-zinc-700"
                         }`}
                       >
-                        <tab.icon className="w-4 h-4" />
                         {tab.label}
                         {tab.count > 0 && (
                           <span className="ml-1 px-1.5 py-0.5 text-[10px] font-semibold bg-red-500/20 text-red-400 rounded-full">
