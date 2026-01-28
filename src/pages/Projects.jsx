@@ -2345,7 +2345,10 @@ function ProjectDetailSheet({
   onAddTask,
   onUpdateTask,
   onUpdateProject,
-  onPreviewShare
+  onPreviewShare,
+  onAddMilestone,
+  onToggleMilestone,
+  onDeleteMilestone,
 }) {
   const [showSharePreview, setShowSharePreview] = useState(false);
   const statusConfig = PROJECT_STATUSES.find(s => s.id === project?.status) || PROJECT_STATUSES[0];
@@ -2660,36 +2663,64 @@ function ProjectDetailSheet({
             </TabsContent>
 
             <TabsContent value="milestones">
-              {project.milestones?.length > 0 ? (
-                <div className="space-y-3">
-                  {project.milestones.map((milestone, i) => (
-                    <div key={i} className="flex items-center gap-3 p-3 bg-zinc-800/30 rounded-xl">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        milestone.completed ? "bg-cyan-500/20" : "bg-zinc-700"
-                      }`}>
-                        {milestone.completed ? (
-                          <CheckCircle2 className="w-4 h-4 text-cyan-400" />
-                        ) : (
-                          <Milestone className="w-4 h-4 text-zinc-400" />
-                        )}
+              <div className="space-y-4">
+                {/* Add Milestone Button */}
+                <Button
+                  onClick={onAddMilestone}
+                  variant="outline"
+                  className="w-full border-dashed border-zinc-700 hover:border-cyan-500/50 hover:bg-cyan-500/5"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Milestone
+                </Button>
+
+                {project.milestones?.length > 0 ? (
+                  <div className="space-y-3">
+                    {project.milestones.map((milestone) => (
+                      <div key={milestone.id || milestone.name} className="flex items-center gap-3 p-3 bg-zinc-800/30 rounded-xl group">
+                        <button
+                          onClick={() => onToggleMilestone?.(milestone.id)}
+                          className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                            milestone.completed ? "bg-cyan-500/20 hover:bg-cyan-500/30" : "bg-zinc-700 hover:bg-zinc-600"
+                          }`}
+                        >
+                          {milestone.completed ? (
+                            <CheckCircle2 className="w-4 h-4 text-cyan-400" />
+                          ) : (
+                            <Circle className="w-4 h-4 text-zinc-400" />
+                          )}
+                        </button>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm ${milestone.completed ? "text-zinc-500 line-through" : "text-white"}`}>
+                            {milestone.name}
+                          </p>
+                          {milestone.description && (
+                            <p className="text-xs text-zinc-600 truncate">{milestone.description}</p>
+                          )}
+                          {milestone.date && (
+                            <p className="text-xs text-zinc-500 flex items-center gap-1 mt-1">
+                              <Calendar className="w-3 h-3" />
+                              {new Date(milestone.date).toLocaleDateString()}
+                            </p>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => onDeleteMilestone?.(milestone.id)}
+                          className="p-1.5 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
-                      <div className="flex-1">
-                        <p className={`text-sm ${milestone.completed ? "text-zinc-500 line-through" : "text-white"}`}>
-                          {milestone.name}
-                        </p>
-                        {milestone.date && (
-                          <p className="text-xs text-zinc-500">{new Date(milestone.date).toLocaleDateString()}</p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-zinc-500">
-                  <Milestone className="w-10 h-10 mx-auto mb-2 opacity-50" />
-                  <p>No milestones added</p>
-                </div>
-              )}
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-zinc-500">
+                    <Milestone className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                    <p>No milestones added</p>
+                    <p className="text-xs mt-1">Add milestones to track project progress</p>
+                  </div>
+                )}
+              </div>
             </TabsContent>
 
             {/* Files Tab */}
@@ -2952,8 +2983,10 @@ export default function Projects() {
   const [viewMode, setViewMode] = useState("grid"); // 'grid', 'kanban', 'list', 'timeline'
   const [showModal, setShowModal] = useState(false);
   const [showTaskModal, setShowTaskModal] = useState(false);
+  const [showMilestoneModal, setShowMilestoneModal] = useState(false);
   const [formData, setFormData] = useState(emptyProject);
   const [taskFormData, setTaskFormData] = useState({ title: "", description: "", priority: "medium", due_date: "", status: "todo" });
+  const [milestoneFormData, setMilestoneFormData] = useState({ name: "", description: "", date: "", completed: false });
   const [editingProject, setEditingProject] = useState(null);
   const [showAnalytics, setShowAnalytics] = useState(true);
 
@@ -3106,6 +3139,9 @@ export default function Projects() {
         id: t.id,
         title: t.title,
         description: t.description,
+        // Map DB status to frontend status
+        // DB: "pending", "in_progress", "completed"
+        // Frontend: "todo", "in_progress", "completed"
         status: t.status === "completed" ? "completed" : t.status === "in_progress" ? "in_progress" : "todo",
         priority: t.priority || "medium",
         due_date: t.due_date,
@@ -3310,6 +3346,55 @@ export default function Projects() {
     }
   };
 
+  const handleSaveMilestone = async () => {
+    if (!milestoneFormData.name?.trim()) {
+      toast.error("Milestone name is required");
+      return;
+    }
+    if (!selectedProject) return;
+
+    try {
+      const newMilestone = {
+        id: `milestone-${Date.now()}`,
+        name: milestoneFormData.name.trim(),
+        description: milestoneFormData.description?.trim() || "",
+        date: milestoneFormData.date || null,
+        completed: false,
+        created_at: new Date().toISOString(),
+      };
+
+      const updatedMilestones = [...(selectedProject.milestones || []), newMilestone];
+
+      // Update project with new milestone
+      await handleUpdateProjectData(selectedProject.id, { milestones: updatedMilestones });
+
+      toast.success("Milestone added");
+      setShowMilestoneModal(false);
+      setMilestoneFormData({ name: "", description: "", date: "", completed: false });
+    } catch (error) {
+      console.error("Failed to add milestone:", error);
+      toast.error("Failed to add milestone");
+    }
+  };
+
+  const handleToggleMilestone = async (milestoneId) => {
+    if (!selectedProject) return;
+
+    const updatedMilestones = (selectedProject.milestones || []).map(m =>
+      m.id === milestoneId ? { ...m, completed: !m.completed } : m
+    );
+
+    await handleUpdateProjectData(selectedProject.id, { milestones: updatedMilestones });
+  };
+
+  const handleDeleteMilestone = async (milestoneId) => {
+    if (!selectedProject) return;
+
+    const updatedMilestones = (selectedProject.milestones || []).filter(m => m.id !== milestoneId);
+    await handleUpdateProjectData(selectedProject.id, { milestones: updatedMilestones });
+    toast.success("Milestone deleted");
+  };
+
   const handleEditProject = (project) => {
     setEditingProject(project);
     setFormData({ ...project });
@@ -3339,12 +3424,25 @@ export default function Projects() {
 
   const handleUpdateTask = async (taskId, updates) => {
     try {
-      await db.entities.Task.update(taskId, {
-        status: updates.status === "completed" ? "completed" : updates.status === "todo" ? "pending" : updates.status,
-      });
-      loadData();
+      // Map frontend status to DB status
+      // Frontend: "todo" → "in_progress" → "completed"
+      // DB accepts: "pending", "in_progress", "completed"
+      const statusMap = {
+        "todo": "pending",
+        "in_progress": "in_progress",
+        "completed": "completed",
+      };
+      const dbStatus = statusMap[updates.status] || updates.status;
+
+      await db.entities.Task.update(taskId, { status: dbStatus });
+
+      // Update local state immediately for responsiveness
+      setTasks(prev => prev.map(t =>
+        t.id === taskId ? { ...t, status: updates.status } : t
+      ));
     } catch (error) {
       console.error("Failed to update task:", error);
+      toast.error("Failed to update task status");
     }
   };
 
@@ -3883,6 +3981,9 @@ export default function Projects() {
         onAddTask={() => setShowTaskModal(true)}
         onUpdateTask={handleUpdateTask}
         onUpdateProject={handleUpdateProjectData}
+        onAddMilestone={() => setShowMilestoneModal(true)}
+        onToggleMilestone={handleToggleMilestone}
+        onDeleteMilestone={handleDeleteMilestone}
       />
 
       {/* Project Modal */}
@@ -4063,6 +4164,57 @@ export default function Projects() {
               </Button>
               <Button onClick={handleSaveTask} className="flex-1 bg-cyan-600/80 hover:bg-cyan-600 text-white">
                 Add Task
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Milestone Modal */}
+      <Dialog open={showMilestoneModal} onOpenChange={setShowMilestoneModal}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-white">Add Milestone</DialogTitle>
+            <DialogDescription className="text-zinc-400">Add a milestone to track project progress</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-4">
+            <div>
+              <label className="text-xs text-zinc-500 mb-1 block">Milestone Name *</label>
+              <Input
+                placeholder="Design approval"
+                value={milestoneFormData.name}
+                onChange={(e) => setMilestoneFormData(prev => ({ ...prev, name: e.target.value }))}
+                className="bg-zinc-800 border-zinc-700"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs text-zinc-500 mb-1 block">Description</label>
+              <Textarea
+                placeholder="Milestone details..."
+                value={milestoneFormData.description}
+                onChange={(e) => setMilestoneFormData(prev => ({ ...prev, description: e.target.value }))}
+                className="bg-zinc-800 border-zinc-700"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs text-zinc-500 mb-1 block">Target Date</label>
+              <Input
+                type="date"
+                value={milestoneFormData.date}
+                onChange={(e) => setMilestoneFormData(prev => ({ ...prev, date: e.target.value }))}
+                className="bg-zinc-800 border-zinc-700"
+              />
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <Button variant="outline" onClick={() => setShowMilestoneModal(false)} className="flex-1 border-zinc-700">
+                Cancel
+              </Button>
+              <Button onClick={handleSaveMilestone} className="flex-1 bg-cyan-600/80 hover:bg-cyan-600 text-white">
+                Add Milestone
               </Button>
             </div>
           </div>
