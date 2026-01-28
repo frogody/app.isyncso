@@ -25,6 +25,7 @@ interface RoleContext {
   project_name?: string;  // Denormalized from wizard
   outreach_channel?: string;
   criteria_weights?: Partial<CriteriaWeights>;
+  signal_filters?: SignalFilter[];
 }
 
 interface Role {
@@ -104,6 +105,8 @@ interface MatchResult {
   outreach_hooks?: string[];
   company_pain_points?: PainPoint[];
   match_factors?: MatchFactors;
+  signals_matched?: Array<{ id: string; boost: number }>;
+  signal_boost_applied?: number;
 }
 
 interface MatchFactors {
@@ -124,6 +127,62 @@ interface CriteriaWeights {
   timing_score: number;
   culture_fit: number;
 }
+
+interface SignalFilter {
+  id: string;
+  enabled: boolean;
+  boost: number;
+  required: boolean;
+}
+
+interface SignalDefinition {
+  id: string;
+  patterns: string[] | null;
+  fields: string[];
+}
+
+const SIGNAL_DEFINITIONS: SignalDefinition[] = [
+  {
+    id: "ma_activity",
+    patterns: ["M&A", "merger", "acquisition", "acquired", "acquiring", "buyout"],
+    fields: ["timing_signals", "recent_ma_news", "intelligence_factors"],
+  },
+  {
+    id: "layoffs",
+    patterns: ["layoff", "restructur", "downsiz", "RIF", "workforce reduction"],
+    fields: ["timing_signals", "company_pain_points"],
+  },
+  {
+    id: "leadership_change",
+    patterns: ["new CEO", "new CTO", "leadership change", "new management"],
+    fields: ["timing_signals", "company_pain_points"],
+  },
+  {
+    id: "funding_round",
+    patterns: ["funding", "raised", "Series", "investment round", "IPO"],
+    fields: ["timing_signals", "key_insights"],
+  },
+  {
+    id: "recent_promotion",
+    patterns: ["promot", "new role", "elevated to"],
+    fields: ["timing_signals", "key_insights"],
+  },
+  {
+    id: "tenure_anniversary",
+    patterns: ["anniversary", "2 year", "3 year", "5 year", "tenure"],
+    fields: ["timing_signals"],
+  },
+  {
+    id: "stagnation",
+    patterns: ["stagnant", "no promotion", "same role", "plateau"],
+    fields: ["key_insights", "intelligence_factors"],
+  },
+  {
+    id: "high_flight_risk",
+    patterns: null,
+    fields: ["intelligence_score"],
+  },
+];
 
 const DEFAULT_WEIGHTS: CriteriaWeights = {
   skills_fit: 20,
@@ -181,6 +240,76 @@ function normalizeToArray(value: string | string[] | undefined): string[] {
 }
 
 // ============================================
+// SIGNAL DETECTION FUNCTIONS
+// Detect and score candidates based on career/timing signals
+// ============================================
+function getNestedValue(obj: any, path: string): any {
+  return path.split(".").reduce((curr, key) => curr?.[key], obj);
+}
+
+function candidateHasSignal(candidate: any, signalId: string): boolean {
+  const signalDef = SIGNAL_DEFINITIONS.find(s => s.id === signalId);
+  if (!signalDef) return false;
+
+  if (signalId === "high_flight_risk") {
+    return (candidate.intelligence_score || 0) >= 70;
+  }
+
+  if (!signalDef.patterns) return false;
+
+  const patternsRegex = new RegExp(signalDef.patterns.join("|"), "i");
+
+  for (const field of signalDef.fields) {
+    const value = getNestedValue(candidate, field);
+
+    if (typeof value === "string" && patternsRegex.test(value)) {
+      return true;
+    }
+
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        const text = typeof item === "string" ? item :
+                     item?.trigger || item?.reason || JSON.stringify(item);
+        if (patternsRegex.test(text)) {
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
+function calculateSignalBoost(candidate: any, signalFilters: SignalFilter[]): { totalBoost: number; matchedSignals: Array<{ id: string; boost: number }> } {
+  let totalBoost = 0;
+  const matchedSignals: Array<{ id: string; boost: number }> = [];
+
+  for (const filter of signalFilters) {
+    if (!filter.enabled) continue;
+
+    const hasSignal = candidateHasSignal(candidate, filter.id);
+    if (hasSignal) {
+      totalBoost += filter.boost;
+      matchedSignals.push({ id: filter.id, boost: filter.boost });
+    }
+  }
+
+  return { totalBoost, matchedSignals };
+}
+
+function passesRequiredSignals(candidate: any, signalFilters: SignalFilter[]): boolean {
+  const requiredFilters = signalFilters.filter(f => f.enabled && f.required);
+
+  for (const filter of requiredFilters) {
+    if (!candidateHasSignal(candidate, filter.id)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+// ============================================
 // STAGE 1: Quick Pre-Filter (Rule-based)
 // Eliminates obviously unqualified candidates
 // ============================================
@@ -203,6 +332,12 @@ function preFilterCandidate(
         return { passes: false, quickScore: 0, reasons: [`Deal breaker: ${breaker}`] };
       }
     }
+  }
+
+  // Check required signals (instant disqualification if missing)
+  const signalFilters: SignalFilter[] = roleContext?.signal_filters || [];
+  if (!passesRequiredSignals(candidate, signalFilters)) {
+    return { passes: false, quickScore: 0, reasons: [`Missing required signals`] };
   }
 
   // Title relevance check (must have SOME relevance)
@@ -875,14 +1010,23 @@ serve(async (req) => {
       }
     }
 
+    // Extract signal filters from campaign
+    const signalFilters: SignalFilter[] = effectiveRoleContext?.signal_filters || [];
+
     // Build match results from AI analysis
     for (const { candidate, reasons: preReasons } of topCandidatesForAI) {
       const aiResult = aiResults.get(candidate.id);
       if (aiResult && aiResult.score >= min_score) {
+        // Calculate signal boost
+        const { totalBoost: signalBoost, matchedSignals } = calculateSignalBoost(candidate, signalFilters);
+
+        // Final score (capped at 0-100)
+        const finalScore = Math.min(100, Math.max(0, aiResult.score + signalBoost));
+
         allMatches.push({
           candidate_id: candidate.id,
           candidate_name: candidate.name || `${candidate.first_name || ''} ${candidate.last_name || ''}`.trim(),
-          match_score: aiResult.score,
+          match_score: finalScore,
           match_reasons: aiResult.reasons,
           ai_analysis: aiResult.analysis,
           match_factors: aiResult.factors,
@@ -892,6 +1036,8 @@ serve(async (req) => {
           timing_signals: candidate.timing_signals,
           outreach_hooks: candidate.outreach_hooks,
           company_pain_points: candidate.company_pain_points,
+          signals_matched: matchedSignals,
+          signal_boost_applied: signalBoost,
         });
       }
     }
@@ -899,10 +1045,16 @@ serve(async (req) => {
     // Add remaining candidates with quick scores (for completeness)
     for (const { candidate, quickScore, reasons } of remainingCandidates) {
       if (quickScore >= min_score) {
+        // Calculate signal boost
+        const { totalBoost: signalBoost, matchedSignals } = calculateSignalBoost(candidate, signalFilters);
+
+        // Final score (capped at 0-100)
+        const finalScore = Math.min(100, Math.max(0, quickScore + signalBoost));
+
         allMatches.push({
           candidate_id: candidate.id,
           candidate_name: candidate.name || `${candidate.first_name || ''} ${candidate.last_name || ''}`.trim(),
-          match_score: quickScore,
+          match_score: finalScore,
           match_reasons: reasons,
           ai_analysis: "Quick match (not AI-analyzed)",
           intelligence_score: candidate.intelligence_score || 0,
@@ -911,6 +1063,8 @@ serve(async (req) => {
           timing_signals: candidate.timing_signals,
           outreach_hooks: candidate.outreach_hooks,
           company_pain_points: candidate.company_pain_points,
+          signals_matched: matchedSignals,
+          signal_boost_applied: signalBoost,
         });
       }
     }
@@ -946,6 +1100,8 @@ serve(async (req) => {
         best_outreach_angle: m.best_outreach_angle,
         timing_signals: m.timing_signals,
         outreach_hooks: m.outreach_hooks,
+        signals_matched: m.signals_matched,
+        signal_boost_applied: m.signal_boost_applied,
         priority_rank: m.priority_rank,
         status: "matched",
         added_at: new Date().toISOString(),
@@ -976,6 +1132,8 @@ serve(async (req) => {
         timing_signals: m.timing_signals,
         outreach_hooks: m.outreach_hooks,
         company_pain_points: m.company_pain_points,
+        signals_matched: m.signals_matched,
+        signal_boost_applied: m.signal_boost_applied,
         status: "matched",
         role_id: role_id || primaryRole?.id || null,
         role_title: primaryRole?.title || campaign?.role_title || null,

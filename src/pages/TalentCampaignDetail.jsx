@@ -72,6 +72,7 @@ import {
   FileText,
   PartyPopper,
   RefreshCw,
+  SlidersHorizontal,
 } from "lucide-react";
 import { createPageUrl } from "@/utils";
 
@@ -124,6 +125,55 @@ const TypeBadge = ({ type }) => {
       <Icon className="w-4 h-4" />
       {type?.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
     </span>
+  );
+};
+
+// Weights Display Widget
+const WeightsDisplayWidget = ({ weights }) => {
+  if (!weights) return null;
+
+  const factors = [
+    { key: 'skills_fit', label: 'Skills', color: 'blue' },
+    { key: 'experience_fit', label: 'Experience', color: 'purple' },
+    { key: 'title_fit', label: 'Title', color: 'cyan' },
+    { key: 'location_fit', label: 'Location', color: 'emerald' },
+    { key: 'timing_score', label: 'Timing', color: 'amber' },
+    { key: 'culture_fit', label: 'Culture', color: 'rose' },
+  ];
+
+  // Use static Tailwind color maps to avoid dynamic class purging
+  const colorMap = {
+    blue: { bg: 'bg-blue-500', text: 'text-blue-400' },
+    purple: { bg: 'bg-purple-500', text: 'text-purple-400' },
+    cyan: { bg: 'bg-cyan-500', text: 'text-cyan-400' },
+    emerald: { bg: 'bg-emerald-500', text: 'text-emerald-400' },
+    amber: { bg: 'bg-amber-500', text: 'text-amber-400' },
+    rose: { bg: 'bg-rose-500', text: 'text-rose-400' },
+  };
+
+  return (
+    <div className="p-4 bg-zinc-800/50 rounded-xl border border-zinc-700/50">
+      <h4 className="text-sm font-medium text-zinc-300 mb-3 flex items-center gap-2">
+        <SlidersHorizontal className="w-4 h-4 text-purple-400" />
+        Matching Weights
+      </h4>
+      <div className="space-y-2">
+        {factors.map(({ key, label, color }) => (
+          <div key={key} className="flex items-center gap-2">
+            <span className="text-xs text-zinc-500 w-20">{label}</span>
+            <div className="flex-1 h-2 bg-zinc-700 rounded-full overflow-hidden">
+              <div
+                className={`h-full ${colorMap[color].bg}`}
+                style={{ width: `${weights[key] || 0}%` }}
+              />
+            </div>
+            <span className={`text-xs font-medium ${colorMap[color].text} w-8 text-right`}>
+              {weights[key] || 0}%
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 };
 
@@ -979,6 +1029,39 @@ const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching, lin
             </div>
           </GlassCard>
 
+          {/* Matching Weights */}
+          {campaign?.role_context?.criteria_weights && (
+            <div className="p-4 bg-zinc-800/50 rounded-xl border border-zinc-700/50">
+              <h4 className="text-sm font-medium text-zinc-300 mb-3 flex items-center gap-2">
+                <SlidersHorizontal className="w-4 h-4 text-purple-400" />
+                Matching Weights
+              </h4>
+              <div className="space-y-2">
+                {[
+                  { key: "skills_fit", label: "Skills", bg: "bg-blue-500", text: "text-blue-400" },
+                  { key: "experience_fit", label: "Experience", bg: "bg-purple-500", text: "text-purple-400" },
+                  { key: "title_fit", label: "Title", bg: "bg-cyan-500", text: "text-cyan-400" },
+                  { key: "location_fit", label: "Location", bg: "bg-emerald-500", text: "text-emerald-400" },
+                  { key: "timing_score", label: "Timing", bg: "bg-amber-500", text: "text-amber-400" },
+                  { key: "culture_fit", label: "Culture", bg: "bg-rose-500", text: "text-rose-400" },
+                ].map(({ key, label, bg, text }) => (
+                  <div key={key} className="flex items-center gap-2">
+                    <span className="text-xs text-zinc-500 w-20">{label}</span>
+                    <div className="flex-1 h-2 bg-zinc-700 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${bg}`}
+                        style={{ width: `${campaign.role_context.criteria_weights[key] || 0}%` }}
+                      />
+                    </div>
+                    <span className={`text-xs font-medium ${text} w-8 text-right`}>
+                      {campaign.role_context.criteria_weights[key] || 0}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Matched Candidates - Enhanced with AI Reasoning */}
           <GlassCard className="p-6">
             {/* Header with Stats */}
@@ -1265,6 +1348,11 @@ const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching, lin
               )}
             </div>
           </GlassCard>
+
+          {/* Matching Configuration */}
+          {campaign?.role_context?.criteria_weights && (
+            <WeightsDisplayWidget weights={campaign.role_context.criteria_weights} />
+          )}
         </div>
       </div>
     </div>
