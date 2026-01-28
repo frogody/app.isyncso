@@ -52,6 +52,7 @@ import { useUser } from "@/components/context/UserContext";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { IntelligenceGauge, IntelligenceLevelBadge, ApproachBadge } from "./IntelligenceGauge";
+import ProfileSummaryCard from "./ProfileSummaryCard";
 import { IntelligenceReport } from "@/components/talent/IntelligenceReport";
 import { CompanyIntelligenceReport } from "@/components/shared/CompanyIntelligenceReport";
 import { fullEnrichFromLinkedIn } from "@/lib/explorium-api";
@@ -2126,6 +2127,9 @@ export default function CandidateDetailDrawer({
                     </Button>
                   </div>
                 </div>
+
+                {/* Profile Summary Card - Quick decision points */}
+                <ProfileSummaryCard candidate={candidate} />
 
                 {/* Tabs */}
                 <div className="border-b border-zinc-800 px-6">

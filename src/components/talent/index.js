@@ -36,6 +36,9 @@ export {
 // Detail Drawer
 export { default as CandidateDetailDrawer } from './CandidateDetailDrawer';
 
+// Profile Summary
+export { default as ProfileSummaryCard } from './ProfileSummaryCard';
+
 // Bulk Operations
 export { default as BulkActionBar } from './BulkActionBar';
 export { default as AddToCampaignModal } from './AddToCampaignModal';
