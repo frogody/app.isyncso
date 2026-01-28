@@ -76,8 +76,9 @@ export default function ClientLogin() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+      <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center gap-4">
         <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+        <p className="text-zinc-500 text-sm">Loading portal...</p>
       </div>
     );
   }

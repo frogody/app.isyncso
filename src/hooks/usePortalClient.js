@@ -51,9 +51,22 @@ export function usePortalClient() {
 
   // Initialize auth state
   useEffect(() => {
+    let isMounted = true;
+
     const initAuth = async () => {
       try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        // Add timeout to prevent infinite loading
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Auth initialization timeout')), 10000)
+        );
+
+        const sessionPromise = supabase.auth.getSession();
+
+        const { data } = await Promise.race([sessionPromise, timeoutPromise]);
+        const currentSession = data?.session || null;
+
+        if (!isMounted) return;
+
         setSession(currentSession);
 
         if (currentSession?.user) {
@@ -61,16 +74,29 @@ export function usePortalClient() {
         }
       } catch (err) {
         console.error('Error initializing auth:', err);
-        setError(err.message);
+        if (isMounted) {
+          setError(err.message);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     initAuth();
 
+    // Safety fallback: ensure loading is set to false after 15 seconds no matter what
+    const safetyTimeout = setTimeout(() => {
+      if (isMounted) {
+        setLoading(false);
+      }
+    }, 15000);
+
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      if (!isMounted) return;
+
       setSession(newSession);
 
       if (event === 'SIGNED_IN' && newSession?.user) {
@@ -80,7 +106,11 @@ export function usePortalClient() {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      clearTimeout(safetyTimeout);
+      subscription.unsubscribe();
+    };
   }, [fetchClientData]);
 
   // Sign in with magic link
