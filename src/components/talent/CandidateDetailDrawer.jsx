@@ -1997,6 +1997,7 @@ export default function CandidateDetailDrawer({
                       onGenerate={handleSyncIntel}
                       isGenerating={generatingIntelligence}
                       syncStatus={syncStatus}
+                      isSectionEnabled={isSectionEnabled}
                     />
                   )}
                   {activeTab === "company" && (
@@ -2024,6 +2025,7 @@ export default function CandidateDetailDrawer({
                         entityType="candidate"
                         entityId={candidate.id}
                         onIntelligenceGenerated={(intel) => setCandidate({ ...candidate, company_intelligence: intel })}
+                        isSectionEnabled={isSectionEnabled}
                       />
                     </div>
                   )}

@@ -203,7 +203,7 @@ const TimingRow = ({ timing }) => {
 /**
  * IntelligenceReport - Professional recruiter intelligence dashboard
  */
-export const IntelligenceReport = ({ candidate, compact = false, onGenerate, isGenerating = false, syncStatus = "" }) => {
+export const IntelligenceReport = ({ candidate, compact = false, onGenerate, isGenerating = false, syncStatus = "", isSectionEnabled = () => true }) => {
   const {
     intelligence_score = 0,
     intelligence_level = "Low",
@@ -316,72 +316,78 @@ export const IntelligenceReport = ({ candidate, compact = false, onGenerate, isG
       className="space-y-4"
     >
       {/* Row 1: Executive Summary + Best Opening */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Left: Score & Status */}
-        <motion.div
-          variants={itemVariants}
-          className="bg-white/[0.02] rounded-xl border border-white/[0.06] p-5"
-        >
-          <div className="flex items-start gap-4">
-            <ScoreRing score={intelligence_score} size="lg" />
-            <div className="flex-1">
-              <div className="flex flex-wrap gap-1.5 mb-3">
-                <StatusBadge type="level" value={intelligence_level} />
-                <StatusBadge type="urgency" value={intelligence_urgency} />
-                <StatusBadge type="approach" value={recommended_approach} />
+      {(isSectionEnabled('intelligence', 'flight_risk_score') || isSectionEnabled('intelligence', 'best_outreach_angle')) && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Left: Score & Status */}
+          {isSectionEnabled('intelligence', 'flight_risk_score') && (
+            <motion.div
+              variants={itemVariants}
+              className="bg-white/[0.02] rounded-xl border border-white/[0.06] p-5"
+            >
+              <div className="flex items-start gap-4">
+                <ScoreRing score={intelligence_score} size="lg" />
+                <div className="flex-1">
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    <StatusBadge type="level" value={intelligence_level} />
+                    <StatusBadge type="urgency" value={intelligence_urgency} />
+                    <StatusBadge type="approach" value={recommended_approach} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-white/50">Timeline</span>
+                      <span className="text-white font-medium">{recommended_timeline || "—"}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-white/50">Signals</span>
+                      <span className="text-white font-medium">{intelligence_factors.length}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-white/50">Timeline</span>
-                  <span className="text-white font-medium">{recommended_timeline || "—"}</span>
+              {last_intelligence_update && (
+                <p className="text-xs text-white/30 mt-3 pt-3 border-t border-white/[0.06]">
+                  Updated {new Date(last_intelligence_update).toLocaleDateString()}
+                </p>
+              )}
+            </motion.div>
+          )}
+
+          {/* Right: Best Opening Angle + Hooks */}
+          {isSectionEnabled('intelligence', 'best_outreach_angle') && (
+            <motion.div
+              variants={itemVariants}
+              className={`${isSectionEnabled('intelligence', 'flight_risk_score') ? 'lg:col-span-2' : 'lg:col-span-3'} bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent rounded-xl border border-blue-500/20 p-5`}
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <div className="p-1.5 rounded-lg bg-blue-500/20">
+                  <MessageSquare className="w-4 h-4 text-blue-400" />
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-white/50">Signals</span>
-                  <span className="text-white font-medium">{intelligence_factors.length}</span>
-                </div>
+                <h3 className="font-semibold text-white">Outreach Strategy</h3>
               </div>
-            </div>
-          </div>
-          {last_intelligence_update && (
-            <p className="text-xs text-white/30 mt-3 pt-3 border-t border-white/[0.06]">
-              Updated {new Date(last_intelligence_update).toLocaleDateString()}
-            </p>
-          )}
-        </motion.div>
 
-        {/* Right: Best Opening Angle + Hooks */}
-        <motion.div
-          variants={itemVariants}
-          className="lg:col-span-2 bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent rounded-xl border border-blue-500/20 p-5"
-        >
-          <div className="flex items-center gap-2 mb-3">
-            <div className="p-1.5 rounded-lg bg-blue-500/20">
-              <MessageSquare className="w-4 h-4 text-blue-400" />
-            </div>
-            <h3 className="font-semibold text-white">Outreach Strategy</h3>
-          </div>
-
-          {best_outreach_angle && (
-            <div className="bg-blue-500/10 rounded-lg p-3 mb-4 border border-blue-500/20">
-              <p className="text-[10px] uppercase tracking-wider text-blue-400 font-semibold mb-1">Best Opening</p>
-              <p className="text-white font-medium">{best_outreach_angle}</p>
-            </div>
-          )}
-
-          {hooks.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {hooks.slice(0, 3).map((hook, idx) => (
-                <div key={idx} className="flex items-start gap-2 p-2 rounded-lg bg-white/[0.03]">
-                  <span className="w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs font-medium flex-shrink-0">
-                    {idx + 1}
-                  </span>
-                  <p className="text-xs text-white/70 line-clamp-2">{hook}</p>
+              {best_outreach_angle && (
+                <div className="bg-blue-500/10 rounded-lg p-3 mb-4 border border-blue-500/20">
+                  <p className="text-[10px] uppercase tracking-wider text-blue-400 font-semibold mb-1">Best Opening</p>
+                  <p className="text-white font-medium">{best_outreach_angle}</p>
                 </div>
-              ))}
-            </div>
+              )}
+
+              {hooks.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {hooks.slice(0, 3).map((hook, idx) => (
+                    <div key={idx} className="flex items-start gap-2 p-2 rounded-lg bg-white/[0.03]">
+                      <span className="w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs font-medium flex-shrink-0">
+                        {idx + 1}
+                      </span>
+                      <p className="text-xs text-white/70 line-clamp-2">{hook}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
           )}
-        </motion.div>
-      </div>
+        </div>
+      )}
 
       {/* Row 2: Risk Summary (if present) */}
       {risk_summary && (
@@ -449,57 +455,63 @@ export const IntelligenceReport = ({ candidate, compact = false, onGenerate, isG
       </div>
 
       {/* Row 4: Timing + Insights */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Timing Windows */}
-        <motion.div
-          variants={itemVariants}
-          className="bg-white/[0.02] rounded-xl border border-white/[0.06] overflow-hidden"
-        >
-          <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06] bg-amber-500/5">
-            <Clock className="w-4 h-4 text-amber-400" />
-            <h3 className="font-semibold text-white text-sm">Timing Windows</h3>
-            <span className="text-xs text-white/40">({intelligence_timing.length})</span>
-          </div>
-          <div className="px-4 py-2 divide-y divide-white/[0.04]">
-            {intelligence_timing.length > 0 ? (
-              intelligence_timing.map((timing, idx) => (
-                <TimingRow key={idx} timing={timing} />
-              ))
-            ) : (
-              <p className="text-sm text-white/30 py-4 text-center">No timing signals</p>
-            )}
-          </div>
-        </motion.div>
+      {(isSectionEnabled('intelligence', 'timing_signals') || isSectionEnabled('intelligence', 'key_insights')) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Timing Windows */}
+          {isSectionEnabled('intelligence', 'timing_signals') && (
+            <motion.div
+              variants={itemVariants}
+              className="bg-white/[0.02] rounded-xl border border-white/[0.06] overflow-hidden"
+            >
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06] bg-amber-500/5">
+                <Clock className="w-4 h-4 text-amber-400" />
+                <h3 className="font-semibold text-white text-sm">Timing Windows</h3>
+                <span className="text-xs text-white/40">({intelligence_timing.length})</span>
+              </div>
+              <div className="px-4 py-2 divide-y divide-white/[0.04]">
+                {intelligence_timing.length > 0 ? (
+                  intelligence_timing.map((timing, idx) => (
+                    <TimingRow key={idx} timing={timing} />
+                  ))
+                ) : (
+                  <p className="text-sm text-white/30 py-4 text-center">No timing signals</p>
+                )}
+              </div>
+            </motion.div>
+          )}
 
-        {/* Key Insights */}
-        <motion.div
-          variants={itemVariants}
-          className="bg-white/[0.02] rounded-xl border border-white/[0.06] overflow-hidden"
-        >
-          <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06] bg-purple-500/5">
-            <Lightbulb className="w-4 h-4 text-purple-400" />
-            <h3 className="font-semibold text-white text-sm">Key Insights</h3>
-            <span className="text-xs text-white/40">({insights.length})</span>
-          </div>
-          <div className="px-4 py-2">
-            {insights.length > 0 ? (
-              <ul className="space-y-2">
-                {insights.map((insight, idx) => (
-                  <li key={idx} className="flex items-start gap-2 py-1">
-                    <ChevronRight className="w-3.5 h-3.5 text-purple-400 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm text-white/70">{insight}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-white/30 py-4 text-center">No insights available</p>
-            )}
-          </div>
-        </motion.div>
-      </div>
+          {/* Key Insights */}
+          {isSectionEnabled('intelligence', 'key_insights') && (
+            <motion.div
+              variants={itemVariants}
+              className="bg-white/[0.02] rounded-xl border border-white/[0.06] overflow-hidden"
+            >
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06] bg-purple-500/5">
+                <Lightbulb className="w-4 h-4 text-purple-400" />
+                <h3 className="font-semibold text-white text-sm">Key Insights</h3>
+                <span className="text-xs text-white/40">({insights.length})</span>
+              </div>
+              <div className="px-4 py-2">
+                {insights.length > 0 ? (
+                  <ul className="space-y-2">
+                    {insights.map((insight, idx) => (
+                      <li key={idx} className="flex items-start gap-2 py-1">
+                        <ChevronRight className="w-3.5 h-3.5 text-purple-400 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm text-white/70">{insight}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-white/30 py-4 text-center">No insights available</p>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </div>
+      )}
 
       {/* Row 5: Company Correlations (when available) */}
-      {companyCorrelations.length > 0 && (
+      {isSectionEnabled('intelligence', 'company_correlations') && companyCorrelations.length > 0 && (
         <motion.div
           variants={itemVariants}
           className="bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent rounded-xl border border-amber-500/20 overflow-hidden"
@@ -534,10 +546,12 @@ export const IntelligenceReport = ({ candidate, compact = false, onGenerate, isG
       )}
 
       {/* Row 6: Inferred Skills + Company Pain Points + Lateral Opportunities */}
-      {(inferredSkills.length > 0 || companyPainPoints.length > 0 || lateralOpportunities.length > 0) && (
+      {((isSectionEnabled('intelligence', 'inferred_skills') && inferredSkills.length > 0) ||
+        (isSectionEnabled('intelligence', 'employer_pain_points') && companyPainPoints.length > 0) ||
+        (isSectionEnabled('intelligence', 'lateral_opportunities') && lateralOpportunities.length > 0)) && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Inferred Skills */}
-          {inferredSkills.length > 0 && (
+          {isSectionEnabled('intelligence', 'inferred_skills') && inferredSkills.length > 0 && (
             <motion.div
               variants={itemVariants}
               className="bg-white/[0.02] rounded-xl border border-white/[0.06] overflow-hidden"
@@ -562,7 +576,7 @@ export const IntelligenceReport = ({ candidate, compact = false, onGenerate, isG
           )}
 
           {/* Company Pain Points */}
-          {companyPainPoints.length > 0 && (
+          {isSectionEnabled('intelligence', 'employer_pain_points') && companyPainPoints.length > 0 && (
             <motion.div
               variants={itemVariants}
               className="bg-white/[0.02] rounded-xl border border-white/[0.06] overflow-hidden"
@@ -585,7 +599,7 @@ export const IntelligenceReport = ({ candidate, compact = false, onGenerate, isG
           )}
 
           {/* Lateral Opportunities */}
-          {lateralOpportunities.length > 0 && (
+          {isSectionEnabled('intelligence', 'lateral_opportunities') && lateralOpportunities.length > 0 && (
             <motion.div
               variants={itemVariants}
               className="bg-white/[0.02] rounded-xl border border-white/[0.06] overflow-hidden"

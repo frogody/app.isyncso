@@ -142,6 +142,7 @@ export const CompanyIntelligenceReport = ({
   entityType,
   entityId,
   onIntelligenceGenerated,
+  isSectionEnabled = () => true,
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -337,7 +338,7 @@ export const CompanyIntelligenceReport = ({
       {/* Main 2-column grid - matches IntelligenceReport layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Firmographics / Company Profile */}
-        {hasFirmographicsContent && (
+        {isSectionEnabled('company', 'company_info') && hasFirmographicsContent && (
           <SectionCard icon={Building2} title="Company Profile" iconColor="blue" headerBg="bg-blue-500/5">
             <div className="space-y-4">
               {firmographics.logo_url && (
@@ -392,7 +393,7 @@ export const CompanyIntelligenceReport = ({
         )}
 
         {/* Employee Ratings */}
-        {hasEmployeeRatingsContent && (
+        {isSectionEnabled('company', 'employee_ratings') && hasEmployeeRatingsContent && (
           <SectionCard
             icon={Star}
             title="Employee Ratings"
@@ -441,7 +442,7 @@ export const CompanyIntelligenceReport = ({
         )}
 
         {/* Funding */}
-        {hasFundingContent && (
+        {isSectionEnabled('company', 'funding_info') && hasFundingContent && (
           <SectionCard
             icon={Banknote}
             title="Funding & Investment"
@@ -507,7 +508,7 @@ export const CompanyIntelligenceReport = ({
         )}
 
         {/* Social Media */}
-        {hasSocialContent && (
+        {isSectionEnabled('company', 'growth_signals') && hasSocialContent && (
           <SectionCard icon={Share2} title="Social Presence" iconColor="purple" headerBg="bg-purple-500/5">
             <div className="grid grid-cols-3 gap-3">
               {social_media.linkedin_followers && (
@@ -548,7 +549,7 @@ export const CompanyIntelligenceReport = ({
         )}
 
         {/* Website Traffic */}
-        {website_traffic && (website_traffic.monthly_visits || website_traffic.unique_visitors) && (
+        {isSectionEnabled('company', 'growth_signals') && website_traffic && (website_traffic.monthly_visits || website_traffic.unique_visitors) && (
           <SectionCard
             icon={Activity}
             title="Website Traffic"
@@ -697,7 +698,7 @@ export const CompanyIntelligenceReport = ({
       </div>
 
       {/* Tech Stack - Full width below grid for better display */}
-      {technographics && technographics.tech_stack?.length > 0 && (
+      {isSectionEnabled('company', 'tech_stack') && technographics && technographics.tech_stack?.length > 0 && (
         <SectionCard
           icon={Layers}
           title="Technology Stack"

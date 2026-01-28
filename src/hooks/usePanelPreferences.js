@@ -7,6 +7,7 @@ export const DEFAULT_PANEL_CONFIG = {
   profile: {
     enabled: true,
     sections: {
+      analysis_cards: { enabled: true, order: 0, label: "Analysis Cards" },
       contact_info: { enabled: true, order: 1, label: "Contact Information" },
       professional_summary: { enabled: true, order: 2, label: "Professional Summary" },
       skills: { enabled: true, order: 3, label: "Skills" },
