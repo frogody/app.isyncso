@@ -536,6 +536,16 @@ function PagesContent() {
     const location = useLocation();
     const currentPage = _getCurrentPage(location.pathname);
     const isAdminRoute = location.pathname.startsWith('/admin');
+    const isShareRoute = location.pathname.startsWith('/share');
+
+    // Share routes render without the main Layout (no sidebar for public views)
+    if (isShareRoute) {
+        return (
+            <Routes>
+                <Route path="/share/:type/:shareId" element={<ShareView />} />
+            </Routes>
+        );
+    }
 
     // Admin routes use their own AdminLayout (no main Layout wrapper)
     // Must wrap with UserProvider and PermissionProvider since they're outside Layout
@@ -714,9 +724,7 @@ function PagesContent() {
                 <Route path="/Sequences" element={<Sequences />} />
                 
                 <Route path="/Settings" element={<Settings />} />
-                
-                <Route path="/share/:type/:shareId" element={<ShareView />} />
-                
+
                 <Route path="/SkillFrameworks" element={<SkillFrameworks />} />
                 
                 <Route path="/SkillMap" element={<SkillMap />} />
