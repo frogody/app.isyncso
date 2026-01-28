@@ -203,7 +203,7 @@ const TimingRow = ({ timing }) => {
 /**
  * IntelligenceReport - Professional recruiter intelligence dashboard
  */
-export const IntelligenceReport = ({ candidate, compact = false, onGenerate, isGenerating = false, syncStatus = "", isSectionEnabled = () => true }) => {
+export const IntelligenceReport = ({ candidate, compact = false, singleColumn = false, onGenerate, isGenerating = false, syncStatus = "", isSectionEnabled = () => true }) => {
   const {
     intelligence_score = 0,
     intelligence_level = "Low",
@@ -317,7 +317,7 @@ export const IntelligenceReport = ({ candidate, compact = false, onGenerate, isG
     >
       {/* Row 1: Executive Summary + Best Opening */}
       {(isSectionEnabled('intelligence', 'flight_risk_score') || isSectionEnabled('intelligence', 'best_outreach_angle')) && (
-        <div className={`grid grid-cols-1 ${compact ? '' : 'lg:grid-cols-3'} gap-4`}>
+        <div className={`grid grid-cols-1 ${singleColumn ? '' : 'lg:grid-cols-3'} gap-4`}>
           {/* Left: Score & Status */}
           {isSectionEnabled('intelligence', 'flight_risk_score') && (
             <motion.div
@@ -356,7 +356,7 @@ export const IntelligenceReport = ({ candidate, compact = false, onGenerate, isG
           {isSectionEnabled('intelligence', 'best_outreach_angle') && (
             <motion.div
               variants={itemVariants}
-              className={`${!compact && isSectionEnabled('intelligence', 'flight_risk_score') ? 'lg:col-span-2' : !compact ? 'lg:col-span-3' : ''} bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent rounded-xl border border-blue-500/20 p-5`}
+              className={`${!singleColumn && isSectionEnabled('intelligence', 'flight_risk_score') ? 'lg:col-span-2' : !singleColumn ? 'lg:col-span-3' : ''} bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent rounded-xl border border-blue-500/20 p-5`}
             >
               <div className="flex items-center gap-2 mb-3">
                 <div className="p-1.5 rounded-lg bg-blue-500/20">
@@ -400,7 +400,7 @@ export const IntelligenceReport = ({ candidate, compact = false, onGenerate, isG
       )}
 
       {/* Row 3: Signals Grid */}
-      <div className={`grid grid-cols-1 ${compact ? '' : 'lg:grid-cols-2'} gap-4`}>
+      <div className={`grid grid-cols-1 ${singleColumn ? '' : 'lg:grid-cols-2'} gap-4`}>
         {/* Opportunities */}
         <motion.div
           variants={itemVariants}
@@ -456,7 +456,7 @@ export const IntelligenceReport = ({ candidate, compact = false, onGenerate, isG
 
       {/* Row 4: Timing + Insights */}
       {(isSectionEnabled('intelligence', 'timing_signals') || isSectionEnabled('intelligence', 'key_insights')) && (
-        <div className={`grid grid-cols-1 ${compact ? '' : 'lg:grid-cols-2'} gap-4`}>
+        <div className={`grid grid-cols-1 ${singleColumn ? '' : 'lg:grid-cols-2'} gap-4`}>
           {/* Timing Windows */}
           {isSectionEnabled('intelligence', 'timing_signals') && (
             <motion.div

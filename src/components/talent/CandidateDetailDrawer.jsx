@@ -2174,7 +2174,7 @@ export default function CandidateDetailDrawer({
                   {activeTab === "intelligence" && (
                     <IntelligenceReport
                       candidate={candidate}
-                      compact
+                      singleColumn
                       onGenerate={handleSyncIntel}
                       isGenerating={generatingIntelligence}
                       syncStatus={syncStatus}
