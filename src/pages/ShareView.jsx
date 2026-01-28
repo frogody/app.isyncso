@@ -5,7 +5,7 @@ import { db } from "@/api/supabaseClient";
 import {
   Folder, FolderOpen, Calendar, Clock, CheckCircle2, Circle, AlertCircle,
   ChevronRight, Target, Lock, Paperclip, Download, File, FileText, FileCode,
-  FileSpreadsheet, Image, FileVideo, FileAudio, FileArchive
+  FileSpreadsheet, Image, FileVideo, FileAudio, FileArchive, DollarSign, MessageSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -283,6 +283,101 @@ function SharedProjectView({ project, tasks }) {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Timeline */}
+        {settings.show_timeline && (project.start_date || project.due_date) && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <Calendar className="w-4 h-4 text-zinc-500" />
+              <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wide">Timeline</h2>
+            </div>
+            <div className="rounded-xl bg-zinc-900/50 border border-zinc-800 p-6">
+              <div className="flex items-center justify-between">
+                {project.start_date && (
+                  <div>
+                    <p className="text-xs text-zinc-500 mb-1">Start Date</p>
+                    <p className="text-sm text-white">{new Date(project.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                  </div>
+                )}
+                {project.start_date && project.due_date && (
+                  <div className="flex-1 mx-6">
+                    <div className="h-1 bg-zinc-800 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-cyan-500 rounded-full"
+                        style={{ width: `${Math.min(100, Math.max(0, ((Date.now() - new Date(project.start_date)) / (new Date(project.due_date) - new Date(project.start_date))) * 100))}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+                {project.due_date && (
+                  <div className="text-right">
+                    <p className="text-xs text-zinc-500 mb-1">End Date</p>
+                    <p className="text-sm text-white">{new Date(project.due_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Budget Information */}
+        {settings.show_budget && (project.budget || project.spent !== undefined) && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <DollarSign className="w-4 h-4 text-zinc-500" />
+              <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wide">Budget</h2>
+            </div>
+            <div className="rounded-xl bg-zinc-900/50 border border-zinc-800 p-6">
+              <div className="grid grid-cols-2 gap-6">
+                {project.budget !== undefined && (
+                  <div>
+                    <p className="text-xs text-zinc-500 mb-1">Total Budget</p>
+                    <p className="text-2xl font-semibold text-white">
+                      ${project.budget?.toLocaleString() || '0'}
+                    </p>
+                  </div>
+                )}
+                {project.spent !== undefined && (
+                  <div>
+                    <p className="text-xs text-zinc-500 mb-1">Spent</p>
+                    <p className="text-2xl font-semibold text-emerald-400">
+                      ${project.spent?.toLocaleString() || '0'}
+                    </p>
+                  </div>
+                )}
+              </div>
+              {project.budget > 0 && project.spent !== undefined && (
+                <div className="mt-4">
+                  <div className="flex justify-between text-xs text-zinc-500 mb-2">
+                    <span>Budget Used</span>
+                    <span>{Math.round((project.spent / project.budget) * 100)}%</span>
+                  </div>
+                  <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${(project.spent / project.budget) > 0.9 ? 'bg-red-500' : 'bg-emerald-500'}`}
+                      style={{ width: `${Math.min(100, (project.spent / project.budget) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Comments Section */}
+        {settings.allow_comments && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <MessageSquare className="w-4 h-4 text-zinc-500" />
+              <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wide">Comments</h2>
+            </div>
+            <div className="rounded-xl bg-zinc-900/50 border border-zinc-800 p-6">
+              <p className="text-sm text-zinc-500 text-center py-4">
+                Comments feature coming soon
+              </p>
             </div>
           </div>
         )}
