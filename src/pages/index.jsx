@@ -811,13 +811,25 @@ function PagesContent() {
 
                 <Route path="/TalentCandidates" element={<TalentCandidates />} />
 
+                {/* Redirect /candidates to /TalentCandidates for convenience */}
+                <Route path="/candidates" element={<Navigate to="/TalentCandidates" replace />} />
+
                 <Route path="/TalentCandidateProfile" element={<TalentCandidateProfile />} />
 
                 <Route path="/TalentCampaigns" element={<TalentCampaigns />} />
 
+                {/* Lowercase alias for talent campaigns */}
+                <Route path="/talentcampaigns" element={<Navigate to="/TalentCampaigns" replace />} />
+
                 <Route path="/TalentCampaignDetail" element={<TalentCampaignDetail />} />
 
                 <Route path="/TalentProjects" element={<TalentProjects />} />
+
+                {/* Redirect /projects to /TalentProjects for Talent context */}
+                <Route path="/talentprojects" element={<Navigate to="/TalentProjects" replace />} />
+
+                {/* Redirect /roles - roles are managed within projects */}
+                <Route path="/roles" element={<Navigate to="/TalentProjects" replace />} />
 
                 <Route path="/TalentAnalytics" element={<Navigate to="/TalentDashboard" replace />} />
 

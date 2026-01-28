@@ -13,12 +13,10 @@ import {
   MapPin,
   Building2,
   Calendar,
-  Clock,
   Copy,
   Check,
   Sparkles,
   RefreshCw,
-  Plus,
   Send,
   Eye,
   MessageSquare,
@@ -30,6 +28,8 @@ import {
   Lightbulb,
   Loader2,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   DollarSign,
   Users,
   Star,
@@ -39,18 +39,38 @@ import {
   ArrowUpRight,
   Network,
   Newspaper,
-  Shield,
   Globe,
-  Percent,
+  Smile,
+  Meh,
+  Frown,
+  CheckCircle2,
+  Settings,
 } from "lucide-react";
 import { supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { IntelligenceGauge, IntelligenceLevelBadge, ApproachBadge } from "./IntelligenceGauge";
+import { IntelligenceReport } from "@/components/talent/IntelligenceReport";
+import { CompanyIntelligenceReport } from "@/components/shared/CompanyIntelligenceReport";
+import { fullEnrichFromLinkedIn } from "@/lib/explorium-api";
 import { usePanelPreferences } from "@/hooks/usePanelPreferences";
 import PanelCustomizationModal from "./PanelCustomizationModal";
-import { Settings } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { createPageUrl } from "@/utils";
 
 // Copy button with feedback
 const CopyButton = ({ value }) => {
@@ -88,6 +108,89 @@ const Section = ({ title, children, className = "" }) => (
     {children}
   </div>
 );
+
+// Expandable Text component
+const ExpandableText = ({ text, maxLength = 200 }) => {
+  const [expanded, setExpanded] = useState(false);
+  if (!text) return <span className="text-zinc-500">—</span>;
+
+  const shouldTruncate = text.length > maxLength;
+  const displayText = expanded || !shouldTruncate ? text : `${text.substring(0, maxLength)}...`;
+
+  return (
+    <div>
+      <p className="text-sm text-zinc-300 leading-relaxed">{displayText}</p>
+      {shouldTruncate && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="text-xs text-red-400 hover:text-red-300 mt-2 flex items-center gap-1"
+        >
+          {expanded ? <>Show less <ChevronUp className="w-3 h-3" /></> : <>Read more <ChevronDown className="w-3 h-3" /></>}
+        </button>
+      )}
+    </div>
+  );
+};
+
+// Urgency Badge
+const UrgencyBadge = ({ level }) => {
+  const config = {
+    high: { bg: "bg-red-500/20", text: "text-red-400", label: "High Priority" },
+    medium: { bg: "bg-red-400/20", text: "text-red-300", label: "Medium Priority" },
+    low: { bg: "bg-zinc-500/20", text: "text-zinc-400", label: "Low Priority" },
+  };
+  const c = config[level?.toLowerCase()] || config.medium;
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-medium ${c.bg} ${c.text}`}>
+      <span className="w-1.5 h-1.5 rounded-full bg-current" />
+      {c.label}
+    </span>
+  );
+};
+
+// Satisfaction Badge - parses "Switching Likelihood: High/Medium/Low" from analysis text
+const SatisfactionBadge = ({ level }) => {
+  let switchingLikelihood = "Medium";
+  if (level) {
+    const match = level.match(/Switching Likelihood:\s*(High|Medium|Low)/i);
+    if (match) {
+      switchingLikelihood = match[1];
+    }
+  }
+
+  const lowerLevel = switchingLikelihood.toLowerCase();
+  let config;
+  if (lowerLevel === "high") {
+    config = { bg: "bg-red-500/20", text: "text-red-400", icon: Smile, label: "Open to Move" };
+  } else if (lowerLevel === "low") {
+    config = { bg: "bg-zinc-500/20", text: "text-zinc-400", icon: Frown, label: "Not Looking" };
+  } else {
+    config = { bg: "bg-red-400/20", text: "text-red-300", icon: Meh, label: "Considering" };
+  }
+  const Icon = config.icon;
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium ${config.bg} ${config.text}`}>
+      <Icon className="w-3 h-3" />
+      {config.label}
+    </span>
+  );
+};
+
+// Analysis Card
+const AnalysisCard = ({ icon: Icon, title, content, maxLength = 300 }) => {
+  if (!content) return null;
+  return (
+    <div className="bg-zinc-800/30 border border-zinc-700/30 rounded-xl p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="p-2 rounded-lg bg-red-500/10">
+          <Icon className="w-4 h-4 text-red-400" />
+        </div>
+        <h3 className="text-sm font-semibold text-white">{title}</h3>
+      </div>
+      <ExpandableText text={content} maxLength={maxLength} />
+    </div>
+  );
+};
 
 // Info row component
 const InfoRow = ({ icon: Icon, label, value, copyable, link }) => {
@@ -577,15 +680,56 @@ const ActivityItem = ({ type, campaign_name, timestamp, details, message_preview
 // Profile Tab
 const ProfileTab = ({ candidate, isSectionEnabled = () => true }) => (
   <div className="space-y-6">
+    {/* Analysis Cards Section */}
+    {isSectionEnabled('profile', 'analysis_cards') && (
+      <div className="space-y-4">
+        <AnalysisCard
+          icon={Target}
+          title="Recruitment Assessment"
+          content={candidate.outreach_urgency_reasoning}
+          maxLength={300}
+        />
+        <AnalysisCard
+          icon={Briefcase}
+          title="Job Satisfaction Analysis"
+          content={candidate.job_satisfaction_analysis}
+          maxLength={300}
+        />
+        <AnalysisCard
+          icon={Award}
+          title="Experience Analysis"
+          content={candidate.experience_analysis}
+          maxLength={300}
+        />
+      </div>
+    )}
+
     {/* Contact Information */}
     {isSectionEnabled('profile', 'contact_info') && (
       <Section title="Contact Information">
         <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700/30">
-          <InfoRow icon={Mail} label="Email" value={candidate.email} copyable />
-          <InfoRow icon={Phone} label="Phone" value={candidate.phone} copyable />
+          <InfoRow icon={Mail} label="Email" value={candidate.verified_email || candidate.email} copyable />
+          {candidate.verified_email && candidate.email && candidate.verified_email !== candidate.email && (
+            <InfoRow icon={Mail} label="Personal Email" value={candidate.email} copyable />
+          )}
+          <InfoRow icon={Phone} label="Phone" value={candidate.verified_phone || candidate.phone} copyable />
+          {candidate.verified_mobile && (
+            <InfoRow icon={Phone} label="Mobile" value={candidate.verified_mobile} copyable />
+          )}
           <InfoRow icon={Linkedin} label="LinkedIn" value={candidate.linkedin_url} link />
           {candidate.website && (
             <InfoRow icon={ExternalLink} label="Website" value={candidate.website} link />
+          )}
+
+          {/* Enrichment status indicator */}
+          {candidate.enriched_at && (
+            <div className="mt-3 pt-3 border-t border-zinc-700/50">
+              <div className="flex items-center gap-2 text-xs text-green-400">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Verified via {candidate.enrichment_source || "Explorium"}</span>
+                <span className="text-zinc-500">• {new Date(candidate.enriched_at).toLocaleDateString()}</span>
+              </div>
+            </div>
           )}
         </div>
       </Section>
@@ -1087,8 +1231,25 @@ export default function CandidateDetailDrawer({
   const [activeTab, setActiveTab] = useState("profile");
   const [activityHistory, setActivityHistory] = useState([]);
   const [activityLoading, setActivityLoading] = useState(false);
-  const [refreshingIntel, setRefreshingIntel] = useState(false);
   const [showCustomizationModal, setShowCustomizationModal] = useState(false);
+
+  // SYNC Intel state
+  const [generatingIntelligence, setGeneratingIntelligence] = useState(false);
+  const [syncStatus, setSyncStatus] = useState(""); // "company" | "candidate" | ""
+
+  // Enrichment state
+  const [enrichingContact, setEnrichingContact] = useState(false);
+
+  // SMS Modal state
+  const [showSMSModal, setShowSMSModal] = useState(false);
+  const [smsMessage, setSmsMessage] = useState("");
+  const [sendingFromNumber, setSendingFromNumber] = useState("");
+  const [availableNumbers, setAvailableNumbers] = useState([]);
+  const [sendingSMS, setSendingSMS] = useState(false);
+  const [generatingMessage, setGeneratingMessage] = useState(false);
+
+  // Campaign Matches state
+  const [campaignMatches, setCampaignMatches] = useState([]);
 
   // Panel preferences
   const {
@@ -1100,11 +1261,14 @@ export default function CandidateDetailDrawer({
     isTabEnabled
   } = usePanelPreferences();
 
+  const SYNC_INTEL_CREDIT_COST = 10;
+
   // Fetch candidate details
   useEffect(() => {
     if (candidateId && open) {
       fetchCandidateDetails();
       fetchActivityHistory();
+      fetchCampaignMatches();
     }
   }, [candidateId, open]);
 
@@ -1114,6 +1278,13 @@ export default function CandidateDetailDrawer({
       setActiveTab("profile");
     }
   }, [candidateId, open]);
+
+  // Fetch phone numbers when SMS modal opens
+  useEffect(() => {
+    if (showSMSModal && user?.organization_id) {
+      fetchAvailableNumbers();
+    }
+  }, [showSMSModal, user?.organization_id]);
 
   const fetchCandidateDetails = async () => {
     setLoading(true);
@@ -1263,29 +1434,298 @@ export default function CandidateDetailDrawer({
     }
   };
 
-  const handleRefreshIntel = async () => {
-    if (!candidate) return;
-    setRefreshingIntel(true);
+  // Fetch campaign matches
+  const fetchCampaignMatches = async () => {
+    if (!candidateId) return;
     try {
-      // Queue for intel generation
-      const { error } = await supabase.from("sync_intel_queue").insert({
-        candidate_id: candidate.id,
-        organization_id: user.organization_id,
-        source: "manual",
-        priority: 1,
-        status: "pending",
-      });
+      const { data, error } = await supabase
+        .from("candidate_campaign_matches")
+        .select(`
+          *,
+          campaigns:campaign_id (id, name, description, status, campaign_type)
+        `)
+        .eq("candidate_id", candidateId)
+        .order("match_score", { ascending: false });
+
+      if (error) throw error;
+      setCampaignMatches(data || []);
+    } catch (err) {
+      console.error("Error fetching matches:", err);
+    }
+  };
+
+  // SYNC Intel handler
+  const handleSyncIntel = async () => {
+    if (!candidate) return;
+
+    const isFromNestPurchase = candidate.source === 'nest_purchase';
+
+    if (!isFromNestPurchase) {
+      const currentCredits = user?.credits || 0;
+      if (currentCredits < SYNC_INTEL_CREDIT_COST) {
+        toast.error("Insufficient credits", {
+          description: `SYNC Intel requires ${SYNC_INTEL_CREDIT_COST} credits. You have ${currentCredits} credits.`,
+        });
+        return;
+      }
+    }
+
+    setGeneratingIntelligence(true);
+    try {
+      let companyIntel = candidate.company_intelligence;
+
+      // Step 1: Sync company intelligence first
+      if (candidate.current_company || candidate.company_name) {
+        setSyncStatus("company");
+        const companyResponse = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generateCompanyIntelligence`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify({
+              companyName: candidate.current_company || candidate.company_name,
+              companyDomain: candidate.company_domain,
+              entityType: "candidate",
+              entityId: candidateId,
+            }),
+          }
+        );
+        const companyData = await companyResponse.json();
+        if (companyData.intelligence) {
+          companyIntel = companyData.intelligence;
+          setCandidate(prev => ({ ...prev, company_intelligence: companyIntel }));
+        }
+      }
+
+      // Step 2: Generate candidate intelligence
+      setSyncStatus("candidate");
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generateCandidateIntelligence`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            candidate_id: candidateId,
+            organization_id: user.organization_id,
+            company_intelligence: companyIntel,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        if (!isFromNestPurchase) {
+          await supabase
+            .from('users')
+            .update({ credits: (user?.credits || 0) - SYNC_INTEL_CREDIT_COST })
+            .eq('id', user.id);
+          toast.success("Intelligence synced!", { description: `${SYNC_INTEL_CREDIT_COST} credits deducted` });
+        } else {
+          toast.success("Intelligence synced!");
+        }
+        await fetchCandidateDetails();
+        setActiveTab("intelligence");
+      } else {
+        toast.error("Failed to sync intelligence");
+      }
+    } catch (err) {
+      console.error("Error syncing intelligence:", err);
+      toast.error("Network error. Please try again.");
+    } finally {
+      setGeneratingIntelligence(false);
+      setSyncStatus("");
+    }
+  };
+
+  // Enrich contact handler
+  const handleEnrichContact = async () => {
+    if (!candidate.linkedin_url) {
+      toast.error("No LinkedIn URL available");
+      return;
+    }
+
+    setEnrichingContact(true);
+    try {
+      const enriched = await fullEnrichFromLinkedIn(candidate.linkedin_url);
+
+      const { error } = await supabase
+        .from("candidates")
+        .update({
+          verified_email: enriched.email,
+          verified_phone: enriched.phone,
+          verified_mobile: enriched.mobile_phone,
+          personal_email: enriched.personal_email,
+          explorium_prospect_id: enriched.explorium_prospect_id,
+          explorium_business_id: enriched.explorium_business_id,
+          enriched_at: enriched.enriched_at,
+          enrichment_source: "explorium",
+          job_title: candidate.current_title || enriched.job_title,
+          company_name: candidate.current_company || enriched.company,
+          skills: candidate.skills?.length ? candidate.skills : enriched.skills,
+          inferred_skills: enriched.skills,
+        })
+        .eq("id", candidateId);
 
       if (error) throw error;
 
-      toast.success("Intelligence generation queued");
-      // Refresh candidate data after a delay
-      setTimeout(fetchCandidateDetails, 2000);
-    } catch (error) {
-      console.error("Error queueing intel:", error);
-      toast.error("Failed to queue intelligence generation");
+      await fetchCandidateDetails();
+      toast.success("Contact info enriched!", {
+        description: `Found ${enriched.email ? "email" : ""}${enriched.email && enriched.phone ? " & " : ""}${enriched.phone ? "phone" : ""}`,
+      });
+    } catch (err) {
+      console.error("Enrichment error:", err);
+      toast.error("Enrichment failed");
     } finally {
-      setRefreshingIntel(false);
+      setEnrichingContact(false);
+    }
+  };
+
+  // Fetch available phone numbers for SMS
+  const fetchAvailableNumbers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("twilio_phone_numbers")
+        .select("*")
+        .eq("organization_id", user.organization_id)
+        .eq("status", "active")
+        .order("purchased_at", { ascending: false });
+
+      if (error) throw error;
+      setAvailableNumbers(data || []);
+      if (data?.length > 0 && !sendingFromNumber) {
+        setSendingFromNumber(data[0].phone_number);
+      }
+    } catch (err) {
+      console.error("Error fetching phone numbers:", err);
+    }
+  };
+
+  // Generate personalized SMS using AI
+  const generatePersonalizedSMS = async () => {
+    if (!candidate) return;
+
+    setGeneratingMessage(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generateCampaignOutreach`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            candidate_name: candidate.name || `${candidate.first_name || ""} ${candidate.last_name || ""}`.trim(),
+            candidate_title: candidate.current_title || candidate.job_title,
+            candidate_company: candidate.current_company || candidate.company_name,
+            candidate_skills: candidate.skills || [],
+            campaign_type: "sms",
+            stage: "initial",
+            intelligence_score: candidate.intelligence_score,
+            recommended_approach: candidate.recommended_approach,
+            outreach_hooks: candidate.outreach_hooks,
+            best_outreach_angle: candidate.best_outreach_angle,
+            timing_signals: candidate.timing_signals,
+            company_pain_points: candidate.company_pain_points,
+            key_insights: candidate.key_insights,
+            lateral_opportunities: candidate.lateral_opportunities,
+            intelligence_factors: candidate.intelligence_factors,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setSmsMessage(data.content || data.message || "");
+        toast.success("Message generated!", {
+          description: data.personalization_score
+            ? `Personalization: ${data.personalization_score}%`
+            : undefined,
+        });
+      } else {
+        toast.error("Failed to generate message");
+      }
+    } catch (err) {
+      console.error("Error generating SMS:", err);
+      toast.error("Failed to generate message");
+    } finally {
+      setGeneratingMessage(false);
+    }
+  };
+
+  // Send SMS to candidate
+  const sendSMS = async () => {
+    const recipientPhone = candidate.verified_phone || candidate.phone;
+    if (!recipientPhone) {
+      toast.error("No phone number available", {
+        description: "Enrich this candidate's contact info first",
+      });
+      return;
+    }
+
+    if (!sendingFromNumber) {
+      toast.error("No sending number selected", {
+        description: "Purchase a phone number in SMS Outreach settings",
+      });
+      return;
+    }
+
+    if (!smsMessage.trim()) {
+      toast.error("Message cannot be empty");
+      return;
+    }
+
+    setSendingSMS(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/twilio-sms`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            action: "send_sms",
+            from_number: sendingFromNumber,
+            to_number: recipientPhone,
+            message: smsMessage,
+            organization_id: user.organization_id,
+            metadata: {
+              candidate_id: candidate.id,
+              candidate_name: candidate.name || `${candidate.first_name || ""} ${candidate.last_name || ""}`.trim(),
+              source: "candidate_drawer",
+            },
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success("SMS sent successfully!", {
+          description: `Message delivered to ${recipientPhone}`,
+        });
+        setShowSMSModal(false);
+        setSmsMessage("");
+        fetchActivityHistory();
+      } else {
+        toast.error("Failed to send SMS", {
+          description: result.error || "Please try again",
+        });
+      }
+    } catch (err) {
+      console.error("Error sending SMS:", err);
+      toast.error("Network error", {
+        description: "Failed to send SMS. Please try again.",
+      });
+    } finally {
+      setSendingSMS(false);
     }
   };
 
@@ -1303,6 +1743,7 @@ export default function CandidateDetailDrawer({
     { id: "profile", label: "Profile", icon: User },
     { id: "intelligence", label: "Intelligence", icon: Brain },
     { id: "company", label: "Company", icon: Building2 },
+    { id: "matches", label: "Matches", icon: Target, count: campaignMatches.length },
     ...(campaignContext
       ? [{ id: "match", label: "Match Analysis", icon: Target }]
       : []),
@@ -1313,6 +1754,8 @@ export default function CandidateDetailDrawer({
   const tabs = allTabs.filter(tab => {
     // Match tab is always shown when there's campaign context
     if (tab.id === "match") return true;
+    // Matches tab is always shown
+    if (tab.id === "matches") return true;
     return isTabEnabled(tab.id);
   });
 
@@ -1405,23 +1848,90 @@ export default function CandidateDetailDrawer({
                     </div>
                   </div>
 
-                  {/* Quick Actions */}
-                  <div className="flex items-center gap-2">
+                  {/* Enhanced Quick Stats Bar */}
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-4 pt-4 border-t border-zinc-700/50">
+                    <div>
+                      <p className="text-[10px] text-zinc-500 mb-0.5">Urgency</p>
+                      <UrgencyBadge level={candidate.recruitment_urgency} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-zinc-500 mb-0.5">Satisfaction</p>
+                      <SatisfactionBadge level={candidate.job_satisfaction} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-zinc-500 mb-0.5">Salary</p>
+                      <p className="text-sm font-semibold text-red-400">
+                        {candidate.salary_range ? `$${Number(candidate.salary_range).toLocaleString()}` : "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-zinc-500 mb-0.5">Tenure</p>
+                      <p className="text-sm font-semibold text-white">{candidate.years_at_company || 0}y</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-zinc-500 mb-0.5">Promos</p>
+                      <p className="text-sm font-semibold text-white">{candidate.times_promoted || 0}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-zinc-500 mb-0.5">Job Changes</p>
+                      <p className="text-sm font-semibold text-white">{candidate.times_company_hopped || 0}</p>
+                    </div>
+                  </div>
+
+                  {/* Enhanced Quick Actions */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {/* SYNC INTEL Button */}
                     <Button
+                      onClick={handleSyncIntel}
+                      disabled={generatingIntelligence}
                       size="sm"
-                      className="bg-red-500 hover:bg-red-600 text-white"
+                      className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
                     >
-                      <Plus className="w-4 h-4 mr-1" />
-                      Add to Campaign
+                      {generatingIntelligence ? (
+                        <Loader2 className="w-3 h-3 animate-spin mr-1.5" />
+                      ) : (
+                        <Sparkles className="w-3 h-3 mr-1.5" />
+                      )}
+                      {syncStatus === "company" ? "SYNCING..." :
+                       syncStatus === "candidate" ? "ANALYZING..." :
+                       "SYNC INTEL"}
                     </Button>
+
+                    {/* Send SMS Button */}
                     <Button
-                      size="sm"
                       variant="outline"
-                      className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                      size="sm"
+                      className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                      onClick={() => setShowSMSModal(true)}
                     >
-                      <Send className="w-4 h-4 mr-1" />
-                      Generate Outreach
+                      <MessageSquare className="w-3 h-3 mr-1.5" />
+                      Send SMS
                     </Button>
+
+                    {/* Enrich Button */}
+                    {candidate.linkedin_url && !candidate.enriched_at ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleEnrichContact}
+                        disabled={enrichingContact}
+                        className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                      >
+                        {enrichingContact ? (
+                          <Loader2 className="w-3 h-3 animate-spin mr-1.5" />
+                        ) : (
+                          <Zap className="w-3 h-3 mr-1.5" />
+                        )}
+                        {enrichingContact ? "Enriching..." : "Enrich"}
+                      </Button>
+                    ) : candidate.enriched_at ? (
+                      <div className="flex items-center gap-1 text-[10px] text-green-400 px-2 py-1 bg-green-500/10 rounded border border-green-500/20">
+                        <CheckCircle2 className="w-3 h-3" />
+                        Enriched
+                      </div>
+                    ) : null}
+
+                    {/* LinkedIn Button */}
                     {candidate.linkedin_url && (
                       <Button
                         size="sm"
@@ -1432,17 +1942,30 @@ export default function CandidateDetailDrawer({
                         <Linkedin className="w-4 h-4" />
                       </Button>
                     )}
+
+                    {/* View Full Profile Link */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                      onClick={() => {
+                        window.location.href = `${createPageUrl("TalentCandidateProfile")}?id=${candidate.id}`;
+                      }}
+                    >
+                      <ExternalLink className="w-3 h-3 mr-1.5" />
+                      Full Profile
+                    </Button>
                   </div>
                 </div>
 
                 {/* Tabs */}
                 <div className="border-b border-zinc-800 px-6">
-                  <div className="flex gap-1">
+                  <div className="flex gap-1 overflow-x-auto">
                     {tabs.map((tab) => (
                       <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                        className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                           activeTab === tab.id
                             ? "text-red-400 border-red-500"
                             : "text-zinc-400 border-transparent hover:text-zinc-300 hover:border-zinc-700"
@@ -1450,6 +1973,11 @@ export default function CandidateDetailDrawer({
                       >
                         <tab.icon className="w-4 h-4" />
                         {tab.label}
+                        {tab.count > 0 && (
+                          <span className="ml-1 px-1.5 py-0.5 text-[10px] font-semibold bg-red-500/20 text-red-400 rounded-full">
+                            {tab.count}
+                          </span>
+                        )}
                       </button>
                     ))}
                   </div>
@@ -1464,18 +1992,137 @@ export default function CandidateDetailDrawer({
                     />
                   )}
                   {activeTab === "intelligence" && (
-                    <IntelligenceTab
+                    <IntelligenceReport
                       candidate={candidate}
-                      onRefresh={handleRefreshIntel}
-                      refreshing={refreshingIntel}
-                      isSectionEnabled={isSectionEnabled}
+                      onGenerate={handleSyncIntel}
+                      isGenerating={generatingIntelligence}
+                      syncStatus={syncStatus}
                     />
                   )}
                   {activeTab === "company" && (
-                    <CompanyTab
-                      candidate={candidate}
-                      isSectionEnabled={isSectionEnabled}
-                    />
+                    <div className="space-y-4">
+                      {/* Compact company info bar at top */}
+                      {(candidate.current_company || candidate.company_name) && (
+                        <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-lg border border-blue-500/20">
+                          <div className="w-12 h-12 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                            <Building2 className="w-6 h-6 text-blue-400" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-white">{candidate.current_company || candidate.company_name}</h3>
+                            {candidate.company_domain && (
+                              <p className="text-sm text-blue-400/70">{candidate.company_domain}</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* CompanyIntelligenceReport */}
+                      <CompanyIntelligenceReport
+                        intelligence={candidate.company_intelligence}
+                        companyName={candidate.current_company || candidate.company_name}
+                        companyDomain={candidate.company_domain}
+                        entityType="candidate"
+                        entityId={candidate.id}
+                        onIntelligenceGenerated={(intel) => setCandidate({ ...candidate, company_intelligence: intel })}
+                      />
+                    </div>
+                  )}
+                  {activeTab === "matches" && (
+                    <div className="space-y-4">
+                      {campaignMatches.length === 0 ? (
+                        <div className="text-center py-12">
+                          <Target className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
+                          <h3 className="text-lg font-semibold text-white mb-2">No Campaign Matches</h3>
+                          <p className="text-zinc-400 text-sm">
+                            This candidate hasn't been matched to any campaigns yet.
+                          </p>
+                        </div>
+                      ) : (
+                        campaignMatches.map((match) => (
+                          <div
+                            key={match.id}
+                            className="bg-zinc-800/50 rounded-xl border border-zinc-700/50 p-4"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-start gap-3">
+                                {/* Score Circle */}
+                                <div className="relative w-14 h-14 flex-shrink-0">
+                                  <svg className="w-14 h-14 -rotate-90">
+                                    <circle
+                                      cx="28"
+                                      cy="28"
+                                      r="24"
+                                      fill="none"
+                                      stroke="rgba(255,255,255,0.1)"
+                                      strokeWidth="4"
+                                    />
+                                    <circle
+                                      cx="28"
+                                      cy="28"
+                                      r="24"
+                                      fill="none"
+                                      stroke={match.match_score >= 80 ? "#22c55e" : match.match_score >= 60 ? "#eab308" : "#ef4444"}
+                                      strokeWidth="4"
+                                      strokeLinecap="round"
+                                      strokeDasharray={`${(match.match_score / 100) * 150.8} 150.8`}
+                                    />
+                                  </svg>
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    <span className="text-sm font-bold text-white">{match.match_score}%</span>
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <h4 className="font-semibold text-white">{match.campaigns?.name || "Unknown Campaign"}</h4>
+                                  <p className="text-sm text-zinc-400">{match.campaigns?.campaign_type || "—"}</p>
+                                  {match.match_reasons?.length > 0 && (
+                                    <div className="flex flex-wrap gap-1 mt-2">
+                                      {match.match_reasons.slice(0, 3).map((reason, idx) => (
+                                        <span key={idx} className="text-[10px] px-2 py-0.5 bg-green-500/10 text-green-400 rounded-full border border-green-500/20">
+                                          {reason}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              <span className={`text-xs px-2 py-1 rounded ${
+                                match.campaigns?.status === "active"
+                                  ? "bg-green-500/20 text-green-400"
+                                  : "bg-zinc-500/20 text-zinc-400"
+                              }`}>
+                                {match.campaigns?.status || "unknown"}
+                              </span>
+                            </div>
+
+                            {match.best_outreach_angle && (
+                              <div className="mt-3 pt-3 border-t border-zinc-700/50">
+                                <p className="text-xs text-amber-400/70 uppercase tracking-wider mb-1">Best Approach</p>
+                                <p className="text-sm text-zinc-300">{match.best_outreach_angle}</p>
+                              </div>
+                            )}
+
+                            {match.timing_signals?.length > 0 && (
+                              <div className="mt-3 pt-3 border-t border-zinc-700/50">
+                                <p className="text-xs text-red-400/70 uppercase tracking-wider mb-1">Timing Signals</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {match.timing_signals.slice(0, 3).map((signal, idx) => (
+                                    <span key={idx} className="text-xs px-2 py-0.5 bg-red-500/10 text-red-400 rounded border border-red-500/20">
+                                      {signal.trigger || signal}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            <p className="text-xs text-zinc-500 mt-3">
+                              Matched {new Date(match.matched_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                        ))
+                      )}
+                    </div>
                   )}
                   {activeTab === "match" && campaignContext && (
                     <MatchAnalysisTab
@@ -1508,6 +2155,126 @@ export default function CandidateDetailDrawer({
         onSave={savePreferences}
         saving={preferencesSaving}
       />
+
+      {/* SMS Modal */}
+      <Dialog open={showSMSModal} onOpenChange={setShowSMSModal}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-red-400" />
+              Send SMS to {candidate?.name || candidate?.first_name || "Candidate"}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-4">
+            {/* Recipient Info */}
+            <div className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg border border-zinc-700/50">
+              <div className="flex items-center gap-2">
+                <Phone className="w-4 h-4 text-zinc-400" />
+                <span className="text-sm text-zinc-300">
+                  {candidate?.verified_phone || candidate?.phone || "No phone number"}
+                </span>
+              </div>
+              {!candidate?.verified_phone && !candidate?.phone && (
+                <span className="text-xs text-amber-400">Enrich to get phone</span>
+              )}
+            </div>
+
+            {/* Sending Number Selection */}
+            <div>
+              <label className="block text-sm font-medium text-zinc-400 mb-2">Send from</label>
+              {availableNumbers.length === 0 ? (
+                <div className="p-3 bg-amber-500/10 rounded-lg border border-amber-500/20 text-sm text-amber-400">
+                  No phone numbers available. Purchase one in SMS Outreach settings.
+                </div>
+              ) : (
+                <Select value={sendingFromNumber} onValueChange={setSendingFromNumber}>
+                  <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                    <SelectValue placeholder="Select phone number" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-800 border-zinc-700">
+                    {availableNumbers.map((num) => (
+                      <SelectItem key={num.phone_number} value={num.phone_number} className="text-white">
+                        {num.friendly_name || num.phone_number}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+
+            {/* Message */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-zinc-400">Message</label>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={generatePersonalizedSMS}
+                  disabled={generatingMessage}
+                  className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-7 text-xs"
+                >
+                  {generatingMessage ? (
+                    <>
+                      <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3 h-3 mr-1" />
+                      Generate with AI
+                    </>
+                  )}
+                </Button>
+              </div>
+              <Textarea
+                value={smsMessage}
+                onChange={(e) => setSmsMessage(e.target.value)}
+                placeholder="Type your message or click 'Generate with AI' for a personalized message..."
+                className="bg-zinc-800 border-zinc-700 text-white min-h-[120px] resize-none"
+                maxLength={160}
+              />
+              <div className="flex items-center justify-between mt-1">
+                <span className="text-xs text-zinc-500">{smsMessage.length}/160 characters</span>
+                {smsMessage.length > 160 && (
+                  <span className="text-xs text-amber-400">Will be sent as multiple messages</span>
+                )}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-2 pt-4 border-t border-zinc-800">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowSMSModal(false);
+                  setSmsMessage("");
+                }}
+                className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={sendSMS}
+                disabled={sendingSMS || !smsMessage.trim() || !sendingFromNumber || (!candidate?.verified_phone && !candidate?.phone)}
+                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
+              >
+                {sendingSMS ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-1.5" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-1.5" />
+                    Send SMS
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AnimatePresence>
   );
 }
