@@ -47,14 +47,17 @@ import {
   Zap,
   Search,
   X,
+  SlidersHorizontal,
 } from "lucide-react";
 import { toast } from "sonner";
+import { CriteriaWeightingStep, DEFAULT_WEIGHTS } from "./campaign/CriteriaWeightingStep";
 
 const STEPS = [
   { id: 1, title: "Select Project", icon: FolderOpen },
   { id: 2, title: "Select Role", icon: Briefcase },
-  { id: 3, title: "Define Role Context", icon: Target },
-  { id: 4, title: "Review & Launch", icon: Sparkles },
+  { id: 3, title: "Role Context", icon: Target },
+  { id: 4, title: "Match Weights", icon: SlidersHorizontal },
+  { id: 5, title: "Review & Launch", icon: Sparkles },
 ];
 
 export default function CampaignWizard({ open, onOpenChange, onComplete, nestContext }) {
@@ -91,6 +94,9 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
     compensation_range: "",
     unique_aspects: "",
   });
+
+  // Criteria weights
+  const [criteriaWeights, setCriteriaWeights] = useState(DEFAULT_WEIGHTS);
 
   // Campaign details
   const [campaignName, setCampaignName] = useState("");
@@ -303,6 +309,7 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
           project_name: selectedProject?.title || selectedProject?.name,
           // Store outreach channel preference
           outreach_channel: outreachChannel,
+          criteria_weights: criteriaWeights,
         },
         auto_match_enabled: true,
         min_match_score: 30,
@@ -356,13 +363,24 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
       case 1: return !!selectedProject;
       case 2: return !!selectedRole;
       case 3: return roleContext.perfect_fit_criteria.trim().length > 0 || roleContext.selling_points.trim().length > 0;
-      case 4: return campaignName.trim().length > 0;
+      case 4: {
+        const total = Object.values(criteriaWeights).reduce((sum, w) => sum + w, 0);
+        return total === 100;
+      }
+      case 5: return campaignName.trim().length > 0;
       default: return false;
     }
   };
 
   const handleNext = () => {
-    if (canProceed() && step < 4) {
+    if (step === 4) {
+      const total = Object.values(criteriaWeights).reduce((sum, w) => sum + w, 0);
+      if (total !== 100) {
+        toast.error("Weights must total 100%");
+        return;
+      }
+    }
+    if (canProceed() && step < 5) {
       setStep(step + 1);
     }
   };
@@ -389,6 +407,7 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
         unique_aspects: "",
       });
       setCampaignName("");
+      setCriteriaWeights(DEFAULT_WEIGHTS);
     }
     onOpenChange(open);
   };
@@ -816,10 +835,36 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
               </motion.div>
             )}
 
-            {/* Step 4: Review & Launch */}
+            {/* Step 4: Matching Weights */}
             {step === 4 && (
               <motion.div
                 key="step4"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-6"
+              >
+                <CriteriaWeightingStep
+                  weights={criteriaWeights}
+                  onChange={setCriteriaWeights}
+                />
+                <div className="flex justify-end">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setStep(5)}
+                    className="text-zinc-500 hover:text-zinc-300"
+                  >
+                    Skip (use defaults)
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Step 5: Review & Launch */}
+            {step === 5 && (
+              <motion.div
+                key="step5"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -951,7 +996,7 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
             Back
           </Button>
 
-          {step < 4 ? (
+          {step < 5 ? (
             <Button
               type="button"
               onClick={handleNext}
