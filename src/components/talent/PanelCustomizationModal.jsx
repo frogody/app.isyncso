@@ -10,7 +10,8 @@ import {
   ChevronRight,
   RotateCcw,
   Check,
-  Loader2
+  Loader2,
+  LayoutDashboard
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DEFAULT_PANEL_CONFIG } from '@/hooks/usePanelPreferences';
@@ -18,6 +19,7 @@ import { toast } from 'sonner';
 
 // Tab icon mapping
 const TAB_ICONS = {
+  summary_card: LayoutDashboard,
   profile: User,
   intelligence: Brain,
   company: Building2,
@@ -26,6 +28,7 @@ const TAB_ICONS = {
 
 // Tab display names
 const TAB_LABELS = {
+  summary_card: 'Summary Card',
   profile: 'Profile',
   intelligence: 'Intelligence',
   company: 'Company',
@@ -61,7 +64,8 @@ const SectionToggle = ({ label, checked, onChange }) => (
 const TabSection = ({ tabKey, config, onToggleTab, onToggleSection, expanded, onToggleExpand }) => {
   const Icon = TAB_ICONS[tabKey];
   const label = TAB_LABELS[tabKey];
-  const sections = config.sections || {};
+  // Support both 'sections' and 'metrics' for summary_card
+  const sections = config.sections || config.metrics || {};
   const hasSections = Object.keys(sections).length > 0;
 
   return (
@@ -135,6 +139,7 @@ export default function PanelCustomizationModal({
 }) {
   const [localConfig, setLocalConfig] = useState(preferences);
   const [expandedTabs, setExpandedTabs] = useState({
+    summary_card: true,
     profile: true,
     intelligence: true,
     company: true,
@@ -167,15 +172,17 @@ export default function PanelCustomizationModal({
   };
 
   const handleToggleSection = (tabKey, sectionKey) => {
+    // Handle summary_card which uses 'metrics' instead of 'sections'
+    const configKey = tabKey === 'summary_card' ? 'metrics' : 'sections';
     setLocalConfig(prev => ({
       ...prev,
       [tabKey]: {
         ...prev[tabKey],
-        sections: {
-          ...prev[tabKey]?.sections,
+        [configKey]: {
+          ...prev[tabKey]?.[configKey],
           [sectionKey]: {
-            ...prev[tabKey]?.sections?.[sectionKey],
-            enabled: !prev[tabKey]?.sections?.[sectionKey]?.enabled
+            ...prev[tabKey]?.[configKey]?.[sectionKey],
+            enabled: !prev[tabKey]?.[configKey]?.[sectionKey]?.enabled
           }
         }
       }
@@ -211,7 +218,8 @@ export default function PanelCustomizationModal({
 
   // Count enabled sections for summary
   const getEnabledCount = (tabKey) => {
-    const sections = localConfig[tabKey]?.sections || {};
+    // Handle summary_card which uses 'metrics' instead of 'sections'
+    const sections = localConfig[tabKey]?.sections || localConfig[tabKey]?.metrics || {};
     const enabled = Object.values(sections).filter(s => s.enabled).length;
     const total = Object.keys(sections).length;
     return total > 0 ? `${enabled}/${total}` : '';
@@ -265,7 +273,7 @@ export default function PanelCustomizationModal({
 
               {/* Content */}
               <div className="p-4 max-h-[60vh] overflow-y-auto space-y-3">
-                {['profile', 'intelligence', 'company', 'activity'].map(tabKey => (
+                {['summary_card', 'profile', 'intelligence', 'company', 'activity'].map(tabKey => (
                   <TabSection
                     key={tabKey}
                     tabKey={tabKey}

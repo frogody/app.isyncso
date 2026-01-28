@@ -4,6 +4,20 @@ import { useUser } from '@/components/context/UserContext';
 
 // Default panel configuration - all sections enabled by default
 export const DEFAULT_PANEL_CONFIG = {
+  summary_card: {
+    enabled: true,
+    metrics: {
+      intelligence_score: { enabled: true, order: 0, label: "Intelligence Score" },
+      intelligence_level: { enabled: true, order: 1, label: "Risk Level" },
+      recommended_approach: { enabled: true, order: 2, label: "Approach" },
+      timing_signal: { enabled: true, order: 3, label: "Key Timing Signal" },
+      outreach_angle: { enabled: true, order: 4, label: "Outreach Angle" },
+      top_skills: { enabled: true, order: 5, label: "Top Skills" },
+      flight_risk: { enabled: true, order: 6, label: "Flight Risk Alert" },
+      years_experience: { enabled: false, order: 7, label: "Years Experience" },
+      location: { enabled: false, order: 8, label: "Location" }
+    }
+  },
   profile: {
     enabled: true,
     sections: {
@@ -158,6 +172,25 @@ export const usePanelPreferences = () => {
     return preferences[tab]?.sections?.[section]?.enabled ?? true;
   }, [preferences]);
 
+  // Check if a summary card metric is enabled
+  const isMetricEnabled = useCallback((metric) => {
+    return preferences.summary_card?.metrics?.[metric]?.enabled ?? true;
+  }, [preferences]);
+
+  // Get ordered metrics for summary card (only enabled ones)
+  const getEnabledMetrics = useCallback(() => {
+    const metrics = preferences.summary_card?.metrics || {};
+    return Object.entries(metrics)
+      .filter(([_, config]) => config.enabled)
+      .sort((a, b) => (a[1].order || 0) - (b[1].order || 0))
+      .map(([key]) => key);
+  }, [preferences]);
+
+  // Check if summary card is enabled
+  const isSummaryCardEnabled = useCallback(() => {
+    return preferences.summary_card?.enabled ?? true;
+  }, [preferences]);
+
   // Check if a tab is enabled
   const isTabEnabled = useCallback((tab) => {
     return preferences[tab]?.enabled ?? true;
@@ -225,6 +258,9 @@ export const usePanelPreferences = () => {
     resetToDefaults,
     isSectionEnabled,
     isTabEnabled,
+    isMetricEnabled,
+    getEnabledMetrics,
+    isSummaryCardEnabled,
     getSectionOrder,
     getAllSections,
     toggleSection,

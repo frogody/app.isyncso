@@ -1378,7 +1378,8 @@ export default function CandidateDetailDrawer({
     saving: preferencesSaving,
     savePreferences,
     isSectionEnabled,
-    isTabEnabled
+    isTabEnabled,
+    updateLocalPreferences
   } = usePanelPreferences();
 
   const SYNC_INTEL_CREDIT_COST = 10;
@@ -2129,7 +2130,28 @@ export default function CandidateDetailDrawer({
                 </div>
 
                 {/* Profile Summary Card - Quick decision points */}
-                <ProfileSummaryCard candidate={candidate} />
+                <ProfileSummaryCard
+                  candidate={candidate}
+                  preferences={preferences}
+                  saving={preferencesSaving}
+                  onSavePreferences={() => savePreferences(preferences)}
+                  onToggleMetric={(metricKey) => {
+                    const newPrefs = {
+                      ...preferences,
+                      summary_card: {
+                        ...preferences.summary_card,
+                        metrics: {
+                          ...preferences.summary_card?.metrics,
+                          [metricKey]: {
+                            ...preferences.summary_card?.metrics?.[metricKey],
+                            enabled: !preferences.summary_card?.metrics?.[metricKey]?.enabled
+                          }
+                        }
+                      }
+                    };
+                    updateLocalPreferences(newPrefs);
+                  }}
+                />
 
                 {/* Tabs */}
                 <div className="border-b border-zinc-800 px-6">
