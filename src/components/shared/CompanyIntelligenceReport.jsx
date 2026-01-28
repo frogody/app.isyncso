@@ -299,41 +299,43 @@ export const CompanyIntelligenceReport = ({
       className="space-y-4"
     >
       {/* Header Bar */}
-      <motion.div
-        variants={itemVariants}
-        className="flex items-center justify-between bg-white/[0.02] rounded-xl border border-white/[0.06] p-4"
-      >
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-blue-500/20">
-            <Zap className="w-5 h-5 text-blue-400" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-white">Company Intelligence</h3>
-            <div className="flex items-center gap-2 mt-0.5">
-              {enriched_at && (
-                <span className="text-xs text-white/40">
-                  Updated {new Date(enriched_at).toLocaleDateString()}
-                </span>
-              )}
-              <DataQualityBadge quality={data_quality} />
+      {isSectionEnabled('company', 'company_info') && (
+        <motion.div
+          variants={itemVariants}
+          className="flex items-center justify-between bg-white/[0.02] rounded-xl border border-white/[0.06] p-4"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-blue-500/20">
+              <Zap className="w-5 h-5 text-blue-400" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-white">Company Intelligence</h3>
+              <div className="flex items-center gap-2 mt-0.5">
+                {enriched_at && (
+                  <span className="text-xs text-white/40">
+                    Updated {new Date(enriched_at).toLocaleDateString()}
+                  </span>
+                )}
+                <DataQualityBadge quality={data_quality} />
+              </div>
             </div>
           </div>
-        </div>
-        {companyName && (
-          <button
-            onClick={generateIntelligence}
-            disabled={isGenerating}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 disabled:opacity-50 rounded-lg transition-all"
-          >
-            {isGenerating ? (
-              <RefreshCw className="w-4 h-4 animate-spin" />
-            ) : (
-              <Sparkles className="w-4 h-4" />
-            )}
-            SYNC INTEL
-          </button>
-        )}
-      </motion.div>
+          {companyName && (
+            <button
+              onClick={generateIntelligence}
+              disabled={isGenerating}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 disabled:opacity-50 rounded-lg transition-all"
+            >
+              {isGenerating ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4" />
+              )}
+              SYNC INTEL
+            </button>
+          )}
+        </motion.div>
+      )}
 
       {/* Main 2-column grid - matches IntelligenceReport layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -630,7 +632,7 @@ export const CompanyIntelligenceReport = ({
         )}
 
         {/* Workforce */}
-        {workforce && (workforce.total_employees || workforce.departments?.length > 0) && (
+        {isSectionEnabled('company', 'company_info') && workforce && (workforce.total_employees || workforce.departments?.length > 0) && (
           <SectionCard icon={Users} title="Workforce Distribution" iconColor="indigo" headerBg="bg-indigo-500/5">
             <div className="space-y-4">
               {workforce.total_employees && (
@@ -666,7 +668,7 @@ export const CompanyIntelligenceReport = ({
         )}
 
         {/* Competitors */}
-        {competitive_landscape?.competitors?.length > 0 && (
+        {isSectionEnabled('company', 'company_info') && competitive_landscape?.competitors?.length > 0 && (
           <SectionCard icon={Target} title="Competitors" iconColor="red" headerBg="bg-red-500/5">
             <div className="divide-y divide-white/[0.04]">
               {competitive_landscape.competitors.slice(0, 6).map((comp, idx) => (
