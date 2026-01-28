@@ -16,14 +16,15 @@ const WidgetWrapper = ({
   dragHandleProps,
   collapsed = false,
   onToggleCollapse,
-  isEmpty = false
+  isEmpty = false,
+  compact = false
 }) => {
   if (isEmpty && !editMode) return null;
 
   return (
     <div className="bg-zinc-800/60 border border-zinc-700/40 rounded-xl overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700/30">
+      <div className={`flex items-center justify-between border-b border-zinc-700/30 ${compact ? 'px-3 py-2' : 'px-4 py-3'}`}>
         <div className="flex items-center gap-3">
           {/* Drag Handle - only in edit mode */}
           {editMode && (
@@ -80,7 +81,7 @@ const WidgetWrapper = ({
           animate={{ opacity: 1, height: 'auto' }}
           exit={{ opacity: 0, height: 0 }}
           transition={{ duration: 0.2 }}
-          className="p-4"
+          className={compact ? 'p-3' : 'p-4'}
         >
           {isEmpty ? (
             <p className="text-sm text-zinc-500 text-center py-4">

@@ -121,7 +121,7 @@ export const WIDGET_REGISTRY = {
 export const DEFAULT_WIDGETS = [
   { id: 'intelligence', type: 'IntelligenceWidget', order: 0, enabled: true },
   { id: 'timing', type: 'TimingSignalsWidget', order: 1, enabled: true },
-  { id: 'outreach', type: 'OutreachWidget', order: 2, enabled: true },
+  { id: 'outreach', type: 'OutreachWidget', order: 2, enabled: false },
   { id: 'contact', type: 'ContactInfoWidget', order: 3, enabled: true },
   { id: 'skills', type: 'SkillsWidget', order: 4, enabled: true },
   { id: 'experience', type: 'ExperienceWidget', order: 5, enabled: false },

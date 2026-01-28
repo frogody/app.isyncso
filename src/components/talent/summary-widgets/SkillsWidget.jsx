@@ -32,6 +32,7 @@ const SkillsWidget = ({ candidate, editMode, onRemove, dragHandleProps }) => {
       onRemove={onRemove}
       dragHandleProps={dragHandleProps}
       isEmpty={!hasData}
+      compact
     >
       <div className="space-y-4">
         {/* Primary Skills */}

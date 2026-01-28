@@ -89,6 +89,7 @@ const ContactInfoWidget = ({ candidate, editMode, onRemove, dragHandleProps }) =
       onRemove={onRemove}
       dragHandleProps={dragHandleProps}
       isEmpty={!hasData}
+      compact
     >
       <div className="space-y-1">
         <ContactRow

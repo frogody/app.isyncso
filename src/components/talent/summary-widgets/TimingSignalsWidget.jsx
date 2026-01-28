@@ -1,63 +1,56 @@
 import React from "react";
-import { Clock, AlertTriangle } from "lucide-react";
+import { Clock, AlertTriangle, Timer } from "lucide-react";
 import WidgetWrapper from "./WidgetWrapper";
 
 /**
- * TimingSignalsWidget - Displays candidate timing signals with urgency indicators
+ * TimingSignalsWidget - Compact display of timing signals
  */
 const TimingSignalsWidget = ({ candidate, editMode, onRemove, dragHandleProps }) => {
   const signals = candidate?.timing_signals || [];
   const hasData = signals.length > 0;
 
   const urgencyConfig = {
-    high: { bg: "bg-red-500/15", text: "text-red-400", border: "border-red-500/30", label: "HIGH" },
-    medium: { bg: "bg-yellow-500/15", text: "text-yellow-400", border: "border-yellow-500/30", label: "MED" },
-    low: { bg: "bg-zinc-500/15", text: "text-zinc-400", border: "border-zinc-500/30", label: "LOW" },
+    high: { text: "text-red-400", dot: "bg-red-400" },
+    medium: { text: "text-amber-400", dot: "bg-amber-400" },
+    low: { text: "text-zinc-400", dot: "bg-zinc-400" },
   };
+
+  // Show max 3 signals in compact view
+  const displaySignals = signals.slice(0, 3);
 
   return (
     <WidgetWrapper
-      title="Timing Signals"
+      title={`Timing (${signals.length})`}
       icon={Clock}
       iconColor="text-amber-400"
       editMode={editMode}
       onRemove={onRemove}
       dragHandleProps={dragHandleProps}
       isEmpty={!hasData}
+      compact
     >
-      <div className="space-y-3">
-        {signals.map((signal, index) => {
+      <div className="space-y-2">
+        {displaySignals.map((signal, index) => {
           const urgency = signal.urgency?.toLowerCase() || 'medium';
           const config = urgencyConfig[urgency] || urgencyConfig.medium;
 
           return (
-            <div
-              key={index}
-              className={`p-3 rounded-lg ${config.bg} border ${config.border}`}
-            >
-              <div className="flex items-start gap-3">
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  {urgency === 'high' && (
-                    <AlertTriangle className={`w-4 h-4 ${config.text}`} />
-                  )}
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${config.bg} ${config.text} border ${config.border}`}>
-                    {config.label}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium ${config.text}`}>
-                    {signal.trigger}
-                  </p>
-                  {signal.explanation && (
-                    <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
-                      {signal.explanation}
-                    </p>
-                  )}
-                </div>
-              </div>
+            <div key={index} className="flex items-center gap-2">
+              <div className={`w-1.5 h-1.5 rounded-full ${config.dot} flex-shrink-0`} />
+              <p className="text-xs text-zinc-300 truncate flex-1">
+                {signal.trigger}
+              </p>
+              <span className={`text-[10px] font-medium ${config.text} flex-shrink-0`}>
+                {urgency === 'high' ? 'Now' : urgency === 'medium' ? 'Soon' : 'Later'}
+              </span>
             </div>
           );
         })}
+        {signals.length > 3 && (
+          <p className="text-[10px] text-zinc-500 pl-3.5">
+            +{signals.length - 3} more signals
+          </p>
+        )}
       </div>
     </WidgetWrapper>
   );
