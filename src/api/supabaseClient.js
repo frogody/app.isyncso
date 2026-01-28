@@ -269,17 +269,40 @@ function createEntityWrapper(entityName) {
         const productIdTables = ['digital_products', 'physical_products'];
         const idColumn = productIdTables.includes(tableName) ? 'product_id' : 'id';
 
+        // Log the update attempt for debugging
+        console.log(`[supabaseClient] ${entityName}.update:`, { id, updates: Object.keys(updates) });
+
         const { data, error } = await supabase
           .from(tableName)
           .update(updates)
           .eq(idColumn, id)
-          .select()
-          .single();
+          .select();
 
-        if (error) throw error;
-        return data;
+        if (error) {
+          console.error(`[supabaseClient] ${entityName}.update error:`, {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+          });
+          throw error;
+        }
+
+        // Handle case where RLS blocks the update (returns empty array)
+        if (!data || data.length === 0) {
+          console.warn(`[supabaseClient] ${entityName}.update: No rows returned (RLS may have blocked)`);
+          return null;
+        }
+
+        return data[0];
       } catch (error) {
-        console.error(`[supabaseClient] ${entityName}.update error:`, error);
+        console.error(`[supabaseClient] ${entityName}.update error:`, {
+          message: error?.message,
+          details: error?.details,
+          hint: error?.hint,
+          code: error?.code,
+          full: JSON.stringify(error)
+        });
         throw error;
       }
     },
