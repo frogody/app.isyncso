@@ -62,6 +62,19 @@ export const DEFAULT_PANEL_CONFIG = {
       recruitment_urgency: { enabled: false, order: 92, label: "Recruitment Urgency", category: "company" }
     }
   },
+  summary_tab: {
+    enabled: true,
+    widgets: [
+      { id: 'intelligence', type: 'IntelligenceWidget', order: 0, enabled: true },
+      { id: 'timing', type: 'TimingSignalsWidget', order: 1, enabled: true },
+      { id: 'outreach', type: 'OutreachWidget', order: 2, enabled: true },
+      { id: 'contact', type: 'ContactInfoWidget', order: 3, enabled: true },
+      { id: 'skills', type: 'SkillsWidget', order: 4, enabled: true },
+      { id: 'experience', type: 'ExperienceWidget', order: 5, enabled: false },
+      { id: 'insights', type: 'KeyInsightsWidget', order: 6, enabled: false },
+      { id: 'quickstats', type: 'QuickStatsWidget', order: 7, enabled: false }
+    ]
+  },
   profile: {
     enabled: true,
     sections: {

@@ -46,6 +46,7 @@ import {
   CheckCircle2,
   Settings,
   BadgeCheck,
+  LayoutDashboard,
 } from "lucide-react";
 import { supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
@@ -53,6 +54,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { IntelligenceGauge, IntelligenceLevelBadge, ApproachBadge } from "./IntelligenceGauge";
 import ProfileSummaryCard from "./ProfileSummaryCard";
+import SummaryTabContent from "./SummaryTabContent";
 import { IntelligenceReport } from "@/components/talent/IntelligenceReport";
 import { CompanyIntelligenceReport } from "@/components/shared/CompanyIntelligenceReport";
 import { fullEnrichFromLinkedIn } from "@/lib/explorium-api";
@@ -1348,7 +1350,7 @@ export default function CandidateDetailDrawer({
   const { user } = useUser();
   const [candidate, setCandidate] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("profile");
+  const [activeTab, setActiveTab] = useState("summary");
   const [activityHistory, setActivityHistory] = useState([]);
   const [activityLoading, setActivityLoading] = useState(false);
   const [showCustomizationModal, setShowCustomizationModal] = useState(false);
@@ -1911,6 +1913,7 @@ export default function CandidateDetailDrawer({
   };
 
   const allTabs = [
+    { id: "summary", label: "Summary", icon: LayoutDashboard },
     { id: "profile", label: "Profile", icon: User },
     { id: "intelligence", label: "Intelligence", icon: Brain },
     { id: "company", label: "Company", icon: Building2 },
@@ -2169,6 +2172,15 @@ export default function CandidateDetailDrawer({
 
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto p-6">
+                  {activeTab === "summary" && (
+                    <SummaryTabContent
+                      candidate={candidate}
+                      preferences={preferences}
+                      onUpdatePreferences={updateLocalPreferences}
+                      onSavePreferences={savePreferences}
+                      saving={preferencesSaving}
+                    />
+                  )}
                   {activeTab === "profile" && (
                     <ProfileTab
                       candidate={candidate}
