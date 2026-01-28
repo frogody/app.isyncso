@@ -557,20 +557,29 @@ function PagesContent() {
     }
 
     // Client Portal routes - uses ClientProvider and ClientLayout
+    // URL Structure: /portal/:org/... where :org is the organization slug
+    // This makes it clear each organization has its own branded portal
     if (isPortalRoute) {
         return (
             <ClientProvider>
                 <Routes>
-                    <Route path="/portal/login" element={<ClientLogin />} />
+                    {/* Auth callback - org-agnostic */}
                     <Route path="/portal/auth/callback" element={<ClientAuthCallback />} />
+
+                    {/* Organization-scoped routes */}
+                    <Route path="/portal/:org/login" element={<ClientLogin />} />
                     <Route element={<ClientLayout />}>
-                        <Route path="/portal" element={<ClientDashboard />} />
-                        <Route path="/portal/projects" element={<ClientDashboard />} />
-                        <Route path="/portal/project/:id" element={<ClientProjectDetail />} />
-                        <Route path="/portal/approvals" element={<ClientDashboard />} />
-                        <Route path="/portal/activity" element={<ClientDashboard />} />
-                        <Route path="/portal/settings" element={<ClientDashboard />} />
+                        <Route path="/portal/:org" element={<ClientDashboard />} />
+                        <Route path="/portal/:org/projects" element={<ClientDashboard />} />
+                        <Route path="/portal/:org/project/:id" element={<ClientProjectDetail />} />
+                        <Route path="/portal/:org/approvals" element={<ClientDashboard />} />
+                        <Route path="/portal/:org/activity" element={<ClientDashboard />} />
+                        <Route path="/portal/:org/settings" element={<ClientDashboard />} />
                     </Route>
+
+                    {/* Legacy/fallback routes - redirect to org-specific if logged in */}
+                    <Route path="/portal/login" element={<ClientLogin />} />
+                    <Route path="/portal" element={<ClientDashboard />} />
                 </Routes>
             </ClientProvider>
         );

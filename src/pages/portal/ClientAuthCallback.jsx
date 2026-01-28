@@ -30,10 +30,13 @@ export default function ClientAuthCallback() {
           }
 
           if (data?.user) {
-            // Link auth user to portal client if not already linked
+            // Link auth user to portal client and get organization slug
             const { data: client, error: clientError } = await supabase
               .from('portal_clients')
-              .select('id, auth_user_id')
+              .select(`
+                id, auth_user_id, organization_id,
+                organization:organizations(slug)
+              `)
               .eq('email', data.user.email.toLowerCase())
               .eq('status', 'active')
               .single();
@@ -52,9 +55,11 @@ export default function ClientAuthCallback() {
 
             setStatus('success');
 
-            // Redirect to portal after short delay
+            // Redirect to org-scoped portal after short delay
+            const orgSlug = client?.organization?.slug;
+            const redirectPath = orgSlug ? `/portal/${orgSlug}` : '/portal';
             setTimeout(() => {
-              navigate('/portal', { replace: true });
+              navigate(redirectPath, { replace: true });
             }, 1500);
 
             return;

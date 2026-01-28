@@ -1,55 +1,69 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Mail, Loader2, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Mail, Loader2, ArrowRight, CheckCircle, AlertCircle, Building2 } from 'lucide-react';
 import { supabase } from '@/api/supabaseClient';
 import { usePortalClientContext } from '@/components/portal/ClientProvider';
 
 export default function ClientLogin() {
   const navigate = useNavigate();
+  const { org: orgSlugFromPath } = useParams();
   const [searchParams] = useSearchParams();
-  const { isAuthenticated, signInWithMagicLink, loading: authLoading } = usePortalClientContext();
+  const { isAuthenticated, signInWithMagicLink, loading: authLoading, client } = usePortalClientContext();
 
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState(null);
   const [portalSettings, setPortalSettings] = useState(null);
+  const [orgNotFound, setOrgNotFound] = useState(false);
 
-  // Get organization from URL params if provided
-  const orgSlug = searchParams.get('org');
+  // Get organization from path params first, fallback to query params for backwards compatibility
+  const orgSlug = orgSlugFromPath || searchParams.get('org');
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated - use org-scoped URL
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/portal');
+    if (isAuthenticated && client?.organization?.slug) {
+      navigate(`/portal/${client.organization.slug}`);
+    } else if (isAuthenticated && orgSlug) {
+      navigate(`/portal/${orgSlug}`);
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, orgSlug, client]);
 
   // Fetch portal settings for branding (if org slug provided)
   useEffect(() => {
     const fetchSettings = async () => {
-      if (!orgSlug) return;
+      if (!orgSlug) {
+        // No org provided - show generic portal or error
+        return;
+      }
 
       try {
-        const { data } = await supabase
+        const { data, error: orgError } = await supabase
           .from('organizations')
-          .select('id, name')
+          .select('id, name, slug')
           .eq('slug', orgSlug)
           .single();
 
-        if (data) {
-          const { data: settings } = await supabase
-            .from('portal_settings')
-            .select('*')
-            .eq('organization_id', data.id)
-            .single();
-
-          if (settings) {
-            setPortalSettings({ ...settings, organization_name: data.name });
-          }
+        if (orgError || !data) {
+          setOrgNotFound(true);
+          return;
         }
+
+        const { data: settings } = await supabase
+          .from('portal_settings')
+          .select('*')
+          .eq('organization_id', data.id)
+          .single();
+
+        setPortalSettings({
+          ...settings,
+          organization_name: data.name,
+          organization_slug: data.slug,
+        });
+        setOrgNotFound(false);
       } catch (err) {
         console.error('Error fetching portal settings:', err);
+        setOrgNotFound(true);
       }
     };
 
@@ -79,6 +93,46 @@ export default function ClientLogin() {
       <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center gap-4">
         <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
         <p className="text-zinc-500 text-sm">Loading portal...</p>
+      </div>
+    );
+  }
+
+  // Organization not found
+  if (orgNotFound) {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-red-500/10 flex items-center justify-center">
+            <Building2 className="w-8 h-8 text-red-400" />
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-3">Portal Not Found</h1>
+          <p className="text-zinc-400 mb-6">
+            We couldn't find a client portal at this address. Please check the URL or contact your agency.
+          </p>
+          <p className="text-sm text-zinc-600">
+            Looking for: <span className="text-zinc-400 font-mono">/portal/{orgSlug}</span>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // No organization specified - show generic message
+  if (!orgSlug) {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-cyan-500/10 flex items-center justify-center">
+            <Building2 className="w-8 h-8 text-cyan-400" />
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-3">Client Portal</h1>
+          <p className="text-zinc-400 mb-6">
+            Please use the portal link provided by your agency to access your projects.
+          </p>
+          <p className="text-sm text-zinc-600">
+            URL format: <span className="text-zinc-400 font-mono">/portal/your-agency</span>
+          </p>
+        </div>
       </div>
     );
   }

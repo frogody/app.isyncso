@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   LayoutDashboard,
   FolderKanban,
@@ -17,17 +17,22 @@ import NotificationBell from './notifications/NotificationBell';
 export default function ClientLayout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { org: orgSlug } = useParams();
   const { client, signOut, isAuthenticated, loading } = usePortalClientContext();
   const settings = usePortalSettings();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
+  // Determine the base path for navigation links
+  const basePath = `/portal/${orgSlug || client?.organization?.slug || ''}`;
+
   // Redirect to login if not authenticated
   React.useEffect(() => {
     if (!loading && !isAuthenticated) {
-      navigate('/portal/login');
+      const loginPath = orgSlug ? `/portal/${orgSlug}/login` : '/portal/login';
+      navigate(loginPath);
     }
-  }, [loading, isAuthenticated, navigate]);
+  }, [loading, isAuthenticated, navigate, orgSlug]);
 
   if (loading) {
     return (
@@ -45,22 +50,23 @@ export default function ClientLayout() {
   }
 
   const navigation = [
-    { name: 'Dashboard', href: '/portal', icon: LayoutDashboard },
-    { name: 'Projects', href: '/portal/projects', icon: FolderKanban },
-    { name: 'Approvals', href: '/portal/approvals', icon: CheckCircle2 },
-    { name: 'Activity', href: '/portal/activity', icon: Clock },
+    { name: 'Dashboard', href: basePath, icon: LayoutDashboard },
+    { name: 'Projects', href: `${basePath}/projects`, icon: FolderKanban },
+    { name: 'Approvals', href: `${basePath}/approvals`, icon: CheckCircle2 },
+    { name: 'Activity', href: `${basePath}/activity`, icon: Clock },
   ];
 
   const isActive = (href) => {
-    if (href === '/portal') {
-      return location.pathname === '/portal';
+    if (href === basePath) {
+      return location.pathname === basePath;
     }
     return location.pathname.startsWith(href);
   };
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/portal/login');
+    const loginPath = orgSlug ? `/portal/${orgSlug}/login` : '/portal/login';
+    navigate(loginPath);
   };
 
   return (
@@ -74,7 +80,7 @@ export default function ClientLayout() {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <div className="flex items-center gap-4">
-              <Link to="/portal" className="flex items-center gap-3">
+              <Link to={basePath} className="flex items-center gap-3">
                 {settings.logo_url ? (
                   <img
                     src={settings.logo_url}
@@ -162,7 +168,7 @@ export default function ClientLayout() {
                       </div>
                       <div className="p-1.5">
                         <Link
-                          to="/portal/settings"
+                          to={`${basePath}/settings`}
                           onClick={() => setUserMenuOpen(false)}
                           className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
                         >

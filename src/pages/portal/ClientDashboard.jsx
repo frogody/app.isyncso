@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import {
   Search,
   ChevronRight,
@@ -13,11 +13,15 @@ import { usePortalClientContext, usePortalSettings } from '@/components/portal/C
 export default function ClientDashboard() {
   const { client, getAccessibleProjects } = usePortalClientContext();
   const settings = usePortalSettings();
+  const { org: orgSlug } = useParams();
   const [projects, setProjects] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
   const [pendingApprovals, setPendingApprovals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Determine the base path for links - use org slug from path or client's org
+  const basePath = `/portal/${orgSlug || client?.organization?.slug || ''}`;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -142,7 +146,7 @@ export default function ClientDashboard() {
 
           <div className="space-y-2">
             {filteredProjects.slice(0, 6).map((project) => (
-              <NotionProjectCard key={project.id} project={project} settings={settings} />
+              <NotionProjectCard key={project.id} project={project} settings={settings} basePath={basePath} />
             ))}
             {filteredProjects.length === 0 && (
               <EmptyState
@@ -153,7 +157,7 @@ export default function ClientDashboard() {
             )}
             {filteredProjects.length > 6 && (
               <Link
-                to="/portal/projects"
+                to={`${basePath}/projects`}
                 className="flex items-center justify-center gap-2 p-3 text-sm text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-lg transition-colors"
               >
                 View all {filteredProjects.length} projects
@@ -178,7 +182,7 @@ export default function ClientDashboard() {
               {pendingApprovals.map((approval) => (
                 <Link
                   key={approval.id}
-                  to={`/portal/project/${approval.project_id}?tab=approvals&approval=${approval.id}`}
+                  to={`${basePath}/project/${approval.project_id}?tab=approvals&approval=${approval.id}`}
                   className="block p-3 bg-amber-500/5 hover:bg-amber-500/10 border border-amber-500/20 rounded-lg transition-colors group"
                 >
                   <div className="flex items-start gap-3">
@@ -274,7 +278,7 @@ function SectionHeader({ emoji, title, count, highlight }) {
   );
 }
 
-function NotionProjectCard({ project, settings }) {
+function NotionProjectCard({ project, settings, basePath }) {
   const statusConfig = {
     active: { emoji: '🟢', label: 'Active' },
     in_progress: { emoji: '🔵', label: 'In Progress' },
@@ -287,7 +291,7 @@ function NotionProjectCard({ project, settings }) {
 
   return (
     <Link
-      to={`/portal/project/${project.id}`}
+      to={`${basePath}/project/${project.id}`}
       className="group flex items-center gap-3 p-3 hover:bg-zinc-800/40 rounded-lg transition-colors"
     >
       {/* Project Icon */}
