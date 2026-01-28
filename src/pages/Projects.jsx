@@ -3058,10 +3058,10 @@ export default function Projects() {
 
   const loadData = async () => {
     try {
-      const [projectsData, foldersData, taskActions] = await Promise.all([
+      const [projectsData, foldersData, tasksData] = await Promise.all([
         db.entities.Project.list().catch(() => []),
         db.entities.ClientFolder.list().catch(() => []),
-        db.entities.ActionLog.filter({ action_type: "task" }).catch(() => []),
+        db.entities.Task.list().catch(() => []),
       ]);
 
       const projectList = projectsData.map(p => ({
@@ -3102,11 +3102,11 @@ export default function Projects() {
         console.log('[Projects] Loaded folders:', foldersData.length);
       }
 
-      const taskList = taskActions.map(t => ({
+      const taskList = tasksData.map(t => ({
         id: t.id,
-        title: t.title || t.action_description,
+        title: t.title,
         description: t.description,
-        status: t.status === "success" ? "completed" : t.status === "pending" ? "todo" : t.status,
+        status: t.status === "completed" ? "completed" : t.status === "in_progress" ? "in_progress" : "todo",
         priority: t.priority || "medium",
         due_date: t.due_date,
         project_id: t.project_id,
@@ -3288,17 +3288,16 @@ export default function Projects() {
     }
 
     try {
-      await db.entities.ActionLog.create({
-        action_type: "task",
+      await db.entities.Task.create({
         title: taskFormData.title,
-        action_description: taskFormData.title,
         description: taskFormData.description,
-        status: taskFormData.status === "completed" ? "success" : "pending",
+        status: taskFormData.status === "completed" ? "completed" : "pending",
         priority: taskFormData.priority,
         due_date: taskFormData.due_date || null,
         project_id: selectedProject?.id,
-        user_id: user.id,
-        organization_id: user.organization_id, // Required for RLS SELECT policy
+        assigned_to: user.id,
+        organization_id: user.organization_id,
+        type: "other",
       });
 
       toast.success("Task created");
@@ -3321,10 +3320,10 @@ export default function Projects() {
     if (!confirm("Delete this project and all its tasks?")) return;
 
     try {
-      await db.entities.ActionLog.delete(id);
+      await db.entities.Project.delete(id);
       // Also delete associated tasks
       const projectTasks = tasks.filter(t => t.project_id === id);
-      await Promise.all(projectTasks.map(t => db.entities.ActionLog.delete(t.id)));
+      await Promise.all(projectTasks.map(t => db.entities.Task.delete(t.id)));
 
       toast.success("Project deleted");
       if (selectedProject?.id === id) {
@@ -3340,8 +3339,8 @@ export default function Projects() {
 
   const handleUpdateTask = async (taskId, updates) => {
     try {
-      await db.entities.ActionLog.update(taskId, {
-        status: updates.status === "completed" ? "success" : updates.status === "todo" ? "pending" : updates.status,
+      await db.entities.Task.update(taskId, {
+        status: updates.status === "completed" ? "completed" : updates.status === "todo" ? "pending" : updates.status,
       });
       loadData();
     } catch (error) {
