@@ -1753,3 +1753,163 @@ body: JSON.stringify({
   outreach_hooks, company_pain_points, key_insights
 })
 ```
+
+---
+
+## ME-4: Weighted Matching Criteria & Signal-Based Matching (Jan 28, 2026)
+
+### Overview
+
+Extended the campaign wizard and AI matching engine with two major features:
+1. **Criteria Weighting** - Recruiters customize how match factors are weighted (skills, experience, title, location, timing, culture)
+2. **Signal-Based Matching** - Boost/filter candidates based on intelligence signals (M&A activity, layoffs, flight risk, etc.)
+
+### Components Created
+
+#### CriteriaWeightingStep
+**File:** `src/components/talent/campaign/CriteriaWeightingStep.jsx`
+
+UI for adjusting match factor weights with sliders (0-50, step 5). Weights must sum to 100%.
+
+| Export | Purpose |
+|--------|---------|
+| `default` (CriteriaWeightingStep) | Main component with sliders and presets |
+| `MATCH_FACTORS` | 6 factor definitions (skills_fit, experience_fit, title_fit, location_fit, timing_score, culture_fit) |
+| `PRESETS` | 4 presets: balanced, skills_first, urgency_first, culture_focus |
+| `DEFAULT_WEIGHTS` | Balanced preset weights |
+
+Sub-components: `WeightSlider`, `TotalIndicator` (progress bar, green at 100%)
+
+#### SignalMatchingConfig
+**File:** `src/components/talent/campaign/SignalMatchingConfig.jsx`
+
+UI for toggling intelligence signal filters with optional boost/required settings.
+
+| Export | Purpose |
+|--------|---------|
+| `default` (SignalMatchingConfig) | Main component with signal toggles |
+| `INTELLIGENCE_SIGNALS` | 8 signal definitions |
+| `SIGNAL_CATEGORIES` | 3 categories: company, career, timing |
+
+**8 Signals:**
+
+| Signal ID | Category | Default Boost | Description |
+|-----------|----------|---------------|-------------|
+| `ma_activity` | company | +15 | M&A activity at employer |
+| `layoffs` | company | +20 | Layoffs/restructuring |
+| `leadership_change` | company | +10 | New CEO/CTO |
+| `funding_round` | company | +5 | Recent funding |
+| `recent_promotion` | career | -5 | Recently promoted (less likely to move) |
+| `tenure_anniversary` | career | +10 | At 2/3/5 year mark |
+| `stagnation` | career | +15 | No growth in 2+ years |
+| `high_flight_risk` | timing | +20 | Intelligence score >= 70 |
+
+Features:
+- Simple/Advanced toggle (advanced shows required filter + boost slider)
+- "Urgency Preset" quick action
+- Accordion categories with expand/collapse
+
+#### MatchReasonCards (previously created)
+**File:** `src/components/talent/campaign/MatchReasonCards.jsx`
+
+Displays match factor scores as cards with animated radial SVG progress rings.
+
+#### Barrel Export
+**File:** `src/components/talent/campaign/index.js`
+```javascript
+export { default as MatchReasonCards } from './MatchReasonCards';
+export { default as CriteriaWeightingStep, MATCH_FACTORS, PRESETS, DEFAULT_WEIGHTS } from './CriteriaWeightingStep';
+export { default as SignalMatchingConfig, INTELLIGENCE_SIGNALS, SIGNAL_CATEGORIES } from './SignalMatchingConfig';
+```
+
+### CampaignWizard Integration
+
+**File:** `src/components/talent/CampaignWizard.jsx`
+
+- Wizard expanded from 4 to 5 steps: Project → Role → Context → **Match Weights** → Review
+- Step 4 renders both `CriteriaWeightingStep` and `SignalMatchingConfig` separated by a divider
+- Content area has `max-h-[calc(80vh-140px)] overflow-y-auto` for scrollability
+- State: `criteriaWeights` (DEFAULT_WEIGHTS), `signalFilters` ([])
+- Validation: weights must sum to 100 to proceed
+- Both stored in campaign `role_context`:
+  ```javascript
+  role_context: {
+    ...roleContext,
+    criteria_weights: criteriaWeights,
+    signal_filters: signalFilters,
+  }
+  ```
+- Reset on dialog close
+
+### Edge Function: analyzeCampaignProject
+
+**File:** `supabase/functions/analyzeCampaignProject/index.ts`
+
+#### Custom Weights
+- Added `CriteriaWeights` interface and `DEFAULT_WEIGHTS` constant
+- `validateAndNormalizeWeights()` - validates/normalizes weights from campaign, fallback to defaults, ensures sum=100
+- `calculateWeightedScore()` - dynamic weighted score calculation replacing hardcoded percentages
+- AI prompt includes dynamic weight percentages: `Skills ${weights.skills_fit}%, Experience ${weights.experience_fit}%...`
+- Weights extracted from `effectiveRoleContext.criteria_weights` after campaign fetch
+- Passed through `deepAIAnalysis()` and `fallbackDeepAnalysis()`
+- Response includes `weights_used` field
+
+#### Signal Detection
+- `SignalFilter` and `SignalDefinition` interfaces
+- `SIGNAL_DEFINITIONS` array with 8 signal patterns
+- `candidateHasSignal()` - pattern-based detection in candidate fields (regex matching across nested data)
+- `calculateSignalBoost()` - sums boost values for matched signals
+- `passesRequiredSignals()` - pre-filter: rejects candidates missing required signals
+- Signal boost applied after base score calculation, capped at 0-100
+- Match results include `signals_matched` and `signal_boost_applied`
+
+### Campaign Detail Display
+
+**File:** `src/pages/TalentCampaignDetail.jsx`
+
+#### Weights Display Widget
+Shows configured weights as horizontal bars below Campaign Details card:
+```jsx
+{campaign?.role_context?.criteria_weights && (
+  <div><!-- 6 color-coded weight bars with percentages --></div>
+)}
+```
+
+#### Signal Badges
+`SignalBadges` component shows matched signals on each candidate card:
+- Color-coded pill badges matching signal theme colors
+- Shows boost value (e.g. "+15", "-5")
+- Total signal boost indicator: "+X from signals"
+- Rendered between MatchReasonCards and expandable analysis
+
+Uses static Tailwind color maps (`signalBgMap`, `signalTextMap`, `signalBorderMap`) to avoid dynamic class purging.
+
+### Key Fixes
+
+| Issue | Cause | Fix |
+|-------|-------|-----|
+| Vercel build failed | `CriteriaWeightingStep` imported as named export `{ CriteriaWeightingStep }` but is a default export | Changed to `import CriteriaWeightingStep, { DEFAULT_WEIGHTS }` |
+| Vercel build failed | `SignalMatchingConfig.jsx` imported but file didn't exist yet | Created the component file |
+| Wizard overflows viewport | Step 4 content (weights + signals) too tall for dialog | Added `max-h-[calc(80vh-140px)] overflow-y-auto` to content area |
+| Missing `@react-pdf/renderer` | `useReportGenerator.jsx` imports it but not installed | `npm install @react-pdf/renderer` |
+
+### Files Summary
+
+| File | Action | Purpose |
+|------|--------|---------|
+| `src/components/talent/campaign/CriteriaWeightingStep.jsx` | Created (previous session) | Weight sliders UI |
+| `src/components/talent/campaign/SignalMatchingConfig.jsx` | Created | Signal toggles UI |
+| `src/components/talent/campaign/index.js` | Updated | Barrel exports |
+| `src/components/talent/CampaignWizard.jsx` | Modified | Step 4 integration, scroll fix, import fix |
+| `src/pages/TalentCampaignDetail.jsx` | Modified | Weights display, signal badges, import |
+| `supabase/functions/analyzeCampaignProject/index.ts` | Modified | Custom weights, signal detection/boosting |
+
+### Deployment
+
+```bash
+# Edge function
+SUPABASE_ACCESS_TOKEN="sbp_b998952de7493074e84b50702e83f1db14be1479" \
+npx supabase functions deploy analyzeCampaignProject --project-ref sfxpmzicgpaxfntqleig --no-verify-jwt
+
+# Frontend auto-deploys via Vercel on push to main
+```
