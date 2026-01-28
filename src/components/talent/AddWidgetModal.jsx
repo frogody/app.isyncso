@@ -76,18 +76,7 @@ const AddWidgetModal = ({ open, onClose, widgets, onAddWidget }) => {
     });
 
   const handleAdd = (type) => {
-    // Find existing widget config or create new one
-    const existingWidget = widgets.find(w => w.type === type);
-    if (existingWidget) {
-      onAddWidget({ ...existingWidget, enabled: true });
-    } else {
-      onAddWidget({
-        id: type.toLowerCase().replace('widget', ''),
-        type,
-        order: widgets.length,
-        enabled: true
-      });
-    }
+    onAddWidget(type);
   };
 
   return (
