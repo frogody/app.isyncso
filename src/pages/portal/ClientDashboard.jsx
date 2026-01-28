@@ -1,16 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  FolderKanban,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
-  ArrowRight,
-  FileText,
-  MessageSquare,
-  Calendar,
-  TrendingUp,
+  Search,
+  ChevronRight,
   Loader2,
+  Plus,
+  ArrowUpRight,
 } from 'lucide-react';
 import { supabase } from '@/api/supabaseClient';
 import { usePortalClientContext, usePortalSettings } from '@/components/portal/ClientProvider';
@@ -22,6 +17,7 @@ export default function ClientDashboard() {
   const [recentActivity, setRecentActivity] = useState([]);
   const [pendingApprovals, setPendingApprovals] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -66,7 +62,10 @@ export default function ClientDashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 animate-spin" style={{ color: settings.primary_color }} />
+          <p className="text-zinc-500 text-sm">Loading your workspace...</p>
+        </div>
       </div>
     );
   }
@@ -79,140 +78,143 @@ export default function ClientDashboard() {
     ? Math.round(projects.reduce((acc, p) => acc + (p.progress || 0), 0) / projects.length)
     : 0;
 
+  // Filter projects by search
+  const filteredProjects = projects.filter(
+    (p) =>
+      p.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const greeting = getGreeting();
+  const firstName = client?.full_name?.split(' ')[0] || 'there';
+
   return (
-    <div className="space-y-8">
-      {/* Welcome Section */}
-      <div className="bg-gradient-to-br from-zinc-900 to-zinc-900/50 border border-zinc-800 rounded-2xl p-6 md:p-8">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div className="max-w-5xl mx-auto px-4 py-8">
+      {/* Notion-style Header */}
+      <div className="mb-10">
+        <div className="flex items-center gap-2 text-sm text-zinc-500 mb-4">
+          <span>Home</span>
+          <ChevronRight className="w-4 h-4" />
+          <span className="text-zinc-300">Dashboard</span>
+        </div>
+
+        <div className="flex items-start gap-4 mb-6">
+          <div className="text-5xl">
+            {getTimeEmoji()}
+          </div>
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
-              {settings.welcome_message || `Welcome back, ${client?.full_name?.split(' ')[0] || 'there'}!`}
+            <h1 className="text-3xl font-bold text-white mb-2">
+              {greeting}, {firstName}
             </h1>
-            <p className="text-zinc-400">
-              Here's an overview of your projects and recent activity.
+            <p className="text-zinc-400 text-lg">
+              {settings.welcome_message || "Here's what's happening with your projects."}
             </p>
           </div>
-          <Link
-            to="/portal/projects"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium text-white transition-all"
-            style={{
-              background: `linear-gradient(135deg, ${settings.primary_color}, ${settings.accent_color})`,
-            }}
-          >
-            View All Projects
-            <ArrowRight className="w-4 h-4" />
-          </Link>
+        </div>
+
+        {/* Search Bar */}
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search projects..."
+            className="w-full pl-10 pr-4 py-2.5 bg-zinc-900/50 border border-zinc-800 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all"
+            style={{ '--tw-ring-color': settings.primary_color }}
+          />
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard
-          icon={FolderKanban}
-          label="Total Projects"
-          value={totalProjects}
-          color={settings.primary_color}
-        />
-        <StatCard
-          icon={TrendingUp}
-          label="Active"
-          value={activeProjects}
-          color="#22c55e"
-        />
-        <StatCard
-          icon={CheckCircle2}
-          label="Completed"
-          value={completedProjects}
-          color="#a855f7"
-        />
-        <StatCard
-          icon={Clock}
-          label="Avg Progress"
-          value={`${avgProgress}%`}
-          color="#f59e0b"
-        />
+      {/* Quick Stats - Notion Style */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
+        <QuickStatBlock emoji="📁" label="Projects" value={totalProjects} />
+        <QuickStatBlock emoji="🚀" label="Active" value={activeProjects} />
+        <QuickStatBlock emoji="✅" label="Completed" value={completedProjects} />
+        <QuickStatBlock emoji="📊" label="Progress" value={`${avgProgress}%`} />
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Projects Column */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Recent Projects */}
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden">
-            <div className="flex items-center justify-between p-5 border-b border-zinc-800">
-              <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                <FolderKanban className="w-5 h-5" style={{ color: settings.primary_color }} />
-                Your Projects
-              </h2>
+      {/* Main Content */}
+      <div className="grid lg:grid-cols-5 gap-8">
+        {/* Projects - Main Column */}
+        <div className="lg:col-span-3">
+          <SectionHeader emoji="📂" title="Your Projects" count={filteredProjects.length} />
+
+          <div className="space-y-2">
+            {filteredProjects.slice(0, 6).map((project) => (
+              <NotionProjectCard key={project.id} project={project} settings={settings} />
+            ))}
+            {filteredProjects.length === 0 && (
+              <EmptyState
+                emoji="📭"
+                title="No projects yet"
+                description="Projects will appear here once they're shared with you"
+              />
+            )}
+            {filteredProjects.length > 6 && (
               <Link
                 to="/portal/projects"
-                className="text-sm text-zinc-400 hover:text-white transition-colors"
+                className="flex items-center justify-center gap-2 p-3 text-sm text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-lg transition-colors"
               >
-                View all
+                View all {filteredProjects.length} projects
+                <ArrowUpRight className="w-4 h-4" />
               </Link>
-            </div>
-            <div className="divide-y divide-zinc-800">
-              {projects.slice(0, 4).map((project) => (
-                <ProjectCard key={project.id} project={project} settings={settings} />
-              ))}
-              {projects.length === 0 && (
-                <div className="p-8 text-center text-zinc-500">
-                  <FolderKanban className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p>No projects available yet</p>
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
+        <div className="lg:col-span-2 space-y-8">
           {/* Pending Approvals */}
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden">
-            <div className="flex items-center justify-between p-5 border-b border-zinc-800">
-              <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-amber-400" />
-                Pending Approvals
-              </h2>
-              <span className="px-2 py-0.5 text-xs font-medium bg-amber-500/10 text-amber-400 rounded-full">
-                {pendingApprovals.length}
-              </span>
-            </div>
-            <div className="p-4 space-y-3">
+          <div>
+            <SectionHeader
+              emoji="⏳"
+              title="Needs Your Attention"
+              count={pendingApprovals.length}
+              highlight={pendingApprovals.length > 0}
+            />
+
+            <div className="space-y-2">
               {pendingApprovals.map((approval) => (
                 <Link
                   key={approval.id}
                   to={`/portal/project/${approval.project_id}?tab=approvals&approval=${approval.id}`}
-                  className="block p-3 bg-zinc-800/50 hover:bg-zinc-800 rounded-xl transition-colors"
+                  className="block p-3 bg-amber-500/5 hover:bg-amber-500/10 border border-amber-500/20 rounded-lg transition-colors group"
                 >
-                  <p className="text-sm font-medium text-white mb-1">{approval.title}</p>
-                  <p className="text-xs text-zinc-500">{approval.project?.name}</p>
+                  <div className="flex items-start gap-3">
+                    <span className="text-lg">📋</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-white group-hover:text-amber-200 transition-colors truncate">
+                        {approval.title}
+                      </p>
+                      <p className="text-xs text-zinc-500 mt-0.5">{approval.project?.name}</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-amber-400 transition-colors" />
+                  </div>
                 </Link>
               ))}
               {pendingApprovals.length === 0 && (
-                <p className="text-sm text-zinc-500 text-center py-4">
-                  No pending approvals
-                </p>
+                <div className="p-4 text-center">
+                  <span className="text-2xl">🎉</span>
+                  <p className="text-sm text-zinc-500 mt-2">All caught up!</p>
+                </div>
               )}
             </div>
           </div>
 
           {/* Recent Activity */}
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden">
-            <div className="flex items-center justify-between p-5 border-b border-zinc-800">
-              <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                <Clock className="w-5 h-5 text-zinc-400" />
-                Recent Activity
-              </h2>
-            </div>
-            <div className="p-4 space-y-3 max-h-80 overflow-y-auto">
-              {recentActivity.map((activity) => (
-                <ActivityItem key={activity.id} activity={activity} />
+          <div>
+            <SectionHeader emoji="🕐" title="Recent Activity" />
+
+            <div className="space-y-1">
+              {recentActivity.slice(0, 5).map((activity) => (
+                <NotionActivityItem key={activity.id} activity={activity} />
               ))}
               {recentActivity.length === 0 && (
-                <p className="text-sm text-zinc-500 text-center py-4">
-                  No recent activity
-                </p>
+                <div className="p-4 text-center">
+                  <span className="text-2xl">📝</span>
+                  <p className="text-sm text-zinc-500 mt-2">No activity yet</p>
+                </div>
               )}
             </div>
           </div>
@@ -222,102 +224,151 @@ export default function ClientDashboard() {
   );
 }
 
-function StatCard({ icon: Icon, label, value, color }) {
+// Helper functions
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
+}
+
+function getTimeEmoji() {
+  const hour = new Date().getHours();
+  if (hour < 6) return '🌙';
+  if (hour < 12) return '☀️';
+  if (hour < 18) return '🌤️';
+  return '🌙';
+}
+
+// Notion-style Components
+
+function QuickStatBlock({ emoji, label, value }) {
   return (
-    <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4">
+    <div className="p-4 bg-zinc-900/30 hover:bg-zinc-900/50 border border-zinc-800/50 rounded-lg transition-colors cursor-default">
       <div className="flex items-center gap-3">
-        <div
-          className="w-10 h-10 rounded-lg flex items-center justify-center"
-          style={{ backgroundColor: `${color}15` }}
-        >
-          <Icon className="w-5 h-5" style={{ color }} />
-        </div>
+        <span className="text-xl">{emoji}</span>
         <div>
-          <p className="text-2xl font-bold text-white">{value}</p>
-          <p className="text-sm text-zinc-500">{label}</p>
+          <p className="text-xl font-semibold text-white">{value}</p>
+          <p className="text-xs text-zinc-500">{label}</p>
         </div>
       </div>
     </div>
   );
 }
 
-function ProjectCard({ project, settings }) {
-  const statusColors = {
-    active: 'bg-emerald-500/10 text-emerald-400',
-    in_progress: 'bg-cyan-500/10 text-cyan-400',
-    completed: 'bg-purple-500/10 text-purple-400',
-    on_hold: 'bg-amber-500/10 text-amber-400',
-    cancelled: 'bg-red-500/10 text-red-400',
+function SectionHeader({ emoji, title, count, highlight }) {
+  return (
+    <div className="flex items-center gap-2 mb-3">
+      <span className="text-lg">{emoji}</span>
+      <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wide">{title}</h2>
+      {count !== undefined && (
+        <span
+          className={`px-1.5 py-0.5 text-xs rounded ${
+            highlight ? 'bg-amber-500/20 text-amber-400' : 'bg-zinc-800 text-zinc-500'
+          }`}
+        >
+          {count}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function NotionProjectCard({ project, settings }) {
+  const statusConfig = {
+    active: { emoji: '🟢', label: 'Active' },
+    in_progress: { emoji: '🔵', label: 'In Progress' },
+    completed: { emoji: '✅', label: 'Completed' },
+    on_hold: { emoji: '🟡', label: 'On Hold' },
+    cancelled: { emoji: '🔴', label: 'Cancelled' },
   };
+
+  const status = statusConfig[project.status] || statusConfig.active;
 
   return (
     <Link
       to={`/portal/project/${project.id}`}
-      className="block p-5 hover:bg-zinc-800/30 transition-colors"
+      className="group flex items-center gap-3 p-3 hover:bg-zinc-800/40 rounded-lg transition-colors"
     >
-      <div className="flex items-start justify-between mb-3">
-        <div>
-          <h3 className="font-medium text-white mb-1">{project.name}</h3>
-          <p className="text-sm text-zinc-500 line-clamp-1">
-            {project.description || 'No description'}
-          </p>
-        </div>
-        <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${statusColors[project.status] || statusColors.active}`}>
-          {project.status?.replace('_', ' ') || 'Active'}
-        </span>
+      {/* Project Icon */}
+      <div
+        className="w-10 h-10 rounded-lg flex items-center justify-center text-lg shrink-0"
+        style={{ backgroundColor: `${settings.primary_color}15` }}
+      >
+        📋
       </div>
-      <div className="flex items-center gap-4">
-        {/* Progress bar */}
-        <div className="flex-1">
-          <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all"
-              style={{
-                width: `${project.progress || 0}%`,
-                backgroundColor: settings.primary_color,
-              }}
-            />
+
+      {/* Project Info */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <h3 className="font-medium text-white group-hover:text-cyan-300 transition-colors truncate">
+            {project.name}
+          </h3>
+          <span className="text-xs text-zinc-500 whitespace-nowrap">
+            {status.emoji} {status.label}
+          </span>
+        </div>
+        <div className="flex items-center gap-3 mt-1">
+          {/* Mini Progress Bar */}
+          <div className="flex items-center gap-2 flex-1 max-w-32">
+            <div className="flex-1 h-1 bg-zinc-800 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all"
+                style={{
+                  width: `${project.progress || 0}%`,
+                  backgroundColor: settings.primary_color,
+                }}
+              />
+            </div>
+            <span className="text-xs text-zinc-500">{project.progress || 0}%</span>
           </div>
+          {project.due_date && (
+            <span className="text-xs text-zinc-600">
+              📅 {new Date(project.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            </span>
+          )}
         </div>
-        <span className="text-sm text-zinc-400">{project.progress || 0}%</span>
       </div>
-      {project.due_date && (
-        <div className="flex items-center gap-1.5 mt-3 text-xs text-zinc-500">
-          <Calendar className="w-3.5 h-3.5" />
-          Due {new Date(project.due_date).toLocaleDateString()}
-        </div>
-      )}
+
+      {/* Arrow */}
+      <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
     </Link>
   );
 }
 
-function ActivityItem({ activity }) {
-  const getIcon = (type) => {
+function NotionActivityItem({ activity }) {
+  const getEmoji = (type) => {
     switch (type) {
       case 'comment':
-        return MessageSquare;
+        return '💬';
       case 'approval':
-        return CheckCircle2;
+        return '✅';
       case 'file':
-        return FileText;
+        return '📎';
+      case 'update':
+        return '✏️';
       default:
-        return Clock;
+        return '📌';
     }
   };
 
-  const Icon = getIcon(activity.action_type);
-
   return (
-    <div className="flex items-start gap-3">
-      <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center shrink-0">
-        <Icon className="w-4 h-4 text-zinc-400" />
-      </div>
+    <div className="flex items-start gap-3 p-2 hover:bg-zinc-800/30 rounded-lg transition-colors">
+      <span className="text-sm mt-0.5">{getEmoji(activity.action_type)}</span>
       <div className="flex-1 min-w-0">
         <p className="text-sm text-zinc-300 line-clamp-2">{activity.description}</p>
-        <p className="text-xs text-zinc-600 mt-1">
-          {formatTimeAgo(activity.created_at)}
-        </p>
+        <p className="text-xs text-zinc-600 mt-0.5">{formatTimeAgo(activity.created_at)}</p>
       </div>
+    </div>
+  );
+}
+
+function EmptyState({ emoji, title, description }) {
+  return (
+    <div className="py-12 text-center">
+      <span className="text-4xl">{emoji}</span>
+      <p className="text-white font-medium mt-3">{title}</p>
+      <p className="text-sm text-zinc-500 mt-1">{description}</p>
     </div>
   );
 }
