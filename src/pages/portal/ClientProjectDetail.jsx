@@ -298,69 +298,222 @@ export default function ClientProjectDetail() {
   );
 }
 
-// Overview Tab Component
+// Overview Tab Component - Notion-like layout
 function OverviewTab({ project, settings, tasks, approvals }) {
   const completedTasks = tasks.filter((t) => t.status === 'completed').length;
   const pendingApprovals = approvals.filter((a) => a.status === 'pending').length;
+  const taskProgress = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
 
   return (
-    <div className="grid md:grid-cols-2 gap-6">
-      {/* Stats */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-white mb-4">Quick Stats</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4">
-            <p className="text-2xl font-bold text-white">{tasks.length}</p>
-            <p className="text-sm text-zinc-500">Total Tasks</p>
-          </div>
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4">
-            <p className="text-2xl font-bold text-emerald-400">{completedTasks}</p>
-            <p className="text-sm text-zinc-500">Completed</p>
-          </div>
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4">
-            <p className="text-2xl font-bold text-amber-400">{pendingApprovals}</p>
-            <p className="text-sm text-zinc-500">Pending Approvals</p>
-          </div>
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4">
-            <p className="text-2xl font-bold text-white">{project.milestones?.length || 0}</p>
-            <p className="text-sm text-zinc-500">Milestones</p>
-          </div>
+    <div className="max-w-4xl mx-auto space-y-8">
+      {/* Notion-style Page Content */}
+      <div className="prose prose-invert max-w-none">
+        {/* Quick Stats as inline blocks */}
+        <div className="not-prose grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+          <StatBlock icon="📋" label="Tasks" value={tasks.length} subValue={`${taskProgress}% done`} color="cyan" />
+          <StatBlock icon="✅" label="Completed" value={completedTasks} color="emerald" />
+          <StatBlock icon="⏳" label="Approvals" value={pendingApprovals} subValue="pending" color="amber" />
+          <StatBlock icon="🎯" label="Milestones" value={project.milestones?.length || 0} color="purple" />
         </div>
-      </div>
 
-      {/* Page Content (Notion-like blocks) */}
-      {project.page_content?.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-white mb-4">Project Details</h3>
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-5 space-y-4">
+        {/* Description as main content */}
+        {project.description && (
+          <div className="mb-8">
+            <p className="text-lg text-zinc-300 leading-relaxed">{project.description}</p>
+          </div>
+        )}
+
+        {/* Page Content (Notion-like blocks) */}
+        {project.page_content?.length > 0 && (
+          <div className="space-y-4">
             {project.page_content.map((block, index) => (
-              <ContentBlock key={index} block={block} />
+              <NotionBlock key={index} block={block} settings={settings} />
             ))}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Client Updates */}
-      {project.client_updates?.length > 0 && (
-        <div className="md:col-span-2 space-y-4">
-          <h3 className="text-lg font-semibold text-white mb-4">Latest Updates</h3>
-          <div className="space-y-3">
-            {project.client_updates.slice(0, 3).map((update, index) => (
-              <div
-                key={index}
-                className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4"
-              >
-                <p className="text-zinc-300">{update.content}</p>
-                <p className="text-xs text-zinc-500 mt-2">
-                  {new Date(update.created_at).toLocaleDateString()}
-                </p>
-              </div>
-            ))}
+        {/* Latest Updates - Timeline style */}
+        {project.client_updates?.length > 0 && (
+          <div className="mt-10 pt-8 border-t border-zinc-800">
+            <h3 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+              <span className="text-2xl">📢</span> Latest Updates
+            </h3>
+            <div className="space-y-4">
+              {project.client_updates.slice(0, 5).map((update, index) => (
+                <div
+                  key={index}
+                  className="relative pl-6 pb-4 border-l-2 border-zinc-800 last:border-l-transparent"
+                >
+                  <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-zinc-800 border-2 border-zinc-700" />
+                  <div className="bg-zinc-900/30 rounded-xl p-4 hover:bg-zinc-900/50 transition-colors">
+                    <p className="text-zinc-300">{update.content}</p>
+                    <p className="text-xs text-zinc-500 mt-2">
+                      {new Date(update.created_at).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Empty state */}
+        {!project.description && !project.page_content?.length && !project.client_updates?.length && (
+          <div className="text-center py-12">
+            <span className="text-6xl mb-4 block">📝</span>
+            <p className="text-zinc-400 text-lg">Project details will appear here</p>
+            <p className="text-zinc-500 text-sm mt-1">The team will add content as the project progresses</p>
+          </div>
+        )}
+      </div>
     </div>
   );
+}
+
+// Stat Block for Overview
+function StatBlock({ icon, label, value, subValue, color }) {
+  const colorClasses = {
+    cyan: 'from-cyan-500/20 to-cyan-500/5 border-cyan-500/20',
+    emerald: 'from-emerald-500/20 to-emerald-500/5 border-emerald-500/20',
+    amber: 'from-amber-500/20 to-amber-500/5 border-amber-500/20',
+    purple: 'from-purple-500/20 to-purple-500/5 border-purple-500/20',
+  };
+
+  return (
+    <div className={`bg-gradient-to-br ${colorClasses[color]} border rounded-xl p-4`}>
+      <div className="flex items-center gap-2 mb-1">
+        <span className="text-lg">{icon}</span>
+        <span className="text-xs font-medium text-zinc-400 uppercase tracking-wide">{label}</span>
+      </div>
+      <p className="text-2xl font-bold text-white">{value}</p>
+      {subValue && <p className="text-xs text-zinc-500 mt-0.5">{subValue}</p>}
+    </div>
+  );
+}
+
+// Notion-style Block Renderer
+function NotionBlock({ block, settings }) {
+  switch (block.type) {
+    case 'heading':
+    case 'heading_1':
+      return <h2 className="text-2xl font-bold text-white mt-8 mb-4">{block.content || block.text}</h2>;
+    case 'heading_2':
+      return <h3 className="text-xl font-semibold text-white mt-6 mb-3">{block.content || block.text}</h3>;
+    case 'heading_3':
+      return <h4 className="text-lg font-medium text-white mt-4 mb-2">{block.content || block.text}</h4>;
+    case 'paragraph':
+    case 'text':
+      return <p className="text-zinc-300 leading-relaxed mb-4">{block.content || block.text}</p>;
+    case 'bulleted_list':
+    case 'list':
+      return (
+        <ul className="list-none space-y-2 mb-4">
+          {(block.items || block.children)?.map((item, i) => (
+            <li key={i} className="flex items-start gap-2 text-zinc-300">
+              <span className="text-zinc-500 mt-1">•</span>
+              <span>{typeof item === 'string' ? item : item.content || item.text}</span>
+            </li>
+          ))}
+        </ul>
+      );
+    case 'numbered_list':
+      return (
+        <ol className="list-none space-y-2 mb-4">
+          {(block.items || block.children)?.map((item, i) => (
+            <li key={i} className="flex items-start gap-3 text-zinc-300">
+              <span className="text-zinc-500 font-medium min-w-[1.5rem]">{i + 1}.</span>
+              <span>{typeof item === 'string' ? item : item.content || item.text}</span>
+            </li>
+          ))}
+        </ol>
+      );
+    case 'todo':
+    case 'to_do':
+      return (
+        <div className="flex items-start gap-3 mb-2">
+          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 ${
+            block.checked ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-600'
+          }`}>
+            {block.checked && <CheckCircle2 className="w-3 h-3 text-white" />}
+          </div>
+          <span className={block.checked ? 'text-zinc-500 line-through' : 'text-zinc-300'}>
+            {block.content || block.text}
+          </span>
+        </div>
+      );
+    case 'quote':
+    case 'callout':
+      return (
+        <div className="border-l-4 border-cyan-500 bg-cyan-500/5 pl-4 py-3 pr-4 rounded-r-lg mb-4">
+          <p className="text-zinc-300 italic">{block.content || block.text}</p>
+        </div>
+      );
+    case 'divider':
+      return <hr className="border-zinc-800 my-8" />;
+    case 'image':
+      return (
+        <figure className="my-6">
+          <img
+            src={block.url || block.src}
+            alt={block.caption || ''}
+            className="rounded-xl w-full"
+          />
+          {block.caption && (
+            <figcaption className="text-sm text-zinc-500 text-center mt-2">{block.caption}</figcaption>
+          )}
+        </figure>
+      );
+    case 'video':
+      return (
+        <div className="my-6 aspect-video rounded-xl overflow-hidden bg-zinc-900">
+          {block.url?.includes('youtube') || block.url?.includes('youtu.be') ? (
+            <iframe
+              src={block.url.replace('watch?v=', 'embed/')}
+              className="w-full h-full"
+              allowFullScreen
+            />
+          ) : block.url?.includes('loom') ? (
+            <iframe
+              src={block.url.replace('share/', 'embed/')}
+              className="w-full h-full"
+              allowFullScreen
+            />
+          ) : (
+            <video src={block.url} controls className="w-full h-full" />
+          )}
+        </div>
+      );
+    case 'code':
+      return (
+        <pre className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 overflow-x-auto mb-4">
+          <code className="text-sm text-zinc-300 font-mono">{block.content || block.code}</code>
+        </pre>
+      );
+    case 'toggle':
+      return (
+        <details className="mb-4 group">
+          <summary className="cursor-pointer text-white font-medium flex items-center gap-2">
+            <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
+            {block.title || block.content}
+          </summary>
+          <div className="pl-6 mt-2 text-zinc-400">
+            {block.children?.map((child, i) => (
+              <NotionBlock key={i} block={child} settings={settings} />
+            ))}
+          </div>
+        </details>
+      );
+    default:
+      // Try to render as text if content exists
+      if (block.content || block.text) {
+        return <p className="text-zinc-300 mb-4">{block.content || block.text}</p>;
+      }
+      return null;
+  }
 }
 
 // Content Block Renderer
