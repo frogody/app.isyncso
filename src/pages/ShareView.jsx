@@ -445,8 +445,216 @@ function SharedProjectView({ project, tasks }) {
   );
 }
 
+// Shared Project View with Back button (for folder drill-down)
+function SharedProjectViewWithBack({ project, tasks, folder, onBack }) {
+  const statusConfig = PROJECT_STATUSES.find(s => s.id === project?.status) || PROJECT_STATUSES[0];
+  const folderColorConfig = FOLDER_COLORS.find(c => c.id === folder?.cover_color) || FOLDER_COLORS[0];
+  const settings = project?.share_settings || {};
+
+  const completedTasks = tasks.filter(t => t.status === "completed" || t.status === "success").length;
+  const inProgressTasks = tasks.filter(t => t.status === "in_progress").length;
+  const progress = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
+
+  const daysRemaining = project.due_date
+    ? Math.ceil((new Date(project.due_date) - new Date()) / (1000 * 60 * 60 * 24))
+    : null;
+
+  return (
+    <div className="min-h-screen bg-black">
+      {/* Header */}
+      <div className="border-b border-zinc-800/50">
+        <div className="max-w-4xl mx-auto px-6 py-8">
+          {/* Breadcrumb with Back */}
+          <div className="flex items-center gap-2 text-sm text-zinc-500 mb-6">
+            <button
+              onClick={onBack}
+              className="flex items-center gap-2 hover:text-cyan-400 transition-colors"
+            >
+              <FolderOpen className={`w-4 h-4 ${folderColorConfig.text}`} />
+              <span>{folder.name}</span>
+            </button>
+            <ChevronRight className="w-3 h-3" />
+            <span className="text-zinc-400">{project.name}</span>
+          </div>
+
+          {/* Back Button */}
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 text-sm text-zinc-400 hover:text-white mb-4 transition-colors"
+          >
+            <ChevronRight className="w-4 h-4 rotate-180" />
+            Back to {folder.name}
+          </button>
+
+          {/* Title */}
+          <h1 className="text-3xl font-semibold text-white mb-3">
+            {project.name}
+          </h1>
+
+          {project.description && (
+            <p className="text-zinc-400 mb-6 max-w-2xl">
+              {project.description}
+            </p>
+          )}
+
+          {/* Status & Due Date */}
+          <div className="flex flex-wrap items-center gap-3">
+            <Badge variant="outline" className={`${statusConfig.bgColor} ${statusConfig.textColor} ${statusConfig.borderColor}`}>
+              <div className={`w-1.5 h-1.5 rounded-full ${statusConfig.color} mr-2`} />
+              {statusConfig.label}
+            </Badge>
+            {project.due_date && (
+              <span className="text-sm text-zinc-500 flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                {daysRemaining !== null && daysRemaining > 0
+                  ? `${daysRemaining} days remaining`
+                  : daysRemaining === 0
+                    ? 'Due today'
+                    : new Date(project.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                }
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-4xl mx-auto px-6 py-8">
+        {/* Progress Section */}
+        {settings.show_tasks !== false && (
+          <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-sm text-zinc-500 mb-1">Overall Progress</p>
+                <p className="text-3xl font-semibold text-white">{progress}%</p>
+              </div>
+              <div className="flex gap-6 text-center">
+                <div>
+                  <p className="text-xl font-semibold text-white">{completedTasks}</p>
+                  <p className="text-xs text-zinc-500">Completed</p>
+                </div>
+                <div>
+                  <p className="text-xl font-semibold text-cyan-400">{inProgressTasks}</p>
+                  <p className="text-xs text-zinc-500">In Progress</p>
+                </div>
+                <div>
+                  <p className="text-xl font-semibold text-zinc-500">{tasks.length - completedTasks - inProgressTasks}</p>
+                  <p className="text-xs text-zinc-500">Remaining</p>
+                </div>
+              </div>
+            </div>
+            <Progress value={progress} className="h-2 bg-zinc-800" />
+          </div>
+        )}
+
+        {/* Tasks */}
+        {settings.show_tasks !== false && tasks.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wide mb-4">Tasks</h2>
+            <div className="space-y-2">
+              {tasks.map((task) => {
+                const isCompleted = task.status === "completed" || task.status === "success";
+                const isInProgress = task.status === "in_progress";
+                return (
+                  <div
+                    key={task.id}
+                    className={`flex items-center gap-3 p-4 rounded-lg border ${
+                      isCompleted
+                        ? "bg-emerald-500/5 border-emerald-500/20"
+                        : isInProgress
+                          ? "bg-cyan-500/5 border-cyan-500/20"
+                          : "bg-zinc-900/50 border-zinc-800"
+                    }`}
+                  >
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      isCompleted ? "bg-emerald-500/20" : isInProgress ? "bg-cyan-500/20" : "bg-zinc-800"
+                    }`}>
+                      {isCompleted ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      ) : isInProgress ? (
+                        <Clock className="w-4 h-4 text-cyan-400" />
+                      ) : (
+                        <Circle className="w-4 h-4 text-zinc-600" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm ${isCompleted ? "text-zinc-500 line-through" : "text-white"}`}>
+                        {task.title}
+                      </p>
+                      {task.description && (
+                        <p className="text-xs text-zinc-600 mt-0.5 truncate">{task.description}</p>
+                      )}
+                    </div>
+                    <Badge variant="outline" className={`text-xs ${
+                      isCompleted
+                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                        : isInProgress
+                          ? "bg-cyan-500/10 text-cyan-400 border-cyan-500/30"
+                          : "bg-zinc-800 text-zinc-500 border-zinc-700"
+                    }`}>
+                      {isCompleted ? "Done" : isInProgress ? "In Progress" : "To Do"}
+                    </Badge>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Milestones */}
+        {settings.show_milestones && project.milestones?.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wide mb-4">Milestones</h2>
+            <div className="space-y-2">
+              {project.milestones.map((milestone, idx) => (
+                <div
+                  key={idx}
+                  className={`flex items-center gap-3 p-4 rounded-lg border ${
+                    milestone.completed
+                      ? "bg-emerald-500/5 border-emerald-500/20"
+                      : "bg-zinc-900/50 border-zinc-800"
+                  }`}
+                >
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                    milestone.completed ? "bg-emerald-500/20" : "bg-zinc-800"
+                  }`}>
+                    {milestone.completed ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    ) : (
+                      <Target className="w-4 h-4 text-zinc-500" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className={`text-sm ${milestone.completed ? "text-zinc-500" : "text-white"}`}>
+                      {milestone.name}
+                    </p>
+                    {milestone.date && (
+                      <p className="text-xs text-zinc-600">Due: {new Date(milestone.date).toLocaleDateString()}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="pt-8 border-t border-zinc-800/50 text-center">
+          <button
+            onClick={onBack}
+            className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
+          >
+            ← Back to {folder.name}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Shared Folder View
 function SharedFolderView({ folder, projects, tasks }) {
+  const [selectedProject, setSelectedProject] = useState(null);
   const colorConfig = FOLDER_COLORS.find(c => c.id === folder.cover_color) || FOLDER_COLORS[0];
   const settings = folder.share_settings || {};
 
@@ -454,6 +662,19 @@ function SharedFolderView({ folder, projects, tasks }) {
   const overallProgress = projects.length > 0
     ? Math.round(projects.reduce((acc, p) => acc + (p.progress || 0), 0) / projects.length)
     : 0;
+
+  // If a project is selected, show its detail view
+  if (selectedProject) {
+    const projectTasks = tasks.filter(t => t.project_id === selectedProject.id || String(t.project_id) === String(selectedProject.id));
+    return (
+      <SharedProjectViewWithBack
+        project={selectedProject}
+        tasks={projectTasks}
+        folder={folder}
+        onBack={() => setSelectedProject(null)}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black">
@@ -547,9 +768,10 @@ function SharedFolderView({ folder, projects, tasks }) {
                   : project.progress || 0;
 
                 return (
-                  <div
+                  <button
                     key={project.id}
-                    className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-5"
+                    onClick={() => setSelectedProject(project)}
+                    className="w-full text-left bg-zinc-900/50 border border-zinc-800 rounded-xl p-5 hover:bg-zinc-800/50 hover:border-zinc-700 transition-all group"
                   >
                     <div className="flex items-start gap-4">
                       <div className={`w-10 h-10 rounded-lg ${statusConfig.bgColor} flex items-center justify-center flex-shrink-0`}>
@@ -557,10 +779,11 @@ function SharedFolderView({ folder, projects, tasks }) {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-base font-medium text-white truncate">{project.name}</h3>
+                          <h3 className="text-base font-medium text-white truncate group-hover:text-cyan-400 transition-colors">{project.name}</h3>
                           <Badge variant="outline" className={`${statusConfig.bgColor} ${statusConfig.textColor} ${statusConfig.borderColor} text-xs`}>
                             {statusConfig.label}
                           </Badge>
+                          <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-cyan-400 ml-auto opacity-0 group-hover:opacity-100 transition-all" />
                         </div>
                         {project.description && (
                           <p className="text-sm text-zinc-500 mb-3 line-clamp-2">{project.description}</p>
@@ -581,7 +804,7 @@ function SharedFolderView({ folder, projects, tasks }) {
                         )}
                       </div>
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
