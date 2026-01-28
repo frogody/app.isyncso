@@ -55,18 +55,28 @@ export function usePortalClient() {
 
     const initAuth = async () => {
       try {
-        // Add timeout to prevent infinite loading
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Auth initialization timeout')), 10000)
+        // Add timeout to prevent infinite loading (5 seconds)
+        const timeoutPromise = new Promise((resolve) =>
+          setTimeout(() => resolve({ data: { session: null }, timedOut: true }), 5000)
         );
 
-        const sessionPromise = supabase.auth.getSession();
+        const sessionPromise = supabase.auth.getSession().then(result => ({
+          ...result,
+          timedOut: false
+        }));
 
-        const { data } = await Promise.race([sessionPromise, timeoutPromise]);
-        const currentSession = data?.session || null;
+        const result = await Promise.race([sessionPromise, timeoutPromise]);
 
         if (!isMounted) return;
 
+        // If timed out, just proceed with no session (user will need to log in)
+        if (result.timedOut) {
+          setSession(null);
+          setLoading(false);
+          return;
+        }
+
+        const currentSession = result.data?.session || null;
         setSession(currentSession);
 
         if (currentSession?.user) {
@@ -86,12 +96,12 @@ export function usePortalClient() {
 
     initAuth();
 
-    // Safety fallback: ensure loading is set to false after 15 seconds no matter what
+    // Safety fallback: ensure loading is set to false after 8 seconds no matter what
     const safetyTimeout = setTimeout(() => {
       if (isMounted) {
         setLoading(false);
       }
-    }, 15000);
+    }, 8000);
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
