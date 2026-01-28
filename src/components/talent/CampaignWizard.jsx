@@ -457,7 +457,7 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
         </div>
 
         {/* Content */}
-        <div className="p-6 min-h-[400px]">
+        <div className="p-6 min-h-[400px] max-h-[calc(80vh-140px)] overflow-y-auto">
           <AnimatePresence mode="wait">
             {/* Step 1: Select Project */}
             {step === 1 && (
