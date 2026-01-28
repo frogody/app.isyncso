@@ -185,14 +185,14 @@ const TimingRow = ({ timing }) => {
   };
 
   return (
-    <div className="flex items-center justify-between py-2">
-      <div className="flex items-center gap-2">
-        <Timer className="w-3.5 h-3.5 text-white/40" />
+    <div className="flex items-start justify-between gap-3 py-2">
+      <div className="flex items-start gap-2 min-w-0 flex-1">
+        <Timer className="w-3.5 h-3.5 text-white/40 flex-shrink-0 mt-0.5" />
         <span className="text-sm text-white">{timing.trigger || timing.description}</span>
       </div>
-      <div className="flex items-center gap-2">
-        {timing.window && <span className="text-xs text-white/40">{timing.window}</span>}
-        <span className={`text-xs font-medium capitalize ${urgencyStyles[timing.urgency] || "text-white/40"}`}>
+      <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
+        {timing.window && <span className="text-xs text-white/40 whitespace-nowrap">{timing.window}</span>}
+        <span className={`text-xs font-medium capitalize whitespace-nowrap ${urgencyStyles[timing.urgency] || "text-white/40"}`}>
           {timing.urgency || "—"}
         </span>
       </div>
@@ -317,7 +317,7 @@ export const IntelligenceReport = ({ candidate, compact = false, onGenerate, isG
     >
       {/* Row 1: Executive Summary + Best Opening */}
       {(isSectionEnabled('intelligence', 'flight_risk_score') || isSectionEnabled('intelligence', 'best_outreach_angle')) && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className={`grid grid-cols-1 ${compact ? '' : 'lg:grid-cols-3'} gap-4`}>
           {/* Left: Score & Status */}
           {isSectionEnabled('intelligence', 'flight_risk_score') && (
             <motion.div
@@ -356,7 +356,7 @@ export const IntelligenceReport = ({ candidate, compact = false, onGenerate, isG
           {isSectionEnabled('intelligence', 'best_outreach_angle') && (
             <motion.div
               variants={itemVariants}
-              className={`${isSectionEnabled('intelligence', 'flight_risk_score') ? 'lg:col-span-2' : 'lg:col-span-3'} bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent rounded-xl border border-blue-500/20 p-5`}
+              className={`${!compact && isSectionEnabled('intelligence', 'flight_risk_score') ? 'lg:col-span-2' : !compact ? 'lg:col-span-3' : ''} bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent rounded-xl border border-blue-500/20 p-5`}
             >
               <div className="flex items-center gap-2 mb-3">
                 <div className="p-1.5 rounded-lg bg-blue-500/20">
@@ -400,7 +400,7 @@ export const IntelligenceReport = ({ candidate, compact = false, onGenerate, isG
       )}
 
       {/* Row 3: Signals Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className={`grid grid-cols-1 ${compact ? '' : 'lg:grid-cols-2'} gap-4`}>
         {/* Opportunities */}
         <motion.div
           variants={itemVariants}
@@ -456,7 +456,7 @@ export const IntelligenceReport = ({ candidate, compact = false, onGenerate, isG
 
       {/* Row 4: Timing + Insights */}
       {(isSectionEnabled('intelligence', 'timing_signals') || isSectionEnabled('intelligence', 'key_insights')) && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className={`grid grid-cols-1 ${compact ? '' : 'lg:grid-cols-2'} gap-4`}>
           {/* Timing Windows */}
           {isSectionEnabled('intelligence', 'timing_signals') && (
             <motion.div

@@ -2020,31 +2020,31 @@ export default function CandidateDetailDrawer({
                   </div>
 
                   {/* Enhanced Quick Stats Bar */}
-                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-4 pt-4 border-t border-zinc-700/50">
-                    <div>
-                      <p className="text-[10px] text-zinc-500 mb-0.5">Urgency</p>
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-4 pt-4 border-t border-zinc-700/50 items-end">
+                    <div className="text-center">
+                      <p className="text-[10px] text-zinc-500 mb-1">Urgency</p>
                       <UrgencyBadge level={candidate.recruitment_urgency} />
                     </div>
-                    <div>
-                      <p className="text-[10px] text-zinc-500 mb-0.5">Satisfaction</p>
+                    <div className="text-center">
+                      <p className="text-[10px] text-zinc-500 mb-1">Satisfaction</p>
                       <SatisfactionBadge level={candidate.job_satisfaction} />
                     </div>
-                    <div>
-                      <p className="text-[10px] text-zinc-500 mb-0.5">Salary</p>
+                    <div className="text-center">
+                      <p className="text-[10px] text-zinc-500 mb-1">Salary</p>
                       <p className="text-sm font-semibold text-red-400">
                         {candidate.salary_range ? `$${Number(candidate.salary_range).toLocaleString()}` : "—"}
                       </p>
                     </div>
-                    <div>
-                      <p className="text-[10px] text-zinc-500 mb-0.5">Tenure</p>
+                    <div className="text-center">
+                      <p className="text-[10px] text-zinc-500 mb-1">Tenure</p>
                       <p className="text-sm font-semibold text-white">{candidate.years_at_company || 0}y</p>
                     </div>
-                    <div>
-                      <p className="text-[10px] text-zinc-500 mb-0.5">Promos</p>
+                    <div className="text-center">
+                      <p className="text-[10px] text-zinc-500 mb-1">Promos</p>
                       <p className="text-sm font-semibold text-white">{candidate.times_promoted || 0}</p>
                     </div>
-                    <div>
-                      <p className="text-[10px] text-zinc-500 mb-0.5">Job Changes</p>
+                    <div className="text-center">
+                      <p className="text-[10px] text-zinc-500 mb-1">Job Changes</p>
                       <p className="text-sm font-semibold text-white">{candidate.times_company_hopped || 0}</p>
                     </div>
                   </div>
@@ -2174,6 +2174,7 @@ export default function CandidateDetailDrawer({
                   {activeTab === "intelligence" && (
                     <IntelligenceReport
                       candidate={candidate}
+                      compact
                       onGenerate={handleSyncIntel}
                       isGenerating={generatingIntelligence}
                       syncStatus={syncStatus}
