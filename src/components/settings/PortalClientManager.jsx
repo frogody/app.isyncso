@@ -44,7 +44,7 @@ export default function PortalClientManager() {
             id,
             project_id,
             permission_level,
-            project:projects (id, name, status)
+            project:projects (id, title, status)
           )
         `)
         .eq('organization_id', user.organization_id)
@@ -64,9 +64,9 @@ export default function PortalClientManager() {
     try {
       const { data, error } = await supabase
         .from('projects')
-        .select('id, name, status')
+        .select('id, title, status')
         .eq('organization_id', user.organization_id)
-        .order('name');
+        .order('title');
 
       if (error) throw error;
       setProjects(data || []);
@@ -355,7 +355,7 @@ function ClientCard({
                   ) : (
                     <XCircle className="w-4 h-4 shrink-0 opacity-50" />
                   )}
-                  <span className="text-sm truncate">{project.name}</span>
+                  <span className="text-sm truncate">{project.title}</span>
                 </button>
               );
             })}
@@ -388,7 +388,7 @@ function AddClientModal({ organizationId, onClose, onSuccess }) {
         email: formData.email.toLowerCase().trim(),
         full_name: formData.full_name.trim() || null,
         company_name: formData.company_name.trim() || null,
-        status: 'pending',
+        status: 'invited',
       });
 
       if (error) {
