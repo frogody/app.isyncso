@@ -15,6 +15,7 @@ import {
   QuickStatsWidget,
   JobSatisfactionWidget,
   WorkHistoryWidget,
+  EducationWidget,
   TechStackWidget,
   CompanyOverviewWidget,
   PainPointsWidget,
@@ -34,6 +35,7 @@ const WIDGET_COMPONENTS = {
   QuickStatsWidget,
   JobSatisfactionWidget,
   WorkHistoryWidget,
+  EducationWidget,
   TechStackWidget,
   CompanyOverviewWidget,
   PainPointsWidget

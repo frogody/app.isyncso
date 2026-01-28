@@ -13,6 +13,7 @@ export { default as WorkHistoryWidget } from './WorkHistoryWidget';
 export { default as TechStackWidget } from './TechStackWidget';
 export { default as CompanyOverviewWidget } from './CompanyOverviewWidget';
 export { default as PainPointsWidget } from './PainPointsWidget';
+export { default as EducationWidget } from './EducationWidget';
 
 // Widget registry for dynamic rendering
 export const WIDGET_REGISTRY = {
@@ -63,6 +64,13 @@ export const WIDGET_REGISTRY = {
     title: 'Recent Roles',
     description: 'Latest 3 positions from work history',
     icon: 'Briefcase',
+    category: 'professional'
+  },
+  EducationWidget: {
+    component: 'EducationWidget',
+    title: 'Education',
+    description: 'Degrees, schools, and graduation years',
+    icon: 'GraduationCap',
     category: 'professional'
   },
   KeyInsightsWidget: {
@@ -121,9 +129,10 @@ export const DEFAULT_WIDGETS = [
   { id: 'quickstats', type: 'QuickStatsWidget', order: 7, enabled: false },
   { id: 'jobsatisfaction', type: 'JobSatisfactionWidget', order: 8, enabled: false },
   { id: 'workhistory', type: 'WorkHistoryWidget', order: 9, enabled: false },
-  { id: 'techstack', type: 'TechStackWidget', order: 10, enabled: false },
-  { id: 'companyoverview', type: 'CompanyOverviewWidget', order: 11, enabled: false },
-  { id: 'painpoints', type: 'PainPointsWidget', order: 12, enabled: false }
+  { id: 'education', type: 'EducationWidget', order: 10, enabled: false },
+  { id: 'techstack', type: 'TechStackWidget', order: 11, enabled: false },
+  { id: 'companyoverview', type: 'CompanyOverviewWidget', order: 12, enabled: false },
+  { id: 'painpoints', type: 'PainPointsWidget', order: 13, enabled: false }
 ];
 
 // Widget categories for the add modal

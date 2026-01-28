@@ -14,7 +14,8 @@ import {
   BarChart3,
   Check,
   Building2,
-  Cpu
+  Cpu,
+  GraduationCap
 } from "lucide-react";
 import { WIDGET_REGISTRY, WIDGET_CATEGORIES } from "./summary-widgets";
 
@@ -29,7 +30,8 @@ const ICONS = {
   Lightbulb,
   BarChart3,
   Building2,
-  Cpu
+  Cpu,
+  GraduationCap
 };
 
 /**
