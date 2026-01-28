@@ -116,6 +116,22 @@ export function UserProvider({ children }) {
           RETRY_OPTIONS
         ),
 
+        // Load organization if user has organization_id
+        userData.organization_id
+          ? retryWithBackoff(
+              async () => {
+                const { data, error: orgError } = await supabase
+                  .from('organizations')
+                  .select('id, name, slug')
+                  .eq('id', userData.organization_id)
+                  .single();
+                if (orgError) throw orgError;
+                return data;
+              },
+              RETRY_OPTIONS
+            )
+          : Promise.resolve(null),
+
         // Get user's effective apps via database function
         retryWithBackoff(
           async () => {
@@ -157,11 +173,18 @@ export function UserProvider({ children }) {
         setUserTeams([]);
       }
 
-      // Process effective apps result
-      if (results[3].status === 'fulfilled') {
-        setEffectiveApps(results[3].value || []);
+      // Process organization result - attach to user object
+      if (results[3].status === 'fulfilled' && results[3].value) {
+        setUser(prev => prev ? { ...prev, organization: results[3].value } : prev);
       } else if (results[3].status === 'rejected') {
-        logError('UserContext:effectiveApps', results[3].reason);
+        logError('UserContext:organization', results[3].reason);
+      }
+
+      // Process effective apps result
+      if (results[4].status === 'fulfilled') {
+        setEffectiveApps(results[4].value || []);
+      } else if (results[4].status === 'rejected') {
+        logError('UserContext:effectiveApps', results[4].reason);
         // Fallback: if function fails, give empty apps (minimal access)
         setEffectiveApps([]);
       }
