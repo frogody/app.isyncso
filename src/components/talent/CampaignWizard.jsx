@@ -51,6 +51,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import CriteriaWeightingStep, { DEFAULT_WEIGHTS } from "./campaign/CriteriaWeightingStep";
+import SignalMatchingConfig from "./campaign/SignalMatchingConfig";
 
 const STEPS = [
   { id: 1, title: "Select Project", icon: FolderOpen },
@@ -97,6 +98,9 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
 
   // Criteria weights
   const [criteriaWeights, setCriteriaWeights] = useState(DEFAULT_WEIGHTS);
+
+  // Signal filters
+  const [signalFilters, setSignalFilters] = useState([]);
 
   // Campaign details
   const [campaignName, setCampaignName] = useState("");
@@ -310,6 +314,7 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
           // Store outreach channel preference
           outreach_channel: outreachChannel,
           criteria_weights: criteriaWeights,
+          signal_filters: signalFilters,
         },
         auto_match_enabled: true,
         min_match_score: 30,
@@ -408,6 +413,7 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
       });
       setCampaignName("");
       setCriteriaWeights(DEFAULT_WEIGHTS);
+      setSignalFilters([]);
     }
     onOpenChange(open);
   };
@@ -842,22 +848,22 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="space-y-6"
+                className="space-y-8"
               >
+                {/* Weight Sliders */}
                 <CriteriaWeightingStep
                   weights={criteriaWeights}
                   onChange={setCriteriaWeights}
                 />
-                <div className="flex justify-end">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setStep(5)}
-                    className="text-zinc-500 hover:text-zinc-300"
-                  >
-                    Skip (use defaults)
-                  </Button>
-                </div>
+
+                {/* Divider */}
+                <div className="border-t border-zinc-700/50" />
+
+                {/* Signal Filters */}
+                <SignalMatchingConfig
+                  selectedSignals={signalFilters}
+                  onChange={setSignalFilters}
+                />
               </motion.div>
             )}
 
