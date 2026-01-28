@@ -10,10 +10,12 @@ import {
   X,
   Eye,
   ExternalLink,
+  Users,
 } from 'lucide-react';
 import { supabase } from '@/api/supabaseClient';
 import { useUser } from '@/components/context/UserContext';
 import { toast } from 'sonner';
+import PortalClientManager from './PortalClientManager';
 
 export default function PortalBranding() {
   const { user } = useUser();
@@ -406,6 +408,11 @@ export default function PortalBranding() {
             onChange={(checked) => setSettings((prev) => ({ ...prev, require_approval_for_downloads: checked }))}
           />
         </div>
+      </section>
+
+      {/* Portal Clients */}
+      <section className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
+        <PortalClientManager />
       </section>
     </div>
   );
