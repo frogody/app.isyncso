@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/api/supabaseClient';
 import { useUser } from '@/components/context/UserContext';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 
 export default function PortalBranding() {
   const { user } = useUser();

@@ -1854,6 +1854,38 @@ function FolderShareSettings({ folder, onUpdateSettings, onGenerateLink }) {
           className="bg-zinc-900/50 border-zinc-700/50 text-sm min-h-[80px]"
         />
       </div>
+
+      {/* Full Portal Management */}
+      <div className="rounded-xl bg-gradient-to-br from-emerald-500/10 to-cyan-500/5 border border-emerald-500/20 p-4">
+        <div className="flex items-start gap-3 mb-3">
+          <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+            <Users className="w-4 h-4 text-emerald-400" />
+          </div>
+          <div>
+            <h4 className="text-sm font-medium text-white">Full Client Portal</h4>
+            <p className="text-xs text-zinc-400 mt-0.5">
+              Invite clients to a secure portal with login, comments, approvals, and more
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Link
+            to="/settings?tab=portal"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-lg text-sm font-medium transition-colors"
+          >
+            <Settings2 className="w-4 h-4" />
+            Configure Portal
+          </Link>
+          <Link
+            to="/portal"
+            target="_blank"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-zinc-700/50 hover:bg-zinc-700 text-zinc-300 rounded-lg text-sm font-medium transition-colors"
+          >
+            <ExternalLink className="w-4 h-4" />
+            Preview
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

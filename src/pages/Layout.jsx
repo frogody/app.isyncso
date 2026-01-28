@@ -75,6 +75,7 @@ import {
   FolderKey,
   Building2,
   Monitor,
+  ExternalLink,
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -161,6 +162,13 @@ const navigationItems = [
 
 // Bottom navigation items (Admin, Settings)
 const bottomNavItems = [
+  {
+    title: "Client Portal",
+    url: "/portal",
+    icon: ExternalLink,
+    permission: "projects.view", // Anyone who can view projects can access portal
+    isExternal: true, // Opens in new tab
+  },
   {
     title: "Admin",
     url: "/admin",
@@ -1107,6 +1115,27 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
         {filteredBottomNavItems.map((item) => {
           const isActive = isNavItemActive(item, location.pathname);
           const isAdminItem = item.isAdmin;
+          const isExternalLink = item.isExternal;
+
+          // External links open in new tab
+          if (isExternalLink) {
+            return (
+              <a
+                key={item.title}
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={triggerActivity}
+                className={`flex items-center ${isMobile ? 'justify-start gap-3 px-4' : 'justify-center'} min-h-[44px] p-3 rounded-xl transition-all duration-200 group relative active:scale-[0.98]
+                  text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/20 active:bg-emerald-950/30
+                `}
+                title={`${item.title} (opens in new tab)`}
+              >
+                <item.icon className="w-5 h-5 flex-shrink-0 transition-colors" />
+                {isMobile && <span className="text-sm font-medium">{item.title}</span>}
+              </a>
+            );
+          }
 
           return (
             <Link

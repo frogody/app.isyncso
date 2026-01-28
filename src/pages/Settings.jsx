@@ -20,7 +20,7 @@ import {
   CheckCircle, Globe, Linkedin, Clock, Target, Shield, Loader2,
   ChevronRight, Award, Zap, LogOut, MapPin, Calendar, Cpu,
   DollarSign, Phone, Twitter, Facebook, TrendingUp, BarChart3, Plug,
-  UserCog
+  UserCog, ExternalLink
 } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -29,6 +29,7 @@ import { useUser } from "@/components/context/UserContext";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { toast } from "sonner";
+import PortalBranding from "@/components/settings/PortalBranding";
 
 export default function Settings() {
   const { user, company, settings: userSettings, updateUser, updateSettings, isLoading: userLoading } = useUser();
@@ -588,6 +589,7 @@ export default function Settings() {
     { id: 'notifications', label: 'Notifications', icon: Bell, color: 'purple' },
     { id: 'appearance', label: 'Appearance', icon: Palette, color: 'pink' },
     { id: 'company', label: 'Company', icon: Building2, color: 'orange' },
+    { id: 'portal', label: 'Client Portal', icon: ExternalLink, color: 'green' },
     { id: 'teams', label: 'Teams & Rights', icon: Shield, color: 'cyan', isLink: true, href: createPageUrl('TeamManagement') },
     { id: 'integrations', label: 'Integrations', icon: Plug, color: 'cyan', isLink: true, href: createPageUrl('MCPIntegrations') },
     { id: 'privacy', label: 'Privacy', icon: Lock, color: 'red' },
@@ -1367,6 +1369,20 @@ export default function Settings() {
                       )}
                     </div>
                   </GlassCard>
+                </motion.div>
+              )}
+
+              {/* CLIENT PORTAL TAB */}
+              {activeTab === 'portal' && (
+                <motion.div
+                  key="portal"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-6"
+                >
+                  <PortalBranding />
                 </motion.div>
               )}
 
