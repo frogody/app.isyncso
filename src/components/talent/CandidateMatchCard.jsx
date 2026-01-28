@@ -81,33 +81,57 @@ const MatchScoreRing = ({ score, size = "md" }) => {
 /**
  * MatchFactorsBar - Mini visualization of match factors
  */
-const MatchFactorsBar = ({ factors }) => {
+const MatchFactorsBar = ({ factors, size = "default" }) => {
   if (!factors) return null;
 
+  const getBarColor = (score) => {
+    if (score >= 80) return "bg-green-500";
+    if (score >= 60) return "bg-yellow-500";
+    if (score >= 40) return "bg-orange-500";
+    return "bg-red-500";
+  };
+
+  const getTextColor = (score) => {
+    if (score >= 80) return "text-green-400";
+    if (score >= 60) return "text-yellow-400";
+    if (score >= 40) return "text-orange-400";
+    return "text-red-400";
+  };
+
   const factorData = [
-    { key: "skills_fit", label: "Skills", value: factors.skills_fit || 0, color: "bg-blue-500" },
-    { key: "experience_fit", label: "Experience", value: factors.experience_fit || 0, color: "bg-purple-500" },
-    { key: "title_fit", label: "Title", value: factors.title_fit || 0, color: "bg-cyan-500" },
-    { key: "timing_score", label: "Timing", value: factors.timing_score || 0, color: "bg-amber-500" },
-    { key: "culture_fit", label: "Culture", value: factors.culture_fit || 0, color: "bg-emerald-500" },
+    { key: "skills_fit", label: "Skills" },
+    { key: "experience_fit", label: "Experience" },
+    { key: "title_fit", label: "Title" },
+    { key: "timing_score", label: "Timing" },
+    { key: "culture_fit", label: "Culture" },
   ];
 
+  const barHeight = size === "compact" ? "h-8" : "h-12";
+
   return (
-    <div className="grid grid-cols-5 gap-2">
-      {factorData.map(({ key, label, value, color }) => (
-        <div key={key} className="text-center">
-          <div className="h-8 w-full bg-zinc-800 rounded-sm overflow-hidden relative">
+    <div className={`flex items-end gap-1 ${barHeight}`}>
+      {factorData.map(({ key, label }, idx) => {
+        const score = factors[key] ?? 0;
+        const height = Math.max(10, score);
+
+        return (
+          <div key={key} className="group relative flex-1">
+            {/* Tooltip */}
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-zinc-900 border border-zinc-700 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+              <span className="text-zinc-300">{label}:</span>
+              <span className={`ml-1 font-medium ${getTextColor(score)}`}>{score}%</span>
+            </div>
+
+            {/* Bar */}
             <motion.div
-              className={`absolute bottom-0 left-0 right-0 ${color}`}
+              className={`w-full rounded-t ${getBarColor(score)}`}
               initial={{ height: 0 }}
-              animate={{ height: `${value}%` }}
-              transition={{ duration: 0.5, delay: 0.1 }}
+              animate={{ height: `${height}%` }}
+              transition={{ duration: 0.5, delay: idx * 0.08 }}
             />
           </div>
-          <span className="text-[10px] text-zinc-500 mt-1 block">{label}</span>
-          <span className="text-xs font-medium text-white">{value}</span>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };
