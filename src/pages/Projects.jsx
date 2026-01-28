@@ -3137,11 +3137,35 @@ export default function Projects() {
     return "planning";
   };
 
+  // Map UI status to valid DB status values
+  // DB allows: discovery, active, on_hold, filled, cancelled, closed
   const mapStatusToDB = (uiStatus) => {
-    if (uiStatus === "completed") return "success";
-    if (uiStatus === "archived") return "cancelled";
-    if (uiStatus === "active") return "in_progress";
-    return "pending";
+    const statusMap = {
+      "completed": "filled",
+      "archived": "cancelled",
+      "active": "active",
+      "in_progress": "active",
+      "on_hold": "on_hold",
+      "discovery": "discovery",
+      "filled": "filled",
+      "cancelled": "cancelled",
+      "closed": "closed",
+    };
+    return statusMap[uiStatus] || "discovery";
+  };
+
+  // Map UI project type to valid DB values
+  // DB allows: retained_search, contingency, exclusive, contract, rpo
+  const mapProjectTypeToDB = (uiType) => {
+    const typeMap = {
+      "retained_search": "retained_search",
+      "contingency": "contingency",
+      "exclusive": "exclusive",
+      "contract": "contract",
+      "rpo": "rpo",
+      "development": "retained_search",  // fallback for legacy/invalid values
+    };
+    return typeMap[uiType] || "retained_search";
   };
 
   const filteredProjects = useMemo(() => {
@@ -3357,7 +3381,7 @@ export default function Projects() {
           description: mergedProject.description,
           status: mapStatusToDB(mergedProject.status),
           priority: mergedProject.priority,
-          project_type: mergedProject.category || mergedProject.project_type,
+          project_type: mapProjectTypeToDB(mergedProject.category || mergedProject.project_type),
           start_date: mergedProject.start_date || null,
           deadline: mergedProject.due_date || mergedProject.deadline || null,
           budget: mergedProject.budget ? parseFloat(mergedProject.budget) : null,
@@ -3389,6 +3413,7 @@ export default function Projects() {
           }
         });
 
+        console.log('[Projects] Updating project:', projectId, 'with data:', JSON.stringify(fullProjectData, null, 2));
         await db.entities.Project.update(projectId, fullProjectData);
       } else {
         // Fallback: try partial update if we can't find the project
