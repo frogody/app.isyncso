@@ -7,15 +7,59 @@ export const DEFAULT_PANEL_CONFIG = {
   summary_card: {
     enabled: true,
     metrics: {
-      intelligence_score: { enabled: true, order: 0, label: "Intelligence Score" },
-      intelligence_level: { enabled: true, order: 1, label: "Risk Level" },
-      recommended_approach: { enabled: true, order: 2, label: "Approach" },
-      timing_signal: { enabled: true, order: 3, label: "Key Timing Signal" },
-      outreach_angle: { enabled: true, order: 4, label: "Outreach Angle" },
-      top_skills: { enabled: true, order: 5, label: "Top Skills" },
-      flight_risk: { enabled: true, order: 6, label: "Flight Risk Alert" },
-      years_experience: { enabled: false, order: 7, label: "Years Experience" },
-      location: { enabled: false, order: 8, label: "Location" }
+      // CORE METRICS - Intelligence
+      intelligence_score: { enabled: true, order: 0, label: "Intelligence Score", category: "core" },
+      intelligence_level: { enabled: true, order: 1, label: "Risk Level", category: "core" },
+      recommended_approach: { enabled: true, order: 2, label: "Approach", category: "core" },
+
+      // TIMING & SIGNALS
+      timing_signal: { enabled: true, order: 10, label: "Key Timing Signal", category: "timing" },
+      outreach_angle: { enabled: true, order: 11, label: "Outreach Angle", category: "timing" },
+      flight_risk: { enabled: true, order: 12, label: "Flight Risk Alert", category: "timing" },
+
+      // PROFESSIONAL
+      current_title: { enabled: false, order: 20, label: "Current Title", category: "professional" },
+      company_name: { enabled: false, order: 21, label: "Company", category: "professional" },
+      years_at_company: { enabled: false, order: 22, label: "Tenure", category: "professional" },
+      times_promoted: { enabled: false, order: 23, label: "Promotions", category: "professional" },
+      times_company_hopped: { enabled: false, order: 24, label: "Job Changes", category: "professional" },
+      years_experience: { enabled: false, order: 25, label: "Years Experience", category: "professional" },
+
+      // LOCATION
+      location: { enabled: false, order: 30, label: "Location", category: "location" },
+      location_city: { enabled: false, order: 31, label: "City", category: "location" },
+      location_region: { enabled: false, order: 32, label: "Region/State", category: "location" },
+      location_country: { enabled: false, order: 33, label: "Country", category: "location" },
+
+      // CONTACT STATUS
+      has_email: { enabled: false, order: 40, label: "Has Email", category: "contact" },
+      has_phone: { enabled: false, order: 41, label: "Has Phone", category: "contact" },
+      has_linkedin: { enabled: false, order: 42, label: "Has LinkedIn", category: "contact" },
+      enrichment_status: { enabled: false, order: 43, label: "Enrichment Status", category: "contact" },
+
+      // SKILLS
+      top_skills: { enabled: true, order: 50, label: "Top Skills", category: "skills" },
+      skills_count: { enabled: false, order: 51, label: "Skills Count", category: "skills" },
+      inferred_skills_count: { enabled: false, order: 52, label: "Inferred Skills", category: "skills" },
+      certifications_count: { enabled: false, order: 53, label: "Certifications", category: "skills" },
+
+      // COMPENSATION
+      salary_range: { enabled: false, order: 60, label: "Salary Range", category: "compensation" },
+
+      // EDUCATION
+      education_level: { enabled: false, order: 70, label: "Education Level", category: "education" },
+      education_count: { enabled: false, order: 71, label: "Degrees", category: "education" },
+
+      // AI INSIGHTS
+      key_insights_count: { enabled: false, order: 80, label: "Key Insights", category: "insights" },
+      outreach_hooks_count: { enabled: false, order: 81, label: "Outreach Hooks", category: "insights" },
+      lateral_opportunities_count: { enabled: false, order: 82, label: "Lateral Opps", category: "insights" },
+      company_correlations_count: { enabled: false, order: 83, label: "Company Correlations", category: "insights" },
+
+      // COMPANY INTEL
+      company_intel_available: { enabled: false, order: 90, label: "Company Intel", category: "company" },
+      job_satisfaction: { enabled: false, order: 91, label: "Job Satisfaction", category: "company" },
+      recruitment_urgency: { enabled: false, order: 92, label: "Recruitment Urgency", category: "company" }
     }
   },
   profile: {
@@ -191,6 +235,27 @@ export const usePanelPreferences = () => {
     return preferences.summary_card?.enabled ?? true;
   }, [preferences]);
 
+  // Get metrics grouped by category
+  const getMetricsByCategory = useCallback(() => {
+    const metrics = preferences.summary_card?.metrics || {};
+    const categories = {};
+
+    Object.entries(metrics).forEach(([key, config]) => {
+      const category = config.category || 'other';
+      if (!categories[category]) {
+        categories[category] = [];
+      }
+      categories[category].push({ key, ...config });
+    });
+
+    // Sort each category by order
+    Object.keys(categories).forEach(cat => {
+      categories[cat].sort((a, b) => (a.order || 0) - (b.order || 0));
+    });
+
+    return categories;
+  }, [preferences]);
+
   // Check if a tab is enabled
   const isTabEnabled = useCallback((tab) => {
     return preferences[tab]?.enabled ?? true;
@@ -261,6 +326,7 @@ export const usePanelPreferences = () => {
     isMetricEnabled,
     getEnabledMetrics,
     isSummaryCardEnabled,
+    getMetricsByCategory,
     getSectionOrder,
     getAllSections,
     toggleSection,

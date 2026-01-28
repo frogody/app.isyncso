@@ -2134,23 +2134,12 @@ export default function CandidateDetailDrawer({
                   candidate={candidate}
                   preferences={preferences}
                   saving={preferencesSaving}
-                  onSavePreferences={() => savePreferences(preferences)}
-                  onToggleMetric={(metricKey) => {
-                    const newPrefs = {
-                      ...preferences,
-                      summary_card: {
-                        ...preferences.summary_card,
-                        metrics: {
-                          ...preferences.summary_card?.metrics,
-                          [metricKey]: {
-                            ...preferences.summary_card?.metrics?.[metricKey],
-                            enabled: !preferences.summary_card?.metrics?.[metricKey]?.enabled
-                          }
-                        }
-                      }
-                    };
-                    updateLocalPreferences(newPrefs);
+                  onSavePreferences={async (prefsToSave) => {
+                    // Accept the current preferences from the component to avoid stale closure
+                    const result = await savePreferences(prefsToSave);
+                    return result;
                   }}
+                  onUpdatePreferences={updateLocalPreferences}
                 />
 
                 {/* Tabs */}

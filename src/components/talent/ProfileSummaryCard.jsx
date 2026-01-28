@@ -8,7 +8,21 @@ import {
   MapPin,
   Briefcase,
   X,
-  Check
+  Check,
+  Building2,
+  Mail,
+  Phone,
+  Linkedin,
+  GraduationCap,
+  Award,
+  TrendingUp,
+  DollarSign,
+  Lightbulb,
+  Users,
+  Search,
+  ChevronDown,
+  ChevronRight,
+  Sparkles
 } from "lucide-react";
 import { IntelligenceGauge, IntelligenceLevelBadge, ApproachBadge } from "./IntelligenceGauge";
 
@@ -16,17 +30,34 @@ import { IntelligenceGauge, IntelligenceLevelBadge, ApproachBadge } from "./Inte
  * ProfileSummaryCard - A scannable summary card showing key decision points for recruiters
  *
  * Features:
- * - Customizable metrics via user preferences
- * - Quick settings popover for toggling metrics
- * - Improved visual design with clear sections
- * - Responsive layout
+ * - 35+ customizable metrics organized by category
+ * - Quick settings popover with categorized toggles
+ * - Clean 2-column layout with visual hierarchy
+ * - Proper save functionality (fixes closure bug)
  */
 
-// Mini Toggle Switch for the settings popover
+// Category metadata for display
+const CATEGORY_META = {
+  core: { label: "Intelligence", icon: Sparkles, color: "text-red-400" },
+  timing: { label: "Timing & Signals", icon: Clock, color: "text-amber-400" },
+  professional: { label: "Professional", icon: Briefcase, color: "text-blue-400" },
+  location: { label: "Location", icon: MapPin, color: "text-green-400" },
+  contact: { label: "Contact Status", icon: Mail, color: "text-cyan-400" },
+  skills: { label: "Skills", icon: Award, color: "text-purple-400" },
+  compensation: { label: "Compensation", icon: DollarSign, color: "text-emerald-400" },
+  education: { label: "Education", icon: GraduationCap, color: "text-indigo-400" },
+  insights: { label: "AI Insights", icon: Lightbulb, color: "text-orange-400" },
+  company: { label: "Company Intel", icon: Building2, color: "text-pink-400" }
+};
+
+// Category display order
+const CATEGORY_ORDER = ['core', 'timing', 'skills', 'professional', 'contact', 'location', 'compensation', 'education', 'insights', 'company'];
+
+// Mini Toggle Switch
 const MiniToggle = ({ checked, onChange }) => (
   <button
     onClick={onChange}
-    className={`relative w-8 h-4 rounded-full transition-colors ${
+    className={`relative w-8 h-4 rounded-full transition-colors flex-shrink-0 ${
       checked ? 'bg-red-500' : 'bg-zinc-600'
     }`}
   >
@@ -37,6 +68,61 @@ const MiniToggle = ({ checked, onChange }) => (
     />
   </button>
 );
+
+// Collapsible Category Section
+const CategorySection = ({ category, metrics, onToggle, expanded, onToggleExpand }) => {
+  const meta = CATEGORY_META[category] || { label: category, icon: Settings, color: "text-zinc-400" };
+  const Icon = meta.icon;
+  const enabledCount = metrics.filter(m => m.enabled).length;
+
+  return (
+    <div className="border-b border-zinc-700/30 last:border-b-0">
+      <button
+        onClick={onToggleExpand}
+        className="w-full flex items-center justify-between px-3 py-2 hover:bg-zinc-800/30 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <motion.div
+            animate={{ rotate: expanded ? 90 : 0 }}
+            transition={{ duration: 0.15 }}
+          >
+            <ChevronRight className="w-3 h-3 text-zinc-500" />
+          </motion.div>
+          <Icon className={`w-3.5 h-3.5 ${meta.color}`} />
+          <span className="text-xs font-medium text-zinc-300">{meta.label}</span>
+        </div>
+        <span className="text-[10px] text-zinc-500">{enabledCount}/{metrics.length}</span>
+      </button>
+
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="overflow-hidden"
+          >
+            <div className="px-3 pb-2 space-y-0.5">
+              {metrics.map(metric => (
+                <div
+                  key={metric.key}
+                  className="flex items-center justify-between py-1.5 pl-5 pr-1 hover:bg-zinc-800/20 rounded transition-colors"
+                >
+                  <span className="text-[11px] text-zinc-400">{metric.label}</span>
+                  <MiniToggle
+                    checked={metric.enabled}
+                    onChange={() => onToggle(metric.key)}
+                  />
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
 
 // Settings Popover Component
 const SettingsPopover = ({
@@ -49,7 +135,36 @@ const SettingsPopover = ({
   anchorRef
 }) => {
   const popoverRef = useRef(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [expandedCategories, setExpandedCategories] = useState({ core: true, timing: true });
+
   const metrics = preferences?.summary_card?.metrics || {};
+
+  // Group metrics by category
+  const groupedMetrics = {};
+  Object.entries(metrics).forEach(([key, config]) => {
+    const category = config.category || 'other';
+    if (!groupedMetrics[category]) {
+      groupedMetrics[category] = [];
+    }
+    groupedMetrics[category].push({ key, ...config });
+  });
+
+  // Sort each category
+  Object.keys(groupedMetrics).forEach(cat => {
+    groupedMetrics[cat].sort((a, b) => (a.order || 0) - (b.order || 0));
+  });
+
+  // Filter by search
+  const filteredCategories = searchQuery
+    ? Object.entries(groupedMetrics).reduce((acc, [cat, items]) => {
+        const filtered = items.filter(m =>
+          m.label.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        if (filtered.length > 0) acc[cat] = filtered;
+        return acc;
+      }, {})
+    : groupedMetrics;
 
   // Close on click outside
   useEffect(() => {
@@ -65,10 +180,19 @@ const SettingsPopover = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [open, onClose, anchorRef]);
 
+  // Reset search on close
+  useEffect(() => {
+    if (!open) setSearchQuery("");
+  }, [open]);
+
   if (!open) return null;
 
-  const sortedMetrics = Object.entries(metrics)
-    .sort((a, b) => (a[1].order || 0) - (b[1].order || 0));
+  const toggleExpand = (cat) => {
+    setExpandedCategories(prev => ({ ...prev, [cat]: !prev[cat] }));
+  };
+
+  const enabledTotal = Object.values(metrics).filter(m => m.enabled).length;
+  const totalMetrics = Object.keys(metrics).length;
 
   return (
     <AnimatePresence>
@@ -79,48 +203,63 @@ const SettingsPopover = ({
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -8, scale: 0.95 }}
           transition={{ duration: 0.15 }}
-          className="absolute right-0 top-8 z-50 w-64 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl overflow-hidden"
+          className="absolute right-0 top-10 z-50 w-72 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl overflow-hidden"
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-700/50 bg-zinc-800/50">
-            <span className="text-xs font-medium text-zinc-300">Customize Summary</span>
+          <div className="flex items-center justify-between px-3 py-2.5 border-b border-zinc-700/50 bg-zinc-800/50">
+            <div>
+              <span className="text-sm font-medium text-white">Customize Summary</span>
+              <span className="text-[10px] text-zinc-500 ml-2">{enabledTotal}/{totalMetrics} shown</span>
+            </div>
             <button
               onClick={onClose}
               className="p-1 hover:bg-zinc-700 rounded transition-colors"
             >
-              <X className="w-3.5 h-3.5 text-zinc-400" />
+              <X className="w-4 h-4 text-zinc-400" />
             </button>
           </div>
 
-          {/* Metrics List */}
-          <div className="p-2 max-h-64 overflow-y-auto">
-            {sortedMetrics.map(([key, config]) => (
-              <div
-                key={key}
-                className="flex items-center justify-between py-1.5 px-2 hover:bg-zinc-800/50 rounded-lg transition-colors"
-              >
-                <span className="text-xs text-zinc-300">{config.label}</span>
-                <MiniToggle
-                  checked={config.enabled}
-                  onChange={() => onToggleMetric(key)}
-                />
-              </div>
+          {/* Search */}
+          <div className="px-3 py-2 border-b border-zinc-700/30">
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" />
+              <input
+                type="text"
+                placeholder="Search metrics..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-7 pr-3 py-1.5 bg-zinc-800 border border-zinc-700/50 rounded-lg text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-red-500/50"
+              />
+            </div>
+          </div>
+
+          {/* Categories */}
+          <div className="max-h-72 overflow-y-auto">
+            {CATEGORY_ORDER.filter(cat => filteredCategories[cat]).map(category => (
+              <CategorySection
+                key={category}
+                category={category}
+                metrics={filteredCategories[category]}
+                onToggle={onToggleMetric}
+                expanded={searchQuery ? true : expandedCategories[category]}
+                onToggleExpand={() => toggleExpand(category)}
+              />
             ))}
           </div>
 
           {/* Footer */}
-          <div className="px-3 py-2 border-t border-zinc-700/50 bg-zinc-800/30">
+          <div className="px-3 py-2.5 border-t border-zinc-700/50 bg-zinc-800/30">
             <button
               onClick={onSave}
               disabled={saving}
-              className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors"
+              className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors"
             >
               {saving ? (
                 <span className="animate-pulse">Saving...</span>
               ) : (
                 <>
-                  <Check className="w-3 h-3" />
-                  Save
+                  <Check className="w-3.5 h-3.5" />
+                  Save Preferences
                 </>
               )}
             </button>
@@ -131,43 +270,98 @@ const SettingsPopover = ({
   );
 };
 
+// Metric Display Components
+const MetricBadge = ({ children, color = "red", className = "" }) => (
+  <span className={`px-2 py-0.5 text-[10px] font-medium bg-${color}-500/10 text-${color}-400 rounded-full border border-${color}-500/20 ${className}`}>
+    {children}
+  </span>
+);
+
+const MetricRow = ({ icon: Icon, label, value, color = "zinc" }) => {
+  if (!value && value !== 0) return null;
+  return (
+    <div className="flex items-center gap-2 text-[11px]">
+      <Icon className={`w-3 h-3 text-${color}-400 flex-shrink-0`} />
+      <span className="text-zinc-500">{label}:</span>
+      <span className="text-zinc-300 truncate">{value}</span>
+    </div>
+  );
+};
+
 const ProfileSummaryCard = ({
   candidate,
   preferences,
-  onSavePreferences,
   saving = false,
-  onToggleMetric
+  onSavePreferences,
+  onUpdatePreferences
 }) => {
   const [showSettings, setShowSettings] = useState(false);
+  const [localPrefs, setLocalPrefs] = useState(preferences);
   const settingsButtonRef = useRef(null);
+
+  // Sync local prefs with parent preferences
+  useEffect(() => {
+    setLocalPrefs(preferences);
+  }, [preferences]);
 
   if (!candidate) return null;
 
   // Check if summary card is enabled
-  const summaryCardEnabled = preferences?.summary_card?.enabled ?? true;
+  const summaryCardEnabled = localPrefs?.summary_card?.enabled ?? true;
   if (!summaryCardEnabled) return null;
 
-  // Get metric enabled state
+  // Get metric enabled state from LOCAL prefs (not stale parent)
   const isMetricEnabled = (metric) => {
-    return preferences?.summary_card?.metrics?.[metric]?.enabled ?? true;
+    return localPrefs?.summary_card?.metrics?.[metric]?.enabled ?? false;
   };
 
-  // Get the highest urgency timing signal
+  // Handle toggle - update local state immediately
+  const handleToggleMetric = (metricKey) => {
+    const newPrefs = {
+      ...localPrefs,
+      summary_card: {
+        ...localPrefs.summary_card,
+        metrics: {
+          ...localPrefs.summary_card?.metrics,
+          [metricKey]: {
+            ...localPrefs.summary_card?.metrics?.[metricKey],
+            enabled: !localPrefs.summary_card?.metrics?.[metricKey]?.enabled
+          }
+        }
+      }
+    };
+    setLocalPrefs(newPrefs);
+    if (onUpdatePreferences) {
+      onUpdatePreferences(newPrefs);
+    }
+  };
+
+  // Handle save - pass CURRENT local prefs (not stale closure)
+  const handleSave = async () => {
+    if (onSavePreferences) {
+      const success = await onSavePreferences(localPrefs);
+      if (success) {
+        setShowSettings(false);
+      }
+      return success;
+    }
+    setShowSettings(false);
+    return true;
+  };
+
+  // Helper functions for data extraction
   const getKeyTimingSignal = () => {
     const signals = candidate.timing_signals || [];
     if (!signals.length) return null;
-
     const urgencyOrder = { high: 3, medium: 2, low: 1 };
     const sorted = [...signals].sort((a, b) => {
       const aUrgency = urgencyOrder[a.urgency?.toLowerCase()] || 0;
       const bUrgency = urgencyOrder[b.urgency?.toLowerCase()] || 0;
       return bUrgency - aUrgency;
     });
-
     return sorted[0];
   };
 
-  // Get top 3 skills
   const getTopSkills = () => {
     const skills = candidate.skills || [];
     return skills.slice(0, 3).map(skill => {
@@ -178,8 +372,7 @@ const ProfileSummaryCard = ({
     });
   };
 
-  // Truncate text intelligently (at word boundary)
-  const truncateText = (text, maxLength = 80) => {
+  const truncateText = (text, maxLength = 100) => {
     if (!text) return null;
     if (text.length <= maxLength) return text;
     const truncated = text.substring(0, maxLength);
@@ -187,162 +380,196 @@ const ProfileSummaryCard = ({
     return (lastSpace > maxLength * 0.6 ? truncated.substring(0, lastSpace) : truncated) + "...";
   };
 
-  // Determine flight risk level based on intelligence_level
   const getFlightRiskIndicator = () => {
     const level = candidate.intelligence_level?.toLowerCase();
     if (level === "critical" || level === "high") {
-      return { show: true, color: "text-red-400", bgColor: "bg-red-500/10", borderColor: "border-red-500/20", label: "High Flight Risk" };
+      return { show: true, color: "red", label: "High Flight Risk" };
     }
     if (level === "medium") {
-      return { show: true, color: "text-yellow-400", bgColor: "bg-yellow-500/10", borderColor: "border-yellow-500/20", label: "Moderate Risk" };
+      return { show: true, color: "yellow", label: "Moderate Risk" };
     }
     return { show: false };
   };
 
+  // Extract all candidate data
   const keySignal = getKeyTimingSignal();
   const topSkills = getTopSkills();
   const outreachAngle = candidate.best_outreach_angle;
-  const truncatedAngle = truncateText(outreachAngle, 80);
   const flightRisk = getFlightRiskIndicator();
 
-  // Urgency colors for timing signal
   const urgencyConfig = {
-    high: { bg: "bg-red-500/20", text: "text-red-400", border: "border-red-500/30", dot: "bg-red-400" },
-    medium: { bg: "bg-yellow-500/20", text: "text-yellow-400", border: "border-yellow-500/30", dot: "bg-yellow-400" },
-    low: { bg: "bg-zinc-500/20", text: "text-zinc-400", border: "border-zinc-500/30", dot: "bg-zinc-400" },
+    high: { bg: "bg-red-500/15", text: "text-red-400", dot: "bg-red-400" },
+    medium: { bg: "bg-yellow-500/15", text: "text-yellow-400", dot: "bg-yellow-400" },
+    low: { bg: "bg-zinc-500/15", text: "text-zinc-400", dot: "bg-zinc-400" },
   };
-
   const signalUrgency = keySignal?.urgency?.toLowerCase() || "medium";
   const signalConfig = urgencyConfig[signalUrgency] || urgencyConfig.medium;
 
-  // Check what data is available
-  const hasIntelligence = candidate.intelligence_score != null && isMetricEnabled('intelligence_score');
-  const hasLevel = candidate.intelligence_level && isMetricEnabled('intelligence_level');
-  const hasApproach = candidate.recommended_approach && isMetricEnabled('recommended_approach');
-  const hasSignals = keySignal != null && isMetricEnabled('timing_signal');
-  const hasAngle = outreachAngle != null && isMetricEnabled('outreach_angle');
-  const hasSkills = topSkills.length > 0 && isMetricEnabled('top_skills');
+  // Check what data is available AND enabled
+  const showIntelScore = candidate.intelligence_score != null && isMetricEnabled('intelligence_score');
+  const showLevel = candidate.intelligence_level && isMetricEnabled('intelligence_level');
+  const showApproach = candidate.recommended_approach && isMetricEnabled('recommended_approach');
+  const showSignal = keySignal != null && isMetricEnabled('timing_signal');
+  const showAngle = outreachAngle != null && isMetricEnabled('outreach_angle');
+  const showSkills = topSkills.length > 0 && isMetricEnabled('top_skills');
   const showFlightRisk = flightRisk.show && isMetricEnabled('flight_risk');
-  const hasYearsExp = candidate.years_of_experience && isMetricEnabled('years_experience');
-  const hasLocation = candidate.location && isMetricEnabled('location');
 
-  // Don't render if no meaningful data
-  const hasAnyContent = hasIntelligence || hasLevel || hasApproach || hasSignals || hasAngle || hasSkills || showFlightRisk || hasYearsExp || hasLocation;
+  // Professional metrics
+  const showTitle = candidate.current_title && isMetricEnabled('current_title');
+  const showCompany = (candidate.current_company || candidate.company_name) && isMetricEnabled('company_name');
+  const showTenure = candidate.years_at_company && isMetricEnabled('years_at_company');
+  const showPromos = candidate.times_promoted != null && isMetricEnabled('times_promoted');
+  const showHops = candidate.times_company_hopped != null && isMetricEnabled('times_company_hopped');
+  const showYearsExp = candidate.years_of_experience && isMetricEnabled('years_experience');
+
+  // Location metrics
+  const showLocation = candidate.location && isMetricEnabled('location');
+  const showCity = candidate.location_city && isMetricEnabled('location_city');
+  const showRegion = candidate.location_region && isMetricEnabled('location_region');
+  const showCountry = candidate.location_country && isMetricEnabled('location_country');
+
+  // Contact metrics
+  const showHasEmail = isMetricEnabled('has_email');
+  const showHasPhone = isMetricEnabled('has_phone');
+  const showHasLinkedin = isMetricEnabled('has_linkedin');
+  const showEnrichment = candidate.enriched_at && isMetricEnabled('enrichment_status');
+
+  // Skills metrics
+  const showSkillsCount = candidate.skills?.length && isMetricEnabled('skills_count');
+  const showInferredCount = candidate.inferred_skills?.length && isMetricEnabled('inferred_skills_count');
+  const showCertsCount = candidate.certifications?.length && isMetricEnabled('certifications_count');
+
+  // Compensation
+  const showSalary = candidate.salary_range && isMetricEnabled('salary_range');
+
+  // Education
+  const showEduLevel = candidate.education_level && isMetricEnabled('education_level');
+  const showEduCount = candidate.education?.length && isMetricEnabled('education_count');
+
+  // Insights
+  const showInsightsCount = candidate.key_insights?.length && isMetricEnabled('key_insights_count');
+  const showHooksCount = candidate.outreach_hooks?.length && isMetricEnabled('outreach_hooks_count');
+  const showLateralCount = candidate.lateral_opportunities?.length && isMetricEnabled('lateral_opportunities_count');
+  const showCorrelationsCount = candidate.company_correlations?.length && isMetricEnabled('company_correlations_count');
+
+  // Company intel
+  const showCompanyIntel = candidate.company_intelligence && isMetricEnabled('company_intel_available');
+  const showSatisfaction = candidate.job_satisfaction && isMetricEnabled('job_satisfaction');
+  const showUrgency = candidate.recruitment_urgency && isMetricEnabled('recruitment_urgency');
+
+  // Check if we have any content to show
+  const hasLeftColumn = showIntelScore || showLevel || showApproach || showFlightRisk;
+  const hasCenterColumn = showSignal || showAngle;
+  const hasRightColumn = showSkills || showTitle || showCompany || showLocation || showTenure ||
+    showPromos || showHops || showYearsExp || showHasEmail || showHasPhone || showHasLinkedin ||
+    showSkillsCount || showSalary || showInsightsCount || showCompanyIntel;
+
+  const hasAnyContent = hasLeftColumn || hasCenterColumn || hasRightColumn;
   if (!hasAnyContent) return null;
-
-  // Handle local toggle for settings popover
-  const handleToggleMetric = (metricKey) => {
-    if (onToggleMetric) {
-      onToggleMetric(metricKey);
-    }
-  };
-
-  const handleSave = async () => {
-    if (onSavePreferences) {
-      await onSavePreferences();
-    }
-    setShowSettings(false);
-  };
 
   return (
     <div className="mx-6 mb-4">
-      <div className="relative p-4 bg-gradient-to-r from-zinc-800/60 to-zinc-800/40 border border-zinc-700/50 rounded-xl backdrop-blur-sm">
+      <div className="relative p-4 bg-gradient-to-br from-zinc-800/70 via-zinc-800/50 to-zinc-900/60 border border-zinc-700/40 rounded-xl">
         {/* Settings Button */}
         <button
           ref={settingsButtonRef}
           onClick={() => setShowSettings(!showSettings)}
-          className="absolute top-3 right-3 p-1.5 hover:bg-zinc-700/50 rounded-lg transition-colors group"
+          className="absolute top-2.5 right-2.5 p-1.5 hover:bg-zinc-700/50 rounded-lg transition-colors group z-10"
           title="Customize summary card"
         >
-          <Settings className="w-4 h-4 text-zinc-500 group-hover:text-zinc-300 transition-colors" />
+          <Settings className={`w-4 h-4 transition-colors ${showSettings ? 'text-red-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
         </button>
 
         {/* Settings Popover */}
         <SettingsPopover
           open={showSettings}
           onClose={() => setShowSettings(false)}
-          preferences={preferences}
+          preferences={localPrefs}
           onToggleMetric={handleToggleMetric}
           onSave={handleSave}
           saving={saving}
           anchorRef={settingsButtonRef}
         />
 
-        <div className="flex items-stretch gap-5 flex-wrap lg:flex-nowrap">
-          {/* Left Section: Intelligence Score + Badges */}
-          {(hasIntelligence || hasLevel || hasApproach) && (
-            <div className="flex items-center gap-4 flex-shrink-0">
-              {/* Intelligence Gauge */}
-              {hasIntelligence && (
+        {/* Main Content - 2 Column Layout */}
+        <div className="flex gap-5">
+          {/* LEFT COLUMN: Intelligence Core */}
+          {hasLeftColumn && (
+            <div className="flex items-center gap-3 flex-shrink-0">
+              {/* Gauge */}
+              {showIntelScore && (
                 <div className="flex flex-col items-center">
                   <IntelligenceGauge
                     score={candidate.intelligence_score || 0}
                     size="xs"
                     animated={false}
                   />
-                  <span className="text-[9px] text-zinc-500 mt-1 uppercase tracking-wider">Score</span>
                 </div>
               )}
 
-              {/* Badges Stack */}
-              {(hasLevel || hasApproach) && (
-                <div className="flex flex-col gap-1.5">
-                  {hasLevel && (
-                    <IntelligenceLevelBadge level={candidate.intelligence_level} size="xs" />
-                  )}
-                  {hasApproach && (
-                    <ApproachBadge approach={candidate.recommended_approach} size="xs" />
-                  )}
-                </div>
-              )}
+              {/* Badges */}
+              <div className="flex flex-col gap-1.5">
+                {showLevel && (
+                  <IntelligenceLevelBadge level={candidate.intelligence_level} size="xs" />
+                )}
+                {showApproach && (
+                  <ApproachBadge approach={candidate.recommended_approach} size="xs" />
+                )}
+                {showFlightRisk && (
+                  <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full bg-${flightRisk.color}-500/10 border border-${flightRisk.color}-500/20`}>
+                    <AlertTriangle className={`w-3 h-3 text-${flightRisk.color}-400`} />
+                    <span className={`text-[9px] font-medium text-${flightRisk.color}-400`}>
+                      {flightRisk.label}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
           {/* Divider */}
-          {(hasIntelligence || hasLevel || hasApproach) && (hasSignals || hasAngle) && (
-            <div className="hidden lg:flex items-center">
-              <div className="w-px h-14 bg-gradient-to-b from-transparent via-zinc-600/50 to-transparent" />
-            </div>
+          {hasLeftColumn && (hasCenterColumn || hasRightColumn) && (
+            <div className="w-px bg-gradient-to-b from-transparent via-zinc-600/40 to-transparent self-stretch" />
           )}
 
-          {/* Center Section: Key Signal + Outreach Angle */}
-          {(hasSignals || hasAngle) && (
-            <div className="flex-1 min-w-0 space-y-3 py-1">
-              {/* Key Timing Signal */}
-              {hasSignals && (
-                <div className="flex items-start gap-2.5">
+          {/* CENTER COLUMN: Timing & Outreach */}
+          {hasCenterColumn && (
+            <div className="flex-1 min-w-0 space-y-2.5 py-0.5">
+              {/* Timing Signal */}
+              {showSignal && (
+                <div className="flex items-start gap-2">
                   <div className={`p-1.5 rounded-lg ${signalConfig.bg} flex-shrink-0`}>
                     <Clock className={`w-3.5 h-3.5 ${signalConfig.text}`} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded ${signalConfig.bg} ${signalConfig.text}`}>
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <span className={`inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded ${signalConfig.bg} ${signalConfig.text}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${signalConfig.dot} animate-pulse`} />
                         {signalUrgency.toUpperCase()}
                       </span>
                     </div>
-                    <p className="text-xs text-zinc-300 leading-relaxed line-clamp-2">
+                    <p className="text-[11px] text-zinc-300 leading-relaxed line-clamp-2">
                       {keySignal.trigger}
                     </p>
                   </div>
                 </div>
               )}
 
-              {/* Best Outreach Angle */}
-              {hasAngle && (
-                <div className="flex items-start gap-2.5">
+              {/* Outreach Angle */}
+              {showAngle && (
+                <div className="flex items-start gap-2">
                   <div className="p-1.5 rounded-lg bg-cyan-500/10 flex-shrink-0">
                     <Target className="w-3.5 h-3.5 text-cyan-400" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] text-cyan-400/70 uppercase tracking-wider font-medium mb-0.5">
+                    <p className="text-[9px] text-cyan-400/70 uppercase tracking-wider font-medium mb-0.5">
                       Outreach Angle
                     </p>
                     <p
-                      className="text-xs text-zinc-300 leading-relaxed"
-                      title={outreachAngle !== truncatedAngle ? outreachAngle : undefined}
+                      className="text-[11px] text-zinc-300 leading-relaxed line-clamp-2"
+                      title={outreachAngle}
                     >
-                      {truncatedAngle}
+                      {truncateText(outreachAngle, 120)}
                     </p>
                   </div>
                 </div>
@@ -351,60 +578,93 @@ const ProfileSummaryCard = ({
           )}
 
           {/* Divider */}
-          {(hasSignals || hasAngle) && (hasSkills || showFlightRisk || hasYearsExp || hasLocation) && (
-            <div className="hidden lg:flex items-center">
-              <div className="w-px h-14 bg-gradient-to-b from-transparent via-zinc-600/50 to-transparent" />
-            </div>
+          {hasCenterColumn && hasRightColumn && (
+            <div className="w-px bg-gradient-to-b from-transparent via-zinc-600/40 to-transparent self-stretch" />
           )}
 
-          {/* Right Section: Skills + Flight Risk + Extra Metrics */}
-          {(hasSkills || showFlightRisk || hasYearsExp || hasLocation) && (
-            <div className="flex flex-col justify-center gap-2.5 flex-shrink-0 min-w-[140px]">
-              {/* Top Skills */}
-              {hasSkills && (
+          {/* RIGHT COLUMN: Quick Facts */}
+          {hasRightColumn && (
+            <div className="flex flex-col gap-2 flex-shrink-0 min-w-[140px] max-w-[180px]">
+              {/* Skills */}
+              {showSkills && (
                 <div>
-                  <p className="text-[9px] text-zinc-500 uppercase tracking-wider mb-1.5">Top Skills</p>
+                  <p className="text-[9px] text-zinc-500 uppercase tracking-wider mb-1">Skills</p>
                   <div className="flex flex-wrap gap-1">
-                    {topSkills.map((skill, index) => (
+                    {topSkills.map((skill, idx) => (
                       <span
-                        key={index}
-                        className="px-2 py-0.5 text-[10px] font-medium bg-red-500/10 text-red-400 rounded-full border border-red-500/20 whitespace-nowrap"
+                        key={idx}
+                        className="px-1.5 py-0.5 text-[9px] font-medium bg-red-500/10 text-red-400 rounded border border-red-500/20"
                         title={skill}
                       >
-                        {skill.length > 12 ? skill.substring(0, 12) + "..." : skill}
+                        {skill.length > 10 ? skill.substring(0, 10) + "..." : skill}
                       </span>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Extra Metrics Row */}
-              {(hasYearsExp || hasLocation) && (
-                <div className="flex items-center gap-3 text-[10px]">
-                  {hasYearsExp && (
-                    <div className="flex items-center gap-1 text-zinc-400">
-                      <Briefcase className="w-3 h-3" />
-                      <span>{candidate.years_of_experience}y exp</span>
-                    </div>
+              {/* Professional Info */}
+              {(showTitle || showCompany || showTenure || showYearsExp) && (
+                <div className="space-y-0.5">
+                  {showTitle && (
+                    <MetricRow icon={Briefcase} label="Role" value={candidate.current_title} color="blue" />
                   )}
-                  {hasLocation && (
-                    <div className="flex items-center gap-1 text-zinc-400">
-                      <MapPin className="w-3 h-3" />
-                      <span className="truncate max-w-[80px]" title={candidate.location}>
-                        {candidate.location}
-                      </span>
-                    </div>
+                  {showCompany && (
+                    <MetricRow icon={Building2} label="Co" value={candidate.current_company || candidate.company_name} color="blue" />
+                  )}
+                  {showTenure && (
+                    <MetricRow icon={TrendingUp} label="Tenure" value={`${candidate.years_at_company}y`} color="green" />
+                  )}
+                  {showYearsExp && (
+                    <MetricRow icon={Briefcase} label="Exp" value={`${candidate.years_of_experience}y`} color="purple" />
                   )}
                 </div>
               )}
 
-              {/* Flight Risk Indicator */}
-              {showFlightRisk && (
-                <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg ${flightRisk.bgColor} border ${flightRisk.borderColor}`}>
-                  <AlertTriangle className={`w-3.5 h-3.5 ${flightRisk.color}`} />
-                  <span className={`text-[10px] font-medium ${flightRisk.color}`}>
-                    {flightRisk.label}
-                  </span>
+              {/* Location */}
+              {(showLocation || showCity) && (
+                <MetricRow
+                  icon={MapPin}
+                  label="Loc"
+                  value={candidate.location || candidate.location_city}
+                  color="green"
+                />
+              )}
+
+              {/* Contact Status */}
+              {(showHasEmail || showHasPhone || showHasLinkedin) && (
+                <div className="flex items-center gap-2">
+                  {showHasEmail && candidate.email && (
+                    <Mail className="w-3 h-3 text-cyan-400" title="Has email" />
+                  )}
+                  {showHasPhone && (candidate.phone || candidate.mobile_phone) && (
+                    <Phone className="w-3 h-3 text-green-400" title="Has phone" />
+                  )}
+                  {showHasLinkedin && candidate.linkedin_url && (
+                    <Linkedin className="w-3 h-3 text-blue-400" title="Has LinkedIn" />
+                  )}
+                  {showEnrichment && (
+                    <span className="text-[9px] text-emerald-400">Enriched</span>
+                  )}
+                </div>
+              )}
+
+              {/* Salary */}
+              {showSalary && (
+                <MetricRow
+                  icon={DollarSign}
+                  label="Salary"
+                  value={typeof candidate.salary_range === 'number' ? `$${candidate.salary_range.toLocaleString()}` : candidate.salary_range}
+                  color="emerald"
+                />
+              )}
+
+              {/* Counts */}
+              {(showSkillsCount || showCertsCount || showInsightsCount) && (
+                <div className="flex items-center gap-2 flex-wrap text-[9px] text-zinc-500">
+                  {showSkillsCount && <span>{candidate.skills.length} skills</span>}
+                  {showCertsCount && <span>{candidate.certifications.length} certs</span>}
+                  {showInsightsCount && <span>{candidate.key_insights.length} insights</span>}
                 </div>
               )}
             </div>
