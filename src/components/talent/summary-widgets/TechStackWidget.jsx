@@ -75,35 +75,12 @@ const getRelevantCategories = (roleText) => {
   return [...new Set(matchedCategories)];
 };
 
-// Safely extract a string value from potentially nested structures
-const safeString = (value) => {
-  if (!value) return '';
-  if (typeof value === 'string') return value;
-  if (typeof value === 'object') {
-    // Handle nested patterns like { en: "Name" } or { value: "Name" }
-    const extracted = value.en || value.value || value.name || value.text || value.label;
-    return typeof extracted === 'string' ? extracted : String(value);
-  }
-  return String(value);
-};
-
-// Extract tech name from various formats - handles nested objects safely
+// Extract tech name from various formats
 const getTechName = (tech) => {
   if (!tech) return null;
   if (typeof tech === 'string') return tech;
   if (typeof tech === 'object') {
-    // Extract the name field
-    const rawName = tech.name || tech.title || tech.technology || tech.label;
-
-    // If rawName is still an object (nested structure), extract string from it
-    if (rawName && typeof rawName === 'object') {
-      // Handle common nested patterns like { en: "Name" } or { value: "Name" }
-      const nestedValue = rawName.en || rawName.value || rawName.name || rawName.text;
-      return typeof nestedValue === 'string' ? nestedValue : null;
-    }
-
-    // Ensure we return a string or null
-    return typeof rawName === 'string' ? rawName : null;
+    return tech.name || tech.title || tech.technology || tech.label || null;
   }
   return String(tech);
 };
@@ -136,9 +113,7 @@ const TechStackWidget = ({ candidate, editMode, onRemove, dragHandleProps }) => 
     // Handle array of category objects: [{category: "X", technologies: [...]}]
     if (Array.isArray(techStackData)) {
       techStackData.forEach(categoryObj => {
-        // Safely extract category name as string
-        const categoryNameRaw = safeString(categoryObj?.category);
-        const categoryName = categoryNameRaw.toUpperCase();
+        const categoryName = (categoryObj?.category || '').toUpperCase();
         const techs = categoryObj?.technologies || categoryObj?.techs || [];
 
         if (!Array.isArray(techs) || techs.length === 0) return;
@@ -153,12 +128,12 @@ const TechStackWidget = ({ candidate, editMode, onRemove, dragHandleProps }) => 
 
         if (isRelevant && techItems.length > 0) {
           relevant.push({
-            category: categoryNameRaw, // Use the safe string version
+            category: categoryObj.category,
             technologies: techItems
           });
         } else if (techItems.length > 0) {
           other.push({
-            category: categoryNameRaw, // Use the safe string version
+            category: categoryObj.category,
             technologies: techItems
           });
         }
@@ -266,13 +241,12 @@ const TechStackWidget = ({ candidate, editMode, onRemove, dragHandleProps }) => 
         {!hasRelevantTech && hasData && (
           <div className="space-y-3">
             {techStackData.slice(0, expanded ? undefined : 3).map((cat, catIndex) => {
-              const categoryName = safeString(cat?.category);
               const techs = (cat?.technologies || cat?.techs || []).map(t => getTechName(t)).filter(Boolean);
               if (techs.length === 0) return null;
               return (
                 <div key={catIndex} className="space-y-1.5">
                   <p className="text-[10px] text-zinc-500 uppercase tracking-wider">
-                    {categoryName}
+                    {cat.category}
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {techs.slice(0, 8).map((tech, i) => (
