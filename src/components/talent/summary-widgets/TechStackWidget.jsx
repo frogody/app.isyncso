@@ -2,20 +2,46 @@ import React, { useState } from "react";
 import { Cpu, ChevronDown, ChevronUp } from "lucide-react";
 import WidgetWrapper from "./WidgetWrapper";
 
+// Extract tech name from various data formats
+const getTechName = (tech) => {
+  if (!tech) return null;
+  if (typeof tech === 'string') return tech;
+  if (typeof tech === 'object') {
+    return tech.name || tech.title || tech.technology || tech.label || null;
+  }
+  return String(tech);
+};
+
+// Flatten and extract tech items from nested structures
+const flattenTechStack = (data) => {
+  if (!data) return [];
+  if (Array.isArray(data)) {
+    return data.flatMap(item => flattenTechStack(item));
+  }
+  if (typeof data === 'object') {
+    // If it has a name/title property, treat it as a single tech item
+    if (data.name || data.title || data.technology || data.label) {
+      return [data];
+    }
+    // Otherwise flatten all values (handles {frontend: [...], backend: [...]})
+    return Object.values(data).flatMap(v => flattenTechStack(v));
+  }
+  // Primitive value (string, number)
+  return [data];
+};
+
 const TechStackWidget = ({ candidate, editMode, onRemove, dragHandleProps }) => {
   const [expanded, setExpanded] = useState(false);
-  
+
   const companyIntel = candidate?.company_intelligence || {};
-  
+
   // Get tech stack from various possible sources
   const rawTechStack = companyIntel.tech_stack ||
                        companyIntel.technologies ||
                        companyIntel.technology_stack;
 
-  // Safely convert to array regardless of input type
-  const techArray = Array.isArray(rawTechStack) ? rawTechStack :
-                    (rawTechStack && typeof rawTechStack === 'object') ?
-                      Object.values(rawTechStack).flat().filter(Boolean) : [];
+  // Flatten and filter out null/undefined values
+  const techArray = flattenTechStack(rawTechStack).filter(Boolean);
   
   // Take relevant subset for the role (first 12, or all if expanded)
   const displayTech = expanded ? techArray : techArray.slice(0, 12);
@@ -39,7 +65,8 @@ const TechStackWidget = ({ candidate, editMode, onRemove, dragHandleProps }) => 
       <div className="space-y-3">
         <div className="flex flex-wrap gap-2">
           {displayTech.map((tech, i) => {
-            const techName = typeof tech === 'string' ? tech : tech.name || tech.technology;
+            const techName = getTechName(tech);
+            if (!techName) return null;
             return (
               <span
                 key={i}
