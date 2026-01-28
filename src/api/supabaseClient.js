@@ -142,6 +142,9 @@ const tableNameMap = {
   'Candidate': 'candidates',
   'OutreachTask': 'outreach_tasks',
   'Campaign': 'campaigns',
+
+  // === Tasks ===
+  'Task': 'tasks',
 };
 
 /**
@@ -455,6 +458,9 @@ export const entities = {
   // === CREATE (Content Creation) ===
   BrandAssets: createEntityWrapper('BrandAssets'),
   GeneratedContent: createEntityWrapper('GeneratedContent'),
+
+  // === Tasks ===
+  Task: createEntityWrapper('Task'),
 };
 
 /**

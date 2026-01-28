@@ -595,24 +595,24 @@ export default function ShareView() {
         extractedId = shareId;
       }
 
-      // Fetch all data and find matching items
-      const [projectActions, taskActions] = await Promise.all([
-        db.entities.ActionLog.filter({ action_type: "project" }).catch(() => []),
-        db.entities.ActionLog.filter({ action_type: "task" }).catch(() => []),
+      // Fetch all projects and tasks from the correct tables
+      const [allProjectsData, allTasksData] = await Promise.all([
+        db.entities.Project.list().catch(() => []),
+        db.entities.Task.list().catch(() => []),
       ]);
 
-      const allProjects = projectActions.map(p => ({
+      const allProjects = allProjectsData.map(p => ({
         id: p.id,
-        name: p.title || p.action_description || "Untitled Project",
-        description: p.description || p.notes,
+        name: p.title || "Untitled Project",
+        description: p.description,
         status: mapStatus(p.status),
         priority: p.priority || "medium",
-        category: p.category || "development",
+        category: p.project_type || "retained_search",
         start_date: p.start_date,
-        due_date: p.due_date,
+        due_date: p.deadline,  // DB uses 'deadline', frontend uses 'due_date'
         budget: p.budget,
         spent: p.spent || 0,
-        client_name: p.client_name,
+        client_name: p.client_company || p.client_contact_name,  // DB uses client_company
         team_members: p.team_members || [],
         tags: p.tags || [],
         milestones: p.milestones || [],
@@ -634,11 +634,11 @@ export default function ShareView() {
         progress: 0,
       }));
 
-      const allTasks = taskActions.map(t => ({
+      const allTasks = allTasksData.map(t => ({
         id: t.id,
-        title: t.title || t.action_description,
+        title: t.title,
         description: t.description,
-        status: t.status === "success" ? "completed" : t.status === "pending" ? "todo" : t.status,
+        status: t.status === "completed" ? "completed" : t.status === "in_progress" ? "in_progress" : "todo",
         priority: t.priority || "medium",
         due_date: t.due_date,
         project_id: t.project_id,
@@ -733,12 +733,22 @@ export default function ShareView() {
     }
   };
 
+  // Map DB status to frontend display status
+  // DB allows: discovery, active, on_hold, filled, cancelled, closed
   const mapStatus = (dbStatus) => {
-    if (dbStatus === "success" || dbStatus === "completed") return "completed";
-    if (dbStatus === "cancelled") return "archived";
-    if (dbStatus === "in_progress") return "active";
-    if (dbStatus === "on_hold") return "on_hold";
-    return "planning";
+    const statusMap = {
+      'discovery': 'planning',
+      'active': 'active',
+      'on_hold': 'on_hold',
+      'filled': 'completed',
+      'cancelled': 'archived',
+      'closed': 'completed',
+      // Legacy mappings for compatibility
+      'success': 'completed',
+      'completed': 'completed',
+      'in_progress': 'active',
+    };
+    return statusMap[dbStatus] || 'planning';
   };
 
   const handlePasswordUnlock = (enteredPassword, callback) => {
