@@ -1568,6 +1568,137 @@ if (company.inference || company.observation || company.outreach_angle) {
 
 ---
 
+## LinkedIn Skills & Career Data (Jan 28, 2026)
+
+### Overview
+
+Replicates the CRM Contact Profile's "Skills & Career" tab functionality for Talent Candidates. Displays rich LinkedIn data including Skills, Work History, Education, Certifications, and Interests in both the drawer panel and full profile page.
+
+### Database Migration
+
+Added new columns to `candidates` table (`20260128100000_candidate_linkedin_career_data.sql`):
+
+```sql
+-- LinkedIn Career Data columns
+ALTER TABLE public.candidates ADD COLUMN IF NOT EXISTS work_history JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.candidates ADD COLUMN IF NOT EXISTS education JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.candidates ADD COLUMN IF NOT EXISTS certifications JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.candidates ADD COLUMN IF NOT EXISTS location_city TEXT;
+ALTER TABLE public.candidates ADD COLUMN IF NOT EXISTS location_region TEXT;
+ALTER TABLE public.candidates ADD COLUMN IF NOT EXISTS location_country TEXT;
+ALTER TABLE public.candidates ADD COLUMN IF NOT EXISTS mobile_phone TEXT;
+ALTER TABLE public.candidates ADD COLUMN IF NOT EXISTS work_phone TEXT;
+ALTER TABLE public.candidates ADD COLUMN IF NOT EXISTS email_status TEXT;
+ALTER TABLE public.candidates ADD COLUMN IF NOT EXISTS age_group TEXT;
+ALTER TABLE public.candidates ADD COLUMN IF NOT EXISTS gender TEXT;
+
+-- GIN indexes for JSONB searches
+CREATE INDEX IF NOT EXISTS idx_candidates_work_history ON public.candidates USING gin(work_history);
+CREATE INDEX IF NOT EXISTS idx_candidates_education ON public.candidates USING gin(education);
+CREATE INDEX IF NOT EXISTS idx_candidates_certifications ON public.candidates USING gin(certifications);
+CREATE INDEX IF NOT EXISTS idx_candidates_interests ON public.candidates USING gin(interests);
+```
+
+### Panel Customization Config
+
+Updated `DEFAULT_PANEL_CONFIG` in `usePanelPreferences.js`:
+
+```javascript
+profile: {
+  sections: {
+    analysis_cards: { enabled: true, order: 0, label: "Analysis Cards" },
+    contact_info: { enabled: true, order: 1, label: "Contact Information" },
+    professional_summary: { enabled: true, order: 2, label: "Professional Summary" },
+    skills: { enabled: true, order: 3, label: "Skills" },
+    work_history: { enabled: true, order: 4, label: "Work History" },
+    education: { enabled: true, order: 5, label: "Education" },
+    certifications: { enabled: true, order: 6, label: "Certifications" },
+    interests: { enabled: true, order: 7, label: "Interests" },
+    experience: { enabled: true, order: 8, label: "Experience (Legacy)" },
+    additional_info: { enabled: true, order: 9, label: "Additional Information" }
+  }
+}
+```
+
+### Enrichment Function Updates
+
+Both `CandidateDetailDrawer.jsx` and `TalentCandidateProfile.jsx` `enrichContact()` functions now save ALL LinkedIn data:
+
+```javascript
+const updateData = {
+  // Contact info
+  verified_email, verified_phone, verified_mobile, personal_email,
+  mobile_phone, work_phone, email_status,
+
+  // Location details
+  location_city, location_region, location_country,
+
+  // Demographics
+  age_group, gender,
+
+  // Skills, Education, Work History - CRITICAL for Skills & Career tab
+  skills: enriched.skills?.length ? enriched.skills : candidate.skills,
+  work_history: enriched.work_history?.length ? enriched.work_history : candidate.work_history,
+  education: enriched.education?.length ? enriched.education : candidate.education,
+  certifications: enriched.certifications?.length ? enriched.certifications : candidate.certifications,
+  interests: enriched.interests?.length ? enriched.interests : candidate.interests,
+};
+```
+
+### UI Sections Added
+
+#### CandidateDetailDrawer ProfileTab
+- **Skills** - Red badges with count, handles object/string formats
+- **Work History** - Job cards with title, company, dates, description
+- **Education** - Degree/institution display with graduation year
+- **Certifications** - Green badge icon with issuer and date
+- **Interests** - Purple topic badges
+
+#### TalentCandidateProfile Overview Tab
+Same sections with matching styling (bg-white/[0.03], rounded-2xl conventions):
+- **Skills** - Red badges
+- **Work History** - Red-themed job cards
+- **Education** - Purple-themed cards
+- **Certifications** - Green badge icons
+- **Interests** - Pink badges
+
+### Polymorphic Data Handling
+
+All sections handle varying data formats from Explorium API:
+
+```javascript
+// Skills - string or object
+const skillName = typeof skill === 'object'
+  ? (skill?.name || skill?.skill || JSON.stringify(skill))
+  : String(skill);
+
+// Work History - nested objects
+const jobTitle = typeof job.title === 'object' ? job.title?.name : (job.title || job.job_title);
+const companyName = typeof job.company === 'object' ? job.company?.name : (job.company || job.company_name);
+
+// Education - arrays or strings
+const degreeName = Array.isArray(edu.degrees) ? edu.degrees.join(', ') : (edu.degree || edu.field_of_study);
+const schoolName = typeof edu.school === 'object' ? edu.school?.name : (edu.school || edu.institution);
+```
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `supabase/migrations/20260128100000_candidate_linkedin_career_data.sql` | New migration for columns |
+| `src/hooks/usePanelPreferences.js` | Added work_history, certifications, interests to config |
+| `src/components/talent/CandidateDetailDrawer.jsx` | Added career sections to ProfileTab, updated enrichContact |
+| `src/pages/TalentCandidateProfile.jsx` | Added career sections to Overview tab, updated enrichContact |
+
+### Verification
+
+1. Navigate to `/talentcandidateprofile?id=<candidate-id>`
+2. Click "Enrich" button (requires LinkedIn URL)
+3. Scroll down in Overview tab to see: Skills, Work History, Education, Certifications, Interests
+4. Open drawer panel to see same sections in ProfileTab
+
+---
+
 ## SMS Outreach (Twilio Integration)
 
 ### Overview
