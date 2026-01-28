@@ -18,10 +18,10 @@ export function usePortalClient() {
         .from('portal_clients')
         .select(`
           *,
-          organization:organizations(id, name, logo_url)
+          organization:organizations(id, name, slug, logo_url)
         `)
         .eq('auth_user_id', authUserId)
-        .eq('status', 'active')
+        .in('status', ['active', 'invited'])
         .single();
 
       if (fetchError) {
@@ -132,9 +132,9 @@ export function usePortalClient() {
       // First verify the client exists
       const { data: clientData, error: clientError } = await supabase
         .from('portal_clients')
-        .select('id, email, organization_id')
+        .select('id, email, organization_id, status')
         .eq('email', email.toLowerCase())
-        .eq('status', 'active')
+        .in('status', ['active', 'invited'])
         .single();
 
       if (clientError || !clientData) {
@@ -190,7 +190,7 @@ export function usePortalClient() {
           permission_level,
           granted_at,
           project:projects(
-            id, name, description, status, progress,
+            id, title, description, status, progress,
             start_date, due_date, budget, spent,
             attachments, milestones, page_content
           )
