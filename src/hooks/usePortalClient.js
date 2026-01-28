@@ -1,0 +1,213 @@
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/api/supabaseClient';
+
+/**
+ * Hook for managing portal client authentication state
+ * Used by external clients accessing the client portal
+ */
+export function usePortalClient() {
+  const [client, setClient] = useState(null);
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch client data based on auth user
+  const fetchClientData = useCallback(async (authUserId) => {
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('portal_clients')
+        .select(`
+          *,
+          organization:organizations(id, name, logo_url)
+        `)
+        .eq('auth_user_id', authUserId)
+        .eq('status', 'active')
+        .single();
+
+      if (fetchError) {
+        if (fetchError.code === 'PGRST116') {
+          // No client found for this auth user
+          setClient(null);
+          return null;
+        }
+        throw fetchError;
+      }
+
+      setClient(data);
+
+      // Update last login
+      await supabase
+        .from('portal_clients')
+        .update({ last_login_at: new Date().toISOString() })
+        .eq('id', data.id);
+
+      return data;
+    } catch (err) {
+      console.error('Error fetching client data:', err);
+      setError(err.message);
+      return null;
+    }
+  }, []);
+
+  // Initialize auth state
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        setSession(currentSession);
+
+        if (currentSession?.user) {
+          await fetchClientData(currentSession.user.id);
+        }
+      } catch (err) {
+        console.error('Error initializing auth:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      setSession(newSession);
+
+      if (event === 'SIGNED_IN' && newSession?.user) {
+        await fetchClientData(newSession.user.id);
+      } else if (event === 'SIGNED_OUT') {
+        setClient(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [fetchClientData]);
+
+  // Sign in with magic link
+  const signInWithMagicLink = useCallback(async (email, organizationSlug) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // First verify the client exists
+      const { data: clientData, error: clientError } = await supabase
+        .from('portal_clients')
+        .select('id, email, organization_id')
+        .eq('email', email.toLowerCase())
+        .eq('status', 'active')
+        .single();
+
+      if (clientError || !clientData) {
+        throw new Error('No account found with this email. Please contact your agency.');
+      }
+
+      // Send magic link
+      const { error: authError } = await supabase.auth.signInWithOtp({
+        email: email.toLowerCase(),
+        options: {
+          emailRedirectTo: `${window.location.origin}/portal/auth/callback`,
+          data: {
+            portal_client_id: clientData.id,
+            organization_id: clientData.organization_id,
+          },
+        },
+      });
+
+      if (authError) throw authError;
+
+      return { success: true, message: 'Check your email for the login link!' };
+    } catch (err) {
+      setError(err.message);
+      return { success: false, error: err.message };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Sign out
+  const signOut = useCallback(async () => {
+    try {
+      setLoading(true);
+      const { error: signOutError } = await supabase.auth.signOut();
+      if (signOutError) throw signOutError;
+      setClient(null);
+      setSession(null);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Get accessible projects for this client
+  const getAccessibleProjects = useCallback(async () => {
+    if (!client) return [];
+
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('client_project_access')
+        .select(`
+          permission_level,
+          granted_at,
+          project:projects(
+            id, name, description, status, progress,
+            start_date, due_date, budget, spent,
+            attachments, milestones, page_content
+          )
+        `)
+        .eq('client_id', client.id)
+        .or('expires_at.is.null,expires_at.gt.now()');
+
+      if (fetchError) throw fetchError;
+
+      return data?.map(item => ({
+        ...item.project,
+        permission_level: item.permission_level,
+        granted_at: item.granted_at,
+      })) || [];
+    } catch (err) {
+      console.error('Error fetching accessible projects:', err);
+      return [];
+    }
+  }, [client]);
+
+  // Check if client has specific permission on a project
+  const hasProjectPermission = useCallback(async (projectId, requiredLevel = 'view') => {
+    if (!client) return false;
+
+    const permissionLevels = ['view', 'comment', 'approve', 'edit'];
+    const requiredIndex = permissionLevels.indexOf(requiredLevel);
+
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('client_project_access')
+        .select('permission_level')
+        .eq('client_id', client.id)
+        .eq('project_id', projectId)
+        .or('expires_at.is.null,expires_at.gt.now()')
+        .single();
+
+      if (fetchError || !data) return false;
+
+      const clientIndex = permissionLevels.indexOf(data.permission_level);
+      return clientIndex >= requiredIndex;
+    } catch {
+      return false;
+    }
+  }, [client]);
+
+  return {
+    client,
+    session,
+    loading,
+    error,
+    isAuthenticated: !!client && !!session,
+    signInWithMagicLink,
+    signOut,
+    getAccessibleProjects,
+    hasProjectPermission,
+    refetchClient: () => session?.user && fetchClientData(session.user.id),
+  };
+}
+
+export default usePortalClient;

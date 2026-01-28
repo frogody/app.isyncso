@@ -270,6 +270,14 @@ import PlatformAdminAI from "./admin/AdminAI";
 import { UserProvider } from "@/components/context/UserContext";
 import { PermissionProvider } from "@/components/context/PermissionContext";
 
+// Client Portal imports
+import ClientProvider from "@/components/portal/ClientProvider";
+import ClientLayout from "@/components/portal/ClientLayout";
+import ClientLogin from "./portal/ClientLogin";
+import ClientAuthCallback from "./portal/ClientAuthCallback";
+import ClientDashboard from "./portal/ClientDashboard";
+import ClientProjectDetail from "./portal/ClientProjectDetail";
+
 import { BrowserRouter as Router, Route, Routes, useLocation, Navigate } from 'react-router-dom';
 
 const PAGES = {
@@ -537,6 +545,7 @@ function PagesContent() {
     const currentPage = _getCurrentPage(location.pathname);
     const isAdminRoute = location.pathname.startsWith('/admin');
     const isShareRoute = location.pathname.startsWith('/share');
+    const isPortalRoute = location.pathname.startsWith('/portal');
 
     // Share routes render without the main Layout (no sidebar for public views)
     if (isShareRoute) {
@@ -544,6 +553,26 @@ function PagesContent() {
             <Routes>
                 <Route path="/share/:type/:shareId" element={<ShareView />} />
             </Routes>
+        );
+    }
+
+    // Client Portal routes - uses ClientProvider and ClientLayout
+    if (isPortalRoute) {
+        return (
+            <ClientProvider>
+                <Routes>
+                    <Route path="/portal/login" element={<ClientLogin />} />
+                    <Route path="/portal/auth/callback" element={<ClientAuthCallback />} />
+                    <Route element={<ClientLayout />}>
+                        <Route path="/portal" element={<ClientDashboard />} />
+                        <Route path="/portal/projects" element={<ClientDashboard />} />
+                        <Route path="/portal/project/:id" element={<ClientProjectDetail />} />
+                        <Route path="/portal/approvals" element={<ClientDashboard />} />
+                        <Route path="/portal/activity" element={<ClientDashboard />} />
+                        <Route path="/portal/settings" element={<ClientDashboard />} />
+                    </Route>
+                </Routes>
+            </ClientProvider>
         );
     }
 
