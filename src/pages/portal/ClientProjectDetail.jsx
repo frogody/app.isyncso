@@ -18,9 +18,11 @@ import {
   Send,
   MoreVertical,
   ChevronRight,
+  FileBarChart,
 } from 'lucide-react';
 import { supabase } from '@/api/supabaseClient';
 import { usePortalClientContext, usePortalSettings } from '@/components/portal/ClientProvider';
+import ExportModal from '@/components/portal/reports/ExportModal';
 
 export default function ClientProjectDetail() {
   const { id } = useParams();
@@ -37,6 +39,7 @@ export default function ClientProjectDetail() {
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
   const [newComment, setNewComment] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
 
   useEffect(() => {
     const fetchProjectData = async () => {
@@ -186,7 +189,24 @@ export default function ClientProjectDetail() {
             <p className="text-zinc-400">{project.description}</p>
           )}
         </div>
+        {/* Export Button */}
+        <button
+          onClick={() => setShowExportModal(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-xl text-sm font-medium text-white transition-colors"
+        >
+          <FileBarChart className="w-4 h-4" />
+          Export
+        </button>
       </div>
+
+      {/* Export Modal */}
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        projectId={id}
+        projectName={project.name}
+        settings={settings}
+      />
 
       {/* Progress Bar */}
       <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-5">
