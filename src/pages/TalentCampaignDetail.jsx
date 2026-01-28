@@ -30,6 +30,7 @@ import CampaignSequenceEditor from "@/components/campaigns/CampaignSequenceEdito
 import CampaignMetricsPanel from "@/components/campaigns/CampaignMetricsPanel";
 import { OutreachPipeline, OutreachQueue, AnalyticsTab, CandidateDetailDrawer, BulkActionBar } from "@/components/talent";
 import { MatchReasonCards } from "@/components/talent/campaign";
+import { INTELLIGENCE_SIGNALS } from "@/components/talent/campaign/SignalMatchingConfig";
 import {
   Megaphone,
   Settings,
@@ -248,6 +249,48 @@ const NestSourceBadge = ({ nestName }) => {
   );
 };
 
+// Signal badges for matched signals
+const signalBgMap = {
+  red: "bg-red-500/20", orange: "bg-orange-500/20", purple: "bg-purple-500/20",
+  emerald: "bg-emerald-500/20", amber: "bg-amber-500/20", blue: "bg-blue-500/20",
+  zinc: "bg-zinc-500/20", rose: "bg-rose-500/20",
+};
+const signalTextMap = {
+  red: "text-red-400", orange: "text-orange-400", purple: "text-purple-400",
+  emerald: "text-emerald-400", amber: "text-amber-400", blue: "text-blue-400",
+  zinc: "text-zinc-400", rose: "text-rose-400",
+};
+const signalBorderMap = {
+  red: "border-red-500/30", orange: "border-orange-500/30", purple: "border-purple-500/30",
+  emerald: "border-emerald-500/30", amber: "border-amber-500/30", blue: "border-blue-500/30",
+  zinc: "border-zinc-500/30", rose: "border-rose-500/30",
+};
+
+const SignalBadges = ({ signals }) => {
+  if (!signals || signals.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-1.5 mt-2">
+      {signals.map((signal) => {
+        const def = INTELLIGENCE_SIGNALS.find(s => s.id === signal.id);
+        if (!def) return null;
+        return (
+          <div
+            key={signal.id}
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border ${signalBgMap[def.color]} ${signalTextMap[def.color]} ${signalBorderMap[def.color]}`}
+          >
+            <span>{def.label}</span>
+            {signal.boost !== 0 && (
+              <span className={signal.boost > 0 ? "text-emerald-400" : "text-rose-400"}>
+                {signal.boost > 0 ? "+" : ""}{signal.boost}
+              </span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 // CandidateMatchResultCard - Detailed match display with AI reasoning
 const CandidateMatchResultCard = ({ match, isSelected, onToggleSelect, onClick }) => {
   const [expanded, setExpanded] = useState(false);
@@ -363,6 +406,18 @@ const CandidateMatchResultCard = ({ match, isSelected, onToggleSelect, onClick }
           }}
           compact={!expanded}
         />
+
+        {/* Matched Signals */}
+        {match.signals_matched?.length > 0 && (
+          <div className="mt-2">
+            <SignalBadges signals={match.signals_matched} />
+            {match.signal_boost_applied > 0 && (
+              <p className="mt-1 text-xs text-emerald-400">
+                +{match.signal_boost_applied} from signals
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Expandable detailed analysis */}
         <AnimatePresence>
