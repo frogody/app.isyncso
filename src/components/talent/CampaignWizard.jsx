@@ -50,7 +50,7 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { toast } from "sonner";
-import { CriteriaWeightingStep, DEFAULT_WEIGHTS } from "./campaign/CriteriaWeightingStep";
+import CriteriaWeightingStep, { DEFAULT_WEIGHTS } from "./campaign/CriteriaWeightingStep";
 
 const STEPS = [
   { id: 1, title: "Select Project", icon: FolderOpen },

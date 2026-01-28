@@ -24,6 +24,7 @@ interface RoleContext {
   role_title?: string;  // Denormalized from wizard
   project_name?: string;  // Denormalized from wizard
   outreach_channel?: string;
+  criteria_weights?: Partial<CriteriaWeights>;
 }
 
 interface Role {
@@ -113,6 +114,56 @@ interface MatchFactors {
   timing_score: number;
   culture_fit: number;
   overall_confidence: number;
+}
+
+interface CriteriaWeights {
+  skills_fit: number;
+  experience_fit: number;
+  title_fit: number;
+  location_fit: number;
+  timing_score: number;
+  culture_fit: number;
+}
+
+const DEFAULT_WEIGHTS: CriteriaWeights = {
+  skills_fit: 20,
+  experience_fit: 20,
+  title_fit: 15,
+  location_fit: 10,
+  timing_score: 20,
+  culture_fit: 15,
+};
+
+function validateAndNormalizeWeights(raw: Partial<CriteriaWeights> | undefined): CriteriaWeights {
+  if (!raw) return { ...DEFAULT_WEIGHTS };
+  const weights: CriteriaWeights = {
+    skills_fit: raw.skills_fit ?? DEFAULT_WEIGHTS.skills_fit,
+    experience_fit: raw.experience_fit ?? DEFAULT_WEIGHTS.experience_fit,
+    title_fit: raw.title_fit ?? DEFAULT_WEIGHTS.title_fit,
+    location_fit: raw.location_fit ?? DEFAULT_WEIGHTS.location_fit,
+    timing_score: raw.timing_score ?? DEFAULT_WEIGHTS.timing_score,
+    culture_fit: raw.culture_fit ?? DEFAULT_WEIGHTS.culture_fit,
+  };
+  const total = Object.values(weights).reduce((s, v) => s + v, 0);
+  if (total === 0) return { ...DEFAULT_WEIGHTS };
+  if (total !== 100) {
+    const scale = 100 / total;
+    for (const key of Object.keys(weights) as (keyof CriteriaWeights)[]) {
+      weights[key] = Math.round(weights[key] * scale);
+    }
+  }
+  return weights;
+}
+
+function calculateWeightedScore(factors: MatchFactors, weights: CriteriaWeights): number {
+  return Math.round(
+    factors.skills_fit * (weights.skills_fit / 100) +
+    factors.experience_fit * (weights.experience_fit / 100) +
+    factors.title_fit * (weights.title_fit / 100) +
+    factors.location_fit * (weights.location_fit / 100) +
+    factors.timing_score * (weights.timing_score / 100) +
+    factors.culture_fit * (weights.culture_fit / 100)
+  );
 }
 
 // Helper function to normalize string or array values to array
@@ -218,7 +269,8 @@ async function deepAIAnalysis(
   candidates: Candidate[],
   role: Role,
   roleContext: RoleContext | undefined,
-  groqApiKey: string
+  groqApiKey: string,
+  weights: CriteriaWeights = DEFAULT_WEIGHTS
 ): Promise<Map<string, { score: number; reasons: string[]; analysis: string; factors: MatchFactors }>> {
   const results = new Map();
 
@@ -291,7 +343,7 @@ For EACH candidate, provide a comprehensive analysis considering:
 
 6. **CULTURE FIT (0-100)**: Based on company background, career trajectory - would they thrive here?
 
-7. **OVERALL MATCH**: Weighted combination (Skills 25%, Experience 20%, Title 15%, Location 10%, Timing 20%, Culture 10%)
+7. **OVERALL MATCH**: Weighted combination (Skills ${weights.skills_fit}%, Experience ${weights.experience_fit}%, Title ${weights.title_fit}%, Location ${weights.location_fit}%, Timing ${weights.timing_score}%, Culture ${weights.culture_fit}%)
 
 Respond with JSON array for ALL candidates:
 [
@@ -341,7 +393,7 @@ Be discriminating. Most candidates are 40-60. Only truly great fits score 70+. S
         console.error("Groq API error:", await response.text());
         // Fall back to rule-based for this batch
         for (const c of batch) {
-          const fallback = fallbackDeepAnalysis(c, role, roleContext);
+          const fallback = fallbackDeepAnalysis(c, role, roleContext, weights);
           results.set(c.id, fallback);
         }
         continue;
@@ -371,13 +423,13 @@ Be discriminating. Most candidates are 40-60. Only truly great fits score 70+. S
       // Add fallback for any candidates not in response
       for (const c of batch) {
         if (!results.has(c.id)) {
-          results.set(c.id, fallbackDeepAnalysis(c, role, roleContext));
+          results.set(c.id, fallbackDeepAnalysis(c, role, roleContext, weights));
         }
       }
     } catch (error) {
       console.error("AI batch analysis error:", error);
       for (const c of batch) {
-        results.set(c.id, fallbackDeepAnalysis(c, role, roleContext));
+        results.set(c.id, fallbackDeepAnalysis(c, role, roleContext, weights));
       }
     }
   }
@@ -400,7 +452,8 @@ function getDefaultFactors(): MatchFactors {
 function fallbackDeepAnalysis(
   candidate: Candidate,
   role: Role,
-  roleContext: RoleContext | undefined
+  roleContext: RoleContext | undefined,
+  weights: CriteriaWeights = DEFAULT_WEIGHTS
 ): { score: number; reasons: string[]; analysis: string; factors: MatchFactors } {
   const factors: MatchFactors = getDefaultFactors();
   const reasons: string[] = [];
@@ -474,14 +527,7 @@ function fallbackDeepAnalysis(
   }
 
   // Calculate overall score (weighted)
-  const score = Math.round(
-    factors.skills_fit * 0.25 +
-    factors.experience_fit * 0.20 +
-    factors.title_fit * 0.15 +
-    factors.location_fit * 0.10 +
-    factors.timing_score * 0.20 +
-    factors.culture_fit * 0.10
-  );
+  const score = calculateWeightedScore(factors, weights);
 
   factors.overall_confidence = 60; // Rule-based = lower confidence
 
@@ -635,6 +681,10 @@ serve(async (req) => {
         throw err;
       }
     }
+
+    // Extract and normalize criteria weights from role_context
+    const criteriaWeights = validateAndNormalizeWeights(effectiveRoleContext?.criteria_weights);
+    console.log("Using criteria weights:", criteriaWeights);
 
     // Get roles to match against - be more flexible with role_context
     let roles: Role[] = [];
@@ -814,13 +864,14 @@ serve(async (req) => {
         topCandidatesForAI.map(r => r.candidate),
         primaryRole,
         effectiveRoleContext,
-        groqApiKey
+        groqApiKey,
+        criteriaWeights
       );
     } else {
       // Fallback to rule-based deep analysis
       aiResults = new Map();
       for (const { candidate } of topCandidatesForAI) {
-        aiResults.set(candidate.id, fallbackDeepAnalysis(candidate, primaryRole, effectiveRoleContext));
+        aiResults.set(candidate.id, fallbackDeepAnalysis(candidate, primaryRole, effectiveRoleContext, criteriaWeights));
       }
     }
 
@@ -966,6 +1017,7 @@ serve(async (req) => {
         ai_powered: shouldUseAI,
         role_context_used: !!effectiveRoleContext,
         analysis_method: shouldUseAI ? "multi-stage-ai" : "rule-based",
+        weights_used: criteriaWeights,
         // NEW: Include source info for transparency
         source: {
           nest_id: campaignNestId || null,
