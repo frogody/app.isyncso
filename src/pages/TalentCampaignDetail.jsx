@@ -29,6 +29,7 @@ import {
 import CampaignSequenceEditor from "@/components/campaigns/CampaignSequenceEditor";
 import CampaignMetricsPanel from "@/components/campaigns/CampaignMetricsPanel";
 import { OutreachPipeline, OutreachQueue, AnalyticsTab, CandidateDetailDrawer, BulkActionBar } from "@/components/talent";
+import { MatchReasonCards } from "@/components/talent/campaign";
 import {
   Megaphone,
   Settings,
@@ -281,133 +282,142 @@ const CandidateMatchResultCard = ({ match, isSelected, onToggleSelect, onClick }
         </div>
       </div>
 
-      {/* Match Factors Quick View */}
-      {match.match_factors && (
-        <div className="mt-3 flex gap-2 flex-wrap">
-          {Object.entries(match.match_factors).slice(0, 4).map(([key, value]) => (
-            <div key={key} className="flex items-center gap-1 text-xs">
-              <span className="text-zinc-500">{key.replace('_', ' ')}:</span>
-              <span className={value >= 70 ? "text-green-400" : value >= 50 ? "text-yellow-400" : "text-zinc-400"}>
-                {value}%
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Expandable Details Toggle */}
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="mt-3 flex items-center gap-1 text-sm text-zinc-400 hover:text-white transition-colors"
-      >
-        <ChevronDown className={`w-4 h-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
-        {expanded ? "Hide" : "Show"} AI Analysis
-      </button>
-
-      {/* Expandable Details Content */}
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
+      {/* Why This Match Section */}
+      <div className="mt-4 pt-4 border-t border-zinc-700/50">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-sm font-medium text-zinc-300 flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-purple-400" />
+            Why This Match?
+          </h4>
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1 transition-colors"
           >
-            <div className="mt-3 pt-3 border-t border-zinc-800 space-y-3">
-              {/* Key Strengths */}
-              {strengths.length > 0 && (
-                <div>
-                  <p className="text-xs text-zinc-500 mb-1.5 flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3 text-green-400" />
-                    Key Strengths
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {strengths.map((s, i) => (
-                      <Badge key={i} className="bg-green-500/20 text-green-400 border-green-500/20 text-xs">
-                        {s}
-                      </Badge>
-                    ))}
+            {expanded ? "Hide Details" : "See Full Analysis"}
+            <ChevronDown className={`w-3 h-3 transition-transform ${expanded ? "rotate-180" : ""}`} />
+          </button>
+        </div>
+
+        {/* Always show factor cards */}
+        <MatchReasonCards
+          factors={match.match_factors || {
+            skills_fit: match.match_score || 0,
+            experience_fit: match.match_score || 0,
+            title_fit: match.match_score || 0,
+            timing_score: 50,
+            culture_fit: 50,
+          }}
+          insights={{
+            key_strengths: strengths,
+            concerns: concerns,
+          }}
+          compact={!expanded}
+        />
+
+        {/* Expandable detailed analysis */}
+        <AnimatePresence>
+          {expanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <div className="mt-4 space-y-4">
+                {/* Key Strengths */}
+                {strengths.length > 0 && (
+                  <div className="space-y-2">
+                    <h5 className="text-xs font-medium text-emerald-400 uppercase tracking-wider">
+                      Key Strengths
+                    </h5>
+                    <ul className="space-y-1">
+                      {strengths.map((s, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-zinc-300">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                          {s}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Potential Concerns */}
-              {concerns.length > 0 && (
-                <div>
-                  <p className="text-xs text-zinc-500 mb-1.5 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3 text-amber-400" />
-                    Potential Concerns
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {concerns.map((c, i) => (
-                      <Badge key={i} className="bg-amber-500/20 text-amber-400 border-amber-500/20 text-xs">
-                        {c}
-                      </Badge>
-                    ))}
+                {/* Concerns */}
+                {concerns.length > 0 && (
+                  <div className="space-y-2">
+                    <h5 className="text-xs font-medium text-amber-400 uppercase tracking-wider">
+                      Considerations
+                    </h5>
+                    <ul className="space-y-1">
+                      {concerns.map((c, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-zinc-400">
+                          <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                          {c}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* AI Reasoning */}
-              {reasoning && (
-                <div>
-                  <p className="text-xs text-zinc-500 mb-1.5 flex items-center gap-1">
-                    <Brain className="w-3 h-3 text-purple-400" />
-                    AI Analysis
-                  </p>
-                  <p className="text-sm text-zinc-300 leading-relaxed">{reasoning}</p>
-                </div>
-              )}
+                {/* AI Reasoning */}
+                {reasoning && (
+                  <div className="space-y-2">
+                    <h5 className="text-xs font-medium text-purple-400 uppercase tracking-wider">
+                      AI Reasoning
+                    </h5>
+                    <p className="text-sm text-zinc-400 leading-relaxed">{reasoning}</p>
+                  </div>
+                )}
 
-              {/* Intelligence Score */}
-              {match.intelligence_score > 0 && (
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                  <Sparkles className="w-4 h-4 text-purple-400" />
-                  <div>
-                    <p className="text-xs text-purple-400">Flight Risk / Timing Score</p>
-                    <p className="text-sm text-white font-medium">
-                      {match.intelligence_score}% - {match.recommended_approach === 'aggressive' ? 'Act Now!' : match.recommended_approach || 'Standard'}
+                {/* Intelligence Score */}
+                {match.intelligence_score > 0 && (
+                  <div className="flex items-center gap-2 p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                    <Sparkles className="w-4 h-4 text-purple-400" />
+                    <div>
+                      <p className="text-xs text-purple-400">Flight Risk / Timing Score</p>
+                      <p className="text-sm text-white font-medium">
+                        {match.intelligence_score}% - {match.recommended_approach === 'aggressive' ? 'Act Now!' : match.recommended_approach || 'Standard'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Outreach Angle */}
+                {outreachAngle && (
+                  <div className="p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+                    <p className="text-xs text-cyan-400 mb-1 flex items-center gap-1">
+                      <Lightbulb className="w-3 h-3" />
+                      Suggested Outreach Angle
                     </p>
+                    <p className="text-sm text-white leading-relaxed">{outreachAngle}</p>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Outreach Angle */}
-              {outreachAngle && (
-                <div className="p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
-                  <p className="text-xs text-cyan-400 mb-1 flex items-center gap-1">
-                    <Lightbulb className="w-3 h-3" />
-                    Suggested Outreach Angle
-                  </p>
-                  <p className="text-sm text-white leading-relaxed">{outreachAngle}</p>
-                </div>
-              )}
-
-              {/* Timing Signals */}
-              {match.timing_signals?.length > 0 && (
-                <div>
-                  <p className="text-xs text-zinc-500 mb-1.5 flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-red-400" />
-                    Timing Signals
-                  </p>
-                  <div className="space-y-1">
-                    {match.timing_signals.slice(0, 3).map((signal, i) => (
-                      <div key={i} className={`text-xs px-2 py-1 rounded ${
-                        signal.urgency === 'high' ? 'bg-red-500/20 text-red-300' :
-                        signal.urgency === 'medium' ? 'bg-yellow-500/20 text-yellow-300' :
-                        'bg-zinc-700/50 text-zinc-400'
-                      }`}>
-                        {signal.trigger}
-                      </div>
-                    ))}
+                {/* Timing Signals */}
+                {match.timing_signals?.length > 0 && (
+                  <div>
+                    <p className="text-xs text-zinc-500 mb-1.5 flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-red-400" />
+                      Timing Signals
+                    </p>
+                    <div className="space-y-1">
+                      {match.timing_signals.slice(0, 3).map((signal, i) => (
+                        <div key={i} className={`text-xs px-2 py-1 rounded ${
+                          signal.urgency === 'high' ? 'bg-red-500/20 text-red-300' :
+                          signal.urgency === 'medium' ? 'bg-yellow-500/20 text-yellow-300' :
+                          'bg-zinc-700/50 text-zinc-400'
+                        }`}>
+                          {signal.trigger}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </motion.div>
   );
 };
