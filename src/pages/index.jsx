@@ -715,7 +715,7 @@ function PagesContent() {
                 
                 <Route path="/Settings" element={<Settings />} />
                 
-                <Route path="/ShareView" element={<ShareView />} />
+                <Route path="/share/:type/:shareId" element={<ShareView />} />
                 
                 <Route path="/SkillFrameworks" element={<SkillFrameworks />} />
                 
