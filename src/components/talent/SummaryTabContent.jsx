@@ -13,6 +13,11 @@ import {
   ExperienceWidget,
   KeyInsightsWidget,
   QuickStatsWidget,
+  JobSatisfactionWidget,
+  WorkHistoryWidget,
+  TechStackWidget,
+  CompanyOverviewWidget,
+  PainPointsWidget,
   DEFAULT_WIDGETS
 } from "./summary-widgets";
 import AddWidgetModal from "./AddWidgetModal";
@@ -26,7 +31,12 @@ const WIDGET_COMPONENTS = {
   SkillsWidget,
   ExperienceWidget,
   KeyInsightsWidget,
-  QuickStatsWidget
+  QuickStatsWidget,
+  JobSatisfactionWidget,
+  WorkHistoryWidget,
+  TechStackWidget,
+  CompanyOverviewWidget,
+  PainPointsWidget
 };
 
 /**
@@ -100,46 +110,45 @@ const SummaryTabContent = ({
     }
 
     if (onSavePreferences) {
-      const success = await onSavePreferences(newPrefs);
-      if (success) {
+      try {
+        await onSavePreferences(newPrefs);
         setHasChanges(false);
-        toast.success("Layout saved");
-      } else {
-        toast.error("Failed to save layout");
+      } catch (error) {
+        toast.error('Failed to save widget preferences');
+        console.error('Failed to save preferences:', error);
       }
     }
   };
 
-  // Handle widget removal
-  const handleRemoveWidget = (widgetId) => {
-    const newWidgets = localWidgets.map(w =>
-      w.id === widgetId ? { ...w, enabled: false } : w
+  // Handle add widget
+  const handleAddWidget = (widgetType) => {
+    const widget = localWidgets.find(w => w.type === widgetType);
+    if (!widget) return;
+
+    const newWidget = { ...widget, enabled: true };
+    const updatedWidgets = localWidgets.map(w =>
+      w.id === widget.id ? newWidget : w
     );
-    setLocalWidgets(newWidgets);
+
+    setLocalWidgets(updatedWidgets);
     setHasChanges(true);
-    saveWidgets(newWidgets);
-    toast.success("Widget removed");
+    setShowAddModal(false);
+
+    // Auto-save on add
+    saveWidgets(updatedWidgets);
   };
 
-  // Handle adding widget
-  const handleAddWidget = (widget) => {
-    const existingIndex = localWidgets.findIndex(w => w.type === widget.type);
+  // Handle remove widget
+  const handleRemoveWidget = (widgetId) => {
+    const updatedWidgets = localWidgets.map(w =>
+      w.id === widgetId ? { ...w, enabled: false } : w
+    );
 
-    let newWidgets;
-    if (existingIndex >= 0) {
-      // Enable existing widget
-      newWidgets = localWidgets.map(w =>
-        w.type === widget.type ? { ...w, enabled: true } : w
-      );
-    } else {
-      // Add new widget
-      newWidgets = [...localWidgets, widget];
-    }
-
-    setLocalWidgets(newWidgets);
+    setLocalWidgets(updatedWidgets);
     setHasChanges(true);
-    saveWidgets(newWidgets);
-    toast.success("Widget added");
+
+    // Auto-save on remove
+    saveWidgets(updatedWidgets);
   };
 
   // Render widget component

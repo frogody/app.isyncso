@@ -8,6 +8,11 @@ export { default as SkillsWidget } from './SkillsWidget';
 export { default as ExperienceWidget } from './ExperienceWidget';
 export { default as KeyInsightsWidget } from './KeyInsightsWidget';
 export { default as QuickStatsWidget } from './QuickStatsWidget';
+export { default as JobSatisfactionWidget } from './JobSatisfactionWidget';
+export { default as WorkHistoryWidget } from './WorkHistoryWidget';
+export { default as TechStackWidget } from './TechStackWidget';
+export { default as CompanyOverviewWidget } from './CompanyOverviewWidget';
+export { default as PainPointsWidget } from './PainPointsWidget';
 
 // Widget registry for dynamic rendering
 export const WIDGET_REGISTRY = {
@@ -53,12 +58,47 @@ export const WIDGET_REGISTRY = {
     icon: 'Briefcase',
     category: 'professional'
   },
+  WorkHistoryWidget: {
+    component: 'WorkHistoryWidget',
+    title: 'Recent Roles',
+    description: 'Latest 3 positions from work history',
+    icon: 'Briefcase',
+    category: 'professional'
+  },
   KeyInsightsWidget: {
     component: 'KeyInsightsWidget',
     title: 'AI Insights',
     description: 'Key insights, pain points, and opportunities',
     icon: 'Lightbulb',
     category: 'insights'
+  },
+  JobSatisfactionWidget: {
+    component: 'JobSatisfactionWidget',
+    title: 'Job Satisfaction',
+    description: 'Company stability, sentiment, and switching likelihood',
+    icon: 'Building2',
+    category: 'insights'
+  },
+  PainPointsWidget: {
+    component: 'PainPointsWidget',
+    title: 'Pain Points & Opps',
+    description: 'Company pain points and competitor opportunities',
+    icon: 'Target',
+    category: 'insights'
+  },
+  TechStackWidget: {
+    component: 'TechStackWidget',
+    title: 'Tech Stack',
+    description: 'Technologies used at current company',
+    icon: 'Cpu',
+    category: 'company'
+  },
+  CompanyOverviewWidget: {
+    component: 'CompanyOverviewWidget',
+    title: 'Company Overview',
+    description: 'Current employer stats and info',
+    icon: 'Building2',
+    category: 'company'
   },
   QuickStatsWidget: {
     component: 'QuickStatsWidget',
@@ -78,7 +118,12 @@ export const DEFAULT_WIDGETS = [
   { id: 'skills', type: 'SkillsWidget', order: 4, enabled: true },
   { id: 'experience', type: 'ExperienceWidget', order: 5, enabled: false },
   { id: 'insights', type: 'KeyInsightsWidget', order: 6, enabled: false },
-  { id: 'quickstats', type: 'QuickStatsWidget', order: 7, enabled: false }
+  { id: 'quickstats', type: 'QuickStatsWidget', order: 7, enabled: false },
+  { id: 'jobsatisfaction', type: 'JobSatisfactionWidget', order: 8, enabled: false },
+  { id: 'workhistory', type: 'WorkHistoryWidget', order: 9, enabled: false },
+  { id: 'techstack', type: 'TechStackWidget', order: 10, enabled: false },
+  { id: 'companyoverview', type: 'CompanyOverviewWidget', order: 11, enabled: false },
+  { id: 'painpoints', type: 'PainPointsWidget', order: 12, enabled: false }
 ];
 
 // Widget categories for the add modal
@@ -87,5 +132,6 @@ export const WIDGET_CATEGORIES = {
   contact: { label: 'Contact & Location', order: 1 },
   professional: { label: 'Professional', order: 2 },
   insights: { label: 'AI Insights', order: 3 },
-  overview: { label: 'Overview', order: 4 }
+  company: { label: 'Company Intel', order: 4 },
+  overview: { label: 'Overview', order: 5 }
 };

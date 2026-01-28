@@ -1392,10 +1392,10 @@ export default function CandidateDetailDrawer({
     }
   }, [candidateId, open]);
 
-  // Reset tab when opening for a new candidate
+  // Reset tab when opening for a new candidate - default to Summary tab
   useEffect(() => {
     if (open) {
-      setActiveTab("profile");
+      setActiveTab("summary");
     }
   }, [candidateId, open]);
 
