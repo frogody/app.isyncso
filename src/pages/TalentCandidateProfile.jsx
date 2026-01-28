@@ -464,7 +464,7 @@ export default function TalentCandidateProfile() {
     }
   };
 
-  // Enrich contact info via Explorium API
+  // Enrich contact info via Explorium API - saves ALL LinkedIn data
   const enrichContact = async () => {
     if (!candidate.linkedin_profile) {
       toast.error("No LinkedIn URL available", {
@@ -477,37 +477,78 @@ export default function TalentCandidateProfile() {
     try {
       const enriched = await fullEnrichFromLinkedIn(candidate.linkedin_profile);
 
-      // Update candidate with verified contact info
+      // Build the update object with ALL LinkedIn enrichment data
+      const updateData = {
+        // Contact info
+        verified_email: enriched.email || candidate.verified_email,
+        verified_phone: enriched.phone || candidate.verified_phone,
+        verified_mobile: enriched.mobile_phone || candidate.verified_mobile,
+        personal_email: enriched.personal_email || candidate.personal_email,
+        mobile_phone: enriched.mobile_phone || candidate.mobile_phone,
+        work_phone: enriched.work_phone || candidate.work_phone,
+        email_status: enriched.email_status || candidate.email_status,
+
+        // Enrichment tracking
+        explorium_prospect_id: enriched.explorium_prospect_id || candidate.explorium_prospect_id,
+        explorium_business_id: enriched.explorium_business_id || candidate.explorium_business_id,
+        enriched_at: new Date().toISOString(),
+        enrichment_source: "explorium",
+
+        // Professional info
+        job_title: candidate.job_title || enriched.job_title,
+        company_name: candidate.company_name || enriched.company,
+        person_home_location: candidate.person_home_location ||
+          [enriched.location_city, enriched.location_country].filter(Boolean).join(", "),
+        job_department: enriched.job_department || candidate.job_department,
+        job_seniority_level: enriched.job_seniority_level || candidate.job_seniority_level,
+
+        // Location details
+        location_city: enriched.location_city || candidate.location_city,
+        location_region: enriched.location_region || candidate.location_region,
+        location_country: enriched.location_country || candidate.location_country,
+
+        // Demographics
+        age_group: enriched.age_group || candidate.age_group,
+        gender: enriched.gender || candidate.gender,
+
+        // Company info
+        company_domain: candidate.company_domain || enriched.company_domain,
+        company_size: candidate.company_size || enriched.company_size,
+        company_employee_count: candidate.company_employee_count || enriched.company_employee_count,
+        industry: candidate.industry || enriched.company_industry,
+
+        // Skills, Education, Work History - CRITICAL for Skills & Career tab
+        skills: enriched.skills?.length ? enriched.skills : candidate.skills,
+        work_history: enriched.work_history?.length ? enriched.work_history : candidate.work_history,
+        education: enriched.education?.length ? enriched.education : candidate.education,
+        certifications: enriched.certifications?.length ? enriched.certifications : candidate.certifications,
+        interests: enriched.interests?.length ? enriched.interests : candidate.interests,
+
+        // Also store as inferred_skills for intelligence
+        inferred_skills: enriched.skills?.length ? enriched.skills : candidate.inferred_skills,
+      };
+
       const { error } = await supabase
         .from("candidates")
-        .update({
-          verified_email: enriched.email,
-          verified_phone: enriched.phone,
-          verified_mobile: enriched.mobile_phone,
-          personal_email: enriched.personal_email,
-          explorium_prospect_id: enriched.explorium_prospect_id,
-          explorium_business_id: enriched.explorium_business_id,
-          enriched_at: enriched.enriched_at,
-          enrichment_source: "explorium",
-          // Also update any missing profile fields
-          job_title: candidate.job_title || enriched.job_title,
-          company_name: candidate.company_name || enriched.company,
-          person_home_location: candidate.person_home_location ||
-            [enriched.location_city, enriched.location_country].filter(Boolean).join(", "),
-          skills: candidate.skills?.length ? candidate.skills : enriched.skills,
-          inferred_skills: enriched.skills,
-          company_domain: candidate.company_domain || enriched.company_domain,
-          company_size: candidate.company_size || enriched.company_size,
-          company_employee_count: candidate.company_employee_count || enriched.company_employee_count,
-          industry: candidate.industry || enriched.company_industry,
-        })
+        .update(updateData)
         .eq("id", candidateId);
 
       if (error) throw error;
 
+      // Count what we enriched
+      const enrichedItems = [];
+      if (enriched.email) enrichedItems.push("email");
+      if (enriched.phone || enriched.mobile_phone) enrichedItems.push("phone");
+      if (enriched.skills?.length) enrichedItems.push(`${enriched.skills.length} skills`);
+      if (enriched.work_history?.length) enrichedItems.push(`${enriched.work_history.length} jobs`);
+      if (enriched.education?.length) enrichedItems.push(`${enriched.education.length} edu`);
+      if (enriched.certifications?.length) enrichedItems.push(`${enriched.certifications.length} certs`);
+
       await fetchCandidate();
-      toast.success("Contact info enriched!", {
-        description: `Found ${enriched.email ? "email" : ""}${enriched.email && enriched.phone ? " & " : ""}${enriched.phone ? "phone" : ""}`,
+      toast.success("Contact enriched!", {
+        description: enrichedItems.length > 0
+          ? `Found: ${enrichedItems.join(", ")}`
+          : "Profile data updated",
       });
     } catch (err) {
       console.error("Enrichment error:", err);

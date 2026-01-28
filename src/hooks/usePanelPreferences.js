@@ -11,9 +11,12 @@ export const DEFAULT_PANEL_CONFIG = {
       contact_info: { enabled: true, order: 1, label: "Contact Information" },
       professional_summary: { enabled: true, order: 2, label: "Professional Summary" },
       skills: { enabled: true, order: 3, label: "Skills" },
-      experience: { enabled: true, order: 4, label: "Experience" },
+      work_history: { enabled: true, order: 4, label: "Work History" },
       education: { enabled: true, order: 5, label: "Education" },
-      additional_info: { enabled: true, order: 6, label: "Additional Information" }
+      certifications: { enabled: true, order: 6, label: "Certifications" },
+      interests: { enabled: true, order: 7, label: "Interests" },
+      experience: { enabled: true, order: 8, label: "Experience (Legacy)" },
+      additional_info: { enabled: true, order: 9, label: "Additional Information" }
     }
   },
   intelligence: {

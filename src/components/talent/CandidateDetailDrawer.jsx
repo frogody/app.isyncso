@@ -45,6 +45,7 @@ import {
   Frown,
   CheckCircle2,
   Settings,
+  BadgeCheck,
 } from "lucide-react";
 import { supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
@@ -746,37 +747,155 @@ const ProfileTab = ({ candidate, isSectionEnabled = () => true }) => (
 
     {/* Skills */}
     {isSectionEnabled('profile', 'skills') && candidate.skills && candidate.skills.length > 0 && (
-      <Section title="Skills">
+      <Section title={`Skills (${candidate.skills.length})`}>
         <div className="flex flex-wrap gap-2">
-          {candidate.skills.map((skill, i) => (
-            <span
-              key={i}
-              className="px-2.5 py-1 bg-zinc-800 rounded-lg text-xs text-zinc-300 border border-zinc-700/30"
-            >
-              {skill}
-            </span>
-          ))}
+          {candidate.skills.map((skill, i) => {
+            // Handle both string and object formats
+            const skillName = typeof skill === 'object' ? (skill?.name || skill?.skill || JSON.stringify(skill)) : String(skill);
+            return (
+              <span
+                key={i}
+                className="px-2.5 py-1 bg-red-500/10 text-red-400 rounded-lg text-xs border border-red-500/20"
+              >
+                {skillName}
+              </span>
+            );
+          })}
         </div>
       </Section>
     )}
 
-    {/* Experience */}
+    {/* Work History (from LinkedIn enrichment) */}
+    {isSectionEnabled('profile', 'work_history') && candidate.work_history && candidate.work_history.length > 0 && (
+      <Section title={`Work History (${candidate.work_history.length})`}>
+        <div className="space-y-3">
+          {candidate.work_history.map((job, i) => {
+            // Handle nested object structures from Explorium API
+            const jobTitle = typeof job.title === 'object' ? job.title?.name : (job.title || job.job_title);
+            const companyName = typeof job.company === 'object' ? job.company?.name : (job.company || job.company_name);
+            const description = job.summary || job.description;
+
+            return (
+              <div
+                key={i}
+                className="flex gap-3 p-3 bg-zinc-800/30 rounded-lg border border-zinc-700/30 hover:bg-zinc-800/50 transition-colors"
+              >
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500/20 to-red-600/20 flex items-center justify-center border border-red-500/30 flex-shrink-0">
+                  <Briefcase className="w-4 h-4 text-red-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-white">{jobTitle || 'Unknown Position'}</p>
+                  <p className="text-sm text-zinc-400">{companyName || 'Unknown Company'}</p>
+                  {(job.start_date || job.end_date) && (
+                    <p className="text-xs text-zinc-500 mt-1 flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      {job.start_date} - {job.end_date || 'Present'}
+                    </p>
+                  )}
+                  {description && (
+                    <p className="text-sm text-zinc-500 mt-2 line-clamp-2">{description}</p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </Section>
+    )}
+
+    {/* Education (enhanced with LinkedIn enrichment data) */}
+    {isSectionEnabled('profile', 'education') && candidate.education && candidate.education.length > 0 && (
+      <Section title={`Education (${candidate.education.length})`}>
+        <div className="space-y-3">
+          {candidate.education.map((edu, i) => {
+            // Handle nested object structures from Explorium API
+            const schoolName = typeof edu.school === 'object' ? edu.school?.name : (edu.school || edu.institution);
+            const degreeName = Array.isArray(edu.degrees) ? edu.degrees.join(', ') : (edu.degree || edu.field_of_study || edu.field);
+            const majorName = Array.isArray(edu.majors) ? edu.majors.join(', ') : edu.major;
+            const displayDegree = degreeName || majorName || 'Degree';
+
+            return (
+              <div
+                key={i}
+                className="p-3 bg-zinc-800/30 rounded-lg border border-zinc-700/30"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/20 to-purple-600/20 flex items-center justify-center border border-purple-500/30 flex-shrink-0">
+                    <GraduationCap className="w-4 h-4 text-purple-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-white">{displayDegree}</p>
+                    <p className="text-sm text-zinc-400">{schoolName || 'Unknown Institution'}</p>
+                    {(edu.year || edu.end_date || edu.graduation_year) && (
+                      <p className="text-xs text-zinc-500 mt-1 flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        {edu.year || edu.end_date || edu.graduation_year}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </Section>
+    )}
+
+    {/* Certifications */}
+    {isSectionEnabled('profile', 'certifications') && candidate.certifications && candidate.certifications.length > 0 && (
+      <Section title={`Certifications (${candidate.certifications.length})`}>
+        <div className="space-y-2">
+          {candidate.certifications.map((cert, i) => {
+            // Handle both string and object formats
+            const certName = typeof cert === 'object' ? (cert?.name || cert?.title || JSON.stringify(cert)) : String(cert);
+            const certIssuer = typeof cert === 'object' ? cert?.issuer : null;
+            const certDate = typeof cert === 'object' ? (cert?.date || cert?.issued_date) : null;
+            return (
+              <div
+                key={i}
+                className="flex items-center gap-3 p-3 bg-zinc-800/30 rounded-lg border border-zinc-700/30"
+              >
+                <BadgeCheck className="w-5 h-5 text-green-400 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-white truncate">
+                    {certName}
+                  </p>
+                  {certIssuer && <p className="text-xs text-zinc-500">{certIssuer}</p>}
+                  {certDate && <p className="text-xs text-zinc-600">{certDate}</p>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </Section>
+    )}
+
+    {/* Interests */}
+    {isSectionEnabled('profile', 'interests') && candidate.interests && candidate.interests.length > 0 && (
+      <Section title={`Interests (${candidate.interests.length})`}>
+        <div className="flex flex-wrap gap-2">
+          {candidate.interests.map((interest, i) => {
+            // Handle both string and object formats
+            const interestName = typeof interest === 'object' ? (interest?.name || interest?.interest || JSON.stringify(interest)) : String(interest);
+            return (
+              <span
+                key={i}
+                className="px-2.5 py-1 bg-purple-500/10 text-purple-400 rounded-lg text-xs border border-purple-500/20"
+              >
+                {interestName}
+              </span>
+            );
+          })}
+        </div>
+      </Section>
+    )}
+
+    {/* Experience (Legacy - from original candidate data) */}
     {isSectionEnabled('profile', 'experience') && candidate.experience && candidate.experience.length > 0 && (
       <Section title="Experience">
         <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700/30">
           {candidate.experience.map((exp, i) => (
             <ExperienceItem key={i} {...exp} />
-          ))}
-        </div>
-      </Section>
-    )}
-
-    {/* Education */}
-    {isSectionEnabled('profile', 'education') && candidate.education && candidate.education.length > 0 && (
-      <Section title="Education">
-        <div className="bg-zinc-800/30 rounded-lg p-3 border border-zinc-700/30">
-          {candidate.education.map((edu, i) => (
-            <EducationItem key={i} {...edu} />
           ))}
         </div>
       </Section>
@@ -1348,6 +1467,13 @@ export default function CandidateDetailDrawer({
         // Quick stats fields
         years_at_company: data.years_at_company || null,
         times_company_hopped: data.times_company_hopped || null,
+
+        // LinkedIn Career Data - Skills & Career tab
+        skills: Array.isArray(data.skills) ? data.skills : [],
+        work_history: Array.isArray(data.work_history) ? data.work_history : [],
+        education: Array.isArray(data.education) ? data.education : [],
+        certifications: Array.isArray(data.certifications) ? data.certifications : [],
+        interests: Array.isArray(data.interests) ? data.interests : [],
       };
 
       setCandidate(normalizedCandidate);
@@ -1542,7 +1668,7 @@ export default function CandidateDetailDrawer({
     }
   };
 
-  // Enrich contact handler
+  // Enrich contact handler - saves ALL LinkedIn data
   const handleEnrichContact = async () => {
     if (!candidate.linkedin_url) {
       toast.error("No LinkedIn URL available");
@@ -1553,33 +1679,76 @@ export default function CandidateDetailDrawer({
     try {
       const enriched = await fullEnrichFromLinkedIn(candidate.linkedin_url);
 
+      // Build the update object with ALL LinkedIn enrichment data
+      const updateData = {
+        // Contact info
+        verified_email: enriched.email || candidate.verified_email,
+        verified_phone: enriched.phone || candidate.verified_phone,
+        verified_mobile: enriched.mobile_phone || candidate.verified_mobile,
+        personal_email: enriched.personal_email || candidate.personal_email,
+        mobile_phone: enriched.mobile_phone || candidate.mobile_phone,
+        work_phone: enriched.work_phone || candidate.work_phone,
+        email_status: enriched.email_status || candidate.email_status,
+
+        // Enrichment tracking
+        explorium_prospect_id: enriched.explorium_prospect_id || candidate.explorium_prospect_id,
+        explorium_business_id: enriched.explorium_business_id || candidate.explorium_business_id,
+        enriched_at: new Date().toISOString(),
+        enrichment_source: "explorium",
+
+        // Professional info
+        job_title: candidate.current_title || candidate.job_title || enriched.job_title,
+        company_name: candidate.current_company || candidate.company_name || enriched.company,
+        job_department: enriched.job_department || candidate.job_department,
+        job_seniority_level: enriched.job_seniority_level || candidate.job_seniority_level,
+
+        // Location details
+        location_city: enriched.location_city || candidate.location_city,
+        location_region: enriched.location_region || candidate.location_region,
+        location_country: enriched.location_country || candidate.location_country,
+
+        // Demographics
+        age_group: enriched.age_group || candidate.age_group,
+        gender: enriched.gender || candidate.gender,
+
+        // Skills, Education, Work History - CRITICAL for Skills & Career tab
+        skills: enriched.skills?.length ? enriched.skills : candidate.skills,
+        work_history: enriched.work_history?.length ? enriched.work_history : candidate.work_history,
+        education: enriched.education?.length ? enriched.education : candidate.education,
+        certifications: enriched.certifications?.length ? enriched.certifications : candidate.certifications,
+        interests: enriched.interests?.length ? enriched.interests : candidate.interests,
+
+        // Also store as inferred_skills for intelligence
+        inferred_skills: enriched.skills?.length ? enriched.skills : candidate.inferred_skills,
+      };
+
       const { error } = await supabase
         .from("candidates")
-        .update({
-          verified_email: enriched.email,
-          verified_phone: enriched.phone,
-          verified_mobile: enriched.mobile_phone,
-          personal_email: enriched.personal_email,
-          explorium_prospect_id: enriched.explorium_prospect_id,
-          explorium_business_id: enriched.explorium_business_id,
-          enriched_at: enriched.enriched_at,
-          enrichment_source: "explorium",
-          job_title: candidate.current_title || enriched.job_title,
-          company_name: candidate.current_company || enriched.company,
-          skills: candidate.skills?.length ? candidate.skills : enriched.skills,
-          inferred_skills: enriched.skills,
-        })
+        .update(updateData)
         .eq("id", candidateId);
 
       if (error) throw error;
 
+      // Count what we enriched
+      const enrichedItems = [];
+      if (enriched.email) enrichedItems.push("email");
+      if (enriched.phone || enriched.mobile_phone) enrichedItems.push("phone");
+      if (enriched.skills?.length) enrichedItems.push(`${enriched.skills.length} skills`);
+      if (enriched.work_history?.length) enrichedItems.push(`${enriched.work_history.length} jobs`);
+      if (enriched.education?.length) enrichedItems.push(`${enriched.education.length} edu`);
+      if (enriched.certifications?.length) enrichedItems.push(`${enriched.certifications.length} certs`);
+
       await fetchCandidateDetails();
-      toast.success("Contact info enriched!", {
-        description: `Found ${enriched.email ? "email" : ""}${enriched.email && enriched.phone ? " & " : ""}${enriched.phone ? "phone" : ""}`,
+      toast.success("Contact enriched!", {
+        description: enrichedItems.length > 0
+          ? `Found: ${enrichedItems.join(", ")}`
+          : "Profile data updated",
       });
     } catch (err) {
       console.error("Enrichment error:", err);
-      toast.error("Enrichment failed");
+      toast.error("Enrichment failed", {
+        description: err.message || "Please try again",
+      });
     } finally {
       setEnrichingContact(false);
     }
