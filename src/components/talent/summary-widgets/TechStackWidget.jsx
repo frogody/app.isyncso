@@ -8,15 +8,14 @@ const TechStackWidget = ({ candidate, editMode, onRemove, dragHandleProps }) => 
   const companyIntel = candidate?.company_intelligence || {};
   
   // Get tech stack from various possible sources
-  const techStack = companyIntel.tech_stack || 
-                    companyIntel.technologies || 
-                    companyIntel.technology_stack || 
-                    [];
-  
-  // If it's an object with categories, flatten to array
-  const techArray = Array.isArray(techStack) 
-    ? techStack 
-    : Object.values(techStack).flat().filter(Boolean);
+  const rawTechStack = companyIntel.tech_stack ||
+                       companyIntel.technologies ||
+                       companyIntel.technology_stack;
+
+  // Safely convert to array regardless of input type
+  const techArray = Array.isArray(rawTechStack) ? rawTechStack :
+                    (rawTechStack && typeof rawTechStack === 'object') ?
+                      Object.values(rawTechStack).flat().filter(Boolean) : [];
   
   // Take relevant subset for the role (first 12, or all if expanded)
   const displayTech = expanded ? techArray : techArray.slice(0, 12);

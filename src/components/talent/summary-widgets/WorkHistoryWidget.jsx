@@ -14,7 +14,7 @@ const formatDate = (dateStr) => {
 };
 
 const WorkHistoryWidget = ({ candidate, editMode, onRemove, dragHandleProps }) => {
-  const workHistory = candidate?.work_history || [];
+  const workHistory = Array.isArray(candidate?.work_history) ? candidate.work_history : [];
   
   // Get the 3 most recent jobs (assuming they're sorted by date)
   const recentJobs = workHistory.slice(0, 3);

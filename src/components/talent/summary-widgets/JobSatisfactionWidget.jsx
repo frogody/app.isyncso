@@ -56,15 +56,23 @@ const JobSatisfactionWidget = ({ candidate, editMode, onRemove, dragHandleProps 
         {/* Quick Metrics */}
         {metrics && metrics.length > 0 && (
           <div className="grid grid-cols-3 gap-2">
-            {metrics.map((metric, i) => (
-              <div key={i} className={`p-2.5 bg-${metric.color}-500/10 rounded-lg border border-${metric.color}-500/20`}>
-                <div className="flex items-center gap-1.5 mb-1">
-                  <metric.icon className={`w-3.5 h-3.5 text-${metric.color}-400`} />
-                  <span className={`text-xs font-medium text-${metric.color}-400`}>{metric.value}</span>
+            {metrics.map((metric, i) => {
+              const bgClass = metric.color === 'red' ? 'bg-red-500/10 border-red-500/20' :
+                              metric.color === 'green' ? 'bg-green-500/10 border-green-500/20' :
+                              'bg-amber-500/10 border-amber-500/20';
+              const textClass = metric.color === 'red' ? 'text-red-400' :
+                                metric.color === 'green' ? 'text-green-400' :
+                                'text-amber-400';
+              return (
+                <div key={i} className={`p-2.5 rounded-lg border ${bgClass}`}>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <metric.icon className={`w-3.5 h-3.5 ${textClass}`} />
+                    <span className={`text-xs font-medium ${textClass}`}>{metric.value}</span>
+                  </div>
+                  <p className="text-[10px] text-zinc-500 uppercase">{metric.label}</p>
                 </div>
-                <p className="text-[10px] text-zinc-500 uppercase">{metric.label}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
         

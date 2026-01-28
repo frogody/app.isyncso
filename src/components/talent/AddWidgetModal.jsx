@@ -12,7 +12,9 @@ import {
   Briefcase,
   Lightbulb,
   BarChart3,
-  Check
+  Check,
+  Building2,
+  Cpu
 } from "lucide-react";
 import { WIDGET_REGISTRY, WIDGET_CATEGORIES } from "./summary-widgets";
 
@@ -25,7 +27,9 @@ const ICONS = {
   Award,
   Briefcase,
   Lightbulb,
-  BarChart3
+  BarChart3,
+  Building2,
+  Cpu
 };
 
 /**
