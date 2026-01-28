@@ -13,6 +13,16 @@ const formatDate = (dateStr) => {
   }
 };
 
+// Extract string value from field that might be object or string
+const getStringValue = (value, fallback = '') => {
+  if (!value) return fallback;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object') {
+    return value.name || value.title || value.text || value.value || fallback;
+  }
+  return String(value);
+};
+
 const WorkHistoryWidget = ({ candidate, editMode, onRemove, dragHandleProps }) => {
   const workHistory = Array.isArray(candidate?.work_history) ? candidate.work_history : [];
   
@@ -43,10 +53,10 @@ const WorkHistoryWidget = ({ candidate, editMode, onRemove, dragHandleProps }) =
               </div>
               <div className="flex-1 min-w-0">
                 <p className={`font-medium truncate ${i === 0 ? 'text-white' : 'text-zinc-300'}`}>
-                  {job.title || job.job_title || 'Unknown Role'}
+                  {getStringValue(job.title) || getStringValue(job.job_title) || 'Unknown Role'}
                 </p>
                 <p className="text-sm text-zinc-400 truncate">
-                  {job.company || job.company_name || 'Unknown Company'}
+                  {getStringValue(job.company) || getStringValue(job.company_name) || 'Unknown Company'}
                 </p>
                 <div className="flex items-center gap-1.5 mt-1 text-xs text-zinc-500">
                   <Calendar className="w-3 h-3" />
@@ -56,7 +66,7 @@ const WorkHistoryWidget = ({ candidate, editMode, onRemove, dragHandleProps }) =
             </div>
             {job.description && (
               <p className="mt-2 text-xs text-zinc-500 line-clamp-2 pl-11">
-                {job.description}
+                {getStringValue(job.description)}
               </p>
             )}
           </div>
