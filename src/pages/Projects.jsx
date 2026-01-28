@@ -3351,17 +3351,18 @@ export default function Projects() {
         // Merge current project data with updates
         const mergedProject = { ...currentProject, ...updates };
 
+        // Build update object, handling both frontend (name) and DB (title) field names
         const fullProjectData = {
-          title: mergedProject.name,
+          title: mergedProject.name || mergedProject.title,
           description: mergedProject.description,
           status: mapStatusToDB(mergedProject.status),
           priority: mergedProject.priority,
-          project_type: mergedProject.category,
+          project_type: mergedProject.category || mergedProject.project_type,
           start_date: mergedProject.start_date || null,
-          deadline: mergedProject.due_date || null,
+          deadline: mergedProject.due_date || mergedProject.deadline || null,
           budget: mergedProject.budget ? parseFloat(mergedProject.budget) : null,
           spent: mergedProject.spent ? parseFloat(mergedProject.spent) : 0,
-          client_contact_name: mergedProject.client_name,
+          client_contact_name: mergedProject.client_name || mergedProject.client_contact_name,
           team_members: mergedProject.team_members || [],
           tags: mergedProject.tags || [],
           milestones: mergedProject.milestones || [],
@@ -3380,6 +3381,14 @@ export default function Projects() {
           client_updates: mergedProject.client_updates || [],
           page_content: mergedProject.page_content || [],
         };
+
+        // Remove undefined values to avoid 400 errors
+        Object.keys(fullProjectData).forEach(key => {
+          if (fullProjectData[key] === undefined) {
+            delete fullProjectData[key];
+          }
+        });
+
         await db.entities.Project.update(projectId, fullProjectData);
       } else {
         // Fallback: try partial update if we can't find the project
