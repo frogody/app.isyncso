@@ -130,15 +130,8 @@ const tableNameMap = {
   'ProductCategory': 'product_categories',
   'ProductBundle': 'product_bundles',
 
-  // === Finance & Proposals ===
+  // === Proposals ===
   'Proposal': 'proposals',
-  'Expense': 'expenses',
-  'Invoice': 'invoices',
-  'Subscription': 'subscriptions',
-
-  // === Fundraising ===
-  'RaiseCampaign': 'raise_campaigns',
-  'RaiseInvestor': 'raise_investors',
   'Investor': 'raise_investors',
 
   // === CREATE (Content Creation) ===

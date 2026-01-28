@@ -144,7 +144,7 @@ class ErrorBoundary extends React.Component {
     if (this.state.hasError) {
       const { errorType, error, errorInfo } = this.state;
       const userMessage = formatErrorMessage(error);
-      const isDevMode = import.meta.env?.DEV || process.env.NODE_ENV === "development";
+      const isDevMode = import.meta.env?.DEV || false;
 
       // Use custom fallback if provided
       if (this.props.fallback) {

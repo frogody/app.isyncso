@@ -43,7 +43,8 @@ import {
   CreditCard,
   Shield,
   Globe,
-  Palette
+  Palette,
+  Trophy
 } from 'lucide-react';
 
 // Mock data

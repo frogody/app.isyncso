@@ -64,6 +64,48 @@ export default function ContactsImport() {
   const canCreate = hasPermission('users.create');
   const navigate = useNavigate();
 
+  // All hooks must be called unconditionally at the top
+  // Wizard state
+  const [currentStep, setCurrentStep] = useState(0);
+
+  // File upload state
+  const [fileData, setFileData] = useState(null);
+
+  // Contact type state
+  const [selectedContactType, setSelectedContactType] = useState('lead');
+
+  // Column mapping state
+  const [mappings, setMappings] = useState({});
+  const [aiSuggestions, setAiSuggestions] = useState({});
+  const [aiConfidence, setAiConfidence] = useState(0);
+  const [isLoadingAI, setIsLoadingAI] = useState(false);
+
+  // Validation state
+  const [validationResult, setValidationResult] = useState(null);
+
+  // Import state
+  const [isImporting, setIsImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
+  const [importResults, setImportResults] = useState(null);
+  const [_importErrors, setImportErrors] = useState([]);
+
+  // Handle file processed
+  const handleFileProcessed = useCallback((data) => {
+    setFileData(data);
+    // Auto-advance to type selection step
+    setCurrentStep(1);
+  }, []);
+
+  // Handle mapping changes
+  const handleMappingChange = useCallback((newMappings) => {
+    setMappings(newMappings);
+  }, []);
+
+  // Handle validation complete
+  const handleValidationComplete = useCallback((result) => {
+    setValidationResult(result);
+  }, []);
+
   // If user doesn't have permission, show access denied
   if (!canCreate) {
     return (
@@ -88,37 +130,6 @@ export default function ContactsImport() {
       </div>
     );
   }
-
-  // Wizard state
-  const [currentStep, setCurrentStep] = useState(0);
-
-  // File upload state
-  const [fileData, setFileData] = useState(null);
-
-  // Contact type state
-  const [selectedContactType, setSelectedContactType] = useState('lead');
-
-  // Column mapping state
-  const [mappings, setMappings] = useState({});
-  const [aiSuggestions, setAiSuggestions] = useState({});
-  const [aiConfidence, setAiConfidence] = useState(0);
-  const [isLoadingAI, setIsLoadingAI] = useState(false);
-
-  // Validation state
-  const [validationResult, setValidationResult] = useState(null);
-
-  // Import state
-  const [isImporting, setIsImporting] = useState(false);
-  const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
-  const [importResults, setImportResults] = useState(null);
-  const [importErrors, setImportErrors] = useState([]);
-
-  // Handle file processed
-  const handleFileProcessed = useCallback((data) => {
-    setFileData(data);
-    // Auto-advance to type selection step
-    setCurrentStep(1);
-  }, []);
 
   // Handle type selection and request AI suggestions
   const handleTypeSelected = async () => {
@@ -165,16 +176,6 @@ export default function ContactsImport() {
       setIsLoadingAI(false);
     }
   };
-
-  // Handle mapping changes
-  const handleMappingChange = useCallback((newMappings) => {
-    setMappings(newMappings);
-  }, []);
-
-  // Handle validation complete
-  const handleValidationComplete = useCallback((result) => {
-    setValidationResult(result);
-  }, []);
 
   // Validate data before import
   const validateData = () => {

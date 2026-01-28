@@ -19,16 +19,16 @@ export default function LessonSidebar({
   completedLessons,
   className 
 }) {
-  if (!course) return null;
-
   const sortedModules = useMemo(
-    () => [...modules].sort((a, b) => a.order_index - b.order_index),
+    () => modules ? [...modules].sort((a, b) => a.order_index - b.order_index) : [],
     [modules]
   );
 
-  const totalLessons = lessons.length;
-  const completedCount = completedLessons.size;
+  const totalLessons = lessons?.length || 0;
+  const completedCount = completedLessons?.size || 0;
   const progressPercent = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
+
+  if (!course) return null;
 
   return (
     <div className={cn("flex flex-col h-full bg-black", className)}>

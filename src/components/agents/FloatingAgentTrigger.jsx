@@ -210,18 +210,16 @@ export default function FloatingAgentTrigger({ agentType, autoOpen = false, onTo
   });
   
   const config = AGENT_CONFIGS[agentType];
-  if (!config) return null;
-  
-  const Icon = config.icon;
-  const colors = config.colorClasses;
+  const Icon = config?.icon;
+  const colors = config?.colorClasses;
 
   // Auto-open when autoOpen prop is true
   useEffect(() => {
-    if (autoOpen && !isOpen) {
+    if (config && autoOpen && !isOpen) {
       setIsOpen(true);
       onToggle?.(true);
     }
-  }, [autoOpen]);
+  }, [autoOpen, config, isOpen, onToggle]);
 
   // Notify parent when panel state changes
   const handleToggle = (open) => {
@@ -327,6 +325,9 @@ export default function FloatingAgentTrigger({ agentType, autoOpen = false, onTo
       content: "🖐️ Control returned to you. Let me know if you need help with anything else!"
     }]);
   }, [stopControl]);
+
+  // Early return after all hooks
+  if (!config) return null;
 
   return (
     <>

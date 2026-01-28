@@ -24,6 +24,16 @@ export default function CriteriaInput({ onSubmit, isProcessing, initialCriteria 
   const [error, setError] = useState(null);
 
   const loadTemplates = React.useCallback(async () => {
+    try {
+      const response = await db.functions.invoke('getICPTemplates');
+      if (response.data?.success) {
+        setTemplates(response.data.templates || []);
+      }
+    } catch (err) {
+      console.error('Failed to load templates:', err);
+      // Fail silently - templates are optional
+    }
+  }, []);
 
   const prefillFromUserContext = React.useCallback(async () => {
     try {
@@ -42,40 +52,48 @@ export default function CriteriaInput({ onSubmit, isProcessing, initialCriteria 
       }
 
       if (!companyData) return;
-      
+
       // Pre-fill based on user's company profile
       const suggestions = [];
-      
+
       if (companyData.industry) {
         suggestions.push(`Companies in ${companyData.industry}`);
       }
-      
+
       if (companyData.tech_stack?.length > 0) {
         const mainTech = companyData.tech_stack.slice(0, 3).join(', ');
         suggestions.push(`that use ${mainTech}`);
         setTechStack(companyData.tech_stack.slice(0, 5));
       }
-      
+
       if (companyData.employee_count) {
-        const size = companyData.employee_count < 50 ? '1-50' 
+        const size = companyData.employee_count < 50 ? '1-50'
           : companyData.employee_count < 200 ? '51-200'
           : companyData.employee_count < 500 ? '201-500'
           : '501+';
         setCompanySize([size]);
       }
-      
+
       if (companyData.headquarters_country) {
         setCountry(companyData.headquarters_country);
       }
-      
+
       // Set a helpful starting description
       if (suggestions.length > 0) {
         setDescription(`Similar to my company: ${suggestions.join(' ')}`);
       }
-      
+
     } catch {
       // Fail silently - prefill is nice to have
     }
+  }, []);
+
+  const loadCriteria = React.useCallback((criteria) => {
+    setDescription(criteria.description || "");
+    setIndustry(criteria.industry || []);
+    setCompanySize(criteria.companySize || []);
+    setCountry(criteria.location?.country || "");
+    setTechStack(criteria.techStack || []);
   }, []);
 
   useEffect(() => {
@@ -86,26 +104,7 @@ export default function CriteriaInput({ onSubmit, isProcessing, initialCriteria 
       // Pre-fill from user's company context if no initial criteria
       prefillFromUserContext();
     }
-  }, [loadTemplates, prefillFromUserContext, initialCriteria]);
-
-    try {
-      const response = await db.functions.invoke('getICPTemplates');
-      if (response.data?.success) {
-        setTemplates(response.data.templates || []);
-      }
-    } catch (error) {
-      console.error('Failed to load templates:', error);
-      // Fail silently - templates are optional
-    }
-  }, []);
-
-  const loadCriteria = (criteria) => {
-    setDescription(criteria.description || "");
-    setIndustry(criteria.industry || []);
-    setCompanySize(criteria.companySize || []);
-    setCountry(criteria.location?.country || "");
-    setTechStack(criteria.techStack || []);
-  };
+  }, [loadTemplates, prefillFromUserContext, loadCriteria, initialCriteria]);
 
   const handleLoadTemplate = React.useCallback(async () => {
     if (!selectedTemplate) return;
