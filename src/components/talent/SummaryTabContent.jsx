@@ -55,10 +55,14 @@ const SummaryTabContent = ({
   const [hasChanges, setHasChanges] = useState(false);
 
   // Initialize widgets from preferences or defaults
+  // Merge saved widgets with defaults to include any new widgets added later
   useEffect(() => {
     const savedWidgets = preferences?.summary_tab?.widgets;
     if (savedWidgets && savedWidgets.length > 0) {
-      setLocalWidgets(savedWidgets);
+      // Merge saved widgets with defaults to include any new widgets
+      const savedTypes = new Set(savedWidgets.map(w => w.type));
+      const newWidgets = DEFAULT_WIDGETS.filter(w => !savedTypes.has(w.type));
+      setLocalWidgets([...savedWidgets, ...newWidgets]);
     } else {
       setLocalWidgets(DEFAULT_WIDGETS);
     }
