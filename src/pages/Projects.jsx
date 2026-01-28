@@ -27,7 +27,7 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -1394,6 +1394,7 @@ function FolderDetailSheet({
     return (
       <Sheet open={isOpen} onOpenChange={onClose}>
         <SheetContent className="w-full sm:max-w-5xl bg-[#0a0a0b] border-zinc-800/60 overflow-y-auto p-0">
+          <SheetDescription className="sr-only">Client portal preview for shared folder</SheetDescription>
           <div className="sticky top-0 z-10 bg-[#0a0a0b]/95 backdrop-blur-xl border-b border-zinc-800/50 p-4">
             <div className="flex items-center justify-between">
               <Button
@@ -1419,6 +1420,7 @@ function FolderDetailSheet({
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent className="w-full sm:max-w-2xl bg-zinc-900 border-zinc-800/60 overflow-y-auto p-0">
+        <SheetDescription className="sr-only">Folder details and management</SheetDescription>
         {/* Header */}
         <div className={`relative overflow-hidden`}>
           <div className={`h-2 bg-gradient-to-r ${colorConfig.gradient}`} />
@@ -2401,6 +2403,7 @@ function ProjectDetailSheet({
     return (
       <Sheet open={isOpen} onOpenChange={onClose}>
         <SheetContent className="w-full sm:max-w-5xl bg-[#0a0a0b] border-zinc-800/60 overflow-y-auto p-0">
+          <SheetDescription className="sr-only">Client preview mode for shared project</SheetDescription>
           <div className="sticky top-0 z-10 bg-[#0a0a0b]/95 backdrop-blur-xl border-b border-zinc-800/50 p-4">
             <div className="flex items-center justify-between">
               <Button
@@ -2434,6 +2437,7 @@ function ProjectDetailSheet({
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent className="w-full sm:max-w-2xl bg-zinc-900 border-zinc-800/60 overflow-y-auto p-0">
+        <SheetDescription className="sr-only">Project details and management</SheetDescription>
         {/* Header with gradient */}
         <div className={`p-6 bg-cyan-500/5 border-b border-zinc-800/60`}>
           <div className="flex items-start justify-between mb-4">
@@ -3973,6 +3977,7 @@ export default function Projects() {
         <DialogContent className="bg-zinc-900 border-zinc-800 max-w-md">
           <DialogHeader>
             <DialogTitle className="text-white">Add Task</DialogTitle>
+            <DialogDescription className="text-zinc-400">Add a new task to this project</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 mt-4">
