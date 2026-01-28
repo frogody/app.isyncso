@@ -24,8 +24,15 @@ const getStringValue = (value, fallback = '') => {
 };
 
 const WorkHistoryWidget = ({ candidate, editMode, onRemove, dragHandleProps }) => {
-  const workHistory = Array.isArray(candidate?.work_history) ? candidate.work_history : [];
-  
+  // Check multiple possible data sources for work history
+  const workHistory = Array.isArray(candidate?.work_history) && candidate.work_history.length > 0
+    ? candidate.work_history
+    : Array.isArray(candidate?.experience) && candidate.experience.length > 0
+      ? candidate.experience
+      : Array.isArray(candidate?.positions)
+        ? candidate.positions
+        : [];
+
   // Get the 3 most recent jobs (assuming they're sorted by date)
   const recentJobs = workHistory.slice(0, 3);
   

@@ -105,42 +105,62 @@ const TechStackWidget = ({ candidate, editMode, onRemove, dragHandleProps }) => 
   const relevantCategories = useMemo(() => getRelevantCategories(roleText), [roleText]);
 
   // Process and filter tech by relevance
-  const { relevantTech, otherTech, totalCount } = useMemo(() => {
+  const { relevantTech, otherTech, totalCount, isFlatArray } = useMemo(() => {
     const relevant = [];
     const other = [];
     let total = 0;
+    let flatArray = false;
 
-    // Handle array of category objects: [{category: "X", technologies: [...]}]
-    if (Array.isArray(techStackData)) {
-      techStackData.forEach(categoryObj => {
-        const categoryName = (categoryObj?.category || '').toUpperCase();
-        const techs = categoryObj?.technologies || categoryObj?.techs || [];
+    if (Array.isArray(techStackData) && techStackData.length > 0) {
+      // Check if it's a flat array of strings/primitives vs category objects
+      const firstItem = techStackData[0];
+      const isFlat = typeof firstItem === 'string' ||
+                     (typeof firstItem === 'object' && !firstItem?.technologies && !firstItem?.techs && !firstItem?.category);
 
-        if (!Array.isArray(techs) || techs.length === 0) return;
+      if (isFlat) {
+        // Handle flat array: ["React", "Node.js"] or [{name: "React"}]
+        flatArray = true;
+        const techItems = techStackData.map(t => getTechName(t)).filter(Boolean);
+        total = techItems.length;
 
-        total += techs.length;
-
-        const isRelevant = relevantCategories.some(rc =>
-          categoryName.includes(rc.toUpperCase())
-        );
-
-        const techItems = techs.map(t => getTechName(t)).filter(Boolean);
-
-        if (isRelevant && techItems.length > 0) {
-          relevant.push({
-            category: categoryObj.category,
-            technologies: techItems
-          });
-        } else if (techItems.length > 0) {
+        if (techItems.length > 0) {
           other.push({
-            category: categoryObj.category,
+            category: 'Technologies',
             technologies: techItems
           });
         }
-      });
+      } else {
+        // Handle array of category objects: [{category: "X", technologies: [...]}]
+        techStackData.forEach(categoryObj => {
+          const categoryName = (categoryObj?.category || '').toUpperCase();
+          const techs = categoryObj?.technologies || categoryObj?.techs || [];
+
+          if (!Array.isArray(techs) || techs.length === 0) return;
+
+          total += techs.length;
+
+          const isRelevant = relevantCategories.some(rc =>
+            categoryName.includes(rc.toUpperCase())
+          );
+
+          const techItems = techs.map(t => getTechName(t)).filter(Boolean);
+
+          if (isRelevant && techItems.length > 0) {
+            relevant.push({
+              category: categoryObj.category,
+              technologies: techItems
+            });
+          } else if (techItems.length > 0) {
+            other.push({
+              category: categoryObj.category,
+              technologies: techItems
+            });
+          }
+        });
+      }
     }
 
-    return { relevantTech: relevant, otherTech: other, totalCount: total };
+    return { relevantTech: relevant, otherTech: other, totalCount: total, isFlatArray: flatArray };
   }, [techStackData, relevantCategories]);
 
   // Count relevant tech items
