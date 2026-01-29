@@ -266,8 +266,8 @@ export default function ProductsPhysical() {
       {/* Page Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
         <div>
-          <h1 className="text-xl font-semibold text-white">Physical Products</h1>
-          <p className="text-sm text-zinc-500 mt-0.5">Manage your physical inventory</p>
+          <h1 className="text-lg font-bold text-white">Physical Products</h1>
+          <p className="text-xs text-zinc-400">Manage your physical inventory</p>
         </div>
         <div className="flex items-center gap-2">
           <Button onClick={handleAddProduct} className="bg-cyan-500 hover:bg-cyan-600 text-white">
@@ -279,22 +279,22 @@ export default function ProductsPhysical() {
       {/* Stats Bar */}
       <div className="flex items-center gap-6 p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
         <div className="flex items-center gap-2">
-          <span className="text-2xl font-bold text-white">{stats.total}</span>
+          <span className="text-lg font-bold text-white">{stats.total}</span>
           <span className="text-sm text-zinc-500">total</span>
         </div>
         <div className="w-px h-8 bg-zinc-800" />
         <div className="flex items-center gap-2">
-          <span className="text-2xl font-bold text-green-400">{stats.in_stock}</span>
+          <span className="text-lg font-bold text-green-400">{stats.in_stock}</span>
           <span className="text-sm text-zinc-500">in stock</span>
         </div>
         <div className="w-px h-8 bg-zinc-800" />
         <div className="flex items-center gap-2">
-          <span className="text-2xl font-bold text-cyan-400">{stats.low_stock}</span>
+          <span className="text-lg font-bold text-cyan-400">{stats.low_stock}</span>
           <span className="text-sm text-zinc-500">low stock</span>
         </div>
         <div className="w-px h-8 bg-zinc-800" />
         <div className="flex items-center gap-2">
-          <span className="text-2xl font-bold text-red-400">{stats.out_of_stock}</span>
+          <span className="text-lg font-bold text-red-400">{stats.out_of_stock}</span>
           <span className="text-sm text-zinc-500">out of stock</span>
         </div>
       </div>

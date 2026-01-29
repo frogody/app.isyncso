@@ -470,8 +470,8 @@ export default function InventoryShipping() {
       <div className="max-w-full mx-auto px-4 lg:px-6 pr-14 py-4 space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
           <div>
-            <h1 className="text-xl font-semibold text-white">Shipping</h1>
-            <p className="text-sm text-zinc-500 mt-0.5">Manage outbound shipments</p>
+            <h1 className="text-lg font-bold text-white">Shipping</h1>
+            <p className="text-xs text-zinc-400">Manage outbound shipments</p>
           </div>
           <div className="flex items-center gap-2">
           </div>

@@ -620,8 +620,8 @@ export default function InventoryImport() {
       {/* Page Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
         <div>
-          <h1 className="text-xl font-semibold text-white">Import Inventory</h1>
-          <p className="text-sm text-zinc-500 mt-0.5">Bulk import products from spreadsheets</p>
+          <h1 className="text-lg font-bold text-white">Import Inventory</h1>
+          <p className="text-xs text-zinc-400">Bulk import products from spreadsheets</p>
         </div>
         {currentStep === STEPS.length - 1 && importResults && (
           <Button onClick={resetWizard} variant="outline">

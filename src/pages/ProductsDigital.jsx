@@ -228,8 +228,8 @@ export default function ProductsDigital() {
       {/* Page Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
         <div>
-          <h1 className="text-xl font-semibold text-white">Digital Products</h1>
-          <p className="text-sm text-zinc-500 mt-0.5">Manage your digital product catalog</p>
+          <h1 className="text-lg font-bold text-white">Digital Products</h1>
+          <p className="text-xs text-zinc-400">Manage your digital product catalog</p>
         </div>
         <div className="flex items-center gap-2">
           <Button onClick={handleAddProduct} className="bg-cyan-500 hover:bg-cyan-600 text-white">
@@ -241,17 +241,17 @@ export default function ProductsDigital() {
       {/* Stats Bar */}
       <div className="flex items-center gap-6 p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
         <div className="flex items-center gap-2">
-          <span className="text-2xl font-bold text-white">{stats.total}</span>
+          <span className="text-lg font-bold text-white">{stats.total}</span>
           <span className="text-sm text-zinc-500">total</span>
         </div>
         <div className="w-px h-8 bg-zinc-800" />
         <div className="flex items-center gap-2">
-          <span className="text-2xl font-bold text-green-400">{stats.published}</span>
+          <span className="text-lg font-bold text-green-400">{stats.published}</span>
           <span className="text-sm text-zinc-500">published</span>
         </div>
         <div className="w-px h-8 bg-zinc-800" />
         <div className="flex items-center gap-2">
-          <span className="text-2xl font-bold text-cyan-400">{stats.withTrial}</span>
+          <span className="text-lg font-bold text-cyan-400">{stats.withTrial}</span>
           <span className="text-sm text-zinc-500">with trial</span>
         </div>
       </div>

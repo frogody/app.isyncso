@@ -1078,8 +1078,8 @@ export default function InventoryExpenses() {
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
           <div>
-            <h1 className="text-xl font-semibold text-white">Expenses</h1>
-            <p className="text-sm text-zinc-500 mt-0.5">Track and manage inventory expenses</p>
+            <h1 className="text-lg font-bold text-white">Expenses</h1>
+            <p className="text-xs text-zinc-400">Track and manage inventory expenses</p>
           </div>
           <div className="flex items-center gap-2">
             <Button
