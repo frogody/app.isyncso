@@ -739,8 +739,8 @@ export default function Settings() {
                       <div className="relative group cursor-pointer" onClick={() => document.getElementById('avatar-upload').click()}>
                         <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-cyan-500/30 bg-zinc-800">
                           <img 
-                            src={profileForm.avatar_url || "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/db-prod/public/68ebfb48566133bc1cface8c/97c0a3206_GeneratedImageDecember082025-5_28PM.jpeg"} 
-                            alt="Avatar" 
+                            src={profileForm.avatar_url || user?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.full_name || 'U')}&background=0e7490&color=fff&size=128`}
+                            alt="Avatar"
                             className="w-full h-full object-cover" 
                           />
                         </div>
