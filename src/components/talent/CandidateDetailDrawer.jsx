@@ -50,6 +50,7 @@ import { supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { IntelligenceGauge, IntelligenceLevelBadge, ApproachBadge } from "./IntelligenceGauge";
 import SummaryTabContent from "./SummaryTabContent";
 import { IntelligenceReport } from "@/components/talent/IntelligenceReport";
@@ -1493,7 +1494,7 @@ export default function CandidateDetailDrawer({
         .from("outreach_tasks")
         .select("*, campaign:campaign_id(id, name)")
         .eq("candidate_id", candidateId)
-        .order("created_at", { ascending: false });
+        .order("created_date", { ascending: false });
 
       if (tasksError) throw tasksError;
 

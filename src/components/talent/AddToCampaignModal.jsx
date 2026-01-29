@@ -143,7 +143,7 @@ export default function AddToCampaignModal({
         .select("*")
         .eq("organization_id", user.organization_id)
         .in("status", ["draft", "active", "paused"])
-        .order("created_at", { ascending: false });
+        .order("created_date", { ascending: false });
 
       if (error) throw error;
       setCampaigns(data || []);

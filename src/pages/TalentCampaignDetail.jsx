@@ -1955,7 +1955,7 @@ export default function TalentCampaignDetail() {
         .from('outreach_tasks')
         .select('*, candidate:candidate_id(id, first_name, last_name, job_title, email, current_title, current_company)')
         .eq('campaign_id', campaign.id)
-        .order('created_at', { ascending: false });
+        .order('created_date', { ascending: false });
 
       if (error) throw error;
       setOutreachTasks(data || []);

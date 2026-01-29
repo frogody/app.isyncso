@@ -107,13 +107,13 @@ const TalentActivityFeed = ({ organizationId, limit = 10, showHeader = true }) =
           status,
           sent_at,
           replied_at,
-          created_at,
+          created_date,
           campaign_id,
           candidate:candidate_id(id, first_name, last_name)
         `)
         .eq('organization_id', organizationId)
         .or('status.eq.sent,status.eq.replied')
-        .order('created_at', { ascending: false })
+        .order('created_date', { ascending: false })
         .limit(20);
 
       // Process outreach tasks into activities
@@ -170,10 +170,10 @@ const TalentActivityFeed = ({ organizationId, limit = 10, showHeader = true }) =
       // Fetch recent campaigns (for matched candidates)
       const { data: campaigns } = await supabase
         .from('campaigns')
-        .select('id, name, matched_candidates, created_at, updated_at')
+        .select('id, name, matched_candidates, created_date, updated_date')
         .eq('organization_id', organizationId)
         .not('matched_candidates', 'is', null)
-        .order('updated_at', { ascending: false })
+        .order('updated_date', { ascending: false })
         .limit(10);
 
       (campaigns || []).forEach(campaign => {

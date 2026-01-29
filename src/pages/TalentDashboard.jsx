@@ -813,7 +813,7 @@ export default function TalentDashboard() {
           .from("campaigns")
           .select("*")
           .eq("organization_id", user.organization_id)
-          .order("updated_at", { ascending: false }),
+          .order("updated_date", { ascending: false }),
         supabase
           .from("outreach_tasks")
           .select("*, candidates(first_name, last_name)")
@@ -872,7 +872,7 @@ export default function TalentDashboard() {
         .from('nests')
         .select('*')
         .eq('is_active', true)
-        .order('purchase_count', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(4);
 
       // Exclude purchased nests if any
