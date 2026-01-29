@@ -602,7 +602,7 @@ export default function InboxPage() {
   }
 
   return (
-    <div className="h-screen bg-black flex overflow-hidden relative">
+    <div className="h-screen bg-black flex overflow-hidden relative pl-4 lg:pl-6">
       {/* Mobile Overlay */}
       <AnimatePresence>
         {mobileMenuOpen && (

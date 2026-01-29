@@ -94,6 +94,7 @@ import { Toaster } from "@/components/ui/toaster";
 // Import icons directly - no lazy loading for icons
 import SentinelOrbitIcon from "@/components/icons/SentinelOrbitIcon";
 import SyncOrbitIcon from "@/components/icons/SyncOrbitIcon";
+import SyncAvatarMini from "@/components/icons/SyncAvatarMini";
 import CoursesOrbitIcon from "@/components/icons/CoursesOrbitIcon";
 
 import GrowthOrbitIcon from "@/components/icons/GrowthOrbitIcon";
@@ -861,19 +862,17 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
 
   return (
     <div className="flex flex-col h-full relative overflow-visible">
-      {/* Apps Manager Button (Desktop only) */}
-      {!isMobile && (
-        <button
-          onClick={onOpenAppsManager}
-          className="absolute -right-3 top-24 bg-black border border-gray-700 text-gray-400 rounded-full p-1.5 hover:text-cyan-400 hover:border-cyan-500/50 transition-all z-50 shadow-lg"
-          title="Manage Apps"
-        >
-          <SettingsIcon size={12} />
-        </button>
-      )}
-
       {/* Navigation - Mobile optimized with larger touch targets */}
       <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-3 space-y-1 scrollbar-hide scroll-smooth-ios">
+        {/* SYNC Avatar - top of sidebar */}
+        <Link
+          to={createPageUrl("SyncAgent")}
+          className="flex items-center justify-center min-h-[44px] p-2 mb-2 rounded-xl transition-all duration-200 group hover:bg-white/5 active:scale-[0.98]"
+          title="SYNC Agent"
+        >
+          <SyncAvatarMini size={36} />
+        </Link>
+
         {/* Core Navigation - filtered by permissions */}
         <div className="space-y-1">
           {filteredNavItems.map((item) => {
@@ -945,23 +944,34 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
 
             // Desktop: items without secondary nav use Link
             return (
-              <Link
-                key={item.title}
-                to={item.url}
-                onClick={triggerActivity}
-                className={`flex items-center justify-center min-h-[44px] p-3 rounded-xl transition-all duration-200 group relative active:scale-[0.98]
-                  ${isActive
-                    ? 'text-cyan-400 bg-cyan-950/30'
-                    : 'text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
-                  }
-                `}
-                title={item.title}
-              >
-                <item.icon isActive={isActive} className={`w-5 h-5 flex-shrink-0 transition-colors ${isActive ? 'text-cyan-400' : 'group-hover:text-white'}`} />
-                {isActive && (
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-cyan-500 rounded-l-full shadow-[0_0_10px_rgba(6,182,212,0.5)]" />
+              <React.Fragment key={item.title}>
+                <Link
+                  to={item.url}
+                  onClick={triggerActivity}
+                  className={`flex items-center justify-center min-h-[44px] p-3 rounded-xl transition-all duration-200 group relative active:scale-[0.98]
+                    ${isActive
+                      ? 'text-cyan-400 bg-cyan-950/30'
+                      : 'text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
+                    }
+                  `}
+                  title={item.title}
+                >
+                  <item.icon isActive={isActive} className={`w-5 h-5 flex-shrink-0 transition-colors ${isActive ? 'text-cyan-400' : 'group-hover:text-white'}`} />
+                  {isActive && (
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-cyan-500 rounded-l-full shadow-[0_0_10px_rgba(6,182,212,0.5)]" />
+                  )}
+                </Link>
+                {/* Apps Manager gear - next to Dashboard */}
+                {item.title === 'Dashboard' && !isMobile && (
+                  <button
+                    onClick={onOpenAppsManager}
+                    className="flex items-center justify-center min-h-[32px] p-2 rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-white/5 transition-all"
+                    title="Manage Apps"
+                  >
+                    <SettingsIcon size={14} />
+                  </button>
                 )}
-              </Link>
+              </React.Fragment>
             );
           })}
         </div>
