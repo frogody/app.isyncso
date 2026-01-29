@@ -1,8 +1,4 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import anime from '@/lib/anime-wrapper';
-const animate = anime;
-import { prefersReducedMotion } from '@/lib/animations';
 import { Link, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
@@ -16,7 +12,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { GlassCard } from "@/components/ui/GlassCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
@@ -241,7 +236,7 @@ function OverviewSection({
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       {/* Left Column - Images */}
       <div className="lg:col-span-1 space-y-3">
-        <GlassCard className="p-3">
+        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
           <ProductImageUploader
             images={localImages}
             featuredImage={localFeatured}
@@ -249,7 +244,7 @@ function OverviewSection({
             onFeaturedChange={handleFeaturedChange}
             maxImages={10}
           />
-        </GlassCard>
+        </div>
 
         {/* Quick Stats */}
         {isPhysical && (
@@ -279,7 +274,7 @@ function OverviewSection({
       {/* Right Column - Details */}
       <div className="lg:col-span-2 space-y-3">
         {/* Header Card */}
-        <GlassCard className="p-4">
+        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div className="flex-1 space-y-3">
               <div className="flex items-center gap-3">
@@ -337,11 +332,11 @@ function OverviewSection({
               </div>
             )}
           </div>
-        </GlassCard>
+        </div>
 
         {/* SKU & Barcode - Physical Only */}
         {isPhysical && (
-          <GlassCard className="p-3">
+          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
             <div className="flex items-center gap-3">
               <div className="grid grid-cols-2 gap-3 flex-1">
                 <InlineEditText
@@ -368,11 +363,11 @@ function OverviewSection({
                 />
               )}
             </div>
-          </GlassCard>
+          </div>
         )}
 
         {/* Description */}
-        <GlassCard className="p-4">
+        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-4">
             <FileText className="w-5 h-5 text-cyan-400" />
             <span className="font-medium text-white">Description</span>
@@ -385,7 +380,7 @@ function OverviewSection({
             rows={4}
             textClassName="text-zinc-300 whitespace-pre-wrap leading-relaxed"
           />
-        </GlassCard>
+        </div>
 
         {/* Key Info Grid */}
         <div ref={statsGridRef} className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -502,7 +497,7 @@ function PricingSection({ details, onDetailsUpdate, currency }) {
     <div className="space-y-4">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Pricing Details */}
-        <GlassCard className="p-4">
+        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-6">
             <Euro className="w-5 h-5 text-cyan-400" />
             <span className="font-medium text-white">Pricing Details</span>
@@ -564,10 +559,10 @@ function PricingSection({ details, onDetailsUpdate, currency }) {
               />
             </div>
           </div>
-        </GlassCard>
+        </div>
 
         {/* Margin Analysis */}
-        <GlassCard className="p-4">
+        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-6">
             <TrendingUp className="w-5 h-5 text-green-400" />
             <span className="font-medium text-white">Margin Analysis</span>
@@ -606,11 +601,11 @@ function PricingSection({ details, onDetailsUpdate, currency }) {
               );
             })()}
           </div>
-        </GlassCard>
+        </div>
       </div>
 
       {/* Volume Pricing */}
-      <GlassCard className="p-4">
+      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
         <PricingTiers
           tiers={tiers}
           basePrice={pricing.base_price || 0}
@@ -618,7 +613,7 @@ function PricingSection({ details, onDetailsUpdate, currency }) {
           currency={currency}
           onTiersChange={handleTiersChange}
         />
-      </GlassCard>
+      </div>
     </div>
   );
 }
@@ -634,13 +629,13 @@ function DigitalPricingSection({ details, onDetailsUpdate, currency }) {
 
   return (
     <div className="space-y-4">
-      <GlassCard className="p-4">
+      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
         <DigitalPricingManager
           pricingConfig={pricingConfig}
           currency={currency}
           onConfigChange={handlePricingConfigChange}
         />
-      </GlassCard>
+      </div>
     </div>
   );
 }
@@ -783,7 +778,7 @@ function BundlesSection({ product, details, currency }) {
 
   if (showEditor) {
     return (
-      <GlassCard className="p-4">
+      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
         <BundleEditor
           bundle={editingBundle}
           currency={currency}
@@ -794,12 +789,12 @@ function BundlesSection({ product, details, currency }) {
           }}
           saving={saving}
         />
-      </GlassCard>
+      </div>
     );
   }
 
   return (
-    <GlassCard className="p-4">
+    <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
       <BundleManager
         bundles={bundles}
         currency={currency}
@@ -810,7 +805,7 @@ function BundlesSection({ product, details, currency }) {
         onArchiveBundle={handleArchiveBundle}
         onDeleteBundle={handleDeleteBundle}
       />
-    </GlassCard>
+    </div>
   );
 }
 
@@ -1067,7 +1062,7 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Stock Management */}
-        <GlassCard className="p-4">
+        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-6">
             <Package className="w-5 h-5 text-cyan-400" />
             <span className="font-medium text-white">Stock Management</span>
@@ -1120,10 +1115,10 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
               </label>
             </div>
           </div>
-        </GlassCard>
+        </div>
 
         {/* Shipping Info */}
-        <GlassCard className="p-4">
+        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-6">
             <Truck className="w-5 h-5 text-blue-400" />
             <span className="font-medium text-white">Shipping Details</span>
@@ -1170,11 +1165,11 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
               placeholder="Standard"
             />
           </div>
-        </GlassCard>
+        </div>
       </div>
 
       {/* Suppliers Section */}
-      <GlassCard className="p-4">
+      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
             <Building2 className="w-5 h-5 text-purple-400" />
@@ -1302,10 +1297,10 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
             ))}
           </div>
         )}
-      </GlassCard>
+      </div>
 
       {/* Purchase History Section */}
-      <GlassCard className="p-4">
+      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
             <History className="w-5 h-5 text-green-400" />
@@ -1468,7 +1463,7 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
             </table>
           </div>
         )}
-      </GlassCard>
+      </div>
 
       {/* Variants */}
       <VariantsManager
@@ -1489,7 +1484,7 @@ function SpecificationsSection({ details, onDetailsUpdate }) {
 
   return (
     <div className="space-y-4">
-      <GlassCard className="p-4">
+      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
         <div className="flex items-center gap-2 mb-6">
           <Settings className="w-5 h-5 text-cyan-400" />
           <span className="font-medium text-white">Technical Specifications</span>
@@ -1511,10 +1506,10 @@ function SpecificationsSection({ details, onDetailsUpdate }) {
             ))}
           </div>
         )}
-      </GlassCard>
+      </div>
 
       {attributes.length > 0 && (
-        <GlassCard className="p-4">
+        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-6">
             <Layers className="w-5 h-5 text-purple-400" />
             <span className="font-medium text-white">Attributes</span>
@@ -1528,12 +1523,12 @@ function SpecificationsSection({ details, onDetailsUpdate }) {
               </div>
             ))}
           </div>
-        </GlassCard>
+        </div>
       )}
 
       {/* Certifications */}
       {details?.certifications && details.certifications.length > 0 && (
-        <GlassCard className="p-4">
+        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-6">
             <Shield className="w-5 h-5 text-green-400" />
             <span className="font-medium text-white">Certifications</span>
@@ -1547,7 +1542,7 @@ function SpecificationsSection({ details, onDetailsUpdate }) {
               </Badge>
             ))}
           </div>
-        </GlassCard>
+        </div>
       )}
     </div>
   );
@@ -1577,13 +1572,13 @@ function DocumentsSectionWrapper({ details, onDetailsUpdate }) {
   };
 
   return (
-    <GlassCard className="p-4">
+    <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
       <DocumentsSection
         documents={documents}
         onUpload={handleUpload}
         onDelete={handleDelete}
       />
-    </GlassCard>
+    </div>
   );
 }
 
@@ -1595,14 +1590,14 @@ function ActivitySectionWrapper({ product, details }) {
   }, [product, details]);
 
   return (
-    <GlassCard className="p-4">
+    <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
       <div className="flex items-center gap-2 mb-6">
         <History className="w-5 h-5 text-cyan-400" />
         <span className="font-medium text-white">Activity History</span>
       </div>
 
       <ActivityTimeline activities={activities} maxItems={20} />
-    </GlassCard>
+    </div>
   );
 }
 
@@ -1626,8 +1621,6 @@ export default function ProductDetail() {
   // Modal states
   const [inquiryModalOpen, setInquiryModalOpen] = useState(false);
 
-  // Refs for anime.js animations
-  const headerRef = useRef(null);
   const statsGridRef = useRef(null);
 
   const isPhysical = type === 'physical';
@@ -1694,43 +1687,6 @@ export default function ProductDetail() {
   useEffect(() => {
     loadProduct();
   }, [slug, type]);
-
-  // Animate header on load
-  useEffect(() => {
-    if (loading || !headerRef.current || prefersReducedMotion()) return;
-
-    animate({
-      targets: headerRef.current,
-      translateY: [-20, 0],
-      opacity: [0, 1],
-      duration: 500,
-      easing: 'easeOutQuart',
-    });
-  }, [loading]);
-
-  // Animate stats cards when in overview section
-  useEffect(() => {
-    if (loading || activeSection !== 'overview' || !statsGridRef.current || prefersReducedMotion()) return;
-
-    const statCards = statsGridRef.current.querySelectorAll('.stat-card');
-    if (statCards.length === 0) return;
-
-    // Set initial state
-    Array.from(statCards).forEach(card => {
-      card.style.opacity = '0';
-      card.style.transform = 'translateY(20px)';
-    });
-
-    // Staggered entrance animation
-    animate({
-      targets: statCards,
-      translateY: [20, 0],
-      opacity: [0, 1],
-      delay: anime.stagger(60, { start: 100 }),
-      duration: 400,
-      easing: 'easeOutQuart',
-    });
-  }, [loading, activeSection]);
 
   // Handle product update
   const handleProductUpdate = async (updates) => {
@@ -1806,8 +1762,8 @@ export default function ProductDetail() {
   // Loading State
   if (loading) {
     return (
-      <div className="min-h-screen bg-black relative">
-        <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
+      <div className="min-h-screen bg-black">
+        <div className="max-w-full mx-auto px-4 lg:px-6 pr-14 py-4 space-y-4">
           <Skeleton className="h-10 w-48 bg-zinc-800/50" />
           <Skeleton className="h-12 w-full bg-zinc-800/50 rounded-lg" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -1825,9 +1781,9 @@ export default function ProductDetail() {
   // Error State
   if (error || !product) {
     return (
-      <div className="min-h-screen bg-black relative">
-        <div className="relative z-10 w-full px-4 lg:px-6 py-4">
-          <GlassCard className="p-8 text-center max-w-md mx-auto">
+      <div className="min-h-screen bg-black">
+        <div className="max-w-full mx-auto px-4 lg:px-6 pr-14 py-4">
+          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-8 text-center max-w-md mx-auto">
             <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mx-auto mb-4">
               <XCircle className="w-8 h-8 text-red-400" />
             </div>
@@ -1838,29 +1794,17 @@ export default function ProductDetail() {
                 <ArrowLeft className="w-4 h-4 mr-2" /> Back to Products
               </Button>
             </Link>
-          </GlassCard>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black relative">
-      {/* Background */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className={cn(
-          "absolute top-20 right-1/4 w-96 h-96 rounded-full blur-3xl",
-          'bg-cyan-900/10'
-        )} />
-        <div className={cn(
-          "absolute bottom-20 left-1/4 w-80 h-80 rounded-full blur-3xl",
-          'bg-cyan-950/10'
-        )} />
-      </div>
-
-      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
+    <div className="min-h-screen bg-black">
+      <div className="max-w-full mx-auto px-4 lg:px-6 pr-14 py-4 space-y-4">
         {/* Header */}
-        <div ref={headerRef} style={{ opacity: 0 }} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Link to={createPageUrl(backUrl)}>
               <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white -ml-2">
@@ -1893,14 +1837,7 @@ export default function ProductDetail() {
         />
 
         {/* Section Content */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeSection}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-          >
+        <div>
             {activeSection === 'overview' && (
               <OverviewSection
                 product={product}
@@ -1967,8 +1904,7 @@ export default function ProductDetail() {
                 details={details}
               />
             )}
-          </motion.div>
-        </AnimatePresence>
+        </div>
 
         {/* Related Products */}
         {activeSection === 'overview' && relatedProducts.length > 0 && (

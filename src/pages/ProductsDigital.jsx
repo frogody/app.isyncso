@@ -1,8 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
-import { motion } from "framer-motion";
-import anime from '@/lib/anime-wrapper';
-const animate = anime;
-import { prefersReducedMotion } from '@/lib/animations';
+import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
@@ -13,8 +9,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { GlassCard } from "@/components/ui/GlassCard";
-import { PageHeader } from "@/components/ui/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@/components/context/UserContext";
 import { Product, DigitalProduct, ProductCategory } from "@/api/entities";
@@ -64,11 +58,6 @@ export default function ProductsDigital() {
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
-
-  // Refs for anime.js animations
-  const headerRef = useRef(null);
-  const statsRef = useRef(null);
-  const productsGridRef = useRef(null);
 
   const handleAddProduct = () => {
     setEditingProduct(null);
@@ -234,259 +223,177 @@ export default function ProductsDigital() {
     withTrial: Object.values(digitalProducts).filter(dp => dp.trial_available).length,
   }), [products, digitalProducts]);
 
-  // Animate header on mount
-  useEffect(() => {
-    if (!headerRef.current || prefersReducedMotion()) return;
-
-    animate({
-      targets: headerRef.current,
-      translateY: [-20, 0],
-      opacity: [0, 1],
-      duration: 500,
-      easing: 'easeOutQuart',
-    });
-  }, []);
-
-  // Animate stats bar with count-up
-  useEffect(() => {
-    if (loading || !statsRef.current || prefersReducedMotion()) return;
-
-    // Entrance animation for stats bar
-    animate({
-      targets: statsRef.current,
-      translateY: [15, 0],
-      opacity: [0, 1],
-      duration: 400,
-      easing: 'easeOutQuad',
-      delay: 100,
-    });
-
-    // Count-up animation for stat numbers
-    const statValues = statsRef.current.querySelectorAll('.stat-number');
-    statValues.forEach(el => {
-      const endValue = parseFloat(el.dataset.value) || 0;
-      const obj = { value: 0 };
-
-      animate({
-        targets: obj,
-        value: endValue,
-        round: 1,
-        duration: 1000,
-        delay: 200,
-        easing: 'easeOutExpo',
-        update: () => {
-          el.textContent = obj.value;
-        },
-      });
-    });
-  }, [loading, stats]);
-
-  // Animate product cards when loaded
-  useEffect(() => {
-    if (loading || !productsGridRef.current || prefersReducedMotion()) return;
-
-    const cards = productsGridRef.current.querySelectorAll('.product-card');
-    if (cards.length === 0) return;
-
-    // Set initial state
-    Array.from(cards).forEach(card => {
-      card.style.opacity = '0';
-      card.style.transform = 'translateY(25px) scale(0.96)';
-    });
-
-    // Staggered entrance animation
-    animate({
-      targets: cards,
-      translateY: [25, 0],
-      scale: [0.96, 1],
-      opacity: [0, 1],
-      delay: anime.stagger(40, { start: 150 }),
-      duration: 450,
-      easing: 'easeOutQuart',
-    });
-  }, [loading, filteredProducts, viewMode]);
-
   return (
-    <div className="min-h-screen bg-black relative">
-      {/* Background */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 right-1/4 w-96 h-96 bg-cyan-900/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-cyan-950/10 rounded-full blur-3xl" />
+    <div className="max-w-full mx-auto px-4 lg:px-6 pr-14 py-4 space-y-4">
+      {/* Page Header */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
+        <div>
+          <h1 className="text-xl font-semibold text-white">Digital Products</h1>
+          <p className="text-sm text-zinc-500 mt-0.5">Manage your digital product catalog</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button onClick={handleAddProduct} className="bg-cyan-500 hover:bg-cyan-600 text-white">
+            <Plus className="w-4 h-4 mr-2" /> New Digital Product
+          </Button>
+        </div>
       </div>
 
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
-        {/* Page Header */}
-        <div ref={headerRef} style={{ opacity: 0 }}>
-          <PageHeader
-            title="Digital Products"
-            subtitle="Software, SaaS, courses, and downloadable content"
-            icon={Cloud}
-            color="cyan"
-            actions={
-              <Button onClick={handleAddProduct} className="bg-cyan-500 hover:bg-cyan-600 text-white">
-                <Plus className="w-4 h-4 mr-2" /> New Digital Product
-              </Button>
-            }
-          />
+      {/* Stats Bar */}
+      <div className="flex items-center gap-6 p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+        <div className="flex items-center gap-2">
+          <span className="text-2xl font-bold text-white">{stats.total}</span>
+          <span className="text-sm text-zinc-500">total</span>
         </div>
+        <div className="w-px h-8 bg-zinc-800" />
+        <div className="flex items-center gap-2">
+          <span className="text-2xl font-bold text-green-400">{stats.published}</span>
+          <span className="text-sm text-zinc-500">published</span>
+        </div>
+        <div className="w-px h-8 bg-zinc-800" />
+        <div className="flex items-center gap-2">
+          <span className="text-2xl font-bold text-cyan-400">{stats.withTrial}</span>
+          <span className="text-sm text-zinc-500">with trial</span>
+        </div>
+      </div>
 
-        {/* Stats Bar */}
-        <div ref={statsRef} className="flex items-center gap-6 p-4 rounded-xl bg-zinc-900/50 border border-white/5" style={{ opacity: 0 }}>
-          <div className="flex items-center gap-2">
-            <span className="stat-number text-2xl font-bold text-white" data-value={stats.total}>0</span>
-            <span className="text-sm text-zinc-500">total</span>
+      {/* Filters */}
+      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
+        <div className="flex flex-wrap items-center gap-4">
+          {/* Search */}
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <Input
+              placeholder="Search digital products..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 bg-zinc-900/50 border-zinc-800/60 text-white placeholder:text-zinc-500"
+            />
           </div>
-          <div className="w-px h-8 bg-white/10" />
-          <div className="flex items-center gap-2">
-            <span className="stat-number text-2xl font-bold text-green-400" data-value={stats.published}>0</span>
-            <span className="text-sm text-zinc-500">published</span>
-          </div>
-          <div className="w-px h-8 bg-white/10" />
-          <div className="flex items-center gap-2">
-            <span className="stat-number text-2xl font-bold text-cyan-400" data-value={stats.withTrial}>0</span>
-            <span className="text-sm text-zinc-500">with trial</span>
+
+          {/* Status Filter */}
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[140px] bg-zinc-900/50 border-zinc-800/60 text-white">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800/60">
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="published">Published</SelectItem>
+              <SelectItem value="draft">Draft</SelectItem>
+              <SelectItem value="archived">Archived</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Category Filter */}
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-[160px] bg-zinc-900/50 border-zinc-800/60 text-white">
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800/60">
+              <SelectItem value="all">All Categories</SelectItem>
+              {categories.map(cat => (
+                <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Pricing Filter */}
+          <Select value={pricingFilter} onValueChange={setPricingFilter}>
+            <SelectTrigger className="w-[160px] bg-zinc-900/50 border-zinc-800/60 text-white">
+              <SelectValue placeholder="Pricing" />
+            </SelectTrigger>
+            <SelectContent className="bg-zinc-900 border-zinc-800/60">
+              <SelectItem value="all">All Pricing</SelectItem>
+              {Object.entries(PRICING_MODELS).map(([key, val]) => (
+                <SelectItem key={key} value={key}>{val.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* View Toggle */}
+          <div className="flex items-center gap-1 p-1 rounded-lg bg-zinc-800/50 border border-zinc-800/60">
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`h-8 px-3 ${viewMode === 'grid' ? 'bg-cyan-500/20 text-cyan-400' : 'text-zinc-400 hover:text-white'}`}
+              onClick={() => setViewMode('grid')}
+            >
+              <Grid3X3 className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`h-8 px-3 ${viewMode === 'list' ? 'bg-cyan-500/20 text-cyan-400' : 'text-zinc-400 hover:text-white'}`}
+              onClick={() => setViewMode('list')}
+            >
+              <List className="w-4 h-4" />
+            </Button>
           </div>
         </div>
+      </div>
 
-        {/* Filters */}
-        <GlassCard className="p-4">
-          <div className="flex flex-wrap items-center gap-4">
-            {/* Search */}
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-              <Input
-                placeholder="Search digital products..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 bg-zinc-900/50 border-white/10 text-white placeholder:text-zinc-500"
-              />
-            </div>
-
-            {/* Status Filter */}
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[140px] bg-zinc-900/50 border-white/10 text-white">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-white/10">
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="published">Published</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
-                <SelectItem value="archived">Archived</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Category Filter */}
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-[160px] bg-zinc-900/50 border-white/10 text-white">
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-white/10">
-                <SelectItem value="all">All Categories</SelectItem>
-                {categories.map(cat => (
-                  <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Pricing Filter */}
-            <Select value={pricingFilter} onValueChange={setPricingFilter}>
-              <SelectTrigger className="w-[160px] bg-zinc-900/50 border-white/10 text-white">
-                <SelectValue placeholder="Pricing" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-white/10">
-                <SelectItem value="all">All Pricing</SelectItem>
-                {Object.entries(PRICING_MODELS).map(([key, val]) => (
-                  <SelectItem key={key} value={key}>{val.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* View Toggle */}
-            <div className="flex items-center gap-1 p-1 rounded-lg bg-zinc-800/50 border border-white/5">
-              <Button
-                variant="ghost"
-                size="sm"
-                className={`h-8 px-3 ${viewMode === 'grid' ? 'bg-cyan-500/20 text-cyan-400' : 'text-zinc-400 hover:text-white'}`}
-                onClick={() => setViewMode('grid')}
-              >
-                <Grid3X3 className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className={`h-8 px-3 ${viewMode === 'list' ? 'bg-cyan-500/20 text-cyan-400' : 'text-zinc-400 hover:text-white'}`}
-                onClick={() => setViewMode('list')}
-              >
-                <List className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </GlassCard>
-
-        {/* Products Grid/List */}
-        {loading ? (
-          <div className={viewMode === 'grid'
-            ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'
-            : 'space-y-3'
-          }>
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <Skeleton
-                key={i}
-                className={viewMode === 'grid' ? 'h-64 bg-zinc-800/50' : 'h-20 bg-zinc-800/50'}
-              />
+      {/* Products Grid/List */}
+      {loading ? (
+        <div className={viewMode === 'grid'
+          ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'
+          : 'space-y-3'
+        }>
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+            <Skeleton
+              key={i}
+              className={viewMode === 'grid' ? 'h-64 bg-zinc-800/50' : 'h-20 bg-zinc-800/50'}
+            />
+          ))}
+        </div>
+      ) : filteredProducts.length > 0 ? (
+        viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {filteredProducts.map((product, index) => (
+              <div key={product.id}>
+                <ProductGridCard
+                  product={product}
+                  productType="digital"
+                  details={digitalProducts[product.id]}
+                  index={index}
+                  onEdit={handleEditProduct}
+                  onArchive={handleArchiveProduct}
+                  onDelete={handleDeleteProduct}
+                />
+              </div>
             ))}
           </div>
-        ) : filteredProducts.length > 0 ? (
-          viewMode === 'grid' ? (
-            <div ref={productsGridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredProducts.map((product, index) => (
-                <div key={product.id} className="product-card">
-                  <ProductGridCard
-                    product={product}
-                    productType="digital"
-                    details={digitalProducts[product.id]}
-                    index={index}
-                    onEdit={handleEditProduct}
-                    onArchive={handleArchiveProduct}
-                    onDelete={handleDeleteProduct}
-                  />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div ref={productsGridRef} className="space-y-3">
-              {filteredProducts.map((product, index) => (
-                <div key={product.id} className="product-card">
-                  <ProductListRow
-                    product={product}
-                    productType="digital"
-                    details={digitalProducts[product.id]}
-                    index={index}
-                    onEdit={handleEditProduct}
-                    onArchive={handleArchiveProduct}
-                    onDelete={handleDeleteProduct}
-                  />
-                </div>
-              ))}
-            </div>
-          )
         ) : (
-          <GlassCard className="p-12 text-center">
-            <div className="w-16 h-16 rounded-full bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mx-auto mb-4">
-              <Cloud className="w-8 h-8 text-cyan-400" />
-            </div>
-            <h4 className="text-lg font-medium text-white mb-2">No digital products found</h4>
-            <p className="text-sm text-zinc-500 mb-4">
-              {searchQuery || statusFilter !== 'all' || categoryFilter !== 'all' || pricingFilter !== 'all'
-                ? 'Try adjusting your filters'
-                : 'Get started by adding your first digital product'}
-            </p>
-            <Button onClick={handleAddProduct} className="bg-cyan-500 hover:bg-cyan-600 text-white">
-              <Plus className="w-4 h-4 mr-2" /> Add Digital Product
-            </Button>
-          </GlassCard>
-        )}
-      </div>
+          <div className="space-y-3">
+            {filteredProducts.map((product, index) => (
+              <div key={product.id}>
+                <ProductListRow
+                  product={product}
+                  productType="digital"
+                  details={digitalProducts[product.id]}
+                  index={index}
+                  onEdit={handleEditProduct}
+                  onArchive={handleArchiveProduct}
+                  onDelete={handleDeleteProduct}
+                />
+              </div>
+            ))}
+          </div>
+        )
+      ) : (
+        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-12 text-center">
+          <div className="w-16 h-16 rounded-full bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mx-auto mb-4">
+            <Cloud className="w-8 h-8 text-cyan-400" />
+          </div>
+          <h4 className="text-lg font-medium text-white mb-2">No digital products found</h4>
+          <p className="text-sm text-zinc-500 mb-4">
+            {searchQuery || statusFilter !== 'all' || categoryFilter !== 'all' || pricingFilter !== 'all'
+              ? 'Try adjusting your filters'
+              : 'Get started by adding your first digital product'}
+          </p>
+          <Button onClick={handleAddProduct} className="bg-cyan-500 hover:bg-cyan-600 text-white">
+            <Plus className="w-4 h-4 mr-2" /> Add Digital Product
+          </Button>
+        </div>
+      )}
 
       {/* Product Modal */}
       <ProductModal

@@ -1,15 +1,10 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import anime from '@/lib/anime-wrapper';
-const animate = anime;
-import { prefersReducedMotion } from '@/lib/animations';
+import React, { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import {
   Upload, Columns, CheckCircle, Download, Sparkles,
   ArrowLeft, ArrowRight, FileSpreadsheet, Package, Building2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { GlassCard } from '@/components/ui/GlassCard';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/components/context/UserContext';
 import { Product, PhysicalProduct, Supplier } from '@/api/entities';
@@ -60,10 +55,6 @@ export default function InventoryImport() {
   const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
   const [importResults, setImportResults] = useState(null);
   const [importErrors, setImportErrors] = useState([]);
-
-  // Refs for anime.js animations
-  const headerRef = useRef(null);
-  const stepsRef = useRef(null);
 
   // Handle file processed
   const handleFileProcessed = useCallback((data) => {
@@ -624,288 +615,230 @@ export default function InventoryImport() {
     setImportErrors([]);
   };
 
-  // Animate header on mount
-  useEffect(() => {
-    if (!headerRef.current || prefersReducedMotion()) return;
-
-    animate({
-      targets: headerRef.current,
-      translateY: [-20, 0],
-      opacity: [0, 1],
-      duration: 500,
-      easing: 'easeOutQuart',
-    });
-  }, []);
-
-  // Animate step cards on mount
-  useEffect(() => {
-    if (!stepsRef.current || prefersReducedMotion()) return;
-
-    const stepCards = stepsRef.current.querySelectorAll('.step-card');
-    if (stepCards.length === 0) return;
-
-    // Set initial state
-    Array.from(stepCards).forEach(card => {
-      card.style.opacity = '0';
-      card.style.transform = 'translateY(15px)';
-    });
-
-    // Staggered entrance animation
-    animate({
-      targets: stepCards,
-      translateY: [15, 0],
-      opacity: [0, 1],
-      delay: anime.stagger(60, { start: 100 }),
-      duration: 400,
-      easing: 'easeOutQuart',
-    });
-  }, []);
-
   return (
-    <div className="min-h-screen bg-black relative">
-      {/* Background */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 right-1/4 w-96 h-96 bg-cyan-900/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-cyan-950/10 rounded-full blur-3xl" />
-      </div>
-
-      <div className="relative z-10 max-w-6xl mx-auto px-4 lg:px-6 py-4 space-y-4">
-        {/* Header */}
-        <div ref={headerRef} className="flex items-center justify-between" style={{ opacity: 0 }}>
-          <div>
-            <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
-                <FileSpreadsheet className="w-4 h-4 text-cyan-400" />
-              </div>
-              Import Inventory
-            </h1>
-            <p className="text-zinc-500 mt-2">
-              Bulk import products from Excel or CSV files
-            </p>
-          </div>
-
-          {currentStep === STEPS.length - 1 && importResults && (
-            <Button onClick={resetWizard} variant="outline">
-              Import Another File
-            </Button>
-          )}
+    <div className="max-w-full mx-auto px-4 lg:px-6 pr-14 py-4 space-y-4">
+      {/* Page Header */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
+        <div>
+          <h1 className="text-xl font-semibold text-white">Import Inventory</h1>
+          <p className="text-sm text-zinc-500 mt-0.5">Bulk import products from spreadsheets</p>
         </div>
-
-        {/* Progress Steps */}
-        <div ref={stepsRef} className="flex items-center justify-between">
-          {STEPS.map((step, index) => {
-            const isActive = index === currentStep;
-            const isCompleted = index < currentStep;
-            const Icon = step.icon;
-
-            return (
-              <React.Fragment key={step.id}>
-                <div className="step-card flex flex-col items-center gap-2">
-                  <div
-                    className={cn(
-                      "w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all",
-                      isActive
-                        ? "bg-cyan-500/20 border-cyan-500 text-cyan-400"
-                        : isCompleted
-                        ? "bg-green-500/20 border-green-500 text-green-400"
-                        : "bg-zinc-900 border-zinc-700 text-zinc-500"
-                    )}
-                  >
-                    {isCompleted ? (
-                      <CheckCircle className="w-4 h-4" />
-                    ) : (
-                      <Icon className="w-4 h-4" />
-                    )}
-                  </div>
-                  <span className={cn(
-                    "text-[10px] font-medium",
-                    isActive ? "text-cyan-400" : isCompleted ? "text-green-400" : "text-zinc-500"
-                  )}>
-                    {step.title}
-                  </span>
-                </div>
-
-                {index < STEPS.length - 1 && (
-                  <div className={cn(
-                    "flex-1 h-0.5 mx-3",
-                    index < currentStep ? "bg-green-500" : "bg-zinc-800"
-                  )} />
-                )}
-              </React.Fragment>
-            );
-          })}
-        </div>
-
-        {/* Step Content */}
-        <GlassCard className="p-4">
-          <motion.div
-            key={currentStep}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-          >
-            {/* Step 0: Upload */}
-            {currentStep === 0 && (
-              <div className="space-y-4">
-                <div>
-                  <h2 className="text-lg font-semibold text-white">{STEPS[0].title}</h2>
-                  <p className="text-xs text-zinc-500 mt-1">{STEPS[0].description}</p>
-                </div>
-                <FileUploader onFileProcessed={handleFileProcessed} />
-              </div>
-            )}
-
-            {/* Step 1: Map Columns */}
-            {currentStep === 1 && fileData && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-semibold text-white">{STEPS[1].title}</h2>
-                    <p className="text-xs text-zinc-500 mt-1">
-                      {fileData.totalRows} rows found in "{fileData.fileName}"
-                    </p>
-                  </div>
-                </div>
-                <ColumnMapper
-                  sourceColumns={fileData.headers}
-                  aiSuggestions={aiSuggestions}
-                  aiConfidence={aiConfidence}
-                  isLoadingAI={isLoadingAI}
-                  onMappingChange={handleMappingChange}
-                  onRequestAISuggestions={() => requestAISuggestions(fileData.headers)}
-                />
-              </div>
-            )}
-
-            {/* Step 2: Validate */}
-            {currentStep === 2 && fileData && (
-              <div className="space-y-4">
-                <div>
-                  <h2 className="text-lg font-semibold text-white">{STEPS[2].title}</h2>
-                  <p className="text-xs text-zinc-500 mt-1">{STEPS[2].description}</p>
-                </div>
-                <ValidationPreview
-                  sourceColumns={fileData.headers}
-                  rows={fileData.rows}
-                  mappings={mappings}
-                  onValidationComplete={handleValidationComplete}
-                />
-              </div>
-            )}
-
-            {/* Step 3: Import */}
-            {currentStep === 3 && (
-              <div className="space-y-4">
-                <div>
-                  <h2 className="text-lg font-semibold text-white">{STEPS[3].title}</h2>
-                  <p className="text-xs text-zinc-500 mt-1">{STEPS[3].description}</p>
-                </div>
-                <ImportProgress
-                  isImporting={isImporting}
-                  progress={importProgress}
-                  results={importResults}
-                  errors={importErrors}
-                  totalToImport={validationResult?.transformedData?.length || 0}
-                />
-              </div>
-            )}
-
-            {/* Step 4: Enrich */}
-            {currentStep === 4 && importResults && (
-              <div className="space-y-4">
-                <div>
-                  <h2 className="text-lg font-semibold text-white">{STEPS[4].title}</h2>
-                  <p className="text-xs text-zinc-500 mt-1">{STEPS[4].description}</p>
-                </div>
-
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center mx-auto mb-4">
-                    <CheckCircle className="w-8 h-8 text-green-400" />
-                  </div>
-
-                  <h3 className="text-xl font-bold text-white mb-2">
-                    Import Complete!
-                  </h3>
-
-                  <p className="text-xs text-zinc-400 mb-4">
-                    {importResults.created} products created, {importResults.updated} updated
-                    {importResults.suppliersCreated > 0 && (
-                      <span className="block mt-1 text-cyan-400">
-                        {importResults.suppliersCreated} new suppliers added
-                      </span>
-                    )}
-                  </p>
-
-                  <div className="flex flex-wrap justify-center gap-3 mb-4">
-                    {importResults.toEnrich > 0 && (
-                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs bg-purple-500/10 border border-purple-500/20 text-purple-400">
-                        <Sparkles className="w-3 h-3" />
-                        <span>{importResults.toEnrich} products queued for AI enrichment</span>
-                      </div>
-                    )}
-                    {importResults.suppliersCreated > 0 && (
-                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
-                        <Building2 className="w-3 h-3" />
-                        <span>{importResults.suppliersCreated} suppliers queued for AI enrichment</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-center gap-3">
-                    <Button
-                      variant="outline"
-                      onClick={resetWizard}
-                      className="text-xs"
-                    >
-                      Import More Products
-                    </Button>
-                    <Button
-                      onClick={() => window.location.href = '/productsphysical'}
-                      className="bg-cyan-500 hover:bg-cyan-600 text-white text-xs"
-                    >
-                      <Package className="w-3 h-3 mr-2" />
-                      View Products
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </motion.div>
-        </GlassCard>
-
-        {/* Navigation Buttons */}
-        {currentStep < 4 && (
-          <div className="flex justify-between">
-            <Button
-              variant="outline"
-              onClick={goBack}
-              disabled={currentStep === 0}
-              className="gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </Button>
-
-            <Button
-              onClick={goNext}
-              disabled={!canProceed() || isImporting}
-              className="gap-2 bg-cyan-500 hover:bg-cyan-600 text-white"
-            >
-              {currentStep === 3 && !importResults ? (
-                <>
-                  <Download className="w-4 h-4" />
-                  Start Import
-                </>
-              ) : (
-                <>
-                  Next
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </Button>
-          </div>
+        {currentStep === STEPS.length - 1 && importResults && (
+          <Button onClick={resetWizard} variant="outline">
+            Import Another File
+          </Button>
         )}
       </div>
+
+      {/* Progress Steps */}
+      <div className="flex items-center justify-between">
+        {STEPS.map((step, index) => {
+          const isActive = index === currentStep;
+          const isCompleted = index < currentStep;
+          const Icon = step.icon;
+
+          return (
+            <React.Fragment key={step.id}>
+              <div className="flex flex-col items-center gap-2">
+                <div
+                  className={cn(
+                    "w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all",
+                    isActive
+                      ? "bg-cyan-500/20 border-cyan-500 text-cyan-400"
+                      : isCompleted
+                      ? "bg-green-500/20 border-green-500 text-green-400"
+                      : "bg-zinc-900 border-zinc-700 text-zinc-500"
+                  )}
+                >
+                  {isCompleted ? (
+                    <CheckCircle className="w-4 h-4" />
+                  ) : (
+                    <Icon className="w-4 h-4" />
+                  )}
+                </div>
+                <span className={cn(
+                  "text-[10px] font-medium",
+                  isActive ? "text-cyan-400" : isCompleted ? "text-green-400" : "text-zinc-500"
+                )}>
+                  {step.title}
+                </span>
+              </div>
+
+              {index < STEPS.length - 1 && (
+                <div className={cn(
+                  "flex-1 h-0.5 mx-3",
+                  index < currentStep ? "bg-green-500" : "bg-zinc-800"
+                )} />
+              )}
+            </React.Fragment>
+          );
+        })}
+      </div>
+
+      {/* Step Content */}
+      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+        <div>
+          {/* Step 0: Upload */}
+          {currentStep === 0 && (
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-lg font-semibold text-white">{STEPS[0].title}</h2>
+                <p className="text-xs text-zinc-500 mt-1">{STEPS[0].description}</p>
+              </div>
+              <FileUploader onFileProcessed={handleFileProcessed} />
+            </div>
+          )}
+
+          {/* Step 1: Map Columns */}
+          {currentStep === 1 && fileData && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-white">{STEPS[1].title}</h2>
+                  <p className="text-xs text-zinc-500 mt-1">
+                    {fileData.totalRows} rows found in "{fileData.fileName}"
+                  </p>
+                </div>
+              </div>
+              <ColumnMapper
+                sourceColumns={fileData.headers}
+                aiSuggestions={aiSuggestions}
+                aiConfidence={aiConfidence}
+                isLoadingAI={isLoadingAI}
+                onMappingChange={handleMappingChange}
+                onRequestAISuggestions={() => requestAISuggestions(fileData.headers)}
+              />
+            </div>
+          )}
+
+          {/* Step 2: Validate */}
+          {currentStep === 2 && fileData && (
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-lg font-semibold text-white">{STEPS[2].title}</h2>
+                <p className="text-xs text-zinc-500 mt-1">{STEPS[2].description}</p>
+              </div>
+              <ValidationPreview
+                sourceColumns={fileData.headers}
+                rows={fileData.rows}
+                mappings={mappings}
+                onValidationComplete={handleValidationComplete}
+              />
+            </div>
+          )}
+
+          {/* Step 3: Import */}
+          {currentStep === 3 && (
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-lg font-semibold text-white">{STEPS[3].title}</h2>
+                <p className="text-xs text-zinc-500 mt-1">{STEPS[3].description}</p>
+              </div>
+              <ImportProgress
+                isImporting={isImporting}
+                progress={importProgress}
+                results={importResults}
+                errors={importErrors}
+                totalToImport={validationResult?.transformedData?.length || 0}
+              />
+            </div>
+          )}
+
+          {/* Step 4: Enrich */}
+          {currentStep === 4 && importResults && (
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-lg font-semibold text-white">{STEPS[4].title}</h2>
+                <p className="text-xs text-zinc-500 mt-1">{STEPS[4].description}</p>
+              </div>
+
+              <div className="text-center py-8">
+                <div className="w-16 h-16 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="w-8 h-8 text-green-400" />
+                </div>
+
+                <h3 className="text-xl font-bold text-white mb-2">
+                  Import Complete!
+                </h3>
+
+                <p className="text-xs text-zinc-400 mb-4">
+                  {importResults.created} products created, {importResults.updated} updated
+                  {importResults.suppliersCreated > 0 && (
+                    <span className="block mt-1 text-cyan-400">
+                      {importResults.suppliersCreated} new suppliers added
+                    </span>
+                  )}
+                </p>
+
+                <div className="flex flex-wrap justify-center gap-3 mb-4">
+                  {importResults.toEnrich > 0 && (
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs bg-purple-500/10 border border-purple-500/20 text-purple-400">
+                      <Sparkles className="w-3 h-3" />
+                      <span>{importResults.toEnrich} products queued for AI enrichment</span>
+                    </div>
+                  )}
+                  {importResults.suppliersCreated > 0 && (
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+                      <Building2 className="w-3 h-3" />
+                      <span>{importResults.suppliersCreated} suppliers queued for AI enrichment</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-center gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={resetWizard}
+                    className="text-xs"
+                  >
+                    Import More Products
+                  </Button>
+                  <Button
+                    onClick={() => window.location.href = '/productsphysical'}
+                    className="bg-cyan-500 hover:bg-cyan-600 text-white text-xs"
+                  >
+                    <Package className="w-3 h-3 mr-2" />
+                    View Products
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Navigation Buttons */}
+      {currentStep < 4 && (
+        <div className="flex justify-between">
+          <Button
+            variant="outline"
+            onClick={goBack}
+            disabled={currentStep === 0}
+            className="gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </Button>
+
+          <Button
+            onClick={goNext}
+            disabled={!canProceed() || isImporting}
+            className="gap-2 bg-cyan-500 hover:bg-cyan-600 text-white"
+          >
+            {currentStep === 3 && !importResults ? (
+              <>
+                <Download className="w-4 h-4" />
+                Start Import
+              </>
+            ) : (
+              <>
+                Next
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

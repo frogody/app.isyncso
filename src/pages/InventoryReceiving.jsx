@@ -1,8 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import anime from '@/lib/anime-wrapper';
-const animate = anime;
-import { prefersReducedMotion } from '@/lib/animations';
 import {
   Package, Scan, Check, AlertTriangle, Plus, Minus,
   Camera, Barcode, Boxes, ArrowRight, X, RefreshCw,
@@ -12,8 +8,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { GlassCard, StatCard } from "@/components/ui/GlassCard";
-import { PageHeader } from "@/components/ui/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
 import {
@@ -245,11 +239,8 @@ function BarcodeScanner({ onScan, isActive }) {
               {isScanning && (
                 <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
                   <div className="relative">
-                    {/* Scan line animation */}
-                    <motion.div
-                      animate={{ y: [-60, 60, -60] }}
-                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                      className="absolute left-0 right-0 h-0.5 bg-cyan-500 shadow-lg shadow-cyan-500/50"
+                    <div
+                      className="absolute left-0 right-0 h-0.5 bg-cyan-500 shadow-lg shadow-cyan-500/50 animate-pulse"
                       style={{ width: "250px", marginLeft: "-125px", left: "50%" }}
                     />
                   </div>
@@ -294,13 +285,6 @@ function BarcodeScanner({ onScan, isActive }) {
       {scanMode === "manual" && (
         <>
           <div className="relative">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <motion.div
-                animate={{ opacity: isActive ? [0.3, 1, 0.3] : 0.3 }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-                className="w-48 h-1 bg-cyan-500 rounded-full"
-              />
-            </div>
             <div className="p-6 border-2 border-dashed border-cyan-500/30 rounded-xl bg-cyan-500/5 text-center">
               <Barcode className="w-12 h-12 mx-auto text-cyan-400 mb-3" />
               <p className="text-zinc-400 text-sm">
@@ -366,12 +350,7 @@ function ScannedProductCard({ scanResult, onReceive, onCancel }) {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className="p-4 rounded-xl bg-zinc-900/70 border border-cyan-500/30"
-    >
+    <div className="p-4 rounded-xl bg-zinc-900/70 border border-cyan-500/30">
       <div className="flex justify-between items-start mb-3">
         <div>
           <h3 className="text-lg font-semibold text-white">
@@ -529,19 +508,14 @@ function ScannedProductCard({ scanResult, onReceive, onCancel }) {
           </Button>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
 // Not found card
 function NotFoundCard({ ean, onClose }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className="p-4 rounded-xl bg-zinc-900/70 border border-red-500/30"
-    >
+    <div className="p-4 rounded-xl bg-zinc-900/70 border border-red-500/30">
       <div className="flex items-center gap-3 mb-3">
         <div className="p-2 rounded-full bg-red-500/10">
           <AlertTriangle className="w-5 h-5 text-red-400" />
@@ -563,7 +537,7 @@ function NotFoundCard({ ean, onClose }) {
           Product toevoegen
         </Button>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -625,21 +599,11 @@ function ReceiveSuccessCard({ productName, quantity, isPartial, remainingQty, on
   }, [onClose]);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      className="p-4 rounded-xl bg-zinc-900/70 border border-green-500/30"
-    >
+    <div className="p-4 rounded-xl bg-zinc-900/70 border border-green-500/30">
       <div className="text-center">
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: "spring", duration: 0.5 }}
-          className="w-14 h-14 mx-auto mb-3 rounded-full bg-green-500/20 flex items-center justify-center"
-        >
+        <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-green-500/20 flex items-center justify-center">
           <CheckCircle2 className="w-7 h-7 text-green-400" />
-        </motion.div>
+        </div>
         <h3 className="text-lg font-semibold text-white mb-2">
           Ontvangst bevestigd!
         </h3>
@@ -660,7 +624,7 @@ function ReceiveSuccessCard({ productName, quantity, isPartial, remainingQty, on
           Volgende scan
         </Button>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -669,7 +633,7 @@ export default function InventoryReceiving() {
   const [scanResult, setScanResult] = useState(null);
   const [notFoundEan, setNotFoundEan] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [receiveSuccess, setReceiveSuccess] = useState(null); // { productName, quantity, isPartial, remainingQty }
+  const [receiveSuccess, setReceiveSuccess] = useState(null);
   const [recentReceiving, setRecentReceiving] = useState([]);
   const [expectedDeliveries, setExpectedDeliveries] = useState([]);
   const [stats, setStats] = useState({
@@ -679,10 +643,6 @@ export default function InventoryReceiving() {
   });
 
   const companyId = user?.company_id;
-
-  // Refs for anime.js animations
-  const headerRef = useRef(null);
-  const statsRef = useRef(null);
   const [dataLoaded, setDataLoaded] = useState(false);
 
   // Load initial data
@@ -716,39 +676,12 @@ export default function InventoryReceiving() {
       } catch (error) {
         console.error('Failed to load receiving data:', error);
         toast.error('Kon gegevens niet laden');
-        setDataLoaded(true); // Set to true even on error to show UI
+        setDataLoaded(true);
       }
     };
 
     loadData();
   }, [companyId]);
-
-  // Animate header on mount
-  useEffect(() => {
-    if (!headerRef.current || prefersReducedMotion()) return;
-
-    animate({
-      targets: headerRef.current,
-      translateY: [-20, 0],
-      opacity: [0, 1],
-      duration: 500,
-      easing: 'easeOutQuart',
-    });
-  }, []);
-
-  // Animate stats bar with entrance animation
-  useEffect(() => {
-    if (!dataLoaded || !statsRef.current || prefersReducedMotion()) return;
-
-    animate({
-      targets: statsRef.current,
-      translateY: [15, 0],
-      opacity: [0, 1],
-      duration: 400,
-      easing: 'easeOutQuad',
-      delay: 100,
-    });
-  }, [dataLoaded]);
 
   // Handle barcode scan
   const handleScan = async (ean) => {
@@ -830,168 +763,168 @@ export default function InventoryReceiving() {
 
   return (
     <PermissionGuard permission="inventory.manage" showMessage>
-      <div className="min-h-screen bg-black relative">
-        {/* Background */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-20 right-1/4 w-96 h-96 bg-cyan-900/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-cyan-950/10 rounded-full blur-3xl" />
+      <div className="max-w-full mx-auto px-4 lg:px-6 pr-14 py-4 space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
+          <div>
+            <h1 className="text-xl font-semibold text-white">Receiving</h1>
+            <p className="text-sm text-zinc-500 mt-0.5">Scan and receive incoming inventory</p>
+          </div>
+          <div className="flex items-center gap-2" />
         </div>
 
-        <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
-          <div ref={headerRef} style={{ opacity: 0 }}>
-            <PageHeader
-              title="Ontvangst"
-              subtitle="Scan producten om voorraad te ontvangen"
-              icon={Package}
-            />
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-cyan-500/10">
+                <Boxes className="w-5 h-5 text-cyan-400" />
+              </div>
+              <div>
+                <p className="text-sm text-zinc-400">Verwachte leveringen</p>
+                <p className="text-xl font-semibold text-white">{stats.pendingDeliveries}</p>
+              </div>
+            </div>
           </div>
-
-          <div>
-          {/* Stats */}
-          <div ref={statsRef} className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6" style={{ opacity: 0 }}>
-            <StatCard
-              icon={Boxes}
-              label="Verwachte leveringen"
-              value={stats.pendingDeliveries}
-              color="cyan"
-            />
-            <StatCard
-              icon={Check}
-              label="Ontvangen vandaag"
-              value={stats.receivedToday}
-              sublabel="stuks"
-              color="green"
-            />
-            <StatCard
-              icon={AlertTriangle}
-              label="Gedeeltelijke leveringen"
-              value={stats.partialDeliveries}
-              color="yellow"
-            />
+          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-green-500/10">
+                <Check className="w-5 h-5 text-green-400" />
+              </div>
+              <div>
+                <p className="text-sm text-zinc-400">Ontvangen vandaag</p>
+                <p className="text-xl font-semibold text-white">{stats.receivedToday} <span className="text-sm font-normal text-zinc-500">stuks</span></p>
+              </div>
+            </div>
           </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* Scanner section */}
-            <GlassCard className="p-4">
-              <h2 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                <Scan className="w-5 h-5 text-cyan-400" />
-                Barcode Scanner
-              </h2>
-
-              {isLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <RefreshCw className="w-8 h-8 text-cyan-400 animate-spin" />
-                </div>
-              ) : (
-                <AnimatePresence mode="wait">
-                  {receiveSuccess ? (
-                    <ReceiveSuccessCard
-                      key="success"
-                      productName={receiveSuccess.productName}
-                      quantity={receiveSuccess.quantity}
-                      isPartial={receiveSuccess.isPartial}
-                      remainingQty={receiveSuccess.remainingQty}
-                      onClose={() => setReceiveSuccess(null)}
-                    />
-                  ) : scanResult ? (
-                    <ScannedProductCard
-                      key="result"
-                      scanResult={scanResult}
-                      onReceive={handleReceive}
-                      onCancel={() => setScanResult(null)}
-                    />
-                  ) : notFoundEan ? (
-                    <NotFoundCard
-                      key="notfound"
-                      ean={notFoundEan}
-                      onClose={() => setNotFoundEan(null)}
-                    />
-                  ) : (
-                    <BarcodeScanner
-                      key="scanner"
-                      onScan={handleScan}
-                      isActive={!scanResult && !notFoundEan && !receiveSuccess}
-                    />
-                  )}
-                </AnimatePresence>
-              )}
-            </GlassCard>
-
-            {/* Recent receiving */}
-            <GlassCard className="p-4">
-              <h2 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                <Warehouse className="w-5 h-5 text-cyan-400" />
-                Recente ontvangsten
-              </h2>
-              <RecentReceivingList items={recentReceiving} />
-            </GlassCard>
+          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-yellow-500/10">
+                <AlertTriangle className="w-5 h-5 text-yellow-400" />
+              </div>
+              <div>
+                <p className="text-sm text-zinc-400">Gedeeltelijke leveringen</p>
+                <p className="text-xl font-semibold text-white">{stats.partialDeliveries}</p>
+              </div>
+            </div>
           </div>
+        </div>
 
-          {/* Expected deliveries */}
-          <GlassCard className="p-4 mt-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Scanner section */}
+          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
             <h2 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-              <Package className="w-5 h-5 text-cyan-400" />
-              Verwachte leveringen ({expectedDeliveries.length})
+              <Scan className="w-5 h-5 text-cyan-400" />
+              Barcode Scanner
             </h2>
 
-            {expectedDeliveries.length === 0 ? (
-              <div className="text-center py-8 text-zinc-500">
-                <Package className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p>Geen verwachte leveringen</p>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <RefreshCw className="w-8 h-8 text-cyan-400 animate-spin" />
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="text-left text-sm text-zinc-500 border-b border-white/10">
-                      <th className="pb-3 font-medium">Product</th>
-                      <th className="pb-3 font-medium">Leverancier</th>
-                      <th className="pb-3 font-medium">Verwacht</th>
-                      <th className="pb-3 font-medium">Status</th>
-                      <th className="pb-3 font-medium">Datum</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5">
-                    {expectedDeliveries.map((delivery) => (
-                      <tr key={delivery.id} className="text-sm">
-                        <td className="py-3 text-white">
-                          {delivery.products?.name || 'Unknown'}
-                          {delivery.products?.ean && (
-                            <span className="ml-2 text-xs text-zinc-500">
-                              ({delivery.products.ean})
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-3 text-zinc-400">
-                          {delivery.suppliers?.name || '-'}
-                        </td>
-                        <td className="py-3 text-white">
-                          {delivery.quantity_received} / {delivery.quantity_expected}
-                        </td>
-                        <td className="py-3">
-                          <Badge
-                            className={
-                              delivery.status === 'partial'
-                                ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30'
-                                : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
-                            }
-                          >
-                            {delivery.status}
-                          </Badge>
-                        </td>
-                        <td className="py-3 text-zinc-400">
-                          {delivery.expected_date
-                            ? new Date(delivery.expected_date).toLocaleDateString('nl-NL')
-                            : '-'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <>
+                {receiveSuccess ? (
+                  <ReceiveSuccessCard
+                    productName={receiveSuccess.productName}
+                    quantity={receiveSuccess.quantity}
+                    isPartial={receiveSuccess.isPartial}
+                    remainingQty={receiveSuccess.remainingQty}
+                    onClose={() => setReceiveSuccess(null)}
+                  />
+                ) : scanResult ? (
+                  <ScannedProductCard
+                    scanResult={scanResult}
+                    onReceive={handleReceive}
+                    onCancel={() => setScanResult(null)}
+                  />
+                ) : notFoundEan ? (
+                  <NotFoundCard
+                    ean={notFoundEan}
+                    onClose={() => setNotFoundEan(null)}
+                  />
+                ) : (
+                  <BarcodeScanner
+                    onScan={handleScan}
+                    isActive={!scanResult && !notFoundEan && !receiveSuccess}
+                  />
+                )}
+              </>
             )}
-          </GlassCard>
+          </div>
+
+          {/* Recent receiving */}
+          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
+            <h2 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+              <Warehouse className="w-5 h-5 text-cyan-400" />
+              Recente ontvangsten
+            </h2>
+            <RecentReceivingList items={recentReceiving} />
+          </div>
         </div>
+
+        {/* Expected deliveries */}
+        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
+          <h2 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+            <Package className="w-5 h-5 text-cyan-400" />
+            Verwachte leveringen ({expectedDeliveries.length})
+          </h2>
+
+          {expectedDeliveries.length === 0 ? (
+            <div className="text-center py-8 text-zinc-500">
+              <Package className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p>Geen verwachte leveringen</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="text-left text-sm text-zinc-500 border-b border-white/10">
+                    <th className="pb-3 font-medium">Product</th>
+                    <th className="pb-3 font-medium">Leverancier</th>
+                    <th className="pb-3 font-medium">Verwacht</th>
+                    <th className="pb-3 font-medium">Status</th>
+                    <th className="pb-3 font-medium">Datum</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {expectedDeliveries.map((delivery) => (
+                    <tr key={delivery.id} className="text-sm">
+                      <td className="py-3 text-white">
+                        {delivery.products?.name || 'Unknown'}
+                        {delivery.products?.ean && (
+                          <span className="ml-2 text-xs text-zinc-500">
+                            ({delivery.products.ean})
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 text-zinc-400">
+                        {delivery.suppliers?.name || '-'}
+                      </td>
+                      <td className="py-3 text-white">
+                        {delivery.quantity_received} / {delivery.quantity_expected}
+                      </td>
+                      <td className="py-3">
+                        <Badge
+                          className={
+                            delivery.status === 'partial'
+                              ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30'
+                              : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
+                          }
+                        >
+                          {delivery.status}
+                        </Badge>
+                      </td>
+                      <td className="py-3 text-zinc-400">
+                        {delivery.expected_date
+                          ? new Date(delivery.expected_date).toLocaleDateString('nl-NL')
+                          : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </PermissionGuard>

@@ -1,8 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import anime from '@/lib/anime-wrapper';
-const animate = anime;
-import { prefersReducedMotion } from '@/lib/animations';
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
@@ -13,8 +9,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { GlassCard, StatCard } from "@/components/ui/GlassCard";
-import { PageHeader } from "@/components/ui/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
 import {
@@ -235,7 +229,6 @@ function getStatusStyle(statusKey) {
   if (style && style.bg && style.text && style.border) {
     return style;
   }
-  // Return safe fallback
   return {
     bg: "bg-zinc-500/10",
     text: "text-zinc-400",
@@ -255,24 +248,15 @@ function getPriorityStyle(priorityKey) {
 
 // Shipping task card
 function ShippingTaskCard({ task, onShip }) {
-  // Defensive: ensure task exists
   if (!task) return null;
 
-  // Get safe style objects
   const status = getStatusStyle(task.status);
   const priority = getPriorityStyle(task.priority);
-
-  // Safely get icon - use Clock as ultimate fallback
   const StatusIcon = (status.icon && typeof status.icon === 'function') ? status.icon : Clock;
-
   const isShippable = ["pending", "ready_to_ship"].includes(task.status);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="p-3 rounded-lg bg-zinc-900/50 border border-white/5 hover:border-cyan-500/30 transition-all"
-    >
+    <div className="p-3 rounded-lg bg-zinc-900/50 border border-white/5 hover:border-cyan-500/30 transition-all">
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-2">
           <div className={`p-2 rounded-lg ${status.bg} ${status.border}`}>
@@ -369,7 +353,7 @@ function ShippingTaskCard({ task, onShip }) {
           </div>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -378,9 +362,7 @@ function OverdueAlert({ count, onClick }) {
   if (count === 0) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
+    <div
       className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 cursor-pointer hover:bg-red-500/20 transition-colors"
       onClick={onClick}
     >
@@ -398,7 +380,7 @@ function OverdueAlert({ count, onClick }) {
         </div>
         <ChevronRight className="w-5 h-5 text-red-400" />
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -413,10 +395,6 @@ export default function InventoryShipping() {
   const [showShipModal, setShowShipModal] = useState(false);
 
   const companyId = user?.company_id;
-
-  // Refs for anime.js animations
-  const headerRef = useRef(null);
-  const statsRef = useRef(null);
 
   // Load tasks
   useEffect(() => {
@@ -442,39 +420,10 @@ export default function InventoryShipping() {
     loadTasks();
   }, [companyId]);
 
-  // Animate header on mount
-  useEffect(() => {
-    if (!headerRef.current || prefersReducedMotion()) return;
-
-    animate({
-      targets: headerRef.current,
-      translateY: [-20, 0],
-      opacity: [0, 1],
-      duration: 500,
-      easing: 'easeOutQuart',
-    });
-  }, []);
-
-  // Animate stats bar
-  useEffect(() => {
-    if (isLoading || !statsRef.current || prefersReducedMotion()) return;
-
-    animate({
-      targets: statsRef.current,
-      translateY: [15, 0],
-      opacity: [0, 1],
-      duration: 400,
-      easing: 'easeOutQuad',
-      delay: 100,
-    });
-  }, [isLoading]);
-
   // Filter tasks
   const filteredTasks = tasks.filter((task) => {
-    // Status filter
     if (filter !== "all" && task.status !== filter) return false;
 
-    // Search filter
     if (search) {
       const searchLower = search.toLowerCase();
       return (
@@ -504,11 +453,10 @@ export default function InventoryShipping() {
         userId: user?.id,
       });
 
-      // Refresh tasks
       const taskData = await listShippingTasks(companyId);
       setTasks(taskData);
     } catch (error) {
-      throw error; // Re-throw for modal to handle
+      throw error;
     }
   };
 
@@ -519,111 +467,107 @@ export default function InventoryShipping() {
 
   return (
     <PermissionGuard permission="shipping.manage" showMessage>
-      <div className="min-h-screen bg-black relative">
-        {/* Background */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-20 right-1/4 w-96 h-96 bg-cyan-900/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-cyan-950/10 rounded-full blur-3xl" />
-        </div>
-
-        <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
-          <div ref={headerRef} style={{ opacity: 0 }}>
-            <PageHeader
-              title="Verzendingen"
-              subtitle="Beheer verzendtaken en track & trace"
-              icon={Truck}
-            />
-          </div>
-
+      <div className="max-w-full mx-auto px-4 lg:px-6 pr-14 py-4 space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
           <div>
-          {/* Overdue alert */}
-          <OverdueAlert
-            count={stats.overdue}
-            onClick={() => setFilter("shipped")}
-          />
-
-          {/* Stats */}
-          <div ref={statsRef} className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4" style={{ opacity: 0 }}>
-            <StatCard
-              icon={Clock}
-              label="Te verzenden"
-              value={stats.pending}
-              color="yellow"
-            />
-            <StatCard
-              icon={Truck}
-              label="Onderweg"
-              value={stats.shipped}
-              color="blue"
-            />
-            <StatCard
-              icon={Check}
-              label="Afgeleverd"
-              value={stats.delivered}
-              color="green"
-            />
-            <StatCard
-              icon={AlertTriangle}
-              label="Te laat"
-              value={stats.overdue}
-              color="red"
-            />
+            <h1 className="text-xl font-semibold text-white">Shipping</h1>
+            <p className="text-sm text-zinc-500 mt-0.5">Manage outbound shipments</p>
           </div>
-
-          {/* Filters */}
-          <GlassCard className="p-3 mb-4">
-            <div className="flex flex-col md:flex-row gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-                <Input
-                  placeholder="Zoek op order, klant of T&T code..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9 bg-zinc-900/50 border-white/10"
-                />
-              </div>
-              <Tabs value={filter} onValueChange={setFilter}>
-                <TabsList className="bg-zinc-900/50">
-                  <TabsTrigger value="all">Alles</TabsTrigger>
-                  <TabsTrigger value="pending">Te verzenden</TabsTrigger>
-                  <TabsTrigger value="shipped">Onderweg</TabsTrigger>
-                  <TabsTrigger value="delivered">Afgeleverd</TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
-          </GlassCard>
-
-          {/* Task list */}
-          {isLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-24 rounded-lg" />
-              ))}
-            </div>
-          ) : filteredTasks.length === 0 ? (
-            <GlassCard className="p-8 text-center">
-              <Package className="w-12 h-12 mx-auto text-zinc-600 mb-3" />
-              <h3 className="text-base font-medium text-white mb-1">
-                Geen verzendtaken gevonden
-              </h3>
-              <p className="text-xs text-zinc-500">
-                {search
-                  ? "Probeer een andere zoekopdracht"
-                  : "Er zijn momenteel geen verzendtaken"}
-              </p>
-            </GlassCard>
-          ) : (
-            <div className="space-y-3">
-              {filteredTasks.map((task) => (
-                <ShippingTaskCard
-                  key={task.id}
-                  task={task}
-                  onShip={openShipModal}
-                />
-              ))}
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+          </div>
         </div>
+
+        {/* Overdue alert */}
+        <OverdueAlert
+          count={stats.overdue}
+          onClick={() => setFilter("shipped")}
+        />
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <Clock className="w-4 h-4 text-yellow-400" />
+              <span className="text-xs text-zinc-500">Te verzenden</span>
+            </div>
+            <p className="text-lg font-semibold text-white">{stats.pending}</p>
+          </div>
+          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <Truck className="w-4 h-4 text-blue-400" />
+              <span className="text-xs text-zinc-500">Onderweg</span>
+            </div>
+            <p className="text-lg font-semibold text-white">{stats.shipped}</p>
+          </div>
+          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <Check className="w-4 h-4 text-green-400" />
+              <span className="text-xs text-zinc-500">Afgeleverd</span>
+            </div>
+            <p className="text-lg font-semibold text-white">{stats.delivered}</p>
+          </div>
+          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <AlertTriangle className="w-4 h-4 text-red-400" />
+              <span className="text-xs text-zinc-500">Te laat</span>
+            </div>
+            <p className="text-lg font-semibold text-white">{stats.overdue}</p>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3 mb-4">
+          <div className="flex flex-col md:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+              <Input
+                placeholder="Zoek op order, klant of T&T code..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 bg-zinc-900/50 border-white/10"
+              />
+            </div>
+            <Tabs value={filter} onValueChange={setFilter}>
+              <TabsList className="bg-zinc-900/50">
+                <TabsTrigger value="all">Alles</TabsTrigger>
+                <TabsTrigger value="pending">Te verzenden</TabsTrigger>
+                <TabsTrigger value="shipped">Onderweg</TabsTrigger>
+                <TabsTrigger value="delivered">Afgeleverd</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        </div>
+
+        {/* Task list */}
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-24 rounded-lg" />
+            ))}
+          </div>
+        ) : filteredTasks.length === 0 ? (
+          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-8 text-center">
+            <Package className="w-12 h-12 mx-auto text-zinc-600 mb-3" />
+            <h3 className="text-base font-medium text-white mb-1">
+              Geen verzendtaken gevonden
+            </h3>
+            <p className="text-xs text-zinc-500">
+              {search
+                ? "Probeer een andere zoekopdracht"
+                : "Er zijn momenteel geen verzendtaken"}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filteredTasks.map((task) => (
+              <ShippingTaskCard
+                key={task.id}
+                task={task}
+                onShip={openShipModal}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Ship modal */}
         <ShipModal
@@ -635,7 +579,6 @@ export default function InventoryShipping() {
           }}
           onShip={handleShip}
         />
-        </div>
       </div>
     </PermissionGuard>
   );

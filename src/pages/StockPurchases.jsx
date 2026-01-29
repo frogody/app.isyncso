@@ -1,10 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-import { motion, AnimatePresence } from "framer-motion";
-import anime from '@/lib/anime-wrapper';
-const animate = anime;
-import { prefersReducedMotion } from '@/lib/animations';
 import {
   Receipt, Search, Filter, Clock, Check, X, AlertTriangle,
   Eye, FileText, Upload, Sparkles, ChevronRight, Edit2,
@@ -15,8 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { GlassCard, StatCard } from "@/components/ui/GlassCard";
-import { PageHeader } from "@/components/ui/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -494,9 +488,7 @@ function ExpenseCard({ expense, onReview, onRetry }) {
   const isFailed = expense.status === 'failed';
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
+    <div
       className={`p-3 rounded-lg bg-zinc-900/50 border transition-all ${
         needsReview
           ? "border-yellow-500/30 hover:border-yellow-500/50"
@@ -610,7 +602,7 @@ function ExpenseCard({ expense, onReview, onRetry }) {
           </Button>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -619,9 +611,7 @@ function ReviewQueueBanner({ count, onClick }) {
   if (count === 0) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
+    <div
       className="mb-4 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30 cursor-pointer hover:bg-yellow-500/20 transition-colors"
       onClick={onClick}
     >
@@ -639,7 +629,7 @@ function ReviewQueueBanner({ count, onClick }) {
         </div>
         <ChevronRight className="w-4 h-4 text-yellow-400" />
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -957,10 +947,10 @@ function UploadInvoiceModal({ isOpen, onClose, onUploadComplete, companyId, user
               <div className="text-xs text-zinc-400">
                 <p>AI zal automatisch extracten:</p>
                 <ul className="mt-1 space-y-0.5 text-zinc-500 text-[10px]">
-                  <li>• Leveranciersgegevens</li>
-                  <li>• Invoice Number en datum</li>
-                  <li>• Amounts and VAT</li>
-                  <li>• Line Items indien beschikbaar</li>
+                  <li>- Leveranciersgegevens</li>
+                  <li>- Invoice Number en datum</li>
+                  <li>- Amounts and VAT</li>
+                  <li>- Line Items indien beschikbaar</li>
                 </ul>
               </div>
             </div>
@@ -1007,10 +997,6 @@ export default function StockPurchases() {
 
   const companyId = user?.company_id;
 
-  // Refs for anime.js animations
-  const headerRef = useRef(null);
-  const statsRef = useRef(null);
-
   // Load stock purchases function (can be called for refresh)
   const loadStockPurchases = useCallback(async () => {
     if (!companyId) return;
@@ -1035,33 +1021,6 @@ export default function StockPurchases() {
   useEffect(() => {
     loadStockPurchases();
   }, [loadStockPurchases]);
-
-  // Animate header on mount
-  useEffect(() => {
-    if (!headerRef.current || prefersReducedMotion()) return;
-
-    animate({
-      targets: headerRef.current,
-      translateY: [-20, 0],
-      opacity: [0, 1],
-      duration: 500,
-      easing: 'easeOutQuart',
-    });
-  }, []);
-
-  // Animate stats bar
-  useEffect(() => {
-    if (isLoading || !statsRef.current || prefersReducedMotion()) return;
-
-    animate({
-      targets: statsRef.current,
-      translateY: [15, 0],
-      opacity: [0, 1],
-      duration: 400,
-      easing: 'easeOutQuad',
-      delay: 100,
-    });
-  }, [isLoading]);
 
   // Filter expenses
   const filteredExpenses = expenses.filter((expense) => {
@@ -1263,120 +1222,114 @@ export default function StockPurchases() {
 
   return (
     <PermissionGuard permission="finance.view" showMessage>
-      <div className="min-h-screen bg-black relative">
-        {/* Background */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-20 right-1/4 w-96 h-96 bg-cyan-900/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-cyan-950/10 rounded-full blur-3xl" />
-        </div>
-
-        <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
-          <div ref={headerRef} style={{ opacity: 0 }}>
-            <PageHeader
-              title="Stock Purchases"
-              subtitle="Manage supplier invoices and AI extraction reviews"
-              icon={Receipt}
-              actions={
-                <Button
-                  className="bg-cyan-600 hover:bg-cyan-700"
-                  onClick={() => setShowUploadModal(true)}
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  Upload Invoice
-                </Button>
-              }
-            />
-          </div>
-
+      <div className="max-w-full mx-auto px-4 lg:px-6 pr-14 py-4 space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
           <div>
-          {/* Review queue banner */}
-          <ReviewQueueBanner
-            count={stats.pendingReview}
-            onClick={() => setFilter("review")}
-          />
-
-          {/* Stats */}
-          <div ref={statsRef} className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6" style={{ opacity: 0 }}>
-            <StatCard
-              icon={Receipt}
-              label="Total facturen"
-              value={stats.total}
-              color="cyan"
-            />
-            <StatCard
-              icon={AlertTriangle}
-              label="To Review"
-              value={stats.pendingReview}
-              color="yellow"
-            />
-            <StatCard
-              icon={Check}
-              label="Approved"
-              value={stats.approved}
-              color="green"
-            />
-            <StatCard
-              icon={DollarSign}
-              label="Total bedrag"
-              value={`€ ${stats.totalAmount.toFixed(0)}`}
-              color="purple"
-            />
+            <h1 className="text-xl font-semibold text-white">Stock Purchases</h1>
+            <p className="text-sm text-zinc-500 mt-0.5">Manage purchase orders and stock procurement</p>
           </div>
-
-          {/* Filters */}
-          <GlassCard className="p-3 mb-6">
-            <div className="flex flex-col md:flex-row gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-                <Input
-                  placeholder="Search by invoice number or supplier..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9 bg-zinc-900/50 border-white/10"
-                />
-              </div>
-              <Tabs value={filter} onValueChange={setFilter}>
-                <TabsList className="bg-zinc-900/50">
-                  <TabsTrigger value="all">Alles</TabsTrigger>
-                  <TabsTrigger value="review">To Review</TabsTrigger>
-                  <TabsTrigger value="approved">Approved</TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
-          </GlassCard>
-
-          {/* Expense list */}
-          {isLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-24 rounded-lg" />
-              ))}
-            </div>
-          ) : filteredExpenses.length === 0 ? (
-            <GlassCard className="p-12 text-center">
-              <Receipt className="w-16 h-16 mx-auto text-zinc-600 mb-4" />
-              <h3 className="text-lg font-medium text-white mb-2">
-                Geen facturen gevonden
-              </h3>
-              <p className="text-zinc-500">
-                {search
-                  ? "Probeer een andere zoekopdracht"
-                  : "Upload an invoice to get started"}
-              </p>
-            </GlassCard>
-          ) : (
-            <div className="space-y-3">
-              {filteredExpenses.map((expense) => (
-                <ExpenseCard
-                  key={expense.id}
-                  expense={expense}
-                  onReview={handleReview}
-                  onRetry={handleRetry}
-                />
-              ))}
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <Button
+              className="bg-cyan-600 hover:bg-cyan-700"
+              onClick={() => setShowUploadModal(true)}
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              Upload Invoice
+            </Button>
+          </div>
         </div>
+
+        {/* Review queue banner */}
+        <ReviewQueueBanner
+          count={stats.pendingReview}
+          onClick={() => setFilter("review")}
+        />
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <Receipt className="w-4 h-4 text-cyan-400" />
+              <span className="text-xs text-zinc-500">Total facturen</span>
+            </div>
+            <p className="text-lg font-semibold text-white">{stats.total}</p>
+          </div>
+          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <AlertTriangle className="w-4 h-4 text-yellow-400" />
+              <span className="text-xs text-zinc-500">To Review</span>
+            </div>
+            <p className="text-lg font-semibold text-white">{stats.pendingReview}</p>
+          </div>
+          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <Check className="w-4 h-4 text-green-400" />
+              <span className="text-xs text-zinc-500">Approved</span>
+            </div>
+            <p className="text-lg font-semibold text-white">{stats.approved}</p>
+          </div>
+          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <DollarSign className="w-4 h-4 text-purple-400" />
+              <span className="text-xs text-zinc-500">Total bedrag</span>
+            </div>
+            <p className="text-lg font-semibold text-white">€ {stats.totalAmount.toFixed(0)}</p>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
+          <div className="flex flex-col md:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+              <Input
+                placeholder="Search by invoice number or supplier..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 bg-zinc-900/50 border-white/10"
+              />
+            </div>
+            <Tabs value={filter} onValueChange={setFilter}>
+              <TabsList className="bg-zinc-900/50">
+                <TabsTrigger value="all">Alles</TabsTrigger>
+                <TabsTrigger value="review">To Review</TabsTrigger>
+                <TabsTrigger value="approved">Approved</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        </div>
+
+        {/* Expense list */}
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-24 rounded-lg" />
+            ))}
+          </div>
+        ) : filteredExpenses.length === 0 ? (
+          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-12 text-center">
+            <Receipt className="w-16 h-16 mx-auto text-zinc-600 mb-4" />
+            <h3 className="text-lg font-medium text-white mb-2">
+              Geen facturen gevonden
+            </h3>
+            <p className="text-zinc-500">
+              {search
+                ? "Probeer een andere zoekopdracht"
+                : "Upload an invoice to get started"}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filteredExpenses.map((expense) => (
+              <ExpenseCard
+                key={expense.id}
+                expense={expense}
+                onReview={handleReview}
+                onRetry={handleRetry}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Review modal */}
         <ReviewModal
@@ -1399,7 +1352,6 @@ export default function StockPurchases() {
           companyId={companyId}
           userId={user?.id}
         />
-        </div>
       </div>
     </PermissionGuard>
   );
