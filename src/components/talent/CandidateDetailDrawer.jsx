@@ -56,6 +56,7 @@ import { IntelligenceReport } from "@/components/talent/IntelligenceReport";
 import { CompanyIntelligenceReport } from "@/components/shared/CompanyIntelligenceReport";
 import { fullEnrichFromLinkedIn } from "@/lib/explorium-api";
 import { usePanelPreferences } from "@/hooks/usePanelPreferences";
+import { EnrichmentOptionsPopover } from "./EnrichmentOptionsPopover";
 import PanelCustomizationModal from "./PanelCustomizationModal";
 import {
   Dialog,
@@ -1381,8 +1382,6 @@ export default function CandidateDetailDrawer({
     updateLocalPreferences
   } = usePanelPreferences();
 
-  const SYNC_INTEL_CREDIT_COST = 10;
-
   // Fetch candidate details
   useEffect(() => {
     if (candidateId && open) {
@@ -1582,20 +1581,9 @@ export default function CandidateDetailDrawer({
   };
 
   // SYNC Intel handler
+  // handleSyncIntel is now only used for nest_purchase candidates (free, included in purchase)
   const handleSyncIntel = async () => {
     if (!candidate) return;
-
-    const isFromNestPurchase = candidate.source === 'nest_purchase';
-
-    if (!isFromNestPurchase) {
-      const currentCredits = user?.credits || 0;
-      if (currentCredits < SYNC_INTEL_CREDIT_COST) {
-        toast.error("Insufficient credits", {
-          description: `SYNC Intel requires ${SYNC_INTEL_CREDIT_COST} credits. You have ${currentCredits} credits.`,
-        });
-        return;
-      }
-    }
 
     setGeneratingIntelligence(true);
     try {
@@ -1646,15 +1634,7 @@ export default function CandidateDetailDrawer({
       );
 
       if (response.ok) {
-        if (!isFromNestPurchase) {
-          await supabase
-            .from('users')
-            .update({ credits: (user?.credits || 0) - SYNC_INTEL_CREDIT_COST })
-            .eq('id', user.id);
-          toast.success("Intelligence synced!", { description: `${SYNC_INTEL_CREDIT_COST} credits deducted` });
-        } else {
-          toast.success("Intelligence synced!");
-        }
+        toast.success("Intelligence synced!");
         await fetchCandidateDetails();
         setActiveTab("intelligence");
       } else {
@@ -2051,22 +2031,37 @@ export default function CandidateDetailDrawer({
 
                   {/* Enhanced Quick Actions */}
                   <div className="flex items-center gap-2 flex-wrap">
-                    {/* SYNC INTEL Button */}
-                    <Button
-                      onClick={handleSyncIntel}
-                      disabled={generatingIntelligence}
-                      size="sm"
-                      className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
-                    >
-                      {generatingIntelligence ? (
-                        <Loader2 className="w-3 h-3 animate-spin mr-1.5" />
-                      ) : (
-                        <Sparkles className="w-3 h-3 mr-1.5" />
-                      )}
-                      {syncStatus === "company" ? "SYNCING..." :
-                       syncStatus === "candidate" ? "ANALYZING..." :
-                       "SYNC INTEL"}
-                    </Button>
+                    {/* SYNC INTEL / Enrichment Button */}
+                    {candidate.source === 'nest_purchase' ? (
+                      <Button
+                        onClick={handleSyncIntel}
+                        disabled={generatingIntelligence}
+                        size="sm"
+                        className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
+                      >
+                        {generatingIntelligence ? (
+                          <Loader2 className="w-3 h-3 animate-spin mr-1.5" />
+                        ) : (
+                          <Sparkles className="w-3 h-3 mr-1.5" />
+                        )}
+                        {syncStatus === "company" ? "SYNCING..." :
+                         syncStatus === "candidate" ? "ANALYZING..." :
+                         "SYNC INTEL"}
+                        <Badge className="ml-1.5 bg-green-500/20 text-green-400 text-[10px] px-1.5 py-0">
+                          Included
+                        </Badge>
+                      </Button>
+                    ) : (
+                      <EnrichmentOptionsPopover
+                        candidate={candidate}
+                        userCredits={user?.credits || 0}
+                        userId={user?.id}
+                        organizationId={user?.organization_id}
+                        onEnrichmentComplete={() => fetchCandidateDetails()}
+                        onCreditsUpdated={() => {}}
+                        disabled={generatingIntelligence}
+                      />
+                    )}
 
                     {/* Send SMS Button */}
                     <Button

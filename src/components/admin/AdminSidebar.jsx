@@ -27,6 +27,7 @@ import {
   Headphones,
   Bot,
   Package,
+  Coins,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -44,6 +45,7 @@ const adminNavItems = [
   { title: 'Support', href: '/admin/support', icon: Headphones },
   { title: 'AI & Automation', href: '/admin/ai', icon: Bot },
   { title: 'Billing', href: '/admin/billing', icon: CreditCard },
+  { title: 'Credits', href: '/admin/credits', icon: Coins },
   { title: 'Integrations', href: '/admin/integrations', icon: Plug2 },
   { title: 'System', href: '/admin/system', icon: Server },
   { divider: true },
