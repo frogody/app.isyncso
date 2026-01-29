@@ -154,18 +154,46 @@ export function usePortalClient() {
   // Sign in with magic link
   const signInWithMagicLink = useCallback(async (email, organizationSlug) => {
     try {
-      setLoading(true);
       setError(null);
 
       // First verify the client exists
-      const { data: clientData, error: clientError } = await supabase
-        .from('portal_clients')
-        .select('id, email, organization_id, status')
-        .eq('email', email.toLowerCase())
-        .in('status', ['active', 'invited'])
-        .single();
+      // Use organization slug to scope the lookup since user isn't authenticated yet
+      let clientData = null;
 
-      if (clientError || !clientData) {
+      if (organizationSlug) {
+        // Look up org first, then find client within it
+        const { data: org } = await supabase
+          .from('organizations')
+          .select('id')
+          .eq('slug', organizationSlug)
+          .single();
+
+        if (org) {
+          const { data, error: clientError } = await supabase
+            .from('portal_clients')
+            .select('id, email, organization_id, status')
+            .eq('email', email.toLowerCase())
+            .eq('organization_id', org.id)
+            .in('status', ['active', 'invited'])
+            .single();
+
+          if (!clientError) clientData = data;
+        }
+      }
+
+      // Fallback: try without org filter (for backwards compat)
+      if (!clientData) {
+        const { data, error: clientError } = await supabase
+          .from('portal_clients')
+          .select('id, email, organization_id, status')
+          .eq('email', email.toLowerCase())
+          .in('status', ['active', 'invited'])
+          .single();
+
+        if (!clientError) clientData = data;
+      }
+
+      if (!clientData) {
         throw new Error('No account found with this email. Please contact your agency.');
       }
 
@@ -187,8 +215,6 @@ export function usePortalClient() {
     } catch (err) {
       setError(err.message);
       return { success: false, error: err.message };
-    } finally {
-      setLoading(false);
     }
   }, []);
 
