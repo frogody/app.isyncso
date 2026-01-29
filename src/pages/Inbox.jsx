@@ -693,18 +693,18 @@ export default function InboxPage() {
                   <button
                     key={item.panel}
                     onClick={() => togglePanel(item.panel)}
-                    className={`p-1.5 sm:p-2 rounded-lg transition-all ${
+                    className={`p-1.5 rounded-md transition-all ${
                       activePanel === item.panel
                         ? 'bg-zinc-800 text-zinc-200'
                         : 'text-zinc-500 hover:bg-zinc-800/80 hover:text-zinc-300'
                     } ${index >= 2 ? 'hidden sm:block' : ''}`}
                     title={item.title}
                   >
-                    <item.icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <item.icon className="w-4 h-4" />
                   </button>
                 ))}
 
-                <div className="w-px h-5 sm:h-6 bg-zinc-800 mx-1 sm:mx-2 hidden sm:block" />
+                <div className="w-px h-4 bg-zinc-800 mx-1 hidden sm:block" />
 
                 {/* Notification toggle */}
                 {notificationsSupported && (
@@ -721,7 +721,7 @@ export default function InboxPage() {
                         }
                       }
                     }}
-                    className={`p-1.5 sm:p-2.5 rounded-xl transition-all ${
+                    className={`p-1.5 rounded-md transition-all ${
                       notificationPermission === 'granted'
                         ? 'text-cyan-400 hover:bg-zinc-800/80'
                         : notificationPermission === 'denied'
@@ -737,19 +737,19 @@ export default function InboxPage() {
                     }
                   >
                     {notificationPermission === 'granted' ? (
-                      <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
+                      <Bell className="w-4 h-4" />
                     ) : (
-                      <BellOff className="w-4 h-4 sm:w-5 sm:h-5" />
+                      <BellOff className="w-4 h-4" />
                     )}
                   </button>
                 )}
 
                 <button
                   onClick={() => setShowKeyboardShortcuts(true)}
-                  className="p-1.5 sm:p-2.5 rounded-xl text-zinc-500 hover:bg-zinc-800/80 hover:text-zinc-300 transition-all hidden sm:block"
+                  className="p-1.5 rounded-md text-zinc-500 hover:bg-zinc-800/80 hover:text-zinc-300 transition-all hidden sm:block"
                   title="Keyboard shortcuts (⌘/)"
                 >
-                  <Keyboard className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <Keyboard className="w-4 h-4" />
                 </button>
               </div>
             </header>

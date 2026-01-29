@@ -341,26 +341,26 @@ export default function ChannelSidebar({
 
   return (
     <div className="w-72 bg-zinc-950 border-r border-zinc-800/60 flex flex-col h-full">
-      {/* Header */}
-      <div className="px-4 py-3 border-b border-zinc-800/60">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-semibold text-white text-sm">Inbox</h2>
-          <div className="flex items-center gap-1">
+      {/* Header + Search + Quick Access */}
+      <div className="px-3 pt-3 pb-2 border-b border-zinc-800/60 space-y-2.5">
+        {/* Title row */}
+        <div className="flex items-center justify-between px-1">
+          <h2 className="font-semibold text-white text-sm tracking-tight">Inbox</h2>
+          <div className="flex items-center gap-0.5">
             <button
               onClick={onOpenSettings}
-              className="p-2 hover:bg-zinc-800/80 rounded-xl transition-all group"
-              title="Workspace settings"
+              className="p-1.5 hover:bg-zinc-800 rounded-md transition-colors"
+              title="Settings"
             >
-              <Settings className="w-5 h-5 text-zinc-500 group-hover:text-cyan-400 transition-colors" />
+              <Settings className="w-3.5 h-3.5 text-zinc-500 hover:text-zinc-300" />
             </button>
-            {/* Mobile close button */}
             {onClose && (
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-zinc-800/80 rounded-xl transition-all group lg:hidden"
+                className="p-1.5 hover:bg-zinc-800 rounded-md transition-colors lg:hidden"
                 aria-label="Close sidebar"
               >
-                <X className="w-5 h-5 text-zinc-500 group-hover:text-white transition-colors" />
+                <X className="w-3.5 h-3.5 text-zinc-500" />
               </button>
             )}
           </div>
@@ -378,31 +378,29 @@ export default function ChannelSidebar({
             className="w-full pl-8 pr-3 py-1.5 bg-zinc-800/50 border border-zinc-700/60 rounded-lg text-xs text-white placeholder-zinc-600 focus:border-zinc-600 focus:outline-none transition-all"
           />
         </div>
-      </div>
 
-      {/* Quick Access */}
-      <div className="px-3 py-2 border-b border-zinc-800/40">
-        <div className="space-y-0.5">
+        {/* Quick Access */}
+        <div className="flex items-center gap-1">
           <button
             onClick={() => onSelectChannel({ id: 'threads', name: 'All Threads', type: 'special' })}
-            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50 transition-all text-xs"
+            className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/60 transition-all text-[11px]"
           >
-            <MessageSquare className="w-3.5 h-3.5 text-zinc-500" />
+            <MessageSquare className="w-3 h-3" />
             <span>Threads</span>
           </button>
           <button
             onClick={() => onSelectChannel({ id: 'mentions', name: 'Mentions & Reactions', type: 'special' })}
-            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50 transition-all text-xs"
+            className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/60 transition-all text-[11px]"
           >
-            <AtSign className="w-3.5 h-3.5 text-zinc-500" />
-            <span>Mentions & Reactions</span>
+            <AtSign className="w-3 h-3" />
+            <span>Mentions</span>
           </button>
           <button
             onClick={() => onSelectChannel({ id: 'saved', name: 'Saved Items', type: 'special' })}
-            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50 transition-all text-xs"
+            className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/60 transition-all text-[11px]"
           >
-            <Bookmark className="w-3.5 h-3.5 text-zinc-500" />
-            <span>Saved Items</span>
+            <Bookmark className="w-3 h-3" />
+            <span>Saved</span>
           </button>
         </div>
       </div>
