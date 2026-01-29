@@ -11,6 +11,8 @@ import {
   Eye,
   ExternalLink,
   Users,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { supabase } from '@/api/supabaseClient';
 import { useUser } from '@/components/context/UserContext';
@@ -39,6 +41,20 @@ export default function PortalBranding() {
     require_approval_for_downloads: false,
   });
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const portalUrl = user?.organization?.slug
+    ? `${window.location.origin}/portal/${user.organization.slug}/login`
+    : null;
+
+  const handleCopyLink = () => {
+    if (portalUrl) {
+      navigator.clipboard.writeText(portalUrl);
+      setCopied(true);
+      toast.success('Portal link copied!');
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   useEffect(() => {
     fetchSettings();
@@ -156,9 +172,18 @@ export default function PortalBranding() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {portalUrl && (
+            <button
+              onClick={handleCopyLink}
+              className="flex items-center gap-2 px-4 py-2 text-sm text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+            >
+              {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+              {copied ? 'Copied!' : 'Copy Portal Link'}
+            </button>
+          )}
           <a
-            href={user?.organization?.slug ? `/portal/${user.organization.slug}/login` : '#'}
-            onClick={(e) => { if (!user?.organization?.slug) { e.preventDefault(); toast.error('Organization slug not set'); } }}
+            href={portalUrl || '#'}
+            onClick={(e) => { if (!portalUrl) { e.preventDefault(); toast.error('Organization slug not set'); } }}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 px-4 py-2 text-sm text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"

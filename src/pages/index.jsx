@@ -577,9 +577,9 @@ function PagesContent() {
                         <Route path="/portal/:org/settings" element={<ClientDashboard />} />
                     </Route>
 
-                    {/* Legacy/fallback routes - redirect to org-specific if logged in */}
+                    {/* Legacy/fallback routes */}
                     <Route path="/portal/login" element={<ClientLogin />} />
-                    <Route path="/portal" element={<ClientDashboard />} />
+                    <Route path="/portal" element={<ClientLogin />} />
                 </Routes>
             </ClientProvider>
         );

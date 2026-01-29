@@ -147,6 +147,7 @@ export default function PortalClientManager() {
           .insert({
             client_id: clientId,
             project_id: projectId,
+            organization_id: user.organization_id,
             permission_level: 'view',
             granted_by: user.id,
           });
@@ -239,9 +240,13 @@ export default function PortalClientManager() {
         <AddClientModal
           organizationId={user.organization_id}
           onClose={() => setShowAddModal(false)}
-          onSuccess={() => {
+          onSuccess={async (newClient) => {
             setShowAddModal(false);
-            fetchClients();
+            await fetchClients();
+            // Auto-send invite after adding
+            if (newClient) {
+              handleSendInvite(newClient);
+            }
           }}
         />
       )}
@@ -383,13 +388,13 @@ function AddClientModal({ organizationId, onClose, onSuccess }) {
 
     setSaving(true);
     try {
-      const { error } = await supabase.from('portal_clients').insert({
+      const { data: newClient, error } = await supabase.from('portal_clients').insert({
         organization_id: organizationId,
         email: formData.email.toLowerCase().trim(),
         full_name: formData.full_name.trim() || null,
         company_name: formData.company_name.trim() || null,
         status: 'invited',
-      });
+      }).select().single();
 
       if (error) {
         if (error.code === '23505') {
@@ -400,8 +405,8 @@ function AddClientModal({ organizationId, onClose, onSuccess }) {
         return;
       }
 
-      toast.success('Client added! Send them an invite to get started.');
-      onSuccess();
+      toast.success('Client added! Sending invite...');
+      onSuccess(newClient);
     } catch (err) {
       console.error('Error adding client:', err);
       toast.error('Failed to add client');

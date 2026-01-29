@@ -12,9 +12,10 @@ export function usePortalClient() {
   const [error, setError] = useState(null);
 
   // Fetch client data based on auth user
-  const fetchClientData = useCallback(async (authUserId) => {
+  const fetchClientData = useCallback(async (authUserId, authEmail) => {
     try {
-      const { data, error: fetchError } = await supabase
+      // Try finding by auth_user_id first
+      let { data, error: fetchError } = await supabase
         .from('portal_clients')
         .select(`
           *,
@@ -24,9 +25,36 @@ export function usePortalClient() {
         .in('status', ['active', 'invited'])
         .single();
 
+      // If not found by auth_user_id, try by email and link the account
+      if (fetchError?.code === 'PGRST116' && authEmail) {
+        const { data: emailMatch, error: emailError } = await supabase
+          .from('portal_clients')
+          .select(`
+            *,
+            organization:organizations(id, name, slug, logo_url)
+          `)
+          .eq('email', authEmail.toLowerCase())
+          .in('status', ['active', 'invited'])
+          .single();
+
+        if (emailMatch && !emailError) {
+          // Link auth user to portal client
+          await supabase
+            .from('portal_clients')
+            .update({
+              auth_user_id: authUserId,
+              status: 'active',
+              last_login_at: new Date().toISOString(),
+            })
+            .eq('id', emailMatch.id);
+
+          data = { ...emailMatch, auth_user_id: authUserId, status: 'active' };
+          fetchError = null;
+        }
+      }
+
       if (fetchError) {
         if (fetchError.code === 'PGRST116') {
-          // No client found for this auth user
           setClient(null);
           return null;
         }
@@ -80,7 +108,7 @@ export function usePortalClient() {
         setSession(currentSession);
 
         if (currentSession?.user) {
-          await fetchClientData(currentSession.user.id);
+          await fetchClientData(currentSession.user.id, currentSession.user.email);
         }
       } catch (err) {
         console.error('Error initializing auth:', err);
@@ -110,7 +138,7 @@ export function usePortalClient() {
       setSession(newSession);
 
       if (event === 'SIGNED_IN' && newSession?.user) {
-        await fetchClientData(newSession.user.id);
+        await fetchClientData(newSession.user.id, newSession.user.email);
       } else if (event === 'SIGNED_OUT') {
         setClient(null);
       }
@@ -246,7 +274,7 @@ export function usePortalClient() {
     signOut,
     getAccessibleProjects,
     hasProjectPermission,
-    refetchClient: () => session?.user && fetchClientData(session.user.id),
+    refetchClient: () => session?.user && fetchClientData(session.user.id, session.user.email),
   };
 }
 

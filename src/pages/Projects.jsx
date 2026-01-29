@@ -2126,7 +2126,7 @@ function TimelineBar({ project, startDate, endDate, totalDays }) {
 }
 
 // Project Card Component
-function ProjectCard({ project, tasks, onClick, onStatusChange }) {
+function ProjectCard({ project, tasks, onClick, onStatusChange, onEdit, onDelete }) {
   const statusConfig = PROJECT_STATUSES.find(s => s.id === project.status) || PROJECT_STATUSES[0];
   const priorityConfig = PRIORITY_LEVELS.find(p => p.id === project.priority) || PRIORITY_LEVELS[1];
   const StatusIcon = statusConfig.icon;
@@ -2169,6 +2169,30 @@ function ProjectCard({ project, tasks, onClick, onStatusChange }) {
           <Badge variant="outline" className={`${priorityConfig.bgColor} ${priorityConfig.color} ${priorityConfig.borderColor} text-xs`}>
             {priorityConfig.label}
           </Badge>
+          {(onEdit || onDelete) && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <MoreVertical className="w-4 h-4 text-zinc-400" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800" onClick={(e) => e.stopPropagation()}>
+                {onEdit && (
+                  <DropdownMenuItem onClick={onEdit} className="text-zinc-300">
+                    <Edit2 className="w-4 h-4 mr-2" /> Edit
+                  </DropdownMenuItem>
+                )}
+                {onDelete && (
+                  <>
+                    <DropdownMenuSeparator className="bg-zinc-800" />
+                    <DropdownMenuItem onClick={onDelete} className="text-red-400">
+                      <Trash2 className="w-4 h-4 mr-2" /> Delete
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
 
@@ -3317,8 +3341,8 @@ export default function Projects() {
         },
         client_updates: formData.client_updates || [],
         page_content: formData.page_content || [],
-        user_id: user.id,
-        company_id: user.company_id,
+        created_by: user.id,
+        organization_id: user.organization_id || user.company_id,
       };
 
       if (editingProject) {
@@ -3864,6 +3888,8 @@ export default function Projects() {
                 project={project}
                 tasks={getProjectTasks(project.id)}
                 onClick={() => handleViewProject(project)}
+                onEdit={() => handleEditProject(project)}
+                onDelete={() => handleDeleteProject(project.id)}
               />
             ))}
             {filteredProjects.length === 0 && (

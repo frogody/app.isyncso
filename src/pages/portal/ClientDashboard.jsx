@@ -85,7 +85,7 @@ export default function ClientDashboard() {
   // Filter projects by search
   const filteredProjects = projects.filter(
     (p) =>
-      p.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.name || p.title)?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -306,7 +306,7 @@ function NotionProjectCard({ project, settings, basePath }) {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <h3 className="font-medium text-white group-hover:text-cyan-300 transition-colors truncate">
-            {project.name}
+            {project.name || project.title}
           </h3>
           <span className="text-xs text-zinc-500 whitespace-nowrap">
             {status.emoji} {status.label}
