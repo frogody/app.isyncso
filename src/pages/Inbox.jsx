@@ -646,7 +646,7 @@ export default function InboxPage() {
         {selectedChannel ? (
           <>
             {/* Channel Header */}
-            <header className="h-14 sm:h-16 border-b border-zinc-800/60 px-3 sm:px-6 flex items-center justify-between bg-zinc-900/50">
+            <header className="h-11 sm:h-12 border-b border-zinc-800/60 px-3 sm:px-5 flex items-center justify-between bg-zinc-900/50">
               <div className="flex items-center gap-2 sm:gap-3">
                 {/* Mobile Menu Button */}
                 <button
@@ -658,32 +658,32 @@ export default function InboxPage() {
                 </button>
 
                 {selectedChannel.type === 'special' ? (
-                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center flex-shrink-0">
+                  <div className="w-6 h-6 rounded bg-zinc-800 flex items-center justify-center flex-shrink-0">
                     {selectedChannel.id === 'threads' ? (
-                      <MessageSquare className="w-4 h-4 text-zinc-400" />
+                      <MessageSquare className="w-3.5 h-3.5 text-zinc-400" />
                     ) : selectedChannel.id === 'mentions' ? (
-                      <AtSign className="w-4 h-4 text-zinc-400" />
+                      <AtSign className="w-3.5 h-3.5 text-zinc-400" />
                     ) : (
-                      <Bookmark className="w-4 h-4 text-zinc-400" />
+                      <Bookmark className="w-3.5 h-3.5 text-zinc-400" />
                     )}
                   </div>
                 ) : selectedChannel.type === 'dm' ? (
-                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-sm font-bold text-zinc-300 flex-shrink-0">
+                  <div className="w-6 h-6 rounded bg-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-300 flex-shrink-0">
                     {selectedChannel.name?.charAt(0)?.toUpperCase()}
                   </div>
                 ) : selectedChannel.type === 'private' ? (
-                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center flex-shrink-0">
-                    <Lock className="w-4 h-4 text-zinc-400" />
+                  <div className="w-6 h-6 rounded bg-zinc-800 flex items-center justify-center flex-shrink-0">
+                    <Lock className="w-3.5 h-3.5 text-zinc-400" />
                   </div>
                 ) : (
-                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center flex-shrink-0">
-                    <Hash className="w-4 h-4 text-zinc-400" />
+                  <div className="w-6 h-6 rounded bg-zinc-800 flex items-center justify-center flex-shrink-0">
+                    <Hash className="w-3.5 h-3.5 text-zinc-400" />
                   </div>
                 )}
                 <div className="min-w-0">
-                  <h2 className="font-semibold text-white text-base sm:text-lg truncate">{selectedChannel.name}</h2>
+                  <h2 className="font-medium text-white text-sm truncate">{selectedChannel.name}</h2>
                   {selectedChannel.description && (
-                    <p className="text-xs text-zinc-500 max-w-[150px] sm:max-w-md truncate hidden sm:block">{selectedChannel.description}</p>
+                    <p className="text-[11px] text-zinc-500 max-w-[150px] sm:max-w-md truncate hidden sm:block">{selectedChannel.description}</p>
                   )}
                 </div>
               </div>

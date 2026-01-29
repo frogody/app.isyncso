@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo, memo } from '
 import {
   Hash, Lock, Plus, ChevronDown, MessageSquare,
   Search, Settings, BellOff, Bell, Star, StarOff, MoreHorizontal,
-  Archive, Trash2, UserPlus, Sparkles, Bookmark, AtSign,
+  Archive, Trash2, UserPlus, Bookmark, AtSign,
   Circle, Clock, MinusCircle, Moon, X
 } from 'lucide-react';
 import {
@@ -66,7 +66,7 @@ const ChannelItem = memo(function ChannelItem({
   return (
     <div
       onClick={() => onSelectChannel(channel)}
-      className={`group relative flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer transition-all duration-200 ${
+      className={`group relative flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-all duration-200 ${
         isSelected
           ? 'bg-zinc-800/80 text-white'
           : isMuted
@@ -82,33 +82,24 @@ const ChannelItem = memo(function ChannelItem({
       {/* Avatar / Icon */}
       {isDM ? (
         <div className="relative flex-shrink-0">
-          <div className={`w-7 h-7 rounded-lg ${
-            isSelected
-              ? 'bg-zinc-700 border-zinc-600'
-              : 'bg-zinc-800 border-zinc-700'
-          } border flex items-center justify-center text-xs font-bold ${
+          <div className={`w-5 h-5 rounded ${
+            isSelected ? 'bg-zinc-700' : 'bg-zinc-800'
+          } flex items-center justify-center text-[10px] font-bold ${
             isSelected ? 'text-zinc-200' : 'text-zinc-500'
           }`}>
             {channel.name?.charAt(0)?.toUpperCase()}
           </div>
-          {/* Online indicator */}
-          <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-zinc-500 border-2 border-zinc-950" />
+          <div className="absolute -bottom-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-zinc-500 border border-zinc-950" />
         </div>
       ) : (
-        <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${
-          isSelected
-            ? 'bg-zinc-700 border border-zinc-600'
-            : 'bg-zinc-800/80 border border-zinc-700/50'
-        }`}>
-          <Icon className={`w-4 h-4 ${
-            isSelected ? 'text-zinc-300' : 'text-zinc-500'
-          }`} />
-        </div>
+        <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${
+          isSelected ? 'text-zinc-300' : 'text-zinc-500'
+        }`} />
       )}
 
       {/* Channel Name */}
-      <span className={`flex-1 text-sm truncate font-medium ${
-        unread > 0 && !isMuted ? 'text-white font-semibold' : ''
+      <span className={`flex-1 text-xs truncate ${
+        unread > 0 && !isMuted ? 'text-white font-semibold' : 'font-medium'
       }`}>
         {channel.name}
       </span>
@@ -127,7 +118,7 @@ const ChannelItem = memo(function ChannelItem({
 
         {/* Unread Badge */}
         {unread > 0 && !isMuted && (
-          <span className="min-w-[18px] h-[18px] px-1.5 text-[10px] font-bold bg-cyan-600/80 text-white rounded-full flex items-center justify-center">
+          <span className="min-w-[16px] h-[16px] px-1 text-[9px] font-bold bg-cyan-600/80 text-white rounded-full flex items-center justify-center">
             {unread > 99 ? '99+' : unread}
           </span>
         )}
@@ -350,18 +341,10 @@ export default function ChannelSidebar({
 
   return (
     <div className="w-72 bg-zinc-950 border-r border-zinc-800/60 flex flex-col h-full">
-      {/* Workspace Header */}
-      <div className="p-4 border-b border-zinc-800/60">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-zinc-400" />
-            </div>
-            <div>
-              <h2 className="font-bold text-white text-lg">ISYNCSO</h2>
-              <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Workspace</p>
-            </div>
-          </div>
+      {/* Header */}
+      <div className="px-4 py-3 border-b border-zinc-800/60">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-semibold text-white text-sm">Inbox</h2>
           <div className="flex items-center gap-1">
             <button
               onClick={onOpenSettings}
@@ -385,46 +368,40 @@ export default function ChannelSidebar({
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-600" />
           <input
             ref={searchInputRef}
             type="text"
-            placeholder="Search channels (⌘K)"
+            placeholder="Search (⌘K)"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-3 py-2.5 bg-zinc-800/50 border border-zinc-700/60 rounded-xl text-sm text-white placeholder-zinc-600 focus:border-cyan-600/50 focus:ring-1 focus:ring-cyan-600/30 focus:outline-none transition-all"
+            className="w-full pl-8 pr-3 py-1.5 bg-zinc-800/50 border border-zinc-700/60 rounded-lg text-xs text-white placeholder-zinc-600 focus:border-zinc-600 focus:outline-none transition-all"
           />
         </div>
       </div>
 
       {/* Quick Access */}
-      <div className="px-3 py-3 border-b border-zinc-800/40">
-        <div className="space-y-1">
+      <div className="px-3 py-2 border-b border-zinc-800/40">
+        <div className="space-y-0.5">
           <button
             onClick={() => onSelectChannel({ id: 'threads', name: 'All Threads', type: 'special' })}
-            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50 transition-all text-sm group"
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50 transition-all text-xs"
           >
-            <div className="w-7 h-7 rounded-lg bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center transition-colors">
-              <MessageSquare className="w-4 h-4 text-zinc-500" />
-            </div>
+            <MessageSquare className="w-3.5 h-3.5 text-zinc-500" />
             <span>Threads</span>
           </button>
           <button
             onClick={() => onSelectChannel({ id: 'mentions', name: 'Mentions & Reactions', type: 'special' })}
-            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50 transition-all text-sm group"
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50 transition-all text-xs"
           >
-            <div className="w-7 h-7 rounded-lg bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center transition-colors">
-              <AtSign className="w-4 h-4 text-zinc-500" />
-            </div>
+            <AtSign className="w-3.5 h-3.5 text-zinc-500" />
             <span>Mentions & Reactions</span>
           </button>
           <button
             onClick={() => onSelectChannel({ id: 'saved', name: 'Saved Items', type: 'special' })}
-            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50 transition-all text-sm group"
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50 transition-all text-xs"
           >
-            <div className="w-7 h-7 rounded-lg bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center transition-colors">
-              <Bookmark className="w-4 h-4 text-zinc-500" />
-            </div>
+            <Bookmark className="w-3.5 h-3.5 text-zinc-500" />
             <span>Saved Items</span>
           </button>
         </div>
@@ -505,29 +482,29 @@ export default function ChannelSidebar({
       </div>
 
       {/* User Status */}
-      <div className="p-4 border-t border-zinc-800/60 bg-zinc-950/50">
+      <div className="px-3 py-2.5 border-t border-zinc-800/60 bg-zinc-950/50">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="w-full flex items-center gap-3 p-2 -m-2 rounded-xl hover:bg-zinc-800/50 transition-all group">
+            <button className="w-full flex items-center gap-2.5 p-1.5 -m-1.5 rounded-lg hover:bg-zinc-800/50 transition-all group">
               <div className="relative">
                 {user?.avatar_url ? (
                   <img
                     src={user.avatar_url}
                     alt=""
-                    className="w-10 h-10 rounded-xl border-2 border-zinc-700/50 object-cover"
+                    className="w-7 h-7 rounded-lg border border-zinc-700/50 object-cover"
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center text-sm font-bold text-zinc-300">
+                  <div className="w-7 h-7 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold text-zinc-300">
                     {user?.full_name?.charAt(0) || '?'}
                   </div>
                 )}
-                <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-zinc-950 shadow-lg ${
+                <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-zinc-950 ${
                   STATUS_OPTIONS.find(s => s.id === userStatus)?.color || 'bg-emerald-500'
                 } ${userStatus === 'active' ? 'shadow-emerald-500/50' : ''}`} />
               </div>
               <div className="flex-1 min-w-0 text-left">
-                <div className="text-sm font-semibold text-white truncate">{user?.full_name || 'User'}</div>
-                <div className={`text-xs flex items-center gap-1.5 ${
+                <div className="text-xs font-medium text-white truncate">{user?.full_name || 'User'}</div>
+                <div className={`text-[10px] flex items-center gap-1 ${
                   STATUS_OPTIONS.find(s => s.id === userStatus)?.textColor || 'text-emerald-400'
                 }`}>
                   <div className={`w-1.5 h-1.5 rounded-full ${

@@ -548,8 +548,8 @@ export default function MessageInput({
       </AnimatePresence>
 
       {/* Input area */}
-      <div className="p-2 sm:p-4">
-        <div className="relative bg-zinc-900/50 rounded-xl">
+      <div className="px-3 py-2 sm:px-4">
+        <div className="relative bg-zinc-900/50 rounded-lg">
           {/* Formatting toolbar - hidden on mobile */}
           <AnimatePresence>
             {showFormatting && (
@@ -583,13 +583,13 @@ export default function MessageInput({
           </AnimatePresence>
 
           {/* Text input */}
-          <div className="flex items-end gap-1.5 sm:gap-2 p-2 sm:p-3">
+          <div className="flex items-end gap-1.5 p-2">
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="p-1.5 sm:p-2 hover:bg-zinc-800 rounded-lg transition-colors flex-shrink-0"
+              className="p-1.5 hover:bg-zinc-800 rounded-md transition-colors flex-shrink-0"
               title="Attach file (⌘U)"
             >
-              <Plus className="w-5 h-5 text-zinc-400" />
+              <Plus className="w-4 h-4 text-zinc-400" />
             </button>
 
             <div className="flex-1 relative">
@@ -686,12 +686,12 @@ export default function MessageInput({
               <button
                 onClick={handleSend}
                 disabled={(!message.trim() && files.length === 0) || uploading || isMuted || rateLimitCountdown > 0}
-                className="p-2 sm:p-2.5 bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-all shadow-md shadow-cyan-500/20 hover:shadow-lg hover:shadow-cyan-500/30"
+                className="p-1.5 bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed rounded-md transition-all"
               >
                 {uploading ? (
-                  <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 text-white animate-spin" />
+                  <Loader2 className="w-4 h-4 text-white animate-spin" />
                 ) : (
-                  <Send className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                  <Send className="w-4 h-4 text-white" />
                 )}
               </button>
             </div>
