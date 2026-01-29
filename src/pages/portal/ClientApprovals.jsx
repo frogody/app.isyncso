@@ -74,7 +74,7 @@ export default function ClientApprovals() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="w-full">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-zinc-500 mb-6">
         <Link to={basePath} className="hover:text-zinc-300 transition-colors">Home</Link>

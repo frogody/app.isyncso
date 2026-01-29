@@ -97,7 +97,7 @@ export default function ClientDashboard() {
   const firstName = client?.full_name?.split(' ')[0] || 'there';
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="w-full">
       {/* Header */}
       <div className="mb-10">
         <div className="flex items-center gap-2 text-sm text-zinc-500 mb-6">

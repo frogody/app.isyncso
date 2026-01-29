@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Users,
   UserPlus,
@@ -9,23 +9,36 @@ import {
   Send,
   CheckCircle,
   XCircle,
-  ChevronDown,
-  ChevronUp,
+  ChevronRight,
   Search,
-  MoreHorizontal,
+  Building2,
+  Plus,
+  X,
+  Globe,
 } from 'lucide-react';
+import { Sheet, SheetContent, SheetDescription } from '@/components/ui/sheet';
 import { supabase } from '@/api/supabaseClient';
 import { useUser } from '@/components/context/UserContext';
 import { toast } from 'sonner';
+
+const STATUS_COLORS = {
+  pending: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/30',
+  invited: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+  active: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
+  inactive: 'bg-red-500/10 text-red-400 border-red-500/30',
+  blocked: 'bg-red-500/10 text-red-400 border-red-500/30',
+};
 
 export default function PortalClientManager() {
   const { user } = useUser();
   const [clients, setClients] = useState([]);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [expandedClient, setExpandedClient] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Sheet state
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [selectedCompany, setSelectedCompany] = useState(null); // null = new, string = existing company_name
 
   useEffect(() => {
     if (user?.organization_id) {
@@ -77,7 +90,6 @@ export default function PortalClientManager() {
 
   const handleSendInvite = async (client) => {
     try {
-      // Send magic link via Supabase Auth
       const { error } = await supabase.auth.signInWithOtp({
         email: client.email,
         options: {
@@ -91,7 +103,6 @@ export default function PortalClientManager() {
 
       if (error) throw error;
 
-      // Update client status to invited
       await supabase
         .from('portal_clients')
         .update({ status: 'invited', updated_at: new Date().toISOString() })
@@ -106,16 +117,14 @@ export default function PortalClientManager() {
   };
 
   const handleDeleteClient = async (clientId) => {
-    if (!confirm('Are you sure you want to remove this client?')) return;
+    if (!confirm('Are you sure you want to remove this person?')) return;
 
     try {
-      // First remove project access
       await supabase
         .from('client_project_access')
         .delete()
         .eq('client_id', clientId);
 
-      // Then remove the client
       const { error } = await supabase
         .from('portal_clients')
         .delete()
@@ -134,14 +143,12 @@ export default function PortalClientManager() {
   const handleToggleProjectAccess = async (clientId, projectId, hasAccess) => {
     try {
       if (hasAccess) {
-        // Remove access
         await supabase
           .from('client_project_access')
           .delete()
           .eq('client_id', clientId)
           .eq('project_id', projectId);
       } else {
-        // Add access
         await supabase
           .from('client_project_access')
           .insert({
@@ -159,12 +166,39 @@ export default function PortalClientManager() {
     }
   };
 
-  const filteredClients = clients.filter(
-    (c) =>
-      c.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.company_name?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Group clients by company_name
+  const groupedClients = useMemo(() => {
+    const groups = {};
+    clients.forEach((c) => {
+      const key = c.company_name || '_ungrouped';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(c);
+    });
+    return groups;
+  }, [clients]);
+
+  const filteredGroups = useMemo(() => {
+    if (!searchQuery.trim()) return groupedClients;
+    const q = searchQuery.toLowerCase();
+    const filtered = {};
+    Object.entries(groupedClients).forEach(([company, members]) => {
+      const matches = members.filter(
+        (c) =>
+          c.full_name?.toLowerCase().includes(q) ||
+          c.email?.toLowerCase().includes(q) ||
+          c.company_name?.toLowerCase().includes(q)
+      );
+      if (matches.length > 0 || company.toLowerCase().includes(q)) {
+        filtered[company] = matches.length > 0 ? matches : members;
+      }
+    });
+    return filtered;
+  }, [groupedClients, searchQuery]);
+
+  const openSheet = (companyName = null) => {
+    setSelectedCompany(companyName);
+    setSheetOpen(true);
+  };
 
   if (loading) {
     return (
@@ -184,11 +218,11 @@ export default function PortalClientManager() {
             Portal Clients
           </h3>
           <p className="text-sm text-zinc-400 mt-1">
-            Manage who can access your client portal
+            Manage client organizations and their team members who can access the portal
           </p>
         </div>
         <button
-          onClick={() => setShowAddModal(true)}
+          onClick={() => openSheet(null)}
           className="flex items-center gap-2 px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-white font-medium rounded-lg transition-colors"
         >
           <UserPlus className="w-4 h-4" />
@@ -203,304 +237,483 @@ export default function PortalClientManager() {
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search clients..."
+          placeholder="Search clients or companies..."
           className="w-full pl-10 pr-4 py-2.5 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
         />
       </div>
 
-      {/* Client List */}
-      <div className="space-y-3">
-        {filteredClients.map((client) => (
-          <ClientCard
-            key={client.id}
-            client={client}
-            projects={projects}
-            expanded={expandedClient === client.id}
-            onToggleExpand={() =>
-              setExpandedClient(expandedClient === client.id ? null : client.id)
-            }
-            onSendInvite={() => handleSendInvite(client)}
-            onDelete={() => handleDeleteClient(client.id)}
-            onToggleAccess={(projectId, hasAccess) =>
-              handleToggleProjectAccess(client.id, projectId, hasAccess)
-            }
-          />
+      {/* Client Organizations */}
+      <div className="space-y-4">
+        {Object.entries(filteredGroups).map(([company, members]) => (
+          <div
+            key={company}
+            className="bg-zinc-800/30 border border-zinc-700/50 rounded-xl overflow-hidden"
+          >
+            {/* Company Header */}
+            <button
+              onClick={() => openSheet(company === '_ungrouped' ? null : company)}
+              className="w-full p-4 flex items-center gap-4 hover:bg-zinc-800/50 transition-colors text-left"
+            >
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 border border-cyan-500/20 flex items-center justify-center">
+                <Building2 className="w-5 h-5 text-cyan-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-medium text-white">
+                  {company === '_ungrouped' ? 'Individual Clients' : company}
+                </h4>
+                <p className="text-sm text-zinc-500">
+                  {members.length} {members.length === 1 ? 'member' : 'members'}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-zinc-400">
+                <FolderKanban className="w-4 h-4" />
+                {new Set(members.flatMap((m) => m.client_project_access?.map((a) => a.project_id) || [])).size} projects
+              </div>
+              <ChevronRight className="w-4 h-4 text-zinc-500" />
+            </button>
+
+            {/* Members */}
+            <div className="border-t border-zinc-700/30">
+              {members.map((client) => (
+                <div
+                  key={client.id}
+                  className="flex items-center gap-3 px-4 py-3 border-b border-zinc-700/20 last:border-b-0 hover:bg-zinc-800/20 transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-emerald-500 flex items-center justify-center text-white text-sm font-medium">
+                    {client.full_name?.[0]?.toUpperCase() || client.email[0].toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-white truncate">
+                        {client.full_name || client.email.split('@')[0]}
+                      </span>
+                      <span
+                        className={`px-1.5 py-0.5 text-[10px] font-medium rounded-full border ${
+                          STATUS_COLORS[client.status] || STATUS_COLORS.pending
+                        }`}
+                      >
+                        {client.status || 'pending'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-zinc-500 truncate">{client.email}</p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {client.status !== 'active' && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSendInvite(client);
+                        }}
+                        className="p-1.5 text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-colors"
+                        title="Send invite"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteClient(client.id);
+                      }}
+                      className="p-1.5 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                      title="Remove"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         ))}
-        {filteredClients.length === 0 && (
+
+        {Object.keys(filteredGroups).length === 0 && (
           <div className="text-center py-12 text-zinc-500">
             <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
             <p>No clients yet</p>
-            <p className="text-sm mt-1">Add your first client to get started</p>
+            <p className="text-sm mt-1">Add your first client organization to get started</p>
           </div>
         )}
       </div>
 
-      {/* Add Client Modal */}
-      {showAddModal && (
-        <AddClientModal
-          organizationId={user.organization_id}
-          onClose={() => setShowAddModal(false)}
-          onSuccess={async (newClient) => {
-            setShowAddModal(false);
-            await fetchClients();
-            // Auto-send invite after adding
-            if (newClient) {
-              handleSendInvite(newClient);
-            }
-          }}
-        />
-      )}
+      {/* Client Sheet */}
+      <ClientSheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        companyName={selectedCompany}
+        organizationId={user?.organization_id}
+        userId={user?.id}
+        clients={selectedCompany ? (groupedClients[selectedCompany] || []) : []}
+        projects={projects}
+        onRefresh={fetchClients}
+        onSendInvite={handleSendInvite}
+        onDeleteClient={handleDeleteClient}
+        onToggleAccess={handleToggleProjectAccess}
+      />
     </div>
   );
 }
 
-function ClientCard({
-  client,
+function ClientSheet({
+  open,
+  onClose,
+  companyName,
+  organizationId,
+  userId,
+  clients,
   projects,
-  expanded,
-  onToggleExpand,
+  onRefresh,
   onSendInvite,
-  onDelete,
+  onDeleteClient,
   onToggleAccess,
 }) {
-  const assignedProjects = client.client_project_access?.map((a) => a.project_id) || [];
+  const isNew = !companyName;
+  const [company, setCompany] = useState('');
+  const [emailInput, setEmailInput] = useState('');
+  const [nameInput, setNameInput] = useState('');
+  const [pendingEmails, setPendingEmails] = useState([]); // { email, full_name }
+  const [saving, setSaving] = useState(false);
+  const [expandedMember, setExpandedMember] = useState(null);
 
-  const statusColors = {
-    pending: 'bg-zinc-500/10 text-zinc-400',
-    invited: 'bg-amber-500/10 text-amber-400',
-    active: 'bg-emerald-500/10 text-emerald-400',
-    inactive: 'bg-red-500/10 text-red-400',
+  // Reset state when opening
+  useEffect(() => {
+    if (open) {
+      setCompany(companyName || '');
+      setEmailInput('');
+      setNameInput('');
+      setPendingEmails([]);
+      setSaving(false);
+      setExpandedMember(null);
+    }
+  }, [open, companyName]);
+
+  const addEmail = () => {
+    const email = emailInput.trim().toLowerCase();
+    if (!email || !email.includes('@')) {
+      toast.error('Enter a valid email address');
+      return;
+    }
+    if (pendingEmails.some((e) => e.email === email) || clients.some((c) => c.email === email)) {
+      toast.error('This email is already added');
+      return;
+    }
+    setPendingEmails([...pendingEmails, { email, full_name: nameInput.trim() || null }]);
+    setEmailInput('');
+    setNameInput('');
   };
 
-  return (
-    <div className="bg-zinc-800/30 border border-zinc-700/50 rounded-xl overflow-hidden">
-      {/* Main Row */}
-      <div className="p-4 flex items-center gap-4">
-        {/* Avatar */}
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-emerald-500 flex items-center justify-center text-white font-medium">
-          {client.full_name?.[0]?.toUpperCase() || client.email[0].toUpperCase()}
-        </div>
+  const removeEmail = (email) => {
+    setPendingEmails(pendingEmails.filter((e) => e.email !== email));
+  };
 
-        {/* Info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <h4 className="font-medium text-white truncate">
-              {client.full_name || 'Unnamed'}
-            </h4>
-            <span
-              className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                statusColors[client.status] || statusColors.pending
-              }`}
-            >
-              {client.status || 'pending'}
-            </span>
-          </div>
-          <p className="text-sm text-zinc-400 truncate">{client.email}</p>
-          {client.company_name && (
-            <p className="text-xs text-zinc-500">{client.company_name}</p>
-          )}
-        </div>
-
-        {/* Project Count */}
-        <div className="flex items-center gap-2 text-sm text-zinc-400">
-          <FolderKanban className="w-4 h-4" />
-          {assignedProjects.length} projects
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center gap-2">
-          {client.status !== 'active' && (
-            <button
-              onClick={onSendInvite}
-              className="p-2 text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-colors"
-              title="Send invite"
-            >
-              <Send className="w-4 h-4" />
-            </button>
-          )}
-          <button
-            onClick={onDelete}
-            className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-            title="Remove client"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-          <button
-            onClick={onToggleExpand}
-            className="p-2 text-zinc-400 hover:bg-zinc-700 rounded-lg transition-colors"
-          >
-            {expanded ? (
-              <ChevronUp className="w-4 h-4" />
-            ) : (
-              <ChevronDown className="w-4 h-4" />
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Expanded: Project Access */}
-      {expanded && (
-        <div className="px-4 pb-4 pt-2 border-t border-zinc-700/50">
-          <p className="text-sm font-medium text-zinc-300 mb-3">Project Access</p>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-            {projects.map((project) => {
-              const hasAccess = assignedProjects.includes(project.id);
-              return (
-                <button
-                  key={project.id}
-                  onClick={() => onToggleAccess(project.id, hasAccess)}
-                  className={`flex items-center gap-2 p-2.5 rounded-lg border text-left transition-colors ${
-                    hasAccess
-                      ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400'
-                      : 'bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:border-zinc-600'
-                  }`}
-                >
-                  {hasAccess ? (
-                    <CheckCircle className="w-4 h-4 shrink-0" />
-                  ) : (
-                    <XCircle className="w-4 h-4 shrink-0 opacity-50" />
-                  )}
-                  <span className="text-sm truncate">{project.title}</span>
-                </button>
-              );
-            })}
-          </div>
-          {projects.length === 0 && (
-            <p className="text-sm text-zinc-500">No projects available</p>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function AddClientModal({ organizationId, onClose, onSuccess }) {
-  const [formData, setFormData] = useState({
-    email: '',
-    full_name: '',
-    company_name: '',
-  });
-  const [saving, setSaving] = useState(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.email.trim()) return;
+  const handleSave = async () => {
+    if (pendingEmails.length === 0) {
+      toast.error('Add at least one email address');
+      return;
+    }
+    if (!company.trim() && isNew) {
+      toast.error('Enter a company name');
+      return;
+    }
 
     setSaving(true);
     try {
-      const { data: newClient, error } = await supabase.from('portal_clients').insert({
+      const companyValue = company.trim() || null;
+      const rows = pendingEmails.map((e) => ({
         organization_id: organizationId,
-        email: formData.email.toLowerCase().trim(),
-        full_name: formData.full_name.trim() || null,
-        company_name: formData.company_name.trim() || null,
+        email: e.email,
+        full_name: e.full_name,
+        company_name: companyValue,
         status: 'invited',
-      }).select().single();
+      }));
+
+      const { data: newClients, error } = await supabase
+        .from('portal_clients')
+        .insert(rows)
+        .select();
 
       if (error) {
         if (error.code === '23505') {
-          toast.error('A client with this email already exists');
+          toast.error('One or more emails already exist');
         } else {
           throw error;
         }
         return;
       }
 
-      toast.success('Client added! Sending invite...');
-      onSuccess(newClient);
+      toast.success(`${newClients.length} client(s) added! Sending invites...`);
+      onClose();
+      await onRefresh();
+
+      // Send invites to all new clients
+      for (const client of newClients) {
+        try {
+          await supabase.auth.signInWithOtp({
+            email: client.email,
+            options: {
+              emailRedirectTo: `${window.location.origin}/portal/auth/callback`,
+              data: {
+                portal_client_id: client.id,
+                organization_id: organizationId,
+              },
+            },
+          });
+          await supabase
+            .from('portal_clients')
+            .update({ status: 'invited', updated_at: new Date().toISOString() })
+            .eq('id', client.id);
+        } catch (err) {
+          console.error(`Failed to invite ${client.email}:`, err);
+        }
+      }
+      await onRefresh();
     } catch (err) {
-      console.error('Error adding client:', err);
-      toast.error('Failed to add client');
+      console.error('Error adding clients:', err);
+      toast.error('Failed to add clients');
     } finally {
       setSaving(false);
     }
   };
 
+  const assignedProjects = (client) =>
+    client.client_project_access?.map((a) => a.project_id) || [];
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl shadow-xl">
-        <div className="p-6 border-b border-zinc-800">
-          <h2 className="text-xl font-semibold text-white flex items-center gap-2">
-            <UserPlus className="w-5 h-5 text-cyan-400" />
-            Add Portal Client
-          </h2>
-          <p className="text-sm text-zinc-400 mt-1">
-            Add a client who will have access to your portal
-          </p>
+    <Sheet open={open} onOpenChange={onClose}>
+      <SheetContent className="w-full sm:max-w-2xl bg-zinc-900 border-zinc-800/60 overflow-y-auto p-0">
+        <SheetDescription className="sr-only">Manage client portal access</SheetDescription>
+
+        {/* Header */}
+        <div className="relative overflow-hidden">
+          <div className="h-1.5 bg-gradient-to-r from-cyan-500 to-emerald-500" />
+          <div className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 border border-cyan-500/20 flex items-center justify-center">
+                <Building2 className="w-6 h-6 text-cyan-400" />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-white">
+                  {isNew ? 'Add Client Organization' : companyName}
+                </h2>
+                <p className="text-sm text-zinc-400">
+                  {isNew
+                    ? 'Add a client company and invite team members'
+                    : `${clients.length} team member(s) with portal access`}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <div className="p-6 space-y-6">
+          {/* Company Name (for new) */}
+          {isNew && (
+            <div>
+              <label className="block text-sm font-medium text-zinc-300 mb-1.5">
+                Company / Organization Name
+              </label>
+              <div className="relative">
+                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                <input
+                  type="text"
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  placeholder="Acme Inc."
+                  className="w-full pl-10 pr-4 py-2.5 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Existing Members (for existing company) */}
+          {!isNew && clients.length > 0 && (
+            <div>
+              <h3 className="text-sm font-medium text-zinc-300 mb-3 flex items-center gap-2">
+                <Users className="w-4 h-4 text-zinc-400" />
+                Team Members
+              </h3>
+              <div className="space-y-2">
+                {clients.map((client) => {
+                  const hasExpanded = expandedMember === client.id;
+                  const assigned = assignedProjects(client);
+                  return (
+                    <div
+                      key={client.id}
+                      className="bg-zinc-800/40 border border-zinc-700/40 rounded-xl overflow-hidden"
+                    >
+                      <div className="flex items-center gap-3 p-3">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-emerald-500 flex items-center justify-center text-white text-sm font-medium">
+                          {client.full_name?.[0]?.toUpperCase() || client.email[0].toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-white truncate">
+                              {client.full_name || client.email.split('@')[0]}
+                            </span>
+                            <span
+                              className={`px-1.5 py-0.5 text-[10px] font-medium rounded-full border ${
+                                STATUS_COLORS[client.status] || STATUS_COLORS.pending
+                              }`}
+                            >
+                              {client.status}
+                            </span>
+                          </div>
+                          <p className="text-xs text-zinc-500">{client.email}</p>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => setExpandedMember(hasExpanded ? null : client.id)}
+                            className="p-1.5 text-zinc-400 hover:bg-zinc-700 rounded-lg transition-colors"
+                            title="Manage project access"
+                          >
+                            <FolderKanban className="w-3.5 h-3.5" />
+                            <span className="sr-only">Projects</span>
+                          </button>
+                          {client.status !== 'active' && (
+                            <button
+                              onClick={() => onSendInvite(client)}
+                              className="p-1.5 text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-colors"
+                              title="Resend invite"
+                            >
+                              <Send className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => onDeleteClient(client.id)}
+                            className="p-1.5 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                            title="Remove"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Project Access */}
+                      {hasExpanded && (
+                        <div className="px-3 pb-3 pt-1 border-t border-zinc-700/30">
+                          <p className="text-xs text-zinc-500 mb-2">Project Access</p>
+                          <div className="grid grid-cols-2 gap-1.5">
+                            {projects.map((project) => {
+                              const has = assigned.includes(project.id);
+                              return (
+                                <button
+                                  key={project.id}
+                                  onClick={() => onToggleAccess(client.id, project.id, has)}
+                                  className={`flex items-center gap-2 p-2 rounded-lg border text-left text-xs transition-colors ${
+                                    has
+                                      ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400'
+                                      : 'bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:border-zinc-600'
+                                  }`}
+                                >
+                                  {has ? (
+                                    <CheckCircle className="w-3.5 h-3.5 shrink-0" />
+                                  ) : (
+                                    <XCircle className="w-3.5 h-3.5 shrink-0 opacity-50" />
+                                  )}
+                                  <span className="truncate">{project.title}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Add New Emails */}
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-1.5">
-              Email Address *
-            </label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                placeholder="client@company.com"
-                required
-                className="w-full pl-10 pr-4 py-2.5 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
-              />
+            <h3 className="text-sm font-medium text-zinc-300 mb-3 flex items-center gap-2">
+              <Mail className="w-4 h-4 text-zinc-400" />
+              {isNew ? 'Add Team Members' : 'Add New Member'}
+            </h3>
+
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <div className="flex-1 space-y-2">
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                    <input
+                      type="email"
+                      value={emailInput}
+                      onChange={(e) => setEmailInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addEmail())}
+                      placeholder="employee@company.com"
+                      className="w-full pl-10 pr-4 py-2.5 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                    />
+                  </div>
+                  <input
+                    type="text"
+                    value={nameInput}
+                    onChange={(e) => setNameInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addEmail())}
+                    placeholder="Full name (optional)"
+                    className="w-full px-4 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                  />
+                </div>
+                <button
+                  onClick={addEmail}
+                  className="self-start px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 rounded-lg transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Pending emails list */}
+              {pendingEmails.length > 0 && (
+                <div className="space-y-1.5">
+                  {pendingEmails.map((entry) => (
+                    <div
+                      key={entry.email}
+                      className="flex items-center gap-3 p-2.5 bg-cyan-500/5 border border-cyan-500/20 rounded-lg"
+                    >
+                      <div className="w-7 h-7 rounded-full bg-cyan-500/20 flex items-center justify-center text-cyan-400 text-xs font-medium">
+                        {(entry.full_name?.[0] || entry.email[0]).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        {entry.full_name && (
+                          <p className="text-sm text-white truncate">{entry.full_name}</p>
+                        )}
+                        <p className="text-xs text-zinc-400 truncate">{entry.email}</p>
+                      </div>
+                      <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                        pending
+                      </span>
+                      <button
+                        onClick={() => removeEmail(entry.email)}
+                        className="p-1 text-zinc-500 hover:text-red-400 transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-1.5">
-              Full Name
-            </label>
-            <input
-              type="text"
-              value={formData.full_name}
-              onChange={(e) =>
-                setFormData({ ...formData, full_name: e.target.value })
-              }
-              placeholder="John Smith"
-              className="w-full px-4 py-2.5 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-1.5">
-              Company
-            </label>
-            <input
-              type="text"
-              value={formData.company_name}
-              onChange={(e) =>
-                setFormData({ ...formData, company_name: e.target.value })
-              }
-              placeholder="Acme Inc."
-              className="w-full px-4 py-2.5 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
-            />
-          </div>
-
-          <div className="flex gap-3 pt-4">
+          {/* Save */}
+          {pendingEmails.length > 0 && (
             <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving || !formData.email.trim()}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-cyan-500 hover:bg-cyan-400 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+              onClick={handleSave}
+              disabled={saving}
+              className="w-full flex items-center justify-center gap-2 py-3 bg-cyan-500 hover:bg-cyan-400 text-white font-medium rounded-xl transition-colors disabled:opacity-50"
             >
               {saving ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                <UserPlus className="w-4 h-4" />
+                <Send className="w-4 h-4" />
               )}
-              Add Client
+              {saving
+                ? 'Saving...'
+                : `Add ${pendingEmails.length} member${pendingEmails.length > 1 ? 's' : ''} & Send Invites`}
             </button>
-          </div>
-        </form>
-      </div>
-    </div>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
