@@ -26,6 +26,7 @@ import { createPageUrl } from "@/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useUser } from "@/components/context/UserContext";
+import { usePermissions } from "@/components/context/PermissionContext";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { toast } from "sonner";
@@ -36,6 +37,7 @@ import { LayoutGrid } from "lucide-react";
 
 export default function Settings() {
   const { user, company, settings: userSettings, updateUser, updateSettings, isLoading: userLoading } = useUser();
+  const { isAdmin } = usePermissions();
   const [saving, setSaving] = useState(false);
   const [refreshingCompany, setRefreshingCompany] = useState(false);
   const [settings, setSettings] = useState(null);
@@ -598,7 +600,7 @@ export default function Settings() {
     { id: 'integrations', label: 'Integrations', icon: Plug, color: 'cyan', isLink: true, href: createPageUrl('MCPIntegrations') },
     { id: 'apps', label: 'Apps', icon: LayoutGrid, color: 'cyan' },
     { id: 'privacy', label: 'Privacy', icon: Lock, color: 'red' },
-    ...(user?.role === 'admin' ? [{ id: 'admin', label: 'Admin', icon: Brain, color: 'purple' }] : [])
+    ...(isAdmin ? [{ id: 'admin', label: 'Admin', icon: Brain, color: 'purple' }] : [])
   ];
 
   const colorClasses = {
@@ -631,7 +633,7 @@ export default function Settings() {
               icon={SettingsIcon}
               color="cyan"
             />
-            {user?.role === 'admin' && (
+            {isAdmin && (
               <Link
                 to="/admin"
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-medium text-sm transition-colors"
@@ -1532,7 +1534,7 @@ export default function Settings() {
 
 
               {/* ADMIN TAB */}
-              {activeTab === 'admin' && user?.role === 'admin' && (
+              {activeTab === 'admin' && isAdmin && (
                 <motion.div
                   key="admin"
                   initial={{ opacity: 0, y: 20 }}
