@@ -261,7 +261,7 @@ export default function TalentNests() {
     <div className="w-full px-4 lg:px-6 py-4 space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-semibold text-white mb-1">Talent Nests</h1>
+        <h1 className="text-lg font-bold text-white mb-1">Talent Nests</h1>
         <p className="text-zinc-500 text-xs">
           Pre-built candidate datasets for your recruitment needs
         </p>

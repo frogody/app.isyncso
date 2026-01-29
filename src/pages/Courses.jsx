@@ -622,7 +622,7 @@ export default function Courses() {
               <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-4">
                 <div className="flex-1 space-y-2">
                   <div className="space-y-1">
-                    <h1 className="text-lg lg:text-xl font-bold metallic-text">
+                    <h1 className="text-lg font-bold text-white">
                       Learning Center
                     </h1>
                     <p className="text-xs text-gray-400">

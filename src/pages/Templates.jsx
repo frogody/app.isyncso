@@ -90,7 +90,7 @@ export default function Templates() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-white mb-1">Email Templates</h1>
+            <h1 className="text-lg font-bold text-white mb-1">Email Templates</h1>
             <p className="text-zinc-400 text-xs">{templates.length} templates available</p>
           </div>
           <button

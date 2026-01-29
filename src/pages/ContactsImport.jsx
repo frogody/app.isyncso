@@ -637,7 +637,7 @@ export default function ContactsImport() {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-white">Import Contacts</h1>
+            <h1 className="text-lg font-bold text-white">Import Contacts</h1>
             <p className="text-sm text-zinc-400">Import contacts from CSV or Excel files</p>
           </div>
         </div>

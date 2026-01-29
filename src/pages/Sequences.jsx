@@ -58,7 +58,7 @@ export default function Sequences() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-white mb-1">Email Sequences</h1>
+            <h1 className="text-lg font-bold text-white mb-1">Email Sequences</h1>
             <p className="text-zinc-400 text-sm">Automate your outreach campaigns</p>
           </div>
           <button 

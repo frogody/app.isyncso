@@ -47,7 +47,7 @@ export default function Insights() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-4">
-          <h1 className="text-2xl font-bold text-white mb-1 flex items-center gap-2">
+          <h1 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
             <Sparkles className="w-6 h-6 text-orange-400" />
             AI Insights
           </h1>

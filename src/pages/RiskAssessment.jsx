@@ -74,7 +74,7 @@ export default function RiskAssessment() {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
+            <h1 className="text-lg font-bold text-white flex items-center gap-3">
               <Shield className="w-8 h-8 text-[#86EFAC]" />
               Risk Assessment
             </h1>

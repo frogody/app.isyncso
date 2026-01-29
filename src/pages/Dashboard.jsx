@@ -658,7 +658,7 @@ export default function Dashboard() {
           className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4"
         >
           <div className="min-w-0 flex-1">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-0.5 sm:mb-1 truncate">
+            <h1 className="text-lg font-bold text-white mb-0.5 truncate">
               {greeting}, {user?.full_name?.split(' ')[0] || 'there'}
             </h1>
             <p className="text-sm sm:text-base text-zinc-400 line-clamp-2">{getPersonalizedSubtitle()}</p>

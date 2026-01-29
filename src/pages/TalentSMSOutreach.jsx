@@ -446,7 +446,7 @@ export default function TalentSMSOutreach() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-white">SMS Outreach</h1>
+          <h1 className="text-lg font-bold text-white">SMS Outreach</h1>
           <p className="text-xs text-zinc-500">{conversations.length} conversations</p>
         </div>
         <div className="flex items-center gap-2">

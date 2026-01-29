@@ -153,7 +153,7 @@ export default function ManagerDashboard() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <h1 className="text-xl font-bold text-white tracking-tight">Team Learning Dashboard</h1>
+              <h1 className="text-lg font-bold text-white tracking-tight">Team Learning Dashboard</h1>
               <Sparkles className="w-4 h-4 text-purple-400 animate-pulse" />
             </div>
             <p className="text-gray-400 text-xs">Monitor your team's progress and identify skill gaps</p>

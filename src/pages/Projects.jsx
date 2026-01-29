@@ -2988,7 +2988,7 @@ export default function Projects() {
   const [showFolderDetailSheet, setShowFolderDetailSheet] = useState(false);
   const [folderFormData, setFolderFormData] = useState(emptyFolder);
   const [editingFolder, setEditingFolder] = useState(null);
-  const [showFoldersSection, setShowFoldersSection] = useState(true);
+  const [showFoldersSection, setShowFoldersSection] = useState(false);
 
   // Refs for anime.js animations
   const headerRef = useRef(null);

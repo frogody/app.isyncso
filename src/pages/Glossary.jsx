@@ -160,7 +160,7 @@ export default function Glossary() {
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <BookOpen className="w-8 h-8 text-cyan-400" />
-            <h1 className="text-3xl font-bold text-white">Glossary</h1>
+            <h1 className="text-lg font-bold text-white">Glossary</h1>
           </div>
           <p className="text-gray-400">
             A beginner-friendly guide to AI compliance and sales terminology.

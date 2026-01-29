@@ -95,7 +95,7 @@ export default function SkillFrameworks() {
       <div className="max-w-6xl mx-auto space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white">Skills & Paths</h1>
+            <h1 className="text-lg font-bold text-white">Skills & Paths</h1>
             <p className="text-gray-400">Define skills, map courses, and track progress by capability</p>
           </div>
         </div>

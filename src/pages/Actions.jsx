@@ -252,7 +252,7 @@ export default function Actions() {
               </div>
               <div>
                 <div className="flex items-center gap-3">
-                  <h1 className="text-2xl md:text-3xl font-bold text-zinc-100">Actions Hub</h1>
+                  <h1 className="text-lg font-bold text-white">Actions Hub</h1>
                   <Badge className="bg-orange-950/40 text-orange-300/80 border-orange-800/30">
                     {activeCount} Connected
                   </Badge>

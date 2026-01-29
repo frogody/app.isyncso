@@ -35,7 +35,7 @@ export default function Leads() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-white mb-1">Lead Scoring</h1>
+            <h1 className="text-lg font-bold text-white mb-1">Lead Scoring</h1>
             <p className="text-zinc-400 text-sm">Prioritize your best prospects</p>
           </div>
           <button

@@ -504,7 +504,7 @@ export default function Tasks() {
         {/* Header */}
         <div ref={headerRef} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-white">Tasks</h1>
+            <h1 className="text-lg font-bold text-white">Tasks</h1>
             <div ref={statsRef} className="flex items-center gap-4 mt-1 text-sm text-zinc-400">
               <span><span className="stat-count" data-count={stats.total}>{stats.total}</span> total</span>
               <span className="text-cyan-400/80"><span className="stat-count" data-count={stats.completed}>{stats.completed}</span> completed</span>

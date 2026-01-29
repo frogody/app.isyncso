@@ -281,7 +281,7 @@ export default function UserAnalytics() {
           className="flex flex-col lg:flex-row lg:items-center justify-between gap-3"
         >
           <div>
-            <h1 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+            <h1 className="text-lg font-bold text-white flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-cyan-500/15">
                 <BarChart3 className="w-4 h-4 text-cyan-400" />
               </div>
