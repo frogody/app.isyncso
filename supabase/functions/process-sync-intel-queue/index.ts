@@ -268,6 +268,21 @@ serve(async (req) => {
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+    // Concurrency guard: skip if another run is already processing items
+    const { data: activeItems } = await supabase
+      .from('sync_intel_queue')
+      .select('id')
+      .eq('status', 'processing')
+      .limit(1);
+
+    if (activeItems && activeItems.length > 0) {
+      console.log('Another processor is already running, skipping');
+      return new Response(
+        JSON.stringify({ message: 'Processor already running', skipped: true }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Get pending queue items, ordered by priority and creation time
     const { data: queueItems, error: queueError } = await supabase
       .from('sync_intel_queue')
@@ -343,6 +358,19 @@ serve(async (req) => {
       .from('sync_intel_queue')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'pending');
+
+    // Self-retrigger if items remain (fire-and-forget)
+    if (remainingCount && remainingCount > 0) {
+      console.log(`${remainingCount} items remaining, retriggering...`);
+      fetch(`${SUPABASE_URL}/functions/v1/process-sync-intel-queue`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({ triggered_by: 'self_retrigger' }),
+      }).catch(() => {}); // fire-and-forget
+    }
 
     return new Response(
       JSON.stringify({
