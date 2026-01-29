@@ -20,13 +20,116 @@ interface QueueItem {
   source: string;
   priority: number;
   status: string;
+  current_stage: string | null;
 }
 
-// Process a single candidate's SYNC Intel (Company Intel first, then Candidate Intel)
+// Stage 0: LinkedIn Enrichment via Explorium
+async function enrichFromLinkedIn(
+  supabase: any,
+  candidateId: string,
+  linkedinUrl: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    console.log(`[Stage 0] LinkedIn enrichment for candidate ${candidateId}`);
+
+    // Call the explorium-enrich edge function with full_enrich action
+    const enrichResponse = await fetch(
+      `${SUPABASE_URL}/functions/v1/explorium-enrich`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({
+          action: 'full_enrich',
+          linkedin: linkedinUrl,
+        }),
+      }
+    );
+
+    if (!enrichResponse.ok) {
+      const errorText = await enrichResponse.text();
+      console.warn(`[Stage 0] LinkedIn enrichment API failed: ${errorText}`);
+      return { success: false, error: `LinkedIn enrichment failed: ${enrichResponse.status}` };
+    }
+
+    const enriched = await enrichResponse.json();
+
+    // Build update object — only overwrite empty fields
+    const updateData: Record<string, any> = {
+      enriched_at: new Date().toISOString(),
+      enrichment_source: 'explorium',
+    };
+
+    // Contact info
+    if (enriched.email) updateData.verified_email = enriched.email;
+    if (enriched.phone) updateData.verified_phone = enriched.phone;
+    if (enriched.mobile_phone) updateData.verified_mobile = enriched.mobile_phone;
+    if (enriched.personal_email) updateData.personal_email = enriched.personal_email;
+    if (enriched.work_phone) updateData.work_phone = enriched.work_phone;
+    if (enriched.email_status) updateData.email_status = enriched.email_status;
+
+    // Professional info
+    if (enriched.job_title) updateData.job_title = enriched.job_title;
+    if (enriched.company) updateData.company_name = enriched.company;
+    if (enriched.job_department) updateData.job_department = enriched.job_department;
+    if (enriched.job_seniority_level) updateData.job_seniority_level = enriched.job_seniority_level;
+
+    // Location
+    if (enriched.location_city) updateData.location_city = enriched.location_city;
+    if (enriched.location_region) updateData.location_region = enriched.location_region;
+    if (enriched.location_country) updateData.location_country = enriched.location_country;
+
+    // Demographics
+    if (enriched.age_group) updateData.age_group = enriched.age_group;
+    if (enriched.gender) updateData.gender = enriched.gender;
+
+    // LinkedIn career data — only overwrite if enriched data has items
+    if (enriched.skills?.length) {
+      updateData.skills = enriched.skills;
+      updateData.inferred_skills = enriched.skills;
+    }
+    if (enriched.work_history?.length) updateData.work_history = enriched.work_history;
+    if (enriched.education?.length) updateData.education = enriched.education;
+    if (enriched.certifications?.length) updateData.certifications = enriched.certifications;
+    if (enriched.interests?.length) updateData.interests = enriched.interests;
+
+    // Explorium IDs for re-enrichment
+    if (enriched.explorium_prospect_id) updateData.explorium_prospect_id = enriched.explorium_prospect_id;
+    if (enriched.explorium_business_id) updateData.explorium_business_id = enriched.explorium_business_id;
+
+    // Company domain (useful for Stage 1)
+    if (enriched.company_domain) updateData.company_domain = enriched.company_domain;
+
+    const { error: updateError } = await supabase
+      .from('candidates')
+      .update(updateData)
+      .eq('id', candidateId);
+
+    if (updateError) {
+      console.warn(`[Stage 0] DB update failed: ${updateError.message}`);
+      return { success: false, error: `DB update failed: ${updateError.message}` };
+    }
+
+    const enrichedFields = Object.keys(updateData).filter(k => k !== 'enriched_at' && k !== 'enrichment_source');
+    console.log(`[Stage 0] LinkedIn enrichment complete: ${enrichedFields.length} fields updated`);
+    return { success: true };
+  } catch (err: any) {
+    console.warn(`[Stage 0] LinkedIn enrichment error: ${err.message}`);
+    return { success: false, error: err.message };
+  }
+}
+
+// Process a single candidate's full enrichment pipeline:
+// Stage 0: LinkedIn Enrichment (NEW)
+// Stage 1: Company Intelligence (Explorium)
+// Stage 2: Candidate Intelligence (LLM)
 async function processCandidateIntel(
   supabase: any,
   candidateId: string,
-  organizationId: string | null
+  organizationId: string | null,
+  queueItemId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
     // Fetch candidate data
@@ -50,8 +153,37 @@ async function processCandidateIntel(
       }
     }
 
-    // Step 1: Generate Company Intelligence (Explorium) first
-    // This enriches the company data so SYNC Intel can use it
+    // --- Stage 0: LinkedIn Enrichment (NEW) ---
+    const linkedinUrl = candidate.linkedin_url || candidate.linkedin_profile;
+    if (linkedinUrl && !candidate.enriched_at) {
+      await supabase.from('sync_intel_queue').update({ current_stage: 'linkedin' }).eq('id', queueItemId);
+
+      const linkedInResult = await enrichFromLinkedIn(supabase, candidateId, linkedinUrl);
+      if (linkedInResult.success) {
+        console.log(`[Stage 0] Success for ${candidateId}`);
+      } else {
+        console.warn(`[Stage 0] Failed for ${candidateId}: ${linkedInResult.error} (continuing)`);
+      }
+
+      // Delay to let DB propagate before next stage
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Re-fetch candidate to get enriched data for subsequent stages
+      const { data: refreshed } = await supabase
+        .from('candidates')
+        .select('*')
+        .eq('id', candidateId)
+        .single();
+      if (refreshed) Object.assign(candidate, refreshed);
+    } else if (candidate.enriched_at) {
+      console.log(`[Stage 0] LinkedIn already enriched for ${candidateId}, skipping`);
+    } else {
+      console.log(`[Stage 0] No LinkedIn URL for ${candidateId}, skipping`);
+    }
+
+    // --- Stage 1: Generate Company Intelligence (Explorium) ---
+    await supabase.from('sync_intel_queue').update({ current_stage: 'company' }).eq('id', queueItemId);
+
     const companyName = candidate.company_name || candidate.current_company;
     const companyDomain = candidate.company_domain || candidate.company_website;
 
@@ -61,7 +193,7 @@ async function processCandidateIntel(
       ((Date.now() - new Date(candidate.company_intelligence_updated_at).getTime()) / (1000 * 60 * 60 * 24)) < 7;
 
     if (companyName && !hasRecentCompanyIntel) {
-      console.log(`Generating company intel for ${companyName} (candidate: ${candidateId})`);
+      console.log(`[Stage 1] Generating company intel for ${companyName} (candidate: ${candidateId})`);
 
       const companyIntelResponse = await fetch(
         `${SUPABASE_URL}/functions/v1/generateCompanyIntelligence`,
@@ -82,23 +214,24 @@ async function processCandidateIntel(
 
       if (companyIntelResponse.ok) {
         const companyResult = await companyIntelResponse.json();
-        console.log(`Company intel completed: ${companyResult.success ? 'success' : 'no match'}`);
+        console.log(`[Stage 1] Company intel completed: ${companyResult.success ? 'success' : 'no match'}`);
       } else {
-        console.log(`Company intel failed (non-blocking): ${await companyIntelResponse.text()}`);
+        console.log(`[Stage 1] Company intel failed (non-blocking): ${await companyIntelResponse.text()}`);
         // Don't fail the whole process if company intel fails
       }
 
       // Small delay to let the DB update propagate
       await new Promise(resolve => setTimeout(resolve, 500));
     } else if (hasRecentCompanyIntel) {
-      console.log(`Company intel already exists for candidate ${candidateId}, skipping`);
+      console.log(`[Stage 1] Company intel already exists for candidate ${candidateId}, skipping`);
     } else {
-      console.log(`No company name for candidate ${candidateId}, skipping company intel`);
+      console.log(`[Stage 1] No company name for candidate ${candidateId}, skipping company intel`);
     }
 
-    // Step 2: Generate Candidate Intelligence (SYNC Intel)
-    // This will now have access to the enriched company data
-    console.log(`Generating candidate intel for ${candidateId}`);
+    // --- Stage 2: Generate Candidate Intelligence (SYNC Intel) ---
+    await supabase.from('sync_intel_queue').update({ current_stage: 'candidate' }).eq('id', queueItemId);
+
+    console.log(`[Stage 2] Generating candidate intel for ${candidateId}`);
 
     const intelResponse = await fetch(
       `${SUPABASE_URL}/functions/v1/generateCandidateIntelligence`,
@@ -168,11 +301,11 @@ serve(async (req) => {
       // Mark as processing
       await supabase
         .from('sync_intel_queue')
-        .update({ status: 'processing', started_at: new Date().toISOString() })
+        .update({ status: 'processing', started_at: new Date().toISOString(), current_stage: 'linkedin' })
         .eq('id', item.id);
 
-      // Process the candidate
-      const result = await processCandidateIntel(supabase, item.candidate_id, item.organization_id);
+      // Process the candidate through all 3 stages
+      const result = await processCandidateIntel(supabase, item.candidate_id, item.organization_id, item.id);
 
       if (result.success) {
         // Mark as completed
@@ -180,6 +313,7 @@ serve(async (req) => {
           .from('sync_intel_queue')
           .update({
             status: 'completed',
+            current_stage: 'completed',
             completed_at: new Date().toISOString(),
           })
           .eq('id', item.id);
@@ -190,6 +324,7 @@ serve(async (req) => {
           .from('sync_intel_queue')
           .update({
             status: 'failed',
+            current_stage: 'failed',
             error_message: result.error,
             completed_at: new Date().toISOString(),
           })
