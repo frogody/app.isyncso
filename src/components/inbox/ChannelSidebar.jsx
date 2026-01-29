@@ -345,7 +345,7 @@ export default function ChannelSidebar({
       <div className="px-3 pt-3 pb-2 border-b border-zinc-800/60 space-y-2.5">
         {/* Title row */}
         <div className="flex items-center justify-between px-1">
-          <h2 className="font-semibold text-white text-sm tracking-tight">Inbox</h2>
+          <h2 className="text-lg font-bold text-white tracking-tight">Inbox</h2>
           <div className="flex items-center gap-0.5">
             <button
               onClick={onOpenSettings}

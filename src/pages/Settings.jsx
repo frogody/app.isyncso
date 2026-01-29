@@ -712,7 +712,7 @@ export default function Settings() {
                       <div className={`w-10 h-10 rounded-xl ${currentColor.bg} border ${currentColor.border} flex items-center justify-center`}>
                         <User className={`w-5 h-5 ${currentColor.text}`} />
                       </div>
-                      <h2 className="text-xl font-bold text-white">Profile Information</h2>
+                      <h2 className="text-sm font-bold text-white">Profile Information</h2>
                     </div>
 
                     <div className="flex flex-col md:flex-row gap-6 mb-6">
@@ -778,7 +778,7 @@ export default function Settings() {
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
                           <Wrench className="w-5 h-5 text-cyan-400/70" />
-                          <h3 className="text-lg font-semibold text-zinc-100">Tech Stack</h3>
+                          <h3 className="text-sm font-bold text-white">Tech Stack</h3>
                         </div>
                         <Badge className="bg-zinc-800/80 text-cyan-400/70 border-zinc-700/50">
                           {profileForm.personal_tech_stack.length}
@@ -812,7 +812,7 @@ export default function Settings() {
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
                           <FileText className="w-5 h-5 text-cyan-400/70" />
-                          <h3 className="text-lg font-semibold text-zinc-100">Knowledge Files</h3>
+                          <h3 className="text-sm font-bold text-white">Knowledge Files</h3>
                         </div>
                         <Button size="sm" variant="outline" onClick={() => fileInputRef.current?.click()} className="border-zinc-700/60 text-cyan-400/70 hover:bg-zinc-800/50">
                           <Plus className="w-3 h-3 mr-1" /> Add
@@ -852,7 +852,7 @@ export default function Settings() {
                       <div className={`w-10 h-10 rounded-xl ${currentColor.bg} border ${currentColor.border} flex items-center justify-center`}>
                         <Book className={`w-5 h-5 ${currentColor.text}`} />
                       </div>
-                      <h2 className="text-xl font-bold text-white">Learning Preferences</h2>
+                      <h2 className="text-sm font-bold text-white">Learning Preferences</h2>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -924,7 +924,7 @@ export default function Settings() {
                       <div className={`w-10 h-10 rounded-xl ${currentColor.bg} border ${currentColor.border} flex items-center justify-center`}>
                         <Bell className={`w-5 h-5 ${currentColor.text}`} />
                       </div>
-                      <h2 className="text-xl font-bold text-white">Notification Settings</h2>
+                      <h2 className="text-sm font-bold text-white">Notification Settings</h2>
                     </div>
 
                     <div className="space-y-4">
@@ -1002,7 +1002,7 @@ export default function Settings() {
                       <div className={`w-10 h-10 rounded-xl ${currentColor.bg} border ${currentColor.border} flex items-center justify-center`}>
                         <Palette className={`w-5 h-5 ${currentColor.text}`} />
                       </div>
-                      <h2 className="text-xl font-bold text-white">Appearance</h2>
+                      <h2 className="text-sm font-bold text-white">Appearance</h2>
                     </div>
 
                     <div className="space-y-6">
@@ -1067,7 +1067,7 @@ export default function Settings() {
                         <div className={`w-10 h-10 rounded-xl ${currentColor.bg} border ${currentColor.border} flex items-center justify-center`}>
                           <Building2 className={`w-5 h-5 ${currentColor.text}`} />
                         </div>
-                        <h2 className="text-xl font-bold text-white">Company Profile</h2>
+                        <h2 className="text-sm font-bold text-white">Company Profile</h2>
                       </div>
                       {company && (
                         <Button size="sm" variant="outline" onClick={handleRefreshCompany} disabled={refreshingCompany} className="border-zinc-700/60 text-cyan-400/70 hover:bg-zinc-800/50">
@@ -1229,7 +1229,7 @@ export default function Settings() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <GlassCard className="p-6">
                       <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-zinc-100 flex items-center gap-2">
+                        <h3 className="text-sm font-bold text-white flex items-center gap-2">
                           <Cpu className="w-5 h-5 text-cyan-400/70" />
                           Tech Stack
                         </h3>
@@ -1261,7 +1261,7 @@ export default function Settings() {
 
                     <GlassCard className="p-6">
                       <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-zinc-100 flex items-center gap-2">
+                        <h3 className="text-sm font-bold text-white flex items-center gap-2">
                           <FileText className="w-5 h-5 text-cyan-400/70" />
                           Knowledge Base
                         </h3>
@@ -1290,7 +1290,7 @@ export default function Settings() {
                   {/* Team Members */}
                   <GlassCard className="p-6">
                     <div className="flex items-center justify-between mb-6">
-                      <h3 className="text-lg font-semibold text-zinc-100 flex items-center gap-2">
+                      <h3 className="text-sm font-bold text-white flex items-center gap-2">
                         <Users className="w-5 h-5 text-cyan-400/70" />
                         Team Members
                       </h3>
@@ -1403,7 +1403,7 @@ export default function Settings() {
                           <LogOut className="w-6 h-6 text-cyan-400/70" />
                         </div>
                         <div>
-                          <h3 className="text-lg font-semibold text-zinc-100">Sign Out</h3>
+                          <h3 className="text-sm font-bold text-white">Sign Out</h3>
                           <p className="text-sm text-zinc-500">Log out of your account on this device</p>
                         </div>
                       </div>
@@ -1423,7 +1423,7 @@ export default function Settings() {
                       <div className={`w-10 h-10 rounded-xl ${currentColor.bg} border ${currentColor.border} flex items-center justify-center`}>
                         <Lock className={`w-5 h-5 ${currentColor.text}`} />
                       </div>
-                      <h2 className="text-xl font-bold text-white">Data & Privacy</h2>
+                      <h2 className="text-sm font-bold text-white">Data & Privacy</h2>
                     </div>
 
                     <div className="space-y-4">
@@ -1502,7 +1502,7 @@ export default function Settings() {
                       <div className={`w-10 h-10 rounded-xl ${currentColor.bg} border ${currentColor.border} flex items-center justify-center`}>
                         <Brain className={`w-5 h-5 ${currentColor.text}`} />
                       </div>
-                      <h2 className="text-xl font-bold text-white">Admin Tools</h2>
+                      <h2 className="text-sm font-bold text-white">Admin Tools</h2>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

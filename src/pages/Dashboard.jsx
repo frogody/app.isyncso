@@ -661,7 +661,7 @@ export default function Dashboard() {
             <h1 className="text-lg font-bold text-white mb-0.5 truncate">
               {greeting}, {user?.full_name?.split(' ')[0] || 'there'}
             </h1>
-            <p className="text-sm sm:text-base text-zinc-400 line-clamp-2">{getPersonalizedSubtitle()}</p>
+            <p className="text-xs text-zinc-400 line-clamp-2">{getPersonalizedSubtitle()}</p>
           </div>
           <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
             <Link to={createPageUrl("Actions")}>
@@ -731,7 +731,7 @@ export default function Dashboard() {
                       <div className="flex items-center justify-between mb-2">
                         <Users className="w-5 h-5 text-cyan-400" />
                       </div>
-                      <p className="text-2xl font-bold text-white">{teamData.memberCount}</p>
+                      <p className="text-lg font-bold text-white">{teamData.memberCount}</p>
                       <p className="text-sm text-zinc-400">Team Members</p>
                       <p className="text-xs text-cyan-400 mt-1">{teamData.activeThisWeek} active this week</p>
                     </CardContent>
@@ -742,7 +742,7 @@ export default function Dashboard() {
                       <div className="flex items-center justify-between mb-2">
                         <DollarSign className="w-5 h-5 text-emerald-400" />
                       </div>
-                      <p className="text-2xl font-bold text-white">${(teamData.pipelineValue / 1000).toFixed(0)}k</p>
+                      <p className="text-lg font-bold text-white">${(teamData.pipelineValue / 1000).toFixed(0)}k</p>
                       <p className="text-sm text-zinc-400">Pipeline Value</p>
                       <p className="text-xs text-emerald-400 mt-1">{teamData.activeDeals} active deals</p>
                     </CardContent>
@@ -753,7 +753,7 @@ export default function Dashboard() {
                       <div className="flex items-center justify-between mb-2">
                         <Shield className="w-5 h-5 text-purple-400" />
                       </div>
-                      <p className="text-2xl font-bold text-white">{teamData.complianceRate}%</p>
+                      <p className="text-lg font-bold text-white">{teamData.complianceRate}%</p>
                       <p className="text-sm text-zinc-400">Compliance Rate</p>
                       <p className="text-xs text-purple-400 mt-1">{teamData.aiSystems} AI systems</p>
                     </CardContent>
@@ -764,7 +764,7 @@ export default function Dashboard() {
                       <div className="flex items-center justify-between mb-2">
                         <Activity className="w-5 h-5 text-amber-400" />
                       </div>
-                      <p className="text-2xl font-bold text-white">{teamData.actionsThisWeek}</p>
+                      <p className="text-lg font-bold text-white">{teamData.actionsThisWeek}</p>
                       <p className="text-sm text-zinc-400">Actions This Week</p>
                       <p className="text-xs text-amber-400 mt-1">Team activity</p>
                     </CardContent>
@@ -784,11 +784,11 @@ export default function Dashboard() {
                     <CardContent className="p-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
-                          <p className="text-2xl font-bold text-white">{teamData.learningHours}h</p>
+                          <p className="text-lg font-bold text-white">{teamData.learningHours}h</p>
                           <p className="text-xs text-zinc-400">Learning Hours</p>
                         </div>
                         <div className="space-y-1">
-                          <p className="text-2xl font-bold text-white">{teamData.coursesCompleted}</p>
+                          <p className="text-lg font-bold text-white">{teamData.coursesCompleted}</p>
                           <p className="text-xs text-zinc-400">Courses Completed</p>
                         </div>
                       </div>
@@ -811,15 +811,15 @@ export default function Dashboard() {
                     <CardContent className="p-4">
                       <div className="grid grid-cols-3 gap-3">
                         <div className="space-y-1">
-                          <p className="text-xl font-bold text-white">{teamData.activeDeals}</p>
+                          <p className="text-lg font-bold text-white">{teamData.activeDeals}</p>
                           <p className="text-xs text-zinc-400">Active Deals</p>
                         </div>
                         <div className="space-y-1">
-                          <p className="text-xl font-bold text-emerald-400">{teamData.wonDeals}</p>
+                          <p className="text-lg font-bold text-emerald-400">{teamData.wonDeals}</p>
                           <p className="text-xs text-zinc-400">Won</p>
                         </div>
                         <div className="space-y-1">
-                          <p className="text-xl font-bold text-white">{teamData.recentDeals}</p>
+                          <p className="text-lg font-bold text-white">{teamData.recentDeals}</p>
                           <p className="text-xs text-zinc-400">New This Week</p>
                         </div>
                       </div>
@@ -842,15 +842,15 @@ export default function Dashboard() {
                     <CardContent className="p-4">
                       <div className="grid grid-cols-3 gap-3">
                         <div className="space-y-1">
-                          <p className="text-xl font-bold text-white">{teamData.aiSystems}</p>
+                          <p className="text-lg font-bold text-white">{teamData.aiSystems}</p>
                           <p className="text-xs text-zinc-400">AI Systems</p>
                         </div>
                         <div className="space-y-1">
-                          <p className="text-xl font-bold text-amber-400">{teamData.highRiskSystems}</p>
+                          <p className="text-lg font-bold text-amber-400">{teamData.highRiskSystems}</p>
                           <p className="text-xs text-zinc-400">High Risk</p>
                         </div>
                         <div className="space-y-1">
-                          <p className="text-xl font-bold text-purple-400">{teamData.complianceRate}%</p>
+                          <p className="text-lg font-bold text-purple-400">{teamData.complianceRate}%</p>
                           <p className="text-xs text-zinc-400">Compliant</p>
                         </div>
                       </div>
@@ -873,15 +873,15 @@ export default function Dashboard() {
                     <CardContent className="p-4">
                       <div className="grid grid-cols-3 gap-3">
                         <div className="space-y-1">
-                          <p className="text-xl font-bold text-emerald-400">${(teamData.revenue / 1000).toFixed(0)}k</p>
+                          <p className="text-lg font-bold text-emerald-400">${(teamData.revenue / 1000).toFixed(0)}k</p>
                           <p className="text-xs text-zinc-400">Revenue</p>
                         </div>
                         <div className="space-y-1">
-                          <p className="text-xl font-bold text-amber-400">{teamData.pendingInvoices}</p>
+                          <p className="text-lg font-bold text-amber-400">{teamData.pendingInvoices}</p>
                           <p className="text-xs text-zinc-400">Pending</p>
                         </div>
                         <div className="space-y-1">
-                          <p className="text-xl font-bold text-rose-400">${(teamData.monthlyExpenses / 1000).toFixed(1)}k</p>
+                          <p className="text-lg font-bold text-rose-400">${(teamData.monthlyExpenses / 1000).toFixed(1)}k</p>
                           <p className="text-xs text-zinc-400">Expenses</p>
                         </div>
                       </div>
@@ -947,7 +947,7 @@ export default function Dashboard() {
             ) : (
               <div className="text-center py-12">
                 <Users className="w-16 h-16 mx-auto mb-4 text-zinc-600" />
-                <h2 className="text-xl font-semibold text-zinc-300 mb-2">No team data available</h2>
+                <h2 className="text-sm font-bold text-zinc-300 mb-2">No team data available</h2>
                 <p className="text-zinc-500">Team analytics will appear once your team starts using the platform</p>
               </div>
             )}
@@ -998,7 +998,7 @@ export default function Dashboard() {
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl bg-zinc-800/50 flex items-center justify-center mx-auto mb-3 sm:mb-4">
               <LayoutGrid className="w-8 h-8 sm:w-10 sm:h-10 text-zinc-600" />
             </div>
-            <h2 className="text-lg sm:text-xl font-semibold text-zinc-300 mb-1.5 sm:mb-2">Customize your dashboard</h2>
+            <h2 className="text-lg sm:text-sm font-bold text-zinc-300 mb-1.5 sm:mb-2">Customize your dashboard</h2>
             <p className="text-sm sm:text-base text-zinc-500 mb-4 sm:mb-6">Tap the menu icon to add widgets</p>
           </div>
         )}

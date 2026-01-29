@@ -1123,7 +1123,7 @@ export default function Integrations() {
                     </div>
                     <div>
                       <div className="flex items-center gap-3">
-                        <h2 className="text-2xl font-bold text-white">SYNC Desktop</h2>
+                        <h2 className="text-sm font-bold text-white">SYNC Desktop</h2>
                         {desktopConnected ? (
                           <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">Connected</Badge>
                         ) : (
@@ -1299,7 +1299,7 @@ export default function Integrations() {
                     </div>
                     <div>
                       <div className="flex items-center gap-3">
-                        <h2 className="text-2xl font-bold text-white">Google Workspace</h2>
+                        <h2 className="text-sm font-bold text-white">Google Workspace</h2>
                         {googleConnected ? (
                           <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">Connected</Badge>
                         ) : (
@@ -1527,7 +1527,7 @@ export default function Integrations() {
                         <Network className="w-4 h-4 text-cyan-400" />
                       </div>
                       <div>
-                        <h2 className="text-2xl font-bold text-white">MCP Servers</h2>
+                        <h2 className="text-sm font-bold text-white">MCP Servers</h2>
                         <p className="text-cyan-400/80 text-sm">
                           Create managed MCP endpoints to connect SYNC with external AI tools
                         </p>

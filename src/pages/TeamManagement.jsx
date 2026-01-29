@@ -801,7 +801,7 @@ export default function TeamManagement() {
           <TabsContent value="teams" className="space-y-4">
             <GlassCard className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
                   <Boxes className="w-5 h-5 text-cyan-400" />
                   Teams
                 </h3>
@@ -845,7 +845,7 @@ export default function TeamManagement() {
               {/* Roles List */}
               <GlassCard className="p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
                     <Shield className="w-5 h-5 text-purple-400" />
                     Role Hierarchy
                   </h3>
@@ -896,7 +896,7 @@ export default function TeamManagement() {
               {/* Role Permissions */}
               <GlassCard className="p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
                     <Key className="w-5 h-5 text-green-400" />
                     {selectedRole ? `${selectedRole.name.replace('_', ' ')} Permissions` : 'Select a Role'}
                   </h3>
@@ -919,7 +919,7 @@ export default function TeamManagement() {
 
             {/* Permission Reference */}
             <GlassCard className="p-6">
-              <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+              <h3 className="text-sm font-bold text-white mb-6 flex items-center gap-2">
                 <Info className="w-5 h-5 text-cyan-400" />
                 Permission Reference Guide
               </h3>
@@ -948,7 +948,7 @@ export default function TeamManagement() {
           <TabsContent value="invitations" className="space-y-4">
             <GlassCard className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
                   <Mail className="w-5 h-5 text-orange-400" />
                   Pending Invitations
                 </h3>
