@@ -10,6 +10,7 @@ import {
   Coins,
 } from 'lucide-react';
 import { useEnrichmentConfig } from '@/hooks/useEnrichmentConfig';
+import { fullEnrichFromLinkedIn } from '@/lib/explorium-api';
 import { toast } from 'sonner';
 import { supabase } from '@/api/supabaseClient';
 import { cn } from '@/lib/utils';
@@ -81,21 +82,45 @@ export function EnrichmentOptionsPopover({
 
       try {
         if (option.key === 'linkedin_enrich' || option.key === 'full_package') {
-          if (candidate.linkedin_url || candidate.linkedin_profile) {
-            await fetch(
-              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/explorium-enrich`,
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-                },
-                body: JSON.stringify({
-                  action: 'full_enrich',
-                  linkedin: candidate.linkedin_url || candidate.linkedin_profile,
-                }),
-              }
-            );
+          const linkedinUrl = candidate.linkedin_url || candidate.linkedin_profile;
+          if (linkedinUrl) {
+            const enriched = await fullEnrichFromLinkedIn(linkedinUrl);
+
+            // Save enriched data to candidates table
+            const updateData = {
+              verified_email: enriched.email || candidate.verified_email,
+              verified_phone: enriched.phone || candidate.verified_phone,
+              verified_mobile: enriched.mobile_phone || candidate.verified_mobile,
+              personal_email: enriched.personal_email || candidate.personal_email,
+              mobile_phone: enriched.mobile_phone || candidate.mobile_phone,
+              work_phone: enriched.work_phone || candidate.work_phone,
+              email_status: enriched.email_status || candidate.email_status,
+              explorium_prospect_id: enriched.explorium_prospect_id || candidate.explorium_prospect_id,
+              explorium_business_id: enriched.explorium_business_id || candidate.explorium_business_id,
+              enriched_at: new Date().toISOString(),
+              enrichment_source: 'explorium',
+              job_title: candidate.job_title || enriched.job_title,
+              company_name: candidate.company_name || enriched.company,
+              job_department: enriched.job_department || candidate.job_department,
+              job_seniority_level: enriched.job_seniority_level || candidate.job_seniority_level,
+              location_city: enriched.location_city || candidate.location_city,
+              location_region: enriched.location_region || candidate.location_region,
+              location_country: enriched.location_country || candidate.location_country,
+              age_group: enriched.age_group || candidate.age_group,
+              gender: enriched.gender || candidate.gender,
+              skills: enriched.skills?.length ? enriched.skills : candidate.skills,
+              inferred_skills: enriched.skills?.length ? enriched.skills : candidate.inferred_skills,
+              work_history: enriched.work_history?.length ? enriched.work_history : candidate.work_history,
+              education: enriched.education?.length ? enriched.education : candidate.education,
+              certifications: enriched.certifications?.length ? enriched.certifications : candidate.certifications,
+              interests: enriched.interests?.length ? enriched.interests : candidate.interests,
+              company_domain: enriched.company_domain || candidate.company_domain,
+            };
+
+            await supabase
+              .from('candidates')
+              .update(updateData)
+              .eq('id', candidate.id);
           }
         }
 

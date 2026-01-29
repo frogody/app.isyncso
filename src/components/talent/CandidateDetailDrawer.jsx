@@ -1588,9 +1588,52 @@ export default function CandidateDetailDrawer({
 
     setGeneratingIntelligence(true);
     try {
+      // Step 0: LinkedIn enrichment (if URL exists and not already enriched)
+      const linkedinUrl = candidate.linkedin_url || candidate.linkedin_profile;
+      if (linkedinUrl && !candidate.enriched_at) {
+        setSyncStatus("linkedin");
+        try {
+          const enriched = await fullEnrichFromLinkedIn(linkedinUrl);
+          const updateData = {
+            verified_email: enriched.email || candidate.verified_email,
+            verified_phone: enriched.phone || candidate.verified_phone,
+            verified_mobile: enriched.mobile_phone || candidate.verified_mobile,
+            personal_email: enriched.personal_email || candidate.personal_email,
+            mobile_phone: enriched.mobile_phone || candidate.mobile_phone,
+            work_phone: enriched.work_phone || candidate.work_phone,
+            email_status: enriched.email_status || candidate.email_status,
+            explorium_prospect_id: enriched.explorium_prospect_id || candidate.explorium_prospect_id,
+            explorium_business_id: enriched.explorium_business_id || candidate.explorium_business_id,
+            enriched_at: new Date().toISOString(),
+            enrichment_source: 'explorium',
+            job_title: candidate.job_title || enriched.job_title,
+            company_name: candidate.company_name || enriched.company,
+            job_department: enriched.job_department || candidate.job_department,
+            job_seniority_level: enriched.job_seniority_level || candidate.job_seniority_level,
+            location_city: enriched.location_city || candidate.location_city,
+            location_region: enriched.location_region || candidate.location_region,
+            location_country: enriched.location_country || candidate.location_country,
+            age_group: enriched.age_group || candidate.age_group,
+            gender: enriched.gender || candidate.gender,
+            skills: enriched.skills?.length ? enriched.skills : candidate.skills,
+            inferred_skills: enriched.skills?.length ? enriched.skills : candidate.inferred_skills,
+            work_history: enriched.work_history?.length ? enriched.work_history : candidate.work_history,
+            education: enriched.education?.length ? enriched.education : candidate.education,
+            certifications: enriched.certifications?.length ? enriched.certifications : candidate.certifications,
+            interests: enriched.interests?.length ? enriched.interests : candidate.interests,
+            company_domain: enriched.company_domain || candidate.company_domain,
+          };
+          await supabase.from("candidates").update(updateData).eq("id", candidateId);
+          // Update local candidate state with enriched data
+          setCandidate(prev => ({ ...prev, ...updateData }));
+        } catch (linkedinErr) {
+          console.warn("LinkedIn enrichment failed (continuing):", linkedinErr);
+        }
+      }
+
       let companyIntel = candidate.company_intelligence;
 
-      // Step 1: Sync company intelligence first
+      // Step 1: Sync company intelligence
       if (candidate.current_company || candidate.company_name) {
         setSyncStatus("company");
         const companyResponse = await fetch(
