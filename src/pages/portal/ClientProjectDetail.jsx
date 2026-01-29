@@ -10,15 +10,17 @@ import {
   CheckCircle2,
   Circle,
   Calendar,
-  Users,
-  DollarSign,
   Loader2,
   Download,
-  ExternalLink,
   Send,
-  MoreVertical,
   ChevronRight,
   FileBarChart,
+  Image,
+  FileSpreadsheet,
+  File,
+  Milestone,
+  ClipboardList,
+  Target,
 } from 'lucide-react';
 import { supabase } from '@/api/supabaseClient';
 import { usePortalClientContext, usePortalSettings } from '@/components/portal/ClientProvider';
@@ -46,7 +48,6 @@ export default function ClientProjectDetail() {
       if (!id || !client) return;
 
       try {
-        // Fetch project
         const { data: projectData, error: projectError } = await supabase
           .from('projects')
           .select('*')
@@ -56,7 +57,6 @@ export default function ClientProjectDetail() {
         if (projectError) throw projectError;
         setProject(projectData);
 
-        // Fetch tasks
         const { data: tasksData } = await supabase
           .from('tasks')
           .select('*')
@@ -64,7 +64,6 @@ export default function ClientProjectDetail() {
           .order('created_at', { ascending: false });
         setTasks(tasksData || []);
 
-        // Fetch comments
         const { data: commentsData } = await supabase
           .from('portal_comments')
           .select(`
@@ -77,14 +76,12 @@ export default function ClientProjectDetail() {
           .order('created_at', { ascending: false });
         setComments(commentsData || []);
 
-        // Fetch approvals
         const { data: approvalsData } = await supabase
           .from('portal_approvals')
           .select('*')
           .eq('project_id', id)
           .order('created_at', { ascending: false });
         setApprovals(approvalsData || []);
-
       } catch (err) {
         console.error('Error fetching project:', err);
       } finally {
@@ -95,7 +92,6 @@ export default function ClientProjectDetail() {
     fetchProjectData();
   }, [id, client]);
 
-  // Update URL when tab changes
   useEffect(() => {
     setSearchParams({ tab: activeTab });
   }, [activeTab, setSearchParams]);
@@ -134,7 +130,7 @@ export default function ClientProjectDetail() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: settings.primary_color }} />
       </div>
     );
   }
@@ -156,50 +152,58 @@ export default function ClientProjectDetail() {
   const tabs = [
     { id: 'overview', label: 'Overview', icon: LayoutGrid },
     { id: 'tasks', label: 'Tasks', icon: ListTodo, count: tasks.length },
-    { id: 'timeline', label: 'Timeline', icon: Clock },
+    { id: 'timeline', label: 'Timeline', icon: Milestone },
     { id: 'comments', label: 'Comments', icon: MessageSquare, count: comments.length },
     { id: 'files', label: 'Files', icon: FileText, count: project.attachments?.length || 0 },
   ];
 
-  const statusColors = {
-    active: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    in_progress: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
-    completed: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-    on_hold: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+  const statusConfig = {
+    active: { color: '#10b981', label: 'Active' },
+    in_progress: { color: '#06b6d4', label: 'In Progress' },
+    completed: { color: '#8b5cf6', label: 'Completed' },
+    on_hold: { color: '#f59e0b', label: 'On Hold' },
+    discovery: { color: '#6366f1', label: 'Discovery' },
+    cancelled: { color: '#ef4444', label: 'Cancelled' },
   };
+  const status = statusConfig[project.status] || statusConfig.active;
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6">
+      {/* Status accent bar */}
+      <div className="h-1 rounded-full w-24" style={{ backgroundColor: status.color }} />
+
       {/* Header */}
       <div className="flex items-start gap-4">
         <button
           onClick={() => navigate(`/portal/${orgSlug || client?.organization?.slug || ''}`)}
-          className="p-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+          className="p-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-xl transition-colors mt-0.5"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-2xl font-bold text-white">{project.title}</h1>
-            <span className={`px-3 py-1 text-sm font-medium rounded-full border ${statusColors[project.status] || statusColors.active}`}>
-              {project.status?.replace('_', ' ') || 'Active'}
+            <h1 className="text-2xl font-bold text-white tracking-tight truncate">{project.title}</h1>
+            <span
+              className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-full shrink-0"
+              style={{ backgroundColor: `${status.color}15`, color: status.color }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: status.color }} />
+              {status.label}
             </span>
           </div>
           {project.description && (
-            <p className="text-zinc-400">{project.description}</p>
+            <p className="text-zinc-400 line-clamp-2">{project.description}</p>
           )}
         </div>
-        {/* Export Button */}
         <button
           onClick={() => setShowExportModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-xl text-sm font-medium text-white transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 bg-white/[0.03] hover:bg-white/[0.06] border border-zinc-800 rounded-xl text-sm font-medium text-white transition-colors shrink-0"
         >
           <FileBarChart className="w-4 h-4" />
           Export
         </button>
       </div>
 
-      {/* Export Modal */}
       <ExportModal
         isOpen={showExportModal}
         onClose={() => setShowExportModal(false)}
@@ -208,15 +212,17 @@ export default function ClientProjectDetail() {
         settings={settings}
       />
 
-      {/* Progress Bar */}
-      <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-5">
-        <div className="flex items-center justify-between mb-3">
+      {/* Progress */}
+      <div className="bg-white/[0.02] border border-zinc-800/60 rounded-2xl p-6">
+        <div className="flex items-center justify-between mb-4">
           <span className="text-sm font-medium text-white">Overall Progress</span>
-          <span className="text-sm text-zinc-400">{project.progress || 0}%</span>
+          <span className="text-sm font-bold" style={{ color: settings.primary_color }}>
+            {project.progress || 0}%
+          </span>
         </div>
-        <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+        <div className="h-2.5 bg-zinc-800/80 rounded-full overflow-hidden">
           <div
-            className="h-full rounded-full transition-all"
+            className="h-full rounded-full transition-all duration-700"
             style={{
               width: `${project.progress || 0}%`,
               background: `linear-gradient(90deg, ${settings.primary_color}, ${settings.accent_color})`,
@@ -225,47 +231,47 @@ export default function ClientProjectDetail() {
         </div>
         <div className="flex items-center gap-6 mt-4">
           {project.start_date && (
-            <div className="flex items-center gap-2 text-sm text-zinc-400">
-              <Calendar className="w-4 h-4" />
+            <div className="flex items-center gap-2 text-sm text-zinc-500">
+              <Calendar className="w-3.5 h-3.5" />
               Started {new Date(project.start_date).toLocaleDateString()}
             </div>
           )}
           {project.due_date && (
-            <div className="flex items-center gap-2 text-sm text-zinc-400">
-              <Calendar className="w-4 h-4" />
+            <div className="flex items-center gap-2 text-sm text-zinc-500">
+              <Calendar className="w-3.5 h-3.5" />
               Due {new Date(project.due_date).toLocaleDateString()}
             </div>
           )}
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-zinc-800">
-        <nav className="flex gap-1 overflow-x-auto pb-px">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-                  isActive
-                    ? 'border-cyan-400 text-white'
-                    : 'border-transparent text-zinc-400 hover:text-white'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                {tab.label}
-                {tab.count !== undefined && (
-                  <span className={`px-1.5 py-0.5 text-xs rounded-full ${isActive ? 'bg-cyan-500/20 text-cyan-400' : 'bg-zinc-800 text-zinc-500'}`}>
-                    {tab.count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </nav>
+      {/* Tabs - pill style */}
+      <div className="flex gap-1 p-1 bg-zinc-900/50 rounded-xl overflow-x-auto">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all whitespace-nowrap ${
+                isActive
+                  ? 'bg-white/[0.08] text-white shadow-sm'
+                  : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.03]'
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              {tab.label}
+              {tab.count !== undefined && tab.count > 0 && (
+                <span className={`px-1.5 py-0.5 text-[10px] font-semibold rounded-full ${
+                  isActive ? 'bg-white/10 text-white' : 'bg-zinc-800 text-zinc-500'
+                }`}>
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* Tab Content */}
@@ -273,12 +279,8 @@ export default function ClientProjectDetail() {
         {activeTab === 'overview' && (
           <OverviewTab project={project} settings={settings} tasks={tasks} approvals={approvals} />
         )}
-        {activeTab === 'tasks' && (
-          <TasksTab tasks={tasks} settings={settings} />
-        )}
-        {activeTab === 'timeline' && (
-          <TimelineTab project={project} settings={settings} />
-        )}
+        {activeTab === 'tasks' && <TasksTab tasks={tasks} settings={settings} />}
+        {activeTab === 'timeline' && <TimelineTab project={project} settings={settings} />}
         {activeTab === 'comments' && (
           <CommentsTab
             comments={comments}
@@ -290,112 +292,100 @@ export default function ClientProjectDetail() {
             canComment={true}
           />
         )}
-        {activeTab === 'files' && (
-          <FilesTab project={project} settings={settings} />
-        )}
+        {activeTab === 'files' && <FilesTab project={project} settings={settings} />}
       </div>
     </div>
   );
 }
 
-// Overview Tab Component - Notion-like layout
+// Overview
 function OverviewTab({ project, settings, tasks, approvals }) {
   const completedTasks = tasks.filter((t) => t.status === 'completed').length;
   const pendingApprovals = approvals.filter((a) => a.status === 'pending').length;
   const taskProgress = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      {/* Notion-style Page Content */}
-      <div className="prose prose-invert max-w-none">
-        {/* Quick Stats as inline blocks */}
-        <div className="not-prose grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-          <StatBlock icon="📋" label="Tasks" value={tasks.length} subValue={`${taskProgress}% done`} color="cyan" />
-          <StatBlock icon="✅" label="Completed" value={completedTasks} color="emerald" />
-          <StatBlock icon="⏳" label="Approvals" value={pendingApprovals} subValue="pending" color="amber" />
-          <StatBlock icon="🎯" label="Milestones" value={project.milestones?.length || 0} color="purple" />
+    <div className="max-w-4xl space-y-8">
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <OverviewStat icon={ClipboardList} label="Tasks" value={tasks.length} sub={`${taskProgress}% done`} color="#06b6d4" />
+        <OverviewStat icon={CheckCircle2} label="Completed" value={completedTasks} color="#10b981" />
+        <OverviewStat icon={Clock} label="Pending Approvals" value={pendingApprovals} color="#f59e0b" />
+        <OverviewStat icon={Target} label="Milestones" value={project.milestones?.length || 0} color="#8b5cf6" />
+      </div>
+
+      {/* Description */}
+      {project.description && (
+        <div>
+          <p className="text-lg text-zinc-300 leading-relaxed">{project.description}</p>
         </div>
+      )}
 
-        {/* Description as main content */}
-        {project.description && (
-          <div className="mb-8">
-            <p className="text-lg text-zinc-300 leading-relaxed">{project.description}</p>
-          </div>
-        )}
+      {/* Page Content */}
+      {project.page_content?.length > 0 && (
+        <div className="space-y-4">
+          {project.page_content.map((block, index) => (
+            <NotionBlock key={index} block={block} settings={settings} />
+          ))}
+        </div>
+      )}
 
-        {/* Page Content (Notion-like blocks) */}
-        {project.page_content?.length > 0 && (
+      {/* Updates */}
+      {project.client_updates?.length > 0 && (
+        <div className="pt-8 border-t border-zinc-800/60">
+          <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+            <Clock className="w-5 h-5" style={{ color: settings.primary_color }} />
+            Latest Updates
+          </h3>
           <div className="space-y-4">
-            {project.page_content.map((block, index) => (
-              <NotionBlock key={index} block={block} settings={settings} />
+            {project.client_updates.slice(0, 5).map((update, index) => (
+              <div key={index} className="relative pl-6 pb-4 border-l-2 border-zinc-800 last:border-l-transparent">
+                <div
+                  className="absolute -left-[7px] top-1 w-3 h-3 rounded-full"
+                  style={{ backgroundColor: settings.primary_color }}
+                />
+                <div className="bg-white/[0.02] border border-zinc-800/40 rounded-xl p-4 hover:bg-white/[0.04] transition-colors">
+                  <p className="text-zinc-300">{update.content}</p>
+                  <p className="text-xs text-zinc-500 mt-2">
+                    {new Date(update.created_at).toLocaleDateString('en-US', {
+                      month: 'short', day: 'numeric', year: 'numeric',
+                    })}
+                  </p>
+                </div>
+              </div>
             ))}
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Latest Updates - Timeline style */}
-        {project.client_updates?.length > 0 && (
-          <div className="mt-10 pt-8 border-t border-zinc-800">
-            <h3 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
-              <span className="text-2xl">📢</span> Latest Updates
-            </h3>
-            <div className="space-y-4">
-              {project.client_updates.slice(0, 5).map((update, index) => (
-                <div
-                  key={index}
-                  className="relative pl-6 pb-4 border-l-2 border-zinc-800 last:border-l-transparent"
-                >
-                  <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-zinc-800 border-2 border-zinc-700" />
-                  <div className="bg-zinc-900/30 rounded-xl p-4 hover:bg-zinc-900/50 transition-colors">
-                    <p className="text-zinc-300">{update.content}</p>
-                    <p className="text-xs text-zinc-500 mt-2">
-                      {new Date(update.created_at).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+      {/* Empty */}
+      {!project.description && !project.page_content?.length && !project.client_updates?.length && (
+        <div className="flex flex-col items-center py-16 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-zinc-800/50 flex items-center justify-center mb-4">
+            <FileText className="w-7 h-7 text-zinc-600" />
           </div>
-        )}
-
-        {/* Empty state */}
-        {!project.description && !project.page_content?.length && !project.client_updates?.length && (
-          <div className="text-center py-12">
-            <span className="text-6xl mb-4 block">📝</span>
-            <p className="text-zinc-400 text-lg">Project details will appear here</p>
-            <p className="text-zinc-500 text-sm mt-1">The team will add content as the project progresses</p>
-          </div>
-        )}
-      </div>
+          <p className="text-zinc-400 text-lg">Project details will appear here</p>
+          <p className="text-zinc-500 text-sm mt-1">The team will add content as the project progresses</p>
+        </div>
+      )}
     </div>
   );
 }
 
-// Stat Block for Overview
-function StatBlock({ icon, label, value, subValue, color }) {
-  const colorClasses = {
-    cyan: 'from-cyan-500/20 to-cyan-500/5 border-cyan-500/20',
-    emerald: 'from-emerald-500/20 to-emerald-500/5 border-emerald-500/20',
-    amber: 'from-amber-500/20 to-amber-500/5 border-amber-500/20',
-    purple: 'from-purple-500/20 to-purple-500/5 border-purple-500/20',
-  };
-
+function OverviewStat({ icon: Icon, label, value, sub, color }) {
   return (
-    <div className={`bg-gradient-to-br ${colorClasses[color]} border rounded-xl p-4`}>
-      <div className="flex items-center gap-2 mb-1">
-        <span className="text-lg">{icon}</span>
-        <span className="text-xs font-medium text-zinc-400 uppercase tracking-wide">{label}</span>
+    <div className="p-4 bg-white/[0.02] border border-zinc-800/60 rounded-xl">
+      <div className="flex items-center gap-2 mb-2">
+        <Icon className="w-4 h-4" style={{ color }} />
+        <span className="text-xs font-medium text-zinc-500 uppercase tracking-wide">{label}</span>
       </div>
       <p className="text-2xl font-bold text-white">{value}</p>
-      {subValue && <p className="text-xs text-zinc-500 mt-0.5">{subValue}</p>}
+      {sub && <p className="text-xs text-zinc-500 mt-0.5">{sub}</p>}
     </div>
   );
 }
 
-// Notion-style Block Renderer
+// Block Renderer
 function NotionBlock({ block, settings }) {
   switch (block.type) {
     case 'heading':
@@ -411,10 +401,10 @@ function NotionBlock({ block, settings }) {
     case 'bulleted_list':
     case 'list':
       return (
-        <ul className="list-none space-y-2 mb-4">
+        <ul className="space-y-2 mb-4">
           {(block.items || block.children)?.map((item, i) => (
-            <li key={i} className="flex items-start gap-2 text-zinc-300">
-              <span className="text-zinc-500 mt-1">•</span>
+            <li key={i} className="flex items-start gap-3 text-zinc-300">
+              <span className="w-1.5 h-1.5 rounded-full bg-zinc-500 mt-2 shrink-0" />
               <span>{typeof item === 'string' ? item : item.content || item.text}</span>
             </li>
           ))}
@@ -422,10 +412,10 @@ function NotionBlock({ block, settings }) {
       );
     case 'numbered_list':
       return (
-        <ol className="list-none space-y-2 mb-4">
+        <ol className="space-y-2 mb-4">
           {(block.items || block.children)?.map((item, i) => (
             <li key={i} className="flex items-start gap-3 text-zinc-300">
-              <span className="text-zinc-500 font-medium min-w-[1.5rem]">{i + 1}.</span>
+              <span className="text-zinc-500 font-mono text-sm min-w-[1.5rem] mt-0.5">{i + 1}.</span>
               <span>{typeof item === 'string' ? item : item.content || item.text}</span>
             </li>
           ))}
@@ -448,20 +438,19 @@ function NotionBlock({ block, settings }) {
     case 'quote':
     case 'callout':
       return (
-        <div className="border-l-4 border-cyan-500 bg-cyan-500/5 pl-4 py-3 pr-4 rounded-r-lg mb-4">
+        <div
+          className="border-l-3 pl-4 py-3 pr-4 rounded-r-xl mb-4 bg-white/[0.02]"
+          style={{ borderLeftColor: settings.primary_color }}
+        >
           <p className="text-zinc-300 italic">{block.content || block.text}</p>
         </div>
       );
     case 'divider':
-      return <hr className="border-zinc-800 my-8" />;
+      return <hr className="border-zinc-800/60 my-8" />;
     case 'image':
       return (
         <figure className="my-6">
-          <img
-            src={block.url || block.src}
-            alt={block.caption || ''}
-            className="rounded-xl w-full"
-          />
+          <img src={block.url || block.src} alt={block.caption || ''} className="rounded-xl w-full" />
           {block.caption && (
             <figcaption className="text-sm text-zinc-500 text-center mt-2">{block.caption}</figcaption>
           )}
@@ -471,17 +460,9 @@ function NotionBlock({ block, settings }) {
       return (
         <div className="my-6 aspect-video rounded-xl overflow-hidden bg-zinc-900">
           {block.url?.includes('youtube') || block.url?.includes('youtu.be') ? (
-            <iframe
-              src={block.url.replace('watch?v=', 'embed/')}
-              className="w-full h-full"
-              allowFullScreen
-            />
+            <iframe src={block.url.replace('watch?v=', 'embed/')} className="w-full h-full" allowFullScreen />
           ) : block.url?.includes('loom') ? (
-            <iframe
-              src={block.url.replace('share/', 'embed/')}
-              className="w-full h-full"
-              allowFullScreen
-            />
+            <iframe src={block.url.replace('share/', 'embed/')} className="w-full h-full" allowFullScreen />
           ) : (
             <video src={block.url} controls className="w-full h-full" />
           )}
@@ -489,7 +470,7 @@ function NotionBlock({ block, settings }) {
       );
     case 'code':
       return (
-        <pre className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 overflow-x-auto mb-4">
+        <pre className="bg-zinc-900/80 border border-zinc-800/60 rounded-xl p-4 overflow-x-auto mb-4">
           <code className="text-sm text-zinc-300 font-mono">{block.content || block.code}</code>
         </pre>
       );
@@ -508,7 +489,6 @@ function NotionBlock({ block, settings }) {
         </details>
       );
     default:
-      // Try to render as text if content exists
       if (block.content || block.text) {
         return <p className="text-zinc-300 mb-4">{block.content || block.text}</p>;
       }
@@ -516,96 +496,68 @@ function NotionBlock({ block, settings }) {
   }
 }
 
-// Content Block Renderer
-function ContentBlock({ block }) {
-  switch (block.type) {
-    case 'heading':
-      return <h4 className="text-lg font-semibold text-white">{block.content}</h4>;
-    case 'paragraph':
-      return <p className="text-zinc-300">{block.content}</p>;
-    case 'list':
-      return (
-        <ul className="list-disc list-inside text-zinc-300 space-y-1">
-          {block.items?.map((item, i) => (
-            <li key={i}>{item}</li>
-          ))}
-        </ul>
-      );
-    case 'image':
-      return (
-        <img
-          src={block.url}
-          alt={block.caption || ''}
-          className="rounded-lg max-w-full"
-        />
-      );
-    default:
-      return null;
-  }
-}
-
-// Tasks Tab Component
+// Tasks
 function TasksTab({ tasks, settings }) {
-  const groupedTasks = {
-    pending: tasks.filter((t) => t.status === 'pending' || t.status === 'todo'),
-    in_progress: tasks.filter((t) => t.status === 'in_progress'),
-    completed: tasks.filter((t) => t.status === 'completed'),
-  };
+  const columns = [
+    { key: 'pending', label: 'To Do', color: '#71717a', filter: (t) => t.status === 'pending' || t.status === 'todo' },
+    { key: 'in_progress', label: 'In Progress', color: '#06b6d4', filter: (t) => t.status === 'in_progress' },
+    { key: 'completed', label: 'Done', color: '#10b981', filter: (t) => t.status === 'completed' },
+  ];
 
   return (
-    <div className="grid md:grid-cols-3 gap-6">
-      {Object.entries(groupedTasks).map(([status, statusTasks]) => (
-        <div key={status} className="space-y-3">
-          <div className="flex items-center gap-2 mb-4">
-            <h3 className="text-sm font-semibold text-white uppercase tracking-wide">
-              {status.replace('_', ' ')}
-            </h3>
-            <span className="px-2 py-0.5 text-xs bg-zinc-800 text-zinc-400 rounded-full">
-              {statusTasks.length}
-            </span>
-          </div>
-          <div className="space-y-2">
-            {statusTasks.map((task) => (
-              <div
-                key={task.id}
-                className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4"
-              >
-                <div className="flex items-start gap-3">
-                  {task.status === 'completed' ? (
-                    <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                  ) : (
-                    <Circle className="w-5 h-5 text-zinc-600 shrink-0 mt-0.5" />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className={`font-medium ${task.status === 'completed' ? 'text-zinc-500 line-through' : 'text-white'}`}>
-                      {task.title}
-                    </p>
-                    {task.description && (
-                      <p className="text-sm text-zinc-500 mt-1 line-clamp-2">
-                        {task.description}
-                      </p>
+    <div className="grid md:grid-cols-3 gap-5">
+      {columns.map(({ key, label, color, filter }) => {
+        const columnTasks = tasks.filter(filter);
+        return (
+          <div key={key}>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+              <h3 className="text-sm font-semibold text-zinc-300 uppercase tracking-wider">{label}</h3>
+              <span className="text-xs text-zinc-600">{columnTasks.length}</span>
+            </div>
+            <div className="space-y-2">
+              {columnTasks.map((task) => (
+                <div
+                  key={task.id}
+                  className="bg-white/[0.02] border border-zinc-800/60 rounded-xl p-4 hover:bg-white/[0.04] transition-colors"
+                >
+                  <div className="flex items-start gap-3">
+                    {task.status === 'completed' ? (
+                      <CheckCircle2 className="w-4.5 h-4.5 text-emerald-400 shrink-0 mt-0.5" />
+                    ) : (
+                      <Circle className="w-4.5 h-4.5 text-zinc-600 shrink-0 mt-0.5" />
                     )}
-                    {task.due_date && (
-                      <p className="text-xs text-zinc-600 mt-2 flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        {new Date(task.due_date).toLocaleDateString()}
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-medium ${task.status === 'completed' ? 'text-zinc-500 line-through' : 'text-white'}`}>
+                        {task.title}
                       </p>
-                    )}
+                      {task.description && (
+                        <p className="text-xs text-zinc-500 mt-1 line-clamp-2">{task.description}</p>
+                      )}
+                      {task.due_date && (
+                        <div className="flex items-center gap-1 mt-2 text-xs text-zinc-600">
+                          <Calendar className="w-3 h-3" />
+                          {new Date(task.due_date).toLocaleDateString()}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-            {statusTasks.length === 0 && (
-              <p className="text-sm text-zinc-600 text-center py-8">No tasks</p>
-            )}
+              ))}
+              {columnTasks.length === 0 && (
+                <div className="py-8 text-center">
+                  <p className="text-xs text-zinc-600">No tasks</p>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
 
-// Timeline Tab Component
+// Timeline
 function TimelineTab({ project, settings }) {
   const milestones = project.milestones || [];
 
@@ -613,18 +565,20 @@ function TimelineTab({ project, settings }) {
     <div className="max-w-2xl">
       {milestones.length > 0 ? (
         <div className="relative">
-          {/* Timeline line */}
-          <div className="absolute left-4 top-8 bottom-8 w-0.5 bg-zinc-800" />
-
-          {/* Milestones */}
+          <div
+            className="absolute left-[15px] top-8 bottom-8 w-0.5"
+            style={{
+              background: `linear-gradient(to bottom, ${settings.primary_color}40, transparent)`,
+            }}
+          />
           <div className="space-y-6">
             {milestones.map((milestone, index) => (
               <div key={milestone.id || index} className="relative flex gap-4">
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10 ${
                     milestone.completed
-                      ? 'bg-emerald-500/20 border-2 border-emerald-500'
-                      : 'bg-zinc-800 border-2 border-zinc-700'
+                      ? 'bg-emerald-500/20 ring-2 ring-emerald-500/50'
+                      : 'bg-zinc-800 ring-2 ring-zinc-700'
                   }`}
                 >
                   {milestone.completed ? (
@@ -633,7 +587,7 @@ function TimelineTab({ project, settings }) {
                     <Circle className="w-4 h-4 text-zinc-500" />
                   )}
                 </div>
-                <div className="flex-1 bg-zinc-900/50 border border-zinc-800 rounded-xl p-4">
+                <div className="flex-1 bg-white/[0.02] border border-zinc-800/60 rounded-xl p-4 hover:bg-white/[0.04] transition-colors">
                   <div className="flex items-start justify-between">
                     <div>
                       <h4 className={`font-medium ${milestone.completed ? 'text-zinc-400' : 'text-white'}`}>
@@ -644,7 +598,7 @@ function TimelineTab({ project, settings }) {
                       )}
                     </div>
                     {milestone.date && (
-                      <span className="text-sm text-zinc-500">
+                      <span className="text-xs text-zinc-500 shrink-0 ml-4">
                         {new Date(milestone.date).toLocaleDateString()}
                       </span>
                     )}
@@ -655,8 +609,10 @@ function TimelineTab({ project, settings }) {
           </div>
         </div>
       ) : (
-        <div className="text-center py-12">
-          <Clock className="w-12 h-12 mx-auto mb-3 text-zinc-700" />
+        <div className="flex flex-col items-center py-16 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-zinc-800/50 flex items-center justify-center mb-4">
+            <Milestone className="w-7 h-7 text-zinc-600" />
+          </div>
           <p className="text-zinc-500">No milestones defined yet</p>
         </div>
       )}
@@ -664,25 +620,24 @@ function TimelineTab({ project, settings }) {
   );
 }
 
-// Comments Tab Component
+// Comments
 function CommentsTab({ comments, newComment, setNewComment, onSubmit, submitting, settings, canComment }) {
   return (
     <div className="max-w-2xl space-y-6">
-      {/* New Comment */}
       {canComment && (
-        <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4">
+        <div className="bg-white/[0.02] border border-zinc-800/60 rounded-xl p-4">
           <textarea
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             placeholder="Add a comment..."
-            className="w-full bg-transparent text-white placeholder:text-zinc-500 resize-none focus:outline-none"
+            className="w-full bg-transparent text-white placeholder:text-zinc-600 resize-none focus:outline-none text-sm"
             rows={3}
           />
-          <div className="flex justify-end mt-3">
+          <div className="flex justify-end mt-3 pt-3 border-t border-zinc-800/40">
             <button
               onClick={onSubmit}
               disabled={!newComment.trim() || submitting}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               style={{
                 background: `linear-gradient(135deg, ${settings.primary_color}, ${settings.accent_color})`,
               }}
@@ -691,7 +646,7 @@ function CommentsTab({ comments, newComment, setNewComment, onSubmit, submitting
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <>
-                  <Send className="w-4 h-4" />
+                  <Send className="w-3.5 h-3.5" />
                   Comment
                 </>
               )}
@@ -700,14 +655,15 @@ function CommentsTab({ comments, newComment, setNewComment, onSubmit, submitting
         </div>
       )}
 
-      {/* Comments List */}
       <div className="space-y-4">
         {comments.map((comment) => (
           <CommentItem key={comment.id} comment={comment} settings={settings} />
         ))}
         {comments.length === 0 && (
-          <div className="text-center py-12">
-            <MessageSquare className="w-12 h-12 mx-auto mb-3 text-zinc-700" />
+          <div className="flex flex-col items-center py-16 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-zinc-800/50 flex items-center justify-center mb-4">
+              <MessageSquare className="w-7 h-7 text-zinc-600" />
+            </div>
             <p className="text-zinc-500">No comments yet</p>
           </div>
         )}
@@ -722,75 +678,107 @@ function CommentItem({ comment, settings }) {
 
   return (
     <div className="flex gap-3">
-      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-emerald-500 flex items-center justify-center shrink-0">
+      <div
+        className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 ring-2 ring-zinc-800"
+        style={{
+          background: `linear-gradient(135deg, ${settings.primary_color}, ${settings.accent_color})`,
+        }}
+      >
         {author?.avatar_url ? (
           <img src={author.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
         ) : (
-          <span className="text-white text-sm font-medium">
+          <span className="text-white text-xs font-semibold">
             {author?.full_name?.charAt(0) || '?'}
           </span>
         )}
       </div>
-      <div className="flex-1">
+      <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="font-medium text-white">{author?.full_name || 'Unknown'}</span>
+          <span className="text-sm font-medium text-white">{author?.full_name || 'Unknown'}</span>
           {isTeam && (
-            <span className="px-2 py-0.5 text-xs bg-cyan-500/10 text-cyan-400 rounded-full">Team</span>
+            <span className="px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full"
+              style={{ backgroundColor: `${settings.primary_color}15`, color: settings.primary_color }}>
+              Team
+            </span>
           )}
-          <span className="text-xs text-zinc-500">
-            {new Date(comment.created_at).toLocaleDateString()}
+          <span className="text-xs text-zinc-600">
+            {formatTimeAgo(comment.created_at)}
           </span>
         </div>
-        <p className="text-zinc-300 mt-1">{comment.content}</p>
+        <p className="text-sm text-zinc-300 mt-1">{comment.content}</p>
       </div>
     </div>
   );
 }
 
-// Files Tab Component
+// Files
 function FilesTab({ project, settings }) {
   const files = project.attachments || [];
 
   const getFileIcon = (type) => {
-    if (type?.startsWith('image/')) return '🖼️';
-    if (type?.includes('pdf')) return '📄';
-    if (type?.includes('document') || type?.includes('word')) return '📝';
-    if (type?.includes('spreadsheet') || type?.includes('excel')) return '📊';
-    return '📎';
+    if (type?.startsWith('image/')) return Image;
+    if (type?.includes('pdf')) return FileText;
+    if (type?.includes('spreadsheet') || type?.includes('excel')) return FileSpreadsheet;
+    return File;
   };
 
   return (
     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {files.map((file, index) => (
-        <div
-          key={index}
-          className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 hover:bg-zinc-900 transition-colors"
-        >
-          <div className="flex items-start gap-3">
-            <span className="text-2xl">{getFileIcon(file.type)}</span>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-white truncate">{file.name}</p>
-              <p className="text-sm text-zinc-500">
-                {file.size ? `${(file.size / 1024).toFixed(1)} KB` : 'Unknown size'}
-              </p>
+      {files.map((file, index) => {
+        const Icon = getFileIcon(file.type);
+        return (
+          <div
+            key={index}
+            className="bg-white/[0.02] border border-zinc-800/60 rounded-xl p-4 hover:bg-white/[0.05] transition-colors group"
+          >
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-lg bg-zinc-800/80 flex items-center justify-center shrink-0">
+                <Icon className="w-5 h-5 text-zinc-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white truncate">{file.name}</p>
+                <p className="text-xs text-zinc-500 mt-0.5">
+                  {file.size ? formatFileSize(file.size) : 'Unknown size'}
+                </p>
+              </div>
+              <a
+                href={file.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 text-zinc-500 hover:text-white hover:bg-white/5 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+              >
+                <Download className="w-4 h-4" />
+              </a>
             </div>
-            <a
-              href={file.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-            >
-              <Download className="w-4 h-4" />
-            </a>
           </div>
-        </div>
-      ))}
+        );
+      })}
       {files.length === 0 && (
-        <div className="col-span-full text-center py-12">
-          <FileText className="w-12 h-12 mx-auto mb-3 text-zinc-700" />
+        <div className="col-span-full flex flex-col items-center py-16 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-zinc-800/50 flex items-center justify-center mb-4">
+            <FileText className="w-7 h-7 text-zinc-600" />
+          </div>
           <p className="text-zinc-500">No files attached</p>
         </div>
       )}
     </div>
   );
+}
+
+function formatFileSize(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1048576).toFixed(1)} MB`;
+}
+
+function formatTimeAgo(date) {
+  const now = new Date();
+  const then = new Date(date);
+  const diff = Math.floor((now - then) / 1000);
+
+  if (diff < 60) return 'Just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+  return then.toLocaleDateString();
 }

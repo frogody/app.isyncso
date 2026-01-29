@@ -139,7 +139,7 @@ export default function ClientLogin() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center px-4"
+      className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden"
       style={{
         backgroundColor: portalSettings?.background_color || '#09090b',
         backgroundImage: portalSettings?.login_background_url
@@ -149,7 +149,21 @@ export default function ClientLogin() {
         backgroundPosition: 'center',
       }}
     >
-      <div className="w-full max-w-md">
+      {/* Subtle gradient mesh background */}
+      {!portalSettings?.login_background_url && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div
+            className="absolute -top-1/2 -left-1/2 w-full h-full rounded-full opacity-[0.03] blur-3xl"
+            style={{ background: portalSettings?.primary_color || '#06b6d4' }}
+          />
+          <div
+            className="absolute -bottom-1/2 -right-1/2 w-full h-full rounded-full opacity-[0.03] blur-3xl"
+            style={{ background: portalSettings?.accent_color || '#10b981' }}
+          />
+        </div>
+      )}
+
+      <div className="w-full max-w-md relative z-10">
         {/* Logo */}
         <div className="text-center mb-8">
           {portalSettings?.logo_url ? (
@@ -159,20 +173,27 @@ export default function ClientLogin() {
               className="h-12 mx-auto mb-4"
             />
           ) : (
-            <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-gradient-to-br from-cyan-500 to-emerald-500 flex items-center justify-center">
-              <span className="text-2xl font-bold text-white">P</span>
+            <div
+              className="w-14 h-14 mx-auto mb-4 rounded-2xl flex items-center justify-center"
+              style={{
+                background: `linear-gradient(135deg, ${portalSettings?.primary_color || '#06b6d4'}, ${portalSettings?.accent_color || '#10b981'})`,
+              }}
+            >
+              <span className="text-2xl font-bold text-white">
+                {(portalSettings?.portal_name || 'P').charAt(0)}
+              </span>
             </div>
           )}
-          <h1 className="text-2xl font-semibold text-white">
+          <h1 className="text-2xl font-bold text-white tracking-tight">
             {portalSettings?.portal_name || 'Client Portal'}
           </h1>
           {portalSettings?.organization_name && (
-            <p className="text-zinc-400 mt-1">{portalSettings.organization_name}</p>
+            <p className="text-zinc-400 mt-1.5">{portalSettings.organization_name}</p>
           )}
         </div>
 
         {/* Login Card */}
-        <div className="bg-zinc-900/80 backdrop-blur-sm border border-zinc-800 rounded-2xl p-8">
+        <div className="bg-white/[0.04] backdrop-blur-xl border border-zinc-800/60 rounded-3xl p-8 shadow-2xl shadow-black/20">
           {sent ? (
             <div className="text-center py-4">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/10 flex items-center justify-center">
@@ -235,7 +256,7 @@ export default function ClientLogin() {
                 <button
                   type="submit"
                   disabled={loading || !email.trim()}
-                  className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-white font-medium rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full flex items-center justify-center gap-2 py-3 px-4 text-white font-medium rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.01] active:scale-[0.99]"
                   style={{
                     background: portalSettings?.primary_color
                       ? `linear-gradient(to right, ${portalSettings.primary_color}, ${portalSettings.accent_color || portalSettings.primary_color})`

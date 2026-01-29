@@ -75,7 +75,7 @@ export default function ClientLayout() {
       style={{ backgroundColor: settings.background_color }}
     >
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-zinc-900/80 backdrop-blur-md border-b border-zinc-800">
+      <header className="sticky top-0 z-50 bg-zinc-900/80 backdrop-blur-xl border-b border-zinc-800/60 shadow-lg shadow-black/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
@@ -114,10 +114,10 @@ export default function ClientLayout() {
                   <Link
                     key={item.name}
                     to={item.href}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
                       active
-                        ? 'bg-white/10 text-white'
-                        : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                        ? 'bg-white/[0.08] text-white shadow-sm'
+                        : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
                     }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -142,7 +142,7 @@ export default function ClientLayout() {
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className="flex items-center gap-2 p-1.5 pr-3 rounded-lg hover:bg-white/5 transition-colors"
                 >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-emerald-500 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center ring-2 ring-zinc-700" style={{ background: `linear-gradient(135deg, ${settings.primary_color || '#06b6d4'}, ${settings.accent_color || '#10b981'})` }}>
                     <span className="text-white text-sm font-medium">
                       {client?.full_name?.charAt(0) || client?.email?.charAt(0) || '?'}
                     </span>
