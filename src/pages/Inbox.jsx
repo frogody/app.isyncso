@@ -1,9 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import anime from '@/lib/anime-wrapper';
-const animate = anime;
-const stagger = anime.stagger;
-import { prefersReducedMotion } from '@/lib/animations';
 import {
   Hash, Lock, Users, Pin, Search, Info,
   Loader2, MessageSquare, Inbox as InboxIcon, Keyboard,
@@ -185,8 +181,6 @@ export default function InboxPage() {
     : (channelsConnected && messagesConnected && unreadConnected);
 
   // Refs for anime.js animations
-  const sidebarRef = useRef(null);
-  const mainContentRef = useRef(null);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -595,54 +589,13 @@ export default function InboxPage() {
     { icon: Info, panel: 'details', title: 'Channel Details' }
   ], [pinnedMessages.length]);
 
-  // Animate sidebar on mount
-  useEffect(() => {
-    if (channelsLoading || !sidebarRef.current) return;
-
-    // If user prefers reduced motion, just set final state immediately
-    if (prefersReducedMotion()) {
-      sidebarRef.current.style.opacity = '1';
-      return;
-    }
-
-    animate({
-      targets: sidebarRef.current,
-      translateX: [-30, 0],
-      opacity: [0, 1],
-      duration: 400,
-      easing: 'easeOutQuart',
-    });
-  }, [channelsLoading]);
-
-  // Animate main content on mount and channel change
-  useEffect(() => {
-    if (channelsLoading || !mainContentRef.current) return;
-
-    // If user prefers reduced motion, just set final state immediately
-    if (prefersReducedMotion()) {
-      mainContentRef.current.style.opacity = '1';
-      return;
-    }
-
-    animate({
-      targets: mainContentRef.current,
-      translateY: [20, 0],
-      opacity: [0, 1],
-      duration: 400,
-      easing: 'easeOutQuad',
-    });
-  }, [channelsLoading, selectedChannel]);
-
   // Loading state
   if (channelsLoading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="h-screen bg-black flex items-center justify-center">
         <div className="text-center">
-          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/20 border border-cyan-500/30 flex items-center justify-center mx-auto mb-6">
-            <Loader2 className="w-10 h-10 text-cyan-400 animate-spin" />
-          </div>
-          <h2 className="text-xl font-semibold text-white mb-2">Loading Workspace</h2>
-          <p className="text-zinc-500">Setting up your channels...</p>
+          <Loader2 className="w-8 h-8 text-cyan-400 animate-spin mx-auto mb-4" />
+          <p className="text-sm text-zinc-500">Loading workspace...</p>
         </div>
       </div>
     );
@@ -665,13 +618,11 @@ export default function InboxPage() {
 
       {/* Channel Sidebar - Desktop always visible, mobile as drawer */}
       <div
-        ref={sidebarRef}
         className={`
           fixed lg:relative inset-y-0 left-0 z-50 lg:z-auto
           transform transition-transform duration-300 ease-out
           ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}
-        style={{ opacity: 0 }}
       >
         <ChannelSidebar
           channels={realtimeChannels}
@@ -691,11 +642,11 @@ export default function InboxPage() {
       </div>
 
       {/* Main Content */}
-      <div ref={mainContentRef} className="flex-1 flex flex-col min-w-0 bg-gradient-to-br from-zinc-950 via-zinc-950 to-cyan-950/10" style={{ opacity: 0 }}>
+      <div className="flex-1 flex flex-col min-w-0 bg-black">
         {selectedChannel ? (
           <>
             {/* Channel Header */}
-            <header className="h-14 sm:h-16 border-b border-zinc-800/50 px-3 sm:px-6 flex items-center justify-between bg-zinc-900/60 backdrop-blur-sm">
+            <header className="h-14 sm:h-16 border-b border-zinc-800/60 px-3 sm:px-6 flex items-center justify-between bg-zinc-900/50">
               <div className="flex items-center gap-2 sm:gap-3">
                 {/* Mobile Menu Button */}
                 <button
@@ -862,7 +813,7 @@ export default function InboxPage() {
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center p-4">
-            <div className="text-center max-w-md">
+            <div className="text-center max-w-sm">
               {/* Mobile Menu Button for empty state */}
               <button
                 onClick={() => setMobileMenuOpen(true)}
@@ -872,23 +823,23 @@ export default function InboxPage() {
                 <span>Open Channels</span>
               </button>
 
-              <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-3xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/20 border border-cyan-500/30 flex items-center justify-center mx-auto mb-6 sm:mb-8 shadow-2xl shadow-cyan-500/10">
-                <InboxIcon className="w-10 h-10 sm:w-14 sm:h-14 text-cyan-400" />
+              <div className="w-14 h-14 rounded-2xl bg-zinc-800/50 flex items-center justify-center mx-auto mb-4">
+                <InboxIcon className="w-7 h-7 text-zinc-600" />
               </div>
-              <h2 className="text-lg sm:text-2xl font-bold text-white mb-2 sm:mb-3">Welcome to Team Inbox</h2>
-              <p className="text-zinc-400 mb-6 sm:mb-8 leading-relaxed text-sm sm:text-base">
-                Select a channel from the sidebar or start a new conversation to begin collaborating with your team.
+              <p className="text-white font-medium">Select a channel</p>
+              <p className="text-sm text-zinc-500 mt-1">
+                Pick a channel from the sidebar or start a new conversation.
               </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <div className="flex items-center justify-center gap-2 mt-6">
                 <button
                   onClick={() => setShowCreateChannel(true)}
-                  className="w-full sm:w-auto px-6 py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-medium rounded-xl transition-colors shadow-lg shadow-cyan-500/20"
+                  className="px-4 py-2 bg-cyan-600/80 hover:bg-cyan-600 text-white text-sm font-medium rounded-lg transition-colors"
                 >
                   Create Channel
                 </button>
                 <button
                   onClick={() => setShowNewDM(true)}
-                  className="w-full sm:w-auto px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-medium rounded-xl transition-colors border border-zinc-700"
+                  className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm font-medium rounded-lg transition-colors border border-zinc-700"
                 >
                   Start DM
                 </button>

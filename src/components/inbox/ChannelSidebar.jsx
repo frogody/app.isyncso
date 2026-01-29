@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
   Hash, Lock, Plus, ChevronDown, MessageSquare,
   Search, Settings, BellOff, Bell, Star, StarOff, MoreHorizontal,
@@ -30,12 +29,7 @@ const SectionHeader = memo(function SectionHeader({ title, count, expanded, onTo
         onClick={onToggle}
         className="flex items-center gap-2 text-xs font-semibold text-zinc-500 hover:text-zinc-300 uppercase tracking-wider transition-colors"
       >
-        <motion.div
-          animate={{ rotate: expanded ? 0 : -90 }}
-          transition={{ duration: 0.2 }}
-        >
-          <ChevronDown className="w-3.5 h-3.5" />
-        </motion.div>
+        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${expanded ? '' : '-rotate-90'}`} />
         {title}
         <span className="text-cyan-500/70 font-normal">{count}</span>
       </button>
@@ -355,13 +349,13 @@ export default function ChannelSidebar({
   ), [selectedChannel?.id, unreadCounts, starredChannels, mutedChannels, onSelectChannel, toggleStar, toggleMute, onArchiveChannel, onDeleteChannel, user]);
 
   return (
-    <div className="w-72 bg-gradient-to-b from-zinc-950 via-zinc-900 to-cyan-950/5 border-r border-zinc-800/50 flex flex-col h-full">
+    <div className="w-72 bg-zinc-950 border-r border-zinc-800/60 flex flex-col h-full">
       {/* Workspace Header */}
       <div className="p-4 border-b border-zinc-800/60">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500/30 to-cyan-600/30 border border-cyan-500/40 flex items-center justify-center shadow-lg shadow-cyan-500/10">
-              <Sparkles className="w-5 h-5 text-cyan-400" />
+            <div className="w-9 h-9 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-zinc-400" />
             </div>
             <div>
               <h2 className="font-bold text-white text-lg">ISYNCSO</h2>
@@ -467,29 +461,21 @@ export default function ChannelSidebar({
               title: 'Create channel'
             }}
           />
-          <AnimatePresence>
-            {channelsExpanded && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden space-y-0.5"
-              >
-                {filteredPublicChannels.filter(c => !starredChannels.includes(c.id)).map(channel =>
-                  renderChannelItem(channel, false)
-                )}
-                {filteredPrivateChannels.length > 0 && (
-                  <div className="mt-2 pt-2 border-t border-zinc-800/50 space-y-0.5">
-                    {filteredPrivateChannels.map(channel => renderChannelItem(channel, false))}
-                  </div>
-                )}
-                {filteredPublicChannels.length === 0 && filteredPrivateChannels.length === 0 && (
-                  <p className="text-xs text-zinc-600 px-2.5 py-2">No channels found</p>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {channelsExpanded && (
+            <div className="space-y-0.5">
+              {filteredPublicChannels.filter(c => !starredChannels.includes(c.id)).map(channel =>
+                renderChannelItem(channel, false)
+              )}
+              {filteredPrivateChannels.length > 0 && (
+                <div className="mt-2 pt-2 border-t border-zinc-800/50 space-y-0.5">
+                  {filteredPrivateChannels.map(channel => renderChannelItem(channel, false))}
+                </div>
+              )}
+              {filteredPublicChannels.length === 0 && filteredPrivateChannels.length === 0 && (
+                <p className="text-xs text-zinc-600 px-2.5 py-2">No channels found</p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Direct Messages Section */}
@@ -505,24 +491,16 @@ export default function ChannelSidebar({
               title: 'New message'
             }}
           />
-          <AnimatePresence>
-            {dmsExpanded && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden space-y-0.5"
-              >
-                {filteredDMs.filter(c => !starredChannels.includes(c.id)).map(dm =>
-                  renderChannelItem(dm, true)
-                )}
-                {filteredDMs.length === 0 && (
-                  <p className="text-xs text-zinc-600 px-2.5 py-2">No conversations yet</p>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {dmsExpanded && (
+            <div className="space-y-0.5">
+              {filteredDMs.filter(c => !starredChannels.includes(c.id)).map(dm =>
+                renderChannelItem(dm, true)
+              )}
+              {filteredDMs.length === 0 && (
+                <p className="text-xs text-zinc-600 px-2.5 py-2">No conversations yet</p>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -539,7 +517,7 @@ export default function ChannelSidebar({
                     className="w-10 h-10 rounded-xl border-2 border-zinc-700/50 object-cover"
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/30 to-cyan-600/30 border border-cyan-500/40 flex items-center justify-center text-sm font-bold text-cyan-300">
+                  <div className="w-10 h-10 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center text-sm font-bold text-zinc-300">
                     {user?.full_name?.charAt(0) || '?'}
                   </div>
                 )}
