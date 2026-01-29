@@ -165,13 +165,6 @@ const navigationItems = [
 // Bottom navigation items (Admin, Settings)
 const bottomNavItems = [
   {
-    title: "Admin",
-    url: "/admin",
-    icon: Shield,
-    permission: "admin.access", // Platform admin access
-    isAdmin: true, // Special flag for admin link styling
-  },
-  {
     title: "Settings",
     url: createPageUrl("Settings"),
     icon: SettingsIcon,
@@ -944,34 +937,23 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
 
             // Desktop: items without secondary nav use Link
             return (
-              <React.Fragment key={item.title}>
-                <Link
-                  to={item.url}
-                  onClick={triggerActivity}
-                  className={`flex items-center justify-center min-h-[44px] p-3 rounded-xl transition-all duration-200 group relative active:scale-[0.98]
-                    ${isActive
-                      ? 'text-cyan-400 bg-cyan-950/30'
-                      : 'text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
-                    }
-                  `}
-                  title={item.title}
-                >
-                  <item.icon isActive={isActive} className={`w-5 h-5 flex-shrink-0 transition-colors ${isActive ? 'text-cyan-400' : 'group-hover:text-white'}`} />
-                  {isActive && (
-                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-cyan-500 rounded-l-full shadow-[0_0_10px_rgba(6,182,212,0.5)]" />
-                  )}
-                </Link>
-                {/* Apps Manager gear - next to Dashboard */}
-                {item.title === 'Dashboard' && !isMobile && (
-                  <button
-                    onClick={onOpenAppsManager}
-                    className="flex items-center justify-center min-h-[32px] p-2 rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-white/5 transition-all"
-                    title="Manage Apps"
-                  >
-                    <SettingsIcon size={14} />
-                  </button>
+              <Link
+                key={item.title}
+                to={item.url}
+                onClick={triggerActivity}
+                className={`flex items-center justify-center min-h-[44px] p-3 rounded-xl transition-all duration-200 group relative active:scale-[0.98]
+                  ${isActive
+                    ? 'text-cyan-400 bg-cyan-950/30'
+                    : 'text-gray-400 hover:text-white hover:bg-white/5 active:bg-white/10'
+                  }
+                `}
+                title={item.title}
+              >
+                <item.icon isActive={isActive} className={`w-5 h-5 flex-shrink-0 transition-colors ${isActive ? 'text-cyan-400' : 'group-hover:text-white'}`} />
+                {isActive && (
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-cyan-500 rounded-l-full shadow-[0_0_10px_rgba(6,182,212,0.5)]" />
                 )}
-              </React.Fragment>
+              </Link>
             );
           })}
         </div>

@@ -30,6 +30,9 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { toast } from "sonner";
 import PortalBranding from "@/components/settings/PortalBranding";
+import AppsManagerModal from "@/components/layout/AppsManagerModal";
+import { Link } from "react-router-dom";
+import { LayoutGrid } from "lucide-react";
 
 export default function Settings() {
   const { user, company, settings: userSettings, updateUser, updateSettings, isLoading: userLoading } = useUser();
@@ -37,6 +40,7 @@ export default function Settings() {
   const [refreshingCompany, setRefreshingCompany] = useState(false);
   const [settings, setSettings] = useState(null);
   const [activeTab, setActiveTab] = useState("profile");
+  const [appsManagerOpen, setAppsManagerOpen] = useState(false);
 
   const [profileForm, setProfileForm] = useState({
     full_name: "",
@@ -592,6 +596,7 @@ export default function Settings() {
     { id: 'portal', label: 'Client Portal', icon: ExternalLink, color: 'green' },
     { id: 'teams', label: 'Teams & Rights', icon: Shield, color: 'cyan', isLink: true, href: createPageUrl('TeamManagement') },
     { id: 'integrations', label: 'Integrations', icon: Plug, color: 'cyan', isLink: true, href: createPageUrl('MCPIntegrations') },
+    { id: 'apps', label: 'Apps', icon: LayoutGrid, color: 'cyan' },
     { id: 'privacy', label: 'Privacy', icon: Lock, color: 'red' },
     ...(user?.role === 'admin' ? [{ id: 'admin', label: 'Admin', icon: Brain, color: 'purple' }] : [])
   ];
@@ -619,12 +624,23 @@ export default function Settings() {
       <div className="relative z-10 w-full px-6 py-6 space-y-6">
         {/* Header */}
         <div ref={headerRef} style={{ opacity: 0 }}>
-          <PageHeader
-            title="Settings"
-            subtitle="Manage your profile, preferences, and account"
-            icon={SettingsIcon}
-            color="cyan"
-          />
+          <div className="flex items-center justify-between">
+            <PageHeader
+              title="Settings"
+              subtitle="Manage your profile, preferences, and account"
+              icon={SettingsIcon}
+              color="cyan"
+            />
+            {user?.role === 'admin' && (
+              <Link
+                to="/admin"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-medium text-sm transition-colors"
+              >
+                <Shield className="w-4 h-4" />
+                Admin Panel
+              </Link>
+            )}
+          </div>
         </div>
 
         {/* Main Content */}
@@ -1386,6 +1402,33 @@ export default function Settings() {
                 </motion.div>
               )}
 
+              {/* APPS TAB */}
+              {activeTab === 'apps' && (
+                <motion.div
+                  key="apps"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="space-y-6"
+                >
+                  <GlassCard className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className="text-sm font-bold text-white">Dashboard Apps</h3>
+                        <p className="text-sm text-zinc-500">Manage which apps are visible on your dashboard</p>
+                      </div>
+                      <Button
+                        onClick={() => setAppsManagerOpen(true)}
+                        className="bg-cyan-600/80 hover:bg-cyan-600 text-white font-medium"
+                      >
+                        <LayoutGrid className="w-4 h-4 mr-2" />
+                        Manage Apps
+                      </Button>
+                    </div>
+                  </GlassCard>
+                </motion.div>
+              )}
+
               {/* PRIVACY TAB */}
               {activeTab === 'privacy' && (
                 <motion.div
@@ -1555,6 +1598,12 @@ export default function Settings() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Apps Manager Modal */}
+      <AppsManagerModal
+        isOpen={appsManagerOpen}
+        onClose={() => setAppsManagerOpen(false)}
+      />
     </div>
   );
 }

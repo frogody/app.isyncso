@@ -5,16 +5,16 @@ import { useSyncState } from '@/components/context/SyncStateContext';
 
 // Agent color segments - MUST match SyncAgent.jsx exactly
 const AGENT_SEGMENTS = [
-  { id: 'orchestrator', color: '#ec4899', from: 0.00, to: 0.10 },  // pink - multi-agent workflows
-  { id: 'learn', color: '#06b6d4', from: 0.10, to: 0.20 },         // cyan
-  { id: 'growth', color: '#6366f1', from: 0.20, to: 0.30 },        // indigo
-  { id: 'products', color: '#10b981', from: 0.30, to: 0.40 },      // emerald
-  { id: 'sentinel', color: '#86EFAC', from: 0.40, to: 0.50 },      // sage green
-  { id: 'finance', color: '#f59e0b', from: 0.50, to: 0.60 },       // amber
-  { id: 'create', color: '#f43f5e', from: 0.60, to: 0.70 },        // rose
-  { id: 'tasks', color: '#f97316', from: 0.70, to: 0.80 },         // orange
-  { id: 'research', color: '#3b82f6', from: 0.80, to: 0.90 },      // blue
-  { id: 'inbox', color: '#14b8a6', from: 0.90, to: 1.00 },         // teal - completes the ring
+  { id: 'orchestrator', color: '#ec4899', from: 0.004, to: 0.096 },  // pink
+  { id: 'learn', color: '#06b6d4', from: 0.104, to: 0.196 },         // cyan
+  { id: 'growth', color: '#6366f1', from: 0.204, to: 0.296 },        // indigo
+  { id: 'products', color: '#10b981', from: 0.304, to: 0.396 },      // emerald
+  { id: 'sentinel', color: '#86EFAC', from: 0.404, to: 0.496 },      // sage green
+  { id: 'finance', color: '#f59e0b', from: 0.504, to: 0.596 },       // amber
+  { id: 'create', color: '#f43f5e', from: 0.604, to: 0.696 },        // rose
+  { id: 'tasks', color: '#f97316', from: 0.704, to: 0.796 },         // orange
+  { id: 'research', color: '#3b82f6', from: 0.804, to: 0.896 },      // blue
+  { id: 'inbox', color: '#14b8a6', from: 0.904, to: 0.996 },         // teal
 ];
 
 // Check for reduced motion preference

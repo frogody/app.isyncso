@@ -373,16 +373,16 @@ function DocumentCard({ url, title }) {
 // Matches the agents in the SYNC edge function + orchestrator
 // Segments now fill the entire ring with no gaps (10 visible segments)
 const AGENT_SEGMENTS = [
-  { id: 'orchestrator', name: 'Orchestrator', color: '#ec4899', from: 0.00, to: 0.10, icon: '🎯' },  // pink - multi-agent workflows
-  { id: 'learn', name: 'Learn', color: '#06b6d4', from: 0.10, to: 0.20, icon: '📚' },       // cyan
-  { id: 'growth', name: 'Growth', color: '#6366f1', from: 0.20, to: 0.30, icon: '📈' },     // indigo
-  { id: 'products', name: 'Products', color: '#10b981', from: 0.30, to: 0.40, icon: '📦' }, // emerald
-  { id: 'sentinel', name: 'Sentinel', color: '#86EFAC', from: 0.40, to: 0.50, icon: '🛡️' }, // sage
-  { id: 'finance', name: 'Finance', color: '#f59e0b', from: 0.50, to: 0.60, icon: '💰' },   // amber
-  { id: 'create', name: 'Create', color: '#f43f5e', from: 0.60, to: 0.70, icon: '🎨' },     // rose
-  { id: 'tasks', name: 'Tasks', color: '#f97316', from: 0.70, to: 0.80, icon: '✅' },       // orange
-  { id: 'research', name: 'Research', color: '#3b82f6', from: 0.80, to: 0.90, icon: '🔍' }, // blue
-  { id: 'inbox', name: 'Inbox', color: '#14b8a6', from: 0.90, to: 1.00, icon: '📬' },       // teal - completes the ring
+  { id: 'orchestrator', name: 'Orchestrator', color: '#ec4899', from: 0.004, to: 0.096, icon: '🎯' },  // pink
+  { id: 'learn', name: 'Learn', color: '#06b6d4', from: 0.104, to: 0.196, icon: '📚' },       // cyan
+  { id: 'growth', name: 'Growth', color: '#6366f1', from: 0.204, to: 0.296, icon: '📈' },     // indigo
+  { id: 'products', name: 'Products', color: '#10b981', from: 0.304, to: 0.396, icon: '📦' }, // emerald
+  { id: 'sentinel', name: 'Sentinel', color: '#86EFAC', from: 0.404, to: 0.496, icon: '🛡️' }, // sage
+  { id: 'finance', name: 'Finance', color: '#f59e0b', from: 0.504, to: 0.596, icon: '💰' },   // amber
+  { id: 'create', name: 'Create', color: '#f43f5e', from: 0.604, to: 0.696, icon: '🎨' },     // rose
+  { id: 'tasks', name: 'Tasks', color: '#f97316', from: 0.704, to: 0.796, icon: '✅' },       // orange
+  { id: 'research', name: 'Research', color: '#3b82f6', from: 0.804, to: 0.896, icon: '🔍' }, // blue
+  { id: 'inbox', name: 'Inbox', color: '#14b8a6', from: 0.904, to: 0.996, icon: '📬' },       // teal
   { id: 'sync', name: 'SYNC', color: '#a855f7', from: 0, to: 0, icon: '🧠' },               // purple - main orchestrator (no segment)
   { id: 'team', name: 'Team', color: '#8b5cf6', from: 0, to: 0, icon: '👥' },               // violet (no segment)
   { id: 'composio', name: 'Integrations', color: '#22c55e', from: 0, to: 0, icon: '🔗' },   // green (no segment)
