@@ -277,6 +277,9 @@ import ClientLogin from "./portal/ClientLogin";
 import ClientAuthCallback from "./portal/ClientAuthCallback";
 import ClientDashboard from "./portal/ClientDashboard";
 import ClientProjectDetail from "./portal/ClientProjectDetail";
+import ClientProjects from "./portal/ClientProjects";
+import ClientApprovals from "./portal/ClientApprovals";
+import ClientActivity from "./portal/ClientActivity";
 
 import { BrowserRouter as Router, Route, Routes, useLocation, Navigate } from 'react-router-dom';
 
@@ -570,10 +573,10 @@ function PagesContent() {
                     <Route path="/portal/:org/login" element={<ClientLogin />} />
                     <Route element={<ClientLayout />}>
                         <Route path="/portal/:org" element={<ClientDashboard />} />
-                        <Route path="/portal/:org/projects" element={<ClientDashboard />} />
+                        <Route path="/portal/:org/projects" element={<ClientProjects />} />
                         <Route path="/portal/:org/project/:id" element={<ClientProjectDetail />} />
-                        <Route path="/portal/:org/approvals" element={<ClientDashboard />} />
-                        <Route path="/portal/:org/activity" element={<ClientDashboard />} />
+                        <Route path="/portal/:org/approvals" element={<ClientApprovals />} />
+                        <Route path="/portal/:org/activity" element={<ClientActivity />} />
                         <Route path="/portal/:org/settings" element={<ClientDashboard />} />
                     </Route>
 
