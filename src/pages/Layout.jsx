@@ -114,6 +114,7 @@ import { SyncStateProvider } from "@/components/context/SyncStateContext";
 // Import SYNC floating components
 import SyncFloatingChat from "@/components/sync/SyncFloatingChat";
 import SyncVoiceMode from "@/components/sync/SyncVoiceMode";
+import EnrichmentProgressBar from "@/components/talent/EnrichmentProgressBar";
 
 // Import Keyboard Shortcuts
 import { KeyboardShortcutsProvider } from "@/contexts/KeyboardShortcutsContext";
@@ -1688,6 +1689,9 @@ export default function Layout({ children, currentPageName }) {
           onClose={handleCloseVoiceMode}
           onSwitchToChat={handleSwitchToChat}
         />
+
+        {/* Enrichment Progress Bar - shows during nest candidate processing */}
+        <EnrichmentProgressBar />
         </div>
           </AchievementProvider>
           </NotificationsProvider>
