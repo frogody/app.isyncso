@@ -33,7 +33,7 @@ import { toast } from "sonner";
 import PortalBranding from "@/components/settings/PortalBranding";
 import AppsManagerModal from "@/components/layout/AppsManagerModal";
 import TeamManagement from "@/pages/TeamManagement";
-import MCPIntegrations from "@/pages/MCPIntegrations";
+import Integrations from "@/pages/Integrations";
 import { Link } from "react-router-dom";
 import { LayoutGrid } from "lucide-react";
 
@@ -1426,7 +1426,7 @@ export default function Settings() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                 >
-                  <MCPIntegrations embedded />
+                  <Integrations embedded />
                 </motion.div>
               )}
 

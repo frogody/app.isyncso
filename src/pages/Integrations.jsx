@@ -125,7 +125,7 @@ const updateMCPIntegrations = (connected, userInfo) => {
   }));
 };
 
-export default function Integrations() {
+export default function Integrations({ embedded = false }) {
   const { user, isLoading: userLoading } = useUser();
   const composio = useComposio();
 
@@ -712,17 +712,18 @@ export default function Integrations() {
     );
   }
 
-  return (
-    <PermissionGuard permission="integrations.view" showMessage>
-      <div className="min-h-screen bg-black relative">
-        {/* Background */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-20 left-1/4 w-96 h-96 bg-cyan-900/5 rounded-full blur-3xl" />
-          <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-cyan-900/5 rounded-full blur-3xl" />
-        </div>
+  const content = (
+      <div className={embedded ? "space-y-4" : "min-h-screen bg-black relative"}>
+        {!embedded && (
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            <div className="absolute top-20 left-1/4 w-96 h-96 bg-cyan-900/5 rounded-full blur-3xl" />
+            <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-cyan-900/5 rounded-full blur-3xl" />
+          </div>
+        )}
 
-        <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
+        <div className={embedded ? "space-y-4" : "relative z-10 w-full px-4 lg:px-6 py-4 space-y-4"}>
           {/* Header */}
+          {!embedded && (
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden rounded-xl bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/60 p-4">
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
               <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full blur-3xl opacity-10 bg-cyan-600" />
@@ -756,6 +757,7 @@ export default function Integrations() {
               </div>
             </div>
           </motion.div>
+          )}
 
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -1946,6 +1948,13 @@ export default function Integrations() {
           </DialogContent>
         </Dialog>
       </div>
+  );
+
+  if (embedded) return content;
+
+  return (
+    <PermissionGuard permission="integrations.view" showMessage>
+      {content}
     </PermissionGuard>
   );
 }
