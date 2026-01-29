@@ -32,6 +32,8 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { toast } from "sonner";
 import PortalBranding from "@/components/settings/PortalBranding";
 import AppsManagerModal from "@/components/layout/AppsManagerModal";
+import TeamManagement from "@/pages/TeamManagement";
+import MCPIntegrations from "@/pages/MCPIntegrations";
 import { Link } from "react-router-dom";
 import { LayoutGrid } from "lucide-react";
 
@@ -596,8 +598,8 @@ export default function Settings() {
     { id: 'appearance', label: 'Appearance', icon: Palette, color: 'pink' },
     { id: 'company', label: 'Company', icon: Building2, color: 'orange' },
     { id: 'portal', label: 'Client Portal', icon: ExternalLink, color: 'green' },
-    { id: 'teams', label: 'Teams & Rights', icon: Shield, color: 'cyan', isLink: true, href: createPageUrl('TeamManagement') },
-    { id: 'integrations', label: 'Integrations', icon: Plug, color: 'cyan', isLink: true, href: createPageUrl('MCPIntegrations') },
+    { id: 'teams', label: 'Teams & Rights', icon: Shield, color: 'cyan' },
+    { id: 'integrations', label: 'Integrations', icon: Plug, color: 'cyan' },
     { id: 'apps', label: 'Apps', icon: LayoutGrid, color: 'cyan' },
     { id: 'privacy', label: 'Privacy', icon: Lock, color: 'red' },
     ...(isAdmin ? [{ id: 'admin', label: 'Admin', icon: Brain, color: 'purple' }] : [])
@@ -1401,6 +1403,30 @@ export default function Settings() {
                   className="space-y-6"
                 >
                   <PortalBranding />
+                </motion.div>
+              )}
+
+              {/* TEAMS & RIGHTS TAB */}
+              {activeTab === 'teams' && (
+                <motion.div
+                  key="teams"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                >
+                  <TeamManagement embedded />
+                </motion.div>
+              )}
+
+              {/* INTEGRATIONS TAB */}
+              {activeTab === 'integrations' && (
+                <motion.div
+                  key="integrations"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                >
+                  <MCPIntegrations embedded />
                 </motion.div>
               )}
 

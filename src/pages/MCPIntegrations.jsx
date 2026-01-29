@@ -67,7 +67,7 @@ const updateMCPIntegrations = (connected, userInfo) => {
   }));
 };
 
-export default function MCPIntegrations() {
+export default function MCPIntegrations({ embedded = false }) {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [userInfo, setUserInfo] = useState(null);
@@ -185,12 +185,14 @@ export default function MCPIntegrations() {
   };
 
   return (
-    <div className="min-h-screen bg-black p-6 space-y-6">
-      <PageHeader
-        icon={Plug}
-        title="MCP Integrations"
-        description="Connect Google Workspace to enable AI-powered workflows"
-      />
+    <div className={embedded ? "space-y-6" : "min-h-screen bg-black p-6 space-y-6"}>
+      {!embedded && (
+        <PageHeader
+          icon={Plug}
+          title="MCP Integrations"
+          description="Connect Google Workspace to enable AI-powered workflows"
+        />
+      )}
 
       {/* Status Card */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

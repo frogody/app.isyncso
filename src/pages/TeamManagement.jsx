@@ -55,7 +55,7 @@ const ALL_APPS = [
   { name: 'analytics', label: 'Analytics', description: 'Business intelligence', icon: '📊' },
 ];
 
-export default function TeamManagement() {
+export default function TeamManagement({ embedded = false }) {
   const { user, company } = useUser();
   const { hasPermission, isAdmin, isSuperAdmin, assignRole, removeRole } = usePermissions();
 
@@ -623,33 +623,37 @@ export default function TeamManagement() {
   }
 
   return (
-    <div className="min-h-screen bg-black relative">
-      {/* Background */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 left-1/4 w-96 h-96 bg-cyan-900/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-purple-950/10 rounded-full blur-3xl" />
-      </div>
-
-      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => window.location.href = createPageUrl('Settings')}
-            className="text-zinc-400 hover:text-white"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Settings
-          </Button>
+    <div className={embedded ? "space-y-4" : "min-h-screen bg-black relative"}>
+      {!embedded && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-20 left-1/4 w-96 h-96 bg-cyan-900/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-purple-950/10 rounded-full blur-3xl" />
         </div>
+      )}
 
-        <PageHeader
-          title="Team Management"
-          subtitle="Manage users, roles, and permissions for your organization"
-          icon={Users}
-          color="cyan"
-        />
+      <div className={embedded ? "space-y-4" : "relative z-10 w-full px-4 lg:px-6 py-4 space-y-4"}>
+        {!embedded && (
+          <>
+            <div className="flex items-center gap-4 mb-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => window.location.href = createPageUrl('Settings')}
+                className="text-zinc-400 hover:text-white"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Settings
+              </Button>
+            </div>
+
+            <PageHeader
+              title="Team Management"
+              subtitle="Manage users, roles, and permissions for your organization"
+              icon={Users}
+              color="cyan"
+            />
+          </>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
