@@ -1,23 +1,17 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
-import { motion } from "framer-motion";
-import anime from '@/lib/anime-wrapper';
-const animate = anime;
-import { prefersReducedMotion } from '@/lib/animations';
+import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
-  Package, Cloud, Box, Plus, ArrowRight, TrendingUp,
-  Search, Filter, Grid3X3, List, Tag, DollarSign,
-  Eye, Edit2, MoreHorizontal, Archive, Layers, Sparkles,
-  Settings, Check, Loader2
+  Package, Cloud, Box, Plus, ArrowRight,
+  Search, Tag,
+  Eye, Edit2,
+  Settings, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { GlassCard, StatCard } from "@/components/ui/GlassCard";
-import { PageHeader } from "@/components/ui/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@/components/context/UserContext";
 import { Product, ProductCategory } from "@/api/entities";
@@ -61,11 +55,7 @@ function ProductCard({ product }) {
 
   return (
     <Link to={createPageUrl(`ProductDetail?type=${product.type}&slug=${product.slug}`)}>
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="group p-4 rounded-xl bg-zinc-900/50 border border-white/5 hover:border-cyan-500/30 transition-all cursor-pointer"
-      >
+      <div className="group p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60 hover:border-cyan-500/30 transition-all cursor-pointer">
         <div className="flex items-start gap-4">
           {/* Product Image or Icon */}
           <div className="w-16 h-16 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -108,42 +98,11 @@ function ProductCard({ product }) {
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
     </Link>
   );
 }
 
-function QuickStatCard({ icon: Icon, label, value, sublabel, color = 'purple' }) {
-  const colorClasses = {
-    purple: 'bg-purple-500/10 border-purple-500/30 text-purple-400',
-    cyan: 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400',
-    green: 'bg-green-500/10 border-green-500/30 text-green-400',
-  };
-
-  // Parse numeric value for count-up animation
-  const numValue = typeof value === 'string' && value !== '-' ? parseInt(value) || 0 : (typeof value === 'number' ? value : 0);
-
-  return (
-    <div className="p-3 rounded-xl bg-zinc-900/50 border border-white/5">
-      <div className="flex items-center gap-3">
-        <div className={`w-8 h-8 rounded-lg ${colorClasses[color]} border flex items-center justify-center`}>
-          <Icon className="w-4 h-4" />
-        </div>
-        <div>
-          {value === '-' ? (
-            <div className="text-lg font-bold text-white">-</div>
-          ) : (
-            <div className="stat-number text-lg font-bold text-white" data-value={numValue}>0</div>
-          )}
-          <div className="text-xs text-zinc-500">{label}</div>
-        </div>
-      </div>
-      {sublabel && (
-        <div className="text-[10px] text-zinc-600 mt-2">{sublabel}</div>
-      )}
-    </div>
-  );
-}
 
 // Settings key for localStorage (synced with UserAppConfig when available)
 const PRODUCTS_SETTINGS_KEY = 'isyncso_products_settings';
@@ -169,11 +128,6 @@ export default function Products() {
     type: 'digital',
     status: 'draft'
   });
-
-  // Refs for anime.js animations
-  const headerRef = useRef(null);
-  const statsRef = useRef(null);
-  const productsGridRef = useRef(null);
 
   // SEO: Set page title
   useEffect(() => {
@@ -383,218 +337,102 @@ export default function Products() {
     ).slice(0, 6);
   }, [products, digitalEnabled, physicalEnabled, searchQuery]);
 
-  // Animate header on mount
-  useEffect(() => {
-    if (!headerRef.current || prefersReducedMotion()) return;
-
-    animate({
-      targets: headerRef.current,
-      translateY: [-20, 0],
-      opacity: [0, 1],
-      duration: 500,
-      easing: 'easeOutQuart',
-    });
-  }, []);
-
-  // Animate stats bar with count-up
-  useEffect(() => {
-    if (loading || !statsRef.current || prefersReducedMotion()) return;
-
-    // Entrance animation for stats bar
-    animate({
-      targets: statsRef.current,
-      translateY: [15, 0],
-      opacity: [0, 1],
-      duration: 400,
-      easing: 'easeOutQuad',
-      delay: 100,
-    });
-
-    // Count-up animation for stat numbers
-    const statValues = statsRef.current.querySelectorAll('.stat-number');
-    statValues.forEach(el => {
-      const endValue = parseFloat(el.dataset.value) || 0;
-      const obj = { value: 0 };
-
-      animate({
-        targets: obj,
-        value: endValue,
-        round: 1,
-        duration: 1000,
-        delay: 200,
-        easing: 'easeOutExpo',
-        update: () => {
-          el.textContent = obj.value;
-        },
-      });
-    });
-  }, [loading, stats]);
-
-  // Animate product cards when loaded
-  useEffect(() => {
-    if (loading || !productsGridRef.current || prefersReducedMotion()) return;
-
-    const cards = productsGridRef.current.querySelectorAll('.product-card');
-    if (cards.length === 0) return;
-
-    // Set initial state
-    Array.from(cards).forEach(card => {
-      card.style.opacity = '0';
-      card.style.transform = 'translateY(25px) scale(0.96)';
-    });
-
-    // Staggered entrance animation
-    animate({
-      targets: cards,
-      translateY: [25, 0],
-      scale: [0.96, 1],
-      opacity: [0, 1],
-      delay: anime.stagger(40, { start: 150 }),
-      duration: 450,
-      easing: 'easeOutQuart',
-    });
-  }, [loading, filteredProducts]);
 
   return (
-    <div className="min-h-screen bg-black relative">
-      {/* Background */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 right-1/4 w-96 h-96 bg-cyan-900/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-cyan-950/10 rounded-full blur-3xl" />
-      </div>
+    <div className="min-h-screen bg-black">
+      <div className="max-w-full mx-auto px-4 lg:px-6 pr-14 py-4 space-y-4">
+        {/* Header */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
+          <div>
+            <h1 className="text-lg font-bold text-white">Products</h1>
+            <p className="text-xs text-zinc-400">{stats.total} total products</p>
+          </div>
 
-      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
-        {/* Page Header */}
-        <div ref={headerRef} style={{ opacity: 0 }}>
-          <PageHeader
-            title="Products"
-            subtitle="Manage your digital and physical product catalog"
-            icon={Package}
-            color="cyan"
-          actions={
-            <div className="flex items-center gap-3">
-              {/* Settings Popover */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="border-white/10 bg-zinc-900/60 text-zinc-300 hover:text-white hover:border-cyan-500/50 hover:bg-cyan-500/10"
-                  >
-                    <Settings className="w-4 h-4 mr-2" /> Settings
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-72 bg-zinc-900 border-white/10 p-4" align="end">
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-medium text-white mb-1">Product Types</h4>
-                      <p className="text-xs text-zinc-500">Enable or disable product categories</p>
-                    </div>
-
-                    {/* Digital Toggle */}
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/50 border border-white/5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
-                          <Cloud className="w-4 h-4 text-cyan-400" />
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium text-white">Digital Products</div>
-                          <div className="text-xs text-zinc-500">SaaS, software, courses</div>
-                        </div>
-                      </div>
-                      <Switch
-                        checked={digitalEnabled}
-                        onCheckedChange={handleDigitalToggle}
-                        disabled={settingsSaving}
-                      />
-                    </div>
-
-                    {/* Physical Toggle */}
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/50 border border-white/5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
-                          <Box className="w-4 h-4 text-cyan-400" />
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium text-white">Physical Products</div>
-                          <div className="text-xs text-zinc-500">Hardware, goods, inventory</div>
-                        </div>
-                      </div>
-                      <Switch
-                        checked={physicalEnabled}
-                        onCheckedChange={handlePhysicalToggle}
-                        disabled={settingsSaving}
-                      />
-                    </div>
-
-                    {settingsSaving && (
-                      <div className="text-xs text-center text-zinc-500">Saving...</div>
-                    )}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Settings Popover */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700"
+                >
+                  <Settings className="w-4 h-4 mr-1" /> Settings
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-72 bg-zinc-900 border-zinc-800 p-4" align="end">
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-medium text-white mb-1">Product Types</h4>
+                    <p className="text-xs text-zinc-500">Enable or disable product categories</p>
                   </div>
-                </PopoverContent>
-              </Popover>
 
-              <Button
-                variant="outline"
-                className="border-white/10 bg-zinc-900/60 text-zinc-300 hover:text-white hover:border-cyan-500/50 hover:bg-cyan-500/10"
-                onClick={() => setShowCreateModal(true)}
-              >
-                <Plus className="w-4 h-4 mr-2" /> Add Product
-              </Button>
-            </div>
-          }
-          />
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/50 border border-zinc-700/50">
+                    <div className="flex items-center gap-3">
+                      <Cloud className="w-4 h-4 text-cyan-400" />
+                      <div>
+                        <div className="text-sm font-medium text-white">Digital</div>
+                        <div className="text-xs text-zinc-500">SaaS, software, courses</div>
+                      </div>
+                    </div>
+                    <Switch checked={digitalEnabled} onCheckedChange={handleDigitalToggle} disabled={settingsSaving} />
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/50 border border-zinc-700/50">
+                    <div className="flex items-center gap-3">
+                      <Box className="w-4 h-4 text-cyan-400" />
+                      <div>
+                        <div className="text-sm font-medium text-white">Physical</div>
+                        <div className="text-xs text-zinc-500">Hardware, goods, inventory</div>
+                      </div>
+                    </div>
+                    <Switch checked={physicalEnabled} onCheckedChange={handlePhysicalToggle} disabled={settingsSaving} />
+                  </div>
+
+                  {settingsSaving && (
+                    <div className="text-xs text-center text-zinc-500">Saving...</div>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            <Button
+              onClick={() => setShowCreateModal(true)}
+              className="bg-cyan-600/80 hover:bg-cyan-600 text-white"
+            >
+              <Plus className="w-4 h-4 mr-1" /> Add Product
+            </Button>
+          </div>
         </div>
 
-        {/* Stats Row */}
-        <div ref={statsRef} className={`grid gap-3 ${digitalEnabled && physicalEnabled ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-6' : 'grid-cols-2 md:grid-cols-4'}`} style={{ opacity: 0 }}>
-          <QuickStatCard
-            icon={Package}
-            label="Total Products"
-            value={loading ? '-' : stats.total}
-            color="cyan"
-          />
-          {digitalEnabled && (
-            <QuickStatCard
-              icon={Cloud}
-              label="Digital"
-              value={loading ? '-' : stats.digital}
-              color="cyan"
-            />
-          )}
-          {physicalEnabled && (
-            <QuickStatCard
-              icon={Box}
-              label="Physical"
-              value={loading ? '-' : stats.physical}
-              color="cyan"
-            />
-          )}
-          <QuickStatCard
-            icon={Eye}
-            label="Published"
-            value={loading ? '-' : stats.published}
-            color="green"
-          />
-          <QuickStatCard
-            icon={Edit2}
-            label="Drafts"
-            value={loading ? '-' : stats.draft}
-            color="cyan"
-          />
-          <QuickStatCard
-            icon={Tag}
-            label="Categories"
-            value={loading ? '-' : stats.categories}
-            color="cyan"
-          />
+        {/* Stat Cards */}
+        <div className={`grid gap-3 ${digitalEnabled && physicalEnabled ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-6' : 'grid-cols-2 md:grid-cols-4'}`}>
+          {[
+            { icon: Package, label: 'Total Products', value: loading ? '-' : stats.total },
+            ...(digitalEnabled ? [{ icon: Cloud, label: 'Digital', value: loading ? '-' : stats.digital }] : []),
+            ...(physicalEnabled ? [{ icon: Box, label: 'Physical', value: loading ? '-' : stats.physical }] : []),
+            { icon: Eye, label: 'Published', value: loading ? '-' : stats.published },
+            { icon: Edit2, label: 'Drafts', value: loading ? '-' : stats.draft },
+            { icon: Tag, label: 'Categories', value: loading ? '-' : stats.categories },
+          ].map((stat) => {
+            const StatIcon = stat.icon;
+            return (
+              <div key={stat.label} className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <StatIcon className="w-4 h-4 text-cyan-400/70" />
+                </div>
+                <div className="text-lg font-bold text-white">{stat.value}</div>
+                <div className="text-[10px] text-zinc-500">{stat.label}</div>
+              </div>
+            );
+          })}
         </div>
 
         {/* Quick Navigation Cards */}
         <div className={`grid gap-4 ${digitalEnabled && physicalEnabled ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
-          {/* Digital Products Card */}
           {digitalEnabled && (
             <Link to={createPageUrl('ProductsDigital')}>
-              <GlassCard className="p-4 group hover:border-cyan-500/30 transition-all cursor-pointer">
+              <div className="group p-4 bg-zinc-900/50 border border-zinc-800/60 rounded-xl hover:border-cyan-500/30 transition-all cursor-pointer">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
                     <Cloud className="w-5 h-5 text-cyan-400" />
@@ -613,14 +451,13 @@ export default function Products() {
                     </div>
                   </div>
                 </div>
-              </GlassCard>
+              </div>
             </Link>
           )}
 
-          {/* Physical Products Card */}
           {physicalEnabled && (
             <Link to={createPageUrl('ProductsPhysical')}>
-              <GlassCard className="p-4 group hover:border-cyan-500/30 transition-all cursor-pointer">
+              <div className="group p-4 bg-zinc-900/50 border border-zinc-800/60 rounded-xl hover:border-cyan-500/30 transition-all cursor-pointer">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
                     <Box className="w-5 h-5 text-cyan-400" />
@@ -639,97 +476,71 @@ export default function Products() {
                     </div>
                   </div>
                 </div>
-              </GlassCard>
+              </div>
             </Link>
           )}
         </div>
 
-        {/* Recent Products */}
-        <GlassCard className="p-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
-                <Layers className="w-4 h-4 text-cyan-400" />
-              </div>
-              <div>
-                <h3 className="text-base font-semibold text-white">Recent Products</h3>
-                <p className="text-xs text-zinc-500">Your latest product additions</p>
-              </div>
-            </div>
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+          <Input
+            placeholder="Search products..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 bg-zinc-900/50 border-zinc-800/60 text-white placeholder:text-zinc-500"
+          />
+        </div>
 
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-                <Input
-                  placeholder="Search products..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 w-64 bg-zinc-900/50 border-white/10 text-white placeholder:text-zinc-500"
-                />
-              </div>
-            </div>
+        {/* Products Grid */}
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <Skeleton key={i} className="h-20 bg-zinc-800/50" />
+            ))}
           </div>
+        ) : filteredProducts.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {filteredProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-16">
+            <div className="w-14 h-14 rounded-2xl bg-zinc-800/50 flex items-center justify-center mx-auto mb-4">
+              <Package className="w-7 h-7 text-zinc-600" />
+            </div>
+            <p className="text-white font-medium">No products yet</p>
+            <p className="text-sm text-zinc-500 mt-1 max-w-xs mx-auto">
+              {searchQuery ? 'No products match your search' : 'Get started by adding your first product'}
+            </p>
+            {!searchQuery && (
+              <Button onClick={() => setShowCreateModal(true)} className="mt-4 bg-cyan-600/80 hover:bg-cyan-600 text-white">
+                <Plus className="w-4 h-4 mr-1" /> Add Your First Product
+              </Button>
+            )}
+          </div>
+        )}
 
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Skeleton key={i} className="h-20 bg-zinc-800/50" />
-              ))}
-            </div>
-          ) : filteredProducts.length > 0 ? (
-            <div ref={productsGridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {filteredProducts.map((product, index) => (
-                <div key={product.id} className="product-card">
-                  <ProductCard product={product} />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <div className="w-12 h-12 rounded-full bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mx-auto mb-3">
-                <Package className="w-6 h-6 text-cyan-400" />
-              </div>
-              <h4 className="text-base font-medium text-white mb-2">No products yet</h4>
-              <p className="text-xs text-zinc-500 mb-3">
-                {searchQuery ? 'No products match your search' : 'Get started by adding your first product'}
-              </p>
-              {!searchQuery && (
-                <Button className="bg-cyan-500 hover:bg-cyan-600 text-white">
-                  <Plus className="w-4 h-4 mr-2" /> Add Your First Product
-                </Button>
-              )}
-            </div>
-          )}
+        {filteredProducts.length > 0 && (
+          <div className="flex justify-center">
+            <Link to={createPageUrl(digitalEnabled ? 'ProductsDigital' : 'ProductsPhysical')}>
+              <Button variant="outline" className="border-zinc-700 text-zinc-400 hover:text-white hover:bg-zinc-800">
+                View All Products <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
+          </div>
+        )}
 
-          {filteredProducts.length > 0 && (
-            <div className="flex justify-center mt-4">
-              <Link to={createPageUrl(digitalEnabled ? 'ProductsDigital' : 'ProductsPhysical')}>
-                <Button variant="outline" className="border-white/10 text-zinc-400 hover:text-white">
-                  View All Products <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </Link>
-            </div>
-          )}
-        </GlassCard>
-
-        {/* Categories Section */}
+        {/* Categories */}
         {categories.length > 0 && (
-          <GlassCard className="p-4">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
-                <Tag className="w-4 h-4 text-cyan-400" />
-              </div>
-              <div>
-                <h3 className="text-base font-semibold text-white">Categories</h3>
-                <p className="text-xs text-zinc-500">Organize products by category</p>
-              </div>
-            </div>
-
+          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+            <h3 className="text-sm font-semibold text-white mb-3">Categories</h3>
             <div className="flex flex-wrap gap-2">
               {categories.map((category) => (
                 <Badge
                   key={category.id}
-                  className="bg-zinc-800/50 border border-white/10 text-zinc-300 hover:border-cyan-500/30 hover:text-cyan-400 cursor-pointer transition-colors"
+                  className="bg-zinc-800/50 border border-zinc-700/50 text-zinc-300 hover:border-cyan-500/30 hover:text-cyan-400 cursor-pointer transition-colors"
                 >
                   {category.name}
                   <span className="ml-2 text-[10px] text-zinc-500">
@@ -738,7 +549,7 @@ export default function Products() {
                 </Badge>
               ))}
             </div>
-          </GlassCard>
+          </div>
         )}
       </div>
 
