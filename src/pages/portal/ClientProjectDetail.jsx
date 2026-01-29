@@ -25,7 +25,7 @@ import { usePortalClientContext, usePortalSettings } from '@/components/portal/C
 import ExportModal from '@/components/portal/reports/ExportModal';
 
 export default function ClientProjectDetail() {
-  const { id } = useParams();
+  const { id, org: orgSlug } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { client, hasProjectPermission } = usePortalClientContext();
@@ -144,7 +144,7 @@ export default function ClientProjectDetail() {
       <div className="text-center py-20">
         <p className="text-zinc-400">Project not found</p>
         <button
-          onClick={() => navigate('/portal')}
+          onClick={() => navigate(`/portal/${orgSlug || client?.organization?.slug || ''}`)}
           className="mt-4 text-cyan-400 hover:text-cyan-300"
         >
           Back to Dashboard
@@ -173,14 +173,14 @@ export default function ClientProjectDetail() {
       {/* Header */}
       <div className="flex items-start gap-4">
         <button
-          onClick={() => navigate('/portal')}
+          onClick={() => navigate(`/portal/${orgSlug || client?.organization?.slug || ''}`)}
           className="p-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-2xl font-bold text-white">{project.name}</h1>
+            <h1 className="text-2xl font-bold text-white">{project.title}</h1>
             <span className={`px-3 py-1 text-sm font-medium rounded-full border ${statusColors[project.status] || statusColors.active}`}>
               {project.status?.replace('_', ' ') || 'Active'}
             </span>
@@ -204,7 +204,7 @@ export default function ClientProjectDetail() {
         isOpen={showExportModal}
         onClose={() => setShowExportModal(false)}
         projectId={id}
-        projectName={project.name}
+        projectName={project.title}
         settings={settings}
       />
 

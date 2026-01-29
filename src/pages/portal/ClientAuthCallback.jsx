@@ -34,23 +34,28 @@ export default function ClientAuthCallback() {
             const { data: client, error: clientError } = await supabase
               .from('portal_clients')
               .select(`
-                id, auth_user_id, organization_id,
-                organization:organizations(slug)
+                id, auth_user_id, organization_id, status,
+                organization:organizations(id, name, slug)
               `)
               .eq('email', data.user.email.toLowerCase())
-              .eq('status', 'active')
+              .in('status', ['active', 'invited'])
               .single();
 
             if (clientError && clientError.code !== 'PGRST116') {
               console.error('Error fetching client:', clientError);
             }
 
-            if (client && !client.auth_user_id) {
-              // Link the auth user to the client
-              await supabase
-                .from('portal_clients')
-                .update({ auth_user_id: data.user.id })
-                .eq('id', client.id);
+            if (client) {
+              // Link auth user and activate if invited
+              const updates = {};
+              if (!client.auth_user_id) updates.auth_user_id = data.user.id;
+              if (client.status === 'invited') updates.status = 'active';
+              if (Object.keys(updates).length > 0) {
+                await supabase
+                  .from('portal_clients')
+                  .update(updates)
+                  .eq('id', client.id);
+              }
             }
 
             setStatus('success');

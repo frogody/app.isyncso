@@ -157,7 +157,8 @@ export default function PortalBranding() {
         </div>
         <div className="flex items-center gap-3">
           <a
-            href={`/portal/${user?.organization?.slug || ''}/login`}
+            href={user?.organization?.slug ? `/portal/${user.organization.slug}/login` : '#'}
+            onClick={(e) => { if (!user?.organization?.slug) { e.preventDefault(); toast.error('Organization slug not set'); } }}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 px-4 py-2 text-sm text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"

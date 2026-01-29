@@ -46,7 +46,7 @@ export default function ClientDashboard() {
         if (projectIds.length > 0) {
           const { data: approvalsData } = await supabase
             .from('portal_approvals')
-            .select('*, project:projects(id, name)')
+            .select('*, project:projects(id, title)')
             .in('project_id', projectIds)
             .eq('status', 'pending')
             .order('created_at', { ascending: false })
@@ -191,7 +191,7 @@ export default function ClientDashboard() {
                       <p className="text-sm font-medium text-white group-hover:text-amber-200 transition-colors truncate">
                         {approval.title}
                       </p>
-                      <p className="text-xs text-zinc-500 mt-0.5">{approval.project?.name}</p>
+                      <p className="text-xs text-zinc-500 mt-0.5">{approval.project?.title}</p>
                     </div>
                     <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-amber-400 transition-colors" />
                   </div>

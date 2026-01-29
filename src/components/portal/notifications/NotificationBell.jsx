@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import usePortalNotifications from '@/hooks/usePortalNotifications';
 
-export default function NotificationBell({ clientId, organizationId }) {
+export default function NotificationBell({ clientId, organizationId, orgSlug }) {
   const {
     notifications,
     unreadCount,
@@ -133,7 +133,7 @@ export default function NotificationBell({ clientId, organizationId }) {
           {notifications.length > 10 && (
             <div className="border-t border-zinc-800 px-4 py-3">
               <Link
-                to="/portal/notifications"
+                to={orgSlug ? `/portal/${orgSlug}/activity` : '/portal'}
                 onClick={() => setIsOpen(false)}
                 className="block text-center text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
               >

@@ -133,6 +133,7 @@ export default function ClientLayout() {
               <NotificationBell
                 clientId={client?.id}
                 organizationId={client?.organization_id}
+                orgSlug={orgSlug}
               />
 
               {/* User Menu */}
