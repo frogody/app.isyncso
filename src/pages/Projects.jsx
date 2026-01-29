@@ -1389,33 +1389,23 @@ function FolderDetailSheet({
     }
   };
 
-  // Share Preview
-  if (showSharePreview) {
-    return (
-      <Sheet open={isOpen} onOpenChange={onClose}>
-        <SheetContent className="w-full sm:max-w-5xl bg-[#0a0a0b] border-zinc-800/60 overflow-y-auto p-0">
-          <SheetDescription className="sr-only">Client portal preview for shared folder</SheetDescription>
-          <div className="sticky top-0 z-10 bg-[#0a0a0b]/95 backdrop-blur-xl border-b border-zinc-800/50 p-4">
-            <div className="flex items-center justify-between">
-              <Button
-                size="sm"
-                onClick={() => setShowSharePreview(false)}
-                className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700"
-              >
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                Back to Folder
-              </Button>
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border border-cyan-500/20">
-                <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-                <span className="text-xs font-medium text-cyan-400">Client Portal Preview</span>
-              </div>
-            </div>
-          </div>
-          <ShareableFolderView folder={folder} projects={folderProjects} tasks={tasks} />
-        </SheetContent>
-      </Sheet>
-    );
-  }
+  // Open actual portal in new tab for preview
+  const handlePreviewPortal = async () => {
+    try {
+      const { data: org } = await supabase
+        .from('organizations')
+        .select('slug')
+        .eq('id', folder?.organization_id)
+        .single();
+      if (org?.slug) {
+        window.open(`/portal/${org.slug}`, '_blank');
+      } else {
+        toast.error('Could not find organization portal');
+      }
+    } catch {
+      toast.error('Could not open portal preview');
+    }
+  };
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
@@ -1484,7 +1474,7 @@ function FolderDetailSheet({
             <Button
               size="sm"
               className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700"
-              onClick={() => setShowSharePreview(true)}
+              onClick={handlePreviewPortal}
             >
               <Eye className="w-4 h-4 mr-1" /> Preview
             </Button>
@@ -1617,6 +1607,7 @@ function FolderDetailSheet({
                 folder={folder}
                 onUpdateSettings={handleUpdateShareSettings}
                 onGenerateLink={handleGenerateLink}
+                onPreviewPortal={handlePreviewPortal}
               />
 
               {/* Preview Card */}
@@ -1634,7 +1625,7 @@ function FolderDetailSheet({
                       </div>
                     </div>
                     <Button
-                      onClick={() => setShowSharePreview(true)}
+                      onClick={handlePreviewPortal}
                       className="bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/20 border-0"
                     >
                       <Eye className="w-4 h-4 mr-2" />
@@ -1727,7 +1718,7 @@ function FolderDetailSheet({
 }
 
 // Folder Share Settings Panel
-function FolderShareSettings({ folder, onUpdateSettings, onGenerateLink }) {
+function FolderShareSettings({ folder, onUpdateSettings, onGenerateLink, onPreviewPortal }) {
   const [settings, setSettings] = useState(folder?.share_settings || {});
   const [copied, setCopied] = useState(false);
 
@@ -1876,219 +1867,169 @@ function FolderShareSettings({ folder, onUpdateSettings, onGenerateLink }) {
             <Settings2 className="w-4 h-4" />
             Configure Portal
           </Link>
-          <Link
-            to="/portal"
-            target="_blank"
+          <button
+            onClick={onPreviewPortal}
             className="flex items-center justify-center gap-2 px-4 py-2.5 bg-zinc-700/50 hover:bg-zinc-700 text-zinc-300 rounded-lg text-sm font-medium transition-colors"
           >
             <ExternalLink className="w-4 h-4" />
             Preview
-          </Link>
+          </button>
         </div>
       </div>
     </div>
   );
 }
 
-// Shareable Folder View - Client Portal
+// Shareable Folder View - Client Portal (matches new portal design)
 function ShareableFolderView({ folder, projects, tasks }) {
   const colorConfig = FOLDER_COLORS.find(c => c.id === folder?.cover_color) || FOLDER_COLORS[0];
   const settings = folder?.share_settings || {};
+  const primaryColor = '#06b6d4'; // cyan-500
 
   if (!folder) return null;
 
   const completedProjects = projects.filter(p => p.status === 'completed').length;
-  const activeProjects = projects.filter(p => p.status === 'active').length;
+  const activeProjects = projects.filter(p => p.status === 'active' || p.status === 'in_progress').length;
   const overallProgress = projects.length > 0
     ? Math.round(projects.reduce((acc, p) => acc + (p.progress || 0), 0) / projects.length)
     : 0;
 
+  const STATUS_MAP = {
+    active: { color: '#10b981', label: 'Active' },
+    in_progress: { color: '#06b6d4', label: 'In Progress' },
+    completed: { color: '#8b5cf6', label: 'Completed' },
+    on_hold: { color: '#f59e0b', label: 'On Hold' },
+    cancelled: { color: '#ef4444', label: 'Cancelled' },
+    discovery: { color: '#6366f1', label: 'Discovery' },
+    planning: { color: '#f59e0b', label: 'Planning' },
+  };
+
   return (
-    <div className="min-h-screen bg-[#0a0a0b]">
-      {/* Hero Header */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0">
-          <div className={`absolute top-0 left-1/4 w-96 h-96 ${colorConfig.bg} rounded-full blur-3xl opacity-50`} />
-          <div className="absolute top-20 right-1/4 w-80 h-80 bg-purple-500/5 rounded-full blur-3xl" />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#0a0a0b]" />
+    <div className="min-h-screen bg-[#0a0a0b] p-6 lg:p-10">
+      <div className="w-full">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-sm text-zinc-500 mb-6">
+          <span>Home</span>
+          <ChevronRight className="w-3.5 h-3.5" />
+          <span className="text-zinc-300">Dashboard</span>
         </div>
 
-        <div className="relative max-w-5xl mx-auto px-6 pt-12 pb-16">
-          {/* Breadcrumb */}
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-800/50 backdrop-blur-sm border border-zinc-700/50">
-              <FolderOpen className={`w-3.5 h-3.5 ${colorConfig.text}`} />
-              <span className="text-zinc-400 text-sm">Client Portal</span>
-              {folder.client_company && (
-                <>
-                  <ChevronRight className="w-3 h-3 text-zinc-600" />
-                  <span className="text-zinc-300 text-sm">{folder.client_company}</span>
-                </>
-              )}
-            </div>
-          </motion.div>
-
-          {/* Title */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">{folder.name}</h1>
-            {folder.description && (
-              <p className="text-lg text-zinc-400 mb-6 max-w-2xl leading-relaxed">{folder.description}</p>
-            )}
-            {settings.welcome_message && (
-              <div className={`p-4 rounded-xl ${colorConfig.bg} border ${colorConfig.border} mb-6`}>
-                <p className={`text-sm ${colorConfig.text}`}>{settings.welcome_message}</p>
-              </div>
-            )}
-          </motion.div>
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-white tracking-tight">{folder.name}</h1>
+          <p className="text-zinc-400 mt-2">
+            {settings.welcome_message || folder.description || `Welcome to your client portal.`}
+          </p>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="max-w-5xl mx-auto px-6 -mt-4">
-        {/* Stats Overview */}
+        {/* Stat Cards */}
         {(settings.show_overall_stats !== false) && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-zinc-800/60 to-zinc-900/60 border border-zinc-700/40 backdrop-blur-xl mb-8"
-          >
-            <div className={`absolute inset-0 bg-gradient-to-br ${colorConfig.bg} opacity-30`} />
-            <div className="relative p-8">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                <div>
-                  <h2 className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1">Portfolio Overview</h2>
-                  <div className="flex items-baseline gap-2">
-                    <span className={`text-5xl font-bold bg-gradient-to-r ${colorConfig.gradient} bg-clip-text text-transparent`}>
-                      {projects.length}
-                    </span>
-                    <span className="text-zinc-500">total projects</span>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+            {[
+              { icon: FolderKanban, label: 'Total Projects', value: projects.length, color: primaryColor },
+              { icon: Rocket, label: 'Active', value: activeProjects, color: '#f59e0b' },
+              { icon: CheckCircle2, label: 'Completed', value: completedProjects, color: '#10b981' },
+              { icon: TrendingUp, label: 'Avg. Progress', value: `${overallProgress}%`, color: '#8b5cf6' },
+            ].map((stat) => (
+              <div key={stat.label} className="relative overflow-hidden p-5 bg-white/[0.02] border border-zinc-800/60 rounded-2xl">
+                <div className="flex items-center gap-4">
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: `${stat.color}15` }}
+                  >
+                    <stat.icon className="w-5 h-5" style={{ color: stat.color }} />
                   </div>
-                </div>
-
-                <div className="flex gap-4">
-                  <div className="text-center px-6 py-3 rounded-xl bg-zinc-800/50 border border-zinc-700/30">
-                    <div className="text-lg font-bold text-emerald-400">{completedProjects}</div>
-                    <div className="text-[10px] text-zinc-500 mt-1">Completed</div>
-                  </div>
-                  <div className="text-center px-6 py-3 rounded-xl bg-zinc-800/50 border border-zinc-700/30">
-                    <div className={`text-lg font-bold ${colorConfig.text}`}>{activeProjects}</div>
-                    <div className="text-xs text-zinc-500 mt-1">Active</div>
-                  </div>
-                  <div className="text-center px-6 py-3 rounded-xl bg-zinc-800/50 border border-zinc-700/30">
-                    <div className="text-lg font-bold text-white">{overallProgress}%</div>
-                    <div className="text-xs text-zinc-500 mt-1">Avg Progress</div>
+                  <div>
+                    <p className="text-2xl font-bold text-white tracking-tight">{stat.value}</p>
+                    <p className="text-xs text-zinc-500 font-medium">{stat.label}</p>
                   </div>
                 </div>
               </div>
-
-              <div className="relative h-3 bg-zinc-800 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${overallProgress}%` }}
-                  transition={{ duration: 1, ease: "easeOut" }}
-                  className={`absolute inset-y-0 left-0 bg-gradient-to-r ${colorConfig.gradient} rounded-full`}
-                />
-              </div>
-            </div>
-          </motion.div>
+            ))}
+          </div>
         )}
 
-        {/* Projects Grid */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-          <div className="flex items-center gap-3 mb-6">
-            <div className={`w-8 h-8 rounded-xl ${colorConfig.bg} border ${colorConfig.border} flex items-center justify-center`}>
-              <Layers className={`w-5 h-5 ${colorConfig.text}`} />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-white">Your Projects</h2>
-              <p className="text-xs text-zinc-500">Track the status of all your orders</p>
-            </div>
-          </div>
+        {/* Section Header */}
+        <div className="flex items-center gap-3 mb-4">
+          <FolderKanban className="w-4 h-4" style={{ color: primaryColor }} />
+          <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wider">Your Projects</h2>
+          <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-zinc-800/80 text-zinc-500">
+            {projects.length}
+          </span>
+        </div>
 
-          <div className="grid md:grid-cols-2 gap-4">
-            {projects.map((project, i) => {
-              const statusConfig = PROJECT_STATUSES.find(s => s.id === project.status) || PROJECT_STATUSES[0];
-              const projectTasks = tasks.filter(t => t.project_id === project.id);
-              const completedTasks = projectTasks.filter(t => t.status === 'completed' || t.status === 'success').length;
-              const progress = projectTasks.length > 0 ? Math.round((completedTasks / projectTasks.length) * 100) : project.progress || 0;
-              const StatusIcon = statusConfig.icon;
+        {/* Project List */}
+        <div className="space-y-3">
+          {projects.map((project) => {
+            const status = STATUS_MAP[project.status] || STATUS_MAP.active;
+            const projectTasks = tasks.filter(t => t.project_id === project.id);
+            const completedTasks = projectTasks.filter(t => t.status === 'completed' || t.status === 'success').length;
+            const progress = projectTasks.length > 0 ? Math.round((completedTasks / projectTasks.length) * 100) : project.progress || 0;
 
-              return (
-                <motion.div
-                  key={project.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 * i }}
-                  className="rounded-xl bg-zinc-800/40 border border-zinc-700/40 overflow-hidden hover:border-zinc-600 transition-all group"
-                >
-                  <div className={`h-1 bg-gradient-to-r ${
-                    project.status === 'completed' ? 'from-emerald-500 to-emerald-400' :
-                    project.status === 'active' ? `${colorConfig.gradient}` :
-                    'from-zinc-600 to-zinc-500'
-                  }`} />
+            // Progress ring
+            const radius = 16;
+            const circumference = 2 * Math.PI * radius;
+            const strokeDashoffset = circumference - (progress / 100) * circumference;
 
-                  <div className="p-5">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-xl ${statusConfig.bgColor} flex items-center justify-center`}>
-                          <StatusIcon className={`w-5 h-5 ${statusConfig.textColor}`} />
-                        </div>
-                        <div>
-                          <h3 className="font-medium text-white group-hover:text-cyan-400 transition-colors">
-                            {project.name}
-                          </h3>
-                          <p className="text-xs text-zinc-500">{project.category || 'Project'}</p>
-                        </div>
-                      </div>
-                      <Badge variant="outline" className={`${statusConfig.bgColor} ${statusConfig.textColor} ${statusConfig.borderColor}`}>
-                        {statusConfig.label}
-                      </Badge>
-                    </div>
-
-                    {(settings.show_individual_progress !== false) && (
-                      <>
-                        <div className="flex items-center justify-between text-sm mb-2">
-                          <span className="text-zinc-500">Progress</span>
-                          <span className={`font-medium ${statusConfig.textColor}`}>{progress}%</span>
-                        </div>
-                        <div className="relative h-2 bg-zinc-800 rounded-full overflow-hidden mb-4">
-                          <div
-                            className={`absolute inset-y-0 left-0 rounded-full ${
-                              project.status === 'completed' ? 'bg-emerald-400' : `bg-gradient-to-r ${colorConfig.gradient}`
-                            }`}
-                            style={{ width: `${progress}%` }}
-                          />
-                        </div>
-                      </>
-                    )}
-
-                    {project.due_date && (
-                      <div className="flex items-center gap-2 text-xs text-zinc-500">
-                        <Calendar className="w-3.5 h-3.5" />
-                        <span>Due {new Date(project.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-                      </div>
-                    )}
+            return (
+              <div
+                key={project.id}
+                className="group flex items-center gap-4 p-4 bg-white/[0.02] hover:bg-white/[0.05] border border-zinc-800/60 hover:border-zinc-700/60 rounded-xl transition-all"
+              >
+                {/* Progress Ring */}
+                {(settings.show_individual_progress !== false) && (
+                  <div className="relative shrink-0">
+                    <svg width="40" height="40" className="transform -rotate-90">
+                      <circle cx="20" cy="20" r={radius} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="3" />
+                      <circle
+                        cx="20" cy="20" r={radius} fill="none"
+                        stroke={primaryColor} strokeWidth="3" strokeLinecap="round"
+                        strokeDasharray={circumference} strokeDashoffset={strokeDashoffset}
+                        className="transition-all duration-500"
+                      />
+                    </svg>
+                    <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-zinc-400">
+                      {progress}
+                    </span>
                   </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        </motion.div>
-      </div>
+                )}
 
-      {/* Footer */}
-      <div className="border-t border-zinc-800/50 bg-zinc-900/30 backdrop-blur-sm mt-12">
-        <div className="max-w-5xl mx-auto px-6 py-6">
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2 text-zinc-500">
-              <div className={`w-6 h-6 rounded-lg ${colorConfig.bg} flex items-center justify-center`}>
-                <FolderOpen className={`w-3 h-3 ${colorConfig.text}`} />
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2.5">
+                    <h3 className="font-medium text-white group-hover:text-cyan-300 transition-colors truncate">
+                      {project.name || project.title}
+                    </h3>
+                    <span
+                      className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full shrink-0"
+                      style={{ backgroundColor: `${status.color}15`, color: status.color }}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: status.color }} />
+                      {status.label}
+                    </span>
+                  </div>
+                  {project.due_date && (
+                    <div className="flex items-center gap-1.5 mt-1.5 text-xs text-zinc-500">
+                      <Calendar className="w-3 h-3" />
+                      Due {new Date(project.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </div>
+                  )}
+                </div>
+
+                <ChevronRight className="w-4 h-4 text-zinc-700 group-hover:text-zinc-400 transition-colors shrink-0" />
               </div>
-              <span>Client Portal</span>
+            );
+          })}
+
+          {projects.length === 0 && (
+            <div className="flex flex-col items-center py-16 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-zinc-800/50 flex items-center justify-center mb-4">
+                <Inbox className="w-7 h-7 text-zinc-600" />
+              </div>
+              <p className="text-white font-medium">No projects yet</p>
+              <p className="text-sm text-zinc-500 mt-1 max-w-xs">Projects will appear here once they're shared with you</p>
             </div>
-            <span className="text-zinc-600">Last updated {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
-          </div>
+          )}
         </div>
       </div>
     </div>
@@ -2457,41 +2398,28 @@ function ProjectDetailSheet({
     onUpdateProject?.(project.id, { client_updates: updatedUpdates });
   };
 
-  // Share Preview Modal - Premium Design
-  if (showSharePreview) {
-    return (
-      <Sheet open={isOpen} onOpenChange={onClose}>
-        <SheetContent className="w-full sm:max-w-5xl bg-[#0a0a0b] border-zinc-800/60 overflow-y-auto p-0">
-          <SheetDescription className="sr-only">Client preview mode for shared project</SheetDescription>
-          <div className="sticky top-0 z-10 bg-[#0a0a0b]/95 backdrop-blur-xl border-b border-zinc-800/50 p-4">
-            <div className="flex items-center justify-between">
-              <Button
-                size="sm"
-                onClick={() => setShowSharePreview(false)}
-                className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 hover:border-zinc-600"
-              >
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                Back to Project
-              </Button>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border border-cyan-500/20">
-                  <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-                  <span className="text-xs font-medium text-cyan-400">Client Preview Mode</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <ShareableProjectView
-            project={project}
-            tasks={tasks}
-            isOwner={true}
-            onAddUpdate={handleAddClientUpdate}
-            onDeleteUpdate={handleDeleteClientUpdate}
-          />
-        </SheetContent>
-      </Sheet>
-    );
-  }
+  // Open actual portal in new tab for preview
+  const handlePreviewPortal = async () => {
+    try {
+      const orgId = project?.organization_id;
+      if (!orgId) {
+        toast.error('No organization linked to this project');
+        return;
+      }
+      const { data: org } = await supabase
+        .from('organizations')
+        .select('slug')
+        .eq('id', orgId)
+        .single();
+      if (org?.slug) {
+        window.open(`/portal/${org.slug}/project/${project.id}`, '_blank');
+      } else {
+        window.open(`/portal`, '_blank');
+      }
+    } catch {
+      toast.error('Could not open portal preview');
+    }
+  };
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
@@ -2557,7 +2485,7 @@ function ProjectDetailSheet({
             <Button
               size="sm"
               className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-zinc-700 hover:border-zinc-600 transition-all"
-              onClick={() => setShowSharePreview(true)}
+              onClick={handlePreviewPortal}
             >
               <Eye className="w-4 h-4 mr-1" /> Preview
             </Button>
@@ -2846,7 +2774,7 @@ function ProjectDetailSheet({
                       </div>
                     </div>
                     <Button
-                      onClick={() => setShowSharePreview(true)}
+                      onClick={handlePreviewPortal}
                       className="bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/20 border-0"
                     >
                       <Eye className="w-4 h-4 mr-2" />
