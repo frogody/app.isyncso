@@ -77,15 +77,27 @@ export default function ClientLogin() {
     setLoading(true);
     setError(null);
 
-    const result = await signInWithMagicLink(email, orgSlug);
+    try {
+      // Safety timeout: if signInWithMagicLink takes too long, unblock the UI
+      const timeoutPromise = new Promise((resolve) =>
+        setTimeout(() => resolve({ success: false, error: 'Request timed out. Please try again.' }), 15000)
+      );
 
-    if (result.success) {
-      setSent(true);
-    } else {
-      setError(result.error);
+      const result = await Promise.race([
+        signInWithMagicLink(email, orgSlug),
+        timeoutPromise,
+      ]);
+
+      if (result.success) {
+        setSent(true);
+      } else {
+        setError(result.error);
+      }
+    } catch (err) {
+      setError(err.message || 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   if (authLoading) {

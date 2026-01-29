@@ -108,7 +108,12 @@ export function usePortalClient() {
         setSession(currentSession);
 
         if (currentSession?.user) {
-          await fetchClientData(currentSession.user.id, currentSession.user.email);
+          const clientResult = await fetchClientData(currentSession.user.id, currentSession.user.email);
+          // If there's a session but no portal client, sign out to prevent stale auth locks
+          if (!clientResult && isMounted) {
+            await supabase.auth.signOut();
+            setSession(null);
+          }
         }
       } catch (err) {
         console.error('Error initializing auth:', err);
@@ -162,11 +167,15 @@ export function usePortalClient() {
 
       if (organizationSlug) {
         // Look up org first, then find client within it
-        const { data: org } = await supabase
+        const { data: org, error: orgError } = await supabase
           .from('organizations')
           .select('id')
           .eq('slug', organizationSlug)
           .single();
+
+        if (orgError) {
+          console.warn('Org lookup error (falling back):', orgError.message);
+        }
 
         if (org) {
           const { data, error: clientError } = await supabase
@@ -213,6 +222,7 @@ export function usePortalClient() {
 
       return { success: true, message: 'Check your email for the login link!' };
     } catch (err) {
+      console.error('signInWithMagicLink error:', err);
       setError(err.message);
       return { success: false, error: err.message };
     }
