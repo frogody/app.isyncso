@@ -1390,12 +1390,18 @@ function FolderDetailSheet({
   };
 
   // Open actual portal in new tab for preview
+  const { user: portalUser } = useUser();
   const handlePreviewPortal = async () => {
     try {
+      const orgId = folder?.organization_id || portalUser?.organization_id;
+      if (!orgId) {
+        toast.error('No organization found');
+        return;
+      }
       const { data: org } = await supabase
         .from('organizations')
         .select('slug')
-        .eq('id', folder?.organization_id)
+        .eq('id', orgId)
         .single();
       if (org?.slug) {
         window.open(`/portal/${org.slug}`, '_blank');
@@ -2399,9 +2405,10 @@ function ProjectDetailSheet({
   };
 
   // Open actual portal in new tab for preview
+  const { user: projPortalUser } = useUser();
   const handlePreviewPortal = async () => {
     try {
-      const orgId = project?.organization_id;
+      const orgId = project?.organization_id || projPortalUser?.organization_id;
       if (!orgId) {
         toast.error('No organization linked to this project');
         return;
@@ -3117,6 +3124,60 @@ export default function Projects() {
       // Store folders for potential use
       if (foldersData.length > 0) {
         console.log('[Projects] Loaded folders:', foldersData.length);
+      }
+
+      // Auto-create client folders for portal client companies
+      try {
+        if (user?.organization_id) {
+          const { data: portalClients } = await supabase
+            .from('portal_clients')
+            .select('company_name')
+            .eq('organization_id', user.organization_id)
+            .in('status', ['active', 'invited']);
+
+          if (portalClients?.length > 0) {
+            const companyNames = [...new Set(portalClients.map(c => c.company_name).filter(Boolean))];
+            const savedFolders = JSON.parse(localStorage.getItem('project_folders') || '[]');
+            const existingCompanies = savedFolders.map(f => f.client_company?.toLowerCase()).filter(Boolean);
+            const colors = ['cyan', 'purple', 'emerald', 'amber', 'rose'];
+            let added = 0;
+
+            companyNames.forEach((company, i) => {
+              if (!existingCompanies.includes(company.toLowerCase())) {
+                savedFolders.push({
+                  id: `folder_client_${Date.now()}_${i}`,
+                  name: `${company} Projects`,
+                  description: `Client folder for ${company}`,
+                  client_name: '',
+                  client_email: '',
+                  client_company: company,
+                  cover_color: colors[i % colors.length],
+                  project_ids: [],
+                  share_settings: {
+                    is_public: false,
+                    share_link: '',
+                    allow_comments: true,
+                    show_individual_progress: true,
+                    show_overall_stats: true,
+                    password_protected: false,
+                    password: '',
+                    welcome_message: '',
+                  },
+                  created_date: new Date().toISOString(),
+                });
+                added++;
+              }
+            });
+
+            if (added > 0) {
+              localStorage.setItem('project_folders', JSON.stringify(savedFolders));
+              setFolders(savedFolders);
+              console.log(`[Projects] Auto-created ${added} client folder(s)`);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('[Projects] Error auto-creating client folders:', err);
       }
 
       const taskList = tasksData.map(t => ({

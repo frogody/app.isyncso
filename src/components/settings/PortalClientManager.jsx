@@ -441,6 +441,41 @@ function ClientSheet({
         return;
       }
 
+      // Auto-create client folder in Projects if it doesn't exist
+      if (companyValue) {
+        try {
+          const savedFolders = JSON.parse(localStorage.getItem('project_folders') || '[]');
+          const exists = savedFolders.some(f => f.client_company?.toLowerCase() === companyValue.toLowerCase());
+          if (!exists) {
+            const colors = ['cyan', 'purple', 'emerald', 'amber', 'rose'];
+            savedFolders.push({
+              id: `folder_client_${Date.now()}`,
+              name: `${companyValue} Projects`,
+              description: `Client folder for ${companyValue}`,
+              client_name: '',
+              client_email: '',
+              client_company: companyValue,
+              cover_color: colors[savedFolders.length % colors.length],
+              project_ids: [],
+              share_settings: {
+                is_public: false,
+                share_link: '',
+                allow_comments: true,
+                show_individual_progress: true,
+                show_overall_stats: true,
+                password_protected: false,
+                password: '',
+                welcome_message: '',
+              },
+              created_date: new Date().toISOString(),
+            });
+            localStorage.setItem('project_folders', JSON.stringify(savedFolders));
+          }
+        } catch (err) {
+          console.error('Error auto-creating client folder:', err);
+        }
+      }
+
       toast.success(`${newClients.length} client(s) added! Sending invites...`);
       onClose();
       await onRefresh();
