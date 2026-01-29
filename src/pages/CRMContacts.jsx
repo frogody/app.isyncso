@@ -1270,49 +1270,36 @@ export default function CRMContacts() {
   const currentTypeLabel = CONTACT_TYPES.find(t => t.id === selectedContactType)?.label || 'Contacts';
 
   return (
-    <div className="max-w-full mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6">
+    <div className="max-w-full mx-auto px-3 sm:px-4 md:px-6 pr-14 py-4 sm:py-6">
       {/* Header */}
-      <div className="flex flex-col gap-4 mb-4 sm:mb-6">
-        {/* Title Row */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-white">{currentTypeLabel}</h1>
-            <p className="text-xs sm:text-sm text-zinc-400">
-              {filteredContacts.length} {selectedContactType === 'all' ? 'contacts' : currentTypeLabel.toLowerCase()} in pipeline
-            </p>
-          </div>
-          {/* Mobile: Primary action only */}
-          <Button onClick={() => {
-            setEditingContact(null);
-            const preselectedType = selectedContactType !== 'all' && selectedContactType !== 'supplier' ? selectedContactType : 'lead';
-            setFormData({ ...emptyContact, contact_type: preselectedType });
-            setShowModal(true);
-          }} className="bg-cyan-600/80 hover:bg-cyan-600 text-white sm:hidden min-h-[44px]">
-            <Plus className="w-5 h-5" />
-          </Button>
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4 sm:mb-6">
+        <div>
+          <h1 className="text-lg font-bold text-white">{currentTypeLabel}</h1>
+          <p className="text-xs text-zinc-400">
+            {filteredContacts.length} {selectedContactType === 'all' ? 'contacts' : currentTypeLabel.toLowerCase()} in pipeline
+          </p>
         </div>
 
-        {/* Actions Row - scrollable on mobile */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-3 px-3 sm:mx-0 sm:px-0 sm:overflow-visible scrollbar-hide">
+        <div className="flex flex-wrap items-center gap-2">
           {/* View Mode Toggle */}
           <div className="flex items-center bg-zinc-800/50 rounded-lg p-1 flex-shrink-0">
             <button
               onClick={() => setViewMode("pipeline")}
-              className={`p-2 sm:p-2 rounded text-sm min-w-[40px] min-h-[40px] flex items-center justify-center ${viewMode === "pipeline" ? "bg-zinc-700 text-white" : "text-zinc-400"}`}
+              className={`p-2 rounded text-sm ${viewMode === "pipeline" ? "bg-zinc-700 text-white" : "text-zinc-400"}`}
               title="Pipeline View"
             >
               <Kanban className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode("grid")}
-              className={`p-2 sm:p-2 rounded text-sm min-w-[40px] min-h-[40px] flex items-center justify-center ${viewMode === "grid" ? "bg-zinc-700 text-white" : "text-zinc-400"}`}
+              className={`p-2 rounded text-sm ${viewMode === "grid" ? "bg-zinc-700 text-white" : "text-zinc-400"}`}
               title="Grid View"
             >
               <LayoutGrid className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode("table")}
-              className={`p-2 sm:p-2 rounded text-sm min-w-[40px] min-h-[40px] flex items-center justify-center ${viewMode === "table" ? "bg-zinc-700 text-white" : "text-zinc-400"}`}
+              className={`p-2 rounded text-sm ${viewMode === "table" ? "bg-zinc-700 text-white" : "text-zinc-400"}`}
               title="Table View"
             >
               <Table2 className="w-4 h-4" />
@@ -1323,24 +1310,21 @@ export default function CRMContacts() {
             variant="outline"
             size="sm"
             onClick={() => setShowAnalytics(!showAnalytics)}
-            className={`border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700 flex-shrink-0 min-h-[40px] ${showAnalytics ? "bg-cyan-500/15 text-cyan-400/80 border-cyan-500/30" : ""}`}
+            className={`border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700 ${showAnalytics ? "bg-cyan-500/15 text-cyan-400/80 border-cyan-500/30" : ""}`}
           >
-            <BarChart3 className="w-4 h-4 sm:mr-1" />
-            <span className="hidden sm:inline">Analytics</span>
+            <BarChart3 className="w-4 h-4 mr-1" /> Analytics
           </Button>
 
-          <Button variant="outline" size="sm" onClick={handleExport} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700 flex-shrink-0 min-h-[40px]">
-            <Download className="w-4 h-4 sm:mr-1" />
-            <span className="hidden sm:inline">Export</span>
+          <Button variant="outline" size="sm" onClick={handleExport} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
+            <Download className="w-4 h-4 mr-1" /> Export
           </Button>
 
           <Button
             variant="outline"
             onClick={() => setShowQuickAdd(true)}
-            className="border-cyan-600/50 bg-cyan-600/10 text-cyan-400 hover:bg-cyan-600/20 flex-shrink-0 min-h-[40px]"
+            className="border-cyan-600/50 bg-cyan-600/10 text-cyan-400 hover:bg-cyan-600/20"
           >
-            <Sparkles className="w-4 h-4 sm:mr-1" />
-            <span className="hidden sm:inline">Quick Add</span>
+            <Sparkles className="w-4 h-4 mr-1" /> Quick Add
           </Button>
 
           <Button onClick={() => {
@@ -1348,7 +1332,7 @@ export default function CRMContacts() {
             const preselectedType = selectedContactType !== 'all' && selectedContactType !== 'supplier' ? selectedContactType : 'lead';
             setFormData({ ...emptyContact, contact_type: preselectedType });
             setShowModal(true);
-          }} className="bg-cyan-600/80 hover:bg-cyan-600 text-white hidden sm:flex flex-shrink-0 min-h-[40px]">
+          }} className="bg-cyan-600/80 hover:bg-cyan-600 text-white">
             <Plus className="w-4 h-4 mr-1" /> Add Contact
           </Button>
         </div>
