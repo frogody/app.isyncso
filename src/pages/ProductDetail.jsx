@@ -1763,7 +1763,7 @@ export default function ProductDetail() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black">
-        <div className="max-w-full mx-auto px-4 lg:px-6 pr-14 py-4 space-y-4">
+        <div className="max-w-full mx-auto px-4 lg:px-6 py-4 space-y-4">
           <Skeleton className="h-10 w-48 bg-zinc-800/50" />
           <Skeleton className="h-12 w-full bg-zinc-800/50 rounded-lg" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -1782,7 +1782,7 @@ export default function ProductDetail() {
   if (error || !product) {
     return (
       <div className="min-h-screen bg-black">
-        <div className="max-w-full mx-auto px-4 lg:px-6 pr-14 py-4">
+        <div className="max-w-full mx-auto px-4 lg:px-6 py-4">
           <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-8 text-center max-w-md mx-auto">
             <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mx-auto mb-4">
               <XCircle className="w-8 h-8 text-red-400" />
@@ -1802,7 +1802,7 @@ export default function ProductDetail() {
 
   return (
     <div className="min-h-screen bg-black">
-      <div className="max-w-full mx-auto px-4 lg:px-6 pr-14 py-4 space-y-4">
+      <div className="max-w-full mx-auto px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">

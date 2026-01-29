@@ -1270,7 +1270,7 @@ export default function CRMContacts() {
   const currentTypeLabel = CONTACT_TYPES.find(t => t.id === selectedContactType)?.label || 'Contacts';
 
   return (
-    <div className="max-w-full mx-auto px-3 sm:px-4 md:px-6 pr-14 py-4 sm:py-6">
+    <div className="max-w-full mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4 sm:mb-6">
         <div>

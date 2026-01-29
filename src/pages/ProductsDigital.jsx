@@ -224,7 +224,7 @@ export default function ProductsDigital() {
   }), [products, digitalProducts]);
 
   return (
-    <div className="max-w-full mx-auto px-4 lg:px-6 pr-14 py-4 space-y-4">
+    <div className="max-w-full mx-auto px-4 lg:px-6 py-4 space-y-4">
       {/* Page Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
         <div>
@@ -334,7 +334,7 @@ export default function ProductsDigital() {
       {/* Products Grid/List */}
       {loading ? (
         <div className={viewMode === 'grid'
-          ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'
+          ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4'
           : 'space-y-3'
         }>
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
@@ -346,7 +346,7 @@ export default function ProductsDigital() {
         </div>
       ) : filteredProducts.length > 0 ? (
         viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             {filteredProducts.map((product, index) => (
               <div key={product.id}>
                 <ProductGridCard

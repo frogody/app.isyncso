@@ -616,7 +616,7 @@ export default function InventoryImport() {
   };
 
   return (
-    <div className="max-w-full mx-auto px-4 lg:px-6 pr-14 py-4 space-y-4">
+    <div className="max-w-full mx-auto px-4 lg:px-6 py-4 space-y-4">
       {/* Page Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
         <div>

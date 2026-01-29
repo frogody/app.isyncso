@@ -34,7 +34,7 @@ const formatRelativeTime = (dateString) => {
   return date.toLocaleDateString();
 };
 
-export default function NotificationsDropdown() {
+export default function NotificationsDropdown({ sidebarMode = false }) {
   const [open, setOpen] = useState(false);
   const {
     notifications,
@@ -114,22 +114,43 @@ export default function NotificationsDropdown() {
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Bell button */}
-      <button
-        onClick={() => setOpen(!open)}
-        className="relative p-2 rounded-lg hover:bg-zinc-800 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500/50"
-        aria-label={`Notifications ${unreadCount > 0 ? `(${unreadCount} unread)` : ""}`}
-      >
-        <Bell className={`w-5 h-5 ${unreadCount > 0 ? "text-white" : "text-zinc-400"}`} />
-        {unreadCount > 0 && (
-          <motion.span
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-red-500 rounded-full flex items-center justify-center text-[10px] text-white font-bold px-1"
-          >
-            {unreadCount > 99 ? "99+" : unreadCount}
-          </motion.span>
-        )}
-      </button>
+      {sidebarMode ? (
+        <button
+          onClick={() => setOpen(!open)}
+          className={`relative flex items-center justify-center min-h-[44px] p-3 rounded-xl transition-all duration-200 w-full active:scale-[0.98]
+            ${unreadCount > 0 ? 'text-red-400 hover:text-red-300 hover:bg-red-950/20' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'}
+          `}
+          aria-label={`Notifications ${unreadCount > 0 ? `(${unreadCount} unread)` : ""}`}
+        >
+          <Bell className="w-5 h-5 flex-shrink-0 transition-colors" />
+          {unreadCount > 0 && (
+            <motion.span
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="absolute top-1.5 right-1.5 min-w-[18px] h-[18px] bg-red-500 rounded-full flex items-center justify-center text-[10px] text-white font-bold px-1"
+            >
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </motion.span>
+          )}
+        </button>
+      ) : (
+        <button
+          onClick={() => setOpen(!open)}
+          className="relative p-2 rounded-lg hover:bg-zinc-800 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500/50"
+          aria-label={`Notifications ${unreadCount > 0 ? `(${unreadCount} unread)` : ""}`}
+        >
+          <Bell className={`w-5 h-5 ${unreadCount > 0 ? "text-white" : "text-zinc-400"}`} />
+          {unreadCount > 0 && (
+            <motion.span
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-red-500 rounded-full flex items-center justify-center text-[10px] text-white font-bold px-1"
+            >
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </motion.span>
+          )}
+        </button>
+      )}
 
       {/* Dropdown */}
       <AnimatePresence>
@@ -139,7 +160,9 @@ export default function NotificationsDropdown() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 top-full mt-2 w-[380px] bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden z-50"
+            className={`absolute w-[380px] bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl overflow-hidden z-50 ${
+              sidebarMode ? 'left-full bottom-0 ml-2' : 'right-0 top-full mt-2'
+            }`}
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-zinc-800">

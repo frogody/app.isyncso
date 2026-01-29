@@ -164,13 +164,6 @@ const navigationItems = [
 // Bottom navigation items (Admin, Settings)
 const bottomNavItems = [
   {
-    title: "Client Portal",
-    url: "/portal",
-    icon: ExternalLink,
-    permission: "projects.view", // Anyone who can view projects can access portal
-    isExternal: true, // Opens in new tab
-  },
-  {
     title: "Admin",
     url: "/admin",
     icon: Shield,
@@ -1112,6 +1105,9 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
 
       {/* Bottom Section */}
       <div className={`p-4 space-y-1 bg-gradient-to-t from-black via-black to-transparent ${isMobile ? 'pb-6' : ''}`}>
+        {/* Notifications bell */}
+        <NotificationsDropdown sidebarMode={!isMobile} />
+
         {/* Settings and Admin - at the bottom */}
         {filteredBottomNavItems.map((item) => {
           const isActive = isNavItemActive(item, location.pathname);
@@ -1620,7 +1616,6 @@ export default function Layout({ children, currentPageName }) {
                 </div>
               )}
               <div className="flex items-center gap-1">
-                <NotificationsDropdown />
               <Sheet>
                 <SheetTrigger asChild>
                   <Button
@@ -1647,10 +1642,7 @@ export default function Layout({ children, currentPageName }) {
             </div>
           </div>
 
-          {/* Desktop Top Bar - Only visible on md+ */}
-          <div className="hidden md:flex fixed top-0 right-0 z-40 items-center gap-2 p-3 pr-4">
-            <NotificationsDropdown />
-          </div>
+          {/* Desktop Top Bar removed - notifications moved to sidebar */}
 
           {/* Main Content - Mobile optimized with safe areas */}
           <main
