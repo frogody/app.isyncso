@@ -13,16 +13,16 @@ export function GlassCard({
   ...props
 }) {
   const glowColors = {
-    cyan: 'hover:shadow-[0_0_30px_rgba(6,182,212,0.15)] hover:border-cyan-500/30',
-    sage: 'hover:shadow-[0_0_30px_rgba(134,239,172,0.15)] hover:border-[#86EFAC]/30',
-    indigo: 'hover:shadow-[0_0_30px_rgba(99,102,241,0.15)] hover:border-indigo-500/30',
-    orange: 'hover:shadow-[0_0_30px_rgba(249,115,22,0.15)] hover:border-orange-500/30',
-    amber: 'hover:shadow-[0_0_30px_rgba(245,158,11,0.15)] hover:border-amber-500/30',
-    red: 'hover:shadow-[0_0_30px_rgba(239,68,68,0.15)] hover:border-red-500/30',
-    yellow: 'hover:shadow-[0_0_30px_rgba(234,179,8,0.15)] hover:border-yellow-500/30',
-    blue: 'hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] hover:border-blue-500/30',
-    green: 'hover:shadow-[0_0_30px_rgba(34,197,94,0.15)] hover:border-green-500/30',
-    purple: 'hover:shadow-[0_0_30px_rgba(168,85,247,0.15)] hover:border-purple-500/30',
+    cyan: 'hover:border-cyan-500/30',
+    sage: 'hover:border-[#86EFAC]/30',
+    indigo: 'hover:border-indigo-500/30',
+    orange: 'hover:border-orange-500/30',
+    amber: 'hover:border-amber-500/30',
+    red: 'hover:border-red-500/30',
+    yellow: 'hover:border-yellow-500/30',
+    blue: 'hover:border-blue-500/30',
+    green: 'hover:border-green-500/30',
+    purple: 'hover:border-purple-500/30',
   };
 
   const sizeClasses = {

@@ -199,7 +199,7 @@ const COLOR_CLASSES = {
   }
 };
 
-export default function AppsManagerModal({ isOpen, onClose, onConfigUpdate }) {
+export default function AppsManagerModal({ isOpen, onClose, onConfigUpdate, embedded = false }) {
   const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -323,32 +323,21 @@ export default function AppsManagerModal({ isOpen, onClose, onConfigUpdate }) {
 
   const selectedAppData = selectedApp ? AVAILABLE_APPS.find(a => a.id === selectedApp) : null;
 
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-zinc-900 border-zinc-800 max-w-4xl w-[95vw] max-h-[90vh] p-0 gap-0 overflow-hidden" hideClose>
-        <DialogTitle className="sr-only">Workspace Settings</DialogTitle>
-        {/* Header */}
-        <div className="p-6 pb-4 border-b border-zinc-800 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center">
-              <Settings className="w-6 h-6 text-cyan-400/80" />
-            </div>
-            <div>
-              <h2 className="text-xl font-semibold text-zinc-100">Workspace Settings</h2>
-              <p className="text-sm text-zinc-500">Configure your apps and customize your dashboard</p>
-            </div>
-          </div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 transition-colors">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+  // Load config on mount for embedded mode
+  useEffect(() => {
+    if (embedded) {
+      loadConfig();
+    }
+  }, [embedded]);
 
-        {loading ? (
-          <div className="py-20 flex items-center justify-center">
-            <div className="w-10 h-10 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
-          </div>
-        ) : (
-          <div className="flex flex-col lg:flex-row h-[calc(90vh-180px)] min-h-[400px]">
+  const renderContent = () => (
+    <>
+      {loading ? (
+        <div className="py-20 flex items-center justify-center">
+          <div className="w-10 h-10 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin" />
+        </div>
+      ) : (
+        <div className={`flex flex-col lg:flex-row ${embedded ? 'min-h-[500px]' : 'h-[calc(90vh-180px)] min-h-[400px]'}`}>
             {/* Left Panel - Apps List */}
             <div className="lg:w-80 border-b lg:border-b-0 lg:border-r border-zinc-800 p-4 overflow-y-auto">
               <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3 px-2">
@@ -598,15 +587,17 @@ export default function AppsManagerModal({ isOpen, onClose, onConfigUpdate }) {
         )}
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 p-4 border-t border-zinc-800 bg-zinc-900/80">
-          <Button 
-            variant="outline" 
-            onClick={onClose}
-            className="border-zinc-700 text-zinc-400"
-          >
-            Cancel
-          </Button>
-          <Button 
+        <div className={`flex justify-end gap-3 p-4 border-t border-zinc-800 ${embedded ? '' : 'bg-zinc-900/80'}`}>
+          {!embedded && (
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="border-zinc-700 text-zinc-400"
+            >
+              Cancel
+            </Button>
+          )}
+          <Button
             onClick={handleSave}
             disabled={saving}
             className="bg-cyan-600 hover:bg-cyan-500 text-white px-6"
@@ -614,6 +605,37 @@ export default function AppsManagerModal({ isOpen, onClose, onConfigUpdate }) {
             {saving ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
+      </>
+    );
+
+  if (embedded) {
+    return (
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
+        {renderContent()}
+      </div>
+    );
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="bg-zinc-900 border-zinc-800 max-w-4xl w-[95vw] max-h-[90vh] p-0 gap-0 overflow-hidden" hideClose>
+        <DialogTitle className="sr-only">Workspace Settings</DialogTitle>
+        {/* Header */}
+        <div className="p-6 pb-4 border-b border-zinc-800 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center">
+              <Settings className="w-6 h-6 text-cyan-400/80" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-zinc-100">Workspace Settings</h2>
+              <p className="text-sm text-zinc-500">Configure your apps and customize your dashboard</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        {renderContent()}
       </DialogContent>
     </Dialog>
   );

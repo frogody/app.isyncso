@@ -71,7 +71,7 @@ const WelcomeSection = React.memo(({ user }) => {
 
             <div className="flex flex-wrap gap-3 pt-2">
               <Link to={createPageUrl("Courses")}>
-                <Button className="bg-gradient-to-b from-yellow-500/10 to-yellow-500/5 border border-yellow-500/30 text-yellow-400 hover:border-yellow-500/50 hover:text-yellow-300 shadow-[0_0_15px_rgba(234,179,8,0.1)] hover:shadow-[0_0_20px_rgba(234,179,8,0.2)] transition-all h-9 px-4 text-sm">
+                <Button className="bg-gradient-to-b from-yellow-500/10 to-yellow-500/5 border border-yellow-500/30 text-yellow-400 hover:border-yellow-500/50 hover:text-yellow-300 transition-all h-9 px-4 text-sm">
                   Explore Courses
                 </Button>
               </Link>

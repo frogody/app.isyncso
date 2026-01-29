@@ -63,7 +63,7 @@ export default function RecommendedCourses({ recommendations }) {
                   </div>
                   
                   <Link to={createPageUrl(`CourseDetail?id=${course.id}`)}>
-                    <Button size="sm" className="bg-gradient-to-b from-cyan-500/10 to-cyan-500/5 border border-cyan-500/30 text-cyan-400 hover:border-cyan-500/50 hover:text-cyan-300 shadow-[0_0_12px_rgba(6,182,212,0.1)] hover:shadow-[0_0_16px_rgba(6,182,212,0.2)] transition-all">
+                    <Button size="sm" className="bg-gradient-to-b from-cyan-500/10 to-cyan-500/5 border border-cyan-500/30 text-cyan-400 hover:border-cyan-500/50 hover:text-cyan-300 transition-all">
                       <ArrowRight className="w-4 h-4" />
                     </Button>
                   </Link>

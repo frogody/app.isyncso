@@ -564,7 +564,7 @@ function PricingSection({ details, onDetailsUpdate, currency }) {
         {/* Margin Analysis */}
         <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-6">
-            <TrendingUp className="w-5 h-5 text-green-400" />
+            <TrendingUp className="w-5 h-5 text-cyan-400" />
             <span className="font-medium text-white">Margin Analysis</span>
           </div>
 
@@ -1038,25 +1038,25 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
           icon={Package}
           label="Current Stock"
           value={formatNumber(mergedInventory.quantity)}
-          color={stock.status === 'out' ? 'red' : stock.status === 'low' ? 'amber' : 'green'}
+          color={stock.status === 'out' ? 'red' : stock.status === 'low' ? 'amber' : 'cyan'}
         />
         <StatCard
           icon={AlertTriangle}
           label="Low Stock Alert"
           value={formatNumber(mergedInventory.low_stock_threshold)}
-          color="amber"
+          color="cyan"
         />
         <StatCard
           icon={Boxes}
           label="Reserved"
           value={formatNumber(mergedInventory.reserved)}
-          color="blue"
+          color="cyan"
         />
         <StatCard
           icon={Truck}
           label="Incoming"
           value={formatNumber(mergedInventory.incoming)}
-          color="purple"
+          color="cyan"
         />
       </div>
 
@@ -1172,10 +1172,10 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
       <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-purple-400" />
+            <Building2 className="w-5 h-5 text-cyan-400" />
             <span className="font-medium text-white">Suppliers</span>
             {productSuppliers.length > 0 && (
-              <Badge variant="secondary" className="ml-2 bg-purple-500/20 text-purple-300">
+              <Badge variant="secondary" className="ml-2 bg-cyan-500/20 text-cyan-300">
                 {productSuppliers.length}
               </Badge>
             )}
@@ -1184,7 +1184,7 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
             variant="outline"
             size="sm"
             onClick={() => setShowAddSupplier(true)}
-            className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
+            className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
             disabled={unlinkedSuppliers.length === 0}
           >
             <Building2 className="w-4 h-4 mr-2" />
@@ -1220,7 +1220,7 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
         {/* Suppliers List */}
         {loadingSuppliers ? (
           <div className="flex items-center justify-center py-8">
-            <div className="w-6 h-6 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+            <div className="w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : productSuppliers.length === 0 ? (
           <div className="text-center py-8">
@@ -1236,25 +1236,25 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
                 className={cn(
                   "flex items-center justify-between p-3 rounded-lg border transition-colors",
                   ps.is_preferred
-                    ? "bg-purple-500/10 border-purple-500/30"
+                    ? "bg-cyan-500/10 border-cyan-500/30"
                     : "bg-zinc-900/50 border-white/5 hover:bg-zinc-800/50"
                 )}
               >
                 <div className="flex items-center gap-3">
                   <div className={cn(
                     "w-8 h-8 rounded-lg flex items-center justify-center",
-                    ps.is_preferred ? "bg-purple-500/20" : "bg-zinc-800"
+                    ps.is_preferred ? "bg-cyan-500/20" : "bg-zinc-800"
                   )}>
                     <Building2 className={cn(
                       "w-4 h-4",
-                      ps.is_preferred ? "text-purple-400" : "text-zinc-400"
+                      ps.is_preferred ? "text-cyan-400" : "text-zinc-400"
                     )} />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-white">{ps.suppliers?.name || 'Unknown'}</span>
                       {ps.is_preferred && (
-                        <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30">
+                        <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30">
                           <Star className="w-3 h-3 mr-1" />
                           Preferred
                         </Badge>
@@ -1278,7 +1278,7 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleSetPreferred(ps.supplier_id)}
-                      className="text-zinc-400 hover:text-purple-400"
+                      className="text-zinc-400 hover:text-cyan-400"
                       title="Set as preferred"
                     >
                       <Star className="w-4 h-4" />
@@ -1303,10 +1303,10 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
       <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
-            <History className="w-5 h-5 text-green-400" />
+            <History className="w-5 h-5 text-cyan-400" />
             <span className="font-medium text-white">Purchase History</span>
             {purchaseHistory.length > 0 && (
-              <Badge variant="secondary" className="ml-2 bg-green-500/20 text-green-300">
+              <Badge variant="secondary" className="ml-2 bg-cyan-500/20 text-cyan-300">
                 {purchaseHistory.length}
               </Badge>
             )}
@@ -1315,7 +1315,7 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
             variant="outline"
             size="sm"
             onClick={() => setShowAddPurchase(true)}
-            className="border-green-500/30 text-green-400 hover:bg-green-500/10"
+            className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
           >
             <Euro className="w-4 h-4 mr-2" />
             Add Purchase
@@ -1391,7 +1391,7 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
               <Button variant="ghost" onClick={() => setShowAddPurchase(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleAddPurchase} className="bg-green-600 hover:bg-green-700">
+              <Button onClick={handleAddPurchase} className="bg-cyan-600 hover:bg-cyan-700">
                 Record Purchase
               </Button>
             </div>
@@ -1401,7 +1401,7 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
         {/* Purchase History Table */}
         {loadingPurchases ? (
           <div className="flex items-center justify-center py-8">
-            <div className="w-6 h-6 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
+            <div className="w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : purchaseHistory.length === 0 ? (
           <div className="text-center py-8">
@@ -1511,7 +1511,7 @@ function SpecificationsSection({ details, onDetailsUpdate }) {
       {attributes.length > 0 && (
         <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-6">
-            <Layers className="w-5 h-5 text-purple-400" />
+            <Layers className="w-5 h-5 text-cyan-400" />
             <span className="font-medium text-white">Attributes</span>
           </div>
 
@@ -1530,13 +1530,13 @@ function SpecificationsSection({ details, onDetailsUpdate }) {
       {details?.certifications && details.certifications.length > 0 && (
         <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-6">
-            <Shield className="w-5 h-5 text-green-400" />
+            <Shield className="w-5 h-5 text-cyan-400" />
             <span className="font-medium text-white">Certifications</span>
           </div>
 
           <div className="flex flex-wrap gap-2">
             {details.certifications.map((cert, index) => (
-              <Badge key={index} className="bg-green-500/10 text-green-400 border-green-500/30">
+              <Badge key={index} className="bg-cyan-500/10 text-cyan-400 border-cyan-500/30">
                 <CheckCircle className="w-3 h-3 mr-1" />
                 {cert.name || cert}
               </Badge>

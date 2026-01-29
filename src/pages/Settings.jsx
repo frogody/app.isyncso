@@ -44,7 +44,6 @@ export default function Settings() {
   const [refreshingCompany, setRefreshingCompany] = useState(false);
   const [settings, setSettings] = useState(null);
   const [activeTab, setActiveTab] = useState("profile");
-  const [appsManagerOpen, setAppsManagerOpen] = useState(false);
 
   const [profileForm, setProfileForm] = useState({
     full_name: "",
@@ -600,7 +599,7 @@ export default function Settings() {
     { id: 'portal', label: 'Client Portal', icon: ExternalLink, color: 'green' },
     { id: 'teams', label: 'Teams & Rights', icon: Shield, color: 'cyan' },
     { id: 'integrations', label: 'Integrations', icon: Plug, color: 'cyan' },
-    { id: 'apps', label: 'Apps', icon: LayoutGrid, color: 'cyan' },
+    { id: 'workspace', label: 'Workspace', icon: LayoutGrid, color: 'cyan' },
     { id: 'privacy', label: 'Privacy', icon: Lock, color: 'red' },
     ...(isAdmin ? [{ id: 'admin', label: 'Admin', icon: Brain, color: 'purple' }] : [])
   ];
@@ -1430,30 +1429,15 @@ export default function Settings() {
                 </motion.div>
               )}
 
-              {/* APPS TAB */}
-              {activeTab === 'apps' && (
+              {/* WORKSPACE TAB */}
+              {activeTab === 'workspace' && (
                 <motion.div
-                  key="apps"
+                  key="workspace"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  className="space-y-6"
                 >
-                  <GlassCard className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h3 className="text-sm font-bold text-white">Dashboard Apps</h3>
-                        <p className="text-sm text-zinc-500">Manage which apps are visible on your dashboard</p>
-                      </div>
-                      <Button
-                        onClick={() => setAppsManagerOpen(true)}
-                        className="bg-cyan-600/80 hover:bg-cyan-600 text-white font-medium"
-                      >
-                        <LayoutGrid className="w-4 h-4 mr-2" />
-                        Manage Apps
-                      </Button>
-                    </div>
-                  </GlassCard>
+                  <AppsManagerModal embedded />
                 </motion.div>
               )}
 
@@ -1627,11 +1611,6 @@ export default function Settings() {
         </Dialog>
       </div>
 
-      {/* Apps Manager Modal */}
-      <AppsManagerModal
-        isOpen={appsManagerOpen}
-        onClose={() => setAppsManagerOpen(false)}
-      />
     </div>
   );
 }

@@ -30,13 +30,13 @@ import {
 } from "@/components/ui/select";
 
 const STATUS_COLORS = {
-  published: { bg: 'bg-green-500/10', text: 'text-green-400', border: 'border-green-500/30', label: 'Published' },
-  draft: { bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/30', label: 'Draft' },
+  published: { bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/30', label: 'Published' },
+  draft: { bg: 'bg-zinc-500/10', text: 'text-zinc-400', border: 'border-zinc-500/30', label: 'Draft' },
   archived: { bg: 'bg-zinc-500/10', text: 'text-zinc-400', border: 'border-zinc-500/30', label: 'Archived' },
 };
 
 const STOCK_STATUS = {
-  in_stock: { label: 'In Stock', color: 'text-green-400', icon: CheckCircle },
+  in_stock: { label: 'In Stock', color: 'text-cyan-400', icon: CheckCircle },
   low_stock: { label: 'Low Stock', color: 'text-cyan-400', icon: AlertTriangle },
   out_of_stock: { label: 'Out of Stock', color: 'text-red-400', icon: XCircle },
 };
@@ -284,7 +284,7 @@ export default function ProductsPhysical() {
         </div>
         <div className="w-px h-8 bg-zinc-800" />
         <div className="flex items-center gap-2">
-          <span className="text-lg font-bold text-green-400">{stats.in_stock}</span>
+          <span className="text-lg font-bold text-cyan-400">{stats.in_stock}</span>
           <span className="text-sm text-zinc-500">in stock</span>
         </div>
         <div className="w-px h-8 bg-zinc-800" />

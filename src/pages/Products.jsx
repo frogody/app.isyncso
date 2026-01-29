@@ -39,8 +39,8 @@ import {
 import { toast } from "sonner";
 
 const STATUS_COLORS = {
-  published: { bg: 'bg-green-500/10', text: 'text-green-400', border: 'border-green-500/30' },
-  draft: { bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/30' },
+  published: { bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/30' },
+  draft: { bg: 'bg-zinc-500/10', text: 'text-zinc-400', border: 'border-zinc-500/30' },
   archived: { bg: 'bg-zinc-500/10', text: 'text-zinc-400', border: 'border-zinc-500/30' },
 };
 

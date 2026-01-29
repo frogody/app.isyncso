@@ -26,7 +26,7 @@ export default function EmptyState({
           <Button 
             onClick={onAction}
             disabled={actionDisabled}
-            className="bg-gradient-to-b from-yellow-500/10 to-yellow-500/5 border border-yellow-500/30 text-yellow-400 hover:border-yellow-500/50 hover:text-yellow-300 shadow-[0_0_15px_rgba(234,179,8,0.1)] hover:shadow-[0_0_20px_rgba(234,179,8,0.2)] transition-all text-lg px-8 py-6"
+            className="bg-gradient-to-b from-yellow-500/10 to-yellow-500/5 border border-yellow-500/30 text-yellow-400 hover:border-yellow-500/50 hover:text-yellow-300 transition-all text-lg px-8 py-6"
           >
             <Zap className="w-5 h-5 mr-2 fill-current" />
             {actionLabel}
