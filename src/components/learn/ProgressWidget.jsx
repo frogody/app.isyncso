@@ -110,7 +110,6 @@ export function ProgressWidget({ userId, compact = false }) {
           {gamification.current_streak > 0 && (
             <motion.div 
               className="flex-1 p-2 rounded-lg bg-orange-500/10 border border-orange-500/20"
-              whileHover={{ scale: 1.02 }}
             >
               <div className="flex items-center justify-between">
                 <Flame className="w-4 h-4 text-orange-400" />
@@ -123,7 +122,6 @@ export function ProgressWidget({ userId, compact = false }) {
           )}
           <motion.div 
             className="flex-1 p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20"
-            whileHover={{ scale: 1.02 }}
           >
             <div className="flex items-center justify-between">
               <Star className="w-4 h-4 text-yellow-400" />

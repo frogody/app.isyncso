@@ -481,19 +481,19 @@ export default function CreateBranding() {
                   </p>
                   <div className="flex gap-1 mt-2">
                     <div
-                      className="px-4 py-2 rounded-xl font-medium transition-transform hover:scale-105"
+                      className="px-4 py-2 rounded-xl font-medium transition-transform"
                       style={{ backgroundColor: brandData.colors.primary, color: brandData.colors.background }}
                     >
                       Primary Button
                     </div>
                     <div
-                      className="px-4 py-2 rounded-xl font-medium transition-transform hover:scale-105"
+                      className="px-4 py-2 rounded-xl font-medium transition-transform"
                       style={{ backgroundColor: brandData.colors.secondary, color: brandData.colors.background }}
                     >
                       Secondary Button
                     </div>
                     <div
-                      className="px-4 py-2 rounded-xl font-medium transition-transform hover:scale-105"
+                      className="px-4 py-2 rounded-xl font-medium transition-transform"
                       style={{ backgroundColor: brandData.colors.accent, color: brandData.colors.background }}
                     >
                       Accent Button

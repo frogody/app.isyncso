@@ -159,7 +159,7 @@ function OrbitVisualization() {
                 rotate: [-angle, -angle - 360],
               }}
               transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
-              whileHover={{ scale: 1.2 }}
+
             >
               <agent.icon className={`w-4 h-4 ${colors.text}`} />
             </motion.div>
@@ -426,7 +426,7 @@ export default function AIAssistant() {
         <motion.button
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-600 text-white shadow-lg shadow-cyan-500/30 flex items-center justify-center hover:scale-105 transition-transform"
+          className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-600 text-white shadow-lg shadow-cyan-500/30 flex items-center justify-center transition-transform"
           onClick={() => setShowChat(true)}
         >
           <Brain className="w-7 h-7" />

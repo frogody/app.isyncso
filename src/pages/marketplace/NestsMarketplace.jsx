@@ -114,7 +114,7 @@ function NestCard({ nest, isPurchased, onPreview, onViewDetails }) {
 
   return (
     <motion.div
-      whileHover={{ y: -4 }}
+
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className="group"

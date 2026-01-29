@@ -173,7 +173,7 @@ export default function ProductHero({
                 onClick={onRequestDemo}
                 className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100 transition-opacity group"
               >
-                <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center transition-transform">
                   <Play className="w-8 h-8 text-white fill-white ml-1" />
                 </div>
               </button>

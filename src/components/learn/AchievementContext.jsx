@@ -132,7 +132,7 @@ function AchievementToast({ achievement, onDismiss }) {
       animate={{ opacity: 1, x: 0, scale: 1 }}
       exit={{ opacity: 0, x: 100, scale: 0.95 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
-      className={`${getToastSize()} bg-gradient-to-br from-gray-900 to-black border border-white/20 rounded-xl shadow-2xl cursor-pointer hover:scale-105 transition-transform`}
+      className={`${getToastSize()} bg-gradient-to-br from-gray-900 to-black border border-white/20 rounded-xl shadow-2xl cursor-pointer transition-transform`}
       onClick={onDismiss}
     >
       {getToastContent()}

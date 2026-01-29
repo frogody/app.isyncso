@@ -155,7 +155,7 @@ function QuickActions() {
           {actions.map((action) => (
             <a key={action.href} href={action.href}>
               <motion.div
-                whileHover={{ scale: 1.02 }}
+
                 whileTap={{ scale: 0.98 }}
                 className="flex items-center gap-2 p-2 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 border border-zinc-700/50 hover:border-red-500/30 transition-all"
               >

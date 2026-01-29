@@ -488,7 +488,7 @@ function DealsTab() {
             {deals.map((deal) => (
               <motion.div
                 key={deal.id}
-                whileHover={{ scale: 1.02 }}
+
                 className="p-3 bg-zinc-800/50 border border-zinc-700 rounded-lg cursor-move hover:border-orange-500/50 transition-colors"
               >
                 <div className="text-sm font-medium text-white mb-1">{deal.title}</div>

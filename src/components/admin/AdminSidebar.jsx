@@ -64,7 +64,7 @@ function NavItem({ item, isActive }) {
   return (
     <Link to={item.href}>
       <motion.div
-        whileHover={{ x: 4 }}
+
         className={cn(
           "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
           isActive
@@ -136,7 +136,7 @@ export default function AdminSidebar() {
       <div className="p-4 border-t border-zinc-800">
         <Link to="/dashboard">
           <motion.div
-            whileHover={{ x: -4 }}
+
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition-all"
           >
             <ChevronLeft className="w-5 h-5" />

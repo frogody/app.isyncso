@@ -106,7 +106,7 @@ export default function IntegrationCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
-      whileHover={{ y: -4 }}
+
       className={cn(
         'bg-zinc-900/60 backdrop-blur-xl border rounded-2xl p-6 transition-all duration-300',
         config.border,

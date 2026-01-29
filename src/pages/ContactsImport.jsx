@@ -396,7 +396,7 @@ export default function ContactsImport() {
                 return (
                   <motion.button
                     key={type.id}
-                    whileHover={{ scale: 1.02 }}
+
                     whileTap={{ scale: 0.98 }}
                     onClick={() => setSelectedContactType(type.id)}
                     className={cn(

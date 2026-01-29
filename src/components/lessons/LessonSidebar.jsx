@@ -98,7 +98,7 @@ export default function LessonSidebar({
                     <motion.button
                       key={lesson.id}
                       onClick={() => onLessonClick(lesson)}
-                      whileHover={{ x: 2 }}
+
                       whileTap={{ scale: 0.98 }}
                       className={cn(
                         "w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 relative group",

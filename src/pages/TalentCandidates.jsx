@@ -116,7 +116,7 @@ const CandidateCard = ({ candidate, isSelected, isFocused, onToggle, onClick, on
   return (
     <motion.div
       variants={itemVariants}
-      whileHover={{ scale: 1.02, y: -2 }}
+
       className="cursor-pointer relative"
       data-candidate-card
     >

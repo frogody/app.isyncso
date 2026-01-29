@@ -280,7 +280,7 @@ function AgentCard({ agent, onToggle, onViewDetails }) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -4 }}
+
       className={cn(
         'relative rounded-xl border bg-zinc-900/60 backdrop-blur-xl overflow-hidden cursor-pointer group',
         colors.border,

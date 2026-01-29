@@ -814,7 +814,7 @@ function MetricCard({ icon: Icon, label, value, subValue, trend, trendLabel, col
   const isPositive = trend > 0;
   return (
     <motion.div
-      whileHover={{ scale: 1.02 }}
+
       className={`bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3 ${className}`}
     >
       <div className="flex items-center justify-between mb-2">

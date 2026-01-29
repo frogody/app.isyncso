@@ -306,7 +306,7 @@ export default function AvatarSelector({ selected, onSelect, size = 'default', a
             onClick={() => onSelect(avatar)}
             className={`
               w-20 h-20 rounded-full overflow-hidden transition-all duration-200
-              border-2 hover:scale-105 flex items-center justify-center mx-auto
+              border-2 flex items-center justify-center mx-auto
               ${selected?.id === avatar.id
                 ? 'border-cyan-500 ring-4 ring-cyan-500/30 scale-105 shadow-lg shadow-cyan-500/30'
                 : 'border-gray-700 hover:border-cyan-400/50'

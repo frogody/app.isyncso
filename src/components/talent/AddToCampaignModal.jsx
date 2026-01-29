@@ -64,7 +64,7 @@ const CampaignOption = ({ campaign, selected, onSelect }) => {
 
   return (
     <motion.button
-      whileHover={{ scale: 1.01 }}
+
       whileTap={{ scale: 0.99 }}
       onClick={() => onSelect(campaign.id)}
       className={`w-full p-4 rounded-xl border text-left transition-all ${

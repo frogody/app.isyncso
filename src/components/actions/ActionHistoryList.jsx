@@ -82,7 +82,6 @@ export default function ActionHistoryList({ actions, loading }) {
                 'rounded-xl border p-4 cursor-pointer transition-all duration-200',
                 config.border,
                 `bg-gradient-to-r ${config.gradient}`,
-                'hover:scale-[1.01]'
               )}
               onClick={() => setExpandedId(isExpanded ? null : action.id)}
             >

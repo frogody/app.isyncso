@@ -268,7 +268,7 @@ export default function ClientLogin() {
                 <button
                   type="submit"
                   disabled={loading || !email.trim()}
-                  className="w-full flex items-center justify-center gap-2 py-3 px-4 text-white font-medium rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.01] active:scale-[0.99]"
+                  className="w-full flex items-center justify-center gap-2 py-3 px-4 text-white font-medium rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed "
                   style={{
                     background: portalSettings?.primary_color
                       ? `linear-gradient(to right, ${portalSettings.primary_color}, ${portalSettings.accent_color || portalSettings.primary_color})`

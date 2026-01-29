@@ -348,7 +348,7 @@ export default function FloatingAgentTrigger({ agentType, autoOpen = false, onTo
       {!autoOpen && (
         <motion.button
           onClick={() => handleToggle(true)}
-          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative ${colors.bgLight} ${colors.border} border hover:scale-[1.02]`}
+          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative ${colors.bgLight} ${colors.border} border`}
           whileTap={{ scale: 0.95 }}
           title={`Open ${config.title}`}
         >

@@ -114,7 +114,6 @@ export default function ActionQueueCard({
           'flex items-center gap-3 p-3 rounded-xl border transition-all',
           statusConfig.border,
           statusConfig.bg,
-          'hover:scale-[1.01]'
         )}
       >
         <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center', statusConfig.bg)}>

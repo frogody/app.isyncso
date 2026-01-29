@@ -111,7 +111,7 @@ const FactorCard = ({ factorKey, score, config, compact, index }) => {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.08 }}
-      whileHover={{ scale: 1.03 }}
+
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
       className={`relative flex-shrink-0 ${compact ? "w-28" : "w-36"} bg-zinc-800/60 border border-zinc-700/50 rounded-xl ${compact ? "p-3" : "p-4"} hover:bg-zinc-800/80 transition-all cursor-default`}

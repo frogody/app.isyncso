@@ -78,7 +78,7 @@ export default function LessonNavigation({
               <motion.button
                 key={lesson.id}
                 onClick={() => onNavigate(i - currentIndex)}
-                whileHover={{ scale: 1.3 }}
+
                 whileTap={{ scale: 0.9 }}
                 className={cn(
                   "flex-shrink-0 rounded-full transition-all duration-200",

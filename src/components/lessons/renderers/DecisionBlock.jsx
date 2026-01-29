@@ -85,7 +85,7 @@ export default function DecisionBlock({ content }) {
                     ? 'border-purple-500 bg-purple-500/10'
                     : 'border-gray-700 bg-gray-800/50 hover:border-gray-600'
                 } ${showFeedback ? 'cursor-default' : 'cursor-pointer'}`}
-                whileHover={!showFeedback ? { scale: 1.01 } : {}}
+
                 whileTap={!showFeedback ? { scale: 0.99 } : {}}
               >
                 <div className="flex items-start gap-3">

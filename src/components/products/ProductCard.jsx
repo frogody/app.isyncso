@@ -74,7 +74,7 @@ export function ProductGridCard({
                 <img
                   src={product.featured_image.url}
                   alt={product.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  className="w-full h-full object-cover transition-transform duration-300"
                 />
                 <div className="absolute inset-0 bg-black/25" />
               </>

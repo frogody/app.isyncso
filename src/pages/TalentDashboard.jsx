@@ -150,7 +150,7 @@ const WorkflowActionCard = ({ icon: Icon, title, description, action, actionLabe
 
   return (
     <motion.div
-      whileHover={{ scale: 1.02, y: -4 }}
+
       className="cursor-pointer"
       onClick={action}
     >
@@ -460,7 +460,7 @@ const RecommendedNests = ({ nests, loading }) => {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {nests.map(nest => (
         <Link key={nest.id} to={`/marketplace/nests/${nest.id}`}>
-          <motion.div whileHover={{ y: -4 }} className="h-full">
+          <motion.div className="h-full">
             <GlassCard className="p-4 h-full hover:border-cyan-500/30 transition-all flex flex-col">
               <div className="flex items-start justify-between mb-2">
                 <Badge className="bg-cyan-500/20 text-cyan-400 text-xs">

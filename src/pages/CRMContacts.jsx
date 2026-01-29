@@ -157,7 +157,7 @@ function ContactCard({ contact, isSelected, onClick, onToggleStar, onStageChange
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -2 }}
+
       onClick={onClick}
       className={`bg-zinc-900/50 border rounded-2xl p-4 cursor-pointer transition-all group ${
         isSelected ? "border-cyan-500/50 ring-1 ring-cyan-500/30" : "border-zinc-800/60 hover:border-zinc-700"

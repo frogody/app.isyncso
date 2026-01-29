@@ -1247,7 +1247,7 @@ function FolderCard({ folder, projects, onClick }) {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -4, scale: 1.01 }}
+
       onClick={onClick}
       className="relative overflow-hidden bg-zinc-900/50 border border-zinc-800/60 rounded-xl cursor-pointer hover:border-zinc-700 transition-all group"
     >
@@ -1600,7 +1600,7 @@ function FolderDetailSheet({
                       onClick={() => onUpdateFolder?.(folder.id, { cover_color: color.id })}
                       className={`w-8 h-8 rounded-lg bg-gradient-to-br ${color.gradient} ${
                         folder.cover_color === color.id ? 'ring-2 ring-white ring-offset-2 ring-offset-zinc-900' : ''
-                      } transition-all hover:scale-110`}
+                      } transition-all`}
                     />
                   ))}
                 </div>
@@ -2093,7 +2093,7 @@ function ProjectCard({ project, tasks, onClick, onStatusChange, onEdit, onDelete
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -2 }}
+
       onClick={onClick}
       className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3 cursor-pointer hover:border-zinc-700 transition-all group"
     >
@@ -4371,7 +4371,7 @@ export default function Projects() {
                     className={`w-8 h-8 rounded-xl bg-gradient-to-br ${color.gradient} transition-all ${
                       folderFormData.cover_color === color.id
                         ? "ring-2 ring-white ring-offset-2 ring-offset-zinc-900 scale-110"
-                        : "hover:scale-105"
+                        : ""
                     }`}
                   />
                 ))}

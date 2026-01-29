@@ -167,7 +167,7 @@ export function ActivityHeatmap({ userId, color = 'cyan' }) {
                       className={cn(
                         'flex-1 aspect-square rounded-sm transition-all cursor-pointer',
                         getIntensityClass(isFuture ? 0 : level),
-                        !isFuture && 'hover:ring-2 hover:ring-cyan-400 hover:scale-110',
+                        !isFuture && 'hover:ring-2 hover:ring-cyan-400',
                         isToday && 'ring-1 ring-white/30',
                         isFuture && 'opacity-30 cursor-not-allowed'
                       )}

@@ -874,7 +874,7 @@ export default function Integrations({ embedded = false }) {
                       {desktopConnected && (
                         <div className="group relative p-4 rounded-xl bg-zinc-900/60 border border-zinc-700/50 hover:border-emerald-500/40 transition-all cursor-pointer">
                           <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center mb-2 transition-transform">
                             <Monitor className="w-4 h-4 text-white" />
                           </div>
                           <h4 className="font-semibold text-white text-sm">SYNC Desktop</h4>
@@ -890,7 +890,7 @@ export default function Integrations({ embedded = false }) {
                       {googleConnected && (
                         <div className="group relative p-4 rounded-xl bg-zinc-900/60 border border-zinc-700/50 hover:border-emerald-500/40 transition-all cursor-pointer">
                           <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center mb-2 transition-transform">
                             <Globe className="w-4 h-4 text-white" />
                           </div>
                           <h4 className="font-semibold text-white text-sm">Google</h4>
@@ -913,7 +913,7 @@ export default function Integrations({ embedded = false }) {
                           >
                             <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                             <div
-                              className="w-8 h-8 rounded-lg flex items-center justify-center mb-2 group-hover:scale-105 transition-transform"
+                              className="w-8 h-8 rounded-lg flex items-center justify-center mb-2 transition-transform"
                               style={{ backgroundColor: integration.color + '25' }}
                             >
                               <span className="text-sm font-bold" style={{ color: integration.color }}>

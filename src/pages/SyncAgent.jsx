@@ -2177,7 +2177,7 @@ export default function SyncAgent() {
                   'group relative inline-flex h-14 w-14 items-center justify-center rounded-xl transition-all duration-300 overflow-hidden',
                   isSending || !input.trim()
                     ? 'cursor-not-allowed bg-zinc-800/60 border border-zinc-700/50 text-zinc-600'
-                    : 'shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30 hover:scale-105 active:scale-95'
+                    : 'shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30'
                 )}
                 title="Send (Enter)"
               >

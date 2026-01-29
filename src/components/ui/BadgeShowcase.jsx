@@ -78,7 +78,7 @@ export function BadgeShowcase({ badges = [], maxDisplay = 6, size = 'md', showLo
               <div
                 className={cn(
                   'rounded-full bg-gradient-to-br border-2 flex items-center justify-center',
-                  'shadow-lg transition-transform group-hover:scale-110',
+                  'shadow-lg transition-transform',
                   sizeClasses[size],
                   colorClass
                 )}
@@ -110,7 +110,7 @@ export function BadgeShowcase({ badges = [], maxDisplay = 6, size = 'md', showLo
             <div
               className={cn(
                 'rounded-full bg-zinc-800/50 border-2 border-zinc-700/50 flex items-center justify-center',
-                'transition-transform group-hover:scale-110 opacity-50',
+                'transition-transform opacity-50',
                 sizeClasses[size]
               )}
             >
