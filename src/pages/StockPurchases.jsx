@@ -1252,28 +1252,28 @@ export default function StockPurchases() {
               <Receipt className="w-4 h-4 text-cyan-400" />
               <span className="text-xs text-zinc-500">Total facturen</span>
             </div>
-            <p className="text-lg font-semibold text-white">{stats.total}</p>
+            <p className="text-lg font-bold text-white">{stats.total}</p>
           </div>
           <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
               <AlertTriangle className="w-4 h-4 text-yellow-400" />
               <span className="text-xs text-zinc-500">To Review</span>
             </div>
-            <p className="text-lg font-semibold text-white">{stats.pendingReview}</p>
+            <p className="text-lg font-bold text-white">{stats.pendingReview}</p>
           </div>
           <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
               <Check className="w-4 h-4 text-green-400" />
               <span className="text-xs text-zinc-500">Approved</span>
             </div>
-            <p className="text-lg font-semibold text-white">{stats.approved}</p>
+            <p className="text-lg font-bold text-white">{stats.approved}</p>
           </div>
           <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
               <DollarSign className="w-4 h-4 text-purple-400" />
               <span className="text-xs text-zinc-500">Total bedrag</span>
             </div>
-            <p className="text-lg font-semibold text-white">€ {stats.totalAmount.toFixed(0)}</p>
+            <p className="text-lg font-bold text-white">€ {stats.totalAmount.toFixed(0)}</p>
           </div>
         </div>
 

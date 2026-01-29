@@ -353,7 +353,7 @@ function ScannedProductCard({ scanResult, onReceive, onCancel }) {
     <div className="p-4 rounded-xl bg-zinc-900/70 border border-cyan-500/30">
       <div className="flex justify-between items-start mb-3">
         <div>
-          <h3 className="text-lg font-semibold text-white">
+          <h3 className="text-sm font-bold text-white">
             {scanResult.product.name}
           </h3>
           <div className="flex gap-2 mt-1">
@@ -521,7 +521,7 @@ function NotFoundCard({ ean, onClose }) {
           <AlertTriangle className="w-5 h-5 text-red-400" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-white">Product niet gevonden</h3>
+          <h3 className="text-sm font-bold text-white">Product niet gevonden</h3>
           <p className="text-sm text-zinc-400">EAN: {ean}</p>
         </div>
       </div>
@@ -604,7 +604,7 @@ function ReceiveSuccessCard({ productName, quantity, isPartial, remainingQty, on
         <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-green-500/20 flex items-center justify-center">
           <CheckCircle2 className="w-7 h-7 text-green-400" />
         </div>
-        <h3 className="text-lg font-semibold text-white mb-2">
+        <h3 className="text-sm font-bold text-white mb-2">
           Ontvangst bevestigd!
         </h3>
         <p className="text-zinc-400 mb-2">
@@ -775,44 +775,32 @@ export default function InventoryReceiving() {
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-cyan-500/10">
-                <Boxes className="w-5 h-5 text-cyan-400" />
-              </div>
-              <div>
-                <p className="text-sm text-zinc-400">Verwachte leveringen</p>
-                <p className="text-xl font-semibold text-white">{stats.pendingDeliveries}</p>
-              </div>
+            <div className="flex items-center gap-2 mb-1">
+              <Boxes className="w-4 h-4 text-cyan-400" />
+              <span className="text-xs text-zinc-500">Verwachte leveringen</span>
             </div>
+            <p className="text-lg font-bold text-white">{stats.pendingDeliveries}</p>
           </div>
           <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-green-500/10">
-                <Check className="w-5 h-5 text-green-400" />
-              </div>
-              <div>
-                <p className="text-sm text-zinc-400">Ontvangen vandaag</p>
-                <p className="text-xl font-semibold text-white">{stats.receivedToday} <span className="text-sm font-normal text-zinc-500">stuks</span></p>
-              </div>
+            <div className="flex items-center gap-2 mb-1">
+              <Check className="w-4 h-4 text-green-400" />
+              <span className="text-xs text-zinc-500">Ontvangen vandaag</span>
             </div>
+            <p className="text-lg font-bold text-white">{stats.receivedToday} <span className="text-xs font-normal text-zinc-500">stuks</span></p>
           </div>
           <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-yellow-500/10">
-                <AlertTriangle className="w-5 h-5 text-yellow-400" />
-              </div>
-              <div>
-                <p className="text-sm text-zinc-400">Gedeeltelijke leveringen</p>
-                <p className="text-xl font-semibold text-white">{stats.partialDeliveries}</p>
-              </div>
+            <div className="flex items-center gap-2 mb-1">
+              <AlertTriangle className="w-4 h-4 text-yellow-400" />
+              <span className="text-xs text-zinc-500">Gedeeltelijke leveringen</span>
             </div>
+            <p className="text-lg font-bold text-white">{stats.partialDeliveries}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Scanner section */}
           <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
-            <h2 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+            <h2 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
               <Scan className="w-5 h-5 text-cyan-400" />
               Barcode Scanner
             </h2>
@@ -854,7 +842,7 @@ export default function InventoryReceiving() {
 
           {/* Recent receiving */}
           <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
-            <h2 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+            <h2 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
               <Warehouse className="w-5 h-5 text-cyan-400" />
               Recente ontvangsten
             </h2>
@@ -864,7 +852,7 @@ export default function InventoryReceiving() {
 
         {/* Expected deliveries */}
         <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
-          <h2 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+          <h2 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
             <Package className="w-5 h-5 text-cyan-400" />
             Verwachte leveringen ({expectedDeliveries.length})
           </h2>

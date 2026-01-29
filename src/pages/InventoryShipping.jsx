@@ -490,28 +490,28 @@ export default function InventoryShipping() {
               <Clock className="w-4 h-4 text-yellow-400" />
               <span className="text-xs text-zinc-500">Te verzenden</span>
             </div>
-            <p className="text-lg font-semibold text-white">{stats.pending}</p>
+            <p className="text-lg font-bold text-white">{stats.pending}</p>
           </div>
           <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
               <Truck className="w-4 h-4 text-blue-400" />
               <span className="text-xs text-zinc-500">Onderweg</span>
             </div>
-            <p className="text-lg font-semibold text-white">{stats.shipped}</p>
+            <p className="text-lg font-bold text-white">{stats.shipped}</p>
           </div>
           <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
               <Check className="w-4 h-4 text-green-400" />
               <span className="text-xs text-zinc-500">Afgeleverd</span>
             </div>
-            <p className="text-lg font-semibold text-white">{stats.delivered}</p>
+            <p className="text-lg font-bold text-white">{stats.delivered}</p>
           </div>
           <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
               <AlertTriangle className="w-4 h-4 text-red-400" />
               <span className="text-xs text-zinc-500">Te laat</span>
             </div>
-            <p className="text-lg font-semibold text-white">{stats.overdue}</p>
+            <p className="text-lg font-bold text-white">{stats.overdue}</p>
           </div>
         </div>
 
