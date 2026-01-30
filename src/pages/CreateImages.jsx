@@ -610,14 +610,8 @@ export default function CreateImages() {
   );
 
   return (
-    <div className="min-h-screen bg-black relative">
-      {/* Animated Background */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 right-1/4 w-96 h-96 bg-rose-500/5 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-pink-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-      </div>
-
-      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
+    <div className="min-h-screen bg-black">
+      <div className="w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <PageHeader
           icon={Image}
@@ -799,12 +793,12 @@ export default function CreateImages() {
                       className="mt-3 space-y-2"
                     >
                       {/* Product Preservation Notice */}
-                      <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+                      <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30">
                         <div className="flex items-start gap-2">
-                          <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+                          <ShieldCheck className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
                           <div>
-                            <p className="text-xs font-medium text-emerald-400">Product Preservation Mode</p>
-                            <p className="text-[10px] text-emerald-400/70 mt-0.5">
+                            <p className="text-xs font-medium text-rose-400">Product Preservation Mode</p>
+                            <p className="text-[10px] text-rose-400/70 mt-0.5">
                               The AI will keep your product exactly as shown in the reference images. Only the background, lighting, and environment will change.
                             </p>
                           </div>
@@ -830,7 +824,7 @@ export default function CreateImages() {
                                 onClick={() => setSelectedReferenceImage(imageUrl)}
                                 className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
                                   selectedReferenceImage === imageUrl
-                                    ? 'border-emerald-500 ring-2 ring-emerald-500/30'
+                                    ? 'border-rose-500 ring-2 ring-rose-500/30'
                                     : 'border-zinc-700/50 hover:border-zinc-500'
                                 }`}
                               >
@@ -840,8 +834,8 @@ export default function CreateImages() {
                                   className="w-full h-full object-cover"
                                 />
                                 {selectedReferenceImage === imageUrl && (
-                                  <div className="absolute inset-0 bg-emerald-500/20 flex items-center justify-center">
-                                    <Check className="w-4 h-4 text-emerald-400" />
+                                  <div className="absolute inset-0 bg-rose-500/20 flex items-center justify-center">
+                                    <Check className="w-4 h-4 text-rose-400" />
                                   </div>
                                 )}
                               </button>
@@ -852,12 +846,12 @@ export default function CreateImages() {
                           </p>
                         </div>
                       ) : (
-                        <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                        <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/30">
                           <div className="flex items-start gap-2">
-                            <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                            <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
                             <div>
-                              <p className="text-xs font-medium text-amber-400">No Reference Images</p>
-                              <p className="text-[10px] text-amber-400/70 mt-0.5">
+                              <p className="text-xs font-medium text-rose-400">No Reference Images</p>
+                              <p className="text-[10px] text-rose-400/70 mt-0.5">
                                 This product has no images. Add images in the Products page for best results. The AI will generate based on the product name and description only.
                               </p>
                             </div>
@@ -1068,7 +1062,7 @@ export default function CreateImages() {
                     <Wand2 className="w-3.5 h-3.5 text-rose-400" />
                     <Label className="text-rose-400 text-[10px] font-medium">AI-Enhanced Prompt</Label>
                     {generatedImage.ai_enhancement && !generatedImage.ai_enhancement.fallback && (
-                      <Badge variant="outline" className="text-xs bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
+                      <Badge variant="outline" className="text-xs bg-rose-500/10 text-rose-400 border-rose-500/30">
                         AI Optimized
                       </Badge>
                     )}

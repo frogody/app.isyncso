@@ -183,14 +183,8 @@ export default function CreateLibrary() {
   };
 
   return (
-    <div className="min-h-screen bg-black relative">
-      {/* Animated Background */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 right-1/4 w-96 h-96 bg-rose-500/5 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-pink-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-      </div>
-
-      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
+    <div className="min-h-screen bg-black">
+      <div className="w-full px-4 lg:px-6 py-4 space-y-4">
         <PageHeader
           title="Content Library"
           subtitle="Manage all your AI-generated images and videos"
@@ -391,7 +385,7 @@ export default function CreateLibrary() {
 
                 {/* Content type badge */}
                 <div className="absolute top-2 right-2 z-10">
-                  <Badge className={`${item.content_type === 'video' ? 'bg-purple-500/80' : 'bg-rose-500/80'} text-white text-xs border-0`}>
+                  <Badge className={`${item.content_type === 'video' ? 'bg-rose-500/80' : 'bg-rose-500/80'} text-white text-xs border-0`}>
                     {item.content_type === 'video' ? (
                       <Video className="w-3 h-3" />
                     ) : (
@@ -532,7 +526,7 @@ export default function CreateLibrary() {
                     </p>
                     <div className="flex items-center gap-2 mt-1">
                       <Badge variant="outline" className={`text-xs ${
-                        item.content_type === 'video' ? 'border-purple-500/50 text-purple-400' : 'border-rose-500/50 text-rose-400'
+                        item.content_type === 'video' ? 'border-rose-500/50 text-rose-400' : 'border-rose-500/50 text-rose-400'
                       }`}>
                         {item.content_type === 'video' ? <Video className="w-3 h-3 mr-1" /> : <Image className="w-3 h-3 mr-1" />}
                         {item.content_type}
@@ -608,7 +602,7 @@ export default function CreateLibrary() {
             <DialogHeader>
               <DialogTitle className="text-white flex items-center gap-2">
                 {previewItem?.content_type === 'video' ? (
-                  <Video className="w-5 h-5 text-purple-400" />
+                  <Video className="w-5 h-5 text-rose-400" />
                 ) : (
                   <Image className="w-5 h-5 text-rose-400" />
                 )}
