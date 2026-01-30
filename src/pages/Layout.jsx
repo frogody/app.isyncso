@@ -76,6 +76,9 @@ import {
   Building2,
   Monitor,
   ExternalLink,
+  FolderPlus,
+  Mail,
+  Plus,
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -1644,8 +1647,8 @@ export default function Layout({ children, currentPageName }) {
           >
             {/* SYNC environment top tabs */}
             {secondaryNavConfig?.title === 'SYNC' && (
-              <div className="sticky top-0 z-10 bg-black/95 backdrop-blur-md border-b border-white/5">
-                <div className="flex items-center gap-1 px-4 lg:px-6 py-2 overflow-x-auto scrollbar-hide">
+              <div className="sticky top-0 z-10 bg-zinc-950/80 backdrop-blur-xl border-b border-white/[0.06]">
+                <div className="flex items-center gap-0.5 px-4 lg:px-6 overflow-x-auto scrollbar-hide">
                   {secondaryNavConfig.items.map((item) => {
                     const Icon = item.icon;
                     const isActive = location.pathname === item.path || location.pathname === item.path?.split('?')[0];
@@ -1653,17 +1656,42 @@ export default function Layout({ children, currentPageName }) {
                       <Link
                         key={item.label}
                         to={item.path}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                        className={`relative flex items-center gap-2 px-4 py-3 text-[13px] font-medium whitespace-nowrap transition-colors ${
                           isActive
-                            ? 'bg-purple-500/15 text-purple-400 border border-purple-500/30'
-                            : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                            ? 'text-purple-400'
+                            : 'text-zinc-500 hover:text-zinc-300'
                         }`}
                       >
-                        {Icon && <Icon className="w-4 h-4" />}
+                        {Icon && <Icon className="w-3.5 h-3.5" />}
                         {item.label}
+                        {isActive && (
+                          <span className="absolute bottom-0 left-3 right-3 h-[2px] rounded-full bg-purple-500" />
+                        )}
                       </Link>
                     );
                   })}
+                </div>
+              </div>
+            )}
+            {/* TALENT environment quick action buttons */}
+            {secondaryNavConfig?.title === 'TALENT' && (
+              <div className="sticky top-0 z-10 bg-zinc-950/80 backdrop-blur-xl border-b border-white/[0.06]">
+                <div className="flex items-center justify-end gap-2 px-4 lg:px-6 py-2 overflow-x-auto scrollbar-hide">
+                  <Button variant="outline" size="sm" onClick={() => navigate(createPageUrl("TalentProjects"))} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
+                    <FolderPlus className="w-4 h-4 mr-1" /> Create Role
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => navigate("/marketplace/nests")} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
+                    <Package className="w-4 h-4 mr-1" /> Browse Nests
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => navigate(`${createPageUrl("TalentCampaignDetail")}?new=true`)} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
+                    <Sparkles className="w-4 h-4 mr-1" /> Run Matching
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => navigate(createPageUrl("TalentCampaigns"))} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
+                    <Mail className="w-4 h-4 mr-1" /> Launch Outreach
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => navigate(`${createPageUrl("TalentCandidates")}?addNew=true`)} className="border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20">
+                    <Plus className="w-4 h-4 mr-1" /> Add Candidate
+                  </Button>
                 </div>
               </div>
             )}
