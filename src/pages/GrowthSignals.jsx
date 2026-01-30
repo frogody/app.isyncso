@@ -130,7 +130,7 @@ function SignalCard({ signal, onAction, onDismiss, index }) {
       }`}>
         {/* Unread indicator */}
         {!signal.is_read && (
-          <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-indigo-500 to-violet-500 rounded-l-xl" />
+          <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-indigo-500 to-indigo-400 rounded-l-xl" />
         )}
 
         <div className="p-5">
@@ -175,8 +175,8 @@ function SignalCard({ signal, onAction, onDismiss, index }) {
                 {/* Score */}
                 {signal.relevance_score && (
                   <div className="flex-shrink-0 text-center">
-                    <div className={`w-14 h-14 rounded-xl ${signal.relevance_score >= 80 ? 'bg-emerald-500/20' : signal.relevance_score >= 50 ? 'bg-amber-500/20' : 'bg-zinc-800'} flex items-center justify-center`}>
-                      <span className={`text-xl font-bold ${signal.relevance_score >= 80 ? 'text-emerald-400' : signal.relevance_score >= 50 ? 'text-amber-400' : 'text-zinc-400'}`}>
+                    <div className={`w-14 h-14 rounded-xl ${signal.relevance_score >= 80 ? 'bg-indigo-500/25' : signal.relevance_score >= 50 ? 'bg-indigo-500/15' : 'bg-zinc-800'} flex items-center justify-center`}>
+                      <span className={`text-xl font-bold ${signal.relevance_score >= 80 ? 'text-indigo-300' : signal.relevance_score >= 50 ? 'text-indigo-400/80' : 'text-zinc-400'}`}>
                         {signal.relevance_score}
                       </span>
                     </div>
@@ -371,7 +371,7 @@ export default function GrowthSignals() {
       {/* Animated Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-20 left-1/4 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-1/4 w-[400px] h-[400px] bg-violet-500/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-1/4 w-[400px] h-[400px] bg-indigo-500/5 rounded-full blur-3xl" />
       </div>
 
       <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
@@ -459,7 +459,7 @@ export default function GrowthSignals() {
               </TabsTrigger>
               <TabsTrigger 
                 value="actioned" 
-                className="data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400 rounded-lg px-4"
+                className="data-[state=active]:bg-indigo-500/20 data-[state=active]:text-indigo-400 rounded-lg px-4"
               >
                 Actioned ({stats.actioned})
               </TabsTrigger>
@@ -522,7 +522,7 @@ export default function GrowthSignals() {
         {/* Signals List */}
         {filteredSignals.length === 0 ? (
           <div className="p-16 text-center rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 flex items-center justify-center mx-auto mb-6">
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-indigo-400/20 flex items-center justify-center mx-auto mb-6">
               <Bell className="w-10 h-10 text-indigo-400" />
             </div>
             <h3 className="text-2xl font-bold text-white mb-3">

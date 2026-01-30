@@ -53,9 +53,9 @@ export function GrowthPipelineWidget({ opportunities = [] }) {
   const stageBadges = {
     lead: 'bg-zinc-700 text-zinc-300',
     qualified: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
-    proposal: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-    negotiation: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-    closed_won: 'bg-green-500/20 text-green-400 border-green-500/30',
+    proposal: 'bg-indigo-500/25 text-indigo-400/80 border-indigo-500/35',
+    negotiation: 'bg-indigo-500/30 text-indigo-400/90 border-indigo-500/40',
+    closed_won: 'bg-indigo-500/35 text-indigo-300 border-indigo-500/45',
     closed_lost: 'bg-red-500/20 text-red-400 border-red-500/30',
   };
 
@@ -105,7 +105,7 @@ export function GrowthValueWidget({ totalValue = 0, change = null }) {
           <DollarSign className="w-5 h-5 text-indigo-400" />
         </div>
         {change !== null && (
-          <Badge className={`${change >= 0 ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'} text-xs`}>
+          <Badge className={`${change >= 0 ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'} text-xs`}>
             {change >= 0 ? '+' : ''}{change}%
           </Badge>
         )}
@@ -124,7 +124,7 @@ export function GrowthDealsWidget({ dealCount = 0, wonCount = 0 }) {
           <Rocket className="w-5 h-5 text-indigo-400" />
         </div>
         {wonCount > 0 && (
-          <span className="text-xs px-2 py-1 rounded-lg bg-green-500/20 text-green-400 border border-green-500/30">
+          <span className="text-xs px-2 py-1 rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
             {wonCount} won
           </span>
         )}
@@ -139,14 +139,14 @@ export function GrowthWinRateWidget({ winRate = 0, wonCount = 0, lostCount = 0 }
   return (
     <GlassCard className="p-5">
       <div className="flex items-start justify-between mb-3">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-green-500/20 border-green-500/30 border">
-          <Percent className="w-5 h-5 text-green-400" />
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-indigo-500/20 border-indigo-500/30 border">
+          <Percent className="w-5 h-5 text-indigo-400" />
         </div>
       </div>
-      <div className="text-2xl font-bold text-green-400">{winRate}%</div>
+      <div className="text-2xl font-bold text-indigo-400">{winRate}%</div>
       <div className="text-sm text-zinc-400 mb-2">Win Rate</div>
       <div className="flex gap-1 h-2">
-        <div className="bg-green-500 rounded-l-full" style={{ width: `${winRate}%` }} />
+        <div className="bg-indigo-500 rounded-l-full" style={{ width: `${winRate}%` }} />
         <div className="bg-zinc-700 rounded-r-full flex-1" />
       </div>
       <div className="flex justify-between text-xs text-zinc-500 mt-1">
@@ -159,10 +159,10 @@ export function GrowthWinRateWidget({ winRate = 0, wonCount = 0, lostCount = 0 }
 
 export function GrowthSignalsWidget({ signals = [] }) {
   const signalColors = {
-    funding: 'bg-green-500/20 text-green-400 border-green-500/30',
-    hiring: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-    news: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-    intent: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+    funding: 'bg-indigo-500/25 text-indigo-400 border-indigo-500/35',
+    hiring: 'bg-indigo-500/20 text-indigo-400/80 border-indigo-500/30',
+    news: 'bg-indigo-500/15 text-indigo-400/70 border-indigo-500/25',
+    intent: 'bg-indigo-500/20 text-indigo-400/80 border-indigo-500/30',
   };
 
   return (

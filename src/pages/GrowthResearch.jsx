@@ -431,7 +431,7 @@ export default function GrowthResearch() {
                       Found {results.length} {searchType === 'people' ? 'prospects' : 'companies'}
                     </h3>
                     <p className="text-[10px] text-zinc-500 flex items-center gap-1 mt-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
                       Live data from Explorium
                     </p>
                   </div>

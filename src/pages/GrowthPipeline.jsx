@@ -33,12 +33,12 @@ import { toast } from 'sonner';
 
 // Pipeline stages - synced with CRMContacts for consistency
 const STAGES = [
-  { id: 'new', label: 'New Lead', color: 'from-blue-500 to-blue-600', accent: 'text-blue-400', bgAccent: 'bg-blue-500', borderAccent: 'border-blue-500/50', probability: 10 },
-  { id: 'contacted', label: 'Contacted', color: 'from-cyan-500 to-cyan-600', accent: 'text-cyan-400', bgAccent: 'bg-cyan-500', borderAccent: 'border-cyan-500/50', probability: 20 },
-  { id: 'qualified', label: 'Qualified', color: 'from-indigo-500/60 to-indigo-600/60', accent: 'text-indigo-400/70', bgAccent: 'bg-indigo-500/60', borderAccent: 'border-indigo-500/40', probability: 40 },
-  { id: 'proposal', label: 'Proposal', color: 'from-purple-500/70 to-purple-600/70', accent: 'text-purple-400/80', bgAccent: 'bg-purple-500/70', borderAccent: 'border-purple-500/50', probability: 60 },
-  { id: 'negotiation', label: 'Negotiation', color: 'from-yellow-500/80 to-yellow-600/80', accent: 'text-yellow-400/90', bgAccent: 'bg-yellow-500/80', borderAccent: 'border-yellow-500/60', probability: 80 },
-  { id: 'won', label: 'Won', color: 'from-green-500 to-green-600', accent: 'text-green-400', bgAccent: 'bg-green-500', borderAccent: 'border-green-500/70', probability: 100 },
+  { id: 'new', label: 'New Lead', color: 'from-indigo-400 to-indigo-500', accent: 'text-indigo-300', bgAccent: 'bg-indigo-400', borderAccent: 'border-indigo-400/50', probability: 10 },
+  { id: 'contacted', label: 'Contacted', color: 'from-indigo-500/70 to-indigo-600/70', accent: 'text-indigo-400/70', bgAccent: 'bg-indigo-500/70', borderAccent: 'border-indigo-500/50', probability: 20 },
+  { id: 'qualified', label: 'Qualified', color: 'from-indigo-500/80 to-indigo-600/80', accent: 'text-indigo-400/80', bgAccent: 'bg-indigo-500/80', borderAccent: 'border-indigo-500/60', probability: 40 },
+  { id: 'proposal', label: 'Proposal', color: 'from-indigo-500/90 to-indigo-600/90', accent: 'text-indigo-400/90', bgAccent: 'bg-indigo-500/90', borderAccent: 'border-indigo-500/70', probability: 60 },
+  { id: 'negotiation', label: 'Negotiation', color: 'from-indigo-500 to-indigo-600', accent: 'text-indigo-400', bgAccent: 'bg-indigo-500', borderAccent: 'border-indigo-500/80', probability: 80 },
+  { id: 'won', label: 'Won', color: 'from-indigo-600 to-indigo-700', accent: 'text-indigo-300', bgAccent: 'bg-indigo-600', borderAccent: 'border-indigo-600/70', probability: 100 },
 ];
 
 const emptyForm = {
@@ -520,7 +520,7 @@ export default function GrowthPipeline() {
       {/* Animated Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-20 left-1/4 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-1/4 w-[400px] h-[400px] bg-violet-500/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-1/4 w-[400px] h-[400px] bg-indigo-500/5 rounded-full blur-3xl" />
       </div>
 
       <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
@@ -598,7 +598,7 @@ export default function GrowthPipeline() {
         {/* Pipeline Board */}
         {opportunities.length === 0 ? (
           <div className="p-16 text-center rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 flex items-center justify-center mx-auto mb-6">
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-indigo-400/20 flex items-center justify-center mx-auto mb-6">
               <Target className="w-10 h-10 text-indigo-400" />
             </div>
             <h3 className="text-2xl font-bold text-white mb-3">Build Your Pipeline</h3>
@@ -631,7 +631,7 @@ export default function GrowthPipeline() {
         {/* Modal */}
         <Dialog open={showModal} onOpenChange={setShowModal}>
           <DialogContent className="bg-zinc-900 border-zinc-800 max-w-xl p-0 overflow-hidden">
-            <div className="px-6 py-4 border-b border-zinc-800 bg-gradient-to-r from-indigo-500/10 to-violet-500/10">
+            <div className="px-6 py-4 border-b border-zinc-800 bg-gradient-to-r from-indigo-500/10 to-indigo-400/10">
               <DialogTitle className="text-lg font-semibold text-white flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center">
                   <Target className="w-5 h-5 text-indigo-400" />

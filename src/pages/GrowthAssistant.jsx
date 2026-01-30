@@ -30,12 +30,12 @@ const INTEGRATION_ICONS = {
 };
 
 const INTEGRATION_COLORS = {
-  gmail: "text-red-400 bg-red-500/10 border-red-500/20",
-  hubspot: "text-orange-400 bg-orange-500/10 border-orange-500/20",
-  calendar: "text-blue-400 bg-blue-500/10 border-blue-500/20",
-  sheets: "text-green-400 bg-green-500/10 border-green-500/20",
-  teams: "text-purple-400 bg-purple-500/10 border-purple-500/20",
-  slack: "text-pink-400 bg-pink-500/10 border-pink-500/20",
+  gmail: "text-indigo-400/80 bg-indigo-500/10 border-indigo-500/20",
+  hubspot: "text-indigo-400/70 bg-indigo-500/10 border-indigo-500/20",
+  calendar: "text-indigo-400/80 bg-indigo-500/10 border-indigo-500/20",
+  sheets: "text-indigo-400/70 bg-indigo-500/10 border-indigo-500/20",
+  teams: "text-indigo-400/80 bg-indigo-500/10 border-indigo-500/20",
+  slack: "text-indigo-400/70 bg-indigo-500/10 border-indigo-500/20",
 };
 
 // RAG Insight component
@@ -95,7 +95,7 @@ function IntegrationStatus({ integration, connected, lastSync, onConnect, onSync
       <div className="flex items-center gap-2">
         {connected ? (
           <>
-            <CheckCircle className="w-4 h-4 text-green-400" />
+            <CheckCircle className="w-4 h-4 text-indigo-400" />
             <Button
               size="sm"
               variant="ghost"
@@ -491,7 +491,7 @@ export default function GrowthAssistant() {
       {/* Animated background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-20 left-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-20 right-1/4 w-72 h-72 bg-purple-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
+        <div className="absolute bottom-20 right-1/4 w-72 h-72 bg-indigo-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
       </div>
 
       <div className="relative z-10 w-full max-w-7xl mx-auto px-4 lg:px-6 py-4 space-y-4">

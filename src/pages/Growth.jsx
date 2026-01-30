@@ -110,12 +110,12 @@ export default function Growth() {
 
     // Analytics data - stages synced with CRM
     const stageData = [
-      { name: 'New', value: opportunities.filter(o => o.stage === 'new').length, fill: '#3b82f6' },
-      { name: 'Contacted', value: opportunities.filter(o => o.stage === 'contacted').length, fill: '#06b6d4' },
-      { name: 'Qualified', value: opportunities.filter(o => o.stage === 'qualified').length, fill: '#6366f1' },
-      { name: 'Proposal', value: opportunities.filter(o => o.stage === 'proposal').length, fill: '#a855f7' },
-      { name: 'Negotiation', value: opportunities.filter(o => o.stage === 'negotiation').length, fill: '#eab308' },
-      { name: 'Won', value: wonDeals.length, fill: '#22c55e' }
+      { name: 'New', value: opportunities.filter(o => o.stage === 'new').length, fill: '#818cf8' },
+      { name: 'Contacted', value: opportunities.filter(o => o.stage === 'contacted').length, fill: '#6366f1' },
+      { name: 'Qualified', value: opportunities.filter(o => o.stage === 'qualified').length, fill: '#4f46e5' },
+      { name: 'Proposal', value: opportunities.filter(o => o.stage === 'proposal').length, fill: '#4338ca' },
+      { name: 'Negotiation', value: opportunities.filter(o => o.stage === 'negotiation').length, fill: '#3730a3' },
+      { name: 'Won', value: wonDeals.length, fill: '#312e81' }
     ];
 
     const sourceData = opportunities.reduce((acc, o) => {
@@ -125,7 +125,7 @@ export default function Growth() {
     }, {});
 
     const pieData = Object.entries(sourceData).map(([name, value], i) => ({
-      name, value, fill: ['#6366f1', '#818cf8', '#a5b4fc', '#6366f1', '#52525b'][i % 5]
+      name, value, fill: ['#6366f1', '#818cf8', '#a5b4fc', '#c7d2fe', '#52525b'][i % 5]
     }));
 
     // Group opportunities by month for pipeline chart
@@ -170,12 +170,12 @@ export default function Growth() {
 
   // Stage badges synced with CRM
   const stageBadges = {
-    new: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-    contacted: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+    new: 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20',
+    contacted: 'bg-indigo-500/15 text-indigo-400/70 border-indigo-500/25',
     qualified: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
-    proposal: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-    negotiation: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-    won: 'bg-green-500/20 text-green-400 border-green-500/30',
+    proposal: 'bg-indigo-500/25 text-indigo-400/80 border-indigo-500/35',
+    negotiation: 'bg-indigo-500/30 text-indigo-400/90 border-indigo-500/40',
+    won: 'bg-indigo-500/35 text-indigo-300 border-indigo-500/45',
     lost: 'bg-red-500/20 text-red-400 border-red-500/30',
   };
 

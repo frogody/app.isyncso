@@ -102,11 +102,11 @@ function CampaignCard({ campaign, onEdit, onDelete, onStatusChange, onViewDetail
                         <Edit className="w-4 h-4 mr-2" /> Edit
                       </DropdownMenuItem>
                       {campaign.status === 'active' ? (
-                        <DropdownMenuItem onClick={() => onStatusChange(campaign.id, 'paused')} className="text-amber-400">
+                        <DropdownMenuItem onClick={() => onStatusChange(campaign.id, 'paused')} className="text-zinc-400">
                           <Pause className="w-4 h-4 mr-2" /> Pause
                         </DropdownMenuItem>
                       ) : campaign.status !== 'completed' && (
-                        <DropdownMenuItem onClick={() => onStatusChange(campaign.id, 'active')} className="text-emerald-400">
+                        <DropdownMenuItem onClick={() => onStatusChange(campaign.id, 'active')} className="text-indigo-400">
                           <Play className="w-4 h-4 mr-2" /> Start
                         </DropdownMenuItem>
                       )}
@@ -379,7 +379,7 @@ export default function GrowthCampaigns() {
     <div className="min-h-screen bg-black relative">
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-20 left-1/4 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-1/4 w-[400px] h-[400px] bg-violet-500/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-1/4 w-[400px] h-[400px] bg-indigo-500/5 rounded-full blur-3xl" />
       </div>
 
       <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
@@ -467,7 +467,7 @@ export default function GrowthCampaigns() {
         {/* Campaigns List */}
         {filteredCampaigns.length === 0 ? (
           <div className="p-12 text-center rounded-xl bg-zinc-900/50 border border-zinc-800/60">
-            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-indigo-500/20 to-indigo-400/20 flex items-center justify-center mx-auto mb-4">
               <Send className="w-8 h-8 text-indigo-400" />
             </div>
             <h3 className="text-lg font-bold text-white mb-2">
@@ -502,7 +502,7 @@ export default function GrowthCampaigns() {
       {/* Create/Edit Modal */}
       <Dialog open={showModal} onOpenChange={setShowModal}>
         <DialogContent className="bg-zinc-900 border-zinc-800 max-w-2xl p-0 max-h-[90vh] overflow-hidden">
-          <div className="px-6 py-4 border-b border-zinc-800 bg-gradient-to-r from-indigo-500/10 to-violet-500/10">
+          <div className="px-6 py-4 border-b border-zinc-800 bg-gradient-to-r from-indigo-500/10 to-indigo-400/10">
             <DialogTitle className="text-lg font-semibold text-white flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center">
                 <Send className="w-5 h-5 text-indigo-400" />
