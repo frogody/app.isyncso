@@ -16,16 +16,16 @@ const CourseCard = ({ course, progress, viewMode = "grid", index = 0 }) => {
   // Distinct colors for each difficulty level
   const difficultyConfig = {
     beginner: {
-      color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-      gradient: 'from-emerald-500 to-emerald-600'
+      color: 'bg-cyan-500/10 text-cyan-300 border-cyan-500/20',
+      gradient: 'from-cyan-400 to-cyan-500'
     },
     intermediate: {
-      color: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-      gradient: 'from-amber-500 to-amber-600'
+      color: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+      gradient: 'from-cyan-500 to-cyan-600'
     },
     advanced: {
-      color: 'bg-rose-500/20 text-rose-400 border-rose-500/30',
-      gradient: 'from-rose-500 to-rose-600'
+      color: 'bg-cyan-500/30 text-cyan-300 border-cyan-500/40',
+      gradient: 'from-cyan-600 to-cyan-700'
     }
   };
 

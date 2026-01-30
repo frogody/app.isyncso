@@ -232,13 +232,13 @@ export default function Learn() {
           <StatBox icon={BookOpen} label="Courses Available" value={libraryCourses.length} color="cyan" />
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <StatBox icon={PlayCircle} label="In Progress" value={stats.inProgressCourses} color="amber" />
+          <StatBox icon={PlayCircle} label="In Progress" value={stats.inProgressCourses} color="cyan" />
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <StatBox icon={CheckCircle} label="Completed" value={stats.completedCourses} color="emerald" />
+          <StatBox icon={CheckCircle} label="Completed" value={stats.completedCourses} color="cyan" />
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-          <StatBox icon={Clock} label="Hours Learned" value={`${Math.round(stats.totalTimeSpent / 60)}h`} color="violet" />
+          <StatBox icon={Clock} label="Hours Learned" value={`${Math.round(stats.totalTimeSpent / 60)}h`} color="cyan" />
         </motion.div>
       </div>
 
@@ -358,11 +358,11 @@ export default function Learn() {
               </div>
               <div className="flex items-center justify-between text-sm p-3 rounded-lg bg-zinc-800/50">
                 <span className="text-zinc-400">Completed</span>
-                <span className="text-emerald-400 font-medium">{stats.completedCourses}</span>
+                <span className="text-cyan-400 font-medium">{stats.completedCourses}</span>
               </div>
               <div className="flex items-center justify-between text-sm p-3 rounded-lg bg-zinc-800/50">
                 <span className="text-zinc-400">In Progress</span>
-                <span className="text-amber-400 font-medium">{stats.inProgressCourses}</span>
+                <span className="text-cyan-300 font-medium">{stats.inProgressCourses}</span>
               </div>
             </div>
           </GlassCard>

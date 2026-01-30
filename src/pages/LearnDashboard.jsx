@@ -256,7 +256,7 @@ export default function LearnDashboard() {
             label="Completed"
             value={analytics?.completedCourses || 0}
             sublabel="Courses finished"
-            color="emerald"
+            color="cyan"
             delay={0.1}
           />
           <StatCardEnhanced
@@ -264,7 +264,7 @@ export default function LearnDashboard() {
             label="Certificates"
             value={analytics?.certificatesCount || 0}
             sublabel="Earned"
-            color="violet"
+            color="cyan"
             delay={0.2}
           />
           <StatCardEnhanced
@@ -272,7 +272,7 @@ export default function LearnDashboard() {
             label="Day Streak"
             value={analytics?.streak || 0}
             sublabel="Keep it going!"
-            color="orange"
+            color="cyan"
             onClick={() => setShowStreakModal(true)}
             delay={0.3}
           />
@@ -401,10 +401,10 @@ export default function LearnDashboard() {
 
               <div
                 onClick={() => setShowStreakModal(true)}
-                className="flex items-center justify-between gap-2 p-3 rounded-lg bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-orange-500/20 cursor-pointer hover:bg-orange-500/15 transition-colors"
+                className="flex items-center justify-between gap-2 p-3 rounded-lg bg-gradient-to-r from-cyan-500/10 to-cyan-400/10 border border-cyan-500/20 cursor-pointer hover:bg-cyan-500/15 transition-colors"
               >
                 <div className="flex items-center gap-2">
-                  <Flame className="w-5 h-5 text-orange-400" />
+                  <Flame className="w-5 h-5 text-cyan-400" />
                   <div>
                     <div className="text-white font-semibold text-sm">{analytics?.streak || 0} Day Streak!</div>
                     <div className="text-[10px] text-zinc-400">Click to view history</div>
@@ -413,7 +413,7 @@ export default function LearnDashboard() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="text-orange-400 hover:bg-orange-500/20 h-7 w-7 p-0"
+                  className="text-cyan-400 hover:bg-cyan-500/20 h-7 w-7 p-0"
                   onClick={(e) => {
                     e.stopPropagation();
                     navigator.clipboard.writeText(`I'm on a ${analytics?.streak || 0} day learning streak!`);
@@ -508,14 +508,14 @@ export default function LearnDashboard() {
         <DialogContent className="bg-zinc-900 border-zinc-800 max-w-md">
           <DialogHeader>
             <DialogTitle className="text-white flex items-center gap-2">
-              <Flame className="w-5 h-5 text-orange-400" />
+              <Flame className="w-5 h-5 text-cyan-400" />
               Streak History
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-orange-500/20 to-amber-500/10 border border-orange-500/30">
-                <div className="text-3xl font-bold text-orange-400">{analytics?.streak || 0}</div>
+              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-400/10 border border-cyan-500/30">
+                <div className="text-3xl font-bold text-cyan-400">{analytics?.streak || 0}</div>
                 <div className="text-sm text-zinc-400">Current Streak</div>
               </div>
               <div className="text-center p-4 rounded-xl bg-zinc-800/50 border border-zinc-700">
@@ -528,15 +528,15 @@ export default function LearnDashboard() {
               <h4 className="text-sm font-medium text-zinc-300 mb-3">Streak Tips</h4>
               <ul className="space-y-2 text-sm text-zinc-400">
                 <li className="flex items-start gap-2">
-                  <Flame className="w-3 h-3 text-orange-400 mt-1 flex-shrink-0" />
+                  <Flame className="w-3 h-3 text-cyan-400 mt-1 flex-shrink-0" />
                   Complete at least one lesson daily
                 </li>
                 <li className="flex items-start gap-2">
-                  <Flame className="w-3 h-3 text-orange-400 mt-1 flex-shrink-0" />
+                  <Flame className="w-3 h-3 text-cyan-400 mt-1 flex-shrink-0" />
                   Streaks reset at midnight
                 </li>
                 <li className="flex items-start gap-2">
-                  <Flame className="w-3 h-3 text-orange-400 mt-1 flex-shrink-0" />
+                  <Flame className="w-3 h-3 text-cyan-400 mt-1 flex-shrink-0" />
                   Longer streaks = bonus XP rewards
                 </li>
               </ul>
@@ -547,7 +547,7 @@ export default function LearnDashboard() {
                 navigator.clipboard.writeText(`I'm on a ${analytics?.streak || 0} day learning streak!`);
                 toast.success('Copied to clipboard!');
               }}
-              className="w-full bg-orange-500 hover:bg-orange-400 text-white"
+              className="w-full bg-cyan-500 hover:bg-cyan-400 text-white"
             >
               <Share2 className="w-4 h-4 mr-2" />
               Share Your Streak

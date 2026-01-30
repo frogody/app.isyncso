@@ -120,11 +120,11 @@ export function LearnStreakWidget({ streak = 0, longestStreak = 0 }) {
   return (
     <GlassCard className="p-5">
       <div className="flex items-start justify-between mb-3">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-orange-500/20 border-orange-500/30 border">
-          <Flame className="w-5 h-5 text-orange-400" />
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-cyan-500/20 border-cyan-500/30 border">
+          <Flame className="w-5 h-5 text-cyan-400" />
         </div>
         {streak >= 7 && (
-          <span className="text-xs px-2 py-1 rounded-lg bg-orange-500/20 text-orange-400 border border-orange-500/30">
+          <span className="text-xs px-2 py-1 rounded-lg bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
             🔥 On Fire!
           </span>
         )}
@@ -201,11 +201,11 @@ export function LearnCertificatesWidget({ certificateCount = 0 }) {
   return (
     <GlassCard className="p-5">
       <div className="flex items-start justify-between mb-3">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-amber-500/20 border-amber-500/30 border">
-          <Award className="w-5 h-5 text-amber-400" />
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-cyan-500/20 border-cyan-500/30 border">
+          <Award className="w-5 h-5 text-cyan-400" />
         </div>
         {certificateCount > 0 && (
-          <Link to={createPageUrl("Certificates")} className="text-xs text-amber-400 hover:text-amber-300">
+          <Link to={createPageUrl("Certificates")} className="text-xs text-cyan-400 hover:text-cyan-300">
             View →
           </Link>
         )}

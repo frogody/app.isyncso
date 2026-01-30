@@ -70,10 +70,10 @@ export function LearningAnalytics({ courseId, userId }) {
       <Card className="glass-card border-0">
         <CardContent className="p-6">
           <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-gray-800 rounded w-1/3" />
+            <div className="h-4 bg-zinc-800 rounded w-1/3" />
             <div className="grid grid-cols-3 gap-4">
               {[1,2,3].map(i => (
-                <div key={i} className="h-20 bg-gray-800 rounded" />
+                <div key={i} className="h-20 bg-zinc-800 rounded" />
               ))}
             </div>
           </div>
@@ -85,29 +85,29 @@ export function LearningAnalytics({ courseId, userId }) {
   if (!stats) return null;
 
   const metrics = [
-    { icon: MessageSquare, label: 'Questions Asked', value: stats.totalQuestions, color: 'text-blue-400' },
-    { icon: Mic, label: 'Voice Chats', value: stats.voiceInteractions, color: 'text-red-400' },
-    { icon: Target, label: 'Lessons Done', value: stats.lessonsCompleted, color: 'text-green-400' },
-    { icon: Brain, label: 'Quizzes Passed', value: stats.quizzesPassed, color: 'text-yellow-400' },
-    { icon: Clock, label: 'Time Spent', value: `${stats.totalTimeMinutes}m`, color: 'text-purple-400' },
-    { icon: TrendingUp, label: 'Avg Questions/Lesson', value: stats.avgQuestionsPerLesson, color: 'text-orange-400' },
+    { icon: MessageSquare, label: 'Questions Asked', value: stats.totalQuestions, color: 'text-cyan-400' },
+    { icon: Mic, label: 'Voice Chats', value: stats.voiceInteractions, color: 'text-cyan-400' },
+    { icon: Target, label: 'Lessons Done', value: stats.lessonsCompleted, color: 'text-cyan-400' },
+    { icon: Brain, label: 'Quizzes Passed', value: stats.quizzesPassed, color: 'text-cyan-400' },
+    { icon: Clock, label: 'Time Spent', value: `${stats.totalTimeMinutes}m`, color: 'text-cyan-400' },
+    { icon: TrendingUp, label: 'Avg Questions/Lesson', value: stats.avgQuestionsPerLesson, color: 'text-cyan-400' },
   ];
 
   return (
     <Card className="glass-card border-0">
       <CardHeader className="pb-2">
         <CardTitle className="text-white text-lg flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-yellow-400" />
+          <TrendingUp className="w-5 h-5 text-cyan-400" />
           Learning Progress
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {metrics.map(({ icon: Icon, label, value, color }) => (
-            <div key={label} className="bg-gray-800/30 rounded-lg p-3 text-center">
+            <div key={label} className="bg-zinc-800/30 rounded-lg p-3 text-center">
               <Icon className={`w-5 h-5 ${color} mx-auto mb-1`} />
               <div className="text-xl font-bold text-white">{value}</div>
-              <div className="text-xs text-gray-500">{label}</div>
+              <div className="text-xs text-zinc-500">{label}</div>
             </div>
           ))}
         </div>
