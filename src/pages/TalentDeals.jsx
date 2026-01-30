@@ -161,7 +161,7 @@ function DealCard({ deal, onEdit, onDelete, stageConfig, index, clients, candida
 
             {/* Progress bar for probability */}
             <div className="mt-3">
-              <Progress value={probability} className="h-1.5 bg-zinc-800" />
+              <Progress value={probability} className="h-1.5 bg-zinc-800 [&>div]:bg-red-500" />
             </div>
 
             {/* Footer info */}

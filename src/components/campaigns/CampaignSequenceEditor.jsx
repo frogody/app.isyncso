@@ -13,9 +13,9 @@ import { db } from "@/api/supabaseClient";
 
 const STEP_TYPES = [
   { id: 'email', label: 'Email', icon: Mail, color: 'from-red-500 to-red-600' },
-  { id: 'linkedin_connection', label: 'LinkedIn Connect', icon: Linkedin, color: 'from-blue-500 to-blue-600' },
-  { id: 'linkedin_message', label: 'LinkedIn Message', icon: Linkedin, color: 'from-blue-500 to-blue-600' },
-  { id: 'call', label: 'Phone Call', icon: Phone, color: 'from-amber-500 to-amber-600' },
+  { id: 'linkedin_connection', label: 'LinkedIn Connect', icon: Linkedin, color: 'from-red-500 to-red-600' },
+  { id: 'linkedin_message', label: 'LinkedIn Message', icon: Linkedin, color: 'from-red-500 to-red-600' },
+  { id: 'call', label: 'Phone Call', icon: Phone, color: 'from-red-500 to-red-600' },
   { id: 'wait', label: 'Wait', icon: Clock, color: 'from-zinc-500 to-zinc-600' },
 ];
 
@@ -178,7 +178,7 @@ Use {{first_name}} and {{company}} as placeholders.`,
                         size="sm"
                         onClick={generateContent}
                         disabled={isGenerating}
-                        className="text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 h-7 text-xs"
+                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-7 text-xs"
                       >
                         {isGenerating ? (
                           <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
@@ -254,7 +254,7 @@ export default function CampaignSequenceEditor({ steps = [], onChange }) {
         <div className="p-8 rounded-xl border border-dashed border-zinc-700 text-center">
           <Mail className="w-8 h-8 text-zinc-600 mx-auto mb-3" />
           <p className="text-zinc-400 text-sm mb-4">No sequence steps yet</p>
-          <Button onClick={() => addStep('email')} className="bg-indigo-500 hover:bg-indigo-400 text-white">
+          <Button onClick={() => addStep('email')} className="bg-red-500 hover:bg-red-400 text-white">
             <Plus className="w-4 h-4 mr-2" /> Add First Step
           </Button>
         </div>

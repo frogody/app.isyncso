@@ -179,7 +179,7 @@ export function QuickAddClientModal({ isOpen, onClose, onSuccess }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleClose(); }}>
-      <DialogContent className="bg-slate-900 border-white/10 max-w-lg">
+      <DialogContent className="bg-zinc-900 border-zinc-800 max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-white flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-red-400" />
@@ -207,7 +207,7 @@ export function QuickAddClientModal({ isOpen, onClose, onSuccess }) {
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   disabled={loading}
-                  className="bg-zinc-800/50 border-zinc-700 text-white h-12"
+                  className="bg-zinc-800/50 border-zinc-700 text-white h-12 focus-visible:ring-red-500/50 focus:border-red-500"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && inputValue.trim() && (isLinkedIn || isEmail)) {
                       handleEnrich();

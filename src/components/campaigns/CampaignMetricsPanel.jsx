@@ -94,7 +94,7 @@ export default function CampaignMetricsPanel({ campaign, onUpdate }) {
           label="Contacted"
           value={campaign.contacted || 0}
           icon={Users}
-          color="text-indigo-400"
+          color="text-red-400"
           onIncrement={() => updateMetric('contacted', 1)}
           onDecrement={() => updateMetric('contacted', -1)}
         />
@@ -102,7 +102,7 @@ export default function CampaignMetricsPanel({ campaign, onUpdate }) {
           label="Responded"
           value={campaign.responded || 0}
           icon={MessageSquare}
-          color="text-emerald-400"
+          color="text-red-400"
           onIncrement={() => updateMetric('responded', 1)}
           onDecrement={() => updateMetric('responded', -1)}
         />
@@ -118,7 +118,7 @@ export default function CampaignMetricsPanel({ campaign, onUpdate }) {
           label="Deals Won"
           value={campaign.deals_won || 0}
           icon={CheckCircle2}
-          color="text-amber-400"
+          color="text-red-400"
           onIncrement={() => updateMetric('deals_won', 1)}
           onDecrement={() => updateMetric('deals_won', -1)}
         />
@@ -137,10 +137,10 @@ export default function CampaignMetricsPanel({ campaign, onUpdate }) {
       </div>
 
       {/* Revenue */}
-      <div className="bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-xl p-4 border border-amber-500/20">
+      <div className="bg-gradient-to-br from-red-500/10 to-red-500/10 rounded-xl p-4 border border-red-500/20">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs text-amber-400/70 mb-1 flex items-center gap-1.5">
+            <p className="text-xs text-red-400/70 mb-1 flex items-center gap-1.5">
               <DollarSign className="w-3.5 h-3.5" />
               Revenue Attributed
             </p>
@@ -159,7 +159,7 @@ export default function CampaignMetricsPanel({ campaign, onUpdate }) {
                     .then(() => onUpdate({ ...campaign, revenue_attributed: val }));
                 }
               }}
-              className="w-28 bg-zinc-900/50 border-amber-500/30 text-white text-right"
+              className="w-28 bg-zinc-900/50 border-red-500/30 text-white text-right"
             />
           </div>
         </div>

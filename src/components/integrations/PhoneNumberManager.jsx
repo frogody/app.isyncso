@@ -280,7 +280,7 @@ export default function PhoneNumberManager({ onNumberSelected }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <Loader2 className="w-6 h-6 animate-spin" style={{ color: "var(--muted)" }} />
+        <Loader2 className="w-6 h-6 animate-spin text-zinc-500" />
       </div>
     );
   }
@@ -290,25 +290,25 @@ export default function PhoneNumberManager({ onNumberSelected }) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold" style={{ color: "var(--txt)" }}>
+          <h3 className="text-lg font-semibold text-white">
             Phone Numbers
           </h3>
-          <p className="text-sm" style={{ color: "var(--muted)" }}>
+          <p className="text-sm text-zinc-500">
             Purchase and manage SMS phone numbers
           </p>
         </div>
 
         <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
           <DialogTrigger asChild>
-            <Button className="gap-2">
+            <Button className="gap-2 bg-red-500 hover:bg-red-600 text-white">
               <Plus className="w-4 h-4" />
               Get New Number
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl" style={{ background: "var(--card)", borderColor: "var(--border)" }}>
+          <DialogContent className="max-w-2xl bg-zinc-900 border-zinc-800">
             <DialogHeader>
-              <DialogTitle style={{ color: "var(--txt)" }}>Get a Phone Number</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-white">Get a Phone Number</DialogTitle>
+              <DialogDescription className="text-zinc-400">
                 Search for available numbers and purchase instantly. Numbers cost $2/month.
               </DialogDescription>
             </DialogHeader>
@@ -316,12 +316,12 @@ export default function PhoneNumberManager({ onNumberSelected }) {
             {/* Search Form */}
             <div className="grid grid-cols-3 gap-3 py-4">
               <div>
-                <Label className="text-xs" style={{ color: "var(--muted)" }}>Country</Label>
+                <Label className="text-xs text-zinc-500">Country</Label>
                 <Select value={searchCountry} onValueChange={setSearchCountry}>
-                  <SelectTrigger style={{ background: "var(--bg)", borderColor: "var(--border)" }}>
+                  <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white focus:ring-red-500/30 focus:border-red-500/50">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-zinc-800 border-zinc-700">
                     <SelectItem value="US">United States</SelectItem>
                     <SelectItem value="CA">Canada</SelectItem>
                     <SelectItem value="GB">United Kingdom</SelectItem>
@@ -334,24 +334,24 @@ export default function PhoneNumberManager({ onNumberSelected }) {
               </div>
 
               <div>
-                <Label className="text-xs" style={{ color: "var(--muted)" }}>Area Code</Label>
+                <Label className="text-xs text-zinc-500">Area Code</Label>
                 <Input
                   placeholder="e.g. 415"
                   value={searchAreaCode}
                   onChange={(e) => setSearchAreaCode(e.target.value)}
                   maxLength={3}
-                  style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--txt)" }}
+                  className="bg-zinc-800 border-zinc-700 text-white focus:ring-red-500/30 focus:border-red-500/50"
                 />
               </div>
 
               <div>
-                <Label className="text-xs" style={{ color: "var(--muted)" }}>Contains</Label>
+                <Label className="text-xs text-zinc-500">Contains</Label>
                 <Input
                   placeholder="e.g. 2024"
                   value={searchContains}
                   onChange={(e) => setSearchContains(e.target.value)}
                   maxLength={7}
-                  style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--txt)" }}
+                  className="bg-zinc-800 border-zinc-700 text-white focus:ring-red-500/30 focus:border-red-500/50"
                 />
               </div>
             </div>
@@ -359,7 +359,7 @@ export default function PhoneNumberManager({ onNumberSelected }) {
             <Button
               onClick={searchAvailableNumbers}
               disabled={searching}
-              className="w-full gap-2"
+              className="w-full gap-2 bg-red-500 hover:bg-red-600 text-white"
             >
               {searching ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -375,21 +375,17 @@ export default function PhoneNumberManager({ onNumberSelected }) {
                 {searchResults.map((num) => (
                   <div
                     key={num.phone_number}
-                    className="flex items-center justify-between p-3 rounded-lg border"
-                    style={{ background: "var(--bg)", borderColor: "var(--border)" }}
+                    className="flex items-center justify-between p-3 rounded-lg border bg-zinc-800/50 border-zinc-700"
                   >
                     <div className="flex items-center gap-3">
-                      <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center"
-                        style={{ background: "var(--accent-muted)" }}
-                      >
-                        <Phone className="w-5 h-5" style={{ color: "var(--accent)" }} />
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center bg-red-500/20">
+                        <Phone className="w-5 h-5 text-red-400" />
                       </div>
                       <div>
-                        <div className="font-medium" style={{ color: "var(--txt)" }}>
+                        <div className="font-medium text-white">
                           {formatPhoneNumber(num.phone_number)}
                         </div>
-                        <div className="text-xs flex items-center gap-2" style={{ color: "var(--muted)" }}>
+                        <div className="text-xs flex items-center gap-2 text-zinc-500">
                           {num.locality && (
                             <span className="flex items-center gap-1">
                               <MapPin className="w-3 h-3" />
@@ -407,7 +403,7 @@ export default function PhoneNumberManager({ onNumberSelected }) {
 
                     <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <div className="text-sm font-medium" style={{ color: "var(--txt)" }}>
+                        <div className="text-sm font-medium text-white">
                           ${num.monthly_cost}/mo
                         </div>
                       </div>
@@ -415,6 +411,7 @@ export default function PhoneNumberManager({ onNumberSelected }) {
                         size="sm"
                         onClick={() => purchaseNumber(num.phone_number)}
                         disabled={purchasing === num.phone_number}
+                        className="bg-red-500 hover:bg-red-600 text-white"
                       >
                         {purchasing === num.phone_number ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -433,16 +430,16 @@ export default function PhoneNumberManager({ onNumberSelected }) {
 
       {/* Numbers List */}
       {numbers.length === 0 ? (
-        <Card style={{ background: "var(--card)", borderColor: "var(--border)" }}>
+        <Card className="bg-zinc-900/50 border-zinc-800">
           <CardContent className="py-8 text-center">
-            <Phone className="w-12 h-12 mx-auto mb-4" style={{ color: "var(--muted)" }} />
-            <h4 className="font-medium mb-2" style={{ color: "var(--txt)" }}>
+            <Phone className="w-12 h-12 mx-auto mb-4 text-zinc-600" />
+            <h4 className="font-medium mb-2 text-white">
               No phone numbers yet
             </h4>
-            <p className="text-sm mb-4" style={{ color: "var(--muted)" }}>
+            <p className="text-sm mb-4 text-zinc-500">
               Get a phone number to start sending SMS messages
             </p>
-            <Button onClick={() => setSearchOpen(true)} className="gap-2">
+            <Button onClick={() => setSearchOpen(true)} className="gap-2 bg-red-500 hover:bg-red-600 text-white">
               <Plus className="w-4 h-4" />
               Get Your First Number
             </Button>
@@ -453,15 +450,11 @@ export default function PhoneNumberManager({ onNumberSelected }) {
           {numbers.map((num) => (
             <div
               key={num.id}
-              className="flex items-center justify-between p-4 rounded-lg border"
-              style={{ background: "var(--card)", borderColor: "var(--border)" }}
+              className="flex items-center justify-between p-4 rounded-lg border bg-zinc-900/50 border-zinc-800"
             >
               <div className="flex items-center gap-4">
-                <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center"
-                  style={{ background: "var(--accent-muted)" }}
-                >
-                  <Phone className="w-6 h-6" style={{ color: "var(--accent)" }} />
+                <div className="w-12 h-12 rounded-full flex items-center justify-center bg-red-500/20">
+                  <Phone className="w-6 h-6 text-red-400" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
@@ -471,14 +464,13 @@ export default function PhoneNumberManager({ onNumberSelected }) {
                           value={newName}
                           onChange={(e) => setNewName(e.target.value)}
                           placeholder="Enter name..."
-                          className="h-7 w-40"
-                          style={{ background: "var(--bg)", borderColor: "var(--border)", color: "var(--txt)" }}
+                          className="h-7 w-40 bg-zinc-800 border-zinc-700 text-white focus:ring-red-500/30 focus:border-red-500/50"
                           autoFocus
                         />
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="h-7 w-7"
+                          className="h-7 w-7 text-zinc-400 hover:text-white"
                           onClick={() => updateNumberName(num.id)}
                         >
                           <Check className="w-4 h-4" />
@@ -486,7 +478,7 @@ export default function PhoneNumberManager({ onNumberSelected }) {
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="h-7 w-7"
+                          className="h-7 w-7 text-zinc-400 hover:text-white"
                           onClick={() => {
                             setEditingName(null);
                             setNewName("");
@@ -497,13 +489,13 @@ export default function PhoneNumberManager({ onNumberSelected }) {
                       </div>
                     ) : (
                       <>
-                        <span className="font-medium" style={{ color: "var(--txt)" }}>
+                        <span className="font-medium text-white">
                           {num.friendly_name || formatPhoneNumber(num.phone_number)}
                         </span>
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="h-6 w-6"
+                          className="h-6 w-6 text-zinc-500 hover:text-white"
                           onClick={() => {
                             setEditingName(num.id);
                             setNewName(num.friendly_name || "");
@@ -514,11 +506,11 @@ export default function PhoneNumberManager({ onNumberSelected }) {
                       </>
                     )}
                   </div>
-                  <div className="text-sm" style={{ color: "var(--muted)" }}>
+                  <div className="text-sm text-zinc-500">
                     {formatPhoneNumber(num.phone_number)}
                     {num.locality && ` • ${num.locality}, ${num.region}`}
                   </div>
-                  <div className="flex items-center gap-3 mt-1 text-xs" style={{ color: "var(--muted)" }}>
+                  <div className="flex items-center gap-3 mt-1 text-xs text-zinc-600">
                     <span>{num.messages_sent || 0} sent</span>
                     <span>{num.messages_received || 0} received</span>
                   </div>
@@ -527,14 +519,18 @@ export default function PhoneNumberManager({ onNumberSelected }) {
 
               <div className="flex items-center gap-3">
                 <Badge
-                  variant={num.status === "active" ? "default" : "secondary"}
-                  className="capitalize"
+                  variant="outline"
+                  className={`capitalize ${
+                    num.status === "active"
+                      ? "bg-red-500/10 text-red-400 border-red-500/30"
+                      : "bg-zinc-500/10 text-zinc-400 border-zinc-500/30"
+                  }`}
                 >
                   {num.status}
                 </Badge>
 
                 <div className="text-right text-sm">
-                  <div style={{ color: "var(--txt)" }}>${(num.monthly_cost_cents / 100).toFixed(2)}/mo</div>
+                  <div className="text-white">${(num.monthly_cost_cents / 100).toFixed(2)}/mo</div>
                 </div>
 
                 {onNumberSelected && (
@@ -542,6 +538,7 @@ export default function PhoneNumberManager({ onNumberSelected }) {
                     size="sm"
                     variant="outline"
                     onClick={() => onNumberSelected(num)}
+                    className="border-zinc-700 text-zinc-400 hover:text-white hover:border-red-500/50"
                   >
                     Select
                   </Button>
@@ -567,16 +564,13 @@ export default function PhoneNumberManager({ onNumberSelected }) {
       )}
 
       {/* Pricing Info */}
-      <div
-        className="p-4 rounded-lg border flex items-start gap-3"
-        style={{ background: "var(--bg)", borderColor: "var(--border)" }}
-      >
-        <DollarSign className="w-5 h-5 mt-0.5" style={{ color: "var(--accent)" }} />
+      <div className="p-4 rounded-lg border flex items-start gap-3 bg-zinc-900/50 border-zinc-800">
+        <DollarSign className="w-5 h-5 mt-0.5 text-red-400" />
         <div>
-          <div className="text-sm font-medium" style={{ color: "var(--txt)" }}>
+          <div className="text-sm font-medium text-white">
             Simple Pricing
           </div>
-          <div className="text-sm" style={{ color: "var(--muted)" }}>
+          <div className="text-sm text-zinc-500">
             $2/month per number + $0.01 per SMS sent. No setup fees. Cancel anytime.
           </div>
         </div>

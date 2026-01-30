@@ -114,9 +114,9 @@ const ReadyForOutreachWidget = ({ organizationId, onRefresh }) => {
 
   // Score color helper
   const getScoreColor = (score) => {
-    if (score >= 80) return 'text-green-400 bg-green-500/20';
-    if (score >= 60) return 'text-cyan-400 bg-cyan-500/20';
-    if (score >= 40) return 'text-yellow-400 bg-yellow-500/20';
+    if (score >= 80) return 'text-red-400 bg-red-500/20';
+    if (score >= 60) return 'text-red-400 bg-red-500/20';
+    if (score >= 40) return 'text-red-300 bg-red-500/15';
     return 'text-zinc-400 bg-zinc-500/20';
   };
 
@@ -124,7 +124,7 @@ const ReadyForOutreachWidget = ({ organizationId, onRefresh }) => {
     return (
       <div className="rounded-xl bg-zinc-900/50 border border-zinc-800 p-4">
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="w-6 h-6 text-cyan-400 animate-spin" />
+          <Loader2 className="w-6 h-6 text-red-400 animate-spin" />
         </div>
       </div>
     );
@@ -140,14 +140,14 @@ const ReadyForOutreachWidget = ({ organizationId, onRefresh }) => {
       <div className="px-4 py-3 border-b border-zinc-800 bg-zinc-900/50">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center">
-              <Send className="w-4 h-4 text-cyan-400" />
+            <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
+              <Send className="w-4 h-4 text-red-400" />
             </div>
             <div>
               <h3 className="text-white font-medium text-sm flex items-center gap-2">
                 Ready for Outreach
                 {totalCount > 0 && (
-                  <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 text-xs">
+                  <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-xs">
                     {totalCount}
                   </Badge>
                 )}
@@ -161,7 +161,7 @@ const ReadyForOutreachWidget = ({ organizationId, onRefresh }) => {
               variant="ghost"
               size="sm"
               onClick={handleViewAll}
-              className="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 text-xs"
+              className="text-red-400 hover:text-red-300 hover:bg-red-500/10 text-xs"
             >
               View All
               <ChevronRight className="w-3 h-3 ml-1" />
@@ -215,7 +215,7 @@ const ReadyForOutreachWidget = ({ organizationId, onRefresh }) => {
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white truncate group-hover:text-cyan-400 transition-colors">
+                    <p className="text-sm font-medium text-white truncate group-hover:text-red-400 transition-colors">
                       {candidate.candidate_name}
                     </p>
                     <p className="text-xs text-zinc-500 truncate">
@@ -225,7 +225,7 @@ const ReadyForOutreachWidget = ({ organizationId, onRefresh }) => {
                       }
                     </p>
                     {candidate.best_outreach_angle && (
-                      <p className="text-xs text-amber-400/80 truncate mt-0.5 flex items-center gap-1">
+                      <p className="text-xs text-red-400/80 truncate mt-0.5 flex items-center gap-1">
                         <Zap className="w-3 h-3 flex-shrink-0" />
                         <span className="truncate">{candidate.best_outreach_angle}</span>
                       </p>
@@ -239,7 +239,7 @@ const ReadyForOutreachWidget = ({ organizationId, onRefresh }) => {
                       e.stopPropagation();
                       handleContact(candidate);
                     }}
-                    className="bg-cyan-600 hover:bg-cyan-700 text-white opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                    className="bg-red-600 hover:bg-red-700 text-white opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
                   >
                     <MessageSquare className="w-3 h-3 mr-1" />
                     Contact
@@ -260,7 +260,7 @@ const ReadyForOutreachWidget = ({ organizationId, onRefresh }) => {
             </span>
             <button
               onClick={fetchReadyCandidates}
-              className="text-zinc-500 hover:text-cyan-400 transition-colors flex items-center gap-1"
+              className="text-zinc-500 hover:text-red-400 transition-colors flex items-center gap-1"
             >
               Refresh
             </button>

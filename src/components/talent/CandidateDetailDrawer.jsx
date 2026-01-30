@@ -1232,7 +1232,7 @@ const MatchAnalysisTab = ({ matchData, campaignContext }) => {
   return (
     <div className="space-y-6">
       {/* Match Score Header */}
-      <div className="flex items-center justify-between p-4 bg-gradient-to-r from-red-500/10 to-purple-500/10 rounded-lg border border-red-500/20">
+      <div className="flex items-center justify-between p-4 bg-gradient-to-r from-red-500/10 to-red-500/10 rounded-lg border border-red-500/20">
         <div>
           <div className="text-lg font-medium text-white">Match Score</div>
           {campaignContext?.roleName && (
