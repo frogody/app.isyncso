@@ -119,6 +119,7 @@ export const Proposal = db.entities.Proposal;
 // === CREATE (Content Creation) ===
 export const BrandAssets = db.entities.BrandAssets;
 export const GeneratedContent = db.entities.GeneratedContent;
+export const RenderJob = db.entities.RenderJob;
 
 // === Auth SDK ===
 export const User = db.auth;

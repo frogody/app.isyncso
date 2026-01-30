@@ -99,3 +99,9 @@ verify_jwt = false
 
 [functions.twilio-numbers]
 verify_jwt = false
+
+[functions.analyze-screenshots]
+verify_jwt = false
+
+[functions.render-video]
+verify_jwt = false

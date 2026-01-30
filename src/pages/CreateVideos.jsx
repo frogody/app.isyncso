@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useUser } from '@/components/context/UserContext';
-import { BrandAssets, GeneratedContent, Product } from '@/api/entities';
+import { BrandAssets, GeneratedContent, Product, DigitalProduct, RenderJob } from '@/api/entities';
+import RenderProgressModal from '../components/video/RenderProgressModal';
 import {
   Video,
   Wand2,
@@ -34,6 +35,9 @@ import {
   LayoutTemplate,
   Pause,
   Info,
+  Eye,
+  AlertCircle,
+  RotateCcw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -62,6 +66,12 @@ import {
 import { supabase } from '@/api/supabaseClient';
 import { Player } from '@remotion/player';
 import { ProductDemo } from '../remotion/compositions/ProductDemo';
+import { SocialAd } from '../remotion/compositions/SocialAd';
+import { FeatureShowcase } from '../remotion/compositions/FeatureShowcase';
+import { ProductShowcase } from '../remotion/compositions/ProductShowcase';
+import { UIShowcase } from '../remotion/compositions/UIShowcase';
+import { analyzeScreenshots } from '../lib/screenshotAnalyzer';
+import DesignAnalysisPanel from '../components/video/DesignAnalysisPanel';
 
 const STYLE_PRESETS = [
   { id: 'cinematic', label: 'Cinematic', icon: Film },
@@ -89,8 +99,130 @@ const ASPECT_RATIOS = [
 ];
 
 const TEMPLATES = [
-  { id: 'ProductDemo', label: 'Product Demo', description: 'Showcase a product with features and CTA', durationFrames: 180, fps: 30 },
+  { id: 'ProductDemo', label: 'Product Demo', description: 'Showcase a product with features and CTA', durationFrames: 180, fps: 30, width: 1920, height: 1080 },
+  { id: 'SocialAd', label: 'Social Ad', description: 'Fast-paced square ad for social media', durationFrames: 90, fps: 30, width: 1080, height: 1080 },
+  { id: 'FeatureShowcase', label: 'Feature Showcase', description: 'Highlight multiple product features', durationFrames: 240, fps: 30, width: 1920, height: 1080 },
+  { id: 'ProductShowcase', label: 'Product Showcase', description: 'Showcase your product with screenshots and features', durationFrames: 300, fps: 30, width: 1920, height: 1080 },
+  { id: 'UIShowcase', label: 'UI Showcase', description: 'Animated UI based on your product design', durationFrames: 360, fps: 30, width: 1920, height: 1080 },
 ];
+
+const COMPONENT_MAP = {
+  ProductDemo,
+  SocialAd,
+  FeatureShowcase,
+  ProductShowcase,
+  UIShowcase,
+};
+
+function getTemplateProps(templateId, selectedProduct, brandAssets, digitalProductData, designAnalysis) {
+  const colors = designAnalysis?.colorPalette ? {
+    primary: designAnalysis.colorPalette.primary,
+    secondary: designAnalysis.colorPalette.secondary,
+    accent: designAnalysis.colorPalette.accent,
+  } : {
+    primary: brandAssets?.colors?.primary || '#0f0f0f',
+    secondary: brandAssets?.colors?.secondary || '#1a1a2e',
+    accent: brandAssets?.colors?.accent || '#06b6d4',
+  };
+
+  const productName = selectedProduct?.name || 'Your Product';
+  const productImage = selectedProduct?.featured_image?.url || 'https://placehold.co/800x600/1a1a2e/06b6d4?text=Product';
+
+  const dpFeatures = digitalProductData?.features;
+
+  switch (templateId) {
+    case 'SocialAd':
+      return {
+        headline: productName,
+        subheadline: selectedProduct?.tagline || selectedProduct?.short_description || selectedProduct?.description?.slice(0, 80) || 'An amazing product built for you',
+        productImage,
+        brandColors: colors,
+        ctaText: 'Learn More',
+      };
+    case 'FeatureShowcase': {
+      const featureSource = dpFeatures?.length ? dpFeatures : selectedProduct?.features;
+      return {
+        productName,
+        features: featureSource?.length
+          ? featureSource.slice(0, 4).map((f, i) => ({
+              title: typeof f === 'string' ? f : (f.name || f.title || `Feature ${i + 1}`),
+              description: typeof f === 'string' ? `Learn more about ${f}` : (f.description || ''),
+              icon: (typeof f === 'object' && f.icon) || ['🚀', '📊', '👥', '🔗'][i] || '✨',
+            }))
+          : [
+              { title: 'AI-Powered Automation', description: 'Automate repetitive tasks with AI agents.', icon: '🤖' },
+              { title: 'Real-time Analytics', description: 'Get instant insights into performance.', icon: '📊' },
+              { title: 'Team Collaboration', description: 'Work together seamlessly.', icon: '👥' },
+              { title: 'Smart Integrations', description: 'Connect to 30+ tools.', icon: '🔗' },
+            ],
+        brandColors: colors,
+        logoUrl: brandAssets?.logo_url || undefined,
+      };
+    }
+    case 'ProductShowcase':
+      return {
+        productName,
+        tagline: selectedProduct?.tagline || selectedProduct?.short_description || 'Built for modern teams',
+        screenshots: selectedProduct?.gallery
+          ?.map(img => typeof img === 'string' ? img : img?.url)
+          .filter(Boolean) || [],
+        features: dpFeatures?.length
+          ? dpFeatures.slice(0, 4).map(f => ({
+              title: f.name || f.title || 'Feature',
+              description: f.description || '',
+              icon: f.icon || 'Zap',
+            }))
+          : selectedProduct?.features?.length
+            ? selectedProduct.features.slice(0, 4).map((f, i) => ({
+                title: typeof f === 'string' ? f : (f.name || f.title || 'Feature'),
+                description: typeof f === 'string' ? '' : (f.description || ''),
+                icon: ['Zap', 'BarChart', 'Users', 'Link'][i] || 'Zap',
+              }))
+            : [
+                { title: 'AI-Powered', description: 'Smart automation', icon: 'Zap' },
+                { title: 'Analytics', description: 'Real-time insights', icon: 'BarChart' },
+                { title: 'Collaboration', description: 'Work together', icon: 'Users' },
+              ],
+        brandColors: colors,
+        ctaText: 'Get Started',
+      };
+    case 'UIShowcase':
+      return {
+        productName: selectedProduct?.name || 'Your Product',
+        tagline: selectedProduct?.tagline || selectedProduct?.short_description || 'Built for modern teams',
+        features: dpFeatures?.length
+          ? dpFeatures.slice(0, 4).map(f => ({
+              title: f.name || f.title || 'Feature',
+              description: f.description || '',
+              icon: f.icon || 'Zap',
+            }))
+          : selectedProduct?.features?.length
+            ? selectedProduct.features.slice(0, 4).map((f, i) => ({
+                title: typeof f === 'string' ? f : (f.name || f.title || 'Feature'),
+                description: typeof f === 'string' ? '' : (f.description || ''),
+                icon: ['Zap', 'BarChart', 'Users', 'Link'][i] || 'Zap',
+              }))
+            : [
+                { title: 'AI-Powered', description: 'Smart automation', icon: 'Zap' },
+                { title: 'Analytics', description: 'Real-time insights', icon: 'BarChart' },
+                { title: 'Collaboration', description: 'Work together', icon: 'Users' },
+              ],
+        screenshots: selectedProduct?.gallery?.map(img => typeof img === 'string' ? img : img?.url).filter(Boolean) || [],
+        designAnalysis: designAnalysis || undefined,
+      };
+    case 'ProductDemo':
+    default:
+      return {
+        productName,
+        productDescription: selectedProduct?.tagline || selectedProduct?.short_description || selectedProduct?.description || 'An amazing product built for you',
+        productImage,
+        brandColors: colors,
+        features: selectedProduct?.features?.length
+          ? selectedProduct.features.slice(0, 4).map(f => typeof f === 'string' ? f : f.title || '')
+          : ['AI-Powered Automation', 'Real-time Analytics', 'Team Collaboration', 'Smart Integrations'],
+      };
+  }
+}
 
 export default function CreateVideos() {
   const { user } = useUser();
@@ -110,6 +242,15 @@ export default function CreateVideos() {
   const [showHistory, setShowHistory] = useState(false);
   const [previewVideo, setPreviewVideo] = useState(null);
 
+  const [digitalProductData, setDigitalProductData] = useState(null);
+  const [designAnalysis, setDesignAnalysis] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  // Render queue state
+  const [renderJob, setRenderJob] = useState(null);
+  const [isRendering, setIsRendering] = useState(false);
+  const [recentRenders, setRecentRenders] = useState([]);
+
   // Template mode state
   const [selectedTemplate, setSelectedTemplate] = useState('ProductDemo');
   const playerRef = useRef(null);
@@ -123,6 +264,23 @@ export default function CreateVideos() {
       loadGenerationHistory();
     }
   }, [user?.company_id]);
+
+  // Fetch digital product data when product changes
+  useEffect(() => {
+    if (!selectedProduct?.id) {
+      setDigitalProductData(null);
+      return;
+    }
+    (async () => {
+      try {
+        const data = await DigitalProduct.filter({ product_id: selectedProduct.id });
+        setDigitalProductData(data?.[0] || null);
+      } catch (e) {
+        console.error('Error loading digital product data:', e);
+        setDigitalProductData(null);
+      }
+    })();
+  }, [selectedProduct?.id]);
 
   // Measure player container width for responsive sizing
   useEffect(() => {
@@ -138,6 +296,41 @@ export default function CreateVideos() {
     setPlayerWidth(el.clientWidth);
     return () => observer.disconnect();
   }, [mode]);
+
+  const fetchRecentRenders = async () => {
+    if (!user?.company_id) return;
+    try {
+      const jobs = await RenderJob.filter({ company_id: user.company_id });
+      const sorted = (jobs || []).sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 5);
+      setRecentRenders(sorted);
+    } catch (e) {
+      console.error('Failed to fetch recent renders:', e);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.company_id) fetchRecentRenders();
+  }, [user?.company_id]);
+
+  // Poll active render job
+  useEffect(() => {
+    if (!renderJob?.id || renderJob?.status === 'completed' || renderJob?.status === 'failed') return;
+
+    const interval = setInterval(async () => {
+      try {
+        const updated = await RenderJob.get(renderJob.id);
+        setRenderJob(updated);
+        if (updated.status === 'completed' || updated.status === 'failed') {
+          clearInterval(interval);
+          fetchRecentRenders();
+        }
+      } catch (e) {
+        console.error('Failed to poll render job:', e);
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [renderJob?.id, renderJob?.status]);
 
   const loadProducts = async () => {
     try {
@@ -318,27 +511,99 @@ export default function CreateVideos() {
     toast.info('Settings loaded from history. Click Generate to create a new video.');
   };
 
+  const handleAnalyzeDesign = async () => {
+    if (!selectedProduct?.gallery?.length) return;
+    setIsAnalyzing(true);
+    try {
+      const screenshotUrls = selectedProduct.gallery
+        .map(img => typeof img === 'string' ? img : img?.url)
+        .filter(Boolean);
+      const analysis = await analyzeScreenshots(screenshotUrls, selectedProduct.name);
+      setDesignAnalysis(analysis);
+    } catch (e) {
+      console.error('Design analysis failed:', e);
+      toast.error('Design analysis failed');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleApplyColors = (colorPalette) => {
+    setBrandAssets(prev => ({
+      ...prev,
+      colors: {
+        ...prev?.colors,
+        primary: colorPalette.primary,
+        secondary: colorPalette.secondary,
+        accent: colorPalette.accent,
+      }
+    }));
+  };
+
+  const handleStartRender = async () => {
+    if (!user?.company_id) {
+      toast.error('No company context');
+      return;
+    }
+
+    const templateConfig = TEMPLATES.find(t => t.id === selectedTemplate);
+    if (!templateConfig) return;
+
+    try {
+      setIsRendering(true);
+
+      const props = getTemplateProps(selectedTemplate, selectedProduct, brandAssets, digitalProductData, designAnalysis);
+
+      const job = await RenderJob.create({
+        company_id: user.company_id,
+        user_id: user.id,
+        template_id: selectedTemplate,
+        template_props: props,
+        width: templateConfig.width,
+        height: templateConfig.height,
+        fps: templateConfig.fps,
+        duration_frames: templateConfig.durationFrames,
+        status: 'pending',
+        progress: 0,
+      });
+
+      setRenderJob(job);
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      fetch(`${supabaseUrl}/functions/v1/render-video`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseKey}`,
+        },
+        body: JSON.stringify({ jobId: job.id }),
+      }).catch(e => console.error('Failed to trigger render:', e));
+
+    } catch (e) {
+      console.error('Failed to start render:', e);
+      toast.error('Failed to start render');
+      setIsRendering(false);
+    }
+  };
+
+  const handleRetryRender = () => {
+    setRenderJob(null);
+    setIsRendering(false);
+    handleStartRender();
+  };
+
   const filteredProducts = products.filter(p =>
     p.name?.toLowerCase().includes(productSearch.toLowerCase())
   );
 
-  // Build props for the Remotion Player based on current state
-  const templateProps = {
-    productName: selectedProduct?.name || 'Your Product',
-    productDescription: selectedProduct?.description || 'An amazing product built for you',
-    productImage: selectedProduct?.featured_image?.url || 'https://placehold.co/800x600/1a1a2e/06b6d4?text=Product',
-    brandColors: {
-      primary: brandAssets?.colors?.primary || '#0f0f0f',
-      secondary: brandAssets?.colors?.secondary || '#1a1a2e',
-      accent: brandAssets?.colors?.accent || '#06b6d4',
-    },
-    features: selectedProduct?.features?.length
-      ? selectedProduct.features.slice(0, 4)
-      : ['AI-Powered Automation', 'Real-time Analytics', 'Team Collaboration', 'Smart Integrations'],
-  };
+  const templateProps = getTemplateProps(selectedTemplate, selectedProduct, brandAssets, digitalProductData, designAnalysis);
 
   const currentTemplateConfig = TEMPLATES.find(t => t.id === selectedTemplate) || TEMPLATES[0];
-  const playerHeight = playerWidth ? Math.round(playerWidth * (9 / 16)) : 0;
+  const aspectRatioValue = currentTemplateConfig.height / currentTemplateConfig.width;
+  const playerHeight = playerWidth ? Math.round(playerWidth * aspectRatioValue) : 0;
+  const SelectedComponent = COMPONENT_MAP[selectedTemplate] || ProductDemo;
 
   return (
     <div className="min-h-screen bg-black">
@@ -639,7 +904,7 @@ export default function CreateVideos() {
                       {(currentTemplateConfig.durationFrames / currentTemplateConfig.fps).toFixed(0)}s
                     </Badge>
                     <Badge variant="outline" className="border-zinc-700 text-zinc-400 bg-zinc-800/50 text-xs">
-                      1920×1080
+                      {currentTemplateConfig.width}×{currentTemplateConfig.height}
                     </Badge>
                   </div>
                 </div>
@@ -719,6 +984,33 @@ export default function CreateVideos() {
                       </Popover>
                     </div>
 
+                    {/* Analyze Design Button */}
+                    {selectedProduct?.gallery?.length > 0 && (
+                      <button
+                        onClick={handleAnalyzeDesign}
+                        disabled={isAnalyzing}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 rounded-lg text-sm text-purple-400 transition-colors disabled:opacity-50"
+                      >
+                        {isAnalyzing ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+                            Analyzing...
+                          </>
+                        ) : (
+                          <>
+                            <Eye className="w-4 h-4" />
+                            Analyze Design
+                          </>
+                        )}
+                      </button>
+                    )}
+
+                    <DesignAnalysisPanel
+                      analysis={designAnalysis}
+                      isLoading={isAnalyzing}
+                      onApplyColors={handleApplyColors}
+                    />
+
                     {/* Live props preview */}
                     <div className="p-3 bg-zinc-800/50 rounded-xl border border-zinc-700/50 space-y-2">
                       <div className="flex items-center gap-2 text-xs text-zinc-500">
@@ -726,20 +1018,90 @@ export default function CreateVideos() {
                         Template data (updates preview live)
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div>
-                          <span className="text-zinc-500">Name:</span>
-                          <span className="text-zinc-300 ml-1">{templateProps.productName}</span>
-                        </div>
-                        <div>
-                          <span className="text-zinc-500">Features:</span>
-                          <span className="text-zinc-300 ml-1">{templateProps.features.length}</span>
-                        </div>
+                        {selectedTemplate === 'SocialAd' ? (
+                          <>
+                            <div>
+                              <span className="text-zinc-500">Headline:</span>
+                              <span className="text-zinc-300 ml-1">{templateProps.headline}</span>
+                            </div>
+                            <div>
+                              <span className="text-zinc-500">CTA:</span>
+                              <span className="text-zinc-300 ml-1">{templateProps.ctaText}</span>
+                            </div>
+                          </>
+                        ) : selectedTemplate === 'FeatureShowcase' ? (
+                          <>
+                            <div>
+                              <span className="text-zinc-500">Product:</span>
+                              <span className="text-zinc-300 ml-1">{templateProps.productName}</span>
+                            </div>
+                            <div>
+                              <span className="text-zinc-500">Features:</span>
+                              <span className="text-zinc-300 ml-1">{templateProps.features?.length || 0}</span>
+                            </div>
+                          </>
+                        ) : selectedTemplate === 'UIShowcase' ? (
+                          <>
+                            <div>
+                              <span className="text-zinc-500">Product:</span>
+                              <span className="text-zinc-300 ml-1">{templateProps.productName}</span>
+                            </div>
+                            <div>
+                              <span className="text-zinc-500">Layout:</span>
+                              <span className="text-zinc-300 ml-1">{designAnalysis?.layoutPattern || 'auto'}</span>
+                            </div>
+                            <div>
+                              <span className="text-zinc-500">Screenshots:</span>
+                              <span className="text-zinc-300 ml-1">{templateProps.screenshots?.length || 0}</span>
+                            </div>
+                            <div>
+                              <span className="text-zinc-500">Features:</span>
+                              <span className="text-zinc-300 ml-1">{templateProps.features?.length || 0}</span>
+                            </div>
+                            {designAnalysis && (
+                              <div className="col-span-2 flex items-center gap-2">
+                                <span className="text-zinc-500">Vibe:</span>
+                                <span className="text-zinc-300">{designAnalysis.overallVibe}</span>
+                              </div>
+                            )}
+                          </>
+                        ) : selectedTemplate === 'ProductShowcase' ? (
+                          <>
+                            <div>
+                              <span className="text-zinc-500">Product:</span>
+                              <span className="text-zinc-300 ml-1">{templateProps.productName}</span>
+                            </div>
+                            <div>
+                              <span className="text-zinc-500">Screenshots:</span>
+                              <span className="text-zinc-300 ml-1">{templateProps.screenshots?.length || 0}</span>
+                            </div>
+                            <div>
+                              <span className="text-zinc-500">Features:</span>
+                              <span className="text-zinc-300 ml-1">{templateProps.features?.length || 0}</span>
+                            </div>
+                            <div>
+                              <span className="text-zinc-500">CTA:</span>
+                              <span className="text-zinc-300 ml-1">{templateProps.ctaText}</span>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div>
+                              <span className="text-zinc-500">Name:</span>
+                              <span className="text-zinc-300 ml-1">{templateProps.productName}</span>
+                            </div>
+                            <div>
+                              <span className="text-zinc-500">Features:</span>
+                              <span className="text-zinc-300 ml-1">{templateProps.features?.length || 0}</span>
+                            </div>
+                          </>
+                        )}
                         <div className="col-span-2 flex items-center gap-2">
                           <span className="text-zinc-500">Brand:</span>
                           <div className="flex gap-1">
-                            <div className="w-4 h-4 rounded" style={{ background: templateProps.brandColors.primary }} />
-                            <div className="w-4 h-4 rounded" style={{ background: templateProps.brandColors.secondary }} />
-                            <div className="w-4 h-4 rounded" style={{ background: templateProps.brandColors.accent }} />
+                            <div className="w-4 h-4 rounded" style={{ background: templateProps.brandColors?.primary || '#0f0f0f' }} />
+                            <div className="w-4 h-4 rounded" style={{ background: templateProps.brandColors?.secondary || '#1a1a2e' }} />
+                            <div className="w-4 h-4 rounded" style={{ background: templateProps.brandColors?.accent || '#06b6d4' }} />
                           </div>
                         </div>
                       </div>
@@ -749,13 +1111,67 @@ export default function CreateVideos() {
 
                 {/* Render Button */}
                 <Button
-                  onClick={() => toast.info('Server-side rendering coming soon. Use the preview player to review your video.')}
-                  className="w-full bg-gradient-to-r from-yellow-500 to-yellow-500 hover:from-yellow-600 hover:to-yellow-600 text-white border-0 h-12"
+                  onClick={handleStartRender}
+                  disabled={isRendering}
+                  className="w-full bg-gradient-to-r from-yellow-500 to-yellow-500 hover:from-yellow-600 hover:to-yellow-600 text-white border-0 h-12 disabled:opacity-50"
                   size="lg"
                 >
-                  <Download className="w-5 h-5 mr-2" />
-                  Render Video
+                  {isRendering ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Rendering...
+                    </>
+                  ) : (
+                    <>
+                      <Film className="w-5 h-5 mr-2" />
+                      Render Video
+                    </>
+                  )}
                 </Button>
+
+                {/* Recent Renders */}
+                {recentRenders.length > 0 && (
+                  <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
+                    <h4 className="text-sm font-medium text-zinc-400 mb-3">Recent Renders</h4>
+                    <div className="space-y-2">
+                      {recentRenders.map(job => (
+                        <div key={job.id} className="flex items-center justify-between p-3 bg-zinc-900/50 border border-zinc-800 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <Film className="w-4 h-4 text-zinc-500" />
+                            <div>
+                              <p className="text-sm text-white">{job.template_id}</p>
+                              <p className="text-xs text-zinc-500">{new Date(job.created_at).toLocaleDateString()}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${
+                              job.status === 'completed' ? 'bg-green-500/10 text-green-400' :
+                              job.status === 'failed' ? 'bg-red-500/10 text-red-400' :
+                              job.status === 'rendering' ? 'bg-cyan-500/10 text-cyan-400' :
+                              'bg-zinc-500/10 text-zinc-400'
+                            }`}>
+                              {job.status}
+                            </span>
+                            {job.status === 'completed' && job.output_url && (
+                              <a href={job.output_url} download className="p-1 hover:bg-white/10 rounded transition-colors">
+                                <Download className="w-4 h-4 text-cyan-400" />
+                              </a>
+                            )}
+                            {job.status === 'failed' && (
+                              <button
+                                onClick={() => { setRenderJob(job); }}
+                                className="p-1 hover:bg-white/10 rounded transition-colors"
+                                title={job.error_message || 'View error'}
+                              >
+                                <AlertCircle className="w-4 h-4 text-red-400" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </motion.div>
@@ -784,11 +1200,11 @@ export default function CreateVideos() {
                   {playerWidth > 0 && (
                     <Player
                       ref={playerRef}
-                      component={ProductDemo}
+                      component={SelectedComponent}
                       inputProps={templateProps}
                       durationInFrames={currentTemplateConfig.durationFrames}
-                      compositionWidth={1920}
-                      compositionHeight={1080}
+                      compositionWidth={currentTemplateConfig.width}
+                      compositionHeight={currentTemplateConfig.height}
                       fps={currentTemplateConfig.fps}
                       style={{ width: '100%', height: playerHeight }}
                       controls
@@ -963,6 +1379,13 @@ export default function CreateVideos() {
             )}
           </motion.div>
         </div>
+
+        <RenderProgressModal
+          isOpen={!!renderJob}
+          onClose={() => { setRenderJob(null); setIsRendering(false); }}
+          job={renderJob}
+          onRetry={handleRetryRender}
+        />
 
         {/* Video Preview Dialog */}
         <Dialog open={!!previewVideo} onOpenChange={() => setPreviewVideo(null)}>
