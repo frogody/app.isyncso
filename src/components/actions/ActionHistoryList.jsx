@@ -14,26 +14,26 @@ import { cn } from '@/lib/utils';
 import { formatTimeAgo } from '@/utils/dateUtils';
 
 const STATUS_CONFIG = {
-  success: { 
-    icon: CheckCircle, 
-    color: 'text-green-400', 
-    bg: 'bg-green-500/10', 
-    border: 'border-green-500/20',
-    gradient: 'from-green-500/20 to-emerald-500/10'
+  success: {
+    icon: CheckCircle,
+    color: 'text-cyan-400',
+    bg: 'bg-cyan-500/10',
+    border: 'border-cyan-500/20',
+    gradient: 'from-cyan-500/20 to-blue-500/10'
   },
-  failed: { 
-    icon: XCircle, 
-    color: 'text-red-400', 
-    bg: 'bg-red-500/10', 
+  failed: {
+    icon: XCircle,
+    color: 'text-red-400',
+    bg: 'bg-red-500/10',
     border: 'border-red-500/20',
-    gradient: 'from-red-500/20 to-orange-500/10'
+    gradient: 'from-red-500/20 to-red-500/10'
   },
-  pending: { 
-    icon: Clock, 
-    color: 'text-amber-400', 
-    bg: 'bg-amber-500/10', 
-    border: 'border-amber-500/20',
-    gradient: 'from-amber-500/20 to-yellow-500/10'
+  pending: {
+    icon: Clock,
+    color: 'text-blue-400',
+    bg: 'bg-blue-500/10',
+    border: 'border-blue-500/20',
+    gradient: 'from-blue-500/20 to-cyan-500/10'
   }
 };
 

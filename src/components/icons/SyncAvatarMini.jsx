@@ -5,16 +5,16 @@ import { useSyncState } from '@/components/context/SyncStateContext';
 
 // Agent color segments - MUST match SyncAgent.jsx exactly
 const AGENT_SEGMENTS = [
-  { id: 'orchestrator', color: '#ec4899', from: 0.01, to: 0.09 },  // pink
-  { id: 'learn', color: '#06b6d4', from: 0.11, to: 0.19 },         // cyan
-  { id: 'growth', color: '#6366f1', from: 0.21, to: 0.29 },        // indigo
-  { id: 'products', color: '#10b981', from: 0.31, to: 0.39 },      // emerald
-  { id: 'sentinel', color: '#86EFAC', from: 0.41, to: 0.49 },      // sage green
-  { id: 'finance', color: '#f59e0b', from: 0.51, to: 0.59 },       // amber
-  { id: 'create', color: '#f43f5e', from: 0.61, to: 0.69 },        // rose
-  { id: 'tasks', color: '#f97316', from: 0.71, to: 0.79 },         // orange
-  { id: 'research', color: '#3b82f6', from: 0.81, to: 0.89 },      // blue
-  { id: 'inbox', color: '#14b8a6', from: 0.91, to: 0.99 },         // teal
+  { id: 'orchestrator', color: '#ec4899', from: 0.02, to: 0.08 },  // pink
+  { id: 'learn', color: '#06b6d4', from: 0.12, to: 0.18 },         // cyan
+  { id: 'growth', color: '#6366f1', from: 0.22, to: 0.28 },        // indigo
+  { id: 'products', color: '#10b981', from: 0.32, to: 0.38 },      // emerald
+  { id: 'sentinel', color: '#86EFAC', from: 0.42, to: 0.48 },      // sage green
+  { id: 'finance', color: '#f59e0b', from: 0.52, to: 0.58 },       // amber
+  { id: 'create', color: '#f43f5e', from: 0.62, to: 0.68 },        // rose
+  { id: 'tasks', color: '#f97316', from: 0.72, to: 0.78 },         // orange
+  { id: 'research', color: '#3b82f6', from: 0.82, to: 0.88 },      // blue
+  { id: 'inbox', color: '#14b8a6', from: 0.92, to: 0.98 },         // teal
 ];
 
 // Check for reduced motion preference

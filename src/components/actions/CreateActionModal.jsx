@@ -99,7 +99,7 @@ export default function CreateActionModal({ open, onClose, onSuccess, userId }) 
       <DialogContent className="bg-zinc-900 border-zinc-800 max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-white flex items-center gap-2">
-            <Zap className="w-5 h-5 text-orange-400" />
+            <Zap className="w-5 h-5 text-cyan-400" />
             {step === 1 ? 'Create New Action' : 'Configure Action'}
           </DialogTitle>
         </DialogHeader>
@@ -122,10 +122,10 @@ export default function CreateActionModal({ open, onClose, onSuccess, userId }) 
                     <button
                       key={type.value}
                       onClick={() => handleTypeSelect(type)}
-                      className="flex items-start gap-3 p-4 rounded-xl border border-zinc-800 bg-zinc-800/30 hover:bg-zinc-800/60 hover:border-orange-500/30 transition-all text-left group"
+                      className="flex items-start gap-3 p-4 rounded-xl border border-zinc-800 bg-zinc-800/30 hover:bg-zinc-800/60 hover:border-cyan-500/30 transition-all text-left group"
                     >
-                      <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center group-hover:bg-orange-500/30 transition-colors">
-                        <Icon className="w-5 h-5 text-orange-400" />
+                      <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center group-hover:bg-cyan-500/30 transition-colors">
+                        <Icon className="w-5 h-5 text-cyan-400" />
                       </div>
                       <div>
                         <h4 className="font-medium text-white">{type.label}</h4>
@@ -147,8 +147,8 @@ export default function CreateActionModal({ open, onClose, onSuccess, userId }) 
               className="space-y-5"
             >
               <div className="flex items-center gap-3 p-3 bg-zinc-800/50 rounded-xl">
-                <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
-                  <selectedType.icon className="w-5 h-5 text-orange-400" />
+                <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
+                  <selectedType.icon className="w-5 h-5 text-cyan-400" />
                 </div>
                 <div>
                   <h4 className="font-medium text-white">{selectedType.label}</h4>
@@ -235,7 +235,7 @@ export default function CreateActionModal({ open, onClose, onSuccess, userId }) 
                 <Button variant="outline" onClick={() => setStep(1)} className="border-zinc-700 text-zinc-300">
                   Back
                 </Button>
-                <Button onClick={handleSubmit} disabled={loading || !formData.title} className="bg-orange-500 hover:bg-orange-400 text-white">
+                <Button onClick={handleSubmit} disabled={loading || !formData.title} className="bg-cyan-600 hover:bg-cyan-500 text-white">
                   {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ArrowRight className="w-4 h-4 mr-2" />}
                   Queue Action
                 </Button>

@@ -36,47 +36,47 @@ const INTEGRATION_ICONS = {
 };
 
 const CATEGORY_CONFIG = {
-  crm: { 
-    gradient: 'from-orange-700/80 to-amber-700/80',
-    bg: 'bg-orange-900/30', 
-    text: 'text-orange-300/80', 
-    border: 'border-orange-800/40',
-    glow: 'shadow-orange-900/20'
+  crm: {
+    gradient: 'from-cyan-700/80 to-blue-700/80',
+    bg: 'bg-cyan-900/30',
+    text: 'text-cyan-300/80',
+    border: 'border-cyan-800/40',
+    glow: 'shadow-cyan-900/20'
   },
-  ticketing: { 
-    gradient: 'from-orange-700/80 to-amber-700/80',
-    bg: 'bg-orange-900/30', 
-    text: 'text-orange-300/80', 
-    border: 'border-orange-800/40',
-    glow: 'shadow-orange-900/20'
+  ticketing: {
+    gradient: 'from-cyan-700/80 to-blue-700/80',
+    bg: 'bg-cyan-900/30',
+    text: 'text-cyan-300/80',
+    border: 'border-cyan-800/40',
+    glow: 'shadow-cyan-900/20'
   },
-  hris: { 
-    gradient: 'from-orange-700/80 to-amber-700/80',
-    bg: 'bg-orange-900/30', 
-    text: 'text-orange-300/80', 
-    border: 'border-orange-800/40',
-    glow: 'shadow-orange-900/20'
+  hris: {
+    gradient: 'from-cyan-700/80 to-blue-700/80',
+    bg: 'bg-cyan-900/30',
+    text: 'text-cyan-300/80',
+    border: 'border-cyan-800/40',
+    glow: 'shadow-cyan-900/20'
   },
-  ats: { 
-    gradient: 'from-orange-700/80 to-amber-700/80',
-    bg: 'bg-orange-900/30', 
-    text: 'text-orange-300/80', 
-    border: 'border-orange-800/40',
-    glow: 'shadow-orange-900/20'
+  ats: {
+    gradient: 'from-cyan-700/80 to-blue-700/80',
+    bg: 'bg-cyan-900/30',
+    text: 'text-cyan-300/80',
+    border: 'border-cyan-800/40',
+    glow: 'shadow-cyan-900/20'
   },
-  accounting: { 
-    gradient: 'from-orange-700/80 to-amber-700/80',
-    bg: 'bg-orange-900/30', 
-    text: 'text-orange-300/80', 
-    border: 'border-orange-800/40',
-    glow: 'shadow-orange-900/20'
+  accounting: {
+    gradient: 'from-cyan-700/80 to-blue-700/80',
+    bg: 'bg-cyan-900/30',
+    text: 'text-cyan-300/80',
+    border: 'border-cyan-800/40',
+    glow: 'shadow-cyan-900/20'
   },
-  filestorage: { 
-    gradient: 'from-orange-700/80 to-amber-700/80',
-    bg: 'bg-orange-900/30', 
-    text: 'text-orange-300/80', 
-    border: 'border-orange-800/40',
-    glow: 'shadow-orange-900/20'
+  filestorage: {
+    gradient: 'from-cyan-700/80 to-blue-700/80',
+    bg: 'bg-cyan-900/30',
+    text: 'text-cyan-300/80',
+    border: 'border-cyan-800/40',
+    glow: 'shadow-cyan-900/20'
   }
 };
 
@@ -136,9 +136,9 @@ export default function IntegrationCard({
         
         <div className="flex items-center gap-1">
           {integration.status === 'active' ? (
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-green-500/10">
-              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-xs text-green-400 font-medium">Active</span>
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-cyan-500/10">
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+              <span className="text-xs text-cyan-400 font-medium">Active</span>
             </div>
           ) : (
             <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-red-500/10">

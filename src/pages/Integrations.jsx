@@ -1422,7 +1422,7 @@ export default function Integrations({ embedded = false }) {
                       <RefreshCw className="w-4 h-4 mr-2" />
                       Refresh
                     </Button>
-                    <Button size="sm" onClick={() => setCreateActionModalOpen(true)} className="bg-blue-600/80 hover:bg-blue-600 text-white">
+                    <Button size="sm" onClick={() => setCreateActionModalOpen(true)} className="bg-cyan-600 hover:bg-cyan-500 text-white">
                       <Plus className="w-4 h-4 mr-2" />
                       New Action
                     </Button>
@@ -1444,7 +1444,7 @@ export default function Integrations({ embedded = false }) {
                           </div>
                           <h4 className="text-lg font-semibold text-white mb-2">No Pending Actions</h4>
                           <p className="text-zinc-500 text-sm mb-6">Create an action to get started</p>
-                          <Button onClick={() => setCreateActionModalOpen(true)} className="bg-blue-600/80 hover:bg-blue-600 text-white">
+                          <Button onClick={() => setCreateActionModalOpen(true)} className="bg-cyan-600 hover:bg-cyan-500 text-white">
                             <Plus className="w-4 h-4 mr-2" />Create Action
                           </Button>
                         </div>

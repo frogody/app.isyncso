@@ -50,49 +50,49 @@ const CATEGORIES = [
     label: 'CRM',
     description: 'HubSpot, Salesforce, Pipedrive',
     icon: Users,
-    gradient: 'from-orange-700/80 to-amber-700/80'
+    gradient: 'from-cyan-700/80 to-blue-700/80'
   },
   {
     id: 'ticketing',
     label: 'Ticketing',
     description: 'Jira, Zendesk, Linear, Asana',
     icon: Ticket,
-    gradient: 'from-orange-700/80 to-amber-700/80'
+    gradient: 'from-cyan-700/80 to-blue-700/80'
   },
   {
     id: 'hris',
     label: 'HR',
     description: 'BambooHR, Workday, Gusto',
     icon: Building2,
-    gradient: 'from-orange-700/80 to-amber-700/80'
+    gradient: 'from-cyan-700/80 to-blue-700/80'
   },
   {
     id: 'ats',
     label: 'Recruiting',
     description: 'Greenhouse, Lever, Workable',
     icon: Briefcase,
-    gradient: 'from-orange-700/80 to-amber-700/80'
+    gradient: 'from-cyan-700/80 to-blue-700/80'
   },
   {
     id: 'accounting',
     label: 'Accounting',
     description: 'QuickBooks, Xero, FreshBooks',
     icon: Calculator,
-    gradient: 'from-orange-700/80 to-amber-700/80'
+    gradient: 'from-cyan-700/80 to-blue-700/80'
   },
   {
     id: 'filestorage',
     label: 'File Storage',
     description: 'Dropbox, Box, Google Drive',
     icon: FolderOpen,
-    gradient: 'from-orange-700/80 to-amber-700/80'
+    gradient: 'from-cyan-700/80 to-blue-700/80'
   },
   {
     id: 'mktg',
     label: 'Marketing',
     description: 'Mailchimp, HubSpot Marketing',
     icon: MessageSquare,
-    gradient: 'from-orange-700/80 to-amber-700/80'
+    gradient: 'from-cyan-700/80 to-blue-700/80'
   }
 ];
 
@@ -246,9 +246,9 @@ export default function ConnectIntegrationModal({
         <DialogHeader>
           <DialogTitle className="text-white text-xl flex items-center gap-2">
             {step === 'success' ? (
-              <><CheckCircle className="w-6 h-6 text-orange-400/80" />Connection Successful!</>
+              <><CheckCircle className="w-6 h-6 text-cyan-400/80" />Connection Successful!</>
             ) : (
-              <><Sparkles className="w-6 h-6 text-orange-400/80" />Connect Integration</>
+              <><Sparkles className="w-6 h-6 text-cyan-400/80" />Connect Integration</>
             )}
           </DialogTitle>
           <DialogDescription className="text-zinc-400">
@@ -281,9 +281,9 @@ export default function ConnectIntegrationModal({
                     disabled={loading || isConnected}
                     className={cn(
                       'p-5 rounded-xl border text-left transition-all group relative overflow-hidden',
-                      'border-zinc-700/60 hover:border-orange-800/50',
+                      'border-zinc-700/60 hover:border-cyan-800/50',
                       isConnected ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-zinc-800/50',
-                      selectedCategory?.id === category.id && loading && 'border-orange-800/50 bg-zinc-800/50'
+                      selectedCategory?.id === category.id && loading && 'border-cyan-800/50 bg-zinc-800/50'
                     )}
                   >
                     <div className="flex items-start justify-between mb-3">
@@ -291,20 +291,20 @@ export default function ConnectIntegrationModal({
                         <Icon className="w-6 h-6 text-white" />
                       </div>
                       {isConnected && (
-                        <Badge className="bg-orange-900/30 text-orange-300/80 border-orange-800/40 text-xs">
+                        <Badge className="bg-cyan-900/30 text-cyan-300/80 border-cyan-800/40 text-xs">
                           Connected
                         </Badge>
                       )}
                       {selectedCategory?.id === category.id && loading && (
-                        <Loader2 className="w-5 h-5 animate-spin text-orange-400/80" />
+                        <Loader2 className="w-5 h-5 animate-spin text-cyan-400/80" />
                       )}
                     </div>
-                    <h3 className="font-semibold text-white mb-1 group-hover:text-orange-300/80 transition-colors">{category.label}</h3>
+                    <h3 className="font-semibold text-white mb-1 group-hover:text-cyan-300/80 transition-colors">{category.label}</h3>
                     <p className="text-xs text-zinc-500">{category.description}</p>
                     
                     {!isConnected && (
                       <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <ArrowRight className="w-5 h-5 text-orange-400/80" />
+                        <ArrowRight className="w-5 h-5 text-cyan-400/80" />
                       </div>
                     )}
                   </motion.button>
@@ -322,10 +322,10 @@ export default function ConnectIntegrationModal({
               className="flex flex-col items-center justify-center py-16"
             >
               <div className="relative mb-6">
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-orange-700/80 to-amber-700/80 flex items-center justify-center">
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-700/80 to-blue-700/80 flex items-center justify-center">
                   <Loader2 className="w-10 h-10 animate-spin text-white" />
                 </div>
-                <div className="absolute inset-0 rounded-2xl bg-orange-800/20 animate-ping" />
+                <div className="absolute inset-0 rounded-2xl bg-cyan-800/20 animate-ping" />
               </div>
               <p className="text-white font-medium mb-2">Connecting...</p>
               <p className="text-zinc-500 text-sm text-center max-w-xs">
@@ -353,8 +353,8 @@ export default function ConnectIntegrationModal({
               exit={{ opacity: 0, scale: 0.95 }}
               className="flex flex-col items-center justify-center py-16"
             >
-              <div className="w-20 h-20 rounded-2xl bg-orange-900/30 border border-orange-800/40 flex items-center justify-center mb-6">
-                <CheckCircle className="w-10 h-10 text-orange-400/80" />
+              <div className="w-20 h-20 rounded-2xl bg-cyan-900/30 border border-cyan-800/40 flex items-center justify-center mb-6">
+                <CheckCircle className="w-10 h-10 text-cyan-400/80" />
               </div>
               <p className="text-white text-lg font-semibold mb-2">Integration Connected!</p>
               <p className="text-zinc-400 text-sm">You can now execute actions through this integration.</p>

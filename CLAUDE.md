@@ -1913,3 +1913,77 @@ npx supabase functions deploy analyzeCampaignProject --project-ref sfxpmzicgpaxf
 
 # Frontend auto-deploys via Vercel on push to main
 ```
+
+---
+
+## UI Color Palette Unification (Jan 30, 2026)
+
+### Overview
+
+Comprehensive migration of the entire platform to a unified **cyan/blue** color palette. Previously, different sections used inconsistent colors (green, amber, orange, purple, pink, emerald). Now all environments follow these rules:
+
+### Color Rules
+
+| Usage | Color | Example |
+|-------|-------|---------|
+| Primary accents | Cyan (`cyan-400`, `cyan-500`, `cyan-600`) | Buttons, active states, badges |
+| Secondary accents | Blue (`blue-400`, `blue-500`) | Secondary info, pricing models |
+| Neutral/Draft | Zinc (`zinc-400`, `zinc-500`) | Draft badges, disabled states |
+| Errors/Destructive | Red (`red-400`, `red-500`) | Delete buttons, failed status, errors |
+| App branding (Workspace) | Per-app colors | Learn=cyan, Growth=indigo, Sentinel=sage, Finance=blue, Raise=blue, Talent=red |
+
+### What Was Changed
+
+**Products Environment** (19 component files):
+- All green "Published" badges → cyan
+- All amber/gold "In Stock" badges → cyan
+- All orange document icons → cyan
+- All purple pricing accents → blue
+- Files: `ProductCard.jsx`, `ProductDetail.jsx`, `ActivityTimeline.jsx`, `ProductImageUploader.jsx`, `DocumentsSection.jsx`, `PricingTiers.jsx`, `InlineEdit.jsx`, `ProductHero.jsx`, `VariantsManager.jsx`, `SpecificationsTable.jsx`, `BundleManager.jsx`, `BundlePricingCalculator.jsx`, `BundleEditor.jsx`, `QuickActions.jsx`, `PricingTable.jsx`, `OneTimePricingEditor.jsx`, `DigitalPricingManager.jsx`, `SubscriptionPlanEditor.jsx`, `AddOnEditor.jsx`, `BarcodeDisplay.jsx`, `ProductInquiryModal.jsx`, `ProductModal.jsx`
+
+**Settings - Integrations** (`src/pages/Integrations.jsx`):
+- All emerald status indicators → cyan
+- All orange action accents → blue/cyan
+- All amber warnings → zinc
+- Google gradient updated to blue/cyan
+
+**Settings - Workspace** (`src/components/layout/AppsManagerModal.jsx`):
+- Finance/Raise app color: emerald → blue
+- Create app color: pink → cyan
+- Removed unused pink/emerald COLOR_CLASSES, added blue
+
+**Integration Components** (`src/components/integrations/IntegrationCard.jsx`):
+- Purple Connect buttons → cyan
+- Green connected indicators → cyan
+
+**Action Components** (`src/components/actions/*.jsx`):
+- All orange/amber action accents → cyan
+- Green success indicators → cyan
+- Files: `IntegrationCard.jsx`, `ActionQueueCard.jsx`, `ActionHistoryList.jsx`, `ConnectIntegrationModal.jsx`, `CreateActionModal.jsx`, `ExecuteActionModal.jsx`
+
+**Global UI**:
+- `GlassCard.jsx`: Removed all hover glow/shadow effects, border-only highlights
+- Hover effects: Only border color changes on hover, no `box-shadow` glow
+
+### Settings Embedded Pages
+
+Settings tabs render page components inline using an `embedded` prop pattern:
+
+```jsx
+// In Settings.jsx
+{activeTab === 'teams' && <TeamManagement embedded />}
+{activeTab === 'integrations' && <Integrations embedded />}
+{activeTab === 'workspace' && <AppsManagerModal embedded />}
+```
+
+When `embedded=true`, components skip their outer layout (min-h-screen, PageHeader, backgrounds) and render only their content.
+
+### SYNC Avatar
+
+The SYNC avatar in the sidebar (`src/components/icons/SyncAvatarMini.jsx`) uses 10 colored ring segments representing AI agents. The gap between segments was increased from 2% to 4% of the circle for better visibility at small sizes.
+
+### Key Commits
+- `e57c864` - fix: unify ProductCard shared component to cyan/blue palette
+- `1ccfcc9` - fix: unify ProductDetail and ActivityTimeline to cyan/blue palette
+- `eef1287` - fix: migrate all 19 product components to cyan/blue palette
+- `d894e2d` - fix: migrate Integrations and Workspace pages to cyan/blue palette

@@ -76,12 +76,12 @@ export function IntegrationCard({
   };
 
   return (
-    <Card className="group relative overflow-hidden transition-all duration-200 hover:shadow-lg dark:hover:shadow-purple-500/10 border-slate-800 bg-slate-900/50">
+    <Card className="group relative overflow-hidden transition-all duration-200 hover:shadow-lg dark:hover:shadow-cyan-500/10 border-slate-800 bg-slate-900/50">
       {/* Status indicator bar */}
       <div
         className="absolute top-0 left-0 right-0 h-1 transition-all duration-300"
         style={{
-          backgroundColor: isConnected ? '#22c55e' : 'transparent',
+          backgroundColor: isConnected ? '#22d3ee' : 'transparent',
         }}
       />
 
@@ -98,7 +98,7 @@ export function IntegrationCard({
             <div className="flex items-center gap-2">
               <h3 className="font-semibold text-white truncate">{name}</h3>
               {isConnected && (
-                <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                <CheckCircle className="w-4 h-4 text-cyan-400 flex-shrink-0" />
               )}
             </div>
 
@@ -175,7 +175,7 @@ export function IntegrationCard({
             ) : (
               <Button
                 size="sm"
-                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white"
+                className="bg-cyan-600 hover:bg-cyan-500 text-white"
                 onClick={handleConnect}
                 disabled={isLoading || isConnecting}
               >
@@ -221,7 +221,7 @@ export function IntegrationCardCompact({
         <IntegrationIcon integration={integration} className="w-8 h-8" />
         <span className="font-medium text-white">{name}</span>
         {isConnected && (
-          <CheckCircle className="w-4 h-4 text-green-500" />
+          <CheckCircle className="w-4 h-4 text-cyan-400" />
         )}
       </div>
 
@@ -229,7 +229,7 @@ export function IntegrationCardCompact({
         <Button
           variant="ghost"
           size="sm"
-          className="text-purple-400 hover:text-purple-300 hover:bg-purple-500/10"
+          className="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10"
           onClick={() => onConnect?.(integration)}
           disabled={isLoading}
         >

@@ -29,11 +29,11 @@ const ACTION_ICONS = {
 };
 
 const STATUS_CONFIG = {
-  queued: { 
-    icon: Clock, 
-    color: 'text-amber-400', 
-    bg: 'bg-amber-500/10', 
-    border: 'border-amber-500/30',
+  queued: {
+    icon: Clock,
+    color: 'text-cyan-400',
+    bg: 'bg-cyan-500/10',
+    border: 'border-cyan-500/30',
     label: 'Queued'
   },
   in_progress: { 
@@ -44,11 +44,11 @@ const STATUS_CONFIG = {
     label: 'In Progress',
     spin: true
   },
-  success: { 
-    icon: CheckCircle, 
-    color: 'text-green-400', 
-    bg: 'bg-green-500/10', 
-    border: 'border-green-500/30',
+  success: {
+    icon: CheckCircle,
+    color: 'text-cyan-400',
+    bg: 'bg-cyan-500/10',
+    border: 'border-cyan-500/30',
     label: 'Completed'
   },
   failed: { 
@@ -69,7 +69,7 @@ const STATUS_CONFIG = {
 
 const PRIORITY_CONFIG = {
   urgent: { color: 'text-red-400', bg: 'bg-red-500/20', border: 'border-red-500/30' },
-  high: { color: 'text-orange-400', bg: 'bg-orange-500/20', border: 'border-orange-500/30' },
+  high: { color: 'text-cyan-400', bg: 'bg-cyan-500/20', border: 'border-cyan-500/30' },
   normal: { color: 'text-zinc-400', bg: 'bg-zinc-500/20', border: 'border-zinc-500/30' },
   low: { color: 'text-zinc-500', bg: 'bg-zinc-600/20', border: 'border-zinc-600/30' }
 };
@@ -144,13 +144,13 @@ export default function ActionQueueCard({
         <div className="flex items-center gap-3">
           <div className={cn(
             'w-12 h-12 rounded-xl flex items-center justify-center',
-            action.status === 'success' ? 'bg-green-500/20' : 
-            action.status === 'failed' ? 'bg-red-500/20' : 'bg-orange-500/20'
+            action.status === 'success' ? 'bg-cyan-500/20' :
+            action.status === 'failed' ? 'bg-red-500/20' : 'bg-cyan-500/20'
           )}>
             <ActionIcon className={cn(
               'w-6 h-6',
-              action.status === 'success' ? 'text-green-400' : 
-              action.status === 'failed' ? 'text-red-400' : 'text-orange-400'
+              action.status === 'success' ? 'text-cyan-400' :
+              action.status === 'failed' ? 'text-red-400' : 'text-cyan-400'
             )} />
           </div>
           <div>
@@ -219,12 +219,12 @@ export default function ActionQueueCard({
       <div className="flex items-center justify-between pt-3 border-t border-zinc-800">
         <div className="flex items-center gap-2">
           {canExecute && onExecute && (
-            <Button size="sm" onClick={() => onExecute(action)} className="bg-orange-500 hover:bg-orange-400 text-white h-8 px-3">
+            <Button size="sm" onClick={() => onExecute(action)} className="bg-cyan-600 hover:bg-cyan-500 text-white h-8 px-3">
               <Play className="w-3 h-3 mr-1" /> Execute Now
             </Button>
           )}
           {canRetry && onRetry && (
-            <Button size="sm" variant="outline" onClick={() => onRetry(action)} className="border-orange-500/30 text-orange-400 hover:bg-orange-500/10 h-8 px-3">
+            <Button size="sm" variant="outline" onClick={() => onRetry(action)} className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 h-8 px-3">
               <RotateCcw className="w-3 h-3 mr-1" /> Retry
             </Button>
           )}

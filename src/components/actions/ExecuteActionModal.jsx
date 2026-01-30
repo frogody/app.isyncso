@@ -265,7 +265,7 @@ export default function ExecuteActionModal({
           value={value}
           onChange={(e) => handleFieldChange(field.name, e.target.value, field)}
           placeholder={field.label}
-          className="bg-zinc-800/50 border-zinc-700 text-white focus:border-orange-500 min-h-[100px]"
+          className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500 min-h-[100px]"
         />
       );
     }
@@ -273,7 +273,7 @@ export default function ExecuteActionModal({
     if (field.type === 'select') {
       return (
         <Select value={value} onValueChange={(v) => handleFieldChange(field.name, v, field)}>
-          <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white focus:border-orange-500">
+          <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500">
             <SelectValue placeholder={`Select ${field.label}`} />
           </SelectTrigger>
           <SelectContent className="bg-zinc-800 border-zinc-700">
@@ -294,7 +294,7 @@ export default function ExecuteActionModal({
             type="checkbox"
             checked={value || false}
             onChange={(e) => handleFieldChange(field.name, e.target.checked, field)}
-            className="w-5 h-5 rounded border-zinc-700 bg-zinc-800 text-orange-500 focus:ring-orange-500"
+            className="w-5 h-5 rounded border-zinc-700 bg-zinc-800 text-cyan-500 focus:ring-cyan-500"
           />
           <span className="text-sm text-zinc-300">{field.label}</span>
         </label>
@@ -316,7 +316,7 @@ export default function ExecuteActionModal({
         value={displayValue}
         onChange={(e) => handleFieldChange(field.name, e.target.value, field)}
         placeholder={field.label}
-        className="bg-zinc-800/50 border-zinc-700 text-white focus:border-orange-500 h-11"
+        className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500 h-11"
       />
     );
   };
@@ -326,7 +326,7 @@ export default function ExecuteActionModal({
       <DialogContent className="bg-zinc-900 border-zinc-700 max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-white text-xl flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center">
               <Zap className="w-5 h-5 text-white" />
             </div>
             {integration?.integration_name}
@@ -347,13 +347,13 @@ export default function ExecuteActionModal({
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.05 }}
                   onClick={() => handleActionSelect(action.id)}
-                  className="p-4 rounded-xl border border-zinc-700 bg-zinc-800/30 hover:bg-zinc-800/50 hover:border-orange-500/50 transition-all text-left group flex items-center justify-between"
+                  className="p-4 rounded-xl border border-zinc-700 bg-zinc-800/30 hover:bg-zinc-800/50 hover:border-cyan-500/50 transition-all text-left group flex items-center justify-between"
                 >
                   <div>
-                    <h4 className="font-medium text-white group-hover:text-orange-400 transition-colors">{action.label}</h4>
+                    <h4 className="font-medium text-white group-hover:text-cyan-400 transition-colors">{action.label}</h4>
                     <p className="text-sm text-zinc-500">{action.description}</p>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-zinc-600 group-hover:text-orange-400 transition-colors" />
+                  <ChevronRight className="w-5 h-5 text-zinc-600 group-hover:text-cyan-400 transition-colors" />
                 </motion.button>
               ))}
             </div>
@@ -373,7 +373,7 @@ export default function ExecuteActionModal({
                   ← Back to actions
                 </button>
 
-                <div className="p-4 rounded-xl bg-orange-500/10 border border-orange-500/20">
+                <div className="p-4 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
                   <h4 className="font-medium text-white">{selectedAction.label}</h4>
                   <p className="text-sm text-zinc-400">{selectedAction.description}</p>
                 </div>
@@ -394,7 +394,7 @@ export default function ExecuteActionModal({
                 <Button
                   onClick={handleExecute}
                   disabled={loading}
-                  className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold h-12"
+                  className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white font-semibold h-12"
                 >
                   {loading ? (
                     <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Executing...</>
@@ -425,12 +425,12 @@ export default function ExecuteActionModal({
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="p-4 rounded-xl bg-green-500/10 border border-green-500/30"
+                    className="p-4 rounded-xl bg-cyan-500/10 border border-cyan-500/30"
                   >
                     <div className="flex items-start gap-3">
-                      <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                      <CheckCircle className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-green-400 font-medium">Success!</h4>
+                        <h4 className="text-cyan-400 font-medium">Success!</h4>
                         <div className="mt-2 p-3 bg-zinc-900/80 rounded-xl text-xs text-zinc-300 overflow-auto max-h-48 border border-zinc-800">
                           <pre className="whitespace-pre-wrap break-words font-mono">
                             {JSON.stringify(result, null, 2)}
