@@ -17,17 +17,17 @@ import {
 import { cn } from '@/lib/utils';
 
 const STATUS_COLORS = {
-  published: { bg: 'bg-green-500/10', text: 'text-green-400', border: 'border-green-500/30', label: 'Published' },
-  draft: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/30', label: 'Draft' },
+  published: { bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/30', label: 'Published' },
+  draft: { bg: 'bg-zinc-500/10', text: 'text-zinc-400', border: 'border-zinc-500/30', label: 'Draft' },
   archived: { bg: 'bg-zinc-500/10', text: 'text-zinc-400', border: 'border-zinc-500/30', label: 'Archived' },
 };
 
 const PRICING_MODELS = {
-  free: { label: 'Free', color: 'text-green-400' },
+  free: { label: 'Free', color: 'text-cyan-400' },
   one_time: { label: 'One-time', color: 'text-cyan-400' },
-  subscription: { label: 'Subscription', color: 'text-purple-400' },
-  usage_based: { label: 'Usage-based', color: 'text-amber-400' },
-  freemium: { label: 'Freemium', color: 'text-indigo-400' },
+  subscription: { label: 'Subscription', color: 'text-blue-400' },
+  usage_based: { label: 'Usage-based', color: 'text-cyan-300' },
+  freemium: { label: 'Freemium', color: 'text-blue-300' },
 };
 
 export function ProductGridCard({
@@ -42,7 +42,6 @@ export function ProductGridCard({
 }) {
   const status = STATUS_COLORS[product.status] || STATUS_COLORS.draft;
   const isDigital = productType === 'digital';
-  const themeColor = isDigital ? 'cyan' : 'amber';
   const Icon = isDigital ? Cloud : Package;
 
   const pricingModel = isDigital && details?.pricing_model
@@ -60,14 +59,12 @@ export function ProductGridCard({
       <Link to={createPageUrl(`ProductDetail?type=${productType}&slug=${product.slug}`)}>
         <div className={cn(
           "group rounded-xl bg-zinc-900/50 border border-white/5 transition-all overflow-hidden",
-          isDigital ? "hover:border-cyan-500/30" : "hover:border-amber-500/30"
+          "hover:border-cyan-500/30"
         )}>
           {/* Image/Preview */}
           <div className={cn(
             "aspect-video relative overflow-hidden",
-            isDigital
-              ? "bg-gradient-to-br from-cyan-900/20 to-cyan-950/20"
-              : "bg-gradient-to-br from-amber-900/20 to-amber-950/20"
+            "bg-gradient-to-br from-cyan-900/20 to-cyan-950/20"
           )}>
             {product.featured_image?.url ? (
               <>
@@ -80,20 +77,14 @@ export function ProductGridCard({
               </>
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <Icon className={cn(
-                  "w-12 h-12",
-                  isDigital ? "text-cyan-500/30" : "text-amber-500/30"
-                )} />
+                <Icon className="w-12 h-12 text-cyan-500/30" />
               </div>
             )}
           </div>
 
           {/* Content */}
           <div className="p-4">
-            <h3 className={cn(
-              "font-medium text-white truncate transition-colors",
-              isDigital ? "group-hover:text-cyan-400" : "group-hover:text-amber-400"
-            )}>
+            <h3 className="font-medium text-white truncate transition-colors group-hover:text-cyan-400">
               {product.name}
             </h3>
             <p className="text-sm text-zinc-500 mt-1 line-clamp-2 min-h-[2.5rem]">
@@ -109,7 +100,7 @@ export function ProductGridCard({
               {/* Physical: Stock badge */}
               {!isDigital && details?.inventory && (
                 details.inventory.quantity > 0 ? (
-                  <Badge className="bg-green-500/20 text-green-400 border border-green-500/30 text-xs">
+                  <Badge className="bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-xs">
                     <Check className="w-3 h-3 mr-1" /> In Stock
                   </Badge>
                 ) : (
@@ -121,7 +112,7 @@ export function ProductGridCard({
 
               {/* Digital: Trial badge */}
               {isDigital && details?.trial_available && (
-                <Badge className="bg-green-500/20 text-green-400 border border-green-500/30 text-xs">
+                <Badge className="bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-xs">
                   {details.trial_days}d Trial
                 </Badge>
               )}
@@ -182,7 +173,7 @@ export function ProductGridCard({
                     <Copy className="w-4 h-4 mr-2" /> Duplicate
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    className="text-amber-400 hover:text-amber-300"
+                    className="text-zinc-400 hover:text-zinc-300"
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); onArchive?.(product); }}
                   >
                     <Archive className="w-4 h-4 mr-2" /> Archive
@@ -215,7 +206,6 @@ export function ProductListRow({
 }) {
   const status = STATUS_COLORS[product.status] || STATUS_COLORS.draft;
   const isDigital = productType === 'digital';
-  const themeColor = isDigital ? 'cyan' : 'amber';
   const Icon = isDigital ? Cloud : Package;
 
   const pricingModel = isDigital && details?.pricing_model
@@ -234,14 +224,12 @@ export function ProductListRow({
       <Link to={createPageUrl(`ProductDetail?type=${productType}&slug=${product.slug}`)}>
         <div className={cn(
           "group flex items-center gap-4 p-4 rounded-xl bg-zinc-900/50 border border-white/5 transition-all",
-          isDigital ? "hover:border-cyan-500/30" : "hover:border-amber-500/30"
+          "hover:border-cyan-500/30"
         )}>
           {/* Thumbnail */}
           <div className={cn(
             "w-16 h-16 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden",
-            isDigital
-              ? "bg-cyan-500/10 border border-cyan-500/20"
-              : "bg-amber-500/10 border border-amber-500/20"
+            "bg-cyan-500/10 border border-cyan-500/20"
           )}>
             {product.featured_image?.url ? (
               <img
@@ -252,7 +240,7 @@ export function ProductListRow({
             ) : (
               <Icon className={cn(
                 "w-7 h-7",
-                isDigital ? "text-cyan-400" : "text-amber-400"
+                "text-cyan-400"
               )} />
             )}
           </div>
@@ -262,7 +250,7 @@ export function ProductListRow({
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className={cn(
                 "font-medium text-white truncate transition-colors",
-                isDigital ? "group-hover:text-cyan-400" : "group-hover:text-amber-400"
+                "group-hover:text-cyan-400"
               )}>
                 {product.name}
               </h3>
@@ -273,7 +261,7 @@ export function ProductListRow({
               {/* Physical: Stock badge */}
               {!isDigital && details?.inventory && (
                 details.inventory.quantity > 0 ? (
-                  <Badge className="bg-green-500/20 text-green-400 border border-green-500/30 text-xs">
+                  <Badge className="bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-xs">
                     <Check className="w-3 h-3 mr-1" /> In Stock
                   </Badge>
                 ) : (
@@ -285,7 +273,7 @@ export function ProductListRow({
 
               {/* Digital: Trial badge */}
               {isDigital && details?.trial_available && (
-                <Badge className="bg-green-500/20 text-green-400 border border-green-500/30 text-xs">
+                <Badge className="bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-xs">
                   {details.trial_days}d Trial
                 </Badge>
               )}
@@ -335,7 +323,7 @@ export function ProductListRow({
             {isDigital && details?.demo_url && (
               <Button variant="ghost" size="sm" className={cn(
                 "h-8 text-zinc-400",
-                isDigital ? "hover:text-cyan-400" : "hover:text-amber-400"
+                "hover:text-cyan-400"
               )}>
                 <Play className="w-4 h-4" />
               </Button>
@@ -363,7 +351,7 @@ export function ProductListRow({
                   <Copy className="w-4 h-4 mr-2" /> Duplicate
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  className="text-amber-400 hover:text-amber-300"
+                  className="text-zinc-400 hover:text-zinc-300"
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); onArchive?.(product); }}
                 >
                   <Archive className="w-4 h-4 mr-2" /> Archive
