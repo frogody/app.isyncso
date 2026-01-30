@@ -50,12 +50,12 @@ import PhoneNumberManager from "@/components/integrations/PhoneNumberManager";
 // Status configuration
 const STATUS_CONFIG = {
   queued: { label: "Queued", color: "bg-zinc-500/20 text-zinc-400 border-zinc-500/30", icon: Clock },
-  sent: { label: "Sent", color: "bg-blue-500/20 text-blue-400 border-blue-500/30", icon: Send },
-  delivered: { label: "Delivered", color: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30", icon: CheckCircle },
-  responded: { label: "Responded", color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", icon: MessageCircle },
-  interested: { label: "Interested", color: "bg-green-500/20 text-green-400 border-green-500/30", icon: Sparkles },
-  declined: { label: "Declined", color: "bg-red-500/20 text-red-400 border-red-500/30", icon: XCircle },
-  scheduled: { label: "Scheduled", color: "bg-purple-500/20 text-purple-400 border-purple-500/30", icon: Calendar },
+  sent: { label: "Sent", color: "bg-red-500/20 text-red-400 border-red-500/30", icon: Send },
+  delivered: { label: "Delivered", color: "bg-red-600/20 text-red-400 border-red-600/30", icon: CheckCircle },
+  responded: { label: "Responded", color: "bg-red-400/20 text-red-300 border-red-400/30", icon: MessageCircle },
+  interested: { label: "Interested", color: "bg-red-500/20 text-red-400 border-red-500/30", icon: Sparkles },
+  declined: { label: "Declined", color: "bg-red-800/20 text-red-500 border-red-800/30", icon: XCircle },
+  scheduled: { label: "Scheduled", color: "bg-red-700/20 text-red-400 border-red-700/30", icon: Calendar },
   opted_out: { label: "Opted Out", color: "bg-zinc-600/20 text-zinc-500 border-zinc-600/30", icon: Ban },
 };
 
@@ -545,8 +545,8 @@ export default function TalentSMSOutreach() {
 
         <GlassCard className="p-2">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-blue-500/20 rounded-lg">
-              <Send className="w-3 h-3 text-blue-400" />
+            <div className="p-1.5 bg-red-500/20 rounded-lg">
+              <Send className="w-3 h-3 text-red-400" />
             </div>
             <div>
               <p className="text-base font-bold text-white">{stats.sent}</p>
@@ -557,8 +557,8 @@ export default function TalentSMSOutreach() {
 
         <GlassCard className="p-2">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-cyan-500/20 rounded-lg">
-              <CheckCircle className="w-3 h-3 text-cyan-400" />
+            <div className="p-1.5 bg-red-600/20 rounded-lg">
+              <CheckCircle className="w-3 h-3 text-red-400" />
             </div>
             <div>
               <p className="text-base font-bold text-white">{stats.delivered}</p>
@@ -569,8 +569,8 @@ export default function TalentSMSOutreach() {
 
         <GlassCard className="p-2">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-yellow-500/20 rounded-lg">
-              <MessageCircle className="w-3 h-3 text-yellow-400" />
+            <div className="p-1.5 bg-red-400/20 rounded-lg">
+              <MessageCircle className="w-3 h-3 text-red-300" />
             </div>
             <div>
               <p className="text-base font-bold text-white">{stats.responded}</p>
@@ -581,8 +581,8 @@ export default function TalentSMSOutreach() {
 
         <GlassCard className="p-2">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-green-500/20 rounded-lg">
-              <Sparkles className="w-3 h-3 text-green-400" />
+            <div className="p-1.5 bg-red-500/20 rounded-lg">
+              <Sparkles className="w-3 h-3 text-red-400" />
             </div>
             <div>
               <p className="text-base font-bold text-white">{stats.interested}</p>
@@ -593,8 +593,8 @@ export default function TalentSMSOutreach() {
 
         <GlassCard className="p-2">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-purple-500/20 rounded-lg">
-              <Calendar className="w-3 h-3 text-purple-400" />
+            <div className="p-1.5 bg-red-700/20 rounded-lg">
+              <Calendar className="w-3 h-3 text-red-400" />
             </div>
             <div>
               <p className="text-base font-bold text-white">{stats.scheduled}</p>

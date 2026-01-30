@@ -46,10 +46,10 @@ const TypeIcon = ({ type }) => {
 
 const StatusBadge = ({ status }) => {
   const styles = {
-    active: "bg-green-500/20 text-green-400",
-    paused: "bg-yellow-500/20 text-yellow-400",
+    active: "bg-red-500/20 text-red-400",
+    paused: "bg-red-500/10 text-red-300",
     draft: "bg-zinc-500/20 text-zinc-400",
-    completed: "bg-blue-500/20 text-blue-400",
+    completed: "bg-red-500/20 text-red-400",
   };
 
   return (
@@ -316,15 +316,15 @@ export default function AddToCampaignModal({
 
           {/* Run Matching Option */}
           {selectedCampaignId && (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
               <input
                 type="checkbox"
                 id="runMatching"
                 checked={runMatching}
                 onChange={(e) => setRunMatching(e.target.checked)}
-                className="rounded border-zinc-600 bg-zinc-700 text-cyan-500"
+                className="rounded border-zinc-600 bg-zinc-700 text-red-500"
               />
-              <label htmlFor="runMatching" className="flex items-center gap-2 text-sm text-cyan-400 cursor-pointer">
+              <label htmlFor="runMatching" className="flex items-center gap-2 text-sm text-red-400 cursor-pointer">
                 <Sparkles className="w-4 h-4" />
                 Go to campaign and run AI matching
               </label>

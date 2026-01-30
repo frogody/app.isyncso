@@ -7,7 +7,7 @@ const ScoreRing = ({ score, size = 56 }) => {
   const radius = (size - 8) / 2;
   const circumference = 2 * Math.PI * radius;
   const progress = (score / 100) * circumference;
-  const color = score >= 70 ? '#22c55e' : score >= 40 ? '#eab308' : '#ef4444';
+  const color = score >= 70 ? '#ef4444' : score >= 40 ? '#f87171' : '#fca5a5';
 
   return (
     <div className="relative" style={{ width: size, height: size }}>
@@ -42,9 +42,9 @@ const ScoreRing = ({ score, size = 56 }) => {
 const Badge = ({ label, color }) => {
   const colors = {
     red: 'bg-red-500/20 text-red-400 border-red-500/30',
-    green: 'bg-green-500/20 text-green-400 border-green-500/30',
-    amber: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-    blue: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+    green: 'bg-red-500/10 text-red-400/70 border-red-500/20',
+    amber: 'bg-red-500/15 text-red-400/80 border-red-500/25',
+    blue: 'bg-red-500/10 text-red-300 border-red-500/20',
   };
   return (
     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${colors[color] || colors.amber}`}>
@@ -98,7 +98,7 @@ const IntelligenceWidget = ({ candidate, editMode, onRemove, dragHandleProps }) 
           )}
           {candidate?.timing_signals?.length > 0 && (
             <div className="flex items-center gap-1.5 col-span-2">
-              <Clock className="w-3 h-3 text-amber-400" />
+              <Clock className="w-3 h-3 text-red-400" />
               <span className="text-xs text-zinc-400">
                 {candidate.timing_signals.length} timing signal{candidate.timing_signals.length !== 1 ? 's' : ''}
               </span>

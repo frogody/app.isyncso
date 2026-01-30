@@ -27,7 +27,7 @@ const SkillsWidget = ({ candidate, editMode, onRemove, dragHandleProps }) => {
     <WidgetWrapper
       title={`Skills ${skills.length > 0 ? `(${skills.length})` : ''}`}
       icon={Award}
-      iconColor="text-purple-400"
+      iconColor="text-red-400"
       editMode={editMode}
       onRemove={onRemove}
       dragHandleProps={dragHandleProps}
@@ -70,7 +70,7 @@ const SkillsWidget = ({ candidate, editMode, onRemove, dragHandleProps }) => {
         {inferredSkills.length > 0 && (
           <div className="pt-3 border-t border-zinc-700/30">
             <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+              <Sparkles className="w-3.5 h-3.5 text-red-400" />
               <p className="text-xs text-zinc-500 uppercase tracking-wider">
                 AI-Inferred Skills
               </p>
@@ -79,7 +79,7 @@ const SkillsWidget = ({ candidate, editMode, onRemove, dragHandleProps }) => {
               {inferredSkills.slice(0, 8).map((skill, index) => (
                 <span
                   key={index}
-                  className="px-2.5 py-1 text-xs font-medium bg-purple-500/10 text-purple-400 rounded-lg border border-purple-500/20"
+                  className="px-2.5 py-1 text-xs font-medium bg-red-500/10 text-red-400 rounded-lg border border-red-500/20"
                 >
                   {getSkillName(skill)}
                 </span>

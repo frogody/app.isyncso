@@ -39,29 +39,29 @@ export const IntelligenceGauge = ({
       };
     }
     if (score >= 60) {
-      return { 
-        stroke: "#f97316", 
-        text: "text-orange-400", 
-        bg: "bg-orange-500/20",
-        glow: "shadow-[0_0_15px_rgba(249,115,22,0.3)]",
-        label: "High" 
+      return {
+        stroke: "#ef4444",
+        text: "text-red-400",
+        bg: "bg-red-500/30",
+        glow: "shadow-[0_0_15px_rgba(239,68,68,0.3)]",
+        label: "High"
       };
     }
     if (score >= 40) {
-      return { 
-        stroke: "#eab308", 
-        text: "text-yellow-400", 
-        bg: "bg-yellow-500/20",
-        glow: "shadow-[0_0_15px_rgba(234,179,8,0.3)]",
-        label: "Medium" 
+      return {
+        stroke: "#ef4444",
+        text: "text-red-400",
+        bg: "bg-red-500/20",
+        glow: "shadow-[0_0_15px_rgba(239,68,68,0.2)]",
+        label: "Medium"
       };
     }
-    return { 
-      stroke: "#22c55e", 
-      text: "text-green-400", 
-      bg: "bg-green-500/20",
-      glow: "shadow-[0_0_15px_rgba(34,197,94,0.3)]",
-      label: "Low" 
+    return {
+      stroke: "#ef4444",
+      text: "text-red-400",
+      bg: "bg-red-500/10",
+      glow: "shadow-[0_0_15px_rgba(239,68,68,0.1)]",
+      label: "Low"
     };
   };
 
@@ -138,9 +138,9 @@ export const IntelligenceGauge = ({
 export const IntelligenceLevelBadge = ({ level, size = "md" }) => {
   const styles = {
     Critical: "bg-red-500/20 text-red-400 border-red-500/30",
-    High: "bg-orange-500/20 text-orange-400 border-orange-500/30",
-    Medium: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-    Low: "bg-green-500/20 text-green-400 border-green-500/30",
+    High: "bg-red-500/30 text-red-400 border-red-500/30",
+    Medium: "bg-red-500/20 text-red-400 border-red-500/30",
+    Low: "bg-red-500/10 text-red-400 border-red-500/30",
   };
 
   const sizeStyles = {
@@ -164,8 +164,8 @@ export const IntelligenceLevelBadge = ({ level, size = "md" }) => {
 export const UrgencyBadge = ({ urgency }) => {
   const styles = {
     High: "bg-red-500/20 text-red-400",
-    Medium: "bg-yellow-500/20 text-yellow-400",
-    Low: "bg-green-500/20 text-green-400",
+    Medium: "bg-red-500/20 text-red-400",
+    Low: "bg-red-500/10 text-red-400",
   };
 
   return (
@@ -185,7 +185,7 @@ export const ApproachBadge = ({ approach, size = "sm" }) => {
   const styles = {
     immediate: { bg: "bg-red-500/20", text: "text-red-400", label: "Immediate" },
     targeted: { bg: "bg-red-500/20", text: "text-red-400", label: "Targeted" },
-    nurture: { bg: "bg-blue-500/20", text: "text-blue-400", label: "Nurture" },
+    nurture: { bg: "bg-red-500/10", text: "text-red-400", label: "Nurture" },
   };
 
   const sizeStyles = {
@@ -227,7 +227,7 @@ export const IntelStatusBadge = ({ lastIntelUpdate, intelligenceScore, size = "s
 
   if (hasIntel) {
     return (
-      <span className={`inline-flex items-center rounded font-medium bg-cyan-500/20 text-cyan-400 ${sizeStyles[size]}`}>
+      <span className={`inline-flex items-center rounded font-medium bg-red-500/20 text-red-400 ${sizeStyles[size]}`}>
         <svg className={iconSizes[size]} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" strokeLinecap="round" strokeLinejoin="round"/>
           <polyline points="22 4 12 14.01 9 11.01" strokeLinecap="round" strokeLinejoin="round"/>

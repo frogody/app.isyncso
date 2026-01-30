@@ -178,7 +178,7 @@ const TechStackWidget = ({ candidate, editMode, onRemove, dragHandleProps }) => 
     <WidgetWrapper
       title={titleText}
       icon={Cpu}
-      iconColor="text-cyan-400"
+      iconColor="text-red-400"
       editMode={editMode}
       onRemove={onRemove}
       dragHandleProps={dragHandleProps}
@@ -191,7 +191,7 @@ const TechStackWidget = ({ candidate, editMode, onRemove, dragHandleProps }) => 
           <div className="space-y-3">
             {/* Role context badge */}
             {roleText && (
-              <div className="flex items-center gap-1.5 text-[10px] text-cyan-400/70">
+              <div className="flex items-center gap-1.5 text-[10px] text-red-400/70">
                 <Sparkles className="w-3 h-3" />
                 <span>Filtered for: {candidate?.job_title || candidate?.current_title || 'Role'}</span>
               </div>
@@ -199,20 +199,20 @@ const TechStackWidget = ({ candidate, editMode, onRemove, dragHandleProps }) => 
 
             {relevantTech.map((cat, catIndex) => (
               <div key={catIndex} className="space-y-2">
-                <p className="text-[10px] text-cyan-400/60 uppercase tracking-wider font-medium">
+                <p className="text-[10px] text-red-400/60 uppercase tracking-wider font-medium">
                   {cat.category}
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {cat.technologies.slice(0, expanded ? undefined : 8).map((tech, i) => (
                     <span
                       key={i}
-                      className="px-2 py-0.5 bg-cyan-500/15 text-cyan-300 rounded text-xs border border-cyan-500/25"
+                      className="px-2 py-0.5 bg-red-500/15 text-red-300 rounded text-xs border border-red-500/25"
                     >
                       {tech}
                     </span>
                   ))}
                   {!expanded && cat.technologies.length > 8 && (
-                    <span className="px-2 py-0.5 text-cyan-400/60 text-xs">
+                    <span className="px-2 py-0.5 text-red-400/60 text-xs">
                       +{cat.technologies.length - 8} more
                     </span>
                   )}
@@ -272,7 +272,7 @@ const TechStackWidget = ({ candidate, editMode, onRemove, dragHandleProps }) => 
                     {techs.slice(0, 8).map((tech, i) => (
                       <span
                         key={i}
-                        className="px-2 py-0.5 bg-cyan-500/10 text-cyan-300 rounded text-xs border border-cyan-500/20"
+                        className="px-2 py-0.5 bg-red-500/10 text-red-300 rounded text-xs border border-red-500/20"
                       >
                         {tech}
                       </span>
@@ -290,7 +290,7 @@ const TechStackWidget = ({ candidate, editMode, onRemove, dragHandleProps }) => 
             {techStackData.length > 3 && (
               <button
                 onClick={() => setExpanded(!expanded)}
-                className="flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300 transition-colors"
+                className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 transition-colors"
               >
                 {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                 {expanded ? 'Show Less' : `Show ${techStackData.length - 3} more categories`}

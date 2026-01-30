@@ -160,24 +160,24 @@ const IntelligenceQueueWidget = ({ organizationId }) => {
     return (
       <div className="rounded-xl bg-zinc-900/50 border border-zinc-800 p-4">
         <div className="flex items-center justify-center py-6">
-          <Loader2 className="w-5 h-5 text-purple-400 animate-spin" />
+          <Loader2 className="w-5 h-5 text-red-400 animate-spin" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl bg-gradient-to-br from-zinc-900 via-zinc-900 to-purple-950/20 border border-zinc-800 overflow-hidden">
+    <div className="rounded-xl bg-gradient-to-br from-zinc-900 via-zinc-900 to-red-950/20 border border-zinc-800 overflow-hidden">
       {/* Header */}
       <div className="px-4 py-3 border-b border-zinc-800 bg-zinc-900/50">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="relative">
-              <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                <Brain className="w-4 h-4 text-purple-400" />
+              <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
+                <Brain className="w-4 h-4 text-red-400" />
               </div>
               {stats.processing > 0 && (
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-purple-500 rounded-full animate-pulse" />
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
               )}
             </div>
             <div>
@@ -227,7 +227,7 @@ const IntelligenceQueueWidget = ({ organizationId }) => {
                   initial={{ width: 0 }}
                   animate={{ width: `${progressPercent}%` }}
                   transition={{ duration: 0.5, ease: 'easeOut' }}
-                  className="h-full bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full"
+                  className="h-full bg-gradient-to-r from-red-500 to-red-600 rounded-full"
                 />
               </div>
             </div>
@@ -239,7 +239,7 @@ const IntelligenceQueueWidget = ({ organizationId }) => {
                 <div className="text-xs text-zinc-500">Total</div>
               </div>
               <div className="text-center p-2 rounded-lg bg-zinc-800/50">
-                <div className="text-lg font-bold text-yellow-400 flex items-center justify-center gap-1">
+                <div className="text-lg font-bold text-red-400 flex items-center justify-center gap-1">
                   {stats.processing > 0 && (
                     <Loader2 className="w-3 h-3 animate-spin" />
                   )}
@@ -248,7 +248,7 @@ const IntelligenceQueueWidget = ({ organizationId }) => {
                 <div className="text-xs text-zinc-500">Processing</div>
               </div>
               <div className="text-center p-2 rounded-lg bg-zinc-800/50">
-                <div className="text-lg font-bold text-green-400">{stats.ready}</div>
+                <div className="text-lg font-bold text-red-400">{stats.ready}</div>
                 <div className="text-xs text-zinc-500">Ready</div>
               </div>
               <div className="text-center p-2 rounded-lg bg-zinc-800/50">
@@ -261,7 +261,7 @@ const IntelligenceQueueWidget = ({ organizationId }) => {
             {stats.processing > 0 && processingCandidates.length > 0 && (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-xs text-zinc-400">
-                  <Zap className="w-3 h-3 text-yellow-400" />
+                  <Zap className="w-3 h-3 text-red-400" />
                   Processing now:
                 </div>
                 <div className="space-y-1">
@@ -273,12 +273,12 @@ const IntelligenceQueueWidget = ({ organizationId }) => {
                       transition={{ delay: index * 0.1 }}
                       className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-zinc-800/30"
                     >
-                      <div className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-white truncate">{candidate.name}</p>
                         <p className="text-xs text-zinc-500 truncate">{candidate.title}</p>
                       </div>
-                      <Loader2 className="w-3 h-3 text-yellow-400 animate-spin flex-shrink-0" />
+                      <Loader2 className="w-3 h-3 text-red-400 animate-spin flex-shrink-0" />
                     </motion.div>
                   ))}
                 </div>
@@ -321,7 +321,7 @@ const IntelligenceQueueWidget = ({ organizationId }) => {
         <div className="px-4 py-2 border-t border-zinc-800 bg-zinc-900/30">
           <button
             onClick={() => navigate('/talent/candidates?filter=pending_intel')}
-            className="text-xs text-zinc-500 hover:text-purple-400 transition-colors flex items-center gap-1 w-full justify-center"
+            className="text-xs text-zinc-500 hover:text-red-400 transition-colors flex items-center gap-1 w-full justify-center"
           >
             View All Candidates
             <ChevronRight className="w-3 h-3" />

@@ -134,28 +134,28 @@ const WeightsDisplayWidget = ({ weights }) => {
   if (!weights) return null;
 
   const factors = [
-    { key: 'skills_fit', label: 'Skills', color: 'blue' },
-    { key: 'experience_fit', label: 'Experience', color: 'purple' },
-    { key: 'title_fit', label: 'Title', color: 'cyan' },
-    { key: 'location_fit', label: 'Location', color: 'emerald' },
-    { key: 'timing_score', label: 'Timing', color: 'amber' },
-    { key: 'culture_fit', label: 'Culture', color: 'rose' },
+    { key: 'skills_fit', label: 'Skills', color: 'red60' },
+    { key: 'experience_fit', label: 'Experience', color: 'red70' },
+    { key: 'title_fit', label: 'Title', color: 'red80' },
+    { key: 'location_fit', label: 'Location', color: 'red90' },
+    { key: 'timing_score', label: 'Timing', color: 'red' },
+    { key: 'culture_fit', label: 'Culture', color: 'red600' },
   ];
 
   // Use static Tailwind color maps to avoid dynamic class purging
   const colorMap = {
-    blue: { bg: 'bg-blue-500', text: 'text-blue-400' },
-    purple: { bg: 'bg-purple-500', text: 'text-purple-400' },
-    cyan: { bg: 'bg-cyan-500', text: 'text-cyan-400' },
-    emerald: { bg: 'bg-emerald-500', text: 'text-emerald-400' },
-    amber: { bg: 'bg-amber-500', text: 'text-amber-400' },
-    rose: { bg: 'bg-rose-500', text: 'text-rose-400' },
+    red60: { bg: 'bg-red-500/60', text: 'text-red-400' },
+    red70: { bg: 'bg-red-500/70', text: 'text-red-400' },
+    red80: { bg: 'bg-red-500/80', text: 'text-red-400' },
+    red90: { bg: 'bg-red-500/90', text: 'text-red-400' },
+    red: { bg: 'bg-red-500', text: 'text-red-400' },
+    red600: { bg: 'bg-red-600', text: 'text-red-300' },
   };
 
   return (
     <div className="p-4 bg-zinc-800/50 rounded-xl border border-zinc-700/50">
       <h4 className="text-sm font-medium text-zinc-300 mb-3 flex items-center gap-2">
-        <SlidersHorizontal className="w-4 h-4 text-purple-400" />
+        <SlidersHorizontal className="w-4 h-4 text-red-400" />
         Matching Weights
       </h4>
       <div className="space-y-2">
@@ -181,9 +181,9 @@ const WeightsDisplayWidget = ({ weights }) => {
 // Match Level Badge with colors
 const MatchLevelBadge = ({ level, score }) => {
   const levelColors = {
-    Excellent: "bg-green-500/20 text-green-400 border-green-500/30",
-    Good: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-    Fair: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+    Excellent: "bg-red-500/30 text-red-300 border-red-500/30",
+    Good: "bg-red-500/20 text-red-400 border-red-500/30",
+    Fair: "bg-red-500/10 text-red-400/70 border-red-500/20",
     Poor: "bg-red-500/20 text-red-400 border-red-500/30",
   };
 
@@ -213,7 +213,7 @@ const IntelligenceStatus = ({ candidate }) => {
 
   if (hasIntelligence) {
     return (
-      <div className="flex items-center gap-1 text-xs text-green-400" title="Intelligence profile ready">
+      <div className="flex items-center gap-1 text-xs text-red-400" title="Intelligence profile ready">
         <Brain className="w-3 h-3" />
         <span>Intel Ready</span>
       </div>
@@ -222,7 +222,7 @@ const IntelligenceStatus = ({ candidate }) => {
 
   if (isProcessing) {
     return (
-      <div className="flex items-center gap-1 text-xs text-yellow-400 animate-pulse" title="Generating intelligence...">
+      <div className="flex items-center gap-1 text-xs text-red-300 animate-pulse" title="Generating intelligence...">
         <Loader2 className="w-3 h-3 animate-spin" />
         <span>Processing</span>
       </div>
@@ -242,7 +242,7 @@ const NestSourceBadge = ({ nestName }) => {
   if (!nestName) return null;
 
   return (
-    <div className="flex items-center gap-1 text-xs text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-full" title={`From nest: ${nestName}`}>
+    <div className="flex items-center gap-1 text-xs text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full" title={`From nest: ${nestName}`}>
       <Package className="w-3 h-3" />
       <span className="truncate max-w-[120px]">{nestName}</span>
     </div>
@@ -251,19 +251,19 @@ const NestSourceBadge = ({ nestName }) => {
 
 // Signal badges for matched signals
 const signalBgMap = {
-  red: "bg-red-500/20", orange: "bg-orange-500/20", purple: "bg-purple-500/20",
-  emerald: "bg-emerald-500/20", amber: "bg-amber-500/20", blue: "bg-blue-500/20",
-  zinc: "bg-zinc-500/20", rose: "bg-rose-500/20",
+  red: "bg-red-500/20", orange: "bg-red-500/20", purple: "bg-red-500/20",
+  emerald: "bg-red-500/20", amber: "bg-red-500/20", blue: "bg-red-500/20",
+  zinc: "bg-zinc-500/20", rose: "bg-red-500/20",
 };
 const signalTextMap = {
-  red: "text-red-400", orange: "text-orange-400", purple: "text-purple-400",
-  emerald: "text-emerald-400", amber: "text-amber-400", blue: "text-blue-400",
-  zinc: "text-zinc-400", rose: "text-rose-400",
+  red: "text-red-400", orange: "text-red-400", purple: "text-red-400",
+  emerald: "text-red-400", amber: "text-red-400", blue: "text-red-400",
+  zinc: "text-zinc-400", rose: "text-red-400",
 };
 const signalBorderMap = {
-  red: "border-red-500/30", orange: "border-orange-500/30", purple: "border-purple-500/30",
-  emerald: "border-emerald-500/30", amber: "border-amber-500/30", blue: "border-blue-500/30",
-  zinc: "border-zinc-500/30", rose: "border-rose-500/30",
+  red: "border-red-500/30", orange: "border-red-500/30", purple: "border-red-500/30",
+  emerald: "border-red-500/30", amber: "border-red-500/30", blue: "border-red-500/30",
+  zinc: "border-zinc-500/30", rose: "border-red-500/30",
 };
 
 const SignalBadges = ({ signals }) => {
@@ -280,7 +280,7 @@ const SignalBadges = ({ signals }) => {
           >
             <span>{def.label}</span>
             {signal.boost !== 0 && (
-              <span className={signal.boost > 0 ? "text-emerald-400" : "text-rose-400"}>
+              <span className={signal.boost > 0 ? "text-red-400" : "text-red-300"}>
                 {signal.boost > 0 ? "+" : ""}{signal.boost}
               </span>
             )}
@@ -295,15 +295,15 @@ const SignalBadges = ({ signals }) => {
 const CandidateMatchResultCard = ({ match, isSelected, onToggleSelect, onClick }) => {
   const [expanded, setExpanded] = useState(false);
 
-  const scoreColor = match.match_score >= 80 ? "text-green-400"
-    : match.match_score >= 60 ? "text-blue-400"
-    : match.match_score >= 40 ? "text-yellow-400"
-    : "text-red-400";
+  const scoreColor = match.match_score >= 80 ? "text-red-300"
+    : match.match_score >= 60 ? "text-red-400"
+    : match.match_score >= 40 ? "text-red-400/70"
+    : "text-red-500/60";
 
-  const scoreBgColor = match.match_score >= 80 ? "from-green-500 to-green-600"
-    : match.match_score >= 60 ? "from-blue-500 to-blue-600"
-    : match.match_score >= 40 ? "from-yellow-500 to-yellow-600"
-    : "from-red-500 to-red-600";
+  const scoreBgColor = match.match_score >= 80 ? "from-red-500 to-red-600"
+    : match.match_score >= 60 ? "from-red-600 to-red-700"
+    : match.match_score >= 40 ? "from-red-700 to-red-800"
+    : "from-red-800 to-red-900";
 
   // Get current role from various possible fields
   const currentRole = match.current_role ||
@@ -379,12 +379,12 @@ const CandidateMatchResultCard = ({ match, isSelected, onToggleSelect, onClick }
       <div className="mt-4 pt-4 border-t border-zinc-700/50">
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-purple-400" />
+            <Sparkles className="w-4 h-4 text-red-400" />
             Why This Match?
           </h4>
           <button
             onClick={() => setExpanded(!expanded)}
-            className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1 transition-colors"
+            className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors"
           >
             {expanded ? "Hide Details" : "See Full Analysis"}
             <ChevronDown className={`w-3 h-3 transition-transform ${expanded ? "rotate-180" : ""}`} />
@@ -412,7 +412,7 @@ const CandidateMatchResultCard = ({ match, isSelected, onToggleSelect, onClick }
           <div className="mt-2">
             <SignalBadges signals={match.signals_matched} />
             {match.signal_boost_applied > 0 && (
-              <p className="mt-1 text-xs text-emerald-400">
+              <p className="mt-1 text-xs text-red-400">
                 +{match.signal_boost_applied} from signals
               </p>
             )}
@@ -433,13 +433,13 @@ const CandidateMatchResultCard = ({ match, isSelected, onToggleSelect, onClick }
                 {/* Key Strengths */}
                 {strengths.length > 0 && (
                   <div className="space-y-2">
-                    <h5 className="text-xs font-medium text-emerald-400 uppercase tracking-wider">
+                    <h5 className="text-xs font-medium text-red-400 uppercase tracking-wider">
                       Key Strengths
                     </h5>
                     <ul className="space-y-1">
                       {strengths.map((s, i) => (
                         <li key={i} className="flex items-start gap-2 text-sm text-zinc-300">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                          <CheckCircle2 className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
                           {s}
                         </li>
                       ))}
@@ -450,13 +450,13 @@ const CandidateMatchResultCard = ({ match, isSelected, onToggleSelect, onClick }
                 {/* Concerns */}
                 {concerns.length > 0 && (
                   <div className="space-y-2">
-                    <h5 className="text-xs font-medium text-amber-400 uppercase tracking-wider">
+                    <h5 className="text-xs font-medium text-red-300 uppercase tracking-wider">
                       Considerations
                     </h5>
                     <ul className="space-y-1">
                       {concerns.map((c, i) => (
                         <li key={i} className="flex items-start gap-2 text-sm text-zinc-400">
-                          <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                          <AlertCircle className="w-4 h-4 text-red-300 shrink-0 mt-0.5" />
                           {c}
                         </li>
                       ))}
@@ -467,7 +467,7 @@ const CandidateMatchResultCard = ({ match, isSelected, onToggleSelect, onClick }
                 {/* AI Reasoning */}
                 {reasoning && (
                   <div className="space-y-2">
-                    <h5 className="text-xs font-medium text-purple-400 uppercase tracking-wider">
+                    <h5 className="text-xs font-medium text-red-400 uppercase tracking-wider">
                       AI Reasoning
                     </h5>
                     <p className="text-sm text-zinc-400 leading-relaxed">{reasoning}</p>
@@ -476,10 +476,10 @@ const CandidateMatchResultCard = ({ match, isSelected, onToggleSelect, onClick }
 
                 {/* Intelligence Score */}
                 {match.intelligence_score > 0 && (
-                  <div className="flex items-center gap-2 p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                    <Sparkles className="w-4 h-4 text-purple-400" />
+                  <div className="flex items-center gap-2 p-2 rounded-lg bg-red-500/10 border border-red-500/20">
+                    <Sparkles className="w-4 h-4 text-red-400" />
                     <div>
-                      <p className="text-xs text-purple-400">Flight Risk / Timing Score</p>
+                      <p className="text-xs text-red-400">Flight Risk / Timing Score</p>
                       <p className="text-sm text-white font-medium">
                         {match.intelligence_score}% - {match.recommended_approach === 'aggressive' ? 'Act Now!' : match.recommended_approach || 'Standard'}
                       </p>
@@ -489,8 +489,8 @@ const CandidateMatchResultCard = ({ match, isSelected, onToggleSelect, onClick }
 
                 {/* Outreach Angle */}
                 {outreachAngle && (
-                  <div className="p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
-                    <p className="text-xs text-cyan-400 mb-1 flex items-center gap-1">
+                  <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                    <p className="text-xs text-red-400 mb-1 flex items-center gap-1">
                       <Lightbulb className="w-3 h-3" />
                       Suggested Outreach Angle
                     </p>
@@ -509,7 +509,7 @@ const CandidateMatchResultCard = ({ match, isSelected, onToggleSelect, onClick }
                       {match.timing_signals.slice(0, 3).map((signal, i) => (
                         <div key={i} className={`text-xs px-2 py-1 rounded ${
                           signal.urgency === 'high' ? 'bg-red-500/20 text-red-300' :
-                          signal.urgency === 'medium' ? 'bg-yellow-500/20 text-yellow-300' :
+                          signal.urgency === 'medium' ? 'bg-red-500/15 text-red-300' :
                           'bg-zinc-700/50 text-zinc-400'
                         }`}>
                           {signal.trigger}
@@ -557,13 +557,13 @@ const OutreachPreviewModal = ({ open, onOpenChange, messages, onApprove, onEdit,
             </div>
             <div className="flex items-center gap-2">
               {currentMessage.match_score && (
-                <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                <Badge className="bg-red-500/20 text-red-400 border-red-500/30">
                   {currentMessage.match_score}% Match
                 </Badge>
               )}
               <Badge className={`${
-                currentMessage.personalization_score >= 70 ? 'bg-purple-500/20 text-purple-400' :
-                currentMessage.personalization_score >= 40 ? 'bg-blue-500/20 text-blue-400' :
+                currentMessage.personalization_score >= 70 ? 'bg-red-500/20 text-red-400' :
+                currentMessage.personalization_score >= 40 ? 'bg-red-500/15 text-red-400/80' :
                 'bg-zinc-700/50 text-zinc-400'
               }`}>
                 {currentMessage.personalization_score || 0}% Personal
@@ -591,14 +591,14 @@ const OutreachPreviewModal = ({ open, onOpenChange, messages, onApprove, onEdit,
 
           {/* Intelligence Used */}
           {currentMessage.intelligence_used?.length > 0 && (
-            <div className="p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
-              <p className="text-xs text-cyan-400 mb-2 flex items-center gap-1">
+            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+              <p className="text-xs text-red-400 mb-2 flex items-center gap-1">
                 <Brain className="w-3 h-3" />
                 AI Personalization Used
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {currentMessage.intelligence_used.map((item, i) => (
-                  <Badge key={i} className="bg-cyan-500/20 text-cyan-400 text-xs">
+                  <Badge key={i} className="bg-red-500/20 text-red-400 text-xs">
                     {item.replace(/_/g, ' ')}
                   </Badge>
                 ))}
@@ -660,8 +660,8 @@ const OutreachSuccessDialog = ({ open, onOpenChange, taskCount, onViewQueue }) =
   <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent className="max-w-md bg-zinc-900 border-zinc-800 text-center">
       <div className="py-4">
-        <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-4">
-          <PartyPopper className="w-8 h-8 text-green-400" />
+        <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
+          <PartyPopper className="w-8 h-8 text-red-400" />
         </div>
         <h2 className="text-xl font-semibold text-white mb-2">
           Outreach Ready!
@@ -674,15 +674,15 @@ const OutreachSuccessDialog = ({ open, onOpenChange, taskCount, onViewQueue }) =
           <h3 className="text-sm font-medium text-white mb-2">Next Steps:</h3>
           <ul className="space-y-2 text-sm text-zinc-400">
             <li className="flex items-center gap-2">
-              <Check className="w-4 h-4 text-green-400 shrink-0" />
+              <Check className="w-4 h-4 text-red-400 shrink-0" />
               Review messages in the Outreach Queue
             </li>
             <li className="flex items-center gap-2">
-              <Check className="w-4 h-4 text-green-400 shrink-0" />
+              <Check className="w-4 h-4 text-red-400 shrink-0" />
               Click "Send" on each message when ready
             </li>
             <li className="flex items-center gap-2">
-              <Check className="w-4 h-4 text-green-400 shrink-0" />
+              <Check className="w-4 h-4 text-red-400 shrink-0" />
               Track responses and follow up
             </li>
           </ul>
@@ -721,10 +721,10 @@ const OutreachQueueTab = ({ campaign, tasks, onRefresh, onSendTask, onCancelTask
 
   const statusColors = {
     pending: 'bg-zinc-500/20 text-zinc-400',
-    approved_ready: 'bg-green-500/20 text-green-400',
-    sent: 'bg-blue-500/20 text-blue-400',
-    replied: 'bg-cyan-500/20 text-cyan-400',
-    completed: 'bg-purple-500/20 text-purple-400',
+    approved_ready: 'bg-red-500/30 text-red-300',
+    sent: 'bg-red-500/20 text-red-400',
+    replied: 'bg-red-500/15 text-red-400/80',
+    completed: 'bg-red-600/20 text-red-300',
     cancelled: 'bg-red-500/20 text-red-400',
   };
 
@@ -800,7 +800,7 @@ const OutreachQueueTab = ({ campaign, tasks, onRefresh, onSendTask, onCancelTask
                     {task.status?.replace('_', ' ')}
                   </Badge>
                   {task.metadata?.match_score && (
-                    <Badge className="bg-cyan-500/20 text-cyan-400">
+                    <Badge className="bg-red-500/20 text-red-400">
                       {task.metadata.match_score}% match
                     </Badge>
                   )}
@@ -838,7 +838,7 @@ const OutreachQueueTab = ({ campaign, tasks, onRefresh, onSendTask, onCancelTask
                         size="sm"
                         onClick={() => handleSend(task)}
                         disabled={sending === task.id}
-                        className="bg-green-500 hover:bg-green-600"
+                        className="bg-red-500 hover:bg-red-600"
                       >
                         {sending === task.id ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -858,7 +858,7 @@ const OutreachQueueTab = ({ campaign, tasks, onRefresh, onSendTask, onCancelTask
                     </Button>
                   )}
                   {task.status === 'replied' && (
-                    <Button size="sm" className="bg-cyan-500 hover:bg-cyan-600">
+                    <Button size="sm" className="bg-red-500 hover:bg-red-600">
                       <MessageSquare className="w-4 h-4 mr-1" />
                       Respond
                     </Button>
@@ -887,15 +887,15 @@ const OutreachQueueTab = ({ campaign, tasks, onRefresh, onSendTask, onCancelTask
               <p className="text-xs text-zinc-500">Total</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-green-400">{taskCounts.approved_ready}</p>
+              <p className="text-2xl font-bold text-red-300">{taskCounts.approved_ready}</p>
               <p className="text-xs text-zinc-500">Ready</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-blue-400">{taskCounts.sent}</p>
+              <p className="text-2xl font-bold text-red-400">{taskCounts.sent}</p>
               <p className="text-xs text-zinc-500">Sent</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-cyan-400">{taskCounts.replied}</p>
+              <p className="text-2xl font-bold text-red-500">{taskCounts.replied}</p>
               <p className="text-xs text-zinc-500">Replied</p>
             </div>
           </div>
@@ -952,14 +952,14 @@ const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching, lin
     <div className="space-y-6">
       {/* Linked Nest Banner */}
       {linkedNest && (
-        <div className="p-4 rounded-xl bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20">
+        <div className="p-4 rounded-xl bg-gradient-to-r from-red-500/10 to-red-600/10 border border-red-500/20">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-cyan-500/20 rounded-xl">
-                <Package className="w-6 h-6 text-cyan-400" />
+              <div className="p-3 bg-red-500/20 rounded-xl">
+                <Package className="w-6 h-6 text-red-400" />
               </div>
               <div>
-                <p className="text-xs text-cyan-400 uppercase tracking-wider font-medium">Sourcing from Nest</p>
+                <p className="text-xs text-red-400 uppercase tracking-wider font-medium">Sourcing from Nest</p>
                 <p className="text-lg font-semibold text-white">{linkedNest.name}</p>
                 <div className="flex items-center gap-4 mt-1">
                   <span className="text-sm text-zinc-400">
@@ -974,13 +974,13 @@ const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching, lin
                     return (
                       <>
                         {intelReady > 0 && (
-                          <span className="flex items-center gap-1 text-xs text-green-400">
+                          <span className="flex items-center gap-1 text-xs text-red-400">
                             <Brain className="w-3 h-3" />
                             {intelReady} ready
                           </span>
                         )}
                         {processing > 0 && (
-                          <span className="flex items-center gap-1 text-xs text-yellow-400">
+                          <span className="flex items-center gap-1 text-xs text-red-300">
                             <Loader2 className="w-3 h-3 animate-spin" />
                             {processing} processing
                           </span>
@@ -1088,17 +1088,17 @@ const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching, lin
           {campaign?.role_context?.criteria_weights && (
             <div className="p-4 bg-zinc-800/50 rounded-xl border border-zinc-700/50">
               <h4 className="text-sm font-medium text-zinc-300 mb-3 flex items-center gap-2">
-                <SlidersHorizontal className="w-4 h-4 text-purple-400" />
+                <SlidersHorizontal className="w-4 h-4 text-red-400" />
                 Matching Weights
               </h4>
               <div className="space-y-2">
                 {[
-                  { key: "skills_fit", label: "Skills", bg: "bg-blue-500", text: "text-blue-400" },
-                  { key: "experience_fit", label: "Experience", bg: "bg-purple-500", text: "text-purple-400" },
-                  { key: "title_fit", label: "Title", bg: "bg-cyan-500", text: "text-cyan-400" },
-                  { key: "location_fit", label: "Location", bg: "bg-emerald-500", text: "text-emerald-400" },
-                  { key: "timing_score", label: "Timing", bg: "bg-amber-500", text: "text-amber-400" },
-                  { key: "culture_fit", label: "Culture", bg: "bg-rose-500", text: "text-rose-400" },
+                  { key: "skills_fit", label: "Skills", bg: "bg-red-500/60", text: "text-red-400" },
+                  { key: "experience_fit", label: "Experience", bg: "bg-red-500/70", text: "text-red-400" },
+                  { key: "title_fit", label: "Title", bg: "bg-red-500/80", text: "text-red-400" },
+                  { key: "location_fit", label: "Location", bg: "bg-red-500/90", text: "text-red-400" },
+                  { key: "timing_score", label: "Timing", bg: "bg-red-500", text: "text-red-400" },
+                  { key: "culture_fit", label: "Culture", bg: "bg-red-600", text: "text-red-300" },
                 ].map(({ key, label, bg, text }) => (
                   <div key={key} className="flex items-center gap-2">
                     <span className="text-xs text-zinc-500 w-20">{label}</span>
@@ -1143,7 +1143,7 @@ const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching, lin
                     size="sm"
                     variant="outline"
                     onClick={onSelectAllExcellent}
-                    className="border-green-500/30 text-green-400 hover:bg-green-500/10"
+                    className="border-red-500/30 text-red-400 hover:bg-red-500/10"
                   >
                     <Plus className="w-4 h-4 mr-1" />
                     Add Excellent ({levelCounts.Excellent})
@@ -1224,9 +1224,9 @@ const OverviewTab = ({ campaign, formData, stats, onRunMatching, isMatching, lin
                     const isActive = matchFilter === level;
                     const levelStyles = {
                       All: isActive ? "bg-zinc-700 text-white" : "text-zinc-400 hover:text-white",
-                      Excellent: isActive ? "bg-green-500/20 text-green-400" : "text-zinc-400 hover:text-green-400",
-                      Good: isActive ? "bg-blue-500/20 text-blue-400" : "text-zinc-400 hover:text-blue-400",
-                      Fair: isActive ? "bg-yellow-500/20 text-yellow-400" : "text-zinc-400 hover:text-yellow-400",
+                      Excellent: isActive ? "bg-red-500/30 text-red-300" : "text-zinc-400 hover:text-red-400",
+                      Good: isActive ? "bg-red-500/20 text-red-400" : "text-zinc-400 hover:text-red-400",
+                      Fair: isActive ? "bg-red-500/10 text-red-400/70" : "text-zinc-400 hover:text-red-400",
                     };
 
                     return (

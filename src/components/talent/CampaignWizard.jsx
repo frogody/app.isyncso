@@ -437,7 +437,7 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
                         isActive
                           ? "bg-red-500 text-white"
                           : isComplete
-                          ? "bg-green-500 text-white"
+                          ? "bg-red-500 text-white"
                           : "bg-zinc-800 text-zinc-500"
                       }`}
                     >
@@ -448,7 +448,7 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
                     </span>
                   </div>
                   {i < STEPS.length - 1 && (
-                    <div className={`flex-1 h-px mx-2 ${step > s.id ? "bg-green-500" : "bg-zinc-800"}`} />
+                    <div className={`flex-1 h-px mx-2 ${step > s.id ? "bg-red-500" : "bg-zinc-800"}`} />
                   )}
                 </React.Fragment>
               );
@@ -772,7 +772,7 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
                 <div className="space-y-4 max-h-[320px] overflow-y-auto pr-2">
                   <div>
                     <Label className="text-xs text-zinc-400 flex items-center gap-2">
-                      <Star className="w-3 h-3 text-yellow-500" />
+                      <Star className="w-3 h-3 text-red-500" />
                       What makes someone PERFECT for this role?
                     </Label>
                     <Textarea
@@ -785,7 +785,7 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
 
                   <div>
                     <Label className="text-xs text-zinc-400 flex items-center gap-2">
-                      <MessageSquare className="w-3 h-3 text-green-500" />
+                      <MessageSquare className="w-3 h-3 text-red-500" />
                       What's the COMPELLING story for this role?
                     </Label>
                     <Textarea
@@ -885,15 +885,15 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
 
                 {/* Nest Context Banner - shown when coming from nest purchase */}
                 {nestContext && (
-                  <div className="p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/30">
+                  <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-cyan-500/20">
-                        <Package className="w-5 h-5 text-cyan-400" />
+                      <div className="p-2 rounded-lg bg-red-500/20">
+                        <Package className="w-5 h-5 text-red-400" />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-cyan-400">Sourcing from Nest</span>
-                          <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 text-[10px]">
+                          <span className="text-sm font-medium text-red-400">Sourcing from Nest</span>
+                          <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-[10px]">
                             <Zap className="w-3 h-3 mr-1" />
                             Intel Active
                           </Badge>
@@ -934,12 +934,12 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
                     </div>
                     {roleContext.perfect_fit_criteria && (
                       <p className="text-xs text-zinc-300 mb-1">
-                        <span className="text-yellow-500">Perfect Fit:</span> {roleContext.perfect_fit_criteria.substring(0, 100)}...
+                        <span className="text-red-500">Perfect Fit:</span> {roleContext.perfect_fit_criteria.substring(0, 100)}...
                       </p>
                     )}
                     {roleContext.selling_points && (
                       <p className="text-xs text-zinc-300">
-                        <span className="text-green-500">Story:</span> {roleContext.selling_points.substring(0, 100)}...
+                        <span className="text-red-500">Story:</span> {roleContext.selling_points.substring(0, 100)}...
                       </p>
                     )}
                   </GlassCard>
@@ -974,8 +974,8 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
                 </div>
 
                 {/* What happens next */}
-                <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
-                  <div className="flex items-center gap-2 text-green-400 mb-2">
+                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30">
+                  <div className="flex items-center gap-2 text-red-400 mb-2">
                     <Sparkles className="w-4 h-4" />
                     <span className="text-sm font-medium">What happens next</span>
                   </div>

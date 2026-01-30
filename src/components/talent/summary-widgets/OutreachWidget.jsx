@@ -14,7 +14,7 @@ const OutreachWidget = ({ candidate, editMode, onRemove, dragHandleProps }) => {
     <WidgetWrapper
       title="Outreach Strategy"
       icon={Target}
-      iconColor="text-cyan-400"
+      iconColor="text-red-400"
       editMode={editMode}
       onRemove={onRemove}
       dragHandleProps={dragHandleProps}
@@ -23,10 +23,10 @@ const OutreachWidget = ({ candidate, editMode, onRemove, dragHandleProps }) => {
       <div className="space-y-4">
         {/* Best Outreach Angle */}
         {hasAngle && (
-          <div className="p-4 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 rounded-lg border border-cyan-500/20">
+          <div className="p-4 bg-gradient-to-r from-red-500/10 to-red-500/5 rounded-lg border border-red-500/20">
             <div className="flex items-center gap-2 mb-2">
-              <Lightbulb className="w-4 h-4 text-cyan-400" />
-              <span className="text-xs font-medium text-cyan-400 uppercase tracking-wider">
+              <Lightbulb className="w-4 h-4 text-red-400" />
+              <span className="text-xs font-medium text-red-400 uppercase tracking-wider">
                 Best Approach
               </span>
             </div>
@@ -40,7 +40,7 @@ const OutreachWidget = ({ candidate, editMode, onRemove, dragHandleProps }) => {
         {hooks.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <MessageSquare className="w-4 h-4 text-purple-400" />
+              <MessageSquare className="w-4 h-4 text-red-400" />
               <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
                 Conversation Starters
               </span>
@@ -49,9 +49,9 @@ const OutreachWidget = ({ candidate, editMode, onRemove, dragHandleProps }) => {
               {hooks.map((hook, index) => (
                 <div
                   key={index}
-                  className="flex items-start gap-3 p-3 bg-zinc-700/30 rounded-lg border border-zinc-700/50 hover:border-purple-500/30 transition-colors"
+                  className="flex items-start gap-3 p-3 bg-zinc-700/30 rounded-lg border border-zinc-700/50 hover:border-red-500/30 transition-colors"
                 >
-                  <span className="flex-shrink-0 w-6 h-6 bg-purple-500/20 rounded-full flex items-center justify-center text-xs font-medium text-purple-400">
+                  <span className="flex-shrink-0 w-6 h-6 bg-red-500/20 rounded-full flex items-center justify-center text-xs font-medium text-red-400">
                     {index + 1}
                   </span>
                   <p className="text-sm text-zinc-300 leading-relaxed">

@@ -39,15 +39,15 @@ import { IntelligenceGauge, IntelligenceLevelBadge, ApproachBadge } from "./Inte
 // Category metadata for display
 const CATEGORY_META = {
   core: { label: "Intelligence", icon: Sparkles, color: "text-red-400" },
-  timing: { label: "Timing & Signals", icon: Clock, color: "text-amber-400" },
-  professional: { label: "Professional", icon: Briefcase, color: "text-blue-400" },
-  location: { label: "Location", icon: MapPin, color: "text-green-400" },
-  contact: { label: "Contact Status", icon: Mail, color: "text-cyan-400" },
-  skills: { label: "Skills", icon: Award, color: "text-purple-400" },
-  compensation: { label: "Compensation", icon: DollarSign, color: "text-emerald-400" },
-  education: { label: "Education", icon: GraduationCap, color: "text-indigo-400" },
-  insights: { label: "AI Insights", icon: Lightbulb, color: "text-orange-400" },
-  company: { label: "Company Intel", icon: Building2, color: "text-pink-400" }
+  timing: { label: "Timing & Signals", icon: Clock, color: "text-red-400" },
+  professional: { label: "Professional", icon: Briefcase, color: "text-red-400" },
+  location: { label: "Location", icon: MapPin, color: "text-red-400" },
+  contact: { label: "Contact Status", icon: Mail, color: "text-red-400" },
+  skills: { label: "Skills", icon: Award, color: "text-red-400" },
+  compensation: { label: "Compensation", icon: DollarSign, color: "text-red-400" },
+  education: { label: "Education", icon: GraduationCap, color: "text-red-400" },
+  insights: { label: "AI Insights", icon: Lightbulb, color: "text-red-400" },
+  company: { label: "Company Intel", icon: Building2, color: "text-red-400" }
 };
 
 // Category display order
@@ -558,11 +558,11 @@ const ProfileSummaryCard = ({
               {/* Outreach Angle */}
               {showAngle && (
                 <div className="flex items-start gap-2">
-                  <div className="p-1.5 rounded-lg bg-cyan-500/10 flex-shrink-0">
-                    <Target className="w-3.5 h-3.5 text-cyan-400" />
+                  <div className="p-1.5 rounded-lg bg-red-500/10 flex-shrink-0">
+                    <Target className="w-3.5 h-3.5 text-red-400" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[9px] text-cyan-400/70 uppercase tracking-wider font-medium mb-0.5">
+                    <p className="text-[9px] text-red-400/70 uppercase tracking-wider font-medium mb-0.5">
                       Outreach Angle
                     </p>
                     <p
@@ -607,16 +607,16 @@ const ProfileSummaryCard = ({
               {(showTitle || showCompany || showTenure || showYearsExp) && (
                 <div className="space-y-0.5">
                   {showTitle && (
-                    <MetricRow icon={Briefcase} label="Role" value={candidate.current_title} color="blue" />
+                    <MetricRow icon={Briefcase} label="Role" value={candidate.current_title} color="red" />
                   )}
                   {showCompany && (
-                    <MetricRow icon={Building2} label="Co" value={candidate.current_company || candidate.company_name} color="blue" />
+                    <MetricRow icon={Building2} label="Co" value={candidate.current_company || candidate.company_name} color="red" />
                   )}
                   {showTenure && (
-                    <MetricRow icon={TrendingUp} label="Tenure" value={`${candidate.years_at_company}y`} color="green" />
+                    <MetricRow icon={TrendingUp} label="Tenure" value={`${candidate.years_at_company}y`} color="red" />
                   )}
                   {showYearsExp && (
-                    <MetricRow icon={Briefcase} label="Exp" value={`${candidate.years_of_experience}y`} color="purple" />
+                    <MetricRow icon={Briefcase} label="Exp" value={`${candidate.years_of_experience}y`} color="red" />
                   )}
                 </div>
               )}
@@ -627,7 +627,7 @@ const ProfileSummaryCard = ({
                   icon={MapPin}
                   label="Loc"
                   value={candidate.location || candidate.location_city}
-                  color="green"
+                  color="red"
                 />
               )}
 
@@ -635,16 +635,16 @@ const ProfileSummaryCard = ({
               {(showHasEmail || showHasPhone || showHasLinkedin) && (
                 <div className="flex items-center gap-2">
                   {showHasEmail && candidate.email && (
-                    <Mail className="w-3 h-3 text-cyan-400" title="Has email" />
+                    <Mail className="w-3 h-3 text-red-400" title="Has email" />
                   )}
                   {showHasPhone && (candidate.phone || candidate.mobile_phone) && (
-                    <Phone className="w-3 h-3 text-green-400" title="Has phone" />
+                    <Phone className="w-3 h-3 text-red-400" title="Has phone" />
                   )}
                   {showHasLinkedin && candidate.linkedin_url && (
-                    <Linkedin className="w-3 h-3 text-blue-400" title="Has LinkedIn" />
+                    <Linkedin className="w-3 h-3 text-red-400" title="Has LinkedIn" />
                   )}
                   {showEnrichment && (
-                    <span className="text-[9px] text-emerald-400">Enriched</span>
+                    <span className="text-[9px] text-red-400">Enriched</span>
                   )}
                 </div>
               )}
@@ -655,7 +655,7 @@ const ProfileSummaryCard = ({
                   icon={DollarSign}
                   label="Salary"
                   value={typeof candidate.salary_range === 'number' ? `$${candidate.salary_range.toLocaleString()}` : candidate.salary_range}
-                  color="emerald"
+                  color="red"
                 />
               )}
 

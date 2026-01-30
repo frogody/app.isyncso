@@ -21,7 +21,7 @@ const KeyInsightsWidget = ({ candidate, editMode, onRemove, dragHandleProps }) =
     <WidgetWrapper
       title="AI Insights"
       icon={Lightbulb}
-      iconColor="text-amber-400"
+      iconColor="text-red-400"
       editMode={editMode}
       onRemove={onRemove}
       dragHandleProps={dragHandleProps}
@@ -32,16 +32,16 @@ const KeyInsightsWidget = ({ candidate, editMode, onRemove, dragHandleProps }) =
         {insights.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
+              <Lightbulb className="w-3.5 h-3.5 text-red-400" />
               <p className="text-xs text-zinc-500 uppercase tracking-wider">Key Insights</p>
             </div>
             <div className="space-y-2">
               {insights.slice(0, 5).map((insight, index) => (
                 <div
                   key={index}
-                  className="flex items-start gap-3 p-3 bg-amber-500/5 rounded-lg border border-amber-500/10"
+                  className="flex items-start gap-3 p-3 bg-red-500/5 rounded-lg border border-red-500/10"
                 >
-                  <span className="flex-shrink-0 w-5 h-5 bg-amber-500/20 rounded-full flex items-center justify-center text-[10px] font-medium text-amber-400">
+                  <span className="flex-shrink-0 w-5 h-5 bg-red-500/20 rounded-full flex items-center justify-center text-[10px] font-medium text-red-400">
                     {index + 1}
                   </span>
                   <p className="text-sm text-zinc-300 leading-relaxed">
@@ -80,7 +80,7 @@ const KeyInsightsWidget = ({ candidate, editMode, onRemove, dragHandleProps }) =
         {lateralOpps.length > 0 && (
           <div className="pt-3 border-t border-zinc-700/30">
             <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="w-3.5 h-3.5 text-green-400" />
+              <TrendingUp className="w-3.5 h-3.5 text-red-400" />
               <p className="text-xs text-zinc-500 uppercase tracking-wider">Lateral Opportunities</p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -89,7 +89,7 @@ const KeyInsightsWidget = ({ candidate, editMode, onRemove, dragHandleProps }) =
                 return (
                   <span
                     key={index}
-                    className="px-2.5 py-1 text-xs font-medium bg-green-500/10 text-green-400 rounded-lg border border-green-500/20"
+                    className="px-2.5 py-1 text-xs font-medium bg-red-500/10 text-red-400 rounded-lg border border-red-500/20"
                   >
                     {oppText}
                   </span>

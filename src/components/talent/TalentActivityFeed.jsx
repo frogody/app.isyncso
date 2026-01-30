@@ -27,32 +27,32 @@ import { supabase } from '@/api/supabaseClient';
 const ACTIVITY_TYPES = {
   candidate_matched: {
     icon: Brain,
-    color: 'text-purple-400',
-    bgColor: 'bg-purple-500/20',
+    color: 'text-red-400',
+    bgColor: 'bg-red-500/20',
     label: 'Candidate Matched',
   },
   intelligence_ready: {
     icon: Sparkles,
-    color: 'text-cyan-400',
-    bgColor: 'bg-cyan-500/20',
+    color: 'text-red-400',
+    bgColor: 'bg-red-500/20',
     label: 'Intelligence Ready',
   },
   message_sent: {
     icon: Send,
-    color: 'text-blue-400',
-    bgColor: 'bg-blue-500/20',
+    color: 'text-red-400',
+    bgColor: 'bg-red-500/20',
     label: 'Message Sent',
   },
   reply_received: {
     icon: MessageSquare,
-    color: 'text-green-400',
-    bgColor: 'bg-green-500/20',
+    color: 'text-red-400',
+    bgColor: 'bg-red-500/20',
     label: 'Reply Received',
   },
   nest_purchased: {
     icon: Package,
-    color: 'text-orange-400',
-    bgColor: 'bg-orange-500/20',
+    color: 'text-red-400',
+    bgColor: 'bg-red-500/20',
     label: 'Nest Purchased',
   },
   campaign_created: {
@@ -63,8 +63,8 @@ const ACTIVITY_TYPES = {
   },
   candidate_added: {
     icon: UserPlus,
-    color: 'text-emerald-400',
-    bgColor: 'bg-emerald-500/20',
+    color: 'text-red-400',
+    bgColor: 'bg-red-500/20',
     label: 'Candidate Added',
   },
 };
@@ -374,7 +374,7 @@ const TalentActivityFeed = ({ organizationId, limit = 10, showHeader = true }) =
         <div className="px-4 py-2 border-t border-zinc-800 bg-zinc-900/30">
           <button
             onClick={() => navigate('/talent/activity')}
-            className="text-xs text-zinc-500 hover:text-cyan-400 transition-colors flex items-center gap-1 w-full justify-center"
+            className="text-xs text-zinc-500 hover:text-red-400 transition-colors flex items-center gap-1 w-full justify-center"
           >
             View All Activity
             <ChevronRight className="w-3 h-3" />

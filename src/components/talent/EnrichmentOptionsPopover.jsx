@@ -22,15 +22,15 @@ const ENRICHMENT_ICONS = {
 };
 
 const ENRICHMENT_COLORS = {
-  linkedin_enrich: 'border-blue-500/30 hover:border-blue-500/50 hover:bg-blue-500/5',
-  sync_intel: 'border-amber-500/30 hover:border-amber-500/50 hover:bg-amber-500/5',
-  full_package: 'border-green-500/30 hover:border-green-500/50 hover:bg-green-500/5',
+  linkedin_enrich: 'border-red-500/30 hover:border-red-500/50 hover:bg-red-500/5',
+  sync_intel: 'border-red-500/30 hover:border-red-500/50 hover:bg-red-500/5',
+  full_package: 'border-red-500/30 hover:border-red-500/50 hover:bg-red-500/5',
 };
 
 const ENRICHMENT_ICON_COLORS = {
-  linkedin_enrich: 'text-blue-400',
-  sync_intel: 'text-amber-400',
-  full_package: 'text-green-400',
+  linkedin_enrich: 'text-red-400',
+  sync_intel: 'text-red-400',
+  full_package: 'text-red-400',
 };
 
 export function EnrichmentOptionsPopover({
@@ -221,9 +221,9 @@ export function EnrichmentOptionsPopover({
         <div className="p-4 border-b border-zinc-800">
           <h4 className="font-semibold text-white">Choose Enrichment</h4>
           <div className="flex items-center gap-2 mt-1">
-            <Coins className="w-4 h-4 text-amber-400" />
+            <Coins className="w-4 h-4 text-red-400" />
             <span className="text-sm text-zinc-400">
-              Balance: <span className="text-amber-400 font-semibold">{userCredits} credits</span>
+              Balance: <span className="text-red-400 font-semibold">{userCredits} credits</span>
             </span>
           </div>
         </div>
@@ -252,8 +252,7 @@ export function EnrichmentOptionsPopover({
                   <div className="flex items-start gap-3 flex-1">
                     <div className={cn(
                       'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0',
-                      option.key === 'full_package' ? 'bg-green-500/10' :
-                      option.key === 'linkedin_enrich' ? 'bg-blue-500/10' : 'bg-amber-500/10',
+                      'bg-red-500/10',
                     )}>
                       {isProcessing ? (
                         <Loader2 className="w-4 h-4 animate-spin text-white" />
@@ -265,7 +264,7 @@ export function EnrichmentOptionsPopover({
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-sm text-white">{option.label}</span>
                         {option.key === 'full_package' && (
-                          <Badge className="bg-green-500/20 text-green-400 text-[10px] px-1.5 py-0">
+                          <Badge className="bg-red-500/20 text-red-400 text-[10px] px-1.5 py-0">
                             Best Value
                           </Badge>
                         )}

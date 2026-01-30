@@ -115,34 +115,34 @@ const MetricCard = ({ title, value, subtitle, icon: Icon, color = "red", trend }
 const WorkflowActionCard = ({ icon: Icon, title, description, action, actionLabel, color, stepNumber }) => {
   const colorStyles = {
     blue: {
-      card: "border-blue-500/20 hover:border-blue-500/40",
-      iconBg: "bg-blue-500/20",
-      icon: "text-blue-400",
-      button: "bg-blue-500 hover:bg-blue-600",
+      card: "border-red-500/20 hover:border-red-500/40",
+      iconBg: "bg-red-500/10",
+      icon: "text-red-300",
+      button: "bg-red-500 hover:bg-red-600",
     },
     cyan: {
-      card: "border-cyan-500/20 hover:border-cyan-500/40",
-      iconBg: "bg-cyan-500/20",
-      icon: "text-cyan-400",
-      button: "bg-cyan-500 hover:bg-cyan-600",
+      card: "border-red-500/25 hover:border-red-500/45",
+      iconBg: "bg-red-500/15",
+      icon: "text-red-400/70",
+      button: "bg-red-500 hover:bg-red-600",
     },
     red: {
-      card: "border-red-500/20 hover:border-red-500/40",
+      card: "border-red-500/30 hover:border-red-500/50",
       iconBg: "bg-red-500/20",
       icon: "text-red-400",
       button: "bg-red-500 hover:bg-red-600",
     },
     green: {
-      card: "border-green-500/20 hover:border-green-500/40",
-      iconBg: "bg-green-500/20",
-      icon: "text-green-400",
-      button: "bg-green-500 hover:bg-green-600",
+      card: "border-red-500/35 hover:border-red-500/55",
+      iconBg: "bg-red-500/25",
+      icon: "text-red-400/90",
+      button: "bg-red-500 hover:bg-red-600",
     },
     purple: {
-      card: "border-purple-500/20 hover:border-purple-500/40",
-      iconBg: "bg-purple-500/20",
-      icon: "text-purple-400",
-      button: "bg-purple-500 hover:bg-purple-600",
+      card: "border-red-500/35 hover:border-red-500/55",
+      iconBg: "bg-red-500/25",
+      icon: "text-red-400/90",
+      button: "bg-red-500 hover:bg-red-600",
     },
   };
 
@@ -333,9 +333,9 @@ const CampaignPerformanceTable = ({ campaigns, outreachTasks }) => {
                     <span
                       className={`font-medium ${
                         campaign.responseRate >= 20
-                          ? "text-green-400"
+                          ? "text-red-400"
                           : campaign.responseRate >= 10
-                          ? "text-yellow-400"
+                          ? "text-red-400/70"
                           : "text-white/50"
                       }`}
                     >
@@ -377,13 +377,13 @@ const RecentCampaignActivity = ({ campaigns }) => {
   const getStatusStyle = (status) => {
     switch (status) {
       case 'active':
-        return 'bg-green-500/20 text-green-400';
+        return 'bg-red-500/20 text-red-400';
       case 'draft':
         return 'bg-zinc-500/20 text-zinc-400';
       case 'paused':
-        return 'bg-yellow-500/20 text-yellow-400';
+        return 'bg-red-500/10 text-red-400/70';
       case 'completed':
-        return 'bg-blue-500/20 text-blue-400';
+        return 'bg-red-500/20 text-red-300';
       default:
         return 'bg-zinc-500/20 text-zinc-400';
     }
@@ -448,7 +448,7 @@ const RecommendedNests = ({ nests, loading }) => {
         <p className="text-zinc-400 mb-2">No nests available yet</p>
         <p className="text-sm text-zinc-500">Check the marketplace for curated candidate pools</p>
         <Link to="/marketplace/nests">
-          <Button className="mt-4 bg-cyan-500 hover:bg-cyan-600">
+          <Button className="mt-4 bg-red-500 hover:bg-red-600">
             Browse Marketplace
           </Button>
         </Link>
@@ -461,13 +461,13 @@ const RecommendedNests = ({ nests, loading }) => {
       {nests.map(nest => (
         <Link key={nest.id} to={`/marketplace/nests/${nest.id}`}>
           <motion.div className="h-full">
-            <GlassCard className="p-4 h-full hover:border-cyan-500/30 transition-all flex flex-col">
+            <GlassCard className="p-4 h-full hover:border-red-500/30 transition-all flex flex-col">
               <div className="flex items-start justify-between mb-2">
-                <Badge className="bg-cyan-500/20 text-cyan-400 text-xs">
+                <Badge className="bg-red-500/20 text-red-400 text-xs">
                   {nest.category || nest.nest_type || 'General'}
                 </Badge>
                 {nest.price === 0 && (
-                  <Badge className="bg-green-500/20 text-green-400 text-xs">Free</Badge>
+                  <Badge className="bg-red-500/20 text-red-400 text-xs">Free</Badge>
                 )}
               </div>
               <h3 className="font-medium text-white mb-1 line-clamp-1">{nest.name}</h3>
@@ -477,7 +477,7 @@ const RecommendedNests = ({ nests, loading }) => {
                   <Users className="w-3 h-3" />
                   {nest.item_count || 0}
                 </span>
-                <span className={nest.price === 0 ? "text-green-400" : "text-white font-medium"}>
+                <span className={nest.price === 0 ? "text-red-400" : "text-white font-medium"}>
                   {nest.price === 0 ? "Free" : `$${nest.price}`}
                 </span>
               </div>
@@ -614,16 +614,16 @@ const AnalyticsOverview = ({ campaigns, outreachTasks, metrics }) => {
   }, [metrics, campaigns, outreachTasks]);
 
   const typeStyles = {
-    warning: { bg: 'bg-amber-500/10', border: 'border-amber-500/20', icon: 'text-amber-400' },
-    info: { bg: 'bg-blue-500/10', border: 'border-blue-500/20', icon: 'text-blue-400' },
-    success: { bg: 'bg-green-500/10', border: 'border-green-500/20', icon: 'text-green-400' },
+    warning: { bg: 'bg-red-500/10', border: 'border-red-500/20', icon: 'text-red-400' },
+    info: { bg: 'bg-red-500/10', border: 'border-red-500/20', icon: 'text-red-400' },
+    success: { bg: 'bg-red-500/10', border: 'border-red-500/20', icon: 'text-red-400' },
     action: { bg: 'bg-red-500/10', border: 'border-red-500/20', icon: 'text-red-400' },
   };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       {/* Response Rate Gauge */}
-      <GlassCard className="p-5 bg-gradient-to-br from-purple-500/10 to-purple-600/10 border-purple-500/20">
+      <GlassCard className="p-5 bg-gradient-to-br from-red-500/10 to-red-600/10 border-red-500/20">
         <div className="text-center">
           <div className="relative inline-flex items-center justify-center mb-3">
             <svg width="120" height="120" className="-rotate-90">
@@ -640,7 +640,7 @@ const AnalyticsOverview = ({ campaigns, outreachTasks, metrics }) => {
                 cy="60"
                 r="50"
                 fill="none"
-                stroke={metrics.responseRate >= 20 ? '#22c55e' : metrics.responseRate >= 10 ? '#f59e0b' : '#ef4444'}
+                stroke={metrics.responseRate >= 20 ? '#ef4444' : metrics.responseRate >= 10 ? '#f87171' : '#fca5a5'}
                 strokeWidth="10"
                 strokeLinecap="round"
                 strokeDasharray={2 * Math.PI * 50}
@@ -661,15 +661,15 @@ const AnalyticsOverview = ({ campaigns, outreachTasks, metrics }) => {
             </div>
             <div>
               <span className="text-zinc-400">Replied:</span>{' '}
-              <span className="text-green-400 font-medium">{metrics.repliedOutreach}</span>
+              <span className="text-red-400 font-medium">{metrics.repliedOutreach}</span>
             </div>
           </div>
         </div>
       </GlassCard>
 
       {/* Best Performing Campaign */}
-      <GlassCard className="p-5 bg-gradient-to-br from-cyan-500/10 to-cyan-600/10 border-cyan-500/20">
-        <div className="flex items-center gap-2 text-cyan-400 text-sm font-medium mb-3">
+      <GlassCard className="p-5 bg-gradient-to-br from-red-500/10 to-red-600/10 border-red-500/20">
+        <div className="flex items-center gap-2 text-red-400 text-sm font-medium mb-3">
           <Award className="w-4 h-4" />
           Best Performing Campaign
         </div>
@@ -679,7 +679,7 @@ const AnalyticsOverview = ({ campaigns, outreachTasks, metrics }) => {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-zinc-400">Response Rate</span>
-                <span className={`font-medium ${bestCampaign.responseRate >= 20 ? 'text-green-400' : 'text-zinc-300'}`}>
+                <span className={`font-medium ${bestCampaign.responseRate >= 20 ? 'text-red-400' : 'text-zinc-300'}`}>
                   {bestCampaign.responseRate?.toFixed(1) || 0}%
                 </span>
               </div>
@@ -689,12 +689,12 @@ const AnalyticsOverview = ({ campaigns, outreachTasks, metrics }) => {
               </div>
               <div className="flex justify-between">
                 <span className="text-zinc-400">Replies</span>
-                <span className="text-green-400">{bestCampaign.replied || 0}</span>
+                <span className="text-red-400">{bestCampaign.replied || 0}</span>
               </div>
             </div>
             <Link
               to={`${createPageUrl('TalentCampaignDetail')}?id=${bestCampaign.id}`}
-              className="mt-3 inline-flex items-center text-xs text-cyan-400 hover:text-cyan-300"
+              className="mt-3 inline-flex items-center text-xs text-red-400 hover:text-red-300"
             >
               View Campaign <ArrowRight className="w-3 h-3 ml-1" />
             </Link>
@@ -705,7 +705,7 @@ const AnalyticsOverview = ({ campaigns, outreachTasks, metrics }) => {
             <p className="text-zinc-500 text-sm">No campaigns yet</p>
             <Link
               to={`${createPageUrl('TalentCampaignDetail')}?new=true`}
-              className="mt-2 inline-flex items-center text-xs text-cyan-400 hover:text-cyan-300"
+              className="mt-2 inline-flex items-center text-xs text-red-400 hover:text-red-300"
             >
               Create First Campaign <ArrowRight className="w-3 h-3 ml-1" />
             </Link>
@@ -714,8 +714,8 @@ const AnalyticsOverview = ({ campaigns, outreachTasks, metrics }) => {
       </GlassCard>
 
       {/* Smart Recommendations */}
-      <GlassCard className="p-5 bg-gradient-to-br from-amber-500/10 to-amber-600/10 border-amber-500/20">
-        <div className="flex items-center gap-2 text-amber-400 text-sm font-medium mb-3">
+      <GlassCard className="p-5 bg-gradient-to-br from-red-500/10 to-red-600/10 border-red-500/20">
+        <div className="flex items-center gap-2 text-red-400 text-sm font-medium mb-3">
           <Sparkles className="w-4 h-4" />
           Recommendations
         </div>
@@ -749,7 +749,7 @@ const AnalyticsOverview = ({ campaigns, outreachTasks, metrics }) => {
           </div>
         ) : (
           <div className="text-center py-4">
-            <CheckCircle2 className="w-10 h-10 text-green-500 mx-auto mb-2" />
+            <CheckCircle2 className="w-10 h-10 text-red-500 mx-auto mb-2" />
             <p className="text-zinc-400 text-sm">All looking good!</p>
             <p className="text-zinc-500 text-xs mt-1">No recommendations at this time</p>
           </div>
@@ -1002,7 +1002,7 @@ export default function TalentDashboard() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                <Zap className="w-5 h-5 text-yellow-400" />
+                <Zap className="w-5 h-5 text-red-400" />
                 Quick Workflow
               </h2>
               <p className="text-sm text-zinc-400">Follow these steps to source and engage talent</p>
@@ -1094,7 +1094,7 @@ export default function TalentDashboard() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-purple-400" />
+                <BarChart3 className="w-5 h-5 text-red-400" />
                 Analytics Overview
               </h2>
               <p className="text-sm text-zinc-400">Performance metrics across all campaigns</p>
@@ -1112,13 +1112,13 @@ export default function TalentDashboard() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                <Package className="w-5 h-5 text-cyan-400" />
+                <Package className="w-5 h-5 text-red-400" />
                 Recommended Nests
               </h2>
               <p className="text-sm text-zinc-400">Curated talent pools for your hiring needs</p>
             </div>
             <Link to="/marketplace/nests">
-              <Button variant="ghost" className="text-cyan-400 hover:text-cyan-300">
+              <Button variant="ghost" className="text-red-400 hover:text-red-300">
                 View All <ArrowRight className="w-4 h-4 ml-1" />
               </Button>
             </Link>

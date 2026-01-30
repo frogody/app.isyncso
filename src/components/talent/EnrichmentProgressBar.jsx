@@ -21,10 +21,10 @@ import { cn } from '@/lib/utils';
 
 const STAGE_CONFIG = {
   pending: { label: 'Queued', icon: Loader2, color: 'text-zinc-400' },
-  linkedin: { label: 'LinkedIn Enrichment', icon: Linkedin, color: 'text-blue-400' },
-  company: { label: 'Company Intelligence', icon: Building2, color: 'text-amber-400' },
-  candidate: { label: 'AI Analysis', icon: Brain, color: 'text-purple-400' },
-  completed: { label: 'Complete', icon: CheckCircle2, color: 'text-green-400' },
+  linkedin: { label: 'LinkedIn Enrichment', icon: Linkedin, color: 'text-red-400' },
+  company: { label: 'Company Intelligence', icon: Building2, color: 'text-red-400/80' },
+  candidate: { label: 'AI Analysis', icon: Brain, color: 'text-red-300' },
+  completed: { label: 'Complete', icon: CheckCircle2, color: 'text-red-400' },
   failed: { label: 'Failed', icon: AlertCircle, color: 'text-red-400' },
 };
 
@@ -108,9 +108,9 @@ function EnrichmentProgressBarInner({ organizationId, onDismiss }) {
           <div className="flex items-center justify-between p-3 bg-zinc-800/50 border-b border-zinc-700">
             <div className="flex items-center gap-2">
               {isComplete ? (
-                <CheckCircle2 className="w-4 h-4 text-green-400" />
+                <CheckCircle2 className="w-4 h-4 text-red-400" />
               ) : (
-                <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
+                <Sparkles className="w-4 h-4 text-red-400 animate-pulse" />
               )}
               <span className="font-medium text-sm text-zinc-200">
                 {isComplete ? 'Enrichment Complete' : 'Enriching Candidates'}
@@ -190,7 +190,7 @@ function EnrichmentProgressBarInner({ organizationId, onDismiss }) {
                             )}>
                               <Icon className={cn(
                                 'w-3.5 h-3.5',
-                                isActive ? cfg.color : isDone ? 'text-green-500' : 'text-zinc-600'
+                                isActive ? cfg.color : isDone ? 'text-red-500' : 'text-zinc-600'
                               )} />
                               <span className={cn(
                                 'text-[10px]',
@@ -202,7 +202,7 @@ function EnrichmentProgressBarInner({ organizationId, onDismiss }) {
                             {idx < 3 && (
                               <div className={cn(
                                 'w-3 h-px',
-                                isDone ? 'bg-green-500/50' : 'bg-zinc-700'
+                                isDone ? 'bg-red-500/50' : 'bg-zinc-700'
                               )} />
                             )}
                           </div>
@@ -220,7 +220,7 @@ function EnrichmentProgressBarInner({ organizationId, onDismiss }) {
                 {/* Completion message */}
                 {isComplete && (
                   <div className="px-3 pb-3 border-t border-zinc-800 pt-2">
-                    <div className="flex items-center gap-2 text-green-400 text-sm">
+                    <div className="flex items-center gap-2 text-red-400 text-sm">
                       <CheckCircle2 className="w-4 h-4" />
                       <span>All {completed} candidate{completed !== 1 ? 's' : ''} enriched!</span>
                     </div>

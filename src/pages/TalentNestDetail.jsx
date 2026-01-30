@@ -655,7 +655,7 @@ export default function TalentNestDetail() {
                       </div>
                       <p className="text-zinc-400 mt-1">Senior Software Engineer at Tech Company</p>
                       <div className="flex items-center gap-2 mt-2">
-                        <span className="text-xs px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/20">
+                        <span className="text-xs px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/20">
                           Medium Satisfaction
                         </span>
                         <span className="text-xs px-2.5 py-1 rounded-full bg-red-500/15 text-red-400 border border-red-500/20">
@@ -798,10 +798,10 @@ export default function TalentNestDetail() {
               {hasPurchased ? (
                 <>
                   {hasUpdate && (
-                    <div className="mb-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                    <div className="mb-3 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
                       <div className="flex items-center gap-2 mb-2">
-                        <Bell className="w-4 h-4 text-amber-400" />
-                        <span className="text-sm font-medium text-amber-400">Update Available</span>
+                        <Bell className="w-4 h-4 text-red-400" />
+                        <span className="text-sm font-medium text-red-400">Update Available</span>
                       </div>
                       <p className="text-xs text-zinc-400 mb-3">
                         New candidates have been added to this nest since your last sync.
@@ -809,7 +809,7 @@ export default function TalentNestDetail() {
                       <Button
                         onClick={handleRefreshNest}
                         disabled={isSyncing}
-                        className="w-full h-9 bg-amber-500 hover:bg-amber-600 text-white font-medium"
+                        className="w-full h-9 bg-red-500 hover:bg-red-600 text-white font-medium"
                       >
                         {isSyncing ? (
                           <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Syncing...</>
@@ -833,13 +833,13 @@ export default function TalentNestDetail() {
                   <Button
                     onClick={goToCandidates}
                     variant="outline"
-                    className="w-full h-10 border-green-600/50 text-green-400 hover:bg-green-600/10"
+                    className="w-full h-10 border-red-600/50 text-red-400 hover:bg-red-600/10"
                   >
                     <Users className="w-4 h-4 mr-2" />
                     View Candidates
                   </Button>
 
-                  <p className="text-xs text-green-500 text-center mt-3">
+                  <p className="text-xs text-red-500 text-center mt-3">
                     ✓ You own this nest
                   </p>
                 </>
@@ -863,8 +863,8 @@ export default function TalentNestDetail() {
             <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
               <div className="space-y-3">
                 <div className="flex items-center gap-3 text-sm">
-                  <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center">
-                    <Check className="w-4 h-4 text-green-400" />
+                  <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center">
+                    <Check className="w-4 h-4 text-red-400" />
                   </div>
                   <div>
                     <p className="text-white font-medium">Verified Data</p>
@@ -872,8 +872,8 @@ export default function TalentNestDetail() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3 text-sm">
-                  <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                    <Zap className="w-4 h-4 text-blue-400" />
+                  <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center">
+                    <Zap className="w-4 h-4 text-red-400" />
                   </div>
                   <div>
                     <p className="text-white font-medium">Instant Access</p>
@@ -881,8 +881,8 @@ export default function TalentNestDetail() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3 text-sm">
-                  <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                    <Brain className="w-4 h-4 text-purple-400" />
+                  <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center">
+                    <Brain className="w-4 h-4 text-red-400" />
                   </div>
                   <div>
                     <p className="text-white font-medium">SYNC Intel</p>
@@ -902,9 +902,9 @@ export default function TalentNestDetail() {
             {hasPurchased ? (
               <>
                 <div className="flex items-center gap-2">
-                  <p className="text-lg font-bold text-green-400">Purchased</p>
+                  <p className="text-lg font-bold text-red-400">Purchased</p>
                   {hasUpdate && (
-                    <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-xs">
+                    <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-xs">
                       Update
                     </Badge>
                   )}
@@ -923,7 +923,7 @@ export default function TalentNestDetail() {
               <Button
                 onClick={handleRefreshNest}
                 disabled={isSyncing}
-                className="bg-amber-500 hover:bg-amber-600 text-white px-6"
+                className="bg-red-500 hover:bg-red-600 text-white px-6"
               >
                 {isSyncing ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Syncing</>
@@ -934,7 +934,7 @@ export default function TalentNestDetail() {
             ) : (
               <Button
                 onClick={goToCandidates}
-                className="bg-green-600 hover:bg-green-700 text-white px-6"
+                className="bg-red-600 hover:bg-red-700 text-white px-6"
               >
                 <Check className="w-4 h-4 mr-2" />
                 View Candidates
@@ -967,8 +967,8 @@ export default function TalentNestDetail() {
         <DialogContent className="bg-zinc-900 border-zinc-800 max-w-lg">
           <div className="text-center py-4">
             {/* Success Animation */}
-            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-green-500/20 to-green-600/10 border border-green-500/30 flex items-center justify-center">
-              <PartyPopper className="w-10 h-10 text-green-400" />
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-red-500/20 to-red-600/10 border border-red-500/30 flex items-center justify-center">
+              <PartyPopper className="w-10 h-10 text-red-400" />
             </div>
 
             <h2 className="text-2xl font-bold text-white mb-2">
@@ -980,13 +980,13 @@ export default function TalentNestDetail() {
             </p>
 
             {/* Intel Processing Notice */}
-            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 mb-6 text-left">
+            <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 mb-6 text-left">
               <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-amber-500/20 flex-shrink-0">
-                  <Brain className="w-5 h-5 text-amber-400" />
+                <div className="p-2 rounded-lg bg-red-500/20 flex-shrink-0">
+                  <Brain className="w-5 h-5 text-red-400" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-amber-400 mb-1">SYNC Intel Processing</p>
+                  <p className="text-sm font-medium text-red-400 mb-1">SYNC Intel Processing</p>
                   <p className="text-xs text-zinc-400">
                     We're analyzing each candidate's profile to generate intelligence insights,
                     match scores, and personalized outreach angles. This runs in the background.

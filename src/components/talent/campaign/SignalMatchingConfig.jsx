@@ -25,7 +25,7 @@ export const INTELLIGENCE_SIGNALS = [
     label: "Layoffs/Restructuring",
     description: "Company has announced layoffs or restructuring",
     icon: "UserMinus",
-    color: "orange",
+    color: "red",
     category: "company",
     defaultBoost: 20,
   },
@@ -34,7 +34,7 @@ export const INTELLIGENCE_SIGNALS = [
     label: "Leadership Change",
     description: "New CEO, CTO, or major leadership transition",
     icon: "Crown",
-    color: "purple",
+    color: "red",
     category: "company",
     defaultBoost: 10,
   },
@@ -43,7 +43,7 @@ export const INTELLIGENCE_SIGNALS = [
     label: "Recent Funding",
     description: "Company raised funding (may indicate growth or instability)",
     icon: "TrendingUp",
-    color: "emerald",
+    color: "red",
     category: "company",
     defaultBoost: 5,
   },
@@ -52,7 +52,7 @@ export const INTELLIGENCE_SIGNALS = [
     label: "Recently Promoted",
     description: "Candidate was promoted in last 6-18 months",
     icon: "Award",
-    color: "amber",
+    color: "red",
     category: "career",
     defaultBoost: -5,
   },
@@ -61,7 +61,7 @@ export const INTELLIGENCE_SIGNALS = [
     label: "Work Anniversary",
     description: "Approaching 2, 3, or 5 year mark (common switch points)",
     icon: "Calendar",
-    color: "blue",
+    color: "red",
     category: "career",
     defaultBoost: 10,
   },
@@ -79,7 +79,7 @@ export const INTELLIGENCE_SIGNALS = [
     label: "High Flight Risk",
     description: "Intelligence score indicates high likelihood to move",
     icon: "Rocket",
-    color: "rose",
+    color: "red",
     category: "timing",
     defaultBoost: 20,
   },
@@ -98,46 +98,22 @@ const ICON_MAP = {
 
 const bgColorMap = {
   red: "bg-red-500/10",
-  orange: "bg-orange-500/10",
-  purple: "bg-purple-500/10",
-  emerald: "bg-emerald-500/10",
-  amber: "bg-amber-500/10",
-  blue: "bg-blue-500/10",
   zinc: "bg-zinc-500/10",
-  rose: "bg-rose-500/10",
 };
 
 const borderColorMap = {
   red: "border-red-500/30",
-  orange: "border-orange-500/30",
-  purple: "border-purple-500/30",
-  emerald: "border-emerald-500/30",
-  amber: "border-amber-500/30",
-  blue: "border-blue-500/30",
   zinc: "border-zinc-500/30",
-  rose: "border-rose-500/30",
 };
 
 const iconBgColorMap = {
   red: "bg-red-500/20",
-  orange: "bg-orange-500/20",
-  purple: "bg-purple-500/20",
-  emerald: "bg-emerald-500/20",
-  amber: "bg-amber-500/20",
-  blue: "bg-blue-500/20",
   zinc: "bg-zinc-500/20",
-  rose: "bg-rose-500/20",
 };
 
 const textColorMap = {
   red: "text-red-400",
-  orange: "text-orange-400",
-  purple: "text-purple-400",
-  emerald: "text-emerald-400",
-  amber: "text-amber-400",
-  blue: "text-blue-400",
   zinc: "text-zinc-400",
-  rose: "text-rose-400",
 };
 
 const SignalCard = ({ signal, config, showAdvanced, onUpdate, Icon }) => {
@@ -200,9 +176,9 @@ const SignalCard = ({ signal, config, showAdvanced, onUpdate, Icon }) => {
               <span
                 className={"text-xs font-medium " + (
                   config.boost > 0
-                    ? "text-emerald-400"
+                    ? "text-red-400"
                     : config.boost < 0
-                    ? "text-rose-400"
+                    ? "text-red-600"
                     : "text-zinc-400"
                 )}
               >
@@ -273,10 +249,10 @@ const SignalMatchingConfig = ({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Filter className="w-5 h-5 text-purple-400" />
+          <Filter className="w-5 h-5 text-red-400" />
           <h3 className="font-medium text-white">Signal Filters</h3>
           {activeCount > 0 && (
-            <Badge variant="secondary" className="bg-purple-500/20 text-purple-300">
+            <Badge variant="secondary" className="bg-red-500/20 text-red-300">
               {activeCount} active
             </Badge>
           )}
@@ -295,7 +271,7 @@ const SignalMatchingConfig = ({
       <p className="text-sm text-zinc-500">
         Boost or filter candidates based on intelligence signals detected in their profile.
         {requiredCount > 0 && (
-          <span className="text-amber-400 ml-1">
+          <span className="text-red-400 ml-1">
             ({requiredCount} required filter{requiredCount > 1 ? "s" : ""} active)
           </span>
         )}

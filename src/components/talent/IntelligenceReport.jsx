@@ -61,9 +61,9 @@ const ScoreRing = ({ score, size = "md" }) => {
   const progress = (score / 100) * circumference;
 
   const getColor = (s) => {
-    if (s >= 70) return { ring: "#22c55e", glow: "rgba(34, 197, 94, 0.3)" };
-    if (s >= 40) return { ring: "#eab308", glow: "rgba(234, 179, 8, 0.3)" };
-    return { ring: "#ef4444", glow: "rgba(239, 68, 68, 0.3)" };
+    if (s >= 70) return { ring: "#ef4444", glow: "rgba(239, 68, 68, 0.3)" };
+    if (s >= 40) return { ring: "#ef4444", glow: "rgba(239, 68, 68, 0.2)" };
+    return { ring: "#ef4444", glow: "rgba(239, 68, 68, 0.1)" };
   };
 
   const colors = getColor(score);
@@ -106,19 +106,19 @@ const StatusBadge = ({ type, value }) => {
   const styles = {
     level: {
       Critical: "bg-red-500/20 text-red-400 border-red-500/30",
-      High: "bg-orange-500/20 text-orange-400 border-orange-500/30",
-      Medium: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-      Low: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+      High: "bg-red-500/30 text-red-400 border-red-500/30",
+      Medium: "bg-red-500/20 text-red-400 border-red-500/30",
+      Low: "bg-red-500/10 text-red-400 border-red-500/30",
     },
     urgency: {
       High: "bg-red-500/20 text-red-400 border-red-500/30",
-      Medium: "bg-amber-500/20 text-amber-400 border-amber-500/30",
-      Low: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+      Medium: "bg-red-500/20 text-red-400 border-red-500/30",
+      Low: "bg-red-500/10 text-red-400 border-red-500/30",
     },
     approach: {
       immediate: "bg-red-500/20 text-red-400 border-red-500/30",
-      targeted: "bg-amber-500/20 text-amber-400 border-amber-500/30",
-      nurture: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+      targeted: "bg-red-500/20 text-red-400 border-red-500/30",
+      nurture: "bg-red-500/10 text-red-400 border-red-500/30",
     },
   };
 
@@ -145,7 +145,7 @@ const StatusBadge = ({ type, value }) => {
  */
 const SignalRow = ({ signal, impact }) => {
   const impactStyles = {
-    positive: { icon: TrendingUp, color: "text-green-400", bg: "bg-green-500/10" },
+    positive: { icon: TrendingUp, color: "text-red-400", bg: "bg-red-500/10" },
     negative: { icon: TrendingDown, color: "text-red-400", bg: "bg-red-500/10" },
     neutral: { icon: Info, color: "text-white/40", bg: "bg-white/5" },
   };
@@ -164,7 +164,7 @@ const SignalRow = ({ signal, impact }) => {
       </div>
       {signal.weight && (
         <span className={`text-xs font-medium flex-shrink-0 ${
-          impact === "positive" ? "text-green-400" :
+          impact === "positive" ? "text-red-400" :
           impact === "negative" ? "text-red-400" : "text-white/40"
         }`}>
           {impact === "positive" ? "+" : impact === "negative" ? "-" : ""}{Math.abs(signal.weight)}
@@ -180,8 +180,8 @@ const SignalRow = ({ signal, impact }) => {
 const TimingRow = ({ timing }) => {
   const urgencyStyles = {
     high: "text-red-400",
-    medium: "text-amber-400",
-    low: "text-blue-400",
+    medium: "text-red-400",
+    low: "text-red-400",
   };
 
   return (
@@ -275,7 +275,7 @@ export const IntelligenceReport = ({ candidate, compact = false, singleColumn = 
         className="flex items-center justify-center py-16"
       >
         <motion.div variants={itemVariants} className="text-center max-w-md">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-red-500/20 to-orange-500/20 flex items-center justify-center">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-red-500/20 to-red-500/10 flex items-center justify-center">
             <Sparkles className="w-10 h-10 text-red-400" />
           </div>
           <h3 className="text-xl font-semibold text-white mb-3">No Intelligence Report Yet</h3>
@@ -356,18 +356,18 @@ export const IntelligenceReport = ({ candidate, compact = false, singleColumn = 
           {isSectionEnabled('intelligence', 'best_outreach_angle') && (
             <motion.div
               variants={itemVariants}
-              className={`${!singleColumn && isSectionEnabled('intelligence', 'flight_risk_score') ? 'lg:col-span-2' : !singleColumn ? 'lg:col-span-3' : ''} bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent rounded-xl border border-blue-500/20 p-5`}
+              className={`${!singleColumn && isSectionEnabled('intelligence', 'flight_risk_score') ? 'lg:col-span-2' : !singleColumn ? 'lg:col-span-3' : ''} bg-gradient-to-br from-red-500/10 via-red-500/5 to-transparent rounded-xl border border-red-500/20 p-5`}
             >
               <div className="flex items-center gap-2 mb-3">
-                <div className="p-1.5 rounded-lg bg-blue-500/20">
-                  <MessageSquare className="w-4 h-4 text-blue-400" />
+                <div className="p-1.5 rounded-lg bg-red-500/20">
+                  <MessageSquare className="w-4 h-4 text-red-400" />
                 </div>
                 <h3 className="font-semibold text-white">Outreach Strategy</h3>
               </div>
 
               {best_outreach_angle && (
-                <div className="bg-blue-500/10 rounded-lg p-3 mb-4 border border-blue-500/20">
-                  <p className="text-[10px] uppercase tracking-wider text-blue-400 font-semibold mb-1">Best Opening</p>
+                <div className="bg-red-500/10 rounded-lg p-3 mb-4 border border-red-500/20">
+                  <p className="text-[10px] uppercase tracking-wider text-red-400 font-semibold mb-1">Best Opening</p>
                   <p className="text-white font-medium">{best_outreach_angle}</p>
                 </div>
               )}
@@ -376,7 +376,7 @@ export const IntelligenceReport = ({ candidate, compact = false, singleColumn = 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {hooks.slice(0, 3).map((hook, idx) => (
                     <div key={idx} className="flex items-start gap-2 p-2 rounded-lg bg-white/[0.03]">
-                      <span className="w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs font-medium flex-shrink-0">
+                      <span className="w-5 h-5 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center text-xs font-medium flex-shrink-0">
                         {idx + 1}
                       </span>
                       <p className="text-xs text-white/70 line-clamp-2">{hook}</p>
@@ -406,14 +406,14 @@ export const IntelligenceReport = ({ candidate, compact = false, singleColumn = 
           variants={itemVariants}
           className="bg-white/[0.02] rounded-xl border border-white/[0.06] overflow-hidden"
         >
-          <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] bg-green-500/5">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] bg-red-500/5">
             <div className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-green-400" />
+              <TrendingUp className="w-4 h-4 text-red-400" />
               <h3 className="font-semibold text-white text-sm">Opportunities</h3>
               <span className="text-xs text-white/40">({positiveFactors.length})</span>
             </div>
             {positivePoints > 0 && (
-              <span className="text-xs font-semibold text-green-400">+{positivePoints} pts</span>
+              <span className="text-xs font-semibold text-red-400">+{positivePoints} pts</span>
             )}
           </div>
           <div className="px-4 py-2 divide-y divide-white/[0.04]">
@@ -486,8 +486,8 @@ export const IntelligenceReport = ({ candidate, compact = false, singleColumn = 
               variants={itemVariants}
               className="bg-white/[0.02] rounded-xl border border-white/[0.06] overflow-hidden"
             >
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06] bg-purple-500/5">
-                <Lightbulb className="w-4 h-4 text-purple-400" />
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06] bg-red-500/5">
+                <Lightbulb className="w-4 h-4 text-red-400" />
                 <h3 className="font-semibold text-white text-sm">Key Insights</h3>
                 <span className="text-xs text-white/40">({insights.length})</span>
               </div>
@@ -496,7 +496,7 @@ export const IntelligenceReport = ({ candidate, compact = false, singleColumn = 
                   <ul className="space-y-2">
                     {insights.map((insight, idx) => (
                       <li key={idx} className="flex items-start gap-2 py-1">
-                        <ChevronRight className="w-3.5 h-3.5 text-purple-400 mt-0.5 flex-shrink-0" />
+                        <ChevronRight className="w-3.5 h-3.5 text-red-400 mt-0.5 flex-shrink-0" />
                         <span className="text-sm text-white/70">{insight}</span>
                       </li>
                     ))}
@@ -531,11 +531,11 @@ export const IntelligenceReport = ({ candidate, compact = false, singleColumn = 
                   <div className="flex-1 space-y-2">
                     <p className="text-xs text-amber-400/70 uppercase tracking-wider font-semibold">Observation</p>
                     <p className="text-sm text-white/90">{correlation.observation}</p>
-                    <p className="text-xs text-emerald-400/70 uppercase tracking-wider font-semibold mt-3">Inference</p>
+                    <p className="text-xs text-red-400/70 uppercase tracking-wider font-semibold mt-3">Inference</p>
                     <p className="text-sm text-white/80">{correlation.inference}</p>
                     <div className="mt-3 pt-3 border-t border-white/[0.06]">
-                      <p className="text-xs text-blue-400/70 uppercase tracking-wider font-semibold">Outreach Angle</p>
-                      <p className="text-sm text-blue-300">{correlation.outreach_angle}</p>
+                      <p className="text-xs text-red-400/70 uppercase tracking-wider font-semibold">Outreach Angle</p>
+                      <p className="text-sm text-red-300">{correlation.outreach_angle}</p>
                     </div>
                   </div>
                 </div>
@@ -556,8 +556,8 @@ export const IntelligenceReport = ({ candidate, compact = false, singleColumn = 
               variants={itemVariants}
               className="bg-white/[0.02] rounded-xl border border-white/[0.06] overflow-hidden"
             >
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06] bg-cyan-500/5">
-                <Award className="w-4 h-4 text-cyan-400" />
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06] bg-red-500/5">
+                <Award className="w-4 h-4 text-red-400" />
                 <h3 className="font-semibold text-white text-sm">Inferred Skills</h3>
               </div>
               <div className="p-4">
@@ -565,7 +565,7 @@ export const IntelligenceReport = ({ candidate, compact = false, singleColumn = 
                   {inferredSkills.map((skill, idx) => (
                     <span
                       key={idx}
-                      className="px-2.5 py-1 text-xs font-medium bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 rounded-full"
+                      className="px-2.5 py-1 text-xs font-medium bg-red-500/10 text-red-300 border border-red-500/20 rounded-full"
                     >
                       {skill}
                     </span>
@@ -581,15 +581,15 @@ export const IntelligenceReport = ({ candidate, compact = false, singleColumn = 
               variants={itemVariants}
               className="bg-white/[0.02] rounded-xl border border-white/[0.06] overflow-hidden"
             >
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06] bg-rose-500/5">
-                <AlertCircle className="w-4 h-4 text-rose-400" />
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06] bg-red-500/5">
+                <AlertCircle className="w-4 h-4 text-red-400" />
                 <h3 className="font-semibold text-white text-sm">Company Pain Points</h3>
               </div>
               <div className="p-4">
                 <ul className="space-y-2">
                   {companyPainPoints.map((point, idx) => (
                     <li key={idx} className="flex items-start gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-400 mt-1.5 flex-shrink-0" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-400 mt-1.5 flex-shrink-0" />
                       <span className="text-xs text-white/70">{point}</span>
                     </li>
                   ))}
@@ -604,8 +604,8 @@ export const IntelligenceReport = ({ candidate, compact = false, singleColumn = 
               variants={itemVariants}
               className="bg-white/[0.02] rounded-xl border border-white/[0.06] overflow-hidden"
             >
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06] bg-emerald-500/5">
-                <Building2 className="w-4 h-4 text-emerald-400" />
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06] bg-red-500/5">
+                <Building2 className="w-4 h-4 text-red-400" />
                 <h3 className="font-semibold text-white text-sm">Lateral Opportunities</h3>
               </div>
               <div className="p-4">
@@ -614,7 +614,7 @@ export const IntelligenceReport = ({ candidate, compact = false, singleColumn = 
                   {lateralOpportunities.map((company, idx) => (
                     <span
                       key={idx}
-                      className="px-2.5 py-1 text-xs font-medium bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 rounded-lg"
+                      className="px-2.5 py-1 text-xs font-medium bg-red-500/10 text-red-300 border border-red-500/20 rounded-lg"
                     >
                       {company}
                     </span>

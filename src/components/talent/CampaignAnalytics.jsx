@@ -33,11 +33,11 @@ export const MetricCard = ({
 }) => {
   const colorStyles = {
     red: { bg: "bg-red-500/10", border: "border-red-500/20", text: "text-red-400", icon: "text-red-400" },
-    green: { bg: "bg-green-500/10", border: "border-green-500/20", text: "text-green-400", icon: "text-green-400" },
-    blue: { bg: "bg-blue-500/10", border: "border-blue-500/20", text: "text-blue-400", icon: "text-blue-400" },
-    cyan: { bg: "bg-cyan-500/10", border: "border-cyan-500/20", text: "text-cyan-400", icon: "text-cyan-400" },
-    amber: { bg: "bg-amber-500/10", border: "border-amber-500/20", text: "text-amber-400", icon: "text-amber-400" },
-    purple: { bg: "bg-purple-500/10", border: "border-purple-500/20", text: "text-purple-400", icon: "text-purple-400" },
+    green: { bg: "bg-red-500/10", border: "border-red-500/20", text: "text-red-400", icon: "text-red-400" },
+    blue: { bg: "bg-red-500/10", border: "border-red-500/20", text: "text-red-400", icon: "text-red-400" },
+    cyan: { bg: "bg-red-500/10", border: "border-red-500/20", text: "text-red-400", icon: "text-red-400" },
+    amber: { bg: "bg-red-500/10", border: "border-red-500/20", text: "text-red-400", icon: "text-red-400" },
+    purple: { bg: "bg-red-500/10", border: "border-red-500/20", text: "text-red-400", icon: "text-red-400" },
   };
 
   const sizeStyles = {
@@ -62,7 +62,7 @@ export const MetricCard = ({
           </div>
         )}
         {trend && (
-          <div className={`flex items-center gap-1 text-xs ${trend === 'up' ? 'text-green-400' : 'text-red-400'}`}>
+          <div className={`flex items-center gap-1 text-xs text-red-400`}>
             {trend === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
             {trendValue && <span>{trendValue}</span>}
           </div>
@@ -172,7 +172,7 @@ export const ResponseTimeline = ({ responses }) => {
     return (
       <div className="bg-zinc-800/30 border border-zinc-700/30 rounded-xl p-5">
         <div className="flex items-center gap-2 mb-4">
-          <Activity className="w-5 h-5 text-cyan-400" />
+          <Activity className="w-5 h-5 text-red-400" />
           <h3 className="text-white font-medium">Response Timeline</h3>
         </div>
         <div className="text-center py-8">
@@ -185,8 +185,8 @@ export const ResponseTimeline = ({ responses }) => {
   }
 
   const sentimentStyles = {
-    positive: { bg: "bg-green-500", text: "text-green-400", label: "Positive" },
-    neutral: { bg: "bg-blue-500", text: "text-blue-400", label: "Neutral" },
+    positive: { bg: "bg-red-500", text: "text-red-400", label: "Positive" },
+    neutral: { bg: "bg-red-400", text: "text-red-300", label: "Neutral" },
     negative: { bg: "bg-red-500", text: "text-red-400", label: "Negative" },
   };
 
@@ -197,7 +197,7 @@ export const ResponseTimeline = ({ responses }) => {
       className="bg-zinc-800/30 border border-zinc-700/30 rounded-xl p-5"
     >
       <div className="flex items-center gap-2 mb-4">
-        <Activity className="w-5 h-5 text-cyan-400" />
+        <Activity className="w-5 h-5 text-red-400" />
         <h3 className="text-white font-medium">Response Timeline</h3>
         <span className="ml-auto text-xs text-zinc-500">{responses.length} responses</span>
       </div>
@@ -263,7 +263,7 @@ export const SourceBreakdown = ({ sources }) => {
     return (
       <div className="bg-zinc-800/30 border border-zinc-700/30 rounded-xl p-5">
         <div className="flex items-center gap-2 mb-4">
-          <PieChart className="w-5 h-5 text-purple-400" />
+          <PieChart className="w-5 h-5 text-red-400" />
           <h3 className="text-white font-medium">Source Performance</h3>
         </div>
         <div className="text-center py-8">
@@ -275,7 +275,7 @@ export const SourceBreakdown = ({ sources }) => {
   }
 
   const totalCount = sources.reduce((sum, s) => sum + s.count, 0);
-  const colors = ['bg-red-500', 'bg-blue-500', 'bg-purple-500', 'bg-cyan-500', 'bg-amber-500', 'bg-green-500'];
+  const colors = ['bg-red-300', 'bg-red-400', 'bg-red-500', 'bg-red-600', 'bg-red-700', 'bg-red-800'];
 
   return (
     <motion.div
@@ -284,7 +284,7 @@ export const SourceBreakdown = ({ sources }) => {
       className="bg-zinc-800/30 border border-zinc-700/30 rounded-xl p-5"
     >
       <div className="flex items-center gap-2 mb-4">
-        <PieChart className="w-5 h-5 text-purple-400" />
+        <PieChart className="w-5 h-5 text-red-400" />
         <h3 className="text-white font-medium">Source Performance</h3>
       </div>
 
@@ -320,7 +320,7 @@ export const SourceBreakdown = ({ sources }) => {
                 <span className="text-xs text-zinc-500 w-12 text-right">{percentage}%</span>
                 {source.responseRate !== undefined && (
                   <div className="flex items-center gap-1 text-xs">
-                    <span className={source.responseRate >= 20 ? 'text-green-400' : 'text-zinc-500'}>
+                    <span className={source.responseRate >= 20 ? 'text-red-400' : 'text-zinc-500'}>
                       {source.responseRate.toFixed(0)}% resp
                     </span>
                   </div>
@@ -335,9 +335,9 @@ export const SourceBreakdown = ({ sources }) => {
       {sources.length > 0 && (
         <div className="mt-4 pt-4 border-t border-zinc-700/30">
           <div className="flex items-center gap-2">
-            <Award className="w-4 h-4 text-amber-400" />
+            <Award className="w-4 h-4 text-red-400" />
             <span className="text-xs text-zinc-400">Best performer:</span>
-            <span className="text-xs text-amber-400 font-medium">
+            <span className="text-xs text-red-400 font-medium">
               {sources.reduce((best, s) => (s.responseRate || 0) > (best.responseRate || 0) ? s : best, sources[0]).nestName}
             </span>
           </div>
@@ -359,11 +359,11 @@ export const RateGauge = ({ value, label, size = "md", color = "red" }) => {
 
   const colorStyles = {
     red: "#ef4444",
-    green: "#22c55e",
-    blue: "#3b82f6",
-    cyan: "#06b6d4",
-    amber: "#f59e0b",
-    purple: "#a855f7",
+    green: "#ef4444",
+    blue: "#ef4444",
+    cyan: "#ef4444",
+    amber: "#ef4444",
+    purple: "#ef4444",
   };
 
   const { width, height, strokeWidth, fontSize } = sizes[size];
@@ -447,12 +447,12 @@ export const AnalyticsTab = ({ campaign, outreachTasks = [], matchedCandidates =
 
   // Build funnel stages
   const funnelStages = [
-    { label: "Matched", count: metrics.funnel.matched, color: "bg-blue-500", icon: Users, iconColor: "text-blue-400" },
-    { label: "Selected", count: metrics.funnel.selectedForOutreach, color: "bg-purple-500", icon: UserCheck, iconColor: "text-purple-400" },
-    { label: "Messaged", count: metrics.funnel.sent, color: "bg-cyan-500", icon: Send, iconColor: "text-cyan-400" },
-    { label: "Responded", count: metrics.funnel.replied, color: "bg-green-500", icon: MessageSquare, iconColor: "text-green-400" },
-    { label: "Interviewed", count: metrics.funnel.interviewed, color: "bg-amber-500", icon: Calendar, iconColor: "text-amber-400" },
-    { label: "Hired", count: metrics.funnel.hired, color: "bg-red-500", icon: Award, iconColor: "text-red-400" },
+    { label: "Matched", count: metrics.funnel.matched, color: "bg-red-300", icon: Users, iconColor: "text-red-300" },
+    { label: "Selected", count: metrics.funnel.selectedForOutreach, color: "bg-red-400", icon: UserCheck, iconColor: "text-red-400" },
+    { label: "Messaged", count: metrics.funnel.sent, color: "bg-red-500", icon: Send, iconColor: "text-red-400" },
+    { label: "Responded", count: metrics.funnel.replied, color: "bg-red-500", icon: MessageSquare, iconColor: "text-red-400" },
+    { label: "Interviewed", count: metrics.funnel.interviewed, color: "bg-red-600", icon: Calendar, iconColor: "text-red-400" },
+    { label: "Hired", count: metrics.funnel.hired, color: "bg-red-700", icon: Award, iconColor: "text-red-400" },
   ];
 
   // Build response timeline from tasks
@@ -506,7 +506,7 @@ export const AnalyticsTab = ({ campaign, outreachTasks = [], matchedCandidates =
           value={metrics.rates.responseRate.toFixed(1)}
           unit="%"
           icon={MessageSquare}
-          color={metrics.rates.responseRate >= 20 ? "green" : metrics.rates.responseRate >= 10 ? "amber" : "red"}
+          color="red"
           trend={metrics.rates.responseRate >= 15 ? "up" : null}
         />
         <MetricCard
@@ -514,34 +514,34 @@ export const AnalyticsTab = ({ campaign, outreachTasks = [], matchedCandidates =
           value={metrics.rates.selectionRate.toFixed(1)}
           unit="%"
           icon={UserCheck}
-          color="purple"
+          color="red"
         />
         <MetricCard
           label="Campaign Age"
           value={metrics.timing.campaignAge}
           unit="days"
           icon={Clock}
-          color="blue"
+          color="red"
         />
         <MetricCard
           label="Avg Response Time"
           value={metrics.timing.avgDaysToResponse ? metrics.timing.avgDaysToResponse.toFixed(1) : "—"}
           unit={metrics.timing.avgDaysToResponse ? "days" : ""}
           icon={TrendingUp}
-          color="cyan"
+          color="red"
         />
       </div>
 
       {/* Rate Gauges */}
       <div className="bg-zinc-800/30 border border-zinc-700/30 rounded-xl p-5">
         <div className="flex items-center gap-2 mb-4">
-          <Sparkles className="w-5 h-5 text-amber-400" />
+          <Sparkles className="w-5 h-5 text-red-400" />
           <h3 className="text-white font-medium">Conversion Rates</h3>
         </div>
         <div className="flex items-center justify-around">
-          <RateGauge value={metrics.rates.selectionRate} label="Selection" color="purple" />
-          <RateGauge value={metrics.rates.responseRate} label="Response" color="green" />
-          <RateGauge value={metrics.rates.interviewRate} label="Interview" color="cyan" />
+          <RateGauge value={metrics.rates.selectionRate} label="Selection" color="red" />
+          <RateGauge value={metrics.rates.responseRate} label="Response" color="red" />
+          <RateGauge value={metrics.rates.interviewRate} label="Interview" color="red" />
           <RateGauge value={metrics.rates.conversionRate} label="Hired" color="red" />
         </div>
       </div>
@@ -571,7 +571,7 @@ export const AnalyticsTab = ({ campaign, outreachTasks = [], matchedCandidates =
             <div className="text-xs text-zinc-500">Messages Sent</div>
           </div>
           <div>
-            <div className="text-2xl font-bold text-green-400">{metrics.funnel.replied}</div>
+            <div className="text-2xl font-bold text-red-400">{metrics.funnel.replied}</div>
             <div className="text-xs text-zinc-500">Responses</div>
           </div>
           <div>

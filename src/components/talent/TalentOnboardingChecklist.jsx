@@ -31,7 +31,7 @@ const CHECKLIST_ITEMS = [
     description: 'Set up a hiring project to organize your roles',
     icon: Briefcase,
     action: 'new_project',
-    color: 'text-blue-400',
+    color: 'text-red-400',
   },
   {
     id: 'add_role',
@@ -39,7 +39,7 @@ const CHECKLIST_ITEMS = [
     description: 'Define the position you\'re hiring for',
     icon: Target,
     action: 'add_role',
-    color: 'text-purple-400',
+    color: 'text-red-400',
   },
   {
     id: 'purchase_nest',
@@ -47,7 +47,7 @@ const CHECKLIST_ITEMS = [
     description: 'Get curated candidate pools from the marketplace',
     icon: Package,
     action: 'marketplace',
-    color: 'text-cyan-400',
+    color: 'text-red-400',
   },
   {
     id: 'run_matching',
@@ -55,7 +55,7 @@ const CHECKLIST_ITEMS = [
     description: 'Let AI find the best candidates for your role',
     icon: Sparkles,
     action: 'campaigns',
-    color: 'text-amber-400',
+    color: 'text-red-400',
   },
   {
     id: 'send_outreach',
@@ -63,7 +63,7 @@ const CHECKLIST_ITEMS = [
     description: 'Reach out to matched candidates',
     icon: Send,
     action: 'outreach',
-    color: 'text-green-400',
+    color: 'text-red-400',
   },
 ];
 
@@ -225,13 +225,13 @@ const TalentOnboardingChecklist = ({
         className="relative overflow-hidden rounded-xl bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800 border border-zinc-800 p-4 mb-4"
       >
         {/* Background decoration */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-cyan-500/10 to-purple-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-red-500/10 to-red-600/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
 
         <div className="relative z-10">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-purple-500 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center">
                 <Rocket className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -263,7 +263,7 @@ const TalentOnboardingChecklist = ({
               initial={{ width: 0 }}
               animate={{ width: `${progressPercent}%` }}
               transition={{ duration: 0.5, ease: 'easeOut' }}
-              className="h-full bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full"
+              className="h-full bg-gradient-to-r from-red-500 to-red-600 rounded-full"
             />
           </div>
 
@@ -287,9 +287,9 @@ const TalentOnboardingChecklist = ({
                   className={`
                     relative p-3 rounded-lg text-left transition-all group
                     ${isComplete
-                      ? 'bg-green-500/10 border border-green-500/20 cursor-default'
+                      ? 'bg-red-500/10 border border-red-500/20 cursor-default'
                       : isNextStep
-                        ? 'bg-zinc-800/80 border border-cyan-500/30 hover:border-cyan-500/50 cursor-pointer'
+                        ? 'bg-zinc-800/80 border border-red-500/30 hover:border-red-500/50 cursor-pointer'
                         : 'bg-zinc-800/50 border border-zinc-700/50 hover:border-zinc-600 cursor-pointer'
                     }
                   `}
@@ -298,9 +298,9 @@ const TalentOnboardingChecklist = ({
                   <div className={`
                     absolute -top-2 -left-2 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold
                     ${isComplete
-                      ? 'bg-green-500 text-white'
+                      ? 'bg-red-500 text-white'
                       : isNextStep
-                        ? 'bg-cyan-500 text-white'
+                        ? 'bg-red-500 text-white'
                         : 'bg-zinc-700 text-zinc-400'
                     }
                   `}>
@@ -313,11 +313,11 @@ const TalentOnboardingChecklist = ({
 
                   <div className="flex items-start gap-2 mt-1">
                     <Icon className={`w-4 h-4 flex-shrink-0 mt-0.5 ${
-                      isComplete ? 'text-green-400' : item.color
+                      isComplete ? 'text-red-400' : item.color
                     }`} />
                     <div className="min-w-0 flex-1">
                       <p className={`text-sm font-medium leading-tight ${
-                        isComplete ? 'text-green-400 line-through' : 'text-white'
+                        isComplete ? 'text-red-400 line-through' : 'text-white'
                       }`}>
                         {item.title}
                       </p>
@@ -330,7 +330,7 @@ const TalentOnboardingChecklist = ({
                   {/* Arrow indicator for next step */}
                   {!isComplete && isNextStep && (
                     <div className="absolute -right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <ChevronRight className="w-4 h-4 text-cyan-400" />
+                      <ChevronRight className="w-4 h-4 text-red-400" />
                     </div>
                   )}
                 </motion.button>

@@ -135,16 +135,16 @@ export default function ActivityFeed({ limit = 10, showHeader = true, compact = 
   const getActivityColor = (type) => {
     const colors = {
       intel_queued: "bg-zinc-700 text-zinc-400",
-      intel_complete: "bg-cyan-500/20 text-cyan-400",
-      candidate_matched: "bg-green-500/20 text-green-400",
-      candidate_added: "bg-blue-500/20 text-blue-400",
-      candidates_imported: "bg-indigo-500/20 text-indigo-400",
-      outreach_sent: "bg-purple-500/20 text-purple-400",
-      outreach_opened: "bg-amber-500/20 text-amber-400",
-      response_received: "bg-yellow-500/20 text-yellow-400",
+      intel_complete: "bg-red-500/20 text-red-400",
+      candidate_matched: "bg-red-500/20 text-red-400",
+      candidate_added: "bg-red-500/20 text-red-400",
+      candidates_imported: "bg-red-500/20 text-red-400",
+      outreach_sent: "bg-red-500/20 text-red-400",
+      outreach_opened: "bg-red-500/20 text-red-400",
+      response_received: "bg-red-500/20 text-red-400",
       campaign_created: "bg-red-500/20 text-red-400",
-      campaign_started: "bg-orange-500/20 text-orange-400",
-      campaign_completed: "bg-emerald-500/20 text-emerald-400",
+      campaign_started: "bg-red-500/20 text-red-400",
+      campaign_completed: "bg-red-500/20 text-red-400",
     };
     return colors[type] || "bg-zinc-700 text-zinc-400";
   };

@@ -5,7 +5,7 @@ import { X, Users, Send, FolderPlus, Download, Trash2, Brain, Loader2 } from "lu
 const BulkActionButton = ({ icon: Icon, label, onClick, variant = "default", disabled = false, loading = false }) => {
   const variants = {
     default: "hover:bg-zinc-700 text-zinc-300 hover:text-white",
-    cyan: "hover:bg-cyan-500/20 text-cyan-400",
+    cyan: "hover:bg-red-500/20 text-red-400",
     danger: "hover:bg-red-500/20 text-red-400",
     primary: "hover:bg-red-500/20 text-red-400",
   };

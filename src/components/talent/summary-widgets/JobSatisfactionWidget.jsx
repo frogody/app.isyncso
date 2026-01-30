@@ -10,27 +10,27 @@ const parseJobSatisfaction = (text) => {
   
   // Company Stability
   if (text.toLowerCase().includes('declining')) {
-    metrics.push({ label: 'Company Stability', value: 'Declining', icon: TrendingDown, color: 'red' });
+    metrics.push({ label: 'Company Stability', value: 'Declining', icon: TrendingDown, color: 'strong' });
   } else if (text.toLowerCase().includes('stable') || text.toLowerCase().includes('growing')) {
-    metrics.push({ label: 'Company Stability', value: 'Stable', icon: TrendingUp, color: 'green' });
+    metrics.push({ label: 'Company Stability', value: 'Stable', icon: TrendingUp, color: 'light' });
   }
   
   // Employee Sentiment
   if (text.toLowerCase().includes('mixed')) {
-    metrics.push({ label: 'Employee Sentiment', value: 'Mixed', icon: Minus, color: 'amber' });
+    metrics.push({ label: 'Employee Sentiment', value: 'Mixed', icon: Minus, color: 'medium' });
   } else if (text.toLowerCase().includes('positive')) {
-    metrics.push({ label: 'Employee Sentiment', value: 'Positive', icon: TrendingUp, color: 'green' });
+    metrics.push({ label: 'Employee Sentiment', value: 'Positive', icon: TrendingUp, color: 'light' });
   } else if (text.toLowerCase().includes('negative')) {
-    metrics.push({ label: 'Employee Sentiment', value: 'Negative', icon: TrendingDown, color: 'red' });
+    metrics.push({ label: 'Employee Sentiment', value: 'Negative', icon: TrendingDown, color: 'strong' });
   }
   
   // Switching Likelihood
   if (text.toLowerCase().includes('high') && (text.toLowerCase().includes('switching') || text.toLowerCase().includes('likelihood'))) {
-    metrics.push({ label: 'Switching Likelihood', value: 'High', icon: AlertCircle, color: 'green' });
+    metrics.push({ label: 'Switching Likelihood', value: 'High', icon: AlertCircle, color: 'strong' });
   } else if (text.toLowerCase().includes('medium')) {
-    metrics.push({ label: 'Switching Likelihood', value: 'Medium', icon: Minus, color: 'amber' });
+    metrics.push({ label: 'Switching Likelihood', value: 'Medium', icon: Minus, color: 'medium' });
   } else if (text.toLowerCase().includes('low')) {
-    metrics.push({ label: 'Switching Likelihood', value: 'Low', icon: TrendingDown, color: 'red' });
+    metrics.push({ label: 'Switching Likelihood', value: 'Low', icon: TrendingDown, color: 'light' });
   }
   
   return metrics;
@@ -46,7 +46,7 @@ const JobSatisfactionWidget = ({ candidate, editMode, onRemove, dragHandleProps 
     <WidgetWrapper
       title="Job Satisfaction"
       icon={Building2}
-      iconColor="text-orange-400"
+      iconColor="text-red-400"
       editMode={editMode}
       onRemove={onRemove}
       dragHandleProps={dragHandleProps}
@@ -57,12 +57,12 @@ const JobSatisfactionWidget = ({ candidate, editMode, onRemove, dragHandleProps 
         {metrics && metrics.length > 0 && (
           <div className="grid grid-cols-3 gap-2">
             {metrics.map((metric, i) => {
-              const bgClass = metric.color === 'red' ? 'bg-red-500/10 border-red-500/20' :
-                              metric.color === 'green' ? 'bg-green-500/10 border-green-500/20' :
-                              'bg-amber-500/10 border-amber-500/20';
-              const textClass = metric.color === 'red' ? 'text-red-400' :
-                                metric.color === 'green' ? 'text-green-400' :
-                                'text-amber-400';
+              const bgClass = metric.color === 'strong' ? 'bg-red-500/20 border-red-500/30' :
+                              metric.color === 'medium' ? 'bg-red-500/10 border-red-500/20' :
+                              'bg-red-500/5 border-red-500/10';
+              const textClass = metric.color === 'strong' ? 'text-red-400' :
+                                metric.color === 'medium' ? 'text-red-400/80' :
+                                'text-red-400/60';
               return (
                 <div key={i} className={`p-2.5 rounded-lg border ${bgClass}`}>
                   <div className="flex items-center gap-1.5 mb-1">

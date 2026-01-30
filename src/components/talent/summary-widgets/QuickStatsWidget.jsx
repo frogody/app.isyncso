@@ -43,7 +43,7 @@ const QuickStatsWidget = ({ candidate, editMode, onRemove, dragHandleProps }) =>
     <WidgetWrapper
       title="Quick Stats"
       icon={BarChart3}
-      iconColor="text-indigo-400"
+      iconColor="text-red-400"
       editMode={editMode}
       onRemove={onRemove}
       dragHandleProps={dragHandleProps}
@@ -54,25 +54,25 @@ const QuickStatsWidget = ({ candidate, editMode, onRemove, dragHandleProps }) =>
           icon={DollarSign}
           label="Salary"
           value={formatSalary(salary)}
-          color="emerald"
+          color="red"
         />
         <StatItem
           icon={Calendar}
           label="Experience"
           value={yearsExp ? `${yearsExp}y` : null}
-          color="purple"
+          color="red"
         />
         <StatItem
           icon={Building2}
           label="Tenure"
           value={tenure ? `${tenure}y` : null}
-          color="blue"
+          color="red"
         />
         <StatItem
           icon={TrendingUp}
           label="Promotions"
           value={promotions}
-          color="green"
+          color="red"
         />
         <StatItem
           icon={Award}
@@ -84,19 +84,19 @@ const QuickStatsWidget = ({ candidate, editMode, onRemove, dragHandleProps }) =>
           icon={MapPin}
           label="Location"
           value={location}
-          color="amber"
+          color="red"
         />
         <StatItem
           icon={GraduationCap}
           label="Degrees"
           value={education > 0 ? education : null}
-          color="indigo"
+          color="red"
         />
         <StatItem
           icon={Building2}
           label="Company"
           value={company}
-          color="cyan"
+          color="red"
         />
       </div>
     </WidgetWrapper>

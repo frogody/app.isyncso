@@ -12,42 +12,42 @@ const MATCH_FACTORS = [
     key: "skills_fit",
     label: "Skills Match",
     icon: Award,
-    color: "blue",
+    color: "red",
     description: "Technical & domain expertise alignment with role requirements",
   },
   {
     key: "experience_fit",
     label: "Experience Level",
     icon: Briefcase,
-    color: "purple",
+    color: "red",
     description: "Years of experience and seniority level fit",
   },
   {
     key: "title_fit",
     label: "Title Alignment",
     icon: Target,
-    color: "cyan",
+    color: "red",
     description: "Current role title relevance to target position",
   },
   {
     key: "location_fit",
     label: "Location",
     icon: MapPin,
-    color: "emerald",
+    color: "red",
     description: "Geographic proximity or remote work compatibility",
   },
   {
     key: "timing_score",
     label: "Flight Risk / Timing",
     icon: Clock,
-    color: "amber",
+    color: "red",
     description: "Likelihood candidate will change jobs soon (high = ready to move)",
   },
   {
     key: "culture_fit",
     label: "Culture Fit",
     icon: Users,
-    color: "rose",
+    color: "red",
     description: "Company background and values alignment",
   },
 ];
@@ -79,20 +79,10 @@ const DEFAULT_WEIGHTS = PRESETS.balanced.weights;
 
 // Static color maps (Tailwind can't see dynamic classes)
 const iconBgColors = {
-  blue: "bg-blue-500/20",
-  purple: "bg-purple-500/20",
-  cyan: "bg-cyan-500/20",
-  emerald: "bg-emerald-500/20",
-  amber: "bg-amber-500/20",
-  rose: "bg-rose-500/20",
+  red: "bg-red-500/20",
 };
 const iconTextColors = {
-  blue: "text-blue-400",
-  purple: "text-purple-400",
-  cyan: "text-cyan-400",
-  emerald: "text-emerald-400",
-  amber: "text-amber-400",
-  rose: "text-rose-400",
+  red: "text-red-400",
 };
 
 const WeightSlider = ({ factor, value, onChange, index }) => {
@@ -140,27 +130,27 @@ const TotalIndicator = ({ total }) => {
     <div
       className={`p-3 rounded-xl border flex items-center gap-3 ${
         isValid
-          ? "bg-emerald-500/10 border-emerald-500/30"
-          : "bg-amber-500/10 border-amber-500/30"
+          ? "bg-red-500/10 border-red-500/30"
+          : "bg-red-600/10 border-red-600/30"
       }`}
     >
       {isValid ? (
-        <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+        <CheckCircle2 className="w-5 h-5 text-red-400 flex-shrink-0" />
       ) : (
-        <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0" />
+        <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
       )}
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-1">
-          <span className={`text-sm font-medium ${isValid ? "text-emerald-400" : "text-amber-400"}`}>
+          <span className={`text-sm font-medium ${isValid ? "text-red-400" : "text-red-600"}`}>
             Total: {total}%
           </span>
-          <span className={`text-xs ${isValid ? "text-emerald-400/70" : "text-amber-400/70"}`}>
+          <span className={`text-xs ${isValid ? "text-red-400/70" : "text-red-600/70"}`}>
             {isValid ? "Ready to match" : total < 100 ? `${100 - total}% remaining` : `${total - 100}% over`}
           </span>
         </div>
         <div className="h-1.5 bg-zinc-700/50 rounded-full overflow-hidden">
           <motion.div
-            className={`h-full rounded-full ${isValid ? "bg-emerald-500" : total > 100 ? "bg-red-500" : "bg-amber-500"}`}
+            className={`h-full rounded-full ${isValid ? "bg-red-500" : total > 100 ? "bg-red-700" : "bg-red-600"}`}
             initial={{ width: 0 }}
             animate={{ width: barWidth }}
             transition={{ duration: 0.3 }}
@@ -210,8 +200,8 @@ const CriteriaWeightingStep = ({ weights = DEFAULT_WEIGHTS, onChange, onPresetAp
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="p-2 rounded-xl bg-purple-500/20">
-          <Sparkles className="w-5 h-5 text-purple-400" />
+        <div className="p-2 rounded-xl bg-red-500/20">
+          <Sparkles className="w-5 h-5 text-red-400" />
         </div>
         <div>
           <h3 className="text-lg font-semibold text-white">Customize Matching Weights</h3>

@@ -11,7 +11,7 @@ const TimingSignalsWidget = ({ candidate, editMode, onRemove, dragHandleProps })
 
   const urgencyConfig = {
     high: { text: "text-red-400", dot: "bg-red-400" },
-    medium: { text: "text-amber-400", dot: "bg-amber-400" },
+    medium: { text: "text-red-400", dot: "bg-red-400" },
     low: { text: "text-zinc-400", dot: "bg-zinc-400" },
   };
 
@@ -22,7 +22,7 @@ const TimingSignalsWidget = ({ candidate, editMode, onRemove, dragHandleProps })
     <WidgetWrapper
       title={`Timing (${signals.length})`}
       icon={Clock}
-      iconColor="text-amber-400"
+      iconColor="text-red-400"
       editMode={editMode}
       onRemove={onRemove}
       dragHandleProps={dragHandleProps}

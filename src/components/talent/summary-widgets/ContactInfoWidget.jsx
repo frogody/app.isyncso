@@ -23,7 +23,7 @@ const CopyButton = ({ value }) => {
       title="Copy to clipboard"
     >
       {copied ? (
-        <Check className="w-3.5 h-3.5 text-green-400" />
+        <Check className="w-3.5 h-3.5 text-red-400" />
       ) : (
         <Copy className="w-3.5 h-3.5 text-zinc-500 hover:text-zinc-300" />
       )}
@@ -45,7 +45,7 @@ const ContactRow = ({ icon: Icon, label, value, copyable, link, iconColor = "tex
               href={link}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-cyan-400 hover:text-cyan-300 truncate block"
+              className="text-sm text-red-400 hover:text-red-300 truncate block"
             >
               {value}
             </a>
@@ -84,7 +84,7 @@ const ContactInfoWidget = ({ candidate, editMode, onRemove, dragHandleProps }) =
     <WidgetWrapper
       title="Contact Info"
       icon={User}
-      iconColor="text-cyan-400"
+      iconColor="text-red-400"
       editMode={editMode}
       onRemove={onRemove}
       dragHandleProps={dragHandleProps}
@@ -97,27 +97,27 @@ const ContactInfoWidget = ({ candidate, editMode, onRemove, dragHandleProps }) =
           label="Email"
           value={email}
           copyable
-          iconColor="text-cyan-400"
+          iconColor="text-red-400"
         />
         <ContactRow
           icon={Phone}
           label="Phone"
           value={phone}
           copyable
-          iconColor="text-green-400"
+          iconColor="text-red-400"
         />
         <ContactRow
           icon={Linkedin}
           label="LinkedIn"
           value={linkedin ? "View Profile" : null}
           link={linkedin}
-          iconColor="text-blue-400"
+          iconColor="text-red-400"
         />
         <ContactRow
           icon={MapPin}
           label="Location"
           value={location}
-          iconColor="text-amber-400"
+          iconColor="text-red-400"
         />
       </div>
     </WidgetWrapper>

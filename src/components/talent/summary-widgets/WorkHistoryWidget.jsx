@@ -42,7 +42,7 @@ const WorkHistoryWidget = ({ candidate, editMode, onRemove, dragHandleProps }) =
     <WidgetWrapper
       title={`Recent Roles${workHistory.length > 3 ? ` (${workHistory.length} total)` : ''}`}
       icon={Briefcase}
-      iconColor="text-indigo-400"
+      iconColor="text-red-400"
       editMode={editMode}
       onRemove={onRemove}
       dragHandleProps={dragHandleProps}
@@ -52,11 +52,11 @@ const WorkHistoryWidget = ({ candidate, editMode, onRemove, dragHandleProps }) =
         {recentJobs.map((job, i) => (
           <div 
             key={i} 
-            className={`p-3 rounded-lg ${i === 0 ? 'bg-indigo-500/10 border border-indigo-500/20' : 'bg-zinc-800/30'}`}
+            className={`p-3 rounded-lg ${i === 0 ? 'bg-red-500/10 border border-red-500/20' : 'bg-zinc-800/30'}`}
           >
             <div className="flex items-start gap-3">
-              <div className={`p-2 rounded-lg ${i === 0 ? 'bg-indigo-500/20' : 'bg-zinc-700/50'}`}>
-                <Building2 className={`w-4 h-4 ${i === 0 ? 'text-indigo-400' : 'text-zinc-400'}`} />
+              <div className={`p-2 rounded-lg ${i === 0 ? 'bg-red-500/20' : 'bg-zinc-700/50'}`}>
+                <Building2 className={`w-4 h-4 ${i === 0 ? 'text-red-400' : 'text-zinc-400'}`} />
               </div>
               <div className="flex-1 min-w-0">
                 <p className={`font-medium truncate ${i === 0 ? 'text-white' : 'text-zinc-300'}`}>

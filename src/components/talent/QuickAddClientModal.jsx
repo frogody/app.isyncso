@@ -217,13 +217,13 @@ export function QuickAddClientModal({ isOpen, onClose, onSuccess }) {
                 {inputValue && (
                   <div className="flex items-center gap-2 text-sm">
                     {isLinkedIn && (
-                      <Badge className="bg-blue-600/20 text-blue-400 border-blue-500/30">
+                      <Badge className="bg-red-600/20 text-red-400 border-red-500/30">
                         <Linkedin className="w-3 h-3 mr-1" />
                         LinkedIn Profile
                       </Badge>
                     )}
                     {isEmail && (
-                      <Badge className="bg-green-600/20 text-green-400 border-green-500/30">
+                      <Badge className="bg-red-600/20 text-red-400 border-red-500/30">
                         <Mail className="w-3 h-3 mr-1" />
                         Email Address
                       </Badge>
@@ -309,7 +309,7 @@ export function QuickAddClientModal({ isOpen, onClose, onSuccess }) {
               className="space-y-4 py-4"
             >
               {/* Success Badge */}
-              <div className="flex items-center gap-2 text-green-400 text-sm">
+              <div className="flex items-center gap-2 text-red-400 text-sm">
                 <CheckCircle className="w-4 h-4" />
                 Contact enriched successfully
               </div>

@@ -33,10 +33,10 @@ const FACTOR_CONFIG = {
 };
 
 const getScoreColor = (score) => {
-  if (score >= 80) return { ring: "#22c55e", text: "text-green-400", border: "border-green-500/50", bg: "bg-green-500/10" };
-  if (score >= 60) return { ring: "#eab308", text: "text-yellow-400", border: "border-yellow-500/50", bg: "bg-yellow-500/10" };
-  if (score >= 40) return { ring: "#f97316", text: "text-orange-400", border: "border-orange-500/50", bg: "bg-orange-500/10" };
-  return { ring: "#ef4444", text: "text-red-400", border: "border-red-500/50", bg: "bg-red-500/10" };
+  if (score >= 80) return { ring: "#ef4444", text: "text-red-400", border: "border-red-500/50", bg: "bg-red-500/10" };
+  if (score >= 60) return { ring: "#dc2626", text: "text-red-500", border: "border-red-600/50", bg: "bg-red-600/10" };
+  if (score >= 40) return { ring: "#b91c1c", text: "text-red-600", border: "border-red-700/50", bg: "bg-red-700/10" };
+  return { ring: "#991b1b", text: "text-red-700", border: "border-red-800/50", bg: "bg-red-800/10" };
 };
 
 const RadialProgress = ({ score, color, size = 48 }) => {
@@ -214,7 +214,7 @@ const MatchReasonCards = ({ factors, insights, compact = false, loading = false 
           {insights.key_strengths?.slice(0, 2).map((s, i) => (
             <span
               key={`s-${i}`}
-              className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/20"
+              className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20"
             >
               {s}
             </span>
@@ -222,7 +222,7 @@ const MatchReasonCards = ({ factors, insights, compact = false, loading = false 
           {insights.concerns?.slice(0, 2).map((c, i) => (
             <span
               key={`c-${i}`}
-              className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20"
+              className="text-[10px] px-2 py-0.5 rounded-full bg-red-600/10 text-red-500 border border-red-600/20"
             >
               {c}
             </span>

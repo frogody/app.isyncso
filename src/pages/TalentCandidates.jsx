@@ -821,11 +821,11 @@ export default function TalentCandidates() {
           const readyCandidates = candidates.filter(c => c.last_intelligence_update && c.intelligence_score != null);
           if (readyCandidates.length >= 3) {
             return (
-              <div className="p-4 rounded-xl bg-gradient-to-r from-cyan-500/10 to-red-500/10 border border-cyan-500/20">
+              <div className="p-4 rounded-xl bg-gradient-to-r from-red-500/10 to-red-600/10 border border-red-500/20">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-cyan-500/20">
-                      <Zap className="w-5 h-5 text-cyan-400" />
+                    <div className="p-2 rounded-lg bg-red-500/20">
+                      <Zap className="w-5 h-5 text-red-400" />
                     </div>
                     <div>
                       <p className="text-white font-medium">

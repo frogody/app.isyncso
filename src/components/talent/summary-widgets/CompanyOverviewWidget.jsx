@@ -43,7 +43,7 @@ const CompanyOverviewWidget = ({ candidate, editMode, onRemove, dragHandleProps 
     <WidgetWrapper
       title="Company Overview"
       icon={Building2}
-      iconColor="text-emerald-400"
+      iconColor="text-red-400"
       editMode={editMode}
       onRemove={onRemove}
       dragHandleProps={dragHandleProps}
@@ -52,10 +52,10 @@ const CompanyOverviewWidget = ({ candidate, editMode, onRemove, dragHandleProps 
       <div className="space-y-4">
         {/* Company Name Header */}
         {companyName && (
-          <div className="p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+          <div className="p-3 bg-red-500/10 rounded-lg border border-red-500/20">
             <p className="text-base font-semibold text-white">{companyName}</p>
             {industry && (
-              <p className="text-sm text-emerald-400/70 mt-0.5">{industry}</p>
+              <p className="text-sm text-red-400/70 mt-0.5">{industry}</p>
             )}
           </div>
         )}

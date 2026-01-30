@@ -94,7 +94,7 @@ const CopyButton = ({ value }) => {
       title="Copy"
     >
       {copied ? (
-        <Check className="w-3.5 h-3.5 text-green-400" />
+        <Check className="w-3.5 h-3.5 text-red-400" />
       ) : (
         <Copy className="w-3.5 h-3.5 text-zinc-500 hover:text-zinc-300" />
       )}
@@ -272,11 +272,11 @@ const EducationItem = ({ degree, field, school, year }) => (
 const ScoreBar = ({ label, score, color = "red" }) => {
   const colorClasses = {
     red: "bg-red-500",
-    green: "bg-green-500",
-    blue: "bg-blue-500",
-    cyan: "bg-cyan-500",
-    amber: "bg-amber-500",
-    purple: "bg-purple-500",
+    green: "bg-red-500",
+    blue: "bg-red-500",
+    cyan: "bg-red-500",
+    amber: "bg-red-500",
+    purple: "bg-red-500",
   };
 
   return (
@@ -300,9 +300,9 @@ const ScoreBar = ({ label, score, color = "red" }) => {
 // Reasoning block component
 const ReasoningBlock = ({ title, items, content, color = "cyan" }) => {
   const colorStyles = {
-    green: { bg: "bg-green-500/10", border: "border-green-500/20", text: "text-green-400" },
-    yellow: { bg: "bg-amber-500/10", border: "border-amber-500/20", text: "text-amber-400" },
-    cyan: { bg: "bg-cyan-500/10", border: "border-cyan-500/20", text: "text-cyan-400" },
+    green: { bg: "bg-red-500/10", border: "border-red-500/20", text: "text-red-400" },
+    yellow: { bg: "bg-red-400/10", border: "border-red-400/20", text: "text-red-400" },
+    cyan: { bg: "bg-red-500/10", border: "border-red-500/20", text: "text-red-400" },
     red: { bg: "bg-red-500/10", border: "border-red-500/20", text: "text-red-400" },
   };
 
@@ -399,19 +399,19 @@ const QuickStats = ({ candidate }) => {
     <div className="flex items-center gap-4 mt-3 text-xs">
       {yearsAtCompany !== null && (
         <div className="flex items-center gap-1.5 px-2 py-1 bg-zinc-800/50 rounded-lg">
-          <Calendar className="w-3 h-3 text-cyan-400" />
+          <Calendar className="w-3 h-3 text-red-400" />
           <span className="text-zinc-300">{yearsAtCompany}y at company</span>
         </div>
       )}
       {timesPromoted > 0 && (
         <div className="flex items-center gap-1.5 px-2 py-1 bg-zinc-800/50 rounded-lg">
-          <TrendingUp className="w-3 h-3 text-green-400" />
+          <TrendingUp className="w-3 h-3 text-red-400" />
           <span className="text-zinc-300">{timesPromoted}x promoted</span>
         </div>
       )}
       {companyChanges > 0 && (
         <div className="flex items-center gap-1.5 px-2 py-1 bg-zinc-800/50 rounded-lg">
-          <ArrowUpRight className="w-3 h-3 text-amber-400" />
+          <ArrowUpRight className="w-3 h-3 text-red-400" />
           <span className="text-zinc-300">{companyChanges} company changes</span>
         </div>
       )}
@@ -440,8 +440,8 @@ const CompanyTab = ({ candidate, isSectionEnabled = () => true }) => {
     <div className="space-y-6">
       {/* Company Basic Info Bar */}
       {isSectionEnabled('company', 'company_info') && (
-        <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-lg border border-blue-500/20">
-          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-lg font-bold text-white flex-shrink-0">
+        <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-red-500/10 to-red-600/10 rounded-lg border border-red-500/20">
+          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-lg font-bold text-white flex-shrink-0">
             {candidate.current_company?.charAt(0)?.toUpperCase() || "?"}
           </div>
           <div className="flex-1">
@@ -478,7 +478,7 @@ const CompanyTab = ({ candidate, isSectionEnabled = () => true }) => {
               {companyIntel.tech_stack.map((tech, i) => (
                 <span
                   key={i}
-                  className="px-2.5 py-1 bg-blue-500/10 text-blue-400 rounded-lg text-xs border border-blue-500/20 flex items-center gap-1"
+                  className="px-2.5 py-1 bg-red-500/10 text-red-400 rounded-lg text-xs border border-red-500/20 flex items-center gap-1"
                 >
                   <Code2 className="w-3 h-3" />
                   {tech}
@@ -503,7 +503,7 @@ const CompanyTab = ({ candidate, isSectionEnabled = () => true }) => {
                         key={star}
                         className={`w-4 h-4 ${
                           star <= Math.round(companyIntel.employee_ratings.overall)
-                            ? "text-amber-400 fill-amber-400"
+                            ? "text-red-400 fill-red-400"
                             : "text-zinc-600"
                         }`}
                       />
@@ -516,16 +516,16 @@ const CompanyTab = ({ candidate, isSectionEnabled = () => true }) => {
               </div>
             )}
             {companyIntel.employee_ratings.culture && (
-              <ScoreBar label="Culture & Values" score={companyIntel.employee_ratings.culture * 20} color="cyan" />
+              <ScoreBar label="Culture & Values" score={companyIntel.employee_ratings.culture * 20} color="red" />
             )}
             {companyIntel.employee_ratings.work_life_balance && (
-              <ScoreBar label="Work-Life Balance" score={companyIntel.employee_ratings.work_life_balance * 20} color="green" />
+              <ScoreBar label="Work-Life Balance" score={companyIntel.employee_ratings.work_life_balance * 20} color="red" />
             )}
             {companyIntel.employee_ratings.compensation && (
-              <ScoreBar label="Compensation" score={companyIntel.employee_ratings.compensation * 20} color="amber" />
+              <ScoreBar label="Compensation" score={companyIntel.employee_ratings.compensation * 20} color="red" />
             )}
             {companyIntel.employee_ratings.career_growth && (
-              <ScoreBar label="Career Growth" score={companyIntel.employee_ratings.career_growth * 20} color="purple" />
+              <ScoreBar label="Career Growth" score={companyIntel.employee_ratings.career_growth * 20} color="red" />
             )}
           </div>
         </Section>
@@ -563,7 +563,7 @@ const CompanyTab = ({ candidate, isSectionEnabled = () => true }) => {
                   {companyIntel.funding.investors.map((investor, i) => (
                     <span
                       key={i}
-                      className="px-2 py-0.5 bg-green-500/10 text-green-400 rounded text-xs border border-green-500/20"
+                      className="px-2 py-0.5 bg-red-500/10 text-red-400 rounded text-xs border border-red-500/20"
                     >
                       {investor}
                     </span>
@@ -582,10 +582,10 @@ const CompanyTab = ({ candidate, isSectionEnabled = () => true }) => {
             {companyIntel.ma_news.map((news, i) => (
               <div
                 key={i}
-                className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg"
+                className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg"
               >
                 <div className="flex items-start gap-2">
-                  <Newspaper className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                  <Newspaper className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
                   <div>
                     <div className="text-sm text-white font-medium">{news.headline}</div>
                     {news.date && (
@@ -618,7 +618,7 @@ const CompanyTab = ({ candidate, isSectionEnabled = () => true }) => {
             <ul className="space-y-2">
               {companyIntel.growth_signals.map((signal, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm">
-                  <Zap className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
+                  <Zap className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
                   <span className="text-zinc-300">{signal}</span>
                 </li>
               ))}
@@ -633,11 +633,11 @@ const CompanyTab = ({ candidate, isSectionEnabled = () => true }) => {
 // Activity item component
 const ActivityItem = ({ type, campaign_name, timestamp, details, message_preview }) => {
   const typeConfig = {
-    matched: { icon: Target, label: "Matched to campaign", color: "text-blue-400" },
-    outreach_generated: { icon: Sparkles, label: "Outreach generated", color: "text-purple-400" },
-    outreach_sent: { icon: Send, label: "Outreach sent", color: "text-cyan-400" },
-    outreach_opened: { icon: Eye, label: "Email opened", color: "text-amber-400" },
-    response_received: { icon: MessageSquare, label: "Response received", color: "text-green-400" },
+    matched: { icon: Target, label: "Matched to campaign", color: "text-red-400" },
+    outreach_generated: { icon: Sparkles, label: "Outreach generated", color: "text-red-400" },
+    outreach_sent: { icon: Send, label: "Outreach sent", color: "text-red-400" },
+    outreach_opened: { icon: Eye, label: "Email opened", color: "text-red-400" },
+    response_received: { icon: MessageSquare, label: "Response received", color: "text-red-400" },
     interview_scheduled: { icon: Calendar, label: "Interview scheduled", color: "text-red-400" },
   };
 
@@ -727,7 +727,7 @@ const ProfileTab = ({ candidate, isSectionEnabled = () => true }) => (
           {/* Enrichment status indicator */}
           {candidate.enriched_at && (
             <div className="mt-3 pt-3 border-t border-zinc-700/50">
-              <div className="flex items-center gap-2 text-xs text-green-400">
+              <div className="flex items-center gap-2 text-xs text-red-400">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 <span>Verified via {candidate.enrichment_source || "Explorium"}</span>
                 <span className="text-zinc-500">• {new Date(candidate.enriched_at).toLocaleDateString()}</span>
@@ -822,8 +822,8 @@ const ProfileTab = ({ candidate, isSectionEnabled = () => true }) => (
                 className="p-3 bg-zinc-800/30 rounded-lg border border-zinc-700/30"
               >
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/20 to-purple-600/20 flex items-center justify-center border border-purple-500/30 flex-shrink-0">
-                    <GraduationCap className="w-4 h-4 text-purple-400" />
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500/20 to-red-600/20 flex items-center justify-center border border-red-500/30 flex-shrink-0">
+                    <GraduationCap className="w-4 h-4 text-red-400" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-white">{displayDegree}</p>
@@ -857,7 +857,7 @@ const ProfileTab = ({ candidate, isSectionEnabled = () => true }) => (
                 key={i}
                 className="flex items-center gap-3 p-3 bg-zinc-800/30 rounded-lg border border-zinc-700/30"
               >
-                <BadgeCheck className="w-5 h-5 text-green-400 flex-shrink-0" />
+                <BadgeCheck className="w-5 h-5 text-red-400 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-white truncate">
                     {certName}
@@ -882,7 +882,7 @@ const ProfileTab = ({ candidate, isSectionEnabled = () => true }) => (
             return (
               <span
                 key={i}
-                className="px-2.5 py-1 bg-purple-500/10 text-purple-400 rounded-lg text-xs border border-purple-500/20"
+                className="px-2.5 py-1 bg-red-500/10 text-red-400 rounded-lg text-xs border border-red-500/20"
               >
                 {interestName}
               </span>
@@ -945,7 +945,7 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
     <div className="space-y-6">
       {/* Intel Score Header */}
       {isSectionEnabled('intelligence', 'flight_risk_score') && (
-        <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 rounded-lg border border-cyan-500/20">
+        <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-red-500/10 to-red-600/10 rounded-lg border border-red-500/20">
           <IntelligenceGauge score={candidate.intelligence_score || 0} size="lg" />
           <div className="flex-1">
             <div className="text-lg font-medium text-white">Flight Risk Score</div>
@@ -969,9 +969,9 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
           {/* Best Outreach Angle */}
           {isSectionEnabled('intelligence', 'best_outreach_angle') && candidate.best_outreach_angle && (
             <Section title="Best Outreach Angle">
-              <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4">
+              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
                 <div className="flex items-start gap-2">
-                  <Lightbulb className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                  <Lightbulb className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
                   <p className="text-zinc-300 text-sm leading-relaxed">
                     {candidate.best_outreach_angle}
                   </p>
@@ -991,7 +991,7 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
                       signal.urgency === "high"
                         ? "bg-red-500/10 border-red-500/20"
                         : signal.urgency === "medium"
-                        ? "bg-amber-500/10 border-amber-500/20"
+                        ? "bg-red-400/10 border-red-400/20"
                         : "bg-zinc-800/50 border-zinc-700/30"
                     }`}
                   >
@@ -1002,7 +1002,7 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
                           signal.urgency === "high"
                             ? "bg-red-500/20 text-red-400"
                             : signal.urgency === "medium"
-                            ? "bg-amber-500/20 text-amber-400"
+                            ? "bg-red-400/20 text-red-400"
                             : "bg-zinc-700 text-zinc-400"
                         }`}
                       >
@@ -1022,7 +1022,7 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
                 <ul className="space-y-2">
                   {candidate.outreach_hooks.map((hook, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm">
-                      <Target className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
+                      <Target className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
                       <span className="text-zinc-300">{hook}</span>
                     </li>
                   ))}
@@ -1038,7 +1038,7 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
                 <ul className="space-y-2">
                   {candidate.key_insights.map((insight, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm">
-                      <Sparkles className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
+                      <Sparkles className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
                       <span className="text-zinc-300">{insight}</span>
                     </li>
                   ))}
@@ -1054,7 +1054,7 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
                 <ul className="space-y-2">
                   {candidate.company_pain_points.map((point, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm">
-                      <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                      <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
                       <span className="text-zinc-300">{point}</span>
                     </li>
                   ))}
@@ -1066,16 +1066,16 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
           {/* Inferred Skills */}
           {isSectionEnabled('intelligence', 'inferred_skills') && candidate.inferred_skills && candidate.inferred_skills.length > 0 && (
             <Section title="Inferred Skills">
-              <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-4">
+              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
                 <div className="flex items-start gap-2 mb-3">
-                  <Brain className="w-5 h-5 text-purple-400 flex-shrink-0" />
+                  <Brain className="w-5 h-5 text-red-400 flex-shrink-0" />
                   <p className="text-xs text-zinc-400">Skills inferred from experience and background, even if not explicitly listed</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {candidate.inferred_skills.map((skill, i) => (
                     <span
                       key={i}
-                      className="px-2.5 py-1 bg-purple-500/20 text-purple-300 rounded-lg text-xs border border-purple-500/30 flex items-center gap-1"
+                      className="px-2.5 py-1 bg-red-500/20 text-red-300 rounded-lg text-xs border border-red-500/30 flex items-center gap-1"
                     >
                       <Sparkles className="w-3 h-3" />
                       {skill}
@@ -1089,9 +1089,9 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
           {/* Lateral Opportunities */}
           {isSectionEnabled('intelligence', 'lateral_opportunities') && candidate.lateral_opportunities && candidate.lateral_opportunities.length > 0 && (
             <Section title="Lateral Opportunities">
-              <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
+              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
                 <div className="flex items-start gap-2 mb-3">
-                  <ArrowUpRight className="w-5 h-5 text-green-400 flex-shrink-0" />
+                  <ArrowUpRight className="w-5 h-5 text-red-400 flex-shrink-0" />
                   <p className="text-xs text-zinc-400">Adjacent roles or companies this candidate could excel in</p>
                 </div>
                 <div className="space-y-2">
@@ -1102,10 +1102,10 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
                       : opp.role || opp.title || opp.name || opp.company || JSON.stringify(opp);
                     return (
                       <div key={i} className="flex items-center gap-2 text-sm">
-                        <Briefcase className="w-4 h-4 text-green-400 flex-shrink-0" />
+                        <Briefcase className="w-4 h-4 text-red-400 flex-shrink-0" />
                         <span className="text-zinc-300">{displayText}</span>
                         {typeof opp === 'object' && opp.fit_score && (
-                          <span className="ml-auto px-2 py-0.5 bg-green-500/20 text-green-400 rounded text-xs">
+                          <span className="ml-auto px-2 py-0.5 bg-red-500/20 text-red-400 rounded text-xs">
                             {opp.fit_score}% fit
                           </span>
                         )}
@@ -1120,9 +1120,9 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
           {/* Company Correlations */}
           {isSectionEnabled('intelligence', 'company_correlations') && candidate.company_correlations && candidate.company_correlations.length > 0 && (
             <Section title="Company Correlations">
-              <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-lg p-4">
+              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
                 <div className="flex items-start gap-2 mb-3">
-                  <Network className="w-5 h-5 text-cyan-400 flex-shrink-0" />
+                  <Network className="w-5 h-5 text-red-400 flex-shrink-0" />
                   <p className="text-xs text-zinc-400">Related companies and competitive insights</p>
                 </div>
                 <div className="space-y-2">
@@ -1132,7 +1132,7 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
                       return (
                         <div key={i} className="flex items-center justify-between p-2 bg-zinc-800/50 rounded-lg">
                           <div className="flex items-center gap-2">
-                            <Building2 className="w-4 h-4 text-cyan-400" />
+                            <Building2 className="w-4 h-4 text-red-400" />
                             <span className="text-sm text-zinc-300">{company}</span>
                           </div>
                         </div>
@@ -1143,11 +1143,11 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
                       return (
                         <div key={i} className="flex items-center justify-between p-2 bg-zinc-800/50 rounded-lg">
                           <div className="flex items-center gap-2">
-                            <Building2 className="w-4 h-4 text-cyan-400" />
+                            <Building2 className="w-4 h-4 text-red-400" />
                             <span className="text-sm text-zinc-300">{company.name}</span>
                           </div>
                           {company.similarity && (
-                            <span className="text-xs text-cyan-400">{company.similarity}% match</span>
+                            <span className="text-xs text-red-400">{company.similarity}% match</span>
                           )}
                         </div>
                       );
@@ -1158,20 +1158,20 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
                         <div key={i} className="p-3 bg-zinc-800/50 rounded-lg space-y-2">
                           {company.observation && (
                             <div className="flex items-start gap-2">
-                              <Eye className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
+                              <Eye className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
                               <span className="text-sm text-zinc-300">{company.observation}</span>
                             </div>
                           )}
                           {company.inference && (
                             <div className="flex items-start gap-2">
-                              <Sparkles className="w-4 h-4 text-purple-400 flex-shrink-0 mt-0.5" />
+                              <Sparkles className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
                               <span className="text-sm text-zinc-400">{company.inference}</span>
                             </div>
                           )}
                           {company.outreach_angle && (
                             <div className="flex items-start gap-2">
-                              <Lightbulb className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-                              <span className="text-sm text-amber-300">{company.outreach_angle}</span>
+                              <Lightbulb className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                              <span className="text-sm text-red-300">{company.outreach_angle}</span>
                             </div>
                           )}
                         </div>
@@ -1180,7 +1180,7 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
                     // Fallback
                     return (
                       <div key={i} className="flex items-center gap-2 p-2 bg-zinc-800/50 rounded-lg">
-                        <Building2 className="w-4 h-4 text-cyan-400" />
+                        <Building2 className="w-4 h-4 text-red-400" />
                         <span className="text-sm text-zinc-300">{JSON.stringify(company)}</span>
                       </div>
                     );
@@ -1205,7 +1205,7 @@ const IntelligenceTab = ({ candidate, onRefresh, refreshing, isSectionEnabled = 
         variant="outline"
         onClick={onRefresh}
         disabled={refreshing}
-        className="w-full border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
+        className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10"
       >
         {refreshing ? (
           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -1251,11 +1251,11 @@ const MatchAnalysisTab = ({ matchData, campaignContext }) => {
       {matchData.match_factors && (
         <Section title="Score Breakdown">
           <div className="bg-zinc-800/30 rounded-lg p-4 border border-zinc-700/30 space-y-3">
-            <ScoreBar label="Skills Match" score={matchData.match_factors.skills_fit} color="blue" />
-            <ScoreBar label="Experience Match" score={matchData.match_factors.experience_fit} color="purple" />
-            <ScoreBar label="Title Match" score={matchData.match_factors.title_fit} color="cyan" />
-            <ScoreBar label="Timing Score" score={matchData.match_factors.timing_score} color="amber" />
-            <ScoreBar label="Culture Fit" score={matchData.match_factors.culture_fit} color="green" />
+            <ScoreBar label="Skills Match" score={matchData.match_factors.skills_fit} color="red" />
+            <ScoreBar label="Experience Match" score={matchData.match_factors.experience_fit} color="red" />
+            <ScoreBar label="Title Match" score={matchData.match_factors.title_fit} color="red" />
+            <ScoreBar label="Timing Score" score={matchData.match_factors.timing_score} color="red" />
+            <ScoreBar label="Culture Fit" score={matchData.match_factors.culture_fit} color="red" />
           </div>
         </Section>
       )}
@@ -1263,9 +1263,9 @@ const MatchAnalysisTab = ({ matchData, campaignContext }) => {
       {/* AI Analysis */}
       {matchData.ai_analysis && (
         <Section title="AI Analysis">
-          <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-4">
+          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
             <div className="flex items-start gap-2">
-              <Brain className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
+              <Brain className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
               <p className="text-zinc-300 text-sm leading-relaxed">{matchData.ai_analysis}</p>
             </div>
           </div>
@@ -1279,9 +1279,9 @@ const MatchAnalysisTab = ({ matchData, campaignContext }) => {
             {matchData.match_reasons.map((reason, i) => (
               <div
                 key={i}
-                className="flex items-start gap-2 p-3 bg-green-500/10 border border-green-500/20 rounded-lg"
+                className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg"
               >
-                <TrendingUp className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
+                <TrendingUp className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
                 <span className="text-sm text-zinc-300">{reason}</span>
               </div>
             ))}
@@ -2091,7 +2091,7 @@ export default function CandidateDetailDrawer({
                         {syncStatus === "company" ? "SYNCING..." :
                          syncStatus === "candidate" ? "ANALYZING..." :
                          "SYNC INTEL"}
-                        <Badge className="ml-1.5 bg-green-500/20 text-green-400 text-[10px] px-1.5 py-0">
+                        <Badge className="ml-1.5 bg-red-500/20 text-red-400 text-[10px] px-1.5 py-0">
                           Included
                         </Badge>
                       </Button>
@@ -2135,7 +2135,7 @@ export default function CandidateDetailDrawer({
                         {enrichingContact ? "Enriching..." : "Enrich"}
                       </Button>
                     ) : candidate.enriched_at ? (
-                      <div className="flex items-center gap-1 text-[10px] text-green-400 px-2 py-1 bg-green-500/10 rounded border border-green-500/20">
+                      <div className="flex items-center gap-1 text-[10px] text-red-400 px-2 py-1 bg-red-500/10 rounded border border-red-500/20">
                         <CheckCircle2 className="w-3 h-3" />
                         Enriched
                       </div>
@@ -2224,14 +2224,14 @@ export default function CandidateDetailDrawer({
                     <div className="space-y-4">
                       {/* Compact company info bar at top */}
                       {(candidate.current_company || candidate.company_name) && (
-                        <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-lg border border-blue-500/20">
-                          <div className="w-12 h-12 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                            <Building2 className="w-6 h-6 text-blue-400" />
+                        <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-red-500/10 to-red-600/10 rounded-lg border border-red-500/20">
+                          <div className="w-12 h-12 rounded-lg bg-red-500/20 flex items-center justify-center">
+                            <Building2 className="w-6 h-6 text-red-400" />
                           </div>
                           <div>
                             <h3 className="font-semibold text-white">{candidate.current_company || candidate.company_name}</h3>
                             {candidate.company_domain && (
-                              <p className="text-sm text-blue-400/70">{candidate.company_domain}</p>
+                              <p className="text-sm text-red-400/70">{candidate.company_domain}</p>
                             )}
                           </div>
                         </div>
@@ -2300,7 +2300,7 @@ export default function CandidateDetailDrawer({
                                   {match.match_reasons?.length > 0 && (
                                     <div className="flex flex-wrap gap-1 mt-2">
                                       {match.match_reasons.slice(0, 3).map((reason, idx) => (
-                                        <span key={idx} className="text-[10px] px-2 py-0.5 bg-green-500/10 text-green-400 rounded-full border border-green-500/20">
+                                        <span key={idx} className="text-[10px] px-2 py-0.5 bg-red-500/10 text-red-400 rounded-full border border-red-500/20">
                                           {reason}
                                         </span>
                                       ))}
@@ -2311,7 +2311,7 @@ export default function CandidateDetailDrawer({
 
                               <span className={`text-xs px-2 py-1 rounded ${
                                 match.campaigns?.status === "active"
-                                  ? "bg-green-500/20 text-green-400"
+                                  ? "bg-red-500/20 text-red-400"
                                   : "bg-zinc-500/20 text-zinc-400"
                               }`}>
                                 {match.campaigns?.status || "unknown"}
@@ -2320,7 +2320,7 @@ export default function CandidateDetailDrawer({
 
                             {match.best_outreach_angle && (
                               <div className="mt-3 pt-3 border-t border-zinc-700/50">
-                                <p className="text-xs text-amber-400/70 uppercase tracking-wider mb-1">Best Approach</p>
+                                <p className="text-xs text-red-400/70 uppercase tracking-wider mb-1">Best Approach</p>
                                 <p className="text-sm text-zinc-300">{match.best_outreach_angle}</p>
                               </div>
                             )}
@@ -2398,7 +2398,7 @@ export default function CandidateDetailDrawer({
                 </span>
               </div>
               {!candidate?.verified_phone && !candidate?.phone && (
-                <span className="text-xs text-amber-400">Enrich to get phone</span>
+                <span className="text-xs text-red-400">Enrich to get phone</span>
               )}
             </div>
 
@@ -2406,7 +2406,7 @@ export default function CandidateDetailDrawer({
             <div>
               <label className="block text-sm font-medium text-zinc-400 mb-2">Send from</label>
               {availableNumbers.length === 0 ? (
-                <div className="p-3 bg-amber-500/10 rounded-lg border border-amber-500/20 text-sm text-amber-400">
+                <div className="p-3 bg-red-500/10 rounded-lg border border-red-500/20 text-sm text-red-400">
                   No phone numbers available. Purchase one in SMS Outreach settings.
                 </div>
               ) : (
@@ -2459,7 +2459,7 @@ export default function CandidateDetailDrawer({
               <div className="flex items-center justify-between mt-1">
                 <span className="text-xs text-zinc-500">{smsMessage.length}/160 characters</span>
                 {smsMessage.length > 160 && (
-                  <span className="text-xs text-amber-400">Will be sent as multiple messages</span>
+                  <span className="text-xs text-red-400">Will be sent as multiple messages</span>
                 )}
               </div>
             </div>

@@ -35,7 +35,7 @@ const ExperienceWidget = ({ candidate, editMode, onRemove, dragHandleProps }) =>
     <WidgetWrapper
       title="Experience"
       icon={Briefcase}
-      iconColor="text-blue-400"
+      iconColor="text-red-400"
       editMode={editMode}
       onRemove={onRemove}
       dragHandleProps={dragHandleProps}
@@ -44,8 +44,8 @@ const ExperienceWidget = ({ candidate, editMode, onRemove, dragHandleProps }) =>
       <div className="space-y-4">
         {/* Current Role */}
         {(currentTitle || currentCompany) && (
-          <div className="p-4 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 rounded-lg border border-blue-500/20">
-            <p className="text-xs text-blue-400/70 uppercase tracking-wider mb-1">Current Position</p>
+          <div className="p-4 bg-gradient-to-r from-red-500/10 to-red-500/5 rounded-lg border border-red-500/20">
+            <p className="text-xs text-red-400/70 uppercase tracking-wider mb-1">Current Position</p>
             {currentTitle && (
               <p className="text-base font-semibold text-white">{currentTitle}</p>
             )}
@@ -64,25 +64,25 @@ const ExperienceWidget = ({ candidate, editMode, onRemove, dragHandleProps }) =>
             icon={Calendar}
             label="Years Experience"
             value={yearsExp ? `${yearsExp}y` : null}
-            color="purple"
+            color="red"
           />
           <StatCard
             icon={Building2}
             label="Tenure"
             value={yearsAtCompany ? `${yearsAtCompany}y` : null}
-            color="blue"
+            color="red"
           />
           <StatCard
             icon={ArrowUpRight}
             label="Promotions"
             value={promotions}
-            color="green"
+            color="red"
           />
           <StatCard
             icon={TrendingUp}
             label="Job Changes"
             value={jobChanges}
-            color="amber"
+            color="red"
           />
         </div>
 
