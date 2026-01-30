@@ -4,7 +4,7 @@ import { Sparkles, TrendingUp, AlertCircle, Zap, ThumbsUp, Target, Clock, Send, 
 import { toast } from 'sonner';
 
 const mockInsights = [
-  { id: 1, type: 'opportunity', icon: TrendingUp, title: 'Revenue Prediction', value: '$156K', description: 'Expected revenue next month based on current pipeline', color: 'green' },
+  { id: 1, type: 'opportunity', icon: TrendingUp, title: 'Revenue Prediction', value: '€156K', description: 'Expected revenue next month based on current pipeline', color: 'green' },
   { id: 2, type: 'risk', icon: AlertCircle, title: 'At-Risk Deals', value: '3', description: 'Deals that need immediate attention', color: 'red' },
   { id: 3, type: 'timing', icon: Clock, title: 'Best Time to Email', value: '9-11 AM', description: 'Highest open rate window for your audience', color: 'blue' },
   { id: 4, type: 'win', icon: Zap, title: 'Quick Wins', value: '5', description: 'High probability deals ready to close', color: 'orange' }

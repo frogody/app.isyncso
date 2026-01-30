@@ -896,7 +896,7 @@ export default function TalentCandidateProfile() {
               <div>
                 <p className="text-[10px] text-white/40 mb-0.5">Salary</p>
                 <p className="text-sm font-semibold text-red-400">
-                  {candidate.salary_range ? `$${Number(candidate.salary_range).toLocaleString()}` : "—"}
+                  {candidate.salary_range ? `€${Number(candidate.salary_range).toLocaleString()}` : "—"}
                 </p>
               </div>
               <div>

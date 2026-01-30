@@ -1200,7 +1200,7 @@ const ProjectModal = ({ isOpen, onClose, project, onSave, clients = [] }) => {
               <Input
                 value={formData.budget}
                 onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                placeholder="e.g., $50,000"
+                placeholder="e.g., €50,000"
                 className="bg-zinc-800/50 border-zinc-700 text-white mt-1"
               />
             </div>
@@ -1434,7 +1434,7 @@ const RoleModal = ({ isOpen, onClose, role, projectId, onSave }) => {
             <Input
               value={formData.salary_range}
               onChange={(e) => setFormData({ ...formData, salary_range: e.target.value })}
-              placeholder="e.g., $120k - $150k"
+              placeholder="e.g., €120k - €150k"
               className="bg-zinc-800/50 border-zinc-700 text-white mt-1"
             />
           </div>

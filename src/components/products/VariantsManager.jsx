@@ -141,7 +141,7 @@ function VariantRow({ variant, index, basePrice, currency, onUpdate, onDelete })
               priceDiff > 0 ? "text-cyan-400" : priceDiff < 0 ? "text-cyan-400" : "text-white"
             )}>
               {priceDiff !== 0 && (priceDiff > 0 ? '+' : '')}
-              {currency === 'EUR' ? '€' : '$'}{priceDiff.toFixed(2)}
+              {'€'}{priceDiff.toFixed(2)}
             </span>
           </div>
 

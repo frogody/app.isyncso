@@ -86,8 +86,8 @@ const NEST_TYPE_COLORS = {
 };
 
 // Format currency
-function formatCurrency(amount, currency = 'USD') {
-  return new Intl.NumberFormat('en-US', {
+function formatCurrency(amount, currency = 'EUR') {
+  return new Intl.NumberFormat('nl-NL', {
     style: 'currency',
     currency,
     minimumFractionDigits: 0,
@@ -135,7 +135,7 @@ export default function AdminNests() {
     description: '',
     nest_type: 'candidates',
     price: 0,
-    currency: 'USD',
+    currency: 'EUR',
     thumbnail_url: '',
     is_active: false,
   });
@@ -263,7 +263,7 @@ export default function AdminNests() {
       description: '',
       nest_type: activeTab,
       price: 0,
-      currency: 'USD',
+      currency: 'EUR',
       thumbnail_url: '',
       is_active: false,
     });
@@ -278,7 +278,7 @@ export default function AdminNests() {
       description: nest.description || '',
       nest_type: nest.nest_type,
       price: nest.price || 0,
-      currency: nest.currency || 'USD',
+      currency: nest.currency || 'EUR',
       thumbnail_url: nest.thumbnail_url || '',
       is_active: nest.is_active || false,
     });
@@ -790,7 +790,7 @@ export default function AdminNests() {
                   onChange={(e) => setNestForm(prev => ({ ...prev, currency: e.target.value }))}
                   className="w-full h-8 rounded-md bg-white/5 border border-white/10 px-2.5 text-white text-xs"
                 >
-                  <option value="USD">USD</option>
+                  <option value="EUR">EUR</option>
                   <option value="EUR">EUR</option>
                   <option value="GBP">GBP</option>
                 </select>

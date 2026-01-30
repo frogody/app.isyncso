@@ -212,7 +212,7 @@ function ContactCard({ contact, isSelected, onClick, onToggleStar, onStageChange
       {contact.deal_value && (
         <div className="flex items-center justify-between text-sm mb-3">
           <span className="text-zinc-500">Deal Value</span>
-          <span className="font-semibold text-cyan-400/80">${parseFloat(contact.deal_value).toLocaleString()}</span>
+          <span className="font-semibold text-cyan-400/80">€{parseFloat(contact.deal_value).toLocaleString()}</span>
         </div>
       )}
 
@@ -351,7 +351,7 @@ function PipelineColumn({ stage, contacts, onAddContact, onEdit, onDelete }) {
           </Button>
         </div>
         {totalValue > 0 && (
-          <div className="text-xs text-zinc-500">${totalValue.toLocaleString()} total</div>
+          <div className="text-xs text-zinc-500">€{totalValue.toLocaleString()} total</div>
         )}
       </div>
 
@@ -431,7 +431,7 @@ function ContactDetailSheet({ contact, isOpen, onClose, onEdit, onDelete, activi
           <div className="p-3 bg-zinc-800/50 rounded-lg text-center">
             <div className="text-xs text-zinc-500 mb-1">Deal Value</div>
             <div className="text-lg font-bold text-white">
-              ${parseFloat(contact.deal_value || 0).toLocaleString()}
+              €{parseFloat(contact.deal_value || 0).toLocaleString()}
             </div>
           </div>
         </div>
@@ -584,7 +584,7 @@ function ContactDetailSheet({ contact, isOpen, onClose, onEdit, onDelete, activi
                   <div key={i} className="p-4 bg-zinc-800/30 rounded-lg border border-zinc-800">
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="font-medium text-white">{deal.company_name || deal.title}</h4>
-                      <span className="text-lg font-bold text-cyan-400/80">${(deal.deal_value || 0).toLocaleString()}</span>
+                      <span className="text-lg font-bold text-cyan-400/80">€{(deal.deal_value || 0).toLocaleString()}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className="border-zinc-700 text-xs">{deal.stage}</Badge>
@@ -1607,7 +1607,7 @@ export default function CRMContacts() {
                         </td>
                         <td className="py-1 px-2">
                           <span className="font-medium text-white text-xs whitespace-nowrap">
-                            {contact.deal_value ? `$${parseFloat(contact.deal_value).toLocaleString()}` : "-"}
+                            {contact.deal_value ? `€${parseFloat(contact.deal_value).toLocaleString()}` : "-"}
                           </span>
                         </td>
                         <td className="py-1 px-2 hidden lg:table-cell">

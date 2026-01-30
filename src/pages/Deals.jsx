@@ -117,7 +117,7 @@ export default function Deals() {
           <div>
             <h1 className="text-lg font-bold text-white mb-1">Deal Pipeline</h1>
             <p className="text-zinc-400 text-xs">
-              Total value: <span className="text-orange-400 font-medium">${Object.values(deals).flat().reduce((sum, d) => sum + d.value, 0).toLocaleString()}</span>
+              Total value: <span className="text-orange-400 font-medium">€{Object.values(deals).flat().reduce((sum, d) => sum + d.value, 0).toLocaleString()}</span>
             </p>
           </div>
           <button 
@@ -146,7 +146,7 @@ export default function Deals() {
                   <h3 className="text-xs font-semibold text-white">{stage.label}</h3>
                   <span className="text-[10px] text-zinc-500">({deals[stage.id].length})</span>
                 </div>
-                <span className="text-[10px] text-zinc-500">${getStageTotal(stage.id).toLocaleString()}</span>
+                <span className="text-[10px] text-zinc-500">€{getStageTotal(stage.id).toLocaleString()}</span>
               </div>
 
               <div className="space-y-2 min-h-[300px]">
@@ -167,7 +167,7 @@ export default function Deals() {
                         <MoreVertical className="w-3 h-3 text-zinc-500" />
                       </button>
                     </div>
-                    <div className="text-sm font-bold text-orange-400 mb-2">${deal.value.toLocaleString()}</div>
+                    <div className="text-sm font-bold text-orange-400 mb-2">€{deal.value.toLocaleString()}</div>
                     <div className="flex items-center justify-between text-[10px] text-zinc-500">
                       <span>{deal.company}</span>
                       <span>{deal.probability}%</span>
@@ -204,7 +204,7 @@ export default function Deals() {
                 </button>
               </div>
 
-              <div className="text-lg font-bold text-orange-400 mb-4">${selectedDeal.value.toLocaleString()}</div>
+              <div className="text-lg font-bold text-orange-400 mb-4">€{selectedDeal.value.toLocaleString()}</div>
 
               <div className="space-y-3 mb-4">
                 <div className="flex items-center gap-2 text-xs">

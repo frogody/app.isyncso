@@ -261,14 +261,14 @@ export default function Raise() {
   const metrics = [
     {
       title: 'Raise Target',
-      value: `$${(targetAmount / 1000000).toFixed(1)}M`,
+      value: `€${(targetAmount / 1000000).toFixed(1)}M`,
       subtitle: activeCampaign?.name || 'No active campaign',
       icon: Target,
       color: 'orange'
     },
     {
       title: 'Amount Raised',
-      value: `$${(raisedAmount / 1000000).toFixed(1)}M`,
+      value: `€${(raisedAmount / 1000000).toFixed(1)}M`,
       subtitle: `${progressPercent}% of target`,
       icon: Euro,
       color: 'orange'

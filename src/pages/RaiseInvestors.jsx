@@ -342,7 +342,7 @@ export default function RaiseInvestors() {
                     value={newInvestor.typical_check_size}
                     onChange={(e) => setNewInvestor({...newInvestor, typical_check_size: e.target.value})}
                     className="bg-zinc-800 border-zinc-700"
-                    placeholder="$500K - $2M"
+                    placeholder="€500K - €2M"
                   />
                 </div>
                 <div>

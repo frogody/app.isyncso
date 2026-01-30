@@ -238,7 +238,7 @@ export default function FinanceSubscriptions() {
   const getCategoryInfo = (value) => CATEGORIES.find(c => c.value === value) || CATEGORIES[9];
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
+    return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(amount || 0);
   };
 
   if (loading || permLoading) {

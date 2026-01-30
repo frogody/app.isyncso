@@ -78,9 +78,9 @@ const locations = ['United States', 'Europe', 'Asia Pacific', 'Remote', 'Netherl
 const priceRanges = [
   { value: 'all', label: 'All Prices' },
   { value: 'free', label: 'Free' },
-  { value: 'under50', label: 'Under $50' },
-  { value: 'under100', label: 'Under $100' },
-  { value: 'premium', label: 'Premium ($100+)' },
+  { value: 'under50', label: 'Under €50' },
+  { value: 'under100', label: 'Under €100' },
+  { value: 'premium', label: 'Premium (€100+)' },
 ];
 const sizeRanges = [
   { value: 'all', label: 'All Sizes' },
@@ -90,7 +90,7 @@ const sizeRanges = [
 ];
 
 // Format currency
-function formatCurrency(amount, currency = 'USD') {
+function formatCurrency(amount, currency = 'EUR') {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,

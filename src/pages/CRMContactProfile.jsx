@@ -470,7 +470,7 @@ export default function CRMContactProfile() {
   const formatCurrency = (value) => {
     if (!value) return '-';
     if (typeof value === 'string') return value;
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact' }).format(value);
+    return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR', notation: 'compact' }).format(value);
   };
 
   const stageBadgeColor = {
@@ -717,7 +717,7 @@ export default function CRMContactProfile() {
               <div className="text-center min-w-[80px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">
                 <p className="text-xs sm:text-sm text-white/40 mb-0.5 sm:mb-1">Deal Value</p>
                 <p className="text-sm sm:text-base lg:text-lg font-semibold text-white whitespace-nowrap">
-                  {contact.deal_value ? `$${Number(contact.deal_value).toLocaleString()}` : '-'}
+                  {contact.deal_value ? `€${Number(contact.deal_value).toLocaleString()}` : '-'}
                 </p>
               </div>
               <div className="text-center min-w-[80px] sm:min-w-0 flex-shrink-0 sm:flex-shrink">

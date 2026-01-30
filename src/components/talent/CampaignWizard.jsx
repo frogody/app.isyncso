@@ -791,7 +791,7 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
                     <Textarea
                       value={roleContext.selling_points}
                       onChange={(e) => setRoleContext({ ...roleContext, selling_points: e.target.value })}
-                      placeholder="e.g., Series B startup, just raised $40M. Building next-gen payment infrastructure. Small team (8 eng), massive ownership. Remote-first, competitive equity."
+                      placeholder="e.g., Series B startup, just raised €40M. Building next-gen payment infrastructure. Small team (8 eng), massive ownership. Remote-first, competitive equity."
                       className="bg-zinc-900 border-zinc-700 text-white mt-1 min-h-[80px]"
                     />
                   </div>
@@ -823,7 +823,7 @@ export default function CampaignWizard({ open, onOpenChange, onComplete, nestCon
                       <Input
                         value={roleContext.compensation_range}
                         onChange={(e) => setRoleContext({ ...roleContext, compensation_range: e.target.value })}
-                        placeholder="e.g., $180-220k + equity"
+                        placeholder="e.g., €180-220k + equity"
                         className="bg-zinc-900 border-zinc-700 text-white mt-1"
                       />
                     </div>

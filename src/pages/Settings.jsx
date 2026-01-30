@@ -1154,7 +1154,7 @@ export default function Settings() {
                       </div>
                       <div>
                         <Label className="text-zinc-400 text-xs">Revenue</Label>
-                        <Input value={companyData.revenue_range} onChange={(e) => setCompanyData({...companyData, revenue_range: e.target.value})} placeholder="$1M-$10M" className="mt-1 bg-zinc-800/50 border-zinc-700 h-9 text-sm" />
+                        <Input value={companyData.revenue_range} onChange={(e) => setCompanyData({...companyData, revenue_range: e.target.value})} placeholder="€1M-€10M" className="mt-1 bg-zinc-800/50 border-zinc-700 h-9 text-sm" />
                       </div>
                       <div>
                         <Label className="text-zinc-400 text-xs">LinkedIn</Label>
@@ -1198,7 +1198,7 @@ export default function Settings() {
                           <div>
                             <div className="text-lg font-bold text-green-400">
                               {typeof companyData.total_funding === 'number'
-                                ? `$${(companyData.total_funding / 1000000).toFixed(1)}M`
+                                ? `€${(companyData.total_funding / 1000000).toFixed(1)}M`
                                 : companyData.total_funding}
                             </div>
                             <div className="text-xs text-zinc-500">Total Funding</div>

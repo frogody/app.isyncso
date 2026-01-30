@@ -888,7 +888,7 @@ function SettingsTab() {
           <div className="p-4 bg-zinc-800/50 rounded-lg">
             <div className="text-sm text-zinc-400 mb-1">Current Plan</div>
             <div className="text-lg font-bold text-white">Pro Plan</div>
-            <div className="text-sm text-orange-400">$49/month</div>
+            <div className="text-sm text-orange-400">€49/month</div>
           </div>
           <button className="w-full px-4 py-2 bg-orange-500 hover:bg-orange-600 rounded-lg text-sm font-medium transition-colors">
             Upgrade Plan
@@ -907,7 +907,7 @@ function AITab() {
         {/* AI Insights */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[
-            { icon: TrendingUp, title: 'Revenue Prediction', value: '$156K', desc: 'Expected next month', color: 'green' },
+            { icon: TrendingUp, title: 'Revenue Prediction', value: '€156K', desc: 'Expected next month', color: 'green' },
             { icon: AlertCircle, title: 'At-Risk Deals', value: '3', desc: 'Need immediate attention', color: 'red' },
             { icon: ThumbsUp, title: 'Best Time to Email', value: '9-11 AM', desc: 'Highest open rate', color: 'blue' },
             { icon: Zap, title: 'Quick Wins', value: '5', desc: 'High probability deals', color: 'orange' }

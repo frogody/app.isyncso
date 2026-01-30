@@ -307,9 +307,9 @@ export default function FinanceOverview() {
         <div ref={statsGridRef} className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
             { title: 'Total Revenue', value: metrics.totalRevenue, displayValue: `€${metrics.totalRevenue.toLocaleString()}`, change: '+12.5%', trend: 'up', icon: Euro, color: 'amber' },
-            { title: 'Total Expenses', value: metrics.totalExpenses, displayValue: `$${metrics.totalExpenses.toLocaleString()}`, change: '-3.2%', trend: 'down', icon: CreditCard, color: 'amber' },
-            { title: 'Pending Invoices', value: metrics.pendingInvoices, displayValue: `$${metrics.pendingInvoices.toLocaleString()}`, change: `${metrics.pendingCount} invoices`, trend: 'neutral', icon: Receipt, color: 'amber' },
-            { title: 'Monthly Recurring', value: metrics.monthlyRecurring, displayValue: `$${metrics.monthlyRecurring.toLocaleString()}`, change: `${metrics.activeSubscriptions} active`, trend: 'up', icon: TrendingUp, color: 'amber' }
+            { title: 'Total Expenses', value: metrics.totalExpenses, displayValue: `€${metrics.totalExpenses.toLocaleString()}`, change: '-3.2%', trend: 'down', icon: CreditCard, color: 'amber' },
+            { title: 'Pending Invoices', value: metrics.pendingInvoices, displayValue: `€${metrics.pendingInvoices.toLocaleString()}`, change: `${metrics.pendingCount} invoices`, trend: 'neutral', icon: Receipt, color: 'amber' },
+            { title: 'Monthly Recurring', value: metrics.monthlyRecurring, displayValue: `€${metrics.monthlyRecurring.toLocaleString()}`, change: `${metrics.activeSubscriptions} active`, trend: 'up', icon: TrendingUp, color: 'amber' }
           ].map((metric, index) => (
             <div key={metric.title} className="stat-card">
               <Card className="bg-zinc-900/50 border-zinc-800 hover:border-zinc-700 transition-colors">
@@ -336,7 +336,7 @@ export default function FinanceOverview() {
                       </Badge>
                     )}
                   </div>
-                  <p className="stat-number text-lg font-bold text-white" data-value={metric.value} data-prefix="$">{metric.displayValue}</p>
+                  <p className="stat-number text-lg font-bold text-white" data-value={metric.value} data-prefix="€">{metric.displayValue}</p>
                   <p className="text-xs text-zinc-500">{metric.title}</p>
                 </CardContent>
               </Card>
@@ -351,7 +351,7 @@ export default function FinanceOverview() {
               <div>
                 <p className="text-zinc-400 text-xs mb-0.5">Net Income</p>
                 <p className={`text-xl font-bold ${metrics.netIncome >= 0 ? 'text-amber-400' : 'text-red-400'}`}>
-                  {metrics.netIncome >= 0 ? '+' : ''}{metrics.netIncome.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                  {metrics.netIncome >= 0 ? '+' : ''}{metrics.netIncome.toLocaleString('nl-NL', { style: 'currency', currency: 'EUR' })}
                 </p>
               </div>
               <div className="text-right">
@@ -395,7 +395,7 @@ export default function FinanceOverview() {
                       <div className="flex-1">
                         <div className="flex justify-between text-sm">
                           <span className="text-zinc-300 capitalize">{cat.name}</span>
-                          <span className="text-white font-medium">${cat.amount.toLocaleString()}</span>
+                          <span className="text-white font-medium">€${cat.amount.toLocaleString()}</span>
                         </div>
                         <Progress
                           value={(cat.amount / metrics.totalExpenses) * 100}
@@ -455,7 +455,7 @@ export default function FinanceOverview() {
                         </div>
                       </div>
                       <p className={`font-medium ${transaction.type === 'invoice' ? 'text-amber-400' : 'text-amber-400'}`}>
-                        {transaction.type === 'invoice' ? '+' : '-'}${(transaction.total || transaction.amount || 0).toLocaleString()}
+                        {transaction.type === 'invoice' ? '+' : '-'}€{(transaction.total || transaction.amount || 0).toLocaleString()}
                       </p>
                     </div>
                   ))}

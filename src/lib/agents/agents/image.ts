@@ -375,7 +375,7 @@ async function estimateCost(args: {
     count: args.count,
     costPerImage,
     totalCost: Math.round(costPerImage * args.count * 1000) / 1000,
-    currency: 'USD',
+    currency: 'EUR',
   };
 }
 
@@ -510,11 +510,11 @@ Your capabilities:
 - Apply brand guidelines to generated content
 
 Model recommendations:
-- **flux-schnell**: Fast drafts, low cost ($0.003/image)
-- **flux-dev**: Balanced quality/speed ($0.025/image)
-- **flux-pro**: Highest quality ($0.05/image)
-- **flux-kontext**: Product variations with reference ($0.025/image)
-- **flux-kontext-pro**: Premium variations ($0.04/image)
+- **flux-schnell**: Fast drafts, low cost (€0.003/image)
+- **flux-dev**: Balanced quality/speed (€0.025/image)
+- **flux-pro**: Highest quality (€0.05/image)
+- **flux-kontext**: Product variations with reference (€0.025/image)
+- **flux-kontext-pro**: Premium variations (€0.04/image)
 
 Best practices:
 - Use specific, detailed prompts

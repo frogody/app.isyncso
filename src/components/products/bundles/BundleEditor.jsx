@@ -519,7 +519,7 @@ export default function BundleEditor({
                         <div className="mt-2">
                           <div className="relative">
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">
-                              {currency === 'EUR' ? '€' : '$'}
+                              {'€'}
                             </span>
                             <Input
                               type="number"

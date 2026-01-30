@@ -82,8 +82,8 @@ function StatCard({ title, value, icon: Icon, color = 'blue', subtitle, trend })
   );
 }
 
-function formatCurrency(amount, currency = 'USD') {
-  return new Intl.NumberFormat('en-US', {
+function formatCurrency(amount, currency = 'EUR') {
+  return new Intl.NumberFormat('nl-NL', {
     style: 'currency',
     currency,
   }).format(amount || 0);
@@ -184,7 +184,7 @@ function PlanModal({ plan, onClose, onSave }) {
 
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1">Monthly ($)</label>
+              <label className="block text-xs font-medium text-zinc-300 mb-1">Monthly (€)</label>
               <input
                 type="number"
                 step="0.01"
@@ -194,7 +194,7 @@ function PlanModal({ plan, onClose, onSave }) {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-zinc-300 mb-1">Yearly ($)</label>
+              <label className="block text-xs font-medium text-zinc-300 mb-1">Yearly (€)</label>
               <input
                 type="number"
                 step="0.01"
@@ -368,12 +368,12 @@ function CouponModal({ coupon, onClose, onSave }) {
                 className="w-full px-2.5 py-1.5 h-7 text-xs bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="percentage">Percentage (%)</option>
-                <option value="fixed_amount">Fixed ($)</option>
+                <option value="fixed_amount">Fixed (€)</option>
               </select>
             </div>
             <div>
               <label className="block text-xs font-medium text-zinc-300 mb-1">
-                Value ({formData.discount_type === 'percentage' ? '%' : '$'}) *
+                Value ({formData.discount_type === 'percentage' ? '%' : '€'}) *
               </label>
               <input
                 type="number"
@@ -663,7 +663,7 @@ export default function AdminBilling() {
                 tick={{ fontSize: 12 }}
                 tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               />
-              <YAxis tick={{ fontSize: 12 }} tickFormatter={(value) => `$${value}`} />
+              <YAxis tick={{ fontSize: 12 }} tickFormatter={(value) => `€${value}`} />
               <Tooltip
                 formatter={(value) => formatCurrency(value)}
                 labelFormatter={(label) => new Date(label).toLocaleDateString()}
@@ -787,11 +787,11 @@ export default function AdminBilling() {
                     )}
                     <h3 className="text-sm font-semibold text-center text-white">{plan.name}</h3>
                     <div className="text-center mt-1">
-                      <span className="text-xl font-bold text-white">${plan.price_monthly}</span>
+                      <span className="text-xl font-bold text-white">€{plan.price_monthly}</span>
                       <span className="text-zinc-400 text-xs">/mo</span>
                     </div>
                     <p className="text-[10px] text-zinc-400 text-center">
-                      or ${plan.price_yearly}/year
+                      or €{plan.price_yearly}/year
                     </p>
                     <p className="text-[10px] text-zinc-400 text-center mt-2">{plan.description}</p>
                     <ul className="mt-2 space-y-1">

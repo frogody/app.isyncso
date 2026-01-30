@@ -3944,7 +3944,7 @@ export default function Projects() {
                         </td>
                         <td className="p-3">
                           <span className="text-sm text-zinc-400">
-                            {project.budget ? `$${parseFloat(project.budget).toLocaleString()}` : "-"}
+                            {project.budget ? `€${parseFloat(project.budget).toLocaleString()}` : "-"}
                           </span>
                         </td>
                         <td className="p-3">

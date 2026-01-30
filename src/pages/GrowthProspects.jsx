@@ -952,7 +952,7 @@ export default function GrowthProspects() {
                               <Input
                                 value={filters.revenue}
                                 onChange={(e) => handleFilterChange('revenue', e.target.value)}
-                                placeholder="e.g., $1M-$10M"
+                                placeholder="e.g., €1M-€10M"
                                 className="bg-zinc-800 border-zinc-700 text-white"
                               />
                             </div>

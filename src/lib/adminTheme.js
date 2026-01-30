@@ -328,7 +328,7 @@ export function getChangeType(changeStr) {
  * @param {string} currency - The currency code (default: USD)
  * @returns {string} Formatted currency string
  */
-export function formatCurrency(amount, currency = 'USD') {
+export function formatCurrency(amount, currency = 'EUR') {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,

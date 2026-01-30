@@ -68,7 +68,7 @@ export default function PhoneNumberManager({ onNumberSelected }) {
   const [searchContains, setSearchContains] = useState("");
 
   const fetchNumbers = useCallback(async () => {
-    if (!user?.company_id) return;
+    if (!user?.organization_id) return;
 
     try {
       const response = await fetch(`${SUPABASE_URL}/functions/v1/twilio-numbers`, {
@@ -79,7 +79,7 @@ export default function PhoneNumberManager({ onNumberSelected }) {
         },
         body: JSON.stringify({
           action: "list",
-          organization_id: user.company_id,
+          organization_id: user.organization_id,
         }),
       });
 
@@ -92,7 +92,7 @@ export default function PhoneNumberManager({ onNumberSelected }) {
     } finally {
       setLoading(false);
     }
-  }, [user?.company_id]);
+  }, [user?.organization_id]);
 
   useEffect(() => {
     fetchNumbers();
@@ -111,7 +111,7 @@ export default function PhoneNumberManager({ onNumberSelected }) {
         },
         body: JSON.stringify({
           action: "search",
-          organization_id: user.company_id,
+          organization_id: user.organization_id,
           country: searchCountry,
           area_code: searchAreaCode || undefined,
           contains: searchContains || undefined,
@@ -157,7 +157,7 @@ export default function PhoneNumberManager({ onNumberSelected }) {
         },
         body: JSON.stringify({
           action: "purchase",
-          organization_id: user.company_id,
+          organization_id: user.organization_id,
           phone_number: phoneNumber,
         }),
       });
@@ -204,7 +204,7 @@ export default function PhoneNumberManager({ onNumberSelected }) {
         },
         body: JSON.stringify({
           action: "release",
-          organization_id: user.company_id,
+          organization_id: user.organization_id,
           number_id: numberId,
         }),
       });
@@ -244,7 +244,7 @@ export default function PhoneNumberManager({ onNumberSelected }) {
         },
         body: JSON.stringify({
           action: "update",
-          organization_id: user.company_id,
+          organization_id: user.organization_id,
           number_id: numberId,
           friendly_name: newName,
         }),
@@ -309,7 +309,7 @@ export default function PhoneNumberManager({ onNumberSelected }) {
             <DialogHeader>
               <DialogTitle className="text-white">Get a Phone Number</DialogTitle>
               <DialogDescription className="text-zinc-400">
-                Search for available numbers and purchase instantly. Numbers cost $2/month.
+                Search for available numbers and purchase instantly. Numbers cost €2/month.
               </DialogDescription>
             </DialogHeader>
 
@@ -404,7 +404,7 @@ export default function PhoneNumberManager({ onNumberSelected }) {
                     <div className="flex items-center gap-3">
                       <div className="text-right">
                         <div className="text-sm font-medium text-white">
-                          ${num.monthly_cost}/mo
+                          €{num.monthly_cost}/mo
                         </div>
                       </div>
                       <Button
@@ -530,7 +530,7 @@ export default function PhoneNumberManager({ onNumberSelected }) {
                 </Badge>
 
                 <div className="text-right text-sm">
-                  <div className="text-white">${(num.monthly_cost_cents / 100).toFixed(2)}/mo</div>
+                  <div className="text-white">€{(num.monthly_cost_cents / 100).toFixed(2)}/mo</div>
                 </div>
 
                 {onNumberSelected && (
@@ -571,7 +571,7 @@ export default function PhoneNumberManager({ onNumberSelected }) {
             Simple Pricing
           </div>
           <div className="text-sm text-zinc-500">
-            $2/month per number + $0.01 per SMS sent. No setup fees. Cancel anytime.
+            €2/month per number + €0.01 per SMS sent. No setup fees. Cancel anytime.
           </div>
         </div>
       </div>

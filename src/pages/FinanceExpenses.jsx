@@ -332,7 +332,7 @@ export default function FinanceExpenses() {
                 <span className="text-xs text-zinc-400">Total Expenses</span>
                 <Wallet className="w-3.5 h-3.5 text-amber-400" />
               </div>
-              <p className="text-lg font-bold text-white">${stats.total.toLocaleString()}</p>
+              <p className="text-lg font-bold text-white">€${stats.total.toLocaleString()}</p>
               <p className="text-[10px] text-zinc-500">{stats.count} expenses</p>
             </CardContent>
           </Card>
@@ -347,7 +347,7 @@ export default function FinanceExpenses() {
                   <TrendingDown className="w-3.5 h-3.5 text-amber-400" />
                 )}
               </div>
-              <p className="text-lg font-bold text-white">${stats.thisMonth.toLocaleString()}</p>
+              <p className="text-lg font-bold text-white">€${stats.thisMonth.toLocaleString()}</p>
               <p className={`text-[10px] text-amber-400`}>
                 {stats.percentChange > 0 ? '+' : ''}{stats.percentChange}% vs last month
               </p>
@@ -367,7 +367,7 @@ export default function FinanceExpenses() {
                       <span className="text-sm">{cat.config.icon}</span>
                       <span className="text-[10px] text-zinc-400 capitalize">{cat.config.label}</span>
                     </div>
-                    <p className="text-xs font-medium text-white">${cat.amount.toLocaleString()}</p>
+                    <p className="text-xs font-medium text-white">€${cat.amount.toLocaleString()}</p>
                     <Progress value={parseFloat(cat.percentage)} className="h-0.5 mt-1 bg-zinc-800" indicatorClassName="bg-amber-500" />
                   </div>
                 ))}
@@ -549,7 +549,7 @@ export default function FinanceExpenses() {
 
                         <div className="flex items-center gap-3">
                           <p className="text-sm font-semibold text-amber-400">
-                            -${(expense.amount || 0).toLocaleString()}
+                            -€{(expense.amount || 0).toLocaleString()}
                           </p>
 
                           <DropdownMenu>

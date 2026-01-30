@@ -489,11 +489,11 @@ const COLOR_CLASSES = {
     glow: THEME_COLORS.growth.glow
   },
   cyan: {
-    text: THEME_COLORS.learn.text,
-    bg: THEME_COLORS.learn.bg,
-    border: THEME_COLORS.learn.border,
-    borderSolid: THEME_COLORS.learn.solid,
-    glow: THEME_COLORS.learn.glow
+    text: THEME_COLORS.default.text,
+    bg: THEME_COLORS.default.bg,
+    border: THEME_COLORS.default.border,
+    borderSolid: THEME_COLORS.default.solid,
+    glow: THEME_COLORS.default.glow
   },
   teal: {
     text: THEME_COLORS.learn.text,

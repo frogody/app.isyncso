@@ -185,7 +185,7 @@ function AppCard({ app, onEdit, onDelete, onViewLicenses }) {
         <div>
           <p className="text-[10px] text-zinc-500">Revenue</p>
           <p className="text-sm font-semibold text-white">
-            ${(app.total_revenue || 0).toLocaleString()}
+            €{(app.total_revenue || 0).toLocaleString()}
           </p>
         </div>
       </div>
@@ -234,7 +234,7 @@ function LicenseRow({ license, onEdit, onRevoke }) {
       <td className="py-1.5 px-3 text-xs text-zinc-400">
         {license.expires_at ? new Date(license.expires_at).toLocaleDateString() : 'Never'}
       </td>
-      <td className="py-1.5 px-3 text-xs text-zinc-300">${(license.amount || 0).toLocaleString()}</td>
+      <td className="py-1.5 px-3 text-xs text-zinc-300">€{(license.amount || 0).toLocaleString()}</td>
       <td className="py-1.5 px-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -651,7 +651,7 @@ export default function AdminApps() {
         />
         <StatCard
           title="Monthly Revenue"
-          value={`$${(stats?.monthly_revenue || 0).toLocaleString()}`}
+          value={`€${(stats?.monthly_revenue || 0).toLocaleString()}`}
           icon={Euro}
           color="orange"
           change={stats?.revenue_change}
@@ -1094,7 +1094,7 @@ export default function AdminApps() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-zinc-300 text-xs">Amount ($)</Label>
+                <Label className="text-zinc-300 text-xs">Amount (€)</Label>
                 <Input
                   type="number"
                   value={licenseForm.amount}

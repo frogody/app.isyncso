@@ -290,8 +290,8 @@ export default function AdminAI() {
   };
 
   const formatCost = (cost) => {
-    if (cost === null || cost === undefined) return '$0.00';
-    return `$${parseFloat(cost).toFixed(4)}`;
+    if (cost === null || cost === undefined) return '€0.00';
+    return `€${parseFloat(cost).toFixed(4)}`;
   };
 
   const formatTokens = (tokens) => {
@@ -484,11 +484,11 @@ export default function AdminAI() {
                       <div className="space-y-1 text-[10px]">
                         <div className="flex justify-between text-zinc-400">
                           <span>Input Price</span>
-                          <span className="text-white">${model.pricing_input}/1K</span>
+                          <span className="text-white">€{model.pricing_input}/1K</span>
                         </div>
                         <div className="flex justify-between text-zinc-400">
                           <span>Output Price</span>
-                          <span className="text-white">${model.pricing_output}/1K</span>
+                          <span className="text-white">€{model.pricing_output}/1K</span>
                         </div>
                         <div className="flex justify-between text-zinc-400">
                           <span>Context Window</span>
@@ -1010,7 +1010,7 @@ function ModelModal({ open, onClose, model, onSave }) {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="text-zinc-400 text-xs">Input Price ($/1K)</Label>
+              <Label className="text-zinc-400 text-xs">Input Price (€/1K)</Label>
               <Input
                 type="number"
                 step="0.000001"
@@ -1020,7 +1020,7 @@ function ModelModal({ open, onClose, model, onSave }) {
               />
             </div>
             <div>
-              <Label className="text-zinc-400 text-xs">Output Price ($/1K)</Label>
+              <Label className="text-zinc-400 text-xs">Output Price (€/1K)</Label>
               <Input
                 type="number"
                 step="0.000001"

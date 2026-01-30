@@ -446,15 +446,15 @@ function FinanceOverviewPreview() {
       <div className="grid grid-cols-3 gap-2">
         <div className="p-1.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-center">
           <div className="text-[10px] text-zinc-400">Revenue</div>
-          <div className="text-xs font-bold text-emerald-400">$45k</div>
+          <div className="text-xs font-bold text-emerald-400">€45k</div>
         </div>
         <div className="p-1.5 rounded bg-red-500/10 border border-red-500/20 text-center">
           <div className="text-[10px] text-zinc-400">Expenses</div>
-          <div className="text-xs font-bold text-red-400">$12k</div>
+          <div className="text-xs font-bold text-red-400">€12k</div>
         </div>
         <div className="p-1.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-center">
           <div className="text-[10px] text-zinc-400">Profit</div>
-          <div className="text-xs font-bold text-emerald-400">$33k</div>
+          <div className="text-xs font-bold text-emerald-400">€33k</div>
         </div>
       </div>
     </div>
@@ -470,7 +470,7 @@ function FinanceRevenuePreview() {
         </div>
         <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">+12%</span>
       </div>
-      <div className="text-lg font-bold text-white">$45k</div>
+      <div className="text-lg font-bold text-white">€45k</div>
       <div className="text-[10px] text-zinc-500">Total Revenue</div>
     </div>
   );
@@ -485,7 +485,7 @@ function FinanceExpensesPreview() {
         </div>
         <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">-3%</span>
       </div>
-      <div className="text-lg font-bold text-red-400">$12k</div>
+      <div className="text-lg font-bold text-red-400">€12k</div>
       <div className="text-[10px] text-zinc-500">Total Expenses</div>
     </div>
   );
@@ -500,7 +500,7 @@ function FinancePendingPreview() {
         </div>
         <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">4 pending</span>
       </div>
-      <div className="text-lg font-bold text-amber-400">$8k</div>
+      <div className="text-lg font-bold text-amber-400">€8k</div>
       <div className="text-[10px] text-zinc-500">Pending Invoices</div>
     </div>
   );
@@ -515,7 +515,7 @@ function FinanceMRRPreview() {
         </div>
         <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">5 active</span>
       </div>
-      <div className="text-lg font-bold text-emerald-400">$2.5k</div>
+      <div className="text-lg font-bold text-emerald-400">€2.5k</div>
       <div className="text-[10px] text-zinc-500">Monthly Recurring</div>
     </div>
   );
@@ -532,7 +532,7 @@ function RaiseCampaignPreview() {
       <div className="mb-2">
         <div className="flex items-center justify-between text-[10px] mb-1">
           <span className="text-zinc-400">Progress</span>
-          <span className="text-emerald-400">$2.1M / $3M</span>
+          <span className="text-emerald-400">€2.1M / €3M</span>
         </div>
         <Progress value={70} className="h-1.5" />
       </div>
@@ -567,7 +567,7 @@ function RaiseTargetPreview() {
         </div>
         <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">Series A</span>
       </div>
-      <div className="text-lg font-bold text-white">$3M</div>
+      <div className="text-lg font-bold text-white">€3M</div>
       <div className="text-[10px] text-zinc-500">Raise Target</div>
     </div>
   );
@@ -582,7 +582,7 @@ function RaiseCommittedPreview() {
         </div>
         <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">70%</span>
       </div>
-      <div className="text-lg font-bold text-emerald-400">$2.1M</div>
+      <div className="text-lg font-bold text-emerald-400">€2.1M</div>
       <div className="text-[10px] text-zinc-500">Committed</div>
     </div>
   );

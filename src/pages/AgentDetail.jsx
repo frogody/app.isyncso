@@ -313,7 +313,7 @@ const AGENTS_DATA = {
       {
         title: 'Track Expenses',
         description: 'Log and categorize business expenses',
-        example: '"Log a $500 expense for office supplies at Staples"'
+        example: '"Log a €500 expense for office supplies at Staples"'
       },
       {
         title: 'Financial Overview',

@@ -428,10 +428,10 @@ export default function FinanceInvoices() {
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { label: 'Total', value: `$${stats.total.toLocaleString()}`, count: stats.count, color: 'zinc' },
-            { label: 'Paid', value: `$${stats.paid.toLocaleString()}`, icon: Check, color: 'amber' },
-            { label: 'Pending', value: `$${stats.pending.toLocaleString()}`, icon: Clock, color: 'amber' },
-            { label: 'Overdue', value: `$${stats.overdue.toLocaleString()}`, icon: AlertCircle, color: 'red' }
+            { label: 'Total', value: `€${stats.total.toLocaleString()}`, count: stats.count, color: 'zinc' },
+            { label: 'Paid', value: `€${stats.paid.toLocaleString()}`, icon: Check, color: 'amber' },
+            { label: 'Pending', value: `€${stats.pending.toLocaleString()}`, icon: Clock, color: 'amber' },
+            { label: 'Overdue', value: `€${stats.overdue.toLocaleString()}`, icon: AlertCircle, color: 'red' }
           ].map((stat) => (
             <Card key={stat.label} className="bg-zinc-900/50 border-zinc-800">
               <CardContent className="p-3">
@@ -577,7 +577,7 @@ export default function FinanceInvoices() {
 
                       <div className="flex items-center gap-3">
                         <p className="text-sm font-semibold text-white">
-                          ${(invoice.total || 0).toLocaleString()}
+                          €{(invoice.total || 0).toLocaleString()}
                         </p>
 
                         <DropdownMenu>
@@ -758,11 +758,11 @@ export default function FinanceInvoices() {
                           </div>
                           <div className="text-right">
                             <p className="text-sm font-medium text-white">
-                              ${((item.quantity || 1) * (parseFloat(item.unit_price) || 0)).toFixed(2)}
+                              €{((item.quantity || 1) * (parseFloat(item.unit_price) || 0)).toFixed(2)}
                             </p>
                             {item.quantity > 1 && (
                               <p className="text-xs text-zinc-500">
-                                {item.quantity} x ${parseFloat(item.unit_price || 0).toFixed(2)}
+                                {item.quantity} x €{parseFloat(item.unit_price || 0).toFixed(2)}
                               </p>
                             )}
                           </div>
@@ -783,7 +783,7 @@ export default function FinanceInvoices() {
                     <div className="flex items-center justify-between p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
                       <span className="text-sm text-amber-400">Calculated Total</span>
                       <span className="text-lg font-bold text-amber-400">
-                        ${calculateTotal().toFixed(2)}
+                        €{calculateTotal().toFixed(2)}
                       </span>
                     </div>
                   </div>
@@ -861,7 +861,7 @@ export default function FinanceInvoices() {
                   {selectedInvoice.status || 'draft'}
                 </Badge>
                 <p className="text-2xl font-bold text-white">
-                  ${(selectedInvoice.total || 0).toLocaleString()}
+                  €{(selectedInvoice.total || 0).toLocaleString()}
                 </p>
               </div>
 

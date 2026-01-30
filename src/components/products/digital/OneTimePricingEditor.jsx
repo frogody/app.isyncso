@@ -133,7 +133,7 @@ function ItemRow({ item, currency, onUpdate, onDelete, isEditing, setEditingId }
             <label className="text-xs text-zinc-500 mb-1 block">Price</label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">
-                {currency === 'EUR' ? '€' : '$'}
+                {'€'}
               </span>
               <Input
                 type="number"

@@ -97,7 +97,7 @@ const glossaryTerms = [
     term: "Firmographics",
     category: "Sales",
     definition: "Facts about a company: industry, size, revenue, location.",
-    examples: "500-employee SaaS company in San Francisco with $50M revenue",
+    examples: "500-employee SaaS company in San Francisco with €50M revenue",
     relatedTerms: ["Technographics"],
     icon: "🏢"
   },

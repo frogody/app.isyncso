@@ -69,7 +69,7 @@ const STATUS_OPTIONS = [
 
 const CURRENCY_OPTIONS = [
   { value: 'EUR', label: 'EUR' },
-  { value: 'USD', label: 'USD' },
+  { value: 'EUR', label: 'EUR' },
   { value: 'GBP', label: 'GBP' },
 ];
 
@@ -309,7 +309,7 @@ function OverviewSection({
                   value={pricing.base_price}
                   onSave={(val) => onDetailsUpdate({ pricing: { ...pricing, base_price: val } })}
                   placeholder="0.00"
-                  prefix={pricing.currency === 'EUR' ? '€' : '$'}
+                  prefix={'€'}
                   textClassName="text-3xl font-bold"
                 />
                 <InlineEditSelect
@@ -527,7 +527,7 @@ function PricingSection({ details, onDetailsUpdate, currency }) {
                 onSave={(val) => onDetailsUpdate({ pricing: { ...pricing, base_price: val } })}
                 label="Base Price (ex BTW)"
                 placeholder="0.00"
-                prefix={currency === 'EUR' ? '€' : '$'}
+                prefix={'€'}
                 disabled={taxIncluded}
               />
               <InlineEditNumber
@@ -535,7 +535,7 @@ function PricingSection({ details, onDetailsUpdate, currency }) {
                 onSave={handleCostPriceChange}
                 label="Cost Price (incl BTW)"
                 placeholder="0.00"
-                prefix={currency === 'EUR' ? '€' : '$'}
+                prefix={'€'}
               />
             </div>
 
@@ -545,14 +545,14 @@ function PricingSection({ details, onDetailsUpdate, currency }) {
                 onSave={(val) => onDetailsUpdate({ pricing: { ...pricing, compare_at_price: val } })}
                 label="Compare at Price"
                 placeholder="0.00"
-                prefix={currency === 'EUR' ? '€' : '$'}
+                prefix={'€'}
               />
               <InlineEditNumber
                 value={pricing.wholesale_price}
                 onSave={(val) => onDetailsUpdate({ pricing: { ...pricing, wholesale_price: val } })}
                 label="Wholesale Price"
                 placeholder="0.00"
-                prefix={currency === 'EUR' ? '€' : '$'}
+                prefix={'€'}
               />
             </div>
           </div>

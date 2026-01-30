@@ -248,8 +248,8 @@ function RevenueChart({ data }) {
           fontSize={12}
           tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
         />
-        <YAxis stroke="#71717a" fontSize={12} tickFormatter={(value) => `$${value}`} />
-        <Tooltip content={<CustomTooltip valueFormatter={(v) => `$${v.toLocaleString()}`} />} />
+        <YAxis stroke="#71717a" fontSize={12} tickFormatter={(value) => `€${value}`} />
+        <Tooltip content={<CustomTooltip valueFormatter={(v) => `€${v.toLocaleString()}`} />} />
         <Legend />
         <Bar dataKey="data_revenue" name="Data Products" fill="#8b5cf6" stackId="revenue" />
         <Bar dataKey="license_revenue" name="App Licenses" fill="#f59e0b" stackId="revenue" />
@@ -386,7 +386,7 @@ function OrganizationsTable({ organizations }) {
                 <span className="text-zinc-500"> / {org.user_count || 0}</span>
               </td>
               <td className="py-1.5 px-3 text-zinc-300 text-xs">{org.app_licenses || 0}</td>
-              <td className="py-1.5 px-3 text-green-400 text-xs">${(org.monthly_spend || 0).toLocaleString()}</td>
+              <td className="py-1.5 px-3 text-green-400 text-xs">€{(org.monthly_spend || 0).toLocaleString()}</td>
             </tr>
           ))}
         </tbody>
@@ -443,7 +443,7 @@ function AppPerformanceTable({ apps }) {
               </td>
               <td className="py-1.5 px-3 text-zinc-300 text-xs">{app.total_licenses || 0}</td>
               <td className="py-1.5 px-3 text-zinc-300 text-xs">{app.licensed_companies || 0}</td>
-              <td className="py-1.5 px-3 text-green-400 text-xs">${(app.total_revenue || 0).toLocaleString()}</td>
+              <td className="py-1.5 px-3 text-green-400 text-xs">€{(app.total_revenue || 0).toLocaleString()}</td>
               <td className="py-1.5 px-3">
                 <div className="flex items-center gap-1.5 text-zinc-300 text-xs">
                   <Eye className="w-3 h-3 text-blue-400" />
@@ -667,7 +667,7 @@ export default function AdminAnalytics() {
           />
           <StatCard
             title="Revenue"
-            value={`$${stats.revenue.toLocaleString()}`}
+            value={`€${stats.revenue.toLocaleString()}`}
             change={stats.revenueChange}
             changeType={parseFloat(stats.revenueChange) >= 0 ? 'increase' : 'decrease'}
             subtitle={`${stats.appLicenses} active licenses`}

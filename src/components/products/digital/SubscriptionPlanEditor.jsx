@@ -149,7 +149,7 @@ function PlanCard({ plan, currency, onUpdate, onDelete, isEditing, setEditingId 
               <label className="text-xs text-zinc-500 mb-1 block">Monthly Price</label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">
-                  {currency === 'EUR' ? '€' : '$'}
+                  {'€'}
                 </span>
                 <Input
                   type="number"
@@ -166,7 +166,7 @@ function PlanCard({ plan, currency, onUpdate, onDelete, isEditing, setEditingId 
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">
-                    {currency === 'EUR' ? '€' : '$'}
+                    {'€'}
                   </span>
                   <Input
                     type="number"

@@ -117,7 +117,7 @@ export default function ProductModal({
       base_price: '',
       compare_at_price: '',
       cost_price: '',
-      currency: 'USD',
+      currency: 'EUR',
     },
     inventory: {
       track_quantity: true,
@@ -215,7 +215,7 @@ export default function ProductModal({
             base_price: '',
             compare_at_price: '',
             cost_price: '',
-            currency: 'USD',
+            currency: 'EUR',
           },
           inventory: product.physicalDetails.inventory || {
             track_quantity: true,
@@ -269,7 +269,7 @@ export default function ProductModal({
           base_price: '',
           compare_at_price: '',
           cost_price: '',
-          currency: 'USD',
+          currency: 'EUR',
         },
         inventory: {
           track_quantity: true,
@@ -1021,8 +1021,8 @@ export default function ProductModal({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-zinc-800 border-zinc-700">
-                        <SelectItem value="USD" className="text-white">USD ($)</SelectItem>
                         <SelectItem value="EUR" className="text-white">EUR (€)</SelectItem>
+                        <SelectItem value="USD" className="text-white">USD ($)</SelectItem>
                         <SelectItem value="GBP" className="text-white">GBP (£)</SelectItem>
                       </SelectContent>
                     </Select>

@@ -189,7 +189,7 @@ export default function Finance() {
     const metrics = [
       {
         title: 'Total Revenue',
-        value: `$${totalRevenue.toLocaleString()}`,
+        value: `€${totalRevenue.toLocaleString()}`,
         change: '+12.5%',
         trend: 'up',
         icon: Euro,
@@ -197,7 +197,7 @@ export default function Finance() {
       },
       {
         title: 'Total Expenses',
-        value: `$${totalExpenses.toLocaleString()}`,
+        value: `€${totalExpenses.toLocaleString()}`,
         change: '-3.2%',
         trend: 'down',
         icon: CreditCard,
@@ -205,7 +205,7 @@ export default function Finance() {
       },
       {
         title: 'Pending Invoices',
-        value: `$${pendingInvoices.toLocaleString()}`,
+        value: `€${pendingInvoices.toLocaleString()}`,
         change: `${invoices.filter(i => i.status === 'pending').length} invoices`,
         trend: 'neutral',
         icon: Receipt,
@@ -213,7 +213,7 @@ export default function Finance() {
       },
       {
         title: 'Monthly Recurring',
-        value: `$${monthlyRecurring.toLocaleString()}`,
+        value: `€${monthlyRecurring.toLocaleString()}`,
         change: `${subscriptions.filter(s => s.status === 'active').length} active`,
         trend: 'up',
         icon: TrendingUp,
@@ -433,7 +433,7 @@ export default function Finance() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-medium text-white">${(invoice.total || 0).toLocaleString()}</p>
+                        <p className="text-sm font-medium text-white">€{(invoice.total || 0).toLocaleString()}</p>
                         <Badge variant="outline" className={
                           invoice.status === 'paid' ? 'text-amber-400 border-amber-500/30' :
                           invoice.status === 'overdue' ? 'text-red-400 border-red-500/30' :
@@ -489,7 +489,7 @@ export default function Finance() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-medium text-amber-400">-${(expense.amount || 0).toLocaleString()}</p>
+                        <p className="text-sm font-medium text-amber-400">-€{(expense.amount || 0).toLocaleString()}</p>
                         <p className="text-xs text-zinc-500">{expense.date || 'No date'}</p>
                       </div>
                     </div>
@@ -539,7 +539,7 @@ export default function Finance() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-medium text-amber-400">${(sub.amount || 0).toLocaleString()}/mo</p>
+                        <p className="text-sm font-medium text-amber-400">€{(sub.amount || 0).toLocaleString()}/mo</p>
                         <Badge variant="outline" className={
                           sub.status === 'active' ? 'text-amber-400 border-amber-500/30' :
                           'text-zinc-400 border-zinc-500/30'

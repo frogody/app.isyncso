@@ -64,7 +64,7 @@ const NEST_TYPE_CONFIG = {
 };
 
 // Format currency
-function formatCurrency(amount, currency = 'USD') {
+function formatCurrency(amount, currency = 'EUR') {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,
