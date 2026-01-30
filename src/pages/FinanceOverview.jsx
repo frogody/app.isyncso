@@ -365,6 +365,7 @@ export default function FinanceOverview() {
               <Progress
                 value={Math.max(0, Math.min(100, Number(metrics.profitMargin)))}
                 className="h-1.5 bg-zinc-800"
+                indicatorClassName="bg-amber-500"
               />
             </div>
           </CardContent>
@@ -399,6 +400,7 @@ export default function FinanceOverview() {
                         <Progress
                           value={(cat.amount / metrics.totalExpenses) * 100}
                           className="h-1.5 mt-1 bg-zinc-800"
+                          indicatorClassName="bg-amber-500"
                         />
                       </div>
                     </div>

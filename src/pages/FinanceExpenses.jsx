@@ -368,7 +368,7 @@ export default function FinanceExpenses() {
                       <span className="text-[10px] text-zinc-400 capitalize">{cat.config.label}</span>
                     </div>
                     <p className="text-xs font-medium text-white">${cat.amount.toLocaleString()}</p>
-                    <Progress value={parseFloat(cat.percentage)} className="h-0.5 mt-1 bg-zinc-800" />
+                    <Progress value={parseFloat(cat.percentage)} className="h-0.5 mt-1 bg-zinc-800" indicatorClassName="bg-amber-500" />
                   </div>
                 ))}
               </div>
