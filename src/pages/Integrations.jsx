@@ -779,7 +779,7 @@ export default function Integrations({ embedded = false }) {
                   <div className="w-11 h-11 rounded-xl bg-zinc-800/80 border border-zinc-700/40 flex items-center justify-center">
                     <Globe className="w-5 h-5 text-blue-400/70" />
                   </div>
-                  {googleConnected && <Badge className="bg-emerald-950/40 text-emerald-300/80 border-emerald-800/30 text-xs">Active</Badge>}
+                  {googleConnected && <Badge className="bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-xs">Active</Badge>}
                 </div>
                 <div className="text-lg font-bold text-zinc-100">{googleConnected ? 'Yes' : 'No'}</div>
                 <div className="text-xs text-zinc-500">Google Workspace</div>
@@ -790,9 +790,9 @@ export default function Integrations({ embedded = false }) {
               <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
                 <div className="flex items-center justify-between mb-3">
                   <div className="w-11 h-11 rounded-xl bg-zinc-800/80 border border-zinc-700/40 flex items-center justify-center">
-                    <Clock className="w-5 h-5 text-orange-400/70" />
+                    <Clock className="w-5 h-5 text-blue-400/70" />
                   </div>
-                  {queuedActions.length > 0 && <Badge className="bg-orange-950/40 text-orange-300/80 border-orange-800/30 text-xs">Pending</Badge>}
+                  {queuedActions.length > 0 && <Badge className="bg-blue-950/40 text-blue-300/80 border-blue-800/30 text-xs">Pending</Badge>}
                 </div>
                 <div className="text-lg font-bold text-zinc-100">{queuedActions.length}</div>
                 <div className="text-xs text-zinc-500">Queued Actions</div>
@@ -803,9 +803,9 @@ export default function Integrations({ embedded = false }) {
               <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
                 <div className="flex items-center justify-between mb-3">
                   <div className="w-11 h-11 rounded-xl bg-zinc-800/80 border border-zinc-700/40 flex items-center justify-center">
-                    <CheckCircle className="w-5 h-5 text-emerald-400/70" />
+                    <CheckCircle className="w-5 h-5 text-cyan-400/70" />
                   </div>
-                  <Badge className="bg-emerald-950/40 text-emerald-300/80 border-emerald-800/30 text-xs">{successRate}%</Badge>
+                  <Badge className="bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-xs">{successRate}%</Badge>
                 </div>
                 <div className="text-lg font-bold text-zinc-100">{successfulActions}</div>
                 <div className="text-xs text-zinc-500">Actions Completed</div>
@@ -825,14 +825,14 @@ export default function Integrations({ embedded = false }) {
               </TabsTrigger>
               <TabsTrigger value="desktop" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300 text-zinc-500 px-4">
                 <Monitor className="w-4 h-4 mr-2" />SYNC Desktop
-                {desktopConnected && <Badge className="ml-2 bg-emerald-950/40 text-emerald-300/80 border-emerald-800/30 text-[10px] px-1.5">Active</Badge>}
+                {desktopConnected && <Badge className="ml-2 bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-[10px] px-1.5">Active</Badge>}
               </TabsTrigger>
               <TabsTrigger value="google" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300 text-zinc-500 px-4">
                 <Globe className="w-4 h-4 mr-2" />Google Workspace
               </TabsTrigger>
               <TabsTrigger value="actions" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300 text-zinc-500 px-4">
                 <Zap className="w-4 h-4 mr-2" />Actions
-                {queuedActions.length > 0 && <Badge className="ml-2 bg-orange-950/40 text-orange-300/80 border-orange-800/30 text-[10px] px-1.5">{queuedActions.length}</Badge>}
+                {queuedActions.length > 0 && <Badge className="ml-2 bg-blue-950/40 text-blue-300/80 border-blue-800/30 text-[10px] px-1.5">{queuedActions.length}</Badge>}
               </TabsTrigger>
               <TabsTrigger value="history" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-cyan-300 text-zinc-500 px-4">
                 <History className="w-4 h-4 mr-2" />History
@@ -850,21 +850,21 @@ export default function Integrations({ embedded = false }) {
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="relative overflow-hidden rounded-xl bg-gradient-to-br from-emerald-950/40 via-zinc-900/60 to-cyan-950/30 border border-emerald-800/30 p-4"
+                  className="relative overflow-hidden rounded-xl bg-gradient-to-br from-cyan-950/40 via-zinc-900/60 to-cyan-950/30 border border-cyan-800/30 p-4"
                 >
                   <div className="absolute inset-0 pointer-events-none">
-                    <div className="absolute top-0 right-0 w-72 h-72 bg-emerald-500/5 rounded-full blur-3xl" />
+                    <div className="absolute top-0 right-0 w-72 h-72 bg-cyan-500/5 rounded-full blur-3xl" />
                     <div className="absolute bottom-0 left-0 w-56 h-56 bg-cyan-500/5 rounded-full blur-3xl" />
                   </div>
 
                   <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
-                        <CheckCircle className="w-4 h-4 text-emerald-400" />
+                      <div className="w-8 h-8 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
+                        <CheckCircle className="w-4 h-4 text-cyan-400" />
                       </div>
                       <div>
                         <h3 className="text-xl font-bold text-white">Your Connected Apps</h3>
-                        <p className="text-emerald-400/80 text-sm">{totalConnected} integration{totalConnected !== 1 ? 's' : ''} ready to use with SYNC</p>
+                        <p className="text-cyan-400/80 text-sm">{totalConnected} integration{totalConnected !== 1 ? 's' : ''} ready to use with SYNC</p>
                       </div>
                     </div>
 
@@ -872,8 +872,8 @@ export default function Integrations({ embedded = false }) {
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                       {/* SYNC Desktop App */}
                       {desktopConnected && (
-                        <div className="group relative p-4 rounded-xl bg-zinc-900/60 border border-zinc-700/50 hover:border-emerald-500/40 transition-all cursor-pointer">
-                          <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <div className="group relative p-4 rounded-xl bg-zinc-900/60 border border-zinc-700/50 hover:border-cyan-500/40 transition-all cursor-pointer">
+                          <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
                           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center mb-2 transition-transform">
                             <Monitor className="w-4 h-4 text-white" />
                           </div>
@@ -888,9 +888,9 @@ export default function Integrations({ embedded = false }) {
 
                       {/* Google Workspace */}
                       {googleConnected && (
-                        <div className="group relative p-4 rounded-xl bg-zinc-900/60 border border-zinc-700/50 hover:border-emerald-500/40 transition-all cursor-pointer">
-                          <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center mb-2 transition-transform">
+                        <div className="group relative p-4 rounded-xl bg-zinc-900/60 border border-zinc-700/50 hover:border-cyan-500/40 transition-all cursor-pointer">
+                          <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center mb-2 transition-transform">
                             <Globe className="w-4 h-4 text-white" />
                           </div>
                           <h4 className="font-semibold text-white text-sm">Google</h4>
@@ -909,9 +909,9 @@ export default function Integrations({ embedded = false }) {
                         return (
                           <div
                             key={slug}
-                            className="group relative p-4 rounded-xl bg-zinc-900/60 border border-zinc-700/50 hover:border-emerald-500/40 transition-all cursor-pointer"
+                            className="group relative p-4 rounded-xl bg-zinc-900/60 border border-zinc-700/50 hover:border-cyan-500/40 transition-all cursor-pointer"
                           >
-                            <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
                             <div
                               className="w-8 h-8 rounded-lg flex items-center justify-center mb-2 transition-transform"
                               style={{ backgroundColor: integration.color + '25' }}
@@ -980,14 +980,14 @@ export default function Integrations({ embedded = false }) {
                       { icon: Mail, label: 'Send emails via Gmail', color: 'text-red-400', connected: composioConnections['gmail'] || googleConnected },
                       { icon: Calendar, label: 'Schedule calendar events', color: 'text-blue-400', connected: composioConnections['googlecalendar'] || googleConnected },
                       { icon: Activity, label: 'Post to Slack channels', color: 'text-cyan-400', connected: !!composioConnections['slack'] },
-                      { icon: TrendingUp, label: 'Create HubSpot contacts', color: 'text-orange-400', connected: !!composioConnections['hubspot'] },
+                      { icon: TrendingUp, label: 'Create HubSpot contacts', color: 'text-blue-400', connected: !!composioConnections['hubspot'] },
                       { icon: FileText, label: 'Add notes to Notion', color: 'text-zinc-400', connected: !!composioConnections['notion'] },
                     ].map((item, i) => (
                       <div key={i} className={`flex items-center gap-3 p-3 rounded-lg ${item.connected ? 'bg-zinc-800/40' : 'bg-zinc-900/30 opacity-50'}`}>
                         <item.icon className={`w-5 h-5 ${item.color}`} />
                         <span className="text-sm text-zinc-300">{item.label}</span>
                         {item.connected ? (
-                          <Badge className="ml-auto bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px]">Ready</Badge>
+                          <Badge className="ml-auto bg-cyan-500/20 text-cyan-400 border-cyan-500/30 text-[10px]">Ready</Badge>
                         ) : (
                           <Badge className="ml-auto bg-zinc-700/50 text-zinc-500 border-zinc-600/30 text-[10px]">Connect</Badge>
                         )}
@@ -1002,7 +1002,7 @@ export default function Integrations({ embedded = false }) {
                 {/* Recent Activity */}
                 <GlassCard hover={false} className="p-4">
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-orange-400" />
+                    <Activity className="w-5 h-5 text-blue-400" />
                     Recent Activity
                   </h3>
                   <div className="space-y-3">
@@ -1010,9 +1010,9 @@ export default function Integrations({ embedded = false }) {
                       <div key={action.id} className="p-3 rounded-xl bg-zinc-800/30 border border-zinc-700/50">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            {action.status === 'success' && <CheckCircle className="w-4 h-4 text-emerald-400" />}
+                            {action.status === 'success' && <CheckCircle className="w-4 h-4 text-cyan-400" />}
                             {action.status === 'failed' && <XCircle className="w-4 h-4 text-red-400" />}
-                            {action.status === 'queued' && <Clock className="w-4 h-4 text-orange-400" />}
+                            {action.status === 'queued' && <Clock className="w-4 h-4 text-blue-400" />}
                             {action.status === 'in_progress' && <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />}
                             <span className="text-sm text-white">{action.title || 'Action'}</span>
                           </div>
@@ -1116,7 +1116,7 @@ export default function Integrations({ embedded = false }) {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`p-4 rounded-xl border transition-all ${desktopConnected ? "bg-emerald-500/5 border-emerald-500/30" : "bg-zinc-900/50 border-zinc-800"}`}
+                className={`p-4 rounded-xl border transition-all ${desktopConnected ? "bg-cyan-500/5 border-cyan-500/30" : "bg-zinc-900/50 border-zinc-800"}`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
@@ -1127,9 +1127,9 @@ export default function Integrations({ embedded = false }) {
                       <div className="flex items-center gap-3">
                         <h2 className="text-sm font-bold text-white">SYNC Desktop</h2>
                         {desktopConnected ? (
-                          <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">Connected</Badge>
+                          <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30">Connected</Badge>
                         ) : (
-                          <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">Not Connected</Badge>
+                          <Badge className="bg-zinc-500/20 text-zinc-400 border-zinc-500/30">Not Connected</Badge>
                         )}
                       </div>
                       {desktopConnected && desktopLastActivity && (
@@ -1141,8 +1141,8 @@ export default function Integrations({ embedded = false }) {
                   </div>
                   {desktopConnected && (
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="text-xs text-emerald-400">Active</span>
+                      <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
+                      <span className="text-xs text-cyan-400">Active</span>
                     </div>
                   )}
                 </div>
@@ -1160,7 +1160,7 @@ export default function Integrations({ embedded = false }) {
                     <p className="text-[10px] text-zinc-500">10-min rolling context</p>
                   </div>
                   <div className="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50">
-                    <FileText className="w-4 h-4 text-orange-400 mb-1" />
+                    <FileText className="w-4 h-4 text-blue-400 mb-1" />
                     <h4 className="font-medium text-white text-xs">Daily Journal</h4>
                     <p className="text-[10px] text-zinc-500">Auto-generated summaries</p>
                   </div>
@@ -1175,7 +1175,7 @@ export default function Integrations({ embedded = false }) {
                     <p className="text-[10px] text-zinc-500">Always-on-top chat</p>
                   </div>
                   <div className="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50">
-                    <Shield className="w-4 h-4 text-green-400 mb-1" />
+                    <Shield className="w-4 h-4 text-cyan-400 mb-1" />
                     <h4 className="font-medium text-white text-xs">Privacy First</h4>
                     <p className="text-[10px] text-zinc-500">Local-first, encrypted</p>
                   </div>
@@ -1259,14 +1259,14 @@ export default function Integrations({ embedded = false }) {
               {desktopConnected && (
                 <GlassCard className="p-4">
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-emerald-400" />
+                    <CheckCircle className="w-5 h-5 text-cyan-400" />
                     Connection Details
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div>
                       <p className="text-zinc-500">Status</p>
                       <p className="text-white flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        <span className="w-2 h-2 rounded-full bg-cyan-500"></span>
                         Connected
                       </p>
                     </div>
@@ -1292,20 +1292,20 @@ export default function Integrations({ embedded = false }) {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`p-4 rounded-xl border transition-all ${googleConnected ? "bg-emerald-500/5 border-emerald-500/30" : "bg-zinc-900/50 border-zinc-800"}`}
+                className={`p-4 rounded-xl border transition-all ${googleConnected ? "bg-cyan-500/5 border-cyan-500/30" : "bg-zinc-900/50 border-zinc-800"}`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
                       <Globe className="w-5 h-5 text-white" />
                     </div>
                     <div>
                       <div className="flex items-center gap-3">
                         <h2 className="text-sm font-bold text-white">Google Workspace</h2>
                         {googleConnected ? (
-                          <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">Connected</Badge>
+                          <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30">Connected</Badge>
                         ) : (
-                          <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">Not Connected</Badge>
+                          <Badge className="bg-zinc-500/20 text-zinc-400 border-zinc-500/30">Not Connected</Badge>
                         )}
                       </div>
                       {googleConnected && googleUserInfo && (
@@ -1317,8 +1317,8 @@ export default function Integrations({ embedded = false }) {
                   </div>
                   {googleConnected && (
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="text-xs text-emerald-400">Active</span>
+                      <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
+                      <span className="text-xs text-cyan-400">Active</span>
                     </div>
                   )}
                 </div>
@@ -1336,7 +1336,7 @@ export default function Integrations({ embedded = false }) {
                     <p className="text-xs text-zinc-500">Manage events</p>
                   </div>
                   <div className="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50">
-                    <FileText className="w-5 h-5 text-yellow-400 mb-2" />
+                    <FileText className="w-5 h-5 text-cyan-400 mb-2" />
                     <h4 className="font-medium text-white text-sm">Drive</h4>
                     <p className="text-xs text-zinc-500">Access files</p>
                   </div>
@@ -1346,7 +1346,7 @@ export default function Integrations({ embedded = false }) {
                     <p className="text-xs text-zinc-500">Read documents</p>
                   </div>
                   <div className="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50">
-                    <FileText className="w-5 h-5 text-green-500 mb-2" />
+                    <FileText className="w-5 h-5 text-cyan-500 mb-2" />
                     <h4 className="font-medium text-white text-sm">Sheets</h4>
                     <p className="text-xs text-zinc-500">Read spreadsheets</p>
                   </div>
@@ -1369,7 +1369,7 @@ export default function Integrations({ embedded = false }) {
                       Disconnect
                     </Button>
                   ) : (
-                    <Button onClick={handleGoogleConnect} disabled={googleConnecting} className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-500 hover:to-green-500 text-white">
+                    <Button onClick={handleGoogleConnect} disabled={googleConnecting} className="bg-cyan-600 hover:bg-cyan-500 text-white">
                       {googleConnecting ? (
                         <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Connecting...</>
                       ) : (
@@ -1384,7 +1384,7 @@ export default function Integrations({ embedded = false }) {
               {googleConnected && googleTokens && (
                 <GlassCard className="p-4">
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-emerald-400" />
+                    <CheckCircle className="w-5 h-5 text-cyan-400" />
                     Connection Details
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -1414,7 +1414,7 @@ export default function Integrations({ embedded = false }) {
               <Suspense fallback={<Skeleton className="h-96 bg-zinc-800 rounded-lg" />}>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                    <Zap className="w-5 h-5 text-orange-400" />
+                    <Zap className="w-5 h-5 text-blue-400" />
                     Action Queue
                   </h3>
                   <div className="flex gap-2">
@@ -1422,7 +1422,7 @@ export default function Integrations({ embedded = false }) {
                       <RefreshCw className="w-4 h-4 mr-2" />
                       Refresh
                     </Button>
-                    <Button size="sm" onClick={() => setCreateActionModalOpen(true)} className="bg-orange-600/80 hover:bg-orange-600 text-white">
+                    <Button size="sm" onClick={() => setCreateActionModalOpen(true)} className="bg-blue-600/80 hover:bg-blue-600 text-white">
                       <Plus className="w-4 h-4 mr-2" />
                       New Action
                     </Button>
@@ -1444,7 +1444,7 @@ export default function Integrations({ embedded = false }) {
                           </div>
                           <h4 className="text-lg font-semibold text-white mb-2">No Pending Actions</h4>
                           <p className="text-zinc-500 text-sm mb-6">Create an action to get started</p>
-                          <Button onClick={() => setCreateActionModalOpen(true)} className="bg-orange-600/80 hover:bg-orange-600 text-white">
+                          <Button onClick={() => setCreateActionModalOpen(true)} className="bg-blue-600/80 hover:bg-blue-600 text-white">
                             <Plus className="w-4 h-4 mr-2" />Create Action
                           </Button>
                         </div>
@@ -1469,7 +1469,7 @@ export default function Integrations({ embedded = false }) {
                   {/* Recent Completed */}
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-zinc-200 flex items-center gap-2">
-                      <CheckCircle className="w-5 h-5 text-emerald-400/70" />
+                      <CheckCircle className="w-5 h-5 text-cyan-400/70" />
                       Recently Completed
                     </h3>
                     <GlassCard hover={false} className="p-4 space-y-2">
@@ -1557,14 +1557,14 @@ export default function Integrations({ embedded = false }) {
                   </Alert>
 
                   {composioConnectedCount === 0 && (
-                    <Alert className="bg-amber-950/30 border-amber-700/40">
-                      <AlertCircle className="w-4 h-4 text-amber-400" />
+                    <Alert className="bg-zinc-800/50 border-zinc-700/40">
+                      <AlertCircle className="w-4 h-4 text-zinc-400" />
                       <AlertDescription className="text-zinc-300">
                         Connect at least one third-party app to create an MCP server.
                         <Button
                           variant="link"
                           onClick={() => setActiveTab('apps')}
-                          className="text-amber-400 hover:text-amber-300 p-0 h-auto ml-1"
+                          className="text-cyan-400 hover:text-cyan-300 p-0 h-auto ml-1"
                         >
                           Go to Third-Party Apps →
                         </Button>
@@ -1619,7 +1619,7 @@ export default function Integrations({ embedded = false }) {
                             </p>
                           </div>
                         </div>
-                        <Badge className={`text-xs ${server.status === 'ACTIVE' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'}`}>
+                        <Badge className={`text-xs ${server.status === 'ACTIVE' ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30' : 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'}`}>
                           {server.status || 'ACTIVE'}
                         </Badge>
                       </div>
@@ -1701,7 +1701,7 @@ export default function Integrations({ embedded = false }) {
               )}
               {connectionDialog.status === 'success' && (
                 <div className="text-center">
-                  <CheckCircle className="w-12 h-12 text-green-500 mx-auto" />
+                  <CheckCircle className="w-12 h-12 text-cyan-500 mx-auto" />
                   <p className="text-sm text-zinc-400 mt-4">{connectionDialog.message}</p>
                 </div>
               )}

@@ -83,7 +83,7 @@ const AVAILABLE_APPS = [
     name: 'Finance',
     description: 'Revenue, expenses, and financial tracking',
     icon: DollarSign,
-    color: 'emerald',
+    color: 'blue',
     defaultEnabled: false,
     widgets: FINANCE_WIDGETS,
     purpose: 'Track your business finances with invoices, expenses, and subscription management.',
@@ -99,7 +99,7 @@ const AVAILABLE_APPS = [
     name: 'Raise',
     description: 'Fundraising toolkit & investor management',
     icon: TrendingUp,
-    color: 'emerald',
+    color: 'blue',
     defaultEnabled: false,
     widgets: RAISE_WIDGETS,
     purpose: 'Manage your fundraising campaigns with investor tracking and data room management.',
@@ -136,7 +136,7 @@ const COMING_SOON_APPS = [
     name: 'Create',
     description: 'Content generation with company context',
     icon: Palette,
-    color: 'pink'
+    color: 'cyan'
   }
 ];
 
@@ -181,21 +181,13 @@ const COLOR_CLASSES = {
     iconBg: 'bg-red-500/20',
     gradient: 'from-red-500/20 to-red-500/5'
   },
-  pink: {
-    bg: 'bg-pink-950/40',
-    border: 'border-pink-500/30',
-    text: 'text-pink-400',
-    activeBg: 'bg-pink-950/60',
-    iconBg: 'bg-pink-500/20',
-    gradient: 'from-pink-500/20 to-pink-500/5'
-  },
-  emerald: {
-    bg: 'bg-emerald-950/40',
-    border: 'border-emerald-500/30',
-    text: 'text-emerald-400',
-    activeBg: 'bg-emerald-950/60',
-    iconBg: 'bg-emerald-500/20',
-    gradient: 'from-emerald-500/20 to-emerald-500/5'
+  blue: {
+    bg: 'bg-blue-950/40',
+    border: 'border-blue-500/30',
+    text: 'text-blue-400',
+    activeBg: 'bg-blue-950/60',
+    iconBg: 'bg-blue-500/20',
+    gradient: 'from-blue-500/20 to-blue-500/5'
   }
 };
 
