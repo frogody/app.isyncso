@@ -1157,6 +1157,11 @@ export default function CreateVideos() {
                                 <Download className="w-4 h-4 text-cyan-400" />
                               </a>
                             )}
+                            {job.status === 'completed' && !job.output_url && (
+                              <span className="p-1" title="Simulated render — preview in player">
+                                <Info className="w-4 h-4 text-blue-400" />
+                              </span>
+                            )}
                             {job.status === 'failed' && (
                               <button
                                 onClick={() => { setRenderJob(job); }}

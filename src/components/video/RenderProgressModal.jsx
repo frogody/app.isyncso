@@ -1,4 +1,4 @@
-import { X, Download, AlertCircle, CheckCircle, Film, RotateCcw } from 'lucide-react';
+import { X, Download, AlertCircle, CheckCircle, Film, RotateCcw, Info, Play } from 'lucide-react';
 
 const STATUS_TEXT = {
   pending: 'Preparing render...',
@@ -52,7 +52,7 @@ export default function RenderProgressModal({ isOpen, onClose, job, onRetry }) {
 
           {/* Status text */}
           <p className="text-center text-sm text-zinc-300 mb-4">
-            {isFailed ? (job?.error_message || 'An error occurred during rendering') : (isActive ? PROGRESS_TEXT(progress) : STATUS_TEXT[status])}
+            {isFailed ? (job?.error_message || 'An error occurred during rendering') : (isActive ? PROGRESS_TEXT(progress) : (isComplete && !job?.output_url ? 'Simulation complete!' : STATUS_TEXT[status]))}
           </p>
 
           {/* Progress bar */}
@@ -71,16 +71,31 @@ export default function RenderProgressModal({ isOpen, onClose, job, onRetry }) {
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3">
+        <div className="flex flex-col gap-3">
           {isComplete && job?.output_url && (
             <a
               href={job.output_url}
               download
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg text-sm font-medium transition-colors"
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg text-sm font-medium transition-colors"
             >
               <Download className="w-4 h-4" />
               Download MP4
             </a>
+          )}
+          {isComplete && !job?.output_url && (
+            <div className="space-y-3">
+              <div className="flex items-start gap-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                <Info className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-blue-300">Real video export requires server setup. Preview your video in the live player above.</p>
+              </div>
+              <button
+                onClick={onClose}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 rounded-lg text-sm font-medium transition-colors"
+              >
+                <Play className="w-4 h-4" />
+                Preview in Player
+              </button>
+            </div>
           )}
           {isFailed && onRetry && (
             <button

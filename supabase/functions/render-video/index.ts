@@ -8,6 +8,7 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const RENDER_SERVER_URL = Deno.env.get("RENDER_SERVER_URL"); // e.g. http://localhost:3100
 
 async function updateJob(jobId: string, updates: Record<string, unknown>) {
   const response = await fetch(
@@ -65,25 +66,37 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Return immediately and process in background
+    // Try to dispatch to the rendering server if configured
+    if (RENDER_SERVER_URL) {
+      try {
+        const renderResponse = await fetch(`${RENDER_SERVER_URL}/render`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jobId }),
+        });
+
+        if (renderResponse.ok) {
+          return new Response(
+            JSON.stringify({ success: true, message: "Dispatched to rendering server", jobId }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        console.warn("Rendering server returned error, falling back to simulation:", renderResponse.status);
+      } catch (e) {
+        console.warn("Rendering server unreachable, falling back to simulation:", (e as Error).message);
+      }
+    }
+
+    // Fallback: simulate rendering when no rendering server is available
     const responsePromise = new Response(
-      JSON.stringify({ success: true, message: "Render started", jobId }),
+      JSON.stringify({ success: true, message: "Render started (simulated)", jobId }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
-    // Process render in background (non-blocking)
     (async () => {
       try {
         await updateJob(jobId, { status: "rendering", progress: 0 });
-
-        // === PLACEHOLDER RENDERING PIPELINE ===
-        // In production, this would:
-        // 1. Call a dedicated Node.js rendering server with @remotion/renderer installed
-        // 2. That server would run: renderMedia({ composition, codec: 'h264', outputLocation })
-        // 3. Upload the MP4 to Supabase Storage (generated-content bucket)
-        // 4. Return the public URL
-        //
-        // For now, simulate rendering progress:
 
         const stages = [
           { progress: 10, delay: 1000 },
@@ -98,12 +111,11 @@ Deno.serve(async (req) => {
           await updateJob(jobId, { progress: stage.progress });
         }
 
-        const placeholderUrl = `${SUPABASE_URL}/storage/v1/object/public/generated-content/renders/${jobId}.mp4`;
-
         await updateJob(jobId, {
           status: "completed",
           progress: 100,
-          output_url: placeholderUrl,
+          output_url: null,
+          error_message: "Simulated render complete. Start the rendering server for real MP4 export.",
           completed_at: new Date().toISOString(),
         });
 
