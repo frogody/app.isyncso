@@ -103,7 +103,7 @@ export default function SpecificationsTable({
               <Badge
                 key={i}
                 variant="secondary"
-                className="bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                className="bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"
               >
                 {typeof attr === 'string' ? attr : `${attr.name}: ${attr.value}`}
               </Badge>
@@ -132,8 +132,8 @@ export default function SpecificationsTable({
                 className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                    <GroupIcon className="w-4 h-4 text-amber-400" />
+                  <div className="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+                    <GroupIcon className="w-4 h-4 text-cyan-400" />
                   </div>
                   <span className="font-medium text-white capitalize">{group}</span>
                   <Badge variant="secondary" className="bg-zinc-800 text-zinc-400">
@@ -260,14 +260,14 @@ export function InventoryStatus({ inventory = {} }) {
 
   if (quantity <= low_stock_threshold) {
     return (
-      <Badge className="bg-amber-500/10 text-amber-400 border border-amber-500/30">
+      <Badge className="bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
         Low Stock ({quantity} left)
       </Badge>
     );
   }
 
   return (
-    <Badge className="bg-green-500/10 text-green-400 border border-green-500/30">
+    <Badge className="bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
       In Stock ({quantity} available)
     </Badge>
   );

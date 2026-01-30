@@ -43,10 +43,10 @@ const ADDON_TYPES = [
 const TYPE_COLORS = {
   support: 'bg-blue-500/10 border-blue-500/30 text-blue-400',
   storage: 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400',
-  users: 'bg-amber-500/10 border-amber-500/30 text-amber-400',
-  security: 'bg-green-500/10 border-green-500/30 text-green-400',
+  users: 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400',
+  security: 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400',
   api: 'bg-pink-500/10 border-pink-500/30 text-pink-400',
-  feature: 'bg-purple-500/10 border-purple-500/30 text-purple-400',
+  feature: 'bg-blue-500/10 border-blue-500/30 text-blue-400',
   other: 'bg-zinc-500/10 border-zinc-500/30 text-zinc-400',
 };
 
@@ -104,7 +104,7 @@ function AddOnRow({ item, currency, onUpdate, onDelete, isEditing, setEditingId 
 
   if (isEditing) {
     return (
-      <div className="p-4 rounded-xl bg-zinc-800/50 border border-purple-500/30 space-y-4">
+      <div className="p-4 rounded-xl bg-zinc-800/50 border border-blue-500/30 space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="text-xs text-zinc-500 mb-1 block">Add-on Name *</label>
@@ -159,7 +159,7 @@ function AddOnRow({ item, currency, onUpdate, onDelete, isEditing, setEditingId 
                   type="radio"
                   checked={localItem.pricing_type === 'one_time'}
                   onChange={() => setLocalItem({ ...localItem, pricing_type: 'one_time' })}
-                  className="text-purple-500"
+                  className="text-blue-500"
                 />
                 <span className="text-sm text-zinc-300">One-time</span>
               </label>
@@ -168,7 +168,7 @@ function AddOnRow({ item, currency, onUpdate, onDelete, isEditing, setEditingId 
                   type="radio"
                   checked={localItem.pricing_type === 'subscription'}
                   onChange={() => setLocalItem({ ...localItem, pricing_type: 'subscription' })}
-                  className="text-purple-500"
+                  className="text-blue-500"
                 />
                 <span className="text-sm text-zinc-300">Recurring</span>
               </label>
@@ -240,7 +240,7 @@ function AddOnRow({ item, currency, onUpdate, onDelete, isEditing, setEditingId 
         </label>
 
         <div className="flex items-center gap-2 pt-2">
-          <Button size="sm" onClick={handleSave} className="bg-purple-500 hover:bg-purple-600">
+          <Button size="sm" onClick={handleSave} className="bg-blue-500 hover:bg-blue-600">
             <Check className="w-4 h-4 mr-1" /> Save
           </Button>
           <Button size="sm" variant="ghost" onClick={handleCancel} className="text-zinc-400">
@@ -255,7 +255,7 @@ function AddOnRow({ item, currency, onUpdate, onDelete, isEditing, setEditingId 
     <div className={cn(
       "p-3 rounded-xl border transition-all group",
       item.is_popular
-        ? "bg-gradient-to-r from-purple-500/5 to-purple-500/10 border-purple-500/30"
+        ? "bg-gradient-to-r from-blue-500/5 to-blue-500/10 border-blue-500/30"
         : "bg-zinc-900/50 border-white/5 hover:border-white/10"
     )}>
       <div className="flex items-center gap-3">
@@ -269,7 +269,7 @@ function AddOnRow({ item, currency, onUpdate, onDelete, isEditing, setEditingId 
           <div className="flex items-center gap-2">
             <span className="font-medium text-white">{item.name}</span>
             {item.is_popular && (
-              <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+              <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
                 <Star className="w-3 h-3 mr-1" /> Popular
               </Badge>
             )}

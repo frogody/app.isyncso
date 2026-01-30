@@ -248,7 +248,7 @@ export default function ProductImageUploader({
           "relative rounded-xl border-2 border-dashed transition-all cursor-pointer",
           "flex flex-col items-center justify-center p-8 text-center",
           isDragging
-            ? "border-amber-500 bg-amber-500/10"
+            ? "border-cyan-500 bg-cyan-500/10"
             : "border-zinc-700 hover:border-zinc-600 bg-zinc-900/50 hover:bg-zinc-900/70",
           uploading && "pointer-events-none opacity-60"
         )}
@@ -271,7 +271,7 @@ export default function ProductImageUploader({
               exit={{ opacity: 0 }}
               className="flex flex-col items-center"
             >
-              <Loader2 className="w-10 h-10 text-amber-400 animate-spin mb-3" />
+              <Loader2 className="w-10 h-10 text-cyan-400 animate-spin mb-3" />
               <p className="text-white font-medium">Uploading...</p>
             </motion.div>
           ) : isDragging ? (
@@ -282,10 +282,10 @@ export default function ProductImageUploader({
               exit={{ opacity: 0, scale: 0.95 }}
               className="flex flex-col items-center"
             >
-              <div className="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center mb-3">
-                <Upload className="w-8 h-8 text-amber-400" />
+              <div className="w-16 h-16 rounded-full bg-cyan-500/20 flex items-center justify-center mb-3">
+                <Upload className="w-8 h-8 text-cyan-400" />
               </div>
-              <p className="text-amber-400 font-medium">Drop images here</p>
+              <p className="text-cyan-400 font-medium">Drop images here</p>
             </motion.div>
           ) : (
             <motion.div
@@ -353,7 +353,7 @@ export default function ProductImageUploader({
                     "relative w-28 h-28 rounded-lg overflow-hidden border-2 transition-all",
                     "bg-zinc-800 cursor-grab active:cursor-grabbing",
                     image.isFeatured
-                      ? "border-amber-500 ring-2 ring-amber-500/30"
+                      ? "border-cyan-500 ring-2 ring-cyan-500/30"
                       : "border-zinc-700 hover:border-zinc-600"
                   )}
                 >
@@ -367,7 +367,7 @@ export default function ProductImageUploader({
 
                   {/* Featured Badge */}
                   {image.isFeatured && (
-                    <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-amber-500 text-[10px] font-bold text-black">
+                    <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-cyan-500 text-[10px] font-bold text-black">
                       FEATURED
                     </div>
                   )}
@@ -401,12 +401,12 @@ export default function ProductImageUploader({
                       }}
                       className={cn(
                         "h-7 w-7 hover:bg-white/20",
-                        image.isFeatured ? "text-amber-400" : "text-white"
+                        image.isFeatured ? "text-cyan-400" : "text-white"
                       )}
                       title={image.isFeatured ? "Featured image" : "Set as featured"}
                     >
                       {image.isFeatured ? (
-                        <Star className="w-4 h-4 fill-amber-400" />
+                        <Star className="w-4 h-4 fill-cyan-400" />
                       ) : (
                         <StarOff className="w-4 h-4" />
                       )}

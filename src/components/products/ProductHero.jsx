@@ -22,9 +22,9 @@ export default function ProductHero({
   return (
     <div className={cn("relative overflow-hidden", className)}>
       {/* Background Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/20 via-transparent to-purple-900/20 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/20 via-transparent to-blue-900/20 pointer-events-none" />
       <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative z-10 grid lg:grid-cols-2 gap-12 items-center py-12 px-6 lg:px-12">
         {/* Left: Content */}
@@ -37,7 +37,7 @@ export default function ProductHero({
           {/* Badges */}
           <div className="flex flex-wrap gap-3">
             {product.status === 'published' && (
-              <Badge className="bg-green-500/10 text-green-400 border border-green-500/30">
+              <Badge className="bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
                 <CheckCircle className="w-3 h-3 mr-1" /> Live
               </Badge>
             )}
@@ -73,7 +73,7 @@ export default function ProductHero({
                     className={cn(
                       "w-5 h-5",
                       i < Math.floor(rating)
-                        ? "text-amber-400 fill-amber-400"
+                        ? "text-cyan-400 fill-cyan-400"
                         : "text-zinc-600"
                     )}
                   />
@@ -157,7 +157,7 @@ export default function ProductHero({
                 className="w-full aspect-video object-cover"
               />
             ) : (
-              <div className="w-full aspect-video bg-gradient-to-br from-cyan-900/30 to-purple-900/30 flex items-center justify-center">
+              <div className="w-full aspect-video bg-gradient-to-br from-cyan-900/30 to-blue-900/30 flex items-center justify-center">
                 <div className="text-center">
                   <div className="w-20 h-20 rounded-2xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center mx-auto mb-4">
                     <Zap className="w-10 h-10 text-cyan-400" />
@@ -194,7 +194,7 @@ export default function ProductHero({
               </div>
               <div className="w-px h-10 bg-white/10" />
               <div className="text-center">
-                <p className="text-2xl font-bold text-green-400">99.9%</p>
+                <p className="text-2xl font-bold text-cyan-400">99.9%</p>
                 <p className="text-xs text-zinc-500">Uptime</p>
               </div>
             </div>

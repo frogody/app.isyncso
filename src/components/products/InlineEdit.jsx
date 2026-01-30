@@ -81,7 +81,7 @@ export function InlineEditText({
             onKeyDown={handleKeyDown}
             rows={rows}
             className={cn(
-              "bg-zinc-800/50 border-orange-500/50 text-white resize-none",
+              "bg-zinc-800/50 border-cyan-500/50 text-white resize-none",
               inputClassName
             )}
             placeholder={placeholder}
@@ -93,7 +93,7 @@ export function InlineEditText({
             onChange={(e) => setEditValue(e.target.value)}
             onKeyDown={handleKeyDown}
             className={cn(
-              "bg-zinc-800/50 border-orange-500/50 text-white",
+              "bg-zinc-800/50 border-cyan-500/50 text-white",
               inputClassName
             )}
             placeholder={placeholder}
@@ -103,7 +103,7 @@ export function InlineEditText({
           <Button
             size="sm"
             onClick={handleSave}
-            className="bg-orange-500 hover:bg-orange-600 text-white h-7 px-2"
+            className="bg-cyan-500 hover:bg-cyan-600 text-white h-7 px-2"
           >
             <Check className="w-3 h-3 mr-1" /> Save
           </Button>
@@ -130,7 +130,7 @@ export function InlineEditText({
         <Button
           variant="ghost"
           size="icon"
-          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400 hover:text-orange-400"
+          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400 hover:text-cyan-400"
           onClick={(e) => {
             e.stopPropagation();
             setIsEditing(true);
@@ -226,7 +226,7 @@ export function InlineEditNumber({
             min={min}
             max={max}
             step={step}
-            className="bg-zinc-800/50 border-orange-500/50 text-white w-32"
+            className="bg-zinc-800/50 border-cyan-500/50 text-white w-32"
             placeholder={placeholder}
           />
           {suffix && <span className="text-zinc-400">{suffix}</span>}
@@ -235,7 +235,7 @@ export function InlineEditNumber({
           <Button
             size="sm"
             onClick={handleSave}
-            className="bg-orange-500 hover:bg-orange-600 text-white h-7 px-2"
+            className="bg-cyan-500 hover:bg-cyan-600 text-white h-7 px-2"
           >
             <Check className="w-3 h-3 mr-1" /> Save
           </Button>
@@ -262,7 +262,7 @@ export function InlineEditNumber({
         <Button
           variant="ghost"
           size="icon"
-          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400 hover:text-orange-400"
+          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400 hover:text-cyan-400"
           onClick={(e) => {
             e.stopPropagation();
             setIsEditing(true);
@@ -315,7 +315,7 @@ export function InlineEditSelect({
             setIsEditing(false);
           }}
         >
-          <SelectTrigger className="w-48 bg-zinc-800/50 border-orange-500/50 text-white">
+          <SelectTrigger className="w-48 bg-zinc-800/50 border-cyan-500/50 text-white">
             <SelectValue placeholder={placeholder} />
           </SelectTrigger>
           <SelectContent className="bg-zinc-900 border-zinc-700">
@@ -348,7 +348,7 @@ export function InlineEditSelect({
         <Button
           variant="ghost"
           size="icon"
-          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400 hover:text-orange-400"
+          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400 hover:text-cyan-400"
           onClick={(e) => {
             e.stopPropagation();
             setIsEditing(true);
@@ -377,7 +377,7 @@ export function EditableSection({
       {title && (
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            {Icon && <Icon className="w-5 h-5 text-orange-400" />}
+            {Icon && <Icon className="w-5 h-5 text-cyan-400" />}
             <span className="font-medium text-white">{title}</span>
           </div>
           {onEdit && (
@@ -385,7 +385,7 @@ export function EditableSection({
               variant="ghost"
               size="sm"
               onClick={onEdit}
-              className="text-zinc-400 hover:text-orange-400 h-7 px-2"
+              className="text-zinc-400 hover:text-cyan-400 h-7 px-2"
             >
               <Edit2 className="w-3 h-3 mr-1" />
               {isEditing ? 'Done' : 'Edit'}

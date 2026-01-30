@@ -198,7 +198,7 @@ function PlanCard({ plan, currency, onUpdate, onDelete, isEditing, setEditingId 
           <div className="space-y-2">
             {(localPlan.features || []).map((feature, index) => (
               <div key={index} className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-green-400 flex-shrink-0" />
+                <Check className="w-4 h-4 text-cyan-400 flex-shrink-0" />
                 <span className="text-sm text-zinc-300 flex-1">{feature}</span>
                 <Button
                   size="icon"
@@ -322,7 +322,7 @@ function PlanCard({ plan, currency, onUpdate, onDelete, isEditing, setEditingId 
               <span className="text-sm text-zinc-500 font-normal">/mo</span>
             </div>
             {yearlyDiscount > 0 && (
-              <div className="text-xs text-green-400">
+              <div className="text-xs text-cyan-400">
                 Save {yearlyDiscount}% yearly
               </div>
             )}
@@ -363,7 +363,7 @@ function PlanCard({ plan, currency, onUpdate, onDelete, isEditing, setEditingId 
                 <ul className="space-y-1">
                   {plan.features.map((feature, i) => (
                     <li key={i} className="flex items-center gap-2 text-sm text-zinc-300">
-                      <Check className="w-3 h-3 text-green-400" />
+                      <Check className="w-3 h-3 text-cyan-400" />
                       {feature}
                     </li>
                   ))}

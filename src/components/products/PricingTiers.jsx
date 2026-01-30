@@ -40,7 +40,7 @@ function TierRow({ tier, index, basePrice, currency, onUpdate, onDelete, isEditi
             type="number"
             value={localTier.min_quantity}
             onChange={(e) => setLocalTier({ ...localTier, min_quantity: parseInt(e.target.value) || 0 })}
-            className="w-20 h-8 bg-zinc-800 border-orange-500/50 text-white text-sm"
+            className="w-20 h-8 bg-zinc-800 border-cyan-500/50 text-white text-sm"
           />
         </td>
         <td className="py-3 px-4">
@@ -49,7 +49,7 @@ function TierRow({ tier, index, basePrice, currency, onUpdate, onDelete, isEditi
             value={localTier.max_quantity || ''}
             onChange={(e) => setLocalTier({ ...localTier, max_quantity: e.target.value ? parseInt(e.target.value) : null })}
             placeholder="∞"
-            className="w-20 h-8 bg-zinc-800 border-orange-500/50 text-white text-sm"
+            className="w-20 h-8 bg-zinc-800 border-cyan-500/50 text-white text-sm"
           />
         </td>
         <td className="py-3 px-4">
@@ -58,13 +58,13 @@ function TierRow({ tier, index, basePrice, currency, onUpdate, onDelete, isEditi
             step="0.01"
             value={localTier.price}
             onChange={(e) => setLocalTier({ ...localTier, price: parseFloat(e.target.value) || 0 })}
-            className="w-24 h-8 bg-zinc-800 border-orange-500/50 text-white text-sm"
+            className="w-24 h-8 bg-zinc-800 border-cyan-500/50 text-white text-sm"
           />
         </td>
-        <td className="py-3 px-4 text-green-400 text-sm">-{discount}%</td>
+        <td className="py-3 px-4 text-cyan-400 text-sm">-{discount}%</td>
         <td className="py-3 px-4">
           <div className="flex items-center gap-1">
-            <Button size="icon" variant="ghost" className="h-7 w-7 text-green-400" onClick={handleSave}>
+            <Button size="icon" variant="ghost" className="h-7 w-7 text-cyan-400" onClick={handleSave}>
               <Check className="w-4 h-4" />
             </Button>
             <Button size="icon" variant="ghost" className="h-7 w-7 text-zinc-400" onClick={handleCancel}>
@@ -83,7 +83,7 @@ function TierRow({ tier, index, basePrice, currency, onUpdate, onDelete, isEditi
       <td className="py-3 px-4 text-white font-medium">{formatPrice(tier.price, currency)}</td>
       <td className="py-3 px-4">
         {discount > 0 && (
-          <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+          <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
             -{discount}%
           </Badge>
         )}
@@ -188,7 +188,7 @@ export default function PricingTiers({
           </div>
           <p className={cn(
             "text-lg font-semibold",
-            margin > 30 ? "text-green-400" : margin > 15 ? "text-amber-400" : "text-red-400"
+            margin > 30 ? "text-cyan-400" : margin > 15 ? "text-zinc-400" : "text-red-400"
           )}>
             {margin ? `${margin}%` : '-'}
           </p>
@@ -217,7 +217,7 @@ export default function PricingTiers({
           </thead>
           <tbody>
             {/* Base price row */}
-            <tr className="border-b border-white/5 bg-orange-500/5">
+            <tr className="border-b border-white/5 bg-cyan-500/5">
               <td className="py-3 px-4 text-white">1</td>
               <td className="py-3 px-4 text-zinc-400">{tiers.length > 0 ? tiers[0].min_quantity - 1 : '∞'}</td>
               <td className="py-3 px-4 text-white font-medium">{formatPrice(basePrice, currency)}</td>

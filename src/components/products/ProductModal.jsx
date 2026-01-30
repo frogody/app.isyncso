@@ -594,7 +594,7 @@ export default function ProductModal({
     }
   };
 
-  const themeColor = productType === 'digital' ? 'cyan' : 'amber';
+  const themeColor = 'cyan';
   const ThemeIcon = productType === 'digital' ? Cloud : Package;
 
   return (
@@ -606,7 +606,7 @@ export default function ProductModal({
               "w-10 h-10 rounded-xl flex items-center justify-center",
               productType === 'digital'
                 ? "bg-gradient-to-br from-cyan-500 to-cyan-600"
-                : "bg-gradient-to-br from-amber-500 to-amber-600"
+                : "bg-gradient-to-br from-cyan-500 to-cyan-600"
             )}>
               <ThemeIcon className="w-5 h-5 text-white" />
             </div>
@@ -808,7 +808,7 @@ export default function ProductModal({
                     {(physicalData.barcode || physicalData.sku) && (
                       <div className="col-span-2 mt-2">
                         <Label className="text-zinc-300 text-sm mb-2 block flex items-center gap-2">
-                          <Barcode className="w-4 h-4 text-amber-400" />
+                          <Barcode className="w-4 h-4 text-cyan-400" />
                           Barcode Preview
                         </Label>
                         <BarcodeDisplay
@@ -972,7 +972,7 @@ export default function ProductModal({
                           pricing: { ...prev.pricing, base_price: e.target.value }
                         }))}
                         placeholder="0.00"
-                        className="bg-zinc-800/50 border-zinc-700 text-white focus:border-amber-500 pl-7"
+                        className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500 pl-7"
                       />
                     </div>
                   </div>
@@ -988,7 +988,7 @@ export default function ProductModal({
                           pricing: { ...prev.pricing, compare_at_price: e.target.value }
                         }))}
                         placeholder="0.00"
-                        className="bg-zinc-800/50 border-zinc-700 text-white focus:border-amber-500 pl-7"
+                        className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500 pl-7"
                       />
                     </div>
                   </div>
@@ -1004,7 +1004,7 @@ export default function ProductModal({
                           pricing: { ...prev.pricing, cost_price: e.target.value }
                         }))}
                         placeholder="0.00"
-                        className="bg-zinc-800/50 border-zinc-700 text-white focus:border-amber-500 pl-7"
+                        className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500 pl-7"
                       />
                     </div>
                   </div>
@@ -1034,7 +1034,7 @@ export default function ProductModal({
             {/* Inventory Tab (Physical only) */}
             {productType === 'physical' && (
               <TabsContent value="inventory" className="space-y-4 m-0">
-                <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/20">
+                <div className="p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/20">
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="text-white font-medium">Track Inventory</h4>
@@ -1061,7 +1061,7 @@ export default function ProductModal({
                           ...prev,
                           inventory: { ...prev.inventory, quantity: parseInt(e.target.value) || 0 }
                         }))}
-                        className="bg-zinc-800/50 border-zinc-700 text-white focus:border-amber-500"
+                        className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500"
                         min={0}
                       />
                     </div>
@@ -1074,7 +1074,7 @@ export default function ProductModal({
                           ...prev,
                           inventory: { ...prev.inventory, low_stock_threshold: parseInt(e.target.value) || 5 }
                         }))}
-                        className="bg-zinc-800/50 border-zinc-700 text-white focus:border-amber-500"
+                        className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500"
                         min={0}
                       />
                     </div>
@@ -1083,7 +1083,7 @@ export default function ProductModal({
 
                 <div className="border-t border-white/5 pt-4 mt-4">
                   <h4 className="text-white font-medium mb-4 flex items-center gap-2">
-                    <Truck className="w-4 h-4 text-amber-400" /> Shipping
+                    <Truck className="w-4 h-4 text-cyan-400" /> Shipping
                   </h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -1097,7 +1097,7 @@ export default function ProductModal({
                             shipping: { ...prev.shipping, weight: e.target.value }
                           }))}
                           placeholder="0"
-                          className="bg-zinc-800/50 border-zinc-700 text-white focus:border-amber-500"
+                          className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500"
                         />
                         <Select
                           value={physicalData.shipping.weight_unit}
@@ -1123,7 +1123,7 @@ export default function ProductModal({
                         value={physicalData.country_of_origin}
                         onChange={(e) => setPhysicalData(prev => ({ ...prev, country_of_origin: e.target.value }))}
                         placeholder="US"
-                        className="bg-zinc-800/50 border-zinc-700 text-white focus:border-amber-500"
+                        className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500"
                         maxLength={2}
                       />
                     </div>
@@ -1134,7 +1134,7 @@ export default function ProductModal({
                 <div className="border-t border-white/5 pt-4 mt-4">
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="text-white font-medium flex items-center gap-2">
-                      <Users className="w-4 h-4 text-amber-400" /> Suppliers
+                      <Users className="w-4 h-4 text-cyan-400" /> Suppliers
                     </h4>
                     <Button
                       type="button"
@@ -1181,7 +1181,7 @@ export default function ProductModal({
                             type="button"
                             onClick={handleAddSupplier}
                             disabled={!selectedSupplierId}
-                            className="bg-amber-500 hover:bg-amber-600 text-black"
+                            className="bg-cyan-500 hover:bg-cyan-600 text-black"
                           >
                             Add
                           </Button>
@@ -1212,7 +1212,7 @@ export default function ProductModal({
                                 {ps.suppliers?.name || 'Unknown Supplier'}
                               </span>
                               {ps.is_preferred && (
-                                <Badge className="bg-amber-500/20 text-amber-400 border-0 text-xs">
+                                <Badge className="bg-cyan-500/20 text-cyan-400 border-0 text-xs">
                                   <Star className="w-3 h-3 mr-1" /> Preferred
                                 </Badge>
                               )}
@@ -1244,7 +1244,7 @@ export default function ProductModal({
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleSetPreferred(ps.supplier_id)}
-                                className="text-zinc-500 hover:text-amber-400 h-8 w-8 p-0"
+                                className="text-zinc-500 hover:text-cyan-400 h-8 w-8 p-0"
                                 title="Set as preferred"
                               >
                                 <Star className="w-4 h-4" />
@@ -1271,7 +1271,7 @@ export default function ProductModal({
                   <div className="border-t border-white/5 pt-4 mt-4">
                     <div className="flex items-center justify-between mb-4">
                       <h4 className="text-white font-medium flex items-center gap-2">
-                        <History className="w-4 h-4 text-amber-400" /> Purchase History
+                        <History className="w-4 h-4 text-cyan-400" /> Purchase History
                       </h4>
                       <Button
                         type="button"
@@ -1318,7 +1318,7 @@ export default function ProductModal({
                                 type="date"
                                 value={purchaseForm.purchase_date}
                                 onChange={(e) => setPurchaseForm(p => ({ ...p, purchase_date: e.target.value }))}
-                                className="bg-zinc-800/50 border-zinc-700 text-white focus:border-amber-500"
+                                className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500"
                               />
                             </div>
                             <div>
@@ -1328,7 +1328,7 @@ export default function ProductModal({
                                 value={purchaseForm.quantity}
                                 onChange={(e) => setPurchaseForm(p => ({ ...p, quantity: e.target.value }))}
                                 placeholder="0"
-                                className="bg-zinc-800/50 border-zinc-700 text-white focus:border-amber-500"
+                                className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500"
                                 min={1}
                               />
                             </div>
@@ -1340,7 +1340,7 @@ export default function ProductModal({
                                 value={purchaseForm.unit_price}
                                 onChange={(e) => setPurchaseForm(p => ({ ...p, unit_price: e.target.value }))}
                                 placeholder="0.00"
-                                className="bg-zinc-800/50 border-zinc-700 text-white focus:border-amber-500"
+                                className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500"
                               />
                             </div>
                             <div className="col-span-2">
@@ -1349,7 +1349,7 @@ export default function ProductModal({
                                 value={purchaseForm.invoice_number}
                                 onChange={(e) => setPurchaseForm(p => ({ ...p, invoice_number: e.target.value }))}
                                 placeholder="INV-001"
-                                className="bg-zinc-800/50 border-zinc-700 text-white focus:border-amber-500"
+                                className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500"
                               />
                             </div>
                           </div>
@@ -1365,7 +1365,7 @@ export default function ProductModal({
                             <Button
                               type="button"
                               onClick={handleAddPurchase}
-                              className="bg-amber-500 hover:bg-amber-600 text-black"
+                              className="bg-cyan-500 hover:bg-cyan-600 text-black"
                             >
                               Save Purchase
                             </Button>
@@ -1511,7 +1511,7 @@ export default function ProductModal({
                   <p className="text-cyan-400 text-sm truncate">
                     {formData.seo_meta_title || formData.name || 'Product Title'}
                   </p>
-                  <p className="text-green-400 text-xs">
+                  <p className="text-cyan-400 text-xs">
                     yoursite.com/products/{formData.slug || 'product-slug'}
                   </p>
                   <p className="text-zinc-400 text-sm line-clamp-2">
@@ -1535,7 +1535,7 @@ export default function ProductModal({
               "text-white font-semibold",
               productType === 'digital'
                 ? "bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700"
-                : "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700"
+                : "bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700"
             )}
           >
             {loading ? (

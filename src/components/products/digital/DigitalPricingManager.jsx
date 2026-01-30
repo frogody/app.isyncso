@@ -76,7 +76,7 @@ function PricingSummaryCard({ config, currency = 'EUR' }) {
       </div>
 
       <div className="p-3 rounded-lg bg-zinc-900/50 border border-white/5">
-        <div className="flex items-center gap-2 text-amber-400 mb-1">
+        <div className="flex items-center gap-2 text-cyan-400 mb-1">
           <Zap className="w-4 h-4" />
           <span className="text-xs">One-time</span>
         </div>
@@ -86,7 +86,7 @@ function PricingSummaryCard({ config, currency = 'EUR' }) {
       </div>
 
       <div className="p-3 rounded-lg bg-zinc-900/50 border border-white/5">
-        <div className="flex items-center gap-2 text-purple-400 mb-1">
+        <div className="flex items-center gap-2 text-blue-400 mb-1">
           <Gift className="w-4 h-4" />
           <span className="text-xs">Add-ons</span>
         </div>
@@ -96,7 +96,7 @@ function PricingSummaryCard({ config, currency = 'EUR' }) {
       </div>
 
       <div className="p-3 rounded-lg bg-zinc-900/50 border border-white/5">
-        <div className="flex items-center gap-2 text-green-400 mb-1">
+        <div className="flex items-center gap-2 text-cyan-400 mb-1">
           <DollarSign className="w-4 h-4" />
           <span className="text-xs">Revenue Types</span>
         </div>
@@ -112,8 +112,7 @@ function PricingSummaryCard({ config, currency = 'EUR' }) {
 function SectionToggle({ icon: Icon, title, description, enabled, onToggle, color = 'cyan' }) {
   const colorClasses = {
     cyan: 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400',
-    amber: 'bg-amber-500/10 border-amber-500/30 text-amber-400',
-    purple: 'bg-purple-500/10 border-purple-500/30 text-purple-400',
+    blue: 'bg-blue-500/10 border-blue-500/30 text-blue-400',
   };
 
   return (
@@ -234,7 +233,7 @@ export default function DigitalPricingManager({
           description="Setup fees, migrations, consultancy"
           enabled={config.one_time?.enabled}
           onToggle={() => toggleSection('one_time')}
-          color="amber"
+          color="cyan"
         />
         <SectionToggle
           icon={Gift}
@@ -242,7 +241,7 @@ export default function DigitalPricingManager({
           description="Optional extras and upgrades"
           enabled={config.add_ons?.enabled}
           onToggle={() => toggleSection('add_ons')}
-          color="purple"
+          color="blue"
         />
       </div>
 
@@ -268,7 +267,7 @@ export default function DigitalPricingManager({
           <TabsTrigger
             value="one_time"
             className={cn(
-              "flex-1 data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-400",
+              "flex-1 data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400",
               !config.one_time?.enabled && "opacity-50"
             )}
             disabled={!config.one_time?.enabled}
@@ -276,7 +275,7 @@ export default function DigitalPricingManager({
             <Zap className="w-4 h-4 mr-2" />
             One-time
             {config.one_time?.items?.length > 0 && (
-              <Badge className="ml-2 bg-amber-500/20 text-amber-400 text-xs">
+              <Badge className="ml-2 bg-cyan-500/20 text-cyan-400 text-xs">
                 {config.one_time.items.length}
               </Badge>
             )}
@@ -284,7 +283,7 @@ export default function DigitalPricingManager({
           <TabsTrigger
             value="add_ons"
             className={cn(
-              "flex-1 data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400",
+              "flex-1 data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-400",
               !config.add_ons?.enabled && "opacity-50"
             )}
             disabled={!config.add_ons?.enabled}
@@ -292,7 +291,7 @@ export default function DigitalPricingManager({
             <Gift className="w-4 h-4 mr-2" />
             Add-ons
             {config.add_ons?.items?.length > 0 && (
-              <Badge className="ml-2 bg-purple-500/20 text-purple-400 text-xs">
+              <Badge className="ml-2 bg-blue-500/20 text-blue-400 text-xs">
                 {config.add_ons.items.length}
               </Badge>
             )}

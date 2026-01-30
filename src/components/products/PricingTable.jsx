@@ -63,7 +63,7 @@ export default function PricingTable({
             billingCycle === 'yearly' ? 'text-white' : 'text-zinc-500'
           )}>
             Yearly
-            <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
+            <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 text-xs">
               Save up to 20%
             </Badge>
           </span>
@@ -93,7 +93,7 @@ export default function PricingTable({
               {/* Popular Badge */}
               {isPopular && (
                 <div className="absolute -top-0 left-1/2 -translate-x-1/2">
-                  <Badge className="bg-gradient-to-r from-cyan-500 to-purple-500 text-white border-0 px-4 py-1 rounded-b-lg rounded-t-none">
+                  <Badge className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white border-0 px-4 py-1 rounded-b-lg rounded-t-none">
                     <Star className="w-3 h-3 mr-1 fill-current" /> Most Popular
                   </Badge>
                 </div>
@@ -119,7 +119,7 @@ export default function PricingTable({
                     </span>
                   </div>
                   {billingCycle === 'yearly' && savings > 0 && (
-                    <p className="text-sm text-green-400 mt-1">
+                    <p className="text-sm text-cyan-400 mt-1">
                       Save {savings}% compared to monthly
                     </p>
                   )}

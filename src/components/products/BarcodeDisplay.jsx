@@ -225,7 +225,7 @@ export default function BarcodeDisplay({
               className="h-8 w-8 text-zinc-400 hover:text-white"
               title="Copy code"
             >
-              {copied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+              {copied ? <Check className="w-4 h-4 text-cyan-400" /> : <Copy className="w-4 h-4" />}
             </Button>
             <Button
               variant="ghost"
@@ -260,13 +260,13 @@ export default function BarcodeDisplay({
       {/* Header */}
       <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Barcode className="w-4 h-4 text-amber-400" />
+          <Barcode className="w-4 h-4 text-cyan-400" />
           <span className="text-sm font-medium text-white">
             {detectedFormat?.toUpperCase() || 'Barcode'}
           </span>
         </div>
         {!barcodeValid && (
-          <span className="text-xs text-amber-400">Invalid format</span>
+          <span className="text-xs text-cyan-400">Invalid format</span>
         )}
       </div>
 
@@ -287,7 +287,7 @@ export default function BarcodeDisplay({
               className="h-8 px-3 text-zinc-400 hover:text-white"
             >
               {copied ? (
-                <><Check className="w-4 h-4 mr-1 text-green-400" /> Copied</>
+                <><Check className="w-4 h-4 mr-1 text-cyan-400" /> Copied</>
               ) : (
                 <><Copy className="w-4 h-4 mr-1" /> Copy</>
               )}

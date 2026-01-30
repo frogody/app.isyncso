@@ -40,10 +40,10 @@ const FILE_ICONS = {
 
 const CATEGORY_COLORS = {
   specification: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  certificate: 'bg-green-500/20 text-green-400 border-green-500/30',
-  manual: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+  certificate: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+  manual: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
   marketing: 'bg-pink-500/20 text-pink-400 border-pink-500/30',
-  compliance: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+  compliance: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
   other: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
 };
 
@@ -196,7 +196,7 @@ export default function DocumentsSection({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <FolderOpen className="w-5 h-5 text-orange-400" />
+          <FolderOpen className="w-5 h-5 text-cyan-400" />
           <span className="font-medium text-white">Documents & Files</span>
           {documents.length > 0 && (
             <Badge variant="outline" className="border-white/10 text-zinc-400">
@@ -229,7 +229,7 @@ export default function DocumentsSection({
       {/* Empty State */}
       {documents.length === 0 && (
         <div
-          className="border-2 border-dashed border-white/10 rounded-lg p-8 text-center cursor-pointer hover:border-orange-500/30 transition-colors"
+          className="border-2 border-dashed border-white/10 rounded-lg p-8 text-center cursor-pointer hover:border-cyan-500/30 transition-colors"
           onClick={() => fileInputRef.current?.click()}
         >
           <Upload className="w-8 h-8 text-zinc-600 mx-auto mb-3" />

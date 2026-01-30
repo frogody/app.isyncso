@@ -93,7 +93,7 @@ export default function QuickActions({
         {isPhysical && details?.inventory?.quantity <= (details?.inventory?.low_stock_threshold || 10) && (
           <Button
             size="sm"
-            className="bg-orange-500 hover:bg-orange-600 text-white"
+            className="bg-cyan-500 hover:bg-cyan-600 text-white"
             onClick={() => onReorder?.()}
           >
             <Truck className="w-4 h-4 mr-2" />
@@ -144,7 +144,7 @@ export default function QuickActions({
 
             {!isPublished && !isArchived && (
               <DropdownMenuItem
-                className="text-green-400 hover:text-green-300 focus:text-green-300 cursor-pointer"
+                className="text-cyan-400 hover:text-cyan-300 focus:text-cyan-300 cursor-pointer"
                 onClick={() => onPublish?.()}
               >
                 <Eye className="w-4 h-4 mr-2" />
@@ -154,7 +154,7 @@ export default function QuickActions({
 
             {isPublished && (
               <DropdownMenuItem
-                className="text-amber-400 hover:text-amber-300 focus:text-amber-300 cursor-pointer"
+                className="text-cyan-400 hover:text-cyan-300 focus:text-cyan-300 cursor-pointer"
                 onClick={() => onPublish?.(false)}
               >
                 <EyeOff className="w-4 h-4 mr-2" />
@@ -192,7 +192,7 @@ export default function QuickActions({
               </DropdownMenuItem>
             ) : (
               <DropdownMenuItem
-                className="text-green-400 hover:text-green-300 focus:text-green-300 cursor-pointer"
+                className="text-cyan-400 hover:text-cyan-300 focus:text-cyan-300 cursor-pointer"
                 onClick={() => onArchive?.(false)}
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
@@ -234,7 +234,7 @@ export default function QuickActions({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-green-500/30 text-green-400 hover:bg-green-500/10"
+                  className="border-green-500/30 text-cyan-400 hover:bg-green-500/10"
                   onClick={() => setStockAdjustment(prev => prev + 1)}
                 >
                   +
@@ -267,7 +267,7 @@ export default function QuickActions({
             <Button
               onClick={handleStockSubmit}
               disabled={stockAdjustment === 0}
-              className="bg-orange-500 hover:bg-orange-600 text-white"
+              className="bg-cyan-500 hover:bg-cyan-600 text-white"
             >
               Apply Adjustment
             </Button>

@@ -42,10 +42,10 @@ const CATEGORIES = [
 const CATEGORY_COLORS = {
   setup: 'bg-blue-500/10 border-blue-500/30 text-blue-400',
   migration: 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400',
-  consultancy: 'bg-purple-500/10 border-purple-500/30 text-purple-400',
+  consultancy: 'bg-blue-500/10 border-blue-500/30 text-blue-400',
   development: 'bg-pink-500/10 border-pink-500/30 text-pink-400',
-  training: 'bg-green-500/10 border-green-500/30 text-green-400',
-  support: 'bg-amber-500/10 border-amber-500/30 text-amber-400',
+  training: 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400',
+  support: 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400',
   other: 'bg-zinc-500/10 border-zinc-500/30 text-zinc-400',
 };
 
@@ -83,7 +83,7 @@ function ItemRow({ item, currency, onUpdate, onDelete, isEditing, setEditingId }
 
   if (isEditing) {
     return (
-      <div className="p-4 rounded-xl bg-zinc-800/50 border border-amber-500/30 space-y-4">
+      <div className="p-4 rounded-xl bg-zinc-800/50 border border-cyan-500/30 space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="text-xs text-zinc-500 mb-1 block">Service Name *</label>
@@ -160,7 +160,7 @@ function ItemRow({ item, currency, onUpdate, onDelete, isEditing, setEditingId }
         </div>
 
         <div className="flex items-center gap-2 pt-2">
-          <Button size="sm" onClick={handleSave} className="bg-amber-500 hover:bg-amber-600">
+          <Button size="sm" onClick={handleSave} className="bg-cyan-500 hover:bg-cyan-600">
             <Check className="w-4 h-4 mr-1" /> Save
           </Button>
           <Button size="sm" variant="ghost" onClick={handleCancel} className="text-zinc-400">

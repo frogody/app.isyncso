@@ -607,14 +607,14 @@ export default function BundleEditor({
               {formData.pricing_strategy === 'discount' && formData.discount_percent > 0 && (
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-zinc-400">Discount ({formData.discount_percent}%)</span>
-                  <span className="text-green-400">-{formatPrice(savings, currency)}</span>
+                  <span className="text-cyan-400">-{formatPrice(savings, currency)}</span>
                 </div>
               )}
 
               {formData.pricing_strategy === 'fixed' && savings !== 0 && (
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-zinc-400">Savings</span>
-                  <span className={savings > 0 ? "text-green-400" : "text-red-400"}>
+                  <span className={savings > 0 ? "text-cyan-400" : "text-red-400"}>
                     {savings > 0 ? '-' : '+'}{formatPrice(Math.abs(savings), currency)}
                   </span>
                 </div>
@@ -629,7 +629,7 @@ export default function BundleEditor({
                 </div>
                 {savingsPercent > 0 && (
                   <div className="text-right mt-1">
-                    <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                    <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
                       Save {savingsPercent.toFixed(0)}%
                     </Badge>
                   </div>

@@ -42,7 +42,7 @@ function VariantRow({ variant, index, basePrice, currency, onUpdate, onDelete })
 
   if (isEditing) {
     return (
-      <div className="p-4 rounded-lg bg-zinc-800/50 border border-orange-500/30 space-y-3">
+      <div className="p-4 rounded-lg bg-zinc-800/50 border border-cyan-500/30 space-y-3">
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-xs text-zinc-500 mb-1 block">Variant Name</label>
@@ -96,7 +96,7 @@ function VariantRow({ variant, index, basePrice, currency, onUpdate, onDelete })
         </div>
 
         <div className="flex items-center gap-2 pt-2">
-          <Button size="sm" onClick={handleSave} className="bg-orange-500 hover:bg-orange-600">
+          <Button size="sm" onClick={handleSave} className="bg-cyan-500 hover:bg-cyan-600">
             <Check className="w-4 h-4 mr-1" /> Save
           </Button>
           <Button size="sm" variant="ghost" onClick={handleCancel} className="text-zinc-400">
@@ -138,7 +138,7 @@ function VariantRow({ variant, index, basePrice, currency, onUpdate, onDelete })
             <span className="text-zinc-500 text-xs block">Price</span>
             <span className={cn(
               "font-medium",
-              priceDiff > 0 ? "text-amber-400" : priceDiff < 0 ? "text-green-400" : "text-white"
+              priceDiff > 0 ? "text-cyan-400" : priceDiff < 0 ? "text-cyan-400" : "text-white"
             )}>
               {priceDiff !== 0 && (priceDiff > 0 ? '+' : '')}
               {currency === 'EUR' ? '€' : '$'}{priceDiff.toFixed(2)}
@@ -149,7 +149,7 @@ function VariantRow({ variant, index, basePrice, currency, onUpdate, onDelete })
             <span className="text-zinc-500 text-xs block">Stock</span>
             <span className={cn(
               "font-medium",
-              variant.stock <= 0 ? "text-red-400" : variant.stock <= 10 ? "text-amber-400" : "text-white"
+              variant.stock <= 0 ? "text-red-400" : variant.stock <= 10 ? "text-zinc-400" : "text-white"
             )}>
               {variant.stock || 0}
             </span>
@@ -220,8 +220,8 @@ export default function VariantsManager({
       <CollapsibleTrigger asChild>
         <div className="flex items-center justify-between p-4 rounded-lg bg-zinc-900/50 border border-white/5 cursor-pointer hover:bg-zinc-900/70 transition-colors">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-purple-500/10 border border-purple-500/30 flex items-center justify-center">
-              <Layers className="w-5 h-5 text-purple-400" />
+            <div className="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-500/30 flex items-center justify-center">
+              <Layers className="w-5 h-5 text-blue-400" />
             </div>
             <div>
               <h3 className="font-medium text-white">Product Variants</h3>

@@ -35,8 +35,8 @@ function formatPrice(amount, currency = 'EUR') {
 }
 
 const STATUS_CONFIG = {
-  active: { label: 'Active', color: 'bg-green-500/10 text-green-400 border-green-500/30', icon: CheckCircle },
-  draft: { label: 'Draft', color: 'bg-amber-500/10 text-amber-400 border-amber-500/30', icon: Clock },
+  active: { label: 'Active', color: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30', icon: CheckCircle },
+  draft: { label: 'Draft', color: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/30', icon: Clock },
   archived: { label: 'Archived', color: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/30', icon: Archive },
 };
 
@@ -106,7 +106,7 @@ function BundleCard({ bundle, currency, onEdit, onDuplicate, onArchive, onDelete
               <PricingIcon className="w-3.5 h-3.5" />
               {pricingStrategy.label}
               {bundle.pricing_strategy === 'discount' && bundle.discount_percent > 0 && (
-                <span className="text-green-400">(-{bundle.discount_percent}%)</span>
+                <span className="text-cyan-400">(-{bundle.discount_percent}%)</span>
               )}
             </span>
           </div>
@@ -231,11 +231,11 @@ export default function BundleManager({
             <div className="text-sm text-zinc-500">Total Bundles</div>
           </div>
           <div className="p-4 rounded-lg bg-zinc-900/50 border border-white/5">
-            <div className="text-2xl font-bold text-green-400">{activeCount}</div>
+            <div className="text-2xl font-bold text-cyan-400">{activeCount}</div>
             <div className="text-sm text-zinc-500">Active</div>
           </div>
           <div className="p-4 rounded-lg bg-zinc-900/50 border border-white/5">
-            <div className="text-2xl font-bold text-amber-400">{draftCount}</div>
+            <div className="text-2xl font-bold text-zinc-400">{draftCount}</div>
             <div className="text-sm text-zinc-500">Drafts</div>
           </div>
         </div>

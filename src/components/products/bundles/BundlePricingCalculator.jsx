@@ -79,7 +79,7 @@ export function BundlePriceTag({ bundle, currency = 'EUR', className }) {
           <span className="text-sm text-zinc-500 line-through">
             {formatPrice(pricing.itemsTotal, currency)}
           </span>
-          <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
+          <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 text-xs">
             -{pricing.savingsPercent.toFixed(0)}%
           </Badge>
         </>
@@ -164,12 +164,12 @@ export default function BundlePricingCalculator({
         {savings > 0 && (
           <div className="flex items-center justify-between text-sm">
             <span className="text-zinc-400 flex items-center gap-1">
-              <TrendingDown className="w-3.5 h-3.5 text-green-400" />
+              <TrendingDown className="w-3.5 h-3.5 text-cyan-400" />
               {bundle?.pricing_strategy === 'discount'
                 ? `Bundle Discount (${bundle.discount_percent}%)`
                 : 'Bundle Savings'}
             </span>
-            <span className="text-green-400">-{formatPrice(savings, currency)}</span>
+            <span className="text-cyan-400">-{formatPrice(savings, currency)}</span>
           </div>
         )}
 
@@ -177,7 +177,7 @@ export default function BundlePricingCalculator({
         {savings < 0 && (
           <div className="flex items-center justify-between text-sm">
             <span className="text-zinc-400">Price Adjustment</span>
-            <span className="text-amber-400">+{formatPrice(Math.abs(savings), currency)}</span>
+            <span className="text-cyan-400">+{formatPrice(Math.abs(savings), currency)}</span>
           </div>
         )}
 
@@ -194,7 +194,7 @@ export default function BundlePricingCalculator({
               </span>
               {savingsPercent > 0 && (
                 <div className="mt-1">
-                  <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                  <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
                     <Sparkles className="w-3 h-3 mr-1" />
                     Save {savingsPercent.toFixed(0)}%
                   </Badge>
@@ -249,7 +249,7 @@ export function InlineBundlePrice({ bundle, currency = 'EUR', className }) {
         {formatPrice(finalPrice, currency)}
       </span>
       {savings > 0 && (
-        <span className="text-xs text-green-400">
+        <span className="text-xs text-cyan-400">
           (-{savingsPercent.toFixed(0)}%)
         </span>
       )}

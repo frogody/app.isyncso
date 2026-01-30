@@ -101,14 +101,14 @@ export default function ProductInquiryModal({
               exit={{ opacity: 0, scale: 0.95 }}
               className="py-12 text-center"
             >
-              <div className="w-16 h-16 rounded-full bg-green-500/10 border border-green-500/30 flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-8 h-8 text-green-400" />
+              <div className="w-16 h-16 rounded-full bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-8 h-8 text-cyan-400" />
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">Inquiry Submitted!</h3>
               <p className="text-zinc-400 mb-6 max-w-sm mx-auto">
                 Thank you for your interest. We'll get back to you within 24-48 hours.
               </p>
-              <Button onClick={handleClose} className="bg-green-500 hover:bg-green-600 text-white">
+              <Button onClick={handleClose} className="bg-cyan-500 hover:bg-cyan-600 text-white">
                 Close
               </Button>
             </motion.div>
@@ -121,8 +121,8 @@ export default function ProductInquiryModal({
             >
               <DialogHeader className="pb-4 border-b border-white/5">
                 <DialogTitle className="flex items-center gap-3 text-white">
-                  <div className="w-10 h-10 rounded-lg bg-orange-500/10 border border-orange-500/30 flex items-center justify-center">
-                    <MessageCircle className="w-5 h-5 text-orange-400" />
+                  <div className="w-10 h-10 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
+                    <MessageCircle className="w-5 h-5 text-cyan-400" />
                   </div>
                   Product Inquiry
                 </DialogTitle>
@@ -153,7 +153,7 @@ export default function ProductInquiryModal({
                       <p className="text-sm text-zinc-500">SKU: {productDetails.sku}</p>
                     )}
                     {hasPrice && (
-                      <p className="text-sm text-orange-400 font-medium mt-1">
+                      <p className="text-sm text-cyan-400 font-medium mt-1">
                         Starting at ${parseFloat(pricing.base_price).toFixed(2)}
                       </p>
                     )}
@@ -173,7 +173,7 @@ export default function ProductInquiryModal({
                         onClick={() => setFormData({ ...formData, type: type.value })}
                         className={`p-3 rounded-lg border text-left transition-all ${
                           formData.type === type.value
-                            ? 'border-orange-500 bg-orange-500/10 text-white'
+                            ? 'border-cyan-500 bg-cyan-500/10 text-white'
                             : 'border-white/10 hover:border-white/20 text-zinc-400 hover:text-white'
                         }`}
                       >
@@ -295,7 +295,7 @@ export default function ProductInquiryModal({
                   <Button
                     type="submit"
                     disabled={submitting}
-                    className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
+                    className="flex-1 bg-cyan-500 hover:bg-cyan-600 text-white"
                   >
                     {submitting ? (
                       <>
