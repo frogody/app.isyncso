@@ -316,7 +316,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
   }
 
   // TALENT routes (must be before GROWTH to prevent /talentdeals matching /deals)
-  if (path.startsWith('/talent')) {
+  if (path.startsWith('/talent') || path.startsWith('/marketplace')) {
     return {
       title: 'TALENT',
       color: 'red',
@@ -1683,6 +1683,28 @@ export default function Layout({ children, currentPageName }) {
                       </Link>
                     );
                   })}
+                </div>
+              </div>
+            )}
+            {/* TALENT environment quick action buttons */}
+            {secondaryNavConfig?.title === 'TALENT' && (
+              <div className="px-4 lg:px-6 pt-3 pb-1">
+                <div className="flex items-center justify-end gap-2">
+                  <Button variant="outline" size="sm" onClick={() => navigate(createPageUrl("TalentProjects"))} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
+                    <FolderPlus className="w-4 h-4 mr-1" /> Create Role
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => navigate("/marketplace/nests")} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
+                    <Package className="w-4 h-4 mr-1" /> Browse Nests
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => navigate(`${createPageUrl("TalentCampaignDetail")}?new=true`)} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
+                    <Sparkles className="w-4 h-4 mr-1" /> Run Matching
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => navigate(createPageUrl("TalentCampaigns"))} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
+                    <Mail className="w-4 h-4 mr-1" /> Launch Outreach
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => navigate(`${createPageUrl("TalentCandidates")}?addNew=true`)} className="border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20">
+                    <Plus className="w-4 h-4 mr-1" /> Add Candidate
+                  </Button>
                 </div>
               </div>
             )}

@@ -52,7 +52,6 @@ import {
 } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { TalentActionButtons } from '@/components/talent/TalentActionButtons';
 
 // Animation variants
 const containerVariants = {
@@ -706,19 +705,14 @@ export default function TalentCampaigns() {
           icon={Megaphone}
           color="red"
           actions={
-            <TalentActionButtons extra={
-              <>
-                <div className="w-px h-6 bg-zinc-700" />
-                <Button
-                  onClick={() => setShowCreateModal(true)}
-                  className="bg-red-500 hover:bg-red-600"
-                  size="sm"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  New Campaign
-                </Button>
-              </>
-            } />
+            <Button
+              onClick={() => setShowCreateModal(true)}
+              className="bg-red-500 hover:bg-red-600"
+              size="sm"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              New Campaign
+            </Button>
           }
         />
 

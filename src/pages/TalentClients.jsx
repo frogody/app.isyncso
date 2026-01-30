@@ -37,7 +37,6 @@ import {
 } from "@/components/ui/table";
 import { toast } from 'sonner';
 import { QuickAddClientModal } from '@/components/talent';
-import { TalentActionButtons } from '@/components/talent/TalentActionButtons';
 
 // Client Pipeline Stages - all red shades
 const CLIENT_STAGES = [
@@ -492,28 +491,25 @@ export default function TalentClients() {
             subtitle={`${stats.total} clients · ${stats.activeClients} active`}
             color="red"
             actions={
-              <TalentActionButtons extra={
-                <>
-                  <div className="w-px h-6 bg-zinc-700" />
-                  <Button
-                    onClick={() => setShowQuickAddModal(true)}
-                    variant="outline"
-                    size="sm"
-                    className="border-red-500/30 text-red-400 hover:bg-red-500/10"
-                  >
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Quick Add
-                  </Button>
-                  <Button
-                    onClick={openNewModal}
-                    size="sm"
-                    className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Client
-                  </Button>
-                </>
-              } />
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={() => setShowQuickAddModal(true)}
+                  variant="outline"
+                  size="sm"
+                  className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Quick Add
+                </Button>
+                <Button
+                  onClick={openNewModal}
+                  size="sm"
+                  className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Client
+                </Button>
+              </div>
             }
           />
         </div>

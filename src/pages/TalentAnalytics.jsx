@@ -37,7 +37,6 @@ import {
   Phone,
   Briefcase,
 } from "lucide-react";
-import { TalentActionButtons } from '@/components/talent/TalentActionButtons';
 
 // Animation variants
 const containerVariants = {
@@ -618,29 +617,26 @@ export default function TalentAnalytics() {
           subtitle="Pipeline metrics and recruitment performance"
           color="red"
           actions={
-            <TalentActionButtons extra={
-              <>
-                <div className="w-px h-6 bg-zinc-700" />
-                <Select value={timeRange} onValueChange={setTimeRange}>
-                  <SelectTrigger className="w-32 bg-zinc-800/50 border-zinc-700 text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-800 border-white/10">
-                    <SelectItem value="7d">Last 7 days</SelectItem>
-                    <SelectItem value="30d">Last 30 days</SelectItem>
-                    <SelectItem value="90d">Last 90 days</SelectItem>
-                    <SelectItem value="all">All time</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button
-                  variant="ghost"
-                  onClick={fetchData}
-                  className="text-white/60 hover:text-white"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                </Button>
-              </>
-            } />
+            <div className="flex items-center gap-2">
+              <Select value={timeRange} onValueChange={setTimeRange}>
+                <SelectTrigger className="w-32 bg-zinc-800/50 border-zinc-700 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-800 border-white/10">
+                  <SelectItem value="7d">Last 7 days</SelectItem>
+                  <SelectItem value="30d">Last 30 days</SelectItem>
+                  <SelectItem value="90d">Last 90 days</SelectItem>
+                  <SelectItem value="all">All time</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="ghost"
+                onClick={fetchData}
+                className="text-white/60 hover:text-white"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </Button>
+            </div>
           }
         />
 

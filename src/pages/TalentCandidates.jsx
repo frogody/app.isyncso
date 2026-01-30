@@ -42,7 +42,6 @@ import { createPageUrl } from "@/utils";
 import { AddCandidateModal, EditCandidateModal, CandidateImportModal, CandidateDetailDrawer, BulkActionBar, AddToCampaignModal, SearchFilterBar } from "@/components/talent";
 import { IntelligenceGauge, IntelligenceLevelBadge, ApproachBadge, IntelStatusBadge } from "@/components/talent/IntelligenceGauge";
 import { useCandidateFilters, extractFilterOptions, countActiveFilters, getDefaultFilters } from "@/hooks/useCandidateFilters";
-import { TalentActionButtons } from '@/components/talent/TalentActionButtons';
 import { useShortcut } from "@/contexts/KeyboardShortcutsContext";
 
 // Animation variants
@@ -635,28 +634,25 @@ export default function TalentCandidates() {
           icon={Users}
           color="red"
           actions={
-            <TalentActionButtons extra={
-              <>
-                <div className="w-px h-6 bg-zinc-700" />
-                <Button
-                  onClick={() => setShowImportModal(true)}
-                  variant="outline"
-                  size="sm"
-                  className="border-red-500/30 text-red-400 hover:bg-red-500/10"
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  Import CSV
-                </Button>
-                <Button
-                  onClick={() => setShowAddModal(true)}
-                  size="sm"
-                  className="bg-red-500 hover:bg-red-600"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Candidate
-                </Button>
-              </>
-            } />
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => setShowImportModal(true)}
+                variant="outline"
+                size="sm"
+                className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Import CSV
+              </Button>
+              <Button
+                onClick={() => setShowAddModal(true)}
+                size="sm"
+                className="bg-red-500 hover:bg-red-600"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Candidate
+              </Button>
+            </div>
           }
         />
 

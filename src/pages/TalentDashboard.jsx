@@ -51,7 +51,6 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { AddCandidateModal, ActivityFeed } from "@/components/talent";
-import { TalentActionButtons } from '@/components/talent/TalentActionButtons';
 
 // Animation variants
 const containerVariants = {
@@ -863,25 +862,22 @@ export default function TalentDashboard() {
           subtitle="Your recruitment command center"
           color="red"
           actions={
-            <TalentActionButtons extra={
-              <>
-                <div className="w-px h-6 bg-zinc-700" />
-                <Select value={timeRange} onValueChange={setTimeRange}>
-                  <SelectTrigger className="w-28 bg-zinc-800/50 border-zinc-700 text-white text-xs h-8">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-800 border-white/10">
-                    <SelectItem value="7d">Last 7 days</SelectItem>
-                    <SelectItem value="30d">Last 30 days</SelectItem>
-                    <SelectItem value="90d">Last 90 days</SelectItem>
-                    <SelectItem value="all">All time</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button variant="ghost" size="sm" onClick={fetchData} className="text-white/60 hover:text-white h-8 w-8 p-0">
-                  <RefreshCw className="w-3.5 h-3.5" />
-                </Button>
-              </>
-            } />
+            <div className="flex items-center gap-2">
+              <Select value={timeRange} onValueChange={setTimeRange}>
+                <SelectTrigger className="w-28 bg-zinc-800/50 border-zinc-700 text-white text-xs h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-800 border-white/10">
+                  <SelectItem value="7d">Last 7 days</SelectItem>
+                  <SelectItem value="30d">Last 30 days</SelectItem>
+                  <SelectItem value="90d">Last 90 days</SelectItem>
+                  <SelectItem value="all">All time</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button variant="ghost" size="sm" onClick={fetchData} className="text-white/60 hover:text-white h-8 w-8 p-0">
+                <RefreshCw className="w-3.5 h-3.5" />
+              </Button>
+            </div>
           }
         />
 
