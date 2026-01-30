@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "remotion:preview": "remotion preview src/remotion/index.ts",
+    "remotion:render": "remotion render src/remotion/index.ts",
+    "remotion:studio": "remotion studio src/remotion/index.ts"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
@@ -41,6 +44,9 @@
     "@radix-ui/react-toggle-group": "^1.1.2",
     "@radix-ui/react-tooltip": "^1.1.8",
     "@react-pdf/renderer": "^4.3.2",
+    "@remotion/bundler": "^4.0.414",
+    "@remotion/cli": "^4.0.414",
+    "@remotion/player": "^4.0.414",
     "@supabase/supabase-js": "^2.49.1",
     "@tanstack/react-query": "^5.90.16",
     "@tanstack/react-virtual": "^3.13.18",
@@ -75,6 +81,7 @@
     "react-simple-code-editor": "^0.14.1",
     "recharts": "^2.15.1",
     "remark-gfm": "^4.0.1",
+    "remotion": "^4.0.414",
     "sonner": "^2.0.1",
     "tailwind-merge": "^3.0.2",
     "tailwindcss-animate": "^1.0.7",
