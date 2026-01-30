@@ -8,9 +8,9 @@ export default function BuildProgress({ builds = [] }) {
   if (builds.length === 0) return null;
 
   return (
-    <Card className="glass-card border-0 p-6 border-l-4 border-l-cyan-500 mb-8">
+    <Card className="glass-card border-0 p-6 border-l-4 border-l-teal-500 mb-8">
       <div className="flex items-center gap-3 mb-4">
-        <Loader2 className="w-5 h-5 text-cyan-400 animate-spin" />
+        <Loader2 className="w-5 h-5 text-teal-400 animate-spin" />
         <h2 className="text-xl font-semibold text-white">Generating Your Courses</h2>
       </div>
       <div className="space-y-4">
@@ -20,7 +20,7 @@ export default function BuildProgress({ builds = [] }) {
               <div className="text-white font-medium truncate flex-1">
                 {build.requested_topic || "New AI Course"}
               </div>
-              <Badge variant="outline" className="border-cyan-500/50 text-cyan-400 ml-2">
+              <Badge variant="outline" className="border-teal-500/50 text-teal-400 ml-2">
                 {build.status}
               </Badge>
             </div>

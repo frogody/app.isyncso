@@ -41,12 +41,12 @@ export default function QuickPollBlock({ content }) {
   };
 
   return (
-    <Card className="glass-card border-0 my-6 border-cyan-500/20">
+    <Card className="glass-card border-0 my-6 border-teal-500/20">
       <CardContent className="p-6">
         {/* Question */}
         <div className="mb-4">
           <div className="flex items-center gap-2 mb-3">
-            <BarChart3 className="w-5 h-5 text-cyan-400" />
+            <BarChart3 className="w-5 h-5 text-teal-400" />
             <h4 className="text-lg font-semibold text-white">Quick Check-In</h4>
           </div>
           <p className="text-gray-300 leading-relaxed">{config.question}</p>
@@ -62,7 +62,7 @@ export default function QuickPollBlock({ content }) {
                   onClick={() => setSelected(index)}
                   className={`w-full text-left p-3 rounded-lg border transition-all ${
                     selected === index
-                      ? 'border-cyan-500 bg-cyan-500/10'
+                      ? 'border-teal-500 bg-teal-500/10'
                       : 'border-gray-700 bg-gray-800/50 hover:border-gray-600'
                   }`}
                 >
@@ -73,7 +73,7 @@ export default function QuickPollBlock({ content }) {
             <Button
               onClick={handleSubmit}
               disabled={selected === null}
-              className="w-full bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50"
+              className="w-full bg-teal-600 hover:bg-teal-500 disabled:opacity-50"
             >
               Submit
             </Button>
@@ -91,7 +91,7 @@ export default function QuickPollBlock({ content }) {
               </div>
               
               {config.reflection && (
-                <p className="text-gray-300 text-sm leading-relaxed p-4 bg-cyan-500/5 rounded-lg border border-cyan-500/20">
+                <p className="text-gray-300 text-sm leading-relaxed p-4 bg-teal-500/5 rounded-lg border border-teal-500/20">
                   {config.reflection}
                 </p>
               )}
@@ -101,7 +101,7 @@ export default function QuickPollBlock({ content }) {
                   setSelected(null);
                   setSubmitted(false);
                 }}
-                className="text-xs text-cyan-400 hover:text-cyan-300"
+                className="text-xs text-teal-400 hover:text-teal-300"
               >
                 Change answer
               </button>

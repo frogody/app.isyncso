@@ -12,7 +12,7 @@ export default function LessonProgress({
     <div className="space-y-2">
       <div className="flex justify-between items-center text-xs text-gray-400">
         <div className="flex items-center gap-2">
-          <CheckCircle className="w-3 h-3 text-cyan-400" />
+          <CheckCircle className="w-3 h-3 text-teal-400" />
           <span>{completedCount} of {totalLessons} lessons completed</span>
         </div>
         <span className="font-semibold text-white">{completionPercentage}%</span>

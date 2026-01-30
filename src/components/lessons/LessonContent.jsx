@@ -61,7 +61,7 @@ function CodeBlock({ children, language }) {
 // Callout Box
 function CalloutBox({ type = 'info', children }) {
   const styles = {
-    info: { bg: 'bg-cyan-500/10', border: 'border-cyan-500/30', icon: Lightbulb, iconColor: 'text-cyan-400' },
+    info: { bg: 'bg-teal-500/10', border: 'border-teal-500/30', icon: Lightbulb, iconColor: 'text-teal-400' },
     tip: { bg: 'bg-green-500/10', border: 'border-green-500/30', icon: Sparkles, iconColor: 'text-green-400' },
     warning: { bg: 'bg-amber-500/10', border: 'border-amber-500/30', icon: Zap, iconColor: 'text-amber-400' },
     important: { bg: 'bg-purple-500/10', border: 'border-purple-500/30', icon: Target, iconColor: 'text-purple-400' },
@@ -83,12 +83,12 @@ function CalloutBox({ type = 'info', children }) {
 // Key Takeaway
 function KeyTakeaway({ children }) {
   return (
-    <div className="my-8 p-6 rounded-2xl bg-gradient-to-br from-cyan-500/10 via-transparent to-purple-500/10 border border-cyan-500/20">
+    <div className="my-8 p-6 rounded-2xl bg-gradient-to-br from-teal-500/10 via-transparent to-purple-500/10 border border-teal-500/20">
       <div className="flex items-center gap-2 mb-3">
-        <div className="p-1.5 rounded-lg bg-cyan-500/20">
-          <Award className="w-4 h-4 text-cyan-400" />
+        <div className="p-1.5 rounded-lg bg-teal-500/20">
+          <Award className="w-4 h-4 text-teal-400" />
         </div>
-        <span className="text-sm font-semibold text-cyan-400 uppercase tracking-wide">Key Takeaway</span>
+        <span className="text-sm font-semibold text-teal-400 uppercase tracking-wide">Key Takeaway</span>
       </div>
       <p className="text-white font-medium leading-relaxed">{children}</p>
     </div>
@@ -133,7 +133,7 @@ function ProgressBar({ containerRef }) {
   return (
     <div className="h-1 bg-zinc-900 flex-shrink-0">
       <div
-        className="h-full bg-gradient-to-r from-cyan-500 to-purple-500 transition-[width] duration-150"
+        className="h-full bg-gradient-to-r from-teal-500 to-purple-500 transition-[width] duration-150"
         style={{ width: `${progress}%` }}
       />
     </div>
@@ -151,7 +151,7 @@ const MarkdownContent = memo(function MarkdownContent({ contentString, lessonId 
       <h2 className="text-xl lg:text-2xl font-bold text-white mt-8 mb-4 pb-2 border-b border-zinc-800">{children}</h2>
     ),
     h3: ({ children }) => (
-      <h3 className="text-lg font-semibold text-cyan-400 mt-6 mb-3">{children}</h3>
+      <h3 className="text-lg font-semibold text-teal-400 mt-6 mb-3">{children}</h3>
     ),
     h4: ({ children }) => (
       <h4 className="text-base font-semibold text-zinc-200 mt-4 mb-2">{children}</h4>
@@ -167,7 +167,7 @@ const MarkdownContent = memo(function MarkdownContent({ contentString, lessonId 
     ),
     li: ({ children }) => (
       <li className="flex items-start gap-3 text-zinc-300">
-        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 mt-2.5 flex-shrink-0" />
+        <span className="w-1.5 h-1.5 rounded-full bg-teal-400 mt-2.5 flex-shrink-0" />
         <span className="flex-1">{children}</span>
       </li>
     ),
@@ -175,7 +175,7 @@ const MarkdownContent = memo(function MarkdownContent({ contentString, lessonId 
       <strong className="text-white font-semibold">{children}</strong>
     ),
     em: ({ children }) => (
-      <em className="text-cyan-400 not-italic font-medium">{children}</em>
+      <em className="text-teal-400 not-italic font-medium">{children}</em>
     ),
     table: ({ children }) => (
       <div className="my-6 overflow-x-auto rounded-xl border border-zinc-800">
@@ -192,7 +192,7 @@ const MarkdownContent = memo(function MarkdownContent({ contentString, lessonId 
       <tr className="hover:bg-zinc-800/30 transition-colors">{children}</tr>
     ),
     th: ({ children }) => (
-      <th className="px-4 py-3 text-left text-xs font-semibold text-cyan-400 uppercase tracking-wider">{children}</th>
+      <th className="px-4 py-3 text-left text-xs font-semibold text-teal-400 uppercase tracking-wider">{children}</th>
     ),
     td: ({ children }) => (
       <td className="px-4 py-3 text-zinc-300">{children}</td>
@@ -202,7 +202,7 @@ const MarkdownContent = memo(function MarkdownContent({ contentString, lessonId 
 
       if (inline) {
         return (
-          <code className="px-1.5 py-0.5 rounded bg-zinc-800 text-cyan-400 text-sm font-mono border border-zinc-700">
+          <code className="px-1.5 py-0.5 rounded bg-zinc-800 text-teal-400 text-sm font-mono border border-zinc-700">
             {children}
           </code>
         );
@@ -240,7 +240,7 @@ const MarkdownContent = memo(function MarkdownContent({ contentString, lessonId 
     },
     pre: ({ children }) => <>{children}</>,
     blockquote: ({ children }) => (
-      <blockquote className="my-6 pl-4 border-l-4 border-cyan-500 bg-cyan-500/5 py-3 pr-4 rounded-r-lg text-zinc-300 italic">
+      <blockquote className="my-6 pl-4 border-l-4 border-teal-500 bg-teal-500/5 py-3 pr-4 rounded-r-lg text-zinc-300 italic">
         {children}
       </blockquote>
     ),
@@ -249,7 +249,7 @@ const MarkdownContent = memo(function MarkdownContent({ contentString, lessonId 
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-cyan-400 hover:text-cyan-300 underline underline-offset-2"
+        className="text-teal-400 hover:text-teal-300 underline underline-offset-2"
       >
         {children}
       </a>
@@ -330,7 +330,7 @@ export default function LessonContent({ lesson, onComplete }) {
           {/* Lesson Meta */}
           <div className="flex flex-wrap items-center gap-3 mb-4">
             {lesson.lesson_type && (
-              <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 text-xs">
+              <Badge className="bg-teal-500/20 text-teal-400 border-teal-500/30 text-xs">
                 {lesson.lesson_type}
               </Badge>
             )}
@@ -349,8 +349,8 @@ export default function LessonContent({ lesson, onComplete }) {
           <div className="mt-12 mb-8 p-5 rounded-xl bg-zinc-900/50 border border-zinc-800">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-cyan-500/20">
-                  <CheckCircle2 className="w-5 h-5 text-cyan-400" />
+                <div className="p-2 rounded-lg bg-teal-500/20">
+                  <CheckCircle2 className="w-5 h-5 text-teal-400" />
                 </div>
                 <div>
                   <h3 className="font-medium text-white text-sm">Ready to continue?</h3>
@@ -359,7 +359,7 @@ export default function LessonContent({ lesson, onComplete }) {
               </div>
               <Button
                 onClick={onComplete}
-                className="bg-cyan-600 hover:bg-cyan-500 text-white text-sm px-5"
+                className="bg-teal-600 hover:bg-teal-500 text-white text-sm px-5"
               >
                 Complete & Continue
                 <ArrowRight className="w-4 h-4 ml-2" />

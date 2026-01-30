@@ -55,7 +55,7 @@ export default function LearningPath({ userProgress, courses }) {
     <Card className="glass-card border-0">
       <CardHeader>
         <CardTitle className="text-white flex items-center gap-2">
-          <Target className="w-5 h-5 text-cyan-400" />
+          <Target className="w-5 h-5 text-teal-400" />
           Your Learning Path
         </CardTitle>
       </CardHeader>
@@ -73,9 +73,9 @@ export default function LearningPath({ userProgress, courses }) {
             <div key={index} className="flex items-center gap-4">
               <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
                 step.completed 
-                  ? 'bg-cyan-500/20 text-cyan-400' 
+                  ? 'bg-teal-500/20 text-teal-400' 
                   : step.progress > 0
-                  ? 'bg-cyan-400/20 text-cyan-300'
+                  ? 'bg-teal-400/20 text-teal-300'
                   : 'bg-gray-700 text-gray-500'
               }`}>
                 {step.completed ? (

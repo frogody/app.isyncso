@@ -240,7 +240,7 @@ export default function LessonEditor({ lesson, onSave, onCancel }) {
         {/* Editor Pane */}
         <div className="flex-1 flex flex-col border-r border-slate-800 overflow-hidden">
           <div className="px-4 py-2 bg-slate-900/30 border-b border-slate-800">
-            <span className="text-xs text-cyan-400 font-bold uppercase tracking-widest">
+            <span className="text-xs text-teal-400 font-bold uppercase tracking-widest">
               Markdown Editor
             </span>
           </div>

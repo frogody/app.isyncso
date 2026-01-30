@@ -74,7 +74,7 @@ export default function LessonHeader({
           className={cn(
             "relative",
             showChat 
-              ? "text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20" 
+              ? "text-teal-400 bg-teal-500/10 hover:bg-teal-500/20" 
               : "text-zinc-400 hover:text-white hover:bg-zinc-800"
           )}
         >
@@ -83,7 +83,7 @@ export default function LessonHeader({
           {showChat && (
             <motion.div 
               layoutId="chatIndicator"
-              className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-cyan-400 rounded-full"
+              className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-teal-400 rounded-full"
             />
           )}
         </Button>

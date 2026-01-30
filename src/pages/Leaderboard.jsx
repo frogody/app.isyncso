@@ -74,7 +74,7 @@ export default function Leaderboard() {
   return (
     <div className="min-h-screen bg-black relative">
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 right-1/4 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute top-20 right-1/4 w-96 h-96 bg-teal-500/5 rounded-full blur-3xl animate-pulse" />
       </div>
 
       <div className="relative z-10 w-full max-w-5xl mx-auto px-4 lg:px-6 py-4 space-y-4">
@@ -82,17 +82,17 @@ export default function Leaderboard() {
           icon={Trophy}
           title="Leaderboard"
           subtitle={`${timeframe === 'weekly' ? 'This Week' : timeframe === 'monthly' ? 'This Month' : 'All Time'}'s Top Learners`}
-          color="cyan"
+          color="teal"
           actions={
             <Tabs value={timeframe} onValueChange={setTimeframe}>
               <TabsList className="bg-zinc-900 border border-zinc-700">
-                <TabsTrigger value="weekly" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400">
+                <TabsTrigger value="weekly" className="data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-400">
                   Weekly
                 </TabsTrigger>
-                <TabsTrigger value="monthly" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400">
+                <TabsTrigger value="monthly" className="data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-400">
                   Monthly
                 </TabsTrigger>
-                <TabsTrigger value="alltime" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400">
+                <TabsTrigger value="alltime" className="data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-400">
                   All Time
                 </TabsTrigger>
               </TabsList>
@@ -160,7 +160,7 @@ export default function Leaderboard() {
         )}
 
         {/* Full Rankings */}
-        <GlassCard glow="cyan" className="p-4">
+        <GlassCard glow="teal" className="p-4">
           <div className="space-y-1">
             <AnimatePresence>
               {leaderboard.slice(0, 10).map((entry, index) => {
@@ -175,7 +175,7 @@ export default function Leaderboard() {
                     transition={{ delay: index * 0.03 }}
                     className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
                       isCurrentUser
-                        ? 'bg-cyan-500/20 border-2 border-cyan-500/40'
+                        ? 'bg-teal-500/20 border-2 border-teal-500/40'
                         : 'bg-zinc-800/50 border border-zinc-700/50 hover:bg-zinc-800'
                     }`}
                   >
@@ -204,7 +204,7 @@ export default function Leaderboard() {
                       <div className="flex items-center gap-2 mb-0.5">
                         <h4 className="font-semibold text-white truncate text-sm">{entry.user_name}</h4>
                         {isCurrentUser && (
-                          <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 text-[10px]">You</Badge>
+                          <Badge className="bg-teal-500/20 text-teal-400 border-teal-500/30 text-[10px]">You</Badge>
                         )}
                       </div>
                       <p className="text-xs text-zinc-400 mb-1">{entry.level_title}</p>
@@ -217,7 +217,7 @@ export default function Leaderboard() {
                             index === 0 ? 'bg-gradient-to-r from-yellow-500 to-amber-500' :
                             index === 1 ? 'bg-gradient-to-r from-zinc-300 to-zinc-500' :
                             index === 2 ? 'bg-gradient-to-r from-amber-600 to-amber-800' :
-                            'bg-gradient-to-r from-cyan-500 to-cyan-400'
+                            'bg-gradient-to-r from-teal-500 to-teal-400'
                           }`}
                         />
                       </div>
@@ -225,7 +225,7 @@ export default function Leaderboard() {
 
                     {/* Points */}
                     <div className="text-right">
-                      <div className="text-lg font-bold text-cyan-400">{entry.points}</div>
+                      <div className="text-lg font-bold text-teal-400">{entry.points}</div>
                       <div className="text-[10px] text-zinc-500">XP</div>
                     </div>
                   </motion.div>
@@ -245,7 +245,7 @@ export default function Leaderboard() {
                     <div
                       key={entry.user_id}
                       className={`flex items-center gap-3 p-2 rounded-lg ${
-                        isCurrentUser ? 'bg-cyan-500/20 border border-cyan-500/40' : 'bg-zinc-800/30'
+                        isCurrentUser ? 'bg-teal-500/20 border border-teal-500/40' : 'bg-zinc-800/30'
                       }`}
                     >
                       <div className="w-8 text-center text-xs font-medium text-zinc-500">#{rank}</div>
@@ -257,10 +257,10 @@ export default function Leaderboard() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <h4 className="text-xs font-medium text-white">{entry.user_name}</h4>
-                          {isCurrentUser && <Badge className="bg-cyan-500/20 text-cyan-400 text-[10px]">You</Badge>}
+                          {isCurrentUser && <Badge className="bg-teal-500/20 text-teal-400 text-[10px]">You</Badge>}
                         </div>
                       </div>
-                      <div className="text-cyan-400 font-bold text-sm">{entry.points} XP</div>
+                      <div className="text-teal-400 font-bold text-sm">{entry.points} XP</div>
                     </div>
                   );
                 })}
@@ -284,7 +284,7 @@ export default function Leaderboard() {
         {/* Empty State */}
         {leaderboard.length === 0 && (
           <GlassCard className="p-6 text-center">
-            <Trophy className="w-10 h-10 text-cyan-400 mx-auto mb-3 opacity-50" />
+            <Trophy className="w-10 h-10 text-teal-400 mx-auto mb-3 opacity-50" />
             <h3 className="text-lg font-bold text-white mb-1">No Rankings Yet</h3>
             <p className="text-xs text-zinc-400">Complete lessons and courses to appear on the leaderboard!</p>
           </GlassCard>

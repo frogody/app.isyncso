@@ -949,7 +949,7 @@ export default function AIChatInterface({ lesson, isVisible, onClose, onConversa
         {/* Clean Header */}
         <div className="h-14 border-b border-gray-800/50 flex items-center justify-between px-4 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <Brain className="w-5 h-5 text-cyan-400" />
+            <Brain className="w-5 h-5 text-teal-400" />
             <span className="text-white font-medium">AI Tutor</span>
           </div>
 
@@ -1015,8 +1015,8 @@ export default function AIChatInterface({ lesson, isVisible, onClose, onConversa
           {Array.isArray(messages) && messages.filter((m) => m?.role !== "system").length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center px-6">
               <BrowserWarnings />
-              <div className="w-16 h-16 rounded-full bg-cyan-500/10 flex items-center justify-center mb-4">
-                <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+              <div className="w-16 h-16 rounded-full bg-teal-500/10 flex items-center justify-center mb-4">
+                <Loader2 className="w-8 h-8 text-teal-400 animate-spin" />
               </div>
               <h3 className="text-white font-medium mb-2">AI Tutor Connecting...</h3>
               <p className="text-gray-400 text-sm">
@@ -1027,9 +1027,9 @@ export default function AIChatInterface({ lesson, isVisible, onClose, onConversa
             <>
               {isLoading && messages.filter((m) => m?.role !== "system").length === 1 && (
                 <div className="text-center py-4">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20">
-                    <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
-                    <span className="text-sm text-cyan-400">AI is thinking...</span>
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500/10 border border-teal-500/20">
+                    <Loader2 className="w-4 h-4 text-teal-400 animate-spin" />
+                    <span className="text-sm text-teal-400">AI is thinking...</span>
                   </div>
                 </div>
               )}
@@ -1069,7 +1069,7 @@ export default function AIChatInterface({ lesson, isVisible, onClose, onConversa
                 >
                   <div className={`rounded-2xl px-4 py-2 text-sm ${
                     message?.role === "user" 
-                      ? 'bg-cyan-500/20 text-white ml-auto' 
+                      ? 'bg-teal-500/20 text-white ml-auto' 
                       : 'bg-gray-800/50 text-gray-200'
                   }`}>
                     {displayContent}
@@ -1142,7 +1142,7 @@ export default function AIChatInterface({ lesson, isVisible, onClose, onConversa
               onClick={handleSendMessage} 
               disabled={!inputMessage.trim() || isLoading || !conversation}
               size="icon" 
-              className="bg-cyan-600 hover:bg-cyan-500"
+              className="bg-teal-600 hover:bg-teal-500"
               aria-label="Send message"
             >
               <Send className="w-4 h-4" />

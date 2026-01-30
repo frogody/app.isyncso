@@ -23,12 +23,12 @@ import CourseCard from "../components/courses/CourseCard";
 import CourseFilters from "../components/courses/CourseFilters";
 import EmptyState from "../components/courses/EmptyState";
 
-function StatBox({ icon: Icon, label, value, color = 'cyan' }) {
+function StatBox({ icon: Icon, label, value, color = 'teal' }) {
   const colorClasses = {
-    cyan: 'bg-zinc-800/80 text-cyan-400/70 border-zinc-700/50',
-    emerald: 'bg-zinc-800/80 text-cyan-400/70 border-zinc-700/50',
-    violet: 'bg-zinc-800/80 text-cyan-400/60 border-zinc-700/50',
-    amber: 'bg-zinc-800/80 text-cyan-300/70 border-zinc-700/50',
+    teal: 'bg-zinc-800/80 text-teal-400/70 border-zinc-700/50',
+    emerald: 'bg-zinc-800/80 text-teal-400/70 border-zinc-700/50',
+    violet: 'bg-zinc-800/80 text-teal-400/60 border-zinc-700/50',
+    amber: 'bg-zinc-800/80 text-teal-300/70 border-zinc-700/50',
   };
 
   return (
@@ -49,19 +49,19 @@ function StatBox({ icon: Icon, label, value, color = 'cyan' }) {
 function ContinueCourseCard({ course, progress }) {
   return (
     <Link to={createPageUrl(`LessonViewer?courseId=${course.id}`)}>
-      <div className="group bg-zinc-900/50 backdrop-blur-sm rounded-xl border border-zinc-800/60 hover:border-cyan-800/50 transition-all duration-200 p-4">
+      <div className="group bg-zinc-900/50 backdrop-blur-sm rounded-xl border border-zinc-800/60 hover:border-teal-800/50 transition-all duration-200 p-4">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-lg bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center flex-shrink-0">
-            <BookOpen className="w-6 h-6 text-cyan-400/70" />
+            <BookOpen className="w-6 h-6 text-teal-400/70" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-zinc-100 truncate group-hover:text-cyan-300/90 transition-colors">{course.title}</h3>
+            <h3 className="font-medium text-zinc-100 truncate group-hover:text-teal-300/90 transition-colors">{course.title}</h3>
             <div className="flex items-center gap-3 mt-2">
               <Progress value={progress?.completion_percentage || 0} className="flex-1 h-2 bg-zinc-800" />
-              <span className="text-xs text-cyan-400/80 font-medium">{progress?.completion_percentage || 0}%</span>
+              <span className="text-xs text-teal-400/80 font-medium">{progress?.completion_percentage || 0}%</span>
             </div>
           </div>
-          <Button size="sm" className="bg-zinc-800/80 hover:bg-zinc-800 text-cyan-400/80 border border-zinc-700/60 flex-shrink-0">
+          <Button size="sm" className="bg-zinc-800/80 hover:bg-zinc-800 text-teal-400/80 border border-zinc-700/60 flex-shrink-0">
             Continue
           </Button>
         </div>
@@ -73,18 +73,18 @@ function ContinueCourseCard({ course, progress }) {
 function RecommendedCourseCard({ course }) {
   return (
     <Link to={createPageUrl(`CourseDetail?id=${course.id}`)}>
-      <div className="group bg-zinc-900/50 backdrop-blur-sm rounded-xl border border-zinc-800/60 hover:border-cyan-800/50 transition-all duration-200 p-4">
+      <div className="group bg-zinc-900/50 backdrop-blur-sm rounded-xl border border-zinc-800/60 hover:border-teal-800/50 transition-all duration-200 p-4">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-lg bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center flex-shrink-0">
-            <Sparkles className="w-5 h-5 text-cyan-400/70" />
+            <Sparkles className="w-5 h-5 text-teal-400/70" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-zinc-100 group-hover:text-cyan-300/90 transition-colors truncate">
+            <h3 className="font-medium text-zinc-100 group-hover:text-teal-300/90 transition-colors truncate">
               {course.title}
             </h3>
             <p className="text-xs text-zinc-600 mt-1 line-clamp-2">{course.description}</p>
             <div className="flex items-center gap-2 mt-2">
-              <Badge className="bg-zinc-800/80 text-cyan-400/70 border-zinc-700/50 border text-xs">
+              <Badge className="bg-zinc-800/80 text-teal-400/70 border-zinc-700/50 border text-xs">
                 {course.difficulty}
               </Badge>
               <span className="text-xs text-zinc-600 flex items-center gap-1">
@@ -229,16 +229,16 @@ export default function Learn() {
       {/* Stats Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
-          <StatBox icon={BookOpen} label="Courses Available" value={libraryCourses.length} color="cyan" />
+          <StatBox icon={BookOpen} label="Courses Available" value={libraryCourses.length} color="teal" />
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <StatBox icon={PlayCircle} label="In Progress" value={stats.inProgressCourses} color="cyan" />
+          <StatBox icon={PlayCircle} label="In Progress" value={stats.inProgressCourses} color="teal" />
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <StatBox icon={CheckCircle} label="Completed" value={stats.completedCourses} color="cyan" />
+          <StatBox icon={CheckCircle} label="Completed" value={stats.completedCourses} color="teal" />
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-          <StatBox icon={Clock} label="Hours Learned" value={`${Math.round(stats.totalTimeSpent / 60)}h`} color="cyan" />
+          <StatBox icon={Clock} label="Hours Learned" value={`${Math.round(stats.totalTimeSpent / 60)}h`} color="teal" />
         </motion.div>
       </div>
 
@@ -246,10 +246,10 @@ export default function Learn() {
         {/* Main Content */}
         <div className="xl:col-span-2 space-y-4">
           {/* Continue Learning */}
-          <GlassCard glow="cyan" className="p-4">
+          <GlassCard glow="teal" className="p-4">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-base font-semibold text-white flex items-center gap-2">
-                <PlayCircle className="w-4 h-4 text-cyan-400" />
+                <PlayCircle className="w-4 h-4 text-teal-400" />
                 Continue Learning
               </h2>
               {myCourses.length > 0 && (
@@ -257,7 +257,7 @@ export default function Learn() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setActiveSection("my-courses")}
-                  className="text-cyan-400 hover:text-cyan-300 text-xs h-7"
+                  className="text-teal-400 hover:text-teal-300 text-xs h-7"
                 >
                   View All <ArrowRight className="w-3 h-3 ml-1" />
                 </Button>
@@ -266,15 +266,15 @@ export default function Learn() {
 
             {inProgressCoursesList.length === 0 ? (
               <div className="text-center py-8">
-                <div className="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center mx-auto mb-3">
-                  <BookOpen className="w-5 h-5 text-cyan-400" />
+                <div className="w-12 h-12 rounded-xl bg-teal-500/10 flex items-center justify-center mx-auto mb-3">
+                  <BookOpen className="w-5 h-5 text-teal-400" />
                 </div>
                 <h4 className="text-white font-medium text-sm mb-1.5">No courses in progress</h4>
                 <p className="text-zinc-400 text-xs mb-3">Browse the library to find your next course</p>
                 <Button
                   size="sm"
                   onClick={() => setActiveSection("library")}
-                  className="bg-cyan-500 hover:bg-cyan-400 text-white h-8 text-xs"
+                  className="bg-teal-500 hover:bg-teal-400 text-white h-8 text-xs"
                 >
                   Browse Library
                 </Button>
@@ -290,17 +290,17 @@ export default function Learn() {
           </GlassCard>
 
           {/* Recommended Courses */}
-          <GlassCard glow="cyan" className="p-4">
+          <GlassCard glow="teal" className="p-4">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-base font-semibold text-white flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-cyan-400" />
+                <Sparkles className="w-4 h-4 text-teal-400" />
                 Recommended for You
               </h2>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setActiveSection("library")}
-                className="text-cyan-400 hover:text-cyan-300 text-xs h-7"
+                className="text-teal-400 hover:text-teal-300 text-xs h-7"
               >
                 Browse All <ArrowRight className="w-3 h-3 ml-1" />
               </Button>
@@ -324,9 +324,9 @@ export default function Learn() {
         {/* Sidebar */}
         <div className="space-y-4">
           {/* Progress Ring */}
-          <GlassCard glow="cyan" className="p-4">
+          <GlassCard glow="teal" className="p-4">
             <h2 className="text-sm font-semibold text-white flex items-center gap-2 mb-3">
-              <Target className="w-4 h-4 text-cyan-400" />
+              <Target className="w-4 h-4 text-teal-400" />
               Your Progress
             </h2>
 
@@ -335,7 +335,7 @@ export default function Learn() {
                 <svg className="w-24 h-24 transform -rotate-90">
                   <circle className="text-zinc-800" strokeWidth="6" stroke="currentColor" fill="transparent" r="42" cx="48" cy="48" />
                   <circle
-                    className="text-cyan-500"
+                    className="text-teal-500"
                     strokeWidth="6"
                     strokeLinecap="round"
                     stroke="currentColor"
@@ -358,19 +358,19 @@ export default function Learn() {
               </div>
               <div className="flex items-center justify-between text-sm p-3 rounded-lg bg-zinc-800/50">
                 <span className="text-zinc-400">Completed</span>
-                <span className="text-cyan-400 font-medium">{stats.completedCourses}</span>
+                <span className="text-teal-400 font-medium">{stats.completedCourses}</span>
               </div>
               <div className="flex items-center justify-between text-sm p-3 rounded-lg bg-zinc-800/50">
                 <span className="text-zinc-400">In Progress</span>
-                <span className="text-cyan-300 font-medium">{stats.inProgressCourses}</span>
+                <span className="text-teal-300 font-medium">{stats.inProgressCourses}</span>
               </div>
             </div>
           </GlassCard>
 
           {/* Quick Actions */}
-          <GlassCard glow="cyan" className="p-6">
+          <GlassCard glow="teal" className="p-6">
             <h2 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
-              <Zap className="w-5 h-5 text-cyan-400" />
+              <Zap className="w-5 h-5 text-teal-400" />
               Quick Actions
             </h2>
             <div className="space-y-2">
@@ -382,8 +382,8 @@ export default function Learn() {
               ].map((item, i) => (
                 item.link ? (
                   <Link key={i} to={createPageUrl(item.link)}>
-                    <Button className="w-full justify-start bg-zinc-800/50 hover:bg-zinc-800 text-white border border-zinc-700 hover:border-cyan-500/30">
-                      <item.icon className="w-4 h-4 mr-2 text-cyan-400" />
+                    <Button className="w-full justify-start bg-zinc-800/50 hover:bg-zinc-800 text-white border border-zinc-700 hover:border-teal-500/30">
+                      <item.icon className="w-4 h-4 mr-2 text-teal-400" />
                       {item.label}
                     </Button>
                   </Link>
@@ -391,9 +391,9 @@ export default function Learn() {
                   <Button 
                     key={i}
                     onClick={item.action}
-                    className="w-full justify-start bg-zinc-800/50 hover:bg-zinc-800 text-white border border-zinc-700 hover:border-cyan-500/30"
+                    className="w-full justify-start bg-zinc-800/50 hover:bg-zinc-800 text-white border border-zinc-700 hover:border-teal-500/30"
                   >
-                    <item.icon className="w-4 h-4 mr-2 text-cyan-400" />
+                    <item.icon className="w-4 h-4 mr-2 text-teal-400" />
                     {item.label}
                   </Button>
                 )
@@ -423,7 +423,7 @@ export default function Learn() {
             variant="ghost"
             size="icon"
             onClick={() => setViewMode("grid")}
-            className={viewMode === "grid" ? "text-cyan-400 bg-cyan-950/30" : "text-gray-400"}
+            className={viewMode === "grid" ? "text-teal-400 bg-teal-950/30" : "text-gray-400"}
           >
             <Grid className="w-4 h-4" />
           </Button>
@@ -431,7 +431,7 @@ export default function Learn() {
             variant="ghost"
             size="icon"
             onClick={() => setViewMode("list")}
-            className={viewMode === "list" ? "text-cyan-400 bg-cyan-950/30" : "text-gray-400"}
+            className={viewMode === "list" ? "text-teal-400 bg-teal-950/30" : "text-gray-400"}
           >
             <List className="w-4 h-4" />
           </Button>
@@ -469,8 +469,8 @@ export default function Learn() {
     <div className="min-h-screen bg-black relative">
       {/* Animated Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 left-1/4 w-96 h-96 bg-cyan-900/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-cyan-950/10 rounded-full blur-3xl" />
+        <div className="absolute top-20 left-1/4 w-96 h-96 bg-teal-900/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-teal-950/10 rounded-full blur-3xl" />
       </div>
 
       <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
@@ -479,7 +479,7 @@ export default function Learn() {
           title="My Courses"
           subtitle={`Welcome back, ${user?.full_name || 'Learner'}! Continue your learning journey.`}
           icon={GraduationCap}
-          color="cyan"
+          color="teal"
           actions={
             <div className="flex gap-2">
               {['dashboard', 'my-courses', 'library'].map((section) => (
@@ -488,7 +488,7 @@ export default function Learn() {
                   onClick={() => setActiveSection(section)}
                   size="sm"
                   className={activeSection === section 
-                    ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30" 
+                    ? "bg-teal-500/20 text-teal-400 border border-teal-500/30" 
                     : "bg-zinc-900 border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-600"
                   }
                 >

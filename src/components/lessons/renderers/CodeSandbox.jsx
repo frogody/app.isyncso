@@ -322,15 +322,15 @@ export default function CodeSandbox({ initialCode, lessonId, blockIndex }) {
   const displayCode = code || '# Write your Python code here...\n\n';
 
   return (
-    <Card className="my-6 bg-gradient-to-br from-gray-900 via-gray-900 to-blue-950/30 border-0 shadow-xl shadow-cyan-500/10 not-prose">
+    <Card className="my-6 bg-gradient-to-br from-gray-900 via-gray-900 to-blue-950/30 border-0 shadow-xl shadow-teal-500/10 not-prose">
       <CardContent className="p-0 not-prose">
         {/* Editor Panel */}
-        <div className="border-b border-cyan-500/20">
+        <div className="border-b border-teal-500/20">
           {/* Header Bar */}
           <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-gray-800/80 to-gray-900/80 backdrop-blur-sm">
             <div className="flex items-center gap-3">
-              <div className="p-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/30">
-                <Code className="w-4 h-4 text-cyan-400" />
+              <div className="p-1.5 rounded-lg bg-teal-500/10 border border-teal-500/30">
+                <Code className="w-4 h-4 text-teal-400" />
               </div>
               <div>
                 <span className="text-sm font-semibold text-white">Python Code Editor</span>
@@ -342,8 +342,8 @@ export default function CodeSandbox({ initialCode, lessonId, blockIndex }) {
                     </>
                   ) : (
                     <>
-                      <Loader2 className="w-3 h-3 text-cyan-400 animate-spin" />
-                      <span className="text-xs text-cyan-400">Loading Runtime... {initProgress}%</span>
+                      <Loader2 className="w-3 h-3 text-teal-400 animate-spin" />
+                      <span className="text-xs text-teal-400">Loading Runtime... {initProgress}%</span>
                     </>
                   )}
                 </div>
@@ -368,7 +368,7 @@ export default function CodeSandbox({ initialCode, lessonId, blockIndex }) {
                 className={`h-8 transition-all shadow-lg ${
                   !isReady || isRunning
                     ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-cyan-500/50'
+                    : 'bg-gradient-to-r from-teal-600 to-blue-600 hover:from-teal-500 hover:to-blue-500 text-white shadow-teal-500/50'
                 }`}
               >
                 {isRunning ? (
@@ -388,7 +388,7 @@ export default function CodeSandbox({ initialCode, lessonId, blockIndex }) {
 
           {/* Editor Label */}
           <div className="px-4 py-2 bg-[#1a1a1a] border-b border-gray-800">
-            <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest">
+            <span className="text-[10px] text-teal-400 font-bold uppercase tracking-widest">
               Python Script (Editable)
             </span>
           </div>
@@ -441,7 +441,7 @@ export default function CodeSandbox({ initialCode, lessonId, blockIndex }) {
                     className={`mb-1 not-prose whitespace-pre-wrap font-mono ${
                       isError ? 'text-red-400 font-semibold' : 
                       isSuccess ? 'text-green-400' : 
-                      isProgress || isPackageLoading ? 'text-cyan-400' : 
+                      isProgress || isPackageLoading ? 'text-teal-400' : 
                       isWarning ? 'text-yellow-400' :
                       'text-gray-300'
                     }`}

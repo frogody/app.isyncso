@@ -40,7 +40,7 @@ function MessageBubble({ message, isUser }) {
       <div className={cn(
         "rounded-2xl px-4 py-3 text-sm leading-relaxed",
         isUser 
-          ? "bg-cyan-600 text-white rounded-br-md" 
+          ? "bg-teal-600 text-white rounded-br-md" 
           : "bg-zinc-800/80 text-zinc-200 rounded-bl-md border border-zinc-700/50"
       )}>
         {isUser ? (
@@ -50,9 +50,9 @@ function MessageBubble({ message, isUser }) {
             components={{
               p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
               strong: ({ children }) => <strong className="text-white font-semibold">{children}</strong>,
-              em: ({ children }) => <em className="text-cyan-400">{children}</em>,
+              em: ({ children }) => <em className="text-teal-400">{children}</em>,
               code: ({ children }) => (
-                <code className="px-1.5 py-0.5 rounded bg-zinc-900 text-cyan-400 text-xs font-mono">
+                <code className="px-1.5 py-0.5 rounded bg-zinc-900 text-teal-400 text-xs font-mono">
                   {children}
                 </code>
               ),
@@ -77,7 +77,7 @@ function TypingIndicator() {
         {[0, 1, 2].map(i => (
           <motion.div
             key={i}
-            className="w-2 h-2 bg-cyan-500 rounded-full"
+            className="w-2 h-2 bg-teal-500 rounded-full"
             animate={{ y: [0, -6, 0] }}
             transition={{ 
               duration: 0.6, 
@@ -246,8 +246,8 @@ export default function AITutorPanel({
           {/* Header */}
           <div className="h-14 border-b border-zinc-800/50 flex items-center justify-between px-4 flex-shrink-0">
             <div className="flex items-center gap-3">
-              <div className="p-1.5 rounded-lg bg-cyan-500/20">
-                <Brain className="w-4 h-4 text-cyan-400" />
+              <div className="p-1.5 rounded-lg bg-teal-500/20">
+                <Brain className="w-4 h-4 text-teal-400" />
               </div>
               <div>
                 <span className="text-white font-medium text-sm">AI Tutor</span>
@@ -295,9 +295,9 @@ export default function AITutorPanel({
                 <motion.div
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  className="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-purple-500/20 flex items-center justify-center mb-6 border border-cyan-500/30"
+                  className="w-20 h-20 rounded-2xl bg-gradient-to-br from-teal-500/20 to-purple-500/20 flex items-center justify-center mb-6 border border-teal-500/30"
                 >
-                  <Sparkles className="w-10 h-10 text-cyan-400" />
+                  <Sparkles className="w-10 h-10 text-teal-400" />
                 </motion.div>
                 <h3 className="text-white font-semibold text-lg mb-2">AI Tutor Ready</h3>
                 <p className="text-zinc-400 text-sm mb-6 max-w-xs">
@@ -332,14 +332,14 @@ export default function AITutorPanel({
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Ask a question..."
-                className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-500 focus:border-cyan-500"
+                className="bg-zinc-900 border-zinc-700 text-white placeholder:text-zinc-500 focus:border-teal-500"
                 disabled={isLoading || !conversation}
               />
               <Button 
                 onClick={() => handleSendMessage()}
                 disabled={!inputMessage.trim() || isLoading || !conversation}
                 size="icon" 
-                className="bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50"
+                className="bg-teal-600 hover:bg-teal-500 disabled:opacity-50"
               >
                 {isLoading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

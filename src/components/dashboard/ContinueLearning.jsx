@@ -55,7 +55,7 @@ export default function ContinueLearning({ courses, userProgress }) {
     <Card className="h-full bg-black border-black flex flex-col">
       <CardHeader className="pb-3">
         <CardTitle className="text-white flex items-center gap-2 text-base">
-          <Target className="w-4 h-4 text-cyan-400" />
+          <Target className="w-4 h-4 text-teal-400" />
           Learning Path
         </CardTitle>
       </CardHeader>
@@ -73,9 +73,9 @@ export default function ContinueLearning({ courses, userProgress }) {
             <div key={index} className="flex items-start gap-2.5">
               <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center mt-0.5 ${
                 step.completed 
-                  ? 'bg-cyan-500/20 text-cyan-400' 
+                  ? 'bg-teal-500/20 text-teal-400' 
                   : step.progress > 0
-                  ? 'bg-cyan-400/20 text-cyan-300'
+                  ? 'bg-teal-400/20 text-teal-300'
                   : 'bg-gray-700 text-gray-500'
               }`}>
                 {step.completed ? (

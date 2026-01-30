@@ -91,20 +91,18 @@ const TrendIndicator = ({ value, suffix = "%" }) => {
 };
 
 // Metric Card Component
-const MetricCard = ({ title, value, subtitle, icon: Icon, color = "red", trend }) => {
+const MetricCard = ({ title, value, subtitle, icon: Icon }) => {
   return (
     <motion.div variants={itemVariants}>
-      <GlassCard className="p-4 bg-gradient-to-br from-red-500/20 to-red-600/20 border-red-500/30">
-        <div className="flex items-start justify-between mb-2">
-          <div className="p-2 rounded-lg bg-black/20 text-red-400">
-            <Icon className="w-4 h-4" />
+      <GlassCard className="px-3 py-2.5 bg-gradient-to-br from-red-500/20 to-red-600/20 border-red-500/30">
+        <div className="flex items-center gap-2.5">
+          <div className="p-1.5 rounded-md bg-black/20 text-red-400 shrink-0">
+            <Icon className="w-3.5 h-3.5" />
           </div>
-          {trend !== undefined && <TrendIndicator value={trend} />}
-        </div>
-        <div>
-          <h3 className="text-xl font-bold text-white mb-0.5">{value}</h3>
-          <p className="text-xs text-white/70 font-medium">{title}</p>
-          {subtitle && <p className="text-[10px] text-white/50 mt-0.5">{subtitle}</p>}
+          <div className="min-w-0">
+            <h3 className="text-lg font-bold text-white leading-tight">{value}</h3>
+            <p className="text-[11px] text-white/60 truncate">{title}{subtitle ? ` · ${subtitle}` : ''}</p>
+          </div>
         </div>
       </GlassCard>
     </motion.div>
@@ -863,95 +861,42 @@ export default function TalentDashboard() {
           title="Talent Dashboard"
           subtitle="Your recruitment command center"
           color="red"
-          actions={
-            <div className="flex items-center gap-3">
-              <Select value={timeRange} onValueChange={setTimeRange}>
-                <SelectTrigger className="w-32 bg-zinc-800/50 border-zinc-700 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-white/10">
-                  <SelectItem value="7d">Last 7 days</SelectItem>
-                  <SelectItem value="30d">Last 30 days</SelectItem>
-                  <SelectItem value="90d">Last 90 days</SelectItem>
-                  <SelectItem value="all">All time</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button
-                variant="ghost"
-                onClick={fetchData}
-                className="text-white/60 hover:text-white"
-              >
-                <RefreshCw className="w-4 h-4" />
-              </Button>
-            </div>
-          }
         />
 
 
-        {/* Key Metrics */}
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3"
-        >
-          <MetricCard
-            title="Total Candidates"
-            value={metrics.totalCandidates}
-            subtitle={`${metrics.intelReady} intel-ready`}
-            icon={Users}
-          />
-          <MetricCard
-            title="Active Campaigns"
-            value={metrics.activeCampaigns}
-            subtitle={`${metrics.totalMatches} total matches`}
-            icon={Megaphone}
-          />
-          <MetricCard
-            title="Outreach Sent"
-            value={metrics.sentOutreach}
-            subtitle={`${metrics.totalOutreach} total tasks`}
-            icon={Send}
-          />
-          <MetricCard
-            title="Response Rate"
-            value={`${metrics.responseRate}%`}
-            subtitle={`${metrics.repliedOutreach} replies`}
-            icon={MessageSquare}
-          />
-        </motion.div>
+        {/* Time Range Controls */}
+        <div className="flex items-center gap-2">
+          <Select value={timeRange} onValueChange={setTimeRange}>
+            <SelectTrigger className="w-32 bg-zinc-800/50 border-zinc-700 text-white text-sm h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-slate-800 border-white/10">
+              <SelectItem value="7d">Last 7 days</SelectItem>
+              <SelectItem value="30d">Last 30 days</SelectItem>
+              <SelectItem value="90d">Last 90 days</SelectItem>
+              <SelectItem value="all">All time</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="ghost" size="sm" onClick={fetchData} className="text-white/60 hover:text-white h-8 w-8 p-0">
+            <RefreshCw className="w-3.5 h-3.5" />
+          </Button>
+        </div>
 
-        {/* Secondary Metrics */}
+        {/* Key Metrics — compact 8-up grid */}
         <motion.div
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 md:grid-cols-4 gap-3"
+          className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2"
         >
-          <MetricCard
-            title="Active Projects"
-            value={metrics.activeProjects}
-            subtitle={`${projects.length} total`}
-            icon={Briefcase}
-          />
-          <MetricCard
-            title="Open Roles"
-            value={metrics.activeRoles}
-            subtitle={`${roles.length} total roles`}
-            icon={Target}
-          />
-          <MetricCard
-            title="Roles Filled"
-            value={metrics.filledRoles}
-            subtitle={`${Math.round((metrics.filledRoles / Math.max(roles.length, 1)) * 100)}% success`}
-            icon={CheckCircle2}
-          />
-          <MetricCard
-            title="High Intel Candidates"
-            value={metrics.highRiskCandidates}
-            subtitle="Score 60+"
-            icon={Brain}
-          />
+          <MetricCard title="Total Candidates" value={metrics.totalCandidates} subtitle={`${metrics.intelReady} intel-ready`} icon={Users} />
+          <MetricCard title="Active Campaigns" value={metrics.activeCampaigns} subtitle={`${metrics.totalMatches} matches`} icon={Megaphone} />
+          <MetricCard title="Outreach Sent" value={metrics.sentOutreach} subtitle={`${metrics.totalOutreach} tasks`} icon={Send} />
+          <MetricCard title="Response Rate" value={`${metrics.responseRate}%`} subtitle={`${metrics.repliedOutreach} replies`} icon={MessageSquare} />
+          <MetricCard title="Active Projects" value={metrics.activeProjects} subtitle={`${projects.length} total`} icon={Briefcase} />
+          <MetricCard title="Open Roles" value={metrics.activeRoles} subtitle={`${roles.length} total`} icon={Target} />
+          <MetricCard title="Roles Filled" value={metrics.filledRoles} subtitle={`${Math.round((metrics.filledRoles / Math.max(roles.length, 1)) * 100)}% success`} icon={CheckCircle2} />
+          <MetricCard title="High Intel" value={metrics.highRiskCandidates} subtitle="Score 60+" icon={Brain} />
         </motion.div>
 
         {/* Analytics Overview Section */}

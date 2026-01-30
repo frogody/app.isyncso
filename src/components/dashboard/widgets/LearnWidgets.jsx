@@ -56,10 +56,10 @@ export function LearnProgressWidget({ courses = [], userProgress = [] }) {
     <GlassCard className="p-6 h-full">
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-          <GraduationCap className="w-5 h-5 text-cyan-400" />
+          <GraduationCap className="w-5 h-5 text-teal-400" />
           Continue Learning
         </h2>
-        <Link to={createPageUrl("Learn")} className="text-cyan-400 text-sm hover:text-cyan-300 flex items-center gap-1">
+        <Link to={createPageUrl("Learn")} className="text-teal-400 text-sm hover:text-teal-300 flex items-center gap-1">
           View all <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
@@ -70,14 +70,14 @@ export function LearnProgressWidget({ courses = [], userProgress = [] }) {
             const progress = inProgressCourses.find(p => p.course_id === course.id);
             return (
               <Link key={course.id} to={createPageUrl(`LessonViewer?courseId=${course.id}`)} className="block group">
-                <div className="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50 hover:border-cyan-500/30 hover:bg-zinc-800/70 transition-all">
+                <div className="p-4 rounded-xl bg-zinc-800/50 border border-zinc-700/50 hover:border-teal-500/30 hover:bg-zinc-800/70 transition-all">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-medium text-white group-hover:text-cyan-400 transition-colors truncate pr-4">{course.title}</h3>
-                    <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-cyan-400 transition-colors flex-shrink-0" />
+                    <h3 className="font-medium text-white group-hover:text-teal-400 transition-colors truncate pr-4">{course.title}</h3>
+                    <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-teal-400 transition-colors flex-shrink-0" />
                   </div>
                   <div className="flex items-center gap-4">
                     <Progress value={progress?.completion_percentage || 0} className="flex-1 h-2" />
-                    <span className="text-sm text-cyan-400 font-medium">{progress?.completion_percentage || 0}%</span>
+                    <span className="text-sm text-teal-400 font-medium">{progress?.completion_percentage || 0}%</span>
                   </div>
                 </div>
               </Link>
@@ -86,13 +86,13 @@ export function LearnProgressWidget({ courses = [], userProgress = [] }) {
         </div>
       ) : (
         <div className="text-center py-8">
-          <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 flex items-center justify-center mx-auto mb-4">
-            <BookOpen className="w-8 h-8 text-cyan-400" />
+          <div className="w-16 h-16 rounded-2xl bg-teal-500/10 flex items-center justify-center mx-auto mb-4">
+            <BookOpen className="w-8 h-8 text-teal-400" />
           </div>
           <h3 className="text-white font-medium mb-2">Start your learning journey</h3>
           <p className="text-zinc-400 text-sm mb-4">Explore courses and build new skills</p>
           <Link to={createPageUrl("Learn")}>
-            <Button className="bg-cyan-500 hover:bg-cyan-400 text-black font-medium">
+            <Button className="bg-teal-500 hover:bg-teal-400 text-black font-medium">
               Browse Courses
             </Button>
           </Link>
@@ -106,8 +106,8 @@ export function LearnStatsWidget({ totalHours = 0, skillsCount = 0 }) {
   return (
     <GlassCard className="p-5">
       <div className="flex items-start justify-between mb-3">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-cyan-500/20 border-cyan-500/30 border">
-          <GraduationCap className="w-5 h-5 text-cyan-400" />
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-teal-500/20 border-teal-500/30 border">
+          <GraduationCap className="w-5 h-5 text-teal-400" />
         </div>
       </div>
       <div className="text-2xl font-bold text-white">{totalHours}h</div>
@@ -120,11 +120,11 @@ export function LearnStreakWidget({ streak = 0, longestStreak = 0 }) {
   return (
     <GlassCard className="p-5">
       <div className="flex items-start justify-between mb-3">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-cyan-500/20 border-cyan-500/30 border">
-          <Flame className="w-5 h-5 text-cyan-400" />
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-teal-500/20 border-teal-500/30 border">
+          <Flame className="w-5 h-5 text-teal-400" />
         </div>
         {streak >= 7 && (
-          <span className="text-xs px-2 py-1 rounded-lg bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+          <span className="text-xs px-2 py-1 rounded-lg bg-teal-500/20 text-teal-400 border border-teal-500/30">
             🔥 On Fire!
           </span>
         )}
@@ -145,14 +145,14 @@ export function LearnXPWidget({ totalXP = 0, level = 1 }) {
   return (
     <GlassCard className="p-5">
       <div className="flex items-start justify-between mb-3">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br from-cyan-500 to-cyan-600 text-white font-bold text-lg">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br from-teal-500 to-teal-600 text-white font-bold text-lg">
           {level}
         </div>
-        <span className="text-xs px-2 py-1 rounded-lg bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+        <span className="text-xs px-2 py-1 rounded-lg bg-teal-500/20 text-teal-400 border border-teal-500/30">
           Level {level}
         </span>
       </div>
-      <div className="text-2xl font-bold text-cyan-400">{totalXP.toLocaleString()}</div>
+      <div className="text-2xl font-bold text-teal-400">{totalXP.toLocaleString()}</div>
       <div className="text-sm text-zinc-400 mb-2">Total XP</div>
       <Progress value={progressToNextLevel} className="h-1.5" />
       <div className="text-xs text-zinc-500 mt-1">{1000 - xpInCurrentLevel} XP to next level</div>
@@ -167,10 +167,10 @@ export function LearnSkillsWidget({ skills = [] }) {
     <GlassCard className="p-6 h-full">
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-          <Target className="w-5 h-5 text-cyan-400" />
+          <Target className="w-5 h-5 text-teal-400" />
           Top Skills
         </h2>
-        <Link to={createPageUrl("SkillMap")} className="text-cyan-400 text-sm hover:text-cyan-300">View all</Link>
+        <Link to={createPageUrl("SkillMap")} className="text-teal-400 text-sm hover:text-teal-300">View all</Link>
       </div>
 
       {topSkills.length > 0 ? (
@@ -180,7 +180,7 @@ export function LearnSkillsWidget({ skills = [] }) {
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-sm text-white truncate">{skill.name || skill.skill_name}</span>
-                  <span className="text-xs text-cyan-400 font-medium">{skill.progress || skill.proficiency_score || 0}%</span>
+                  <span className="text-xs text-teal-400 font-medium">{skill.progress || skill.proficiency_score || 0}%</span>
                 </div>
                 <Progress value={skill.progress || skill.proficiency_score || 0} className="h-1.5" />
               </div>
@@ -201,11 +201,11 @@ export function LearnCertificatesWidget({ certificateCount = 0 }) {
   return (
     <GlassCard className="p-5">
       <div className="flex items-start justify-between mb-3">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-cyan-500/20 border-cyan-500/30 border">
-          <Award className="w-5 h-5 text-cyan-400" />
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-teal-500/20 border-teal-500/30 border">
+          <Award className="w-5 h-5 text-teal-400" />
         </div>
         {certificateCount > 0 && (
-          <Link to={createPageUrl("Certificates")} className="text-xs text-cyan-400 hover:text-cyan-300">
+          <Link to={createPageUrl("Certificates")} className="text-xs text-teal-400 hover:text-teal-300">
             View →
           </Link>
         )}

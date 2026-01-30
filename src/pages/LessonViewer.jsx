@@ -57,12 +57,12 @@ function ErrorState({ error }) {
     <div className="min-h-screen bg-black flex items-center justify-center text-white p-4">
       <div className="max-w-md text-center">
         <div className="w-14 h-14 rounded-xl bg-zinc-800/50 border border-zinc-700/40 flex items-center justify-center mx-auto mb-4">
-          <AlertTriangle className="w-7 h-7 text-cyan-400/60" />
+          <AlertTriangle className="w-7 h-7 text-teal-400/60" />
         </div>
         <h2 className="text-lg font-bold text-zinc-100 mb-2">Could not load lesson</h2>
         <p className="text-zinc-500 mb-4 text-sm">{error}</p>
         <Link to={createPageUrl("Learn")}>
-          <Button className="bg-cyan-600/80 hover:bg-cyan-600 text-white font-medium text-sm">
+          <Button className="bg-teal-600/80 hover:bg-teal-600 text-white font-medium text-sm">
             Back to Courses
           </Button>
         </Link>

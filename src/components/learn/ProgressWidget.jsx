@@ -59,7 +59,7 @@ export function ProgressWidget({ userId, compact = false }) {
     return (
       <div className="flex items-center gap-3 px-3 py-2 bg-gray-900/50 rounded-lg border border-gray-800">
         <div className="flex items-center gap-1.5">
-          <TrendingUp className="w-4 h-4 text-cyan-400" />
+          <TrendingUp className="w-4 h-4 text-teal-400" />
           <span className="text-xs text-gray-400">Lvl {gamification.level}</span>
         </div>
         <div className="flex items-center gap-1.5">
@@ -82,8 +82,8 @@ export function ProgressWidget({ userId, compact = false }) {
         {/* Level & XP */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-cyan-400" />
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500/20 to-blue-500/20 border border-teal-500/30 flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-teal-400" />
             </div>
             <div>
               <div className="text-xs text-gray-500">Level {gamification.level}</div>

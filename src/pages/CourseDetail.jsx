@@ -201,11 +201,11 @@ export default function CourseDetail() {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center p-4">
         <div className="p-8 text-center max-w-md rounded-xl bg-zinc-900/50 border border-zinc-800/60">
-          <AlertTriangle className="w-16 h-16 text-cyan-400/60 mx-auto mb-4" />
+          <AlertTriangle className="w-16 h-16 text-teal-400/60 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-white mb-2">Error</h2>
           <p className="text-zinc-500 mb-6">{error}</p>
           <Link to={createPageUrl("Learn")}>
-            <Button className="bg-cyan-600/80 hover:bg-cyan-600 text-white">Back to Courses</Button>
+            <Button className="bg-teal-600/80 hover:bg-teal-600 text-white">Back to Courses</Button>
           </Link>
         </div>
       </div>
@@ -220,8 +220,8 @@ export default function CourseDetail() {
     <div className="min-h-screen bg-black relative">
       {/* Animated Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 left-1/4 w-[500px] h-[500px] bg-cyan-500/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-1/4 w-[400px] h-[400px] bg-cyan-400/5 rounded-full blur-3xl" />
+        <div className="absolute top-20 left-1/4 w-[500px] h-[500px] bg-teal-500/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-1/4 w-[400px] h-[400px] bg-teal-400/5 rounded-full blur-3xl" />
       </div>
 
       <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
@@ -250,7 +250,7 @@ export default function CourseDetail() {
                     </Badge>
                   )}
                   {course.is_template && (
-                    <Badge className="bg-cyan-500/15 text-cyan-400/70 border-cyan-500/25 border">
+                    <Badge className="bg-teal-500/15 text-teal-400/70 border-teal-500/25 border">
                       <Sparkles className="w-3 h-3 mr-1" />
                       Template
                     </Badge>
@@ -262,15 +262,15 @@ export default function CourseDetail() {
 
                 <div className="flex flex-wrap items-center gap-3 lg:gap-4 text-xs text-zinc-500 pt-2">
                   <div className="flex items-center gap-2 bg-zinc-800/40 px-3 py-1.5 rounded-lg border border-zinc-700/30">
-                    <Layers className="w-4 h-4 text-cyan-400/70" />
+                    <Layers className="w-4 h-4 text-teal-400/70" />
                     <span>{modules.length} Modules</span>
                   </div>
                   <div className="flex items-center gap-2 bg-zinc-800/40 px-3 py-1.5 rounded-lg border border-zinc-700/30">
-                    <BookOpen className="w-4 h-4 text-cyan-400/70" />
+                    <BookOpen className="w-4 h-4 text-teal-400/70" />
                     <span>{lessons.length} Lessons</span>
                   </div>
                   <div className="flex items-center gap-2 bg-zinc-800/40 px-3 py-1.5 rounded-lg border border-zinc-700/30">
-                    <Timer className="w-4 h-4 text-cyan-400/70" />
+                    <Timer className="w-4 h-4 text-teal-400/70" />
                     <span>{course.duration_hours} Hours</span>
                   </div>
                 </div>
@@ -285,8 +285,8 @@ export default function CourseDetail() {
                       disabled={isPersonalizing}
                       className={`w-full h-14 font-semibold text-base transition-all ${
                         isPersonalizing 
-                          ? "bg-zinc-800/60 border border-cyan-500/30 text-cyan-400/80" 
-                          : "bg-cyan-600/80 hover:bg-cyan-600 text-white"
+                          ? "bg-zinc-800/60 border border-teal-500/30 text-teal-400/80" 
+                          : "bg-teal-600/80 hover:bg-teal-600 text-white"
                       }`}
                     >
                       {isPersonalizing ? (
@@ -308,7 +308,7 @@ export default function CourseDetail() {
                 ) : (
                   <Button
                     onClick={handleStartOrContinueCourse}
-                    className="w-full h-14 bg-cyan-600/80 hover:bg-cyan-600 text-white font-semibold text-base"
+                    className="w-full h-14 bg-teal-600/80 hover:bg-teal-600 text-white font-semibold text-base"
                   >
                     <PlayCircle className="w-6 h-6 mr-2" />
                     {userProgress?.status === 'in_progress' ? 'Continue Course' : 'Start Course'}
@@ -319,7 +319,7 @@ export default function CourseDetail() {
                   <div className="p-4 rounded-xl bg-zinc-800/40 border border-zinc-700/40 space-y-3">
                     <div className="flex justify-between text-sm">
                       <span className="text-zinc-500">Your Progress</span>
-                      <span className="text-cyan-400/80 font-semibold">{userProgress.completion_percentage}%</span>
+                      <span className="text-teal-400/80 font-semibold">{userProgress.completion_percentage}%</span>
                     </div>
                     <Progress value={userProgress.completion_percentage} className="h-2 bg-zinc-800" />
                   </div>
@@ -341,7 +341,7 @@ export default function CourseDetail() {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
               <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
                 <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
-                  <Award className="w-5 h-5 text-cyan-400/70" />
+                  <Award className="w-5 h-5 text-teal-400/70" />
                   What you'll learn
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -353,7 +353,7 @@ export default function CourseDetail() {
                       transition={{ delay: 0.15 + index * 0.05 }}
                       className="flex items-start gap-2 p-2 rounded-lg bg-zinc-800/30 border border-zinc-700/30"
                     >
-                      <CheckCircle className="w-5 h-5 text-cyan-400/70 mt-0.5 flex-shrink-0" />
+                      <CheckCircle className="w-5 h-5 text-teal-400/70 mt-0.5 flex-shrink-0" />
                       <span className="text-zinc-400 text-xs">{outcome}</span>
                     </motion.div>
                   ))}
@@ -365,7 +365,7 @@ export default function CourseDetail() {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
               <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
                 <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
-                  <BookOpen className="w-5 h-5 text-cyan-400/70" />
+                  <BookOpen className="w-5 h-5 text-teal-400/70" />
                   Course Curriculum
                 </h3>
                 <div className="space-y-3">
@@ -381,8 +381,8 @@ export default function CourseDetail() {
                         className="rounded-lg bg-zinc-800/30 border border-zinc-700/30 overflow-hidden"
                       >
                         <div className="flex items-center gap-2 p-3 bg-zinc-800/40">
-                          <div className="w-8 h-8 rounded-lg bg-cyan-500/15 border border-cyan-500/25 flex items-center justify-center flex-shrink-0">
-                            <span className="text-cyan-400/80 font-bold">{idx + 1}</span>
+                          <div className="w-8 h-8 rounded-lg bg-teal-500/15 border border-teal-500/25 flex items-center justify-center flex-shrink-0">
+                            <span className="text-teal-400/80 font-bold">{idx + 1}</span>
                           </div>
                           <div className="flex-1">
                             <h4 className="font-semibold text-sm text-white">{module.title}</h4>
@@ -394,7 +394,7 @@ export default function CourseDetail() {
                           {moduleLessons.map((lesson, lessonIdx) => (
                             <div key={lesson.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-zinc-800/40 transition-colors">
                               <div className="flex items-center gap-2">
-                                <ChevronRight className="w-3 h-3 text-cyan-400/40" />
+                                <ChevronRight className="w-3 h-3 text-teal-400/40" />
                                 <span className="text-zinc-400 text-xs">{lesson.title}</span>
                               </div>
                               <span className="text-[10px] text-zinc-500 bg-zinc-800/60 px-2 py-0.5 rounded">
@@ -417,7 +417,7 @@ export default function CourseDetail() {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
               <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
                 <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-3">
-                  <UserIcon className="w-5 h-5 text-cyan-400/70" />
+                  <UserIcon className="w-5 h-5 text-teal-400/70" />
                   Instructor
                 </h3>
                 <div className="flex items-center gap-3">
@@ -428,8 +428,8 @@ export default function CourseDetail() {
                       className="w-12 h-12 rounded-lg object-cover border-2 border-zinc-700/50"
                     />
                   ) : (
-                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-cyan-500/20 to-cyan-600/20 flex items-center justify-center border-2 border-zinc-700/50">
-                      <GraduationCap className="w-6 h-6 text-cyan-400" />
+                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-teal-500/20 to-teal-600/20 flex items-center justify-center border-2 border-zinc-700/50">
+                      <GraduationCap className="w-6 h-6 text-teal-400" />
                     </div>
                   )}
                   <div>
@@ -444,18 +444,18 @@ export default function CourseDetail() {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
               <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
                 <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-3">
-                  <Target className="w-5 h-5 text-cyan-400/70" />
+                  <Target className="w-5 h-5 text-teal-400/70" />
                   Prerequisites
                 </h3>
                 <ul className="space-y-1">
                   {course.prerequisites?.length > 0 ? course.prerequisites.map((req, index) => (
                     <li key={index} className="flex items-start gap-2 text-zinc-400 text-xs">
-                      <div className="w-1 h-1 rounded-full bg-cyan-400/60 mt-1.5 flex-shrink-0" />
+                      <div className="w-1 h-1 rounded-full bg-teal-400/60 mt-1.5 flex-shrink-0" />
                       <span>{req}</span>
                     </li>
                   )) : (
                     <li className="flex items-start gap-2 text-zinc-400 text-xs">
-                      <CheckCircle className="w-3 h-3 text-cyan-400/70 mt-0.5 flex-shrink-0" />
+                      <CheckCircle className="w-3 h-3 text-teal-400/70 mt-0.5 flex-shrink-0" />
                       <span>No specific prerequisites required.</span>
                     </li>
                   )}
@@ -467,7 +467,7 @@ export default function CourseDetail() {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
               <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
                 <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-3">
-                  <BarChart3 className="w-5 h-5 text-cyan-400/70" />
+                  <BarChart3 className="w-5 h-5 text-teal-400/70" />
                   Course Details
                 </h3>
                 <div className="space-y-2">

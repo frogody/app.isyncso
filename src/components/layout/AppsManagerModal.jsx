@@ -35,7 +35,7 @@ const AVAILABLE_APPS = [
     name: 'Learn',
     description: 'Courses, skills, and learning paths',
     icon: GraduationCap,
-    color: 'cyan',
+    color: 'teal',
     defaultEnabled: true,
     widgets: LEARN_WIDGETS,
     purpose: 'Master AI skills with personalized learning paths designed for your role and goals.',
@@ -141,6 +141,14 @@ const COMING_SOON_APPS = [
 ];
 
 const COLOR_CLASSES = {
+  teal: {
+    bg: 'bg-teal-950/40',
+    border: 'border-teal-500/30',
+    text: 'text-teal-400',
+    activeBg: 'bg-teal-950/60',
+    iconBg: 'bg-teal-500/20',
+    gradient: 'from-teal-500/20 to-teal-500/5'
+  },
   cyan: {
     bg: 'bg-cyan-950/40',
     border: 'border-cyan-500/30',

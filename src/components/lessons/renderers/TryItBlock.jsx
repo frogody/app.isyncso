@@ -149,16 +149,16 @@ Provide brief, encouraging feedback (2-3 sentences). Highlight what they did wel
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="my-8 rounded-2xl overflow-hidden bg-gradient-to-br from-zinc-900 via-zinc-900 to-cyan-950/30 border border-cyan-500/20 shadow-xl shadow-cyan-500/5"
+      className="my-8 rounded-2xl overflow-hidden bg-gradient-to-br from-zinc-900 via-zinc-900 to-teal-950/30 border border-teal-500/20 shadow-xl shadow-teal-500/5"
     >
       {/* Header */}
-      <div className="flex items-center gap-3 px-5 py-4 bg-gradient-to-r from-cyan-500/10 to-transparent border-b border-cyan-500/20">
-        <div className="p-2 rounded-xl bg-cyan-500/20 border border-cyan-500/30">
-          <Code2 className="w-5 h-5 text-cyan-400" />
+      <div className="flex items-center gap-3 px-5 py-4 bg-gradient-to-r from-teal-500/10 to-transparent border-b border-teal-500/20">
+        <div className="p-2 rounded-xl bg-teal-500/20 border border-teal-500/30">
+          <Code2 className="w-5 h-5 text-teal-400" />
         </div>
         <div className="flex-1">
           <h3 className="font-semibold text-white">{exercise.title}</h3>
-          <p className="text-xs text-cyan-400/70">Practice Exercise</p>
+          <p className="text-xs text-teal-400/70">Practice Exercise</p>
         </div>
         {isCompleted && (
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/20 border border-green-500/30">
@@ -235,14 +235,14 @@ Provide brief, encouraging feedback (2-3 sentences). Highlight what they did wel
               value={userResponse}
               onChange={(e) => setUserResponse(e.target.value)}
               placeholder="Write your code or response here..."
-              className="min-h-[200px] bg-[#0d1117] border-zinc-700 text-zinc-100 font-mono text-sm placeholder:text-zinc-600 focus:border-cyan-500/50 resize-none"
+              className="min-h-[200px] bg-[#0d1117] border-zinc-700 text-zinc-100 font-mono text-sm placeholder:text-zinc-600 focus:border-teal-500/50 resize-none"
             />
             
             <div className="flex justify-end gap-2">
               <Button
                 onClick={handleSubmit}
                 disabled={!userResponse.trim() || isSubmitting}
-                className="bg-cyan-600 hover:bg-cyan-500 text-white"
+                className="bg-teal-600 hover:bg-teal-500 text-white"
               >
                 {isSubmitting ? (
                   <>
@@ -275,13 +275,13 @@ Provide brief, encouraging feedback (2-3 sentences). Highlight what they did wel
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="p-5 rounded-xl bg-gradient-to-br from-cyan-500/10 via-transparent to-green-500/10 border border-cyan-500/30"
+                className="p-5 rounded-xl bg-gradient-to-br from-teal-500/10 via-transparent to-green-500/10 border border-teal-500/30"
               >
                 <div className="flex items-center gap-2 mb-3">
-                  <Sparkles className="w-5 h-5 text-cyan-400" />
+                  <Sparkles className="w-5 h-5 text-teal-400" />
                   <span className="font-semibold text-white">Feedback</span>
                   {feedback.score && (
-                    <span className="ml-auto text-sm text-cyan-400 font-medium">{feedback.score}/10</span>
+                    <span className="ml-auto text-sm text-teal-400 font-medium">{feedback.score}/10</span>
                   )}
                 </div>
                 
@@ -302,7 +302,7 @@ Provide brief, encouraging feedback (2-3 sentences). Highlight what they did wel
                 )}
                 
                 {feedback.suggestion && (
-                  <p className="text-sm text-cyan-300/80 flex items-start gap-2">
+                  <p className="text-sm text-teal-300/80 flex items-start gap-2">
                     <Lightbulb className="w-4 h-4 flex-shrink-0 mt-0.5" />
                     {feedback.suggestion}
                   </p>

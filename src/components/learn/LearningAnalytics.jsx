@@ -85,19 +85,19 @@ export function LearningAnalytics({ courseId, userId }) {
   if (!stats) return null;
 
   const metrics = [
-    { icon: MessageSquare, label: 'Questions Asked', value: stats.totalQuestions, color: 'text-cyan-400' },
-    { icon: Mic, label: 'Voice Chats', value: stats.voiceInteractions, color: 'text-cyan-400' },
-    { icon: Target, label: 'Lessons Done', value: stats.lessonsCompleted, color: 'text-cyan-400' },
-    { icon: Brain, label: 'Quizzes Passed', value: stats.quizzesPassed, color: 'text-cyan-400' },
-    { icon: Clock, label: 'Time Spent', value: `${stats.totalTimeMinutes}m`, color: 'text-cyan-400' },
-    { icon: TrendingUp, label: 'Avg Questions/Lesson', value: stats.avgQuestionsPerLesson, color: 'text-cyan-400' },
+    { icon: MessageSquare, label: 'Questions Asked', value: stats.totalQuestions, color: 'text-teal-400' },
+    { icon: Mic, label: 'Voice Chats', value: stats.voiceInteractions, color: 'text-teal-400' },
+    { icon: Target, label: 'Lessons Done', value: stats.lessonsCompleted, color: 'text-teal-400' },
+    { icon: Brain, label: 'Quizzes Passed', value: stats.quizzesPassed, color: 'text-teal-400' },
+    { icon: Clock, label: 'Time Spent', value: `${stats.totalTimeMinutes}m`, color: 'text-teal-400' },
+    { icon: TrendingUp, label: 'Avg Questions/Lesson', value: stats.avgQuestionsPerLesson, color: 'text-teal-400' },
   ];
 
   return (
     <Card className="glass-card border-0">
       <CardHeader className="pb-2">
         <CardTitle className="text-white text-lg flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-cyan-400" />
+          <TrendingUp className="w-5 h-5 text-teal-400" />
           Learning Progress
         </CardTitle>
       </CardHeader>

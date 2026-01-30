@@ -34,12 +34,12 @@ export const THEME_COLORS = {
     glow: 'shadow-[0_0_10px_rgba(99,102,241,0.5)]'
   },
   learn: {
-    // Cyan
-    text: 'text-cyan-400',
-    bg: 'bg-cyan-500/10',
-    border: 'border-cyan-500/20',
-    solid: 'bg-cyan-500',
-    glow: 'shadow-[0_0_10px_rgba(6,182,212,0.5)]'
+    // Teal
+    text: 'text-teal-400',
+    bg: 'bg-teal-500/10',
+    border: 'border-teal-500/20',
+    solid: 'bg-teal-500',
+    glow: 'shadow-[0_0_10px_rgba(20,184,166,0.5)]'
   },
   sync: {
     // Purple

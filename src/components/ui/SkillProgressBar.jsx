@@ -17,14 +17,14 @@ const LEVEL_THRESHOLDS = [
 export function SkillProgressBar({ 
   name, 
   progress = 0, 
-  color = 'cyan',
+  color = 'teal',
   showLevel = true,
   delay = 0,
   clickable = false,
   skillId
 }) {
   const colorClasses = {
-    cyan: 'from-cyan-500 to-cyan-400',
+    teal: 'from-teal-500 to-teal-400',
     sage: 'from-[#86EFAC] to-[#6EE7B7]',
     indigo: 'from-indigo-500 to-indigo-400',
     orange: 'from-orange-500 to-orange-400',
@@ -51,7 +51,7 @@ export function SkillProgressBar({
         <div className="flex items-center gap-2">
           <span className="text-sm text-zinc-400">{progress}%</span>
           {clickable && (
-            <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-cyan-400 transition-colors" />
+            <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-teal-400 transition-colors" />
           )}
         </div>
       </div>
@@ -87,7 +87,7 @@ export function SkillProgressBar({
   return content;
 }
 
-export function SkillProgressList({ skills = [], color = 'cyan', clickable = false }) {
+export function SkillProgressList({ skills = [], color = 'teal', clickable = false }) {
   return (
     <div className="space-y-4">
       {skills.map((skill, i) => (

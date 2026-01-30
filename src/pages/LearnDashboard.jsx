@@ -23,12 +23,12 @@ import { CourseCarousel } from '@/components/ui/CourseCarousel';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 
-function StatCardEnhanced({ icon: Icon, label, value, sublabel, color = 'cyan', onClick, delay = 0 }) {
+function StatCardEnhanced({ icon: Icon, label, value, sublabel, color = 'teal', onClick, delay = 0 }) {
   const colorClasses = {
-    cyan: { icon: 'text-cyan-400/70', bg: 'bg-zinc-800/80', border: 'border-zinc-700/50', glow: 'shadow-cyan-500/5' },
-    orange: { icon: 'text-cyan-300/70', bg: 'bg-zinc-800/80', border: 'border-zinc-700/50', glow: 'shadow-cyan-500/5' },
-    violet: { icon: 'text-cyan-400/60', bg: 'bg-zinc-800/80', border: 'border-zinc-700/50', glow: 'shadow-cyan-500/5' },
-    emerald: { icon: 'text-cyan-400/70', bg: 'bg-zinc-800/80', border: 'border-zinc-700/50', glow: 'shadow-cyan-500/5' },
+    teal: { icon: 'text-teal-400/70', bg: 'bg-zinc-800/80', border: 'border-zinc-700/50', glow: 'shadow-teal-500/5' },
+    orange: { icon: 'text-teal-300/70', bg: 'bg-zinc-800/80', border: 'border-zinc-700/50', glow: 'shadow-teal-500/5' },
+    violet: { icon: 'text-teal-400/60', bg: 'bg-zinc-800/80', border: 'border-zinc-700/50', glow: 'shadow-teal-500/5' },
+    emerald: { icon: 'text-teal-400/70', bg: 'bg-zinc-800/80', border: 'border-zinc-700/50', glow: 'shadow-teal-500/5' },
   };
   const colors = colorClasses[color];
 
@@ -39,7 +39,7 @@ function StatCardEnhanced({ icon: Icon, label, value, sublabel, color = 'cyan', 
       transition={{ delay }}
       onClick={onClick}
       className={`relative bg-zinc-900/50 backdrop-blur-sm rounded-xl border border-zinc-800/60 p-3 transition-all duration-200 ${
-        onClick ? 'cursor-pointer hover:border-cyan-700/40 hover:bg-zinc-900/70' : ''
+        onClick ? 'cursor-pointer hover:border-teal-700/40 hover:bg-zinc-900/70' : ''
       }`}
     >
       <div className="flex items-center justify-between">
@@ -69,21 +69,21 @@ function ContinueLearningCard({ course, progress, index }) {
       transition={{ delay: index * 0.1 }}
     >
       <Link to={createPageUrl(`LessonViewer?courseId=${course.id}`)}>
-        <div className="group relative bg-zinc-900/50 backdrop-blur-sm rounded-xl border border-zinc-800/60 hover:border-cyan-800/50 transition-all duration-200 p-3">
-          <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-xl bg-cyan-600/40" />
+        <div className="group relative bg-zinc-900/50 backdrop-blur-sm rounded-xl border border-zinc-800/60 hover:border-teal-800/50 transition-all duration-200 p-3">
+          <div className="absolute top-0 left-0 right-0 h-0.5 rounded-t-xl bg-teal-600/40" />
 
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center flex-shrink-0">
-              <BookOpen className="w-5 h-5 text-cyan-400/70" />
+              <BookOpen className="w-5 h-5 text-teal-400/70" />
             </div>
 
             <div className="flex-1 min-w-0">
-              <h4 className="font-semibold text-zinc-100 text-sm truncate group-hover:text-cyan-300/90 transition-colors">
+              <h4 className="font-semibold text-zinc-100 text-sm truncate group-hover:text-teal-300/90 transition-colors">
                 {course.title}
               </h4>
               <div className="flex items-center gap-2 mt-1.5">
                 <Progress value={progress?.completion_percentage || 0} className="flex-1 h-1.5 bg-zinc-800" />
-                <span className="text-xs font-medium text-cyan-400/80">{progress?.completion_percentage || 0}%</span>
+                <span className="text-xs font-medium text-teal-400/80">{progress?.completion_percentage || 0}%</span>
               </div>
               <div className="flex items-center gap-2 mt-1.5 text-[10px] text-zinc-600">
                 <span className="flex items-center gap-1">
@@ -98,7 +98,7 @@ function ContinueLearningCard({ course, progress, index }) {
               </div>
             </div>
             
-            <Button size="sm" className="bg-zinc-800/80 hover:bg-zinc-800 text-cyan-400/80 border border-zinc-700/60 flex-shrink-0">
+            <Button size="sm" className="bg-zinc-800/80 hover:bg-zinc-800 text-teal-400/80 border border-zinc-700/60 flex-shrink-0">
               Continue <ArrowRight className="w-3 h-3 ml-1" />
             </Button>
           </div>
@@ -220,8 +220,8 @@ export default function LearnDashboard() {
     <div className="min-h-screen bg-black relative">
       {/* Animated Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 left-1/4 w-96 h-96 bg-cyan-900/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-cyan-950/10 rounded-full blur-3xl" />
+        <div className="absolute top-20 left-1/4 w-96 h-96 bg-teal-900/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-teal-950/10 rounded-full blur-3xl" />
       </div>
 
       <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
@@ -230,10 +230,10 @@ export default function LearnDashboard() {
           icon={GraduationCap}
           title="Learning Dashboard"
           subtitle={`Welcome back, ${user?.full_name?.split(' ')[0] || 'Learner'}! Keep up the momentum.`}
-          color="cyan"
+          color="teal"
           actions={
             <Link to={createPageUrl('Learn')}>
-              <Button size="sm" className="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 h-8 text-xs">
+              <Button size="sm" className="bg-teal-500/10 hover:bg-teal-500/20 text-teal-400 border border-teal-500/30 h-8 text-xs">
                 <BookOpen className="w-3 h-3 mr-1.5" />
                 Browse Courses
               </Button>
@@ -248,7 +248,7 @@ export default function LearnDashboard() {
             label="In Progress"
             value={analytics?.inProgressCourses || 0}
             sublabel="Active courses"
-            color="cyan"
+            color="teal"
             delay={0}
           />
           <StatCardEnhanced
@@ -256,7 +256,7 @@ export default function LearnDashboard() {
             label="Completed"
             value={analytics?.completedCourses || 0}
             sublabel="Courses finished"
-            color="cyan"
+            color="teal"
             delay={0.1}
           />
           <StatCardEnhanced
@@ -264,7 +264,7 @@ export default function LearnDashboard() {
             label="Certificates"
             value={analytics?.certificatesCount || 0}
             sublabel="Earned"
-            color="cyan"
+            color="teal"
             delay={0.2}
           />
           <StatCardEnhanced
@@ -272,7 +272,7 @@ export default function LearnDashboard() {
             label="Day Streak"
             value={analytics?.streak || 0}
             sublabel="Keep it going!"
-            color="cyan"
+            color="teal"
             onClick={() => setShowStreakModal(true)}
             delay={0.3}
           />
@@ -283,13 +283,13 @@ export default function LearnDashboard() {
           {/* Left Column */}
           <div className="lg:col-span-2 space-y-4">
             {/* Continue Learning */}
-            <GlassCard glow="cyan" className="p-4">
+            <GlassCard glow="teal" className="p-4">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                  <Play className="w-4 h-4 text-cyan-400" />
+                  <Play className="w-4 h-4 text-teal-400" />
                   Continue Learning
                 </h3>
-                <Link to={createPageUrl('Learn')} className="text-cyan-400 text-xs hover:text-cyan-300 flex items-center gap-1">
+                <Link to={createPageUrl('Learn')} className="text-teal-400 text-xs hover:text-teal-300 flex items-center gap-1">
                   View All <ArrowRight className="w-3 h-3" />
                 </Link>
               </div>
@@ -303,13 +303,13 @@ export default function LearnDashboard() {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <div className="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center mx-auto mb-3">
-                    <BookOpen className="w-5 h-5 text-cyan-400" />
+                  <div className="w-12 h-12 rounded-xl bg-teal-500/10 flex items-center justify-center mx-auto mb-3">
+                    <BookOpen className="w-5 h-5 text-teal-400" />
                   </div>
                   <h4 className="text-white font-medium text-sm mb-1.5">No courses in progress</h4>
                   <p className="text-zinc-400 text-xs mb-3">Start your learning journey today</p>
                   <Link to={createPageUrl('Learn')}>
-                    <Button size="sm" className="bg-cyan-500 hover:bg-cyan-400 text-white h-8 text-xs">
+                    <Button size="sm" className="bg-teal-500 hover:bg-teal-400 text-white h-8 text-xs">
                       Start a Course
                     </Button>
                   </Link>
@@ -318,27 +318,27 @@ export default function LearnDashboard() {
             </GlassCard>
 
             {/* Activity Heatmap */}
-            <GlassCard glow="cyan" className="p-4">
+            <GlassCard glow="teal" className="p-4">
               <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-3">
-                <Calendar className="w-4 h-4 text-cyan-400" />
+                <Calendar className="w-4 h-4 text-teal-400" />
                 Weekly Activity
               </h3>
-              <ActivityHeatmap userId={user?.id} color="cyan" />
+              <ActivityHeatmap userId={user?.id} color="teal" />
             </GlassCard>
 
             {/* Skill Progress */}
             {skills.length > 0 && (
-              <GlassCard glow="cyan" className="p-4">
+              <GlassCard glow="teal" className="p-4">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                    <Target className="w-4 h-4 text-cyan-400" />
+                    <Target className="w-4 h-4 text-teal-400" />
                     Skill Progress
                   </h3>
-                  <Link to={createPageUrl('SkillMap')} className="text-cyan-400 text-xs hover:text-cyan-300 flex items-center gap-1">
+                  <Link to={createPageUrl('SkillMap')} className="text-teal-400 text-xs hover:text-teal-300 flex items-center gap-1">
                     View All <ArrowRight className="w-3 h-3" />
                   </Link>
                 </div>
-                <SkillProgressList skills={skills} color="cyan" clickable />
+                <SkillProgressList skills={skills} color="teal" clickable />
               </GlassCard>
             )}
           </div>
@@ -346,10 +346,10 @@ export default function LearnDashboard() {
           {/* Right Column */}
           <div className="space-y-4">
             {/* Progress Ring */}
-            <GlassCard glow="cyan" className="p-4">
+            <GlassCard glow="teal" className="p-4">
               <h3 className="text-sm font-semibold text-white text-center mb-4">Overall Progress</h3>
               <div className="flex justify-center mb-4">
-                <ProgressRing value={overallProgress} color="cyan" />
+                <ProgressRing value={overallProgress} color="teal" />
               </div>
               <div className="grid grid-cols-2 gap-3 text-center">
                 <div
@@ -365,7 +365,7 @@ export default function LearnDashboard() {
                   onClick={() => setShowXPModal(true)}
                   className="cursor-pointer hover:bg-zinc-800/50 rounded-lg p-2 transition-colors border border-transparent hover:border-zinc-700"
                 >
-                  <div className="text-lg font-bold text-cyan-400">{analytics?.totalPoints || 0}</div>
+                  <div className="text-lg font-bold text-teal-400">{analytics?.totalPoints || 0}</div>
                   <div className="text-[10px] text-zinc-400 flex items-center justify-center gap-1">
                     Total XP <Info className="w-2.5 h-2.5" />
                   </div>
@@ -374,13 +374,13 @@ export default function LearnDashboard() {
             </GlassCard>
 
             {/* Level & Streak */}
-            <GlassCard glow="cyan" className="p-4">
+            <GlassCard glow="teal" className="p-4">
               <div
                 onClick={() => setShowLevelModal(true)}
                 className="flex items-center justify-between mb-3 cursor-pointer hover:bg-zinc-800/30 rounded-lg p-2 -m-2 transition-colors"
               >
                 <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-cyan-500/30">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-teal-500/30">
                     {analytics?.level || 1}
                   </div>
                   <div>
@@ -394,17 +394,17 @@ export default function LearnDashboard() {
               <div className="mb-3 mt-3">
                 <div className="flex justify-between text-[10px] text-zinc-400 mb-1">
                   <span>Progress to Level {(analytics?.level || 1) + 1}</span>
-                  <span className="text-cyan-400">{((analytics?.totalPoints || 0) % 1000)} / 1000 XP</span>
+                  <span className="text-teal-400">{((analytics?.totalPoints || 0) % 1000)} / 1000 XP</span>
                 </div>
                 <Progress value={((analytics?.totalPoints || 0) % 1000) / 10} className="h-1.5 bg-zinc-800" />
               </div>
 
               <div
                 onClick={() => setShowStreakModal(true)}
-                className="flex items-center justify-between gap-2 p-3 rounded-lg bg-gradient-to-r from-cyan-500/10 to-cyan-400/10 border border-cyan-500/20 cursor-pointer hover:bg-cyan-500/15 transition-colors"
+                className="flex items-center justify-between gap-2 p-3 rounded-lg bg-gradient-to-r from-teal-500/10 to-teal-400/10 border border-teal-500/20 cursor-pointer hover:bg-teal-500/15 transition-colors"
               >
                 <div className="flex items-center gap-2">
-                  <Flame className="w-5 h-5 text-cyan-400" />
+                  <Flame className="w-5 h-5 text-teal-400" />
                   <div>
                     <div className="text-white font-semibold text-sm">{analytics?.streak || 0} Day Streak!</div>
                     <div className="text-[10px] text-zinc-400">Click to view history</div>
@@ -413,7 +413,7 @@ export default function LearnDashboard() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="text-cyan-400 hover:bg-cyan-500/20 h-7 w-7 p-0"
+                  className="text-teal-400 hover:bg-teal-500/20 h-7 w-7 p-0"
                   onClick={(e) => {
                     e.stopPropagation();
                     navigator.clipboard.writeText(`I'm on a ${analytics?.streak || 0} day learning streak!`);
@@ -426,13 +426,13 @@ export default function LearnDashboard() {
             </GlassCard>
 
             {/* Achievements */}
-            <GlassCard glow="cyan" className="p-4">
+            <GlassCard glow="teal" className="p-4">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                  <Trophy className="w-4 h-4 text-cyan-400" />
+                  <Trophy className="w-4 h-4 text-teal-400" />
                   Achievements
                 </h3>
-                <Link to={createPageUrl('Leaderboard')} className="text-cyan-400 text-xs hover:text-cyan-300">
+                <Link to={createPageUrl('Leaderboard')} className="text-teal-400 text-xs hover:text-teal-300">
                   View All
                 </Link>
               </div>
@@ -455,7 +455,7 @@ export default function LearnDashboard() {
         {/* Recommended Courses */}
         {recommended.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-            <CourseCarousel courses={recommended} title="Recommended for You" color="cyan" />
+            <CourseCarousel courses={recommended} title="Recommended for You" color="teal" />
           </motion.div>
         )}
       </div>
@@ -465,13 +465,13 @@ export default function LearnDashboard() {
         <DialogContent className="bg-zinc-900 border-zinc-800 max-w-md">
           <DialogHeader>
             <DialogTitle className="text-white flex items-center gap-2">
-              <Zap className="w-5 h-5 text-cyan-400" />
+              <Zap className="w-5 h-5 text-teal-400" />
               XP Breakdown
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
-            <div className="text-center p-5 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 border border-cyan-500/30">
-              <div className="text-4xl font-bold text-cyan-400">{analytics?.totalPoints || 0}</div>
+            <div className="text-center p-5 rounded-xl bg-gradient-to-br from-teal-500/20 to-teal-600/10 border border-teal-500/30">
+              <div className="text-4xl font-bold text-teal-400">{analytics?.totalPoints || 0}</div>
               <div className="text-sm text-zinc-400">Total XP Earned</div>
             </div>
             
@@ -486,16 +486,16 @@ export default function LearnDashboard() {
               ].map((item, i) => (
                 <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/50">
                   <div className="flex items-center gap-3">
-                    <item.icon className="w-4 h-4 text-cyan-400" />
+                    <item.icon className="w-4 h-4 text-teal-400" />
                     <span className="text-sm text-white">{item.action}</span>
                   </div>
-                  <span className="text-sm font-medium text-cyan-400">{item.xp}</span>
+                  <span className="text-sm font-medium text-teal-400">{item.xp}</span>
                 </div>
               ))}
             </div>
 
             <Link to={createPageUrl('Leaderboard')}>
-              <Button className="w-full bg-cyan-500 hover:bg-cyan-400 text-white">
+              <Button className="w-full bg-teal-500 hover:bg-teal-400 text-white">
                 View Leaderboard
               </Button>
             </Link>
@@ -508,14 +508,14 @@ export default function LearnDashboard() {
         <DialogContent className="bg-zinc-900 border-zinc-800 max-w-md">
           <DialogHeader>
             <DialogTitle className="text-white flex items-center gap-2">
-              <Flame className="w-5 h-5 text-cyan-400" />
+              <Flame className="w-5 h-5 text-teal-400" />
               Streak History
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-400/10 border border-cyan-500/30">
-                <div className="text-3xl font-bold text-cyan-400">{analytics?.streak || 0}</div>
+              <div className="text-center p-4 rounded-xl bg-gradient-to-br from-teal-500/20 to-teal-400/10 border border-teal-500/30">
+                <div className="text-3xl font-bold text-teal-400">{analytics?.streak || 0}</div>
                 <div className="text-sm text-zinc-400">Current Streak</div>
               </div>
               <div className="text-center p-4 rounded-xl bg-zinc-800/50 border border-zinc-700">
@@ -528,15 +528,15 @@ export default function LearnDashboard() {
               <h4 className="text-sm font-medium text-zinc-300 mb-3">Streak Tips</h4>
               <ul className="space-y-2 text-sm text-zinc-400">
                 <li className="flex items-start gap-2">
-                  <Flame className="w-3 h-3 text-cyan-400 mt-1 flex-shrink-0" />
+                  <Flame className="w-3 h-3 text-teal-400 mt-1 flex-shrink-0" />
                   Complete at least one lesson daily
                 </li>
                 <li className="flex items-start gap-2">
-                  <Flame className="w-3 h-3 text-cyan-400 mt-1 flex-shrink-0" />
+                  <Flame className="w-3 h-3 text-teal-400 mt-1 flex-shrink-0" />
                   Streaks reset at midnight
                 </li>
                 <li className="flex items-start gap-2">
-                  <Flame className="w-3 h-3 text-cyan-400 mt-1 flex-shrink-0" />
+                  <Flame className="w-3 h-3 text-teal-400 mt-1 flex-shrink-0" />
                   Longer streaks = bonus XP rewards
                 </li>
               </ul>
@@ -547,7 +547,7 @@ export default function LearnDashboard() {
                 navigator.clipboard.writeText(`I'm on a ${analytics?.streak || 0} day learning streak!`);
                 toast.success('Copied to clipboard!');
               }}
-              className="w-full bg-cyan-500 hover:bg-cyan-400 text-white"
+              className="w-full bg-teal-500 hover:bg-teal-400 text-white"
             >
               <Share2 className="w-4 h-4 mr-2" />
               Share Your Streak
@@ -561,13 +561,13 @@ export default function LearnDashboard() {
         <DialogContent className="bg-zinc-900 border-zinc-800 max-w-md">
           <DialogHeader>
             <DialogTitle className="text-white flex items-center gap-2">
-              <Award className="w-5 h-5 text-cyan-400" />
+              <Award className="w-5 h-5 text-teal-400" />
               Level Progress
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div className="flex items-center justify-center gap-6">
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center text-white font-bold text-3xl shadow-lg shadow-cyan-500/30">
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center text-white font-bold text-3xl shadow-lg shadow-teal-500/30">
                 {analytics?.level || 1}
               </div>
               <div>
@@ -579,7 +579,7 @@ export default function LearnDashboard() {
             <div className="p-4 rounded-xl bg-zinc-800/50">
               <div className="flex justify-between text-sm mb-2">
                 <span className="text-zinc-400">Progress to Level {(analytics?.level || 1) + 1}</span>
-                <span className="text-cyan-400">{((analytics?.totalPoints || 0) % 1000)} / 1000 XP</span>
+                <span className="text-teal-400">{((analytics?.totalPoints || 0) % 1000)} / 1000 XP</span>
               </div>
               <Progress value={((analytics?.totalPoints || 0) % 1000) / 10} className="h-3" />
               <div className="text-xs text-zinc-500 mt-2">
@@ -595,14 +595,14 @@ export default function LearnDashboard() {
                 { level: 20, reward: 'Early Access Features', unlocked: (analytics?.level || 1) >= 20 },
                 { level: 50, reward: 'Master Status', unlocked: (analytics?.level || 1) >= 50 },
               ].map((item, i) => (
-                <div key={i} className={`flex items-center justify-between p-3 rounded-lg ${item.unlocked ? 'bg-cyan-500/10 border border-cyan-500/30' : 'bg-zinc-800/50'}`}>
+                <div key={i} className={`flex items-center justify-between p-3 rounded-lg ${item.unlocked ? 'bg-teal-500/10 border border-teal-500/30' : 'bg-zinc-800/50'}`}>
                   <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${item.unlocked ? 'bg-cyan-500 text-white' : 'bg-zinc-700 text-zinc-400'}`}>
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${item.unlocked ? 'bg-teal-500 text-white' : 'bg-zinc-700 text-zinc-400'}`}>
                       {item.level}
                     </div>
                     <span className={`text-sm ${item.unlocked ? 'text-white' : 'text-zinc-400'}`}>{item.reward}</span>
                   </div>
-                  {item.unlocked && <Star className="w-4 h-4 text-cyan-400" />}
+                  {item.unlocked && <Star className="w-4 h-4 text-teal-400" />}
                 </div>
               ))}
             </div>
@@ -615,13 +615,13 @@ export default function LearnDashboard() {
         <DialogContent className="bg-zinc-900 border-zinc-800 max-w-md">
           <DialogHeader>
             <DialogTitle className="text-white flex items-center gap-2">
-              <Clock className="w-5 h-5 text-cyan-400" />
+              <Clock className="w-5 h-5 text-teal-400" />
               Time Invested
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
-            <div className="text-center p-5 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 border border-cyan-500/30">
-              <div className="text-4xl font-bold text-cyan-400">{formatMinutes(analytics?.totalTimeMinutes || 0)}</div>
+            <div className="text-center p-5 rounded-xl bg-gradient-to-br from-teal-500/20 to-teal-600/10 border border-teal-500/30">
+              <div className="text-4xl font-bold text-teal-400">{formatMinutes(analytics?.totalTimeMinutes || 0)}</div>
               <div className="text-sm text-zinc-400">Total Learning Time</div>
             </div>
 
@@ -639,7 +639,7 @@ export default function LearnDashboard() {
             </div>
 
             <Link to={createPageUrl('ActivityTimeline')}>
-              <Button className="w-full bg-cyan-500 hover:bg-cyan-400 text-white">
+              <Button className="w-full bg-teal-500 hover:bg-teal-400 text-white">
                 View Full Activity History
               </Button>
             </Link>

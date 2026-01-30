@@ -8,16 +8,16 @@ import { createPageUrl } from "@/utils";
 
 export default function RecommendedCourses({ recommendations }) {
   const difficultyColors = {
-    beginner: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30",
-    intermediate: "bg-cyan-400/20 text-cyan-300 border-cyan-400/30",
-    advanced: "bg-cyan-600/20 text-cyan-500 border-cyan-600/30"
+    beginner: "bg-teal-500/20 text-teal-400 border-teal-500/30",
+    intermediate: "bg-teal-400/20 text-teal-300 border-teal-400/30",
+    advanced: "bg-teal-600/20 text-teal-500 border-teal-600/30"
   };
 
   return (
     <Card className="glass-card border-0">
       <CardHeader>
         <CardTitle className="text-white flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-cyan-400" />
+          <Sparkles className="w-5 h-5 text-teal-400" />
           AI Recommended for You
         </CardTitle>
       </CardHeader>
@@ -30,7 +30,7 @@ export default function RecommendedCourses({ recommendations }) {
         ) : (
           <div className="space-y-4">
             {recommendations.map((course) => (
-              <div key={course.id} className="p-4 rounded-lg bg-gray-800/50 border border-cyan-500/20 hover:border-cyan-500/30 transition-all duration-300">
+              <div key={course.id} className="p-4 rounded-lg bg-gray-800/50 border border-teal-500/20 hover:border-teal-500/30 transition-all duration-300">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
@@ -43,8 +43,8 @@ export default function RecommendedCourses({ recommendations }) {
                     <p className="text-sm text-gray-400 mb-3 line-clamp-2">{course.description}</p>
                     
                     {course.reason && (
-                      <div className="p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/20 mb-3">
-                        <p className="text-sm text-cyan-300">
+                      <div className="p-3 rounded-lg bg-teal-500/10 border border-teal-500/20 mb-3">
+                        <p className="text-sm text-teal-300">
                           <Sparkles className="w-4 h-4 inline mr-1" />
                           {course.reason}
                         </p>
@@ -63,7 +63,7 @@ export default function RecommendedCourses({ recommendations }) {
                   </div>
                   
                   <Link to={createPageUrl(`CourseDetail?id=${course.id}`)}>
-                    <Button size="sm" className="bg-gradient-to-b from-cyan-500/10 to-cyan-500/5 border border-cyan-500/30 text-cyan-400 hover:border-cyan-500/50 hover:text-cyan-300 transition-all">
+                    <Button size="sm" className="bg-gradient-to-b from-teal-500/10 to-teal-500/5 border border-teal-500/30 text-teal-400 hover:border-teal-500/50 hover:text-teal-300 transition-all">
                       <ArrowRight className="w-4 h-4" />
                     </Button>
                   </Link>

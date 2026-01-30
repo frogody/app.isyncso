@@ -131,7 +131,7 @@ export default function Certificates() {
     <div className="min-h-screen bg-black relative">
       {/* Animated Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 right-1/4 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute top-20 right-1/4 w-96 h-96 bg-teal-500/5 rounded-full blur-3xl animate-pulse" />
       </div>
 
       <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
@@ -140,15 +140,15 @@ export default function Certificates() {
           icon={Award}
           title="My Certificates"
           subtitle="Your earned credentials and achievements"
-          color="cyan"
+          color="teal"
           badge={`${certificates.length} earned`}
         />
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <StatCard icon={Award} label="Total Certificates" value={certificates.length} color="cyan" delay={0} />
-          <StatCard icon={Star} label="High Scores (90%+)" value={highScoreCerts} color="cyan" delay={0.1} />
-          <StatCard icon={Calendar} label="Years Active" value={years.length} color="cyan" delay={0.2} />
+          <StatCard icon={Award} label="Total Certificates" value={certificates.length} color="teal" delay={0} />
+          <StatCard icon={Star} label="High Scores (90%+)" value={highScoreCerts} color="teal" delay={0.1} />
+          <StatCard icon={Calendar} label="Years Active" value={years.length} color="teal" delay={0.2} />
         </div>
 
         {/* Filters */}
@@ -182,10 +182,10 @@ export default function Certificates() {
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ delay: i * 0.05 }}
                   >
-                    <GlassCard glow="cyan" hover className="p-4 rounded-xl" onClick={() => setPreviewCert(cert)}>
+                    <GlassCard glow="teal" hover className="p-4 rounded-xl" onClick={() => setPreviewCert(cert)}>
                       <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500/20 to-cyan-600/20 flex items-center justify-center border border-cyan-500/30 flex-shrink-0">
-                          <Award className="w-5 h-5 text-cyan-400" />
+                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-teal-500/20 to-teal-600/20 flex items-center justify-center border border-teal-500/30 flex-shrink-0">
+                          <Award className="w-5 h-5 text-teal-400" />
                         </div>
 
                         <div className="flex-1 min-w-0">
@@ -196,7 +196,7 @@ export default function Certificates() {
                               {new Date(cert.issued_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                             </span>
                             {cert.final_score !== null && (
-                              <Badge className={`text-[10px] ${cert.final_score >= 90 ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30' : 'bg-zinc-700 text-zinc-300'}`}>
+                              <Badge className={`text-[10px] ${cert.final_score >= 90 ? 'bg-teal-500/20 text-teal-400 border-teal-500/30' : 'bg-zinc-700 text-zinc-300'}`}>
                                 Score: {cert.final_score}%
                               </Badge>
                             )}
@@ -204,14 +204,14 @@ export default function Certificates() {
 
                           <div className="flex flex-wrap items-center gap-1.5 mb-3">
                             <Badge className="bg-zinc-800 text-zinc-300 border-zinc-700 font-mono text-[10px]">{cert.certificate_number}</Badge>
-                            <Badge className="bg-cyan-500/10 text-cyan-300 border-cyan-500/20 font-mono text-[10px]">
+                            <Badge className="bg-teal-500/10 text-teal-300 border-teal-500/20 font-mono text-[10px]">
                               <CheckCircle className="w-2.5 h-2.5 mr-0.5" />
                               Verified
                             </Badge>
                           </div>
 
                           <div className="flex flex-wrap gap-1.5">
-                            <Button size="sm" onClick={(e) => { e.stopPropagation(); handleDownload(cert); }} className="bg-cyan-500 hover:bg-cyan-400 text-white text-xs h-7 px-2">
+                            <Button size="sm" onClick={(e) => { e.stopPropagation(); handleDownload(cert); }} className="bg-teal-500 hover:bg-teal-400 text-white text-xs h-7 px-2">
                               <Download className="w-3 h-3 mr-1" /> Download
                             </Button>
                             <Button size="sm" onClick={(e) => { e.stopPropagation(); handleShare(cert); }} variant="outline" className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10 text-xs h-7 px-2">
@@ -243,10 +243,10 @@ export default function Certificates() {
           </>
         ) : (
           <GlassCard className="p-8 text-center rounded-xl">
-            <Award className="w-8 h-8 text-cyan-400 mx-auto mb-3 opacity-50" />
+            <Award className="w-8 h-8 text-teal-400 mx-auto mb-3 opacity-50" />
             <h3 className="text-lg font-bold text-white mb-1">No Certificates Yet</h3>
             <p className="text-xs text-zinc-400 mb-4">Complete courses to earn certificates and showcase your achievements</p>
-            <Button className="bg-cyan-500 hover:bg-cyan-400 text-white text-xs h-7">Start Learning</Button>
+            <Button className="bg-teal-500 hover:bg-teal-400 text-white text-xs h-7">Start Learning</Button>
           </GlassCard>
         )}
       </div>
@@ -265,7 +265,7 @@ export default function Certificates() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-gradient-to-br from-zinc-900 to-black border border-cyan-500/30 rounded-xl p-6 max-w-md w-full relative"
+              className="bg-gradient-to-br from-zinc-900 to-black border border-teal-500/30 rounded-xl p-6 max-w-md w-full relative"
               onClick={(e) => e.stopPropagation()}
             >
               <button onClick={() => setPreviewCert(null)} className="absolute top-3 right-3 text-zinc-400 hover:text-white">
@@ -273,15 +273,15 @@ export default function Certificates() {
               </button>
 
               <div className="text-center">
-                <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center">
+                <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center">
                   <Award className="w-6 h-6 text-white" />
                 </div>
-                <h2 className="text-lg font-bold text-cyan-400 mb-1">Certificate of Completion</h2>
+                <h2 className="text-lg font-bold text-teal-400 mb-1">Certificate of Completion</h2>
                 <p className="text-[10px] text-zinc-500 mb-4">This certifies that</p>
                 <h3 className="text-sm font-semibold text-white mb-4">{previewCert.user_name}</h3>
                 <p className="text-[10px] text-zinc-500 mb-1">has successfully completed</p>
                 <h4 className="text-sm text-white mb-3">{previewCert.course_title}</h4>
-                {previewCert.final_score && <p className="text-cyan-400 text-xs mb-4">Score: {previewCert.final_score}%</p>}
+                {previewCert.final_score && <p className="text-teal-400 text-xs mb-4">Score: {previewCert.final_score}%</p>}
                 <div className="border-t border-zinc-700 pt-3 text-[10px] text-zinc-500 space-y-0.5">
                   <p>Certificate: {previewCert.certificate_number}</p>
                   <p>Issued: {new Date(previewCert.issued_at).toLocaleDateString()}</p>

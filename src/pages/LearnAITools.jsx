@@ -99,13 +99,13 @@ export default function LearnAITools() {
           title="Course AI Tools"
           subtitle="AI-powered tools to create and enhance learning content"
           icon={Sparkles}
-          color="cyan"
+          color="teal"
           badge="Admin Tool"
           actions={
             <div className="flex items-center gap-3">
               {importStatus !== "idle" && importStatus !== "done" ? (
                 <div className="flex items-center gap-3 px-4 py-2 rounded-xl bg-zinc-900/60 border border-white/10">
-                  <Clock className="w-4 h-4 text-cyan-400 animate-spin" />
+                  <Clock className="w-4 h-4 text-teal-400 animate-spin" />
                   <span className="text-sm text-zinc-300">
                     {importStatus === "uploading" && "Uploading..."}
                     {importStatus === "parsing" && "Analyzing..."}
@@ -125,7 +125,7 @@ export default function LearnAITools() {
                   <label htmlFor="pdf-upload">
                     <Button
                       variant="outline"
-                      className="border-white/10 bg-zinc-900/60 text-zinc-300 hover:text-white hover:border-cyan-500/50 hover:bg-cyan-500/10"
+                      className="border-white/10 bg-zinc-900/60 text-zinc-300 hover:text-white hover:border-teal-500/50 hover:bg-teal-500/10"
                       asChild
                     >
                       <span className="cursor-pointer flex items-center gap-2">
@@ -150,13 +150,13 @@ export default function LearnAITools() {
                 <span className="text-sm text-zinc-300">
                   Importing: {importProgress.currentCourse}
                 </span>
-                <span className="text-sm text-cyan-400 font-medium">
+                <span className="text-sm text-teal-400 font-medium">
                   {Math.round((importProgress.current / importProgress.total) * 100)}%
                 </span>
               </div>
               <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
                 <motion.div
-                  className="h-full bg-gradient-to-r from-cyan-500 to-cyan-400"
+                  className="h-full bg-gradient-to-r from-teal-500 to-teal-400"
                   initial={{ width: 0 }}
                   animate={{ width: `${(importProgress.current / importProgress.total) * 100}%` }}
                   transition={{ duration: 0.3 }}
@@ -173,21 +173,21 @@ export default function LearnAITools() {
               <TabsList className="w-full justify-start bg-transparent h-auto p-0 rounded-none flex-wrap">
                 <TabsTrigger
                   value="generator"
-                  className="relative px-6 py-4 rounded-none border-b-2 border-transparent data-[state=active]:border-cyan-500 data-[state=active]:bg-transparent data-[state=active]:text-cyan-400 text-zinc-400 hover:text-zinc-200 transition-colors"
+                  className="relative px-6 py-4 rounded-none border-b-2 border-transparent data-[state=active]:border-teal-500 data-[state=active]:bg-transparent data-[state=active]:text-teal-400 text-zinc-400 hover:text-zinc-200 transition-colors"
                 >
                   <Sparkles className="w-4 h-4 mr-2" />
                   Course Generator
                 </TabsTrigger>
                 <TabsTrigger
                   value="enhancer"
-                  className="relative px-6 py-4 rounded-none border-b-2 border-transparent data-[state=active]:border-cyan-500 data-[state=active]:bg-transparent data-[state=active]:text-cyan-400 text-zinc-400 hover:text-zinc-200 transition-colors"
+                  className="relative px-6 py-4 rounded-none border-b-2 border-transparent data-[state=active]:border-teal-500 data-[state=active]:bg-transparent data-[state=active]:text-teal-400 text-zinc-400 hover:text-zinc-200 transition-colors"
                 >
                   <Zap className="w-4 h-4 mr-2" />
                   Content Enhancer
                 </TabsTrigger>
                 <TabsTrigger
                   value="optimizer"
-                  className="relative px-6 py-4 rounded-none border-b-2 border-transparent data-[state=active]:border-cyan-500 data-[state=active]:bg-transparent data-[state=active]:text-cyan-400 text-zinc-400 hover:text-zinc-200 transition-colors"
+                  className="relative px-6 py-4 rounded-none border-b-2 border-transparent data-[state=active]:border-teal-500 data-[state=active]:bg-transparent data-[state=active]:text-teal-400 text-zinc-400 hover:text-zinc-200 transition-colors"
                 >
                   <Target className="w-4 h-4 mr-2" />
                   Learning Optimizer

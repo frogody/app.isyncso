@@ -5,11 +5,11 @@ import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 
-export function CourseCarousel({ courses = [], title, color = 'cyan' }) {
+export function CourseCarousel({ courses = [], title, color = 'teal' }) {
   const scrollRef = useRef(null);
 
   const colorClasses = {
-    cyan: { badge: 'bg-zinc-800/80 text-cyan-400/70 border-zinc-700/50', button: 'bg-cyan-600/80 hover:bg-cyan-600' },
+    teal: { badge: 'bg-zinc-800/80 text-teal-400/70 border-zinc-700/50', button: 'bg-teal-600/80 hover:bg-teal-600' },
     sage: { badge: 'bg-zinc-800/80 text-[#86EFAC]/70 border-zinc-700/50', button: 'bg-[#86EFAC]/80 hover:bg-[#6EE7B7] text-black' },
     indigo: { badge: 'bg-zinc-800/80 text-indigo-400/70 border-zinc-700/50', button: 'bg-indigo-600/80 hover:bg-indigo-600' },
     orange: { badge: 'bg-zinc-800/80 text-orange-400/70 border-zinc-700/50', button: 'bg-orange-600/80 hover:bg-orange-600' },
@@ -28,9 +28,9 @@ export function CourseCarousel({ courses = [], title, color = 'cyan' }) {
   };
 
   const difficultyColors = {
-    beginner: 'bg-zinc-800/80 text-cyan-400/70',
-    intermediate: 'bg-zinc-800/80 text-cyan-300/70',
-    advanced: 'bg-zinc-800/80 text-cyan-200/70',
+    beginner: 'bg-zinc-800/80 text-teal-400/70',
+    intermediate: 'bg-zinc-800/80 text-teal-300/70',
+    advanced: 'bg-zinc-800/80 text-teal-200/70',
   };
 
   if (courses.length === 0) return null;
@@ -70,7 +70,7 @@ export function CourseCarousel({ courses = [], title, color = 'cyan' }) {
             className="flex-shrink-0 w-[300px]"
           >
             <Link to={createPageUrl(`CourseDetail?id=${course.id}`)}>
-              <div className="bg-zinc-900/50 backdrop-blur-xl border border-zinc-800/60 rounded-2xl overflow-hidden hover:border-cyan-800/50 transition-all group">
+              <div className="bg-zinc-900/50 backdrop-blur-xl border border-zinc-800/60 rounded-2xl overflow-hidden hover:border-teal-800/50 transition-all group">
                 {/* Thumbnail */}
                 <div className="h-40 bg-zinc-800/50 relative overflow-hidden">
                   {course.cover_image ? (
@@ -86,8 +86,8 @@ export function CourseCarousel({ courses = [], title, color = 'cyan' }) {
                       {course.difficulty}
                     </span>
                     {course.rating && (
-                      <span className="flex items-center gap-1 text-cyan-400/70 text-sm">
-                        <Star className="w-4 h-4 fill-cyan-400/70" />
+                      <span className="flex items-center gap-1 text-teal-400/70 text-sm">
+                        <Star className="w-4 h-4 fill-teal-400/70" />
                         {course.rating}
                       </span>
                     )}
@@ -96,7 +96,7 @@ export function CourseCarousel({ courses = [], title, color = 'cyan' }) {
 
                 {/* Content */}
                 <div className="p-4">
-                  <h4 className="font-semibold text-zinc-100 mb-2 line-clamp-2 group-hover:text-cyan-300/90 transition-colors">
+                  <h4 className="font-semibold text-zinc-100 mb-2 line-clamp-2 group-hover:text-teal-300/90 transition-colors">
                     {course.title}
                   </h4>
                   <p className="text-sm text-zinc-500 line-clamp-2 mb-3">

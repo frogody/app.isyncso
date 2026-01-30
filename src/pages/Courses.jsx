@@ -474,28 +474,28 @@ export default function Courses() {
       title: "Completed Courses",
       value: completedCourses.length,
       icon: CheckCircle,
-      color: "cyan",
+      color: "teal",
       subtitle: "Learning milestones"
     },
     {
       title: "In Progress",
       value: inProgressCourses.length,
       icon: PlayCircle,
-      color: "cyan",
+      color: "teal",
       subtitle: "Currently learning"
     },
     {
       title: "Time Invested",
       value: `${Math.round(totalTimeSpent / 60)}h`,
       icon: Clock,
-      color: "cyan",
+      color: "teal",
       subtitle: "Total learning time"
     },
     {
       title: "Average Progress",
       value: `${Math.round(averageProgress)}%`,
       icon: TrendingUp,
-      color: "cyan",
+      color: "teal",
       subtitle: "Overall completion"
     }
   ];

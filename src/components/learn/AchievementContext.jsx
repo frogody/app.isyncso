@@ -59,11 +59,11 @@ function AchievementToast({ achievement, onDismiss }) {
         return (
           <div className="p-4">
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-500/30 to-blue-500/30 flex items-center justify-center border-2 border-cyan-500/50">
-                <TrendingUp className="w-6 h-6 text-cyan-400" />
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-500/30 to-blue-500/30 flex items-center justify-center border-2 border-teal-500/50">
+                <TrendingUp className="w-6 h-6 text-teal-400" />
               </div>
               <div>
-                <div className="text-xs text-cyan-300 font-semibold uppercase tracking-wider">Level Up!</div>
+                <div className="text-xs text-teal-300 font-semibold uppercase tracking-wider">Level Up!</div>
                 <div className="text-base font-bold text-white">You're now a {level.title}</div>
               </div>
             </div>

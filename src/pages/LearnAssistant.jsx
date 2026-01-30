@@ -116,7 +116,7 @@ export default function LearnAssistant() {
   return (
     <div className="min-h-screen bg-black relative">
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 left-1/3 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute top-20 left-1/3 w-96 h-96 bg-teal-500/5 rounded-full blur-3xl animate-pulse" />
       </div>
 
       <div className="relative z-10 w-full max-w-5xl mx-auto px-6 lg:px-8 py-6 space-y-6">
@@ -124,7 +124,7 @@ export default function LearnAssistant() {
           icon={Sparkles}
           title="Learning Assistant"
           subtitle="Your AI-powered learning companion"
-          color="cyan"
+          color="teal"
         />
 
         <div className="h-[calc(100vh-220px)] min-h-[500px]">
@@ -134,7 +134,7 @@ export default function LearnAssistant() {
             isLoading={isLoading}
             placeholder="Ask about courses, concepts, or get personalized recommendations..."
             quickActions={quickActions}
-            color="cyan"
+            color="teal"
             assistantName="Learn AI"
             assistantIcon={BookOpen}
           />

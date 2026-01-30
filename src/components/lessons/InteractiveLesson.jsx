@@ -59,7 +59,7 @@ function CodeBlock({ children, language }) {
 // Callout Box
 function CalloutBox({ type = 'info', children }) {
   const configs = {
-    info: { bg: 'bg-cyan-500/10', border: 'border-cyan-500/30', icon: Lightbulb, color: 'text-cyan-400' },
+    info: { bg: 'bg-teal-500/10', border: 'border-teal-500/30', icon: Lightbulb, color: 'text-teal-400' },
     tip: { bg: 'bg-green-500/10', border: 'border-green-500/30', icon: Sparkles, color: 'text-green-400' },
     warning: { bg: 'bg-amber-500/10', border: 'border-amber-500/30', icon: Zap, color: 'text-amber-400' },
     important: { bg: 'bg-purple-500/10', border: 'border-purple-500/30', icon: Target, color: 'text-purple-400' },
@@ -84,11 +84,11 @@ function KeyTakeaway({ children }) {
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="my-8 p-6 rounded-2xl bg-gradient-to-br from-cyan-500/10 via-transparent to-purple-500/10 border border-cyan-500/20"
+      className="my-8 p-6 rounded-2xl bg-gradient-to-br from-teal-500/10 via-transparent to-purple-500/10 border border-teal-500/20"
     >
       <div className="flex items-center gap-2 mb-3">
-        <Award className="w-5 h-5 text-cyan-400" />
-        <span className="text-sm font-semibold text-cyan-400 uppercase tracking-wide">Key Takeaway</span>
+        <Award className="w-5 h-5 text-teal-400" />
+        <span className="text-sm font-semibold text-teal-400 uppercase tracking-wide">Key Takeaway</span>
       </div>
       <p className="text-white font-medium leading-relaxed">{children}</p>
     </motion.div>
@@ -173,7 +173,7 @@ export default function InteractiveLesson({ lesson, onComplete }) {
       {/* Reading Progress */}
       <div className="sticky top-0 z-10 h-1 bg-zinc-900">
         <motion.div 
-          className="h-full bg-gradient-to-r from-cyan-500 to-purple-500"
+          className="h-full bg-gradient-to-r from-teal-500 to-purple-500"
           animate={{ width: `${readingProgress}%` }}
           transition={{ duration: 0.1 }}
         />
@@ -189,7 +189,7 @@ export default function InteractiveLesson({ lesson, onComplete }) {
         >
           <div className="flex flex-wrap items-center gap-3 mb-3">
             {lesson.lesson_type && (
-              <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 text-xs">
+              <Badge className="bg-teal-500/20 text-teal-400 border-teal-500/30 text-xs">
                 {lesson.lesson_type}
               </Badge>
             )}
@@ -216,7 +216,7 @@ export default function InteractiveLesson({ lesson, onComplete }) {
             components={{
               h1: ({ children }) => <h1 className="text-3xl font-bold text-white mt-10 mb-6 first:mt-0">{children}</h1>,
               h2: ({ children }) => <h2 className="text-2xl font-bold text-white mt-10 mb-4 pb-3 border-b border-zinc-800">{children}</h2>,
-              h3: ({ children }) => <h3 className="text-xl font-semibold text-cyan-400 mt-8 mb-3">{children}</h3>,
+              h3: ({ children }) => <h3 className="text-xl font-semibold text-teal-400 mt-8 mb-3">{children}</h3>,
               h4: ({ children }) => <h4 className="text-lg font-semibold text-zinc-200 mt-6 mb-2">{children}</h4>,
               
               p: ({ children }) => <p className="text-zinc-300 leading-relaxed mb-5 text-base lg:text-lg">{children}</p>,
@@ -225,13 +225,13 @@ export default function InteractiveLesson({ lesson, onComplete }) {
               ol: ({ children }) => <ol className="space-y-2 mb-6 ml-1 list-decimal list-inside">{children}</ol>,
               li: ({ children }) => (
                 <li className="flex items-start gap-3 text-zinc-300">
-                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 mt-2.5 flex-shrink-0" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-teal-400 mt-2.5 flex-shrink-0" />
                   <span className="flex-1">{children}</span>
                 </li>
               ),
               
               strong: ({ children }) => <strong className="text-white font-semibold">{children}</strong>,
-              em: ({ children }) => <em className="text-cyan-400 not-italic font-medium">{children}</em>,
+              em: ({ children }) => <em className="text-teal-400 not-italic font-medium">{children}</em>,
               
               code: ({ inline, className, children }) => {
                 const language = className?.replace('language-', '') || '';
@@ -239,7 +239,7 @@ export default function InteractiveLesson({ lesson, onComplete }) {
                 
                 if (inline) {
                   return (
-                    <code className="px-1.5 py-0.5 rounded bg-zinc-800 text-cyan-400 text-sm font-mono border border-zinc-700">
+                    <code className="px-1.5 py-0.5 rounded bg-zinc-800 text-teal-400 text-sm font-mono border border-zinc-700">
                       {children}
                     </code>
                   );
@@ -314,14 +314,14 @@ export default function InteractiveLesson({ lesson, onComplete }) {
               pre: ({ children }) => <>{children}</>,
               
               blockquote: ({ children }) => (
-                <blockquote className="my-6 pl-4 border-l-4 border-cyan-500 bg-cyan-500/5 py-4 pr-4 rounded-r-lg">
+                <blockquote className="my-6 pl-4 border-l-4 border-teal-500 bg-teal-500/5 py-4 pr-4 rounded-r-lg">
                   <div className="text-zinc-300 italic">{children}</div>
                 </blockquote>
               ),
               
               a: ({ href, children }) => (
                 <a href={href} target="_blank" rel="noopener noreferrer" 
-                   className="text-cyan-400 hover:text-cyan-300 underline decoration-cyan-500/30 hover:decoration-cyan-400 transition-colors">
+                   className="text-teal-400 hover:text-teal-300 underline decoration-teal-500/30 hover:decoration-teal-400 transition-colors">
                   {children}
                 </a>
               ),
@@ -350,7 +350,7 @@ export default function InteractiveLesson({ lesson, onComplete }) {
                   </div>
                   <h3 className="text-xl font-semibold text-white mb-2">Knowledge Check</h3>
                   <p className="text-zinc-400 mb-6">Test your understanding with {quiz.length} questions</p>
-                  <Button onClick={() => setQuizStarted(true)} className="bg-cyan-600 hover:bg-cyan-500">
+                  <Button onClick={() => setQuizStarted(true)} className="bg-teal-600 hover:bg-teal-500">
                     Start Quiz
                   </Button>
                 </div>
@@ -373,7 +373,7 @@ export default function InteractiveLesson({ lesson, onComplete }) {
                         className={cn(
                           "w-full text-left p-4 rounded-xl border-2 transition-all",
                           selectedAnswers[currentQuestionIndex] === opt
-                            ? "border-cyan-500 bg-cyan-500/10 text-white"
+                            ? "border-teal-500 bg-teal-500/10 text-white"
                             : "border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:border-zinc-600"
                         )}
                       >
@@ -394,7 +394,7 @@ export default function InteractiveLesson({ lesson, onComplete }) {
                     <Button
                       onClick={handleNextQuestion}
                       disabled={selectedAnswers[currentQuestionIndex] === undefined}
-                      className="bg-cyan-600 hover:bg-cyan-500"
+                      className="bg-teal-600 hover:bg-teal-500"
                     >
                       {currentQuestionIndex === quiz.length - 1 ? 'Submit' : 'Next'}
                     </Button>
@@ -411,10 +411,10 @@ export default function InteractiveLesson({ lesson, onComplete }) {
                     <Award className={cn("w-10 h-10", score >= 70 ? "text-green-400" : "text-amber-400")} />
                   </div>
                   <h3 className="text-2xl font-bold text-white mb-2">Quiz Complete!</h3>
-                  <p className="text-4xl font-bold text-cyan-400 mb-4">{score}%</p>
+                  <p className="text-4xl font-bold text-teal-400 mb-4">{score}%</p>
                   <div className="flex gap-3 justify-center">
                     <Button variant="outline" onClick={handleRetakeQuiz} className="border-zinc-700">Retake</Button>
-                    <Button onClick={onComplete} className="bg-cyan-600 hover:bg-cyan-500">Continue</Button>
+                    <Button onClick={onComplete} className="bg-teal-600 hover:bg-teal-500">Continue</Button>
                   </div>
                 </div>
               )}
@@ -431,15 +431,15 @@ export default function InteractiveLesson({ lesson, onComplete }) {
           >
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-cyan-500/20">
-                  <CheckCircle2 className="w-6 h-6 text-cyan-400" />
+                <div className="p-2 rounded-xl bg-teal-500/20">
+                  <CheckCircle2 className="w-6 h-6 text-teal-400" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-white">Ready to continue?</h3>
                   <p className="text-sm text-zinc-400">Mark this lesson as complete</p>
                 </div>
               </div>
-              <Button onClick={onComplete} className="bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white px-6">
+              <Button onClick={onComplete} className="bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-500 hover:to-teal-400 text-white px-6">
                 Complete & Continue
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>

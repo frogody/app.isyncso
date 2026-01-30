@@ -30,18 +30,18 @@ const LEVEL_CONFIG = {
     label: 'Advanced',
     color: 'text-blue-400', 
     bg: 'bg-blue-500/20',
-    gradient: 'from-blue-500 to-cyan-500', 
+    gradient: 'from-blue-500 to-teal-500', 
     border: 'border-blue-500/30',
     glow: 'shadow-blue-500/20'
   },
   intermediate: { 
     icon: '🔹', 
     label: 'Intermediate',
-    color: 'text-cyan-400', 
-    bg: 'bg-cyan-500/20',
-    gradient: 'from-cyan-500 to-teal-500', 
-    border: 'border-cyan-500/30',
-    glow: 'shadow-cyan-500/20'
+    color: 'text-teal-400', 
+    bg: 'bg-teal-500/20',
+    gradient: 'from-teal-500 to-teal-500', 
+    border: 'border-teal-500/30',
+    glow: 'shadow-teal-500/20'
   },
   beginner: { 
     icon: '🔸', 
@@ -72,7 +72,7 @@ function SkillCard({ skill, config, index, isExpanded, onToggle }) {
     >
       <div
         onClick={onToggle}
-        className={`relative bg-zinc-900/50 backdrop-blur-sm rounded-xl border border-zinc-800/60 hover:border-cyan-800/50 transition-all duration-200 cursor-pointer overflow-hidden`}
+        className={`relative bg-zinc-900/50 backdrop-blur-sm rounded-xl border border-zinc-800/60 hover:border-teal-800/50 transition-all duration-200 cursor-pointer overflow-hidden`}
       >
         {/* Top gradient bar */}
         <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${config.gradient} opacity-40`} />
@@ -112,7 +112,7 @@ function SkillCard({ skill, config, index, isExpanded, onToggle }) {
                 </span>
                 {skill.assessments_passed > 0 && (
                   <span className="flex items-center gap-1">
-                    <Star className="w-3 h-3 text-cyan-400/60" />
+                    <Star className="w-3 h-3 text-teal-400/60" />
                     {skill.assessments_passed} assessment{skill.assessments_passed !== 1 ? 's' : ''} passed
                   </span>
                 )}
@@ -151,24 +151,24 @@ function SkillCard({ skill, config, index, isExpanded, onToggle }) {
 
 function SkillGapCard({ gap, index }) {
   return (
-    <GlassCard key={index} glow="cyan" className="p-6 bg-zinc-900/30">
+    <GlassCard key={index} glow="teal" className="p-6 bg-zinc-900/30">
       <div className="flex items-start justify-between mb-4">
         <div>
           <h4 className="text-lg font-semibold text-zinc-100 mb-1 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-cyan-400/70" />
+            <TrendingUp className="w-5 h-5 text-teal-400/70" />
             {gap.skill_name}
           </h4>
           <div className="flex items-center gap-3 text-sm">
             <span className="text-zinc-500">
-              Current: <span className="text-cyan-400/80 font-medium">{gap.current_score}%</span> ({gap.current_level})
+              Current: <span className="text-teal-400/80 font-medium">{gap.current_score}%</span> ({gap.current_level})
             </span>
             <ArrowRight className="w-4 h-4 text-zinc-700" />
             <span className="text-zinc-500">
-              Target: <span className="text-cyan-300/80 font-medium">{gap.target_level}</span>
+              Target: <span className="text-teal-300/80 font-medium">{gap.target_level}</span>
             </span>
           </div>
         </div>
-        <Badge className="bg-zinc-800/80 text-cyan-400/70 border-zinc-700/50 border">
+        <Badge className="bg-zinc-800/80 text-teal-400/70 border-zinc-700/50 border">
           Growth Area
         </Badge>
       </div>
@@ -176,17 +176,17 @@ function SkillGapCard({ gap, index }) {
       <div className="space-y-2">
         {gap.recommended_courses?.map((course) => (
           <Link key={course.course_id} to={createPageUrl(`CourseDetail?id=${course.course_id}`)}>
-            <div className="flex items-center justify-between p-4 rounded-xl bg-zinc-800/50 hover:bg-zinc-800/70 border border-zinc-700/60 hover:border-cyan-800/50 transition-all group">
+            <div className="flex items-center justify-between p-4 rounded-xl bg-zinc-800/50 hover:bg-zinc-800/70 border border-zinc-700/60 hover:border-teal-800/50 transition-all group">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center">
-                  <BookOpen className="w-5 h-5 text-cyan-400/70" />
+                  <BookOpen className="w-5 h-5 text-teal-400/70" />
                 </div>
                 <div>
-                  <h5 className="text-sm font-medium text-zinc-200 group-hover:text-cyan-300/90 transition-colors">{course.course_title}</h5>
+                  <h5 className="text-sm font-medium text-zinc-200 group-hover:text-teal-300/90 transition-colors">{course.course_title}</h5>
                   <p className="text-xs text-zinc-600">+{course.estimated_boost} estimated boost</p>
                 </div>
               </div>
-              <Button size="sm" className="bg-zinc-800/80 hover:bg-zinc-800 text-cyan-400/80 border border-zinc-700/60">
+              <Button size="sm" className="bg-zinc-800/80 hover:bg-zinc-800 text-teal-400/80 border border-zinc-700/60">
                 Start
               </Button>
             </div>
@@ -262,8 +262,8 @@ export default function SkillMap() {
     <div className="min-h-screen bg-black relative">
       {/* Animated Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 left-1/4 w-96 h-96 bg-cyan-900/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-cyan-950/10 rounded-full blur-3xl" />
+        <div className="absolute top-20 left-1/4 w-96 h-96 bg-teal-900/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-teal-950/10 rounded-full blur-3xl" />
       </div>
 
       <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
@@ -272,10 +272,10 @@ export default function SkillMap() {
           icon={Target}
           title="Skill Map"
           subtitle={`${stats.total} skills tracked · ${stats.expert + stats.advanced} mastered`}
-          color="cyan"
+          color="teal"
           actions={
             <Link to={createPageUrl('Learn')}>
-              <Button className="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+              <Button className="bg-teal-500/10 hover:bg-teal-500/20 text-teal-400 border border-teal-500/30">
                 <BookOpen className="w-4 h-4 mr-2" />
                 Browse Courses
               </Button>
@@ -293,7 +293,7 @@ export default function SkillMap() {
                   <p className="text-2xl font-bold text-zinc-100 mt-1">{stats.total}</p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center">
-                  <Target className="w-6 h-6 text-cyan-400/70" />
+                  <Target className="w-6 h-6 text-teal-400/70" />
                 </div>
               </div>
             </div>
@@ -307,7 +307,7 @@ export default function SkillMap() {
                   <p className="text-2xl font-bold text-zinc-100 mt-1">{stats.expert}</p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center">
-                  <Trophy className="w-6 h-6 text-cyan-300/70" />
+                  <Trophy className="w-6 h-6 text-teal-300/70" />
                 </div>
               </div>
             </div>
@@ -321,7 +321,7 @@ export default function SkillMap() {
                   <p className="text-2xl font-bold text-zinc-100 mt-1">{stats.advanced}</p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center">
-                  <Award className="w-6 h-6 text-cyan-400/60" />
+                  <Award className="w-6 h-6 text-teal-400/60" />
                 </div>
               </div>
             </div>
@@ -335,7 +335,7 @@ export default function SkillMap() {
                   <p className="text-2xl font-bold text-zinc-100 mt-1">{stats.growthAreas}</p>
                 </div>
                 <div className="w-12 h-12 rounded-xl bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-cyan-400/70" />
+                  <TrendingUp className="w-6 h-6 text-teal-400/70" />
                 </div>
               </div>
             </div>
@@ -383,7 +383,7 @@ export default function SkillMap() {
         {skillData?.skill_gaps?.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
                 <Sparkles className="w-5 h-5 text-white" />
               </div>
               <h3 className="text-lg font-semibold text-white">Recommended Growth Areas</h3>
@@ -401,14 +401,14 @@ export default function SkillMap() {
         {(!skillData?.skills || skillData.skills.length === 0) && (
           <div className="p-16 text-center rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="w-20 h-20 rounded-2xl bg-zinc-800/80 border border-zinc-700/50 flex items-center justify-center mx-auto mb-6">
-              <Target className="w-10 h-10 text-cyan-400/70" />
+              <Target className="w-10 h-10 text-teal-400/70" />
             </div>
             <h3 className="text-2xl font-bold text-zinc-100 mb-3">Build Your Skill Profile</h3>
             <p className="text-zinc-500 mb-8 max-w-md mx-auto">
               Complete courses to build your professional skill profile and track your growth over time.
             </p>
             <Link to={createPageUrl("Learn")}>
-              <Button className="bg-cyan-600/80 hover:bg-cyan-600 text-white px-6">
+              <Button className="bg-teal-600/80 hover:bg-teal-600 text-white px-6">
                 <GraduationCap className="w-4 h-4 mr-2" />
                 Start Learning
               </Button>

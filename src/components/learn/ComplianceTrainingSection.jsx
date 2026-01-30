@@ -9,11 +9,11 @@ import { Shield, AlertTriangle, BookOpen, ArrowRight, ExternalLink } from "lucid
 export default function ComplianceTrainingSection({ recommendations }) {
   if (!recommendations || recommendations.ai_systems_count === 0) {
     return (
-      <Card className="glass-card border-0 border-cyan-500/20">
+      <Card className="glass-card border-0 border-teal-500/20">
         <CardContent className="p-6">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-full bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
-              <Shield className="w-6 h-6 text-cyan-400" />
+            <div className="w-12 h-12 rounded-full bg-teal-500/20 flex items-center justify-center flex-shrink-0">
+              <Shield className="w-6 h-6 text-teal-400" />
             </div>
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-white mb-2">🛡️ Compliance Training</h3>
@@ -21,7 +21,7 @@ export default function ComplianceTrainingSection({ recommendations }) {
                 Register your AI systems in SENTINEL to get personalized compliance training recommendations.
               </p>
               <Link to={createPageUrl("SentinelDashboard")}>
-                <Button variant="outline" className="border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/10">
+                <Button variant="outline" className="border-teal-500/30 text-teal-300 hover:bg-teal-500/10">
                   Go to SENTINEL
                   <ExternalLink className="w-4 h-4 ml-2" />
                 </Button>
@@ -38,12 +38,12 @@ export default function ComplianceTrainingSection({ recommendations }) {
   const recommendedCourses = courses.filter(c => c.priority === 'recommended');
 
   return (
-    <Card className="glass-card border-0 border-cyan-500/20">
+    <Card className="glass-card border-0 border-teal-500/20">
       <CardContent className="p-6">
         {/* Header */}
         <div className="flex items-start gap-4 mb-6">
-          <div className="w-12 h-12 rounded-full bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
-            <Shield className="w-6 h-6 text-cyan-400" />
+          <div className="w-12 h-12 rounded-full bg-teal-500/20 flex items-center justify-center flex-shrink-0">
+            <Shield className="w-6 h-6 text-teal-400" />
           </div>
           <div className="flex-1">
             <h3 className="text-lg font-semibold text-white mb-2">🛡️ Compliance Training</h3>
@@ -54,8 +54,8 @@ export default function ComplianceTrainingSection({ recommendations }) {
         </div>
 
         {/* Context */}
-        <div className="mb-6 p-4 bg-cyan-500/10 border border-cyan-500/20 rounded-lg">
-          <p className="text-sm text-cyan-200">
+        <div className="mb-6 p-4 bg-teal-500/10 border border-teal-500/20 rounded-lg">
+          <p className="text-sm text-teal-200">
             Your company has <span className="font-bold">{ai_systems_count}</span> AI system{ai_systems_count !== 1 ? 's' : ''} registered
             {high_risk_count > 0 && (
               <>, including <span className="font-bold text-orange-300">{high_risk_count}</span> high-risk system{high_risk_count !== 1 ? 's' : ''}</>
@@ -111,19 +111,19 @@ export default function ComplianceTrainingSection({ recommendations }) {
         {recommendedCourses.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <BookOpen className="w-5 h-5 text-cyan-400" />
-              <h4 className="text-sm font-semibold text-cyan-300 uppercase tracking-wider">Recommended</h4>
+              <BookOpen className="w-5 h-5 text-teal-400" />
+              <h4 className="text-sm font-semibold text-teal-300 uppercase tracking-wider">Recommended</h4>
             </div>
             <div className="space-y-3">
               {recommendedCourses.map(course => (
                 <div 
                   key={course.course_id}
-                  className="p-4 bg-cyan-500/10 border border-cyan-500/20 rounded-lg hover:border-cyan-500/40 transition-all"
+                  className="p-4 bg-teal-500/10 border border-teal-500/20 rounded-lg hover:border-teal-500/40 transition-all"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <BookOpen className="w-4 h-4 text-cyan-400" />
+                        <BookOpen className="w-4 h-4 text-teal-400" />
                         <h5 className="text-base font-semibold text-white">{course.course_title}</h5>
                       </div>
                       <p className="text-xs text-gray-400 mb-2">{course.relevance_reason}</p>
@@ -131,7 +131,7 @@ export default function ComplianceTrainingSection({ recommendations }) {
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-xs text-gray-500">Relevant for:</span>
                           {course.matching_systems.map((system, idx) => (
-                            <Badge key={idx} className="bg-cyan-500/20 text-cyan-300 border-cyan-500/30 text-xs">
+                            <Badge key={idx} className="bg-teal-500/20 text-teal-300 border-teal-500/30 text-xs">
                               {system}
                             </Badge>
                           ))}
@@ -139,7 +139,7 @@ export default function ComplianceTrainingSection({ recommendations }) {
                       )}
                     </div>
                     <Link to={createPageUrl(`CourseDetail?id=${course.course_id}`)}>
-                      <Button size="sm" variant="outline" className="border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/10">
+                      <Button size="sm" variant="outline" className="border-teal-500/30 text-teal-300 hover:bg-teal-500/10">
                         View
                         <ArrowRight className="w-4 h-4 ml-2" />
                       </Button>

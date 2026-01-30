@@ -69,7 +69,7 @@ export function RecentActionsWidget({ actions = [] }) {
 export function QuickActionsWidget({ enabledApps = [] }) {
   const allActions = [
     { id: 'growth', label: "View Pipeline", icon: Zap, href: "GrowthPipeline", color: "indigo", app: 'growth' },
-    { id: 'learn', label: "Continue Learning", icon: Zap, href: "Learn", color: "cyan", app: 'learn' },
+    { id: 'learn', label: "Continue Learning", icon: Zap, href: "Learn", color: "teal", app: 'learn' },
     { id: 'sentinel', label: "Check Compliance", icon: Zap, href: "SentinelDashboard", color: "sage", app: 'sentinel' },
     { id: 'actions', label: "View Actions", icon: ListTodo, href: "Actions", color: "orange", app: null },
   ];
@@ -80,7 +80,7 @@ export function QuickActionsWidget({ enabledApps = [] }) {
     indigo: 'bg-indigo-500/5 border-indigo-500/20 hover:border-indigo-500/40 hover:bg-indigo-500/10 text-indigo-400',
     sage: 'bg-[#86EFAC]/5 border-[#86EFAC]/20 hover:border-[#86EFAC]/40 hover:bg-[#86EFAC]/10 text-[#86EFAC]',
     orange: 'bg-orange-500/5 border-orange-500/20 hover:border-orange-500/40 hover:bg-orange-500/10 text-orange-400',
-    cyan: 'bg-cyan-500/5 border-cyan-500/20 hover:border-cyan-500/40 hover:bg-cyan-500/10 text-cyan-400'
+    teal: 'bg-teal-500/5 border-teal-500/20 hover:border-teal-500/40 hover:bg-teal-500/10 text-teal-400'
   };
 
   return (

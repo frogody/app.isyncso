@@ -33,20 +33,20 @@ export default function CourseFilters({
             placeholder="Search courses..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-10 bg-gray-900 border-gray-700 focus:border-cyan-500 text-white focus:ring-cyan-500/20"
+            className="pl-10 bg-gray-900 border-gray-700 focus:border-teal-500 text-white focus:ring-teal-500/20"
           />
         </div>
         <div className="flex gap-4">
           <Select value={selectedCategory} onValueChange={onCategoryChange}>
-            <SelectTrigger className="w-[180px] bg-gradient-to-b from-cyan-500/10 to-cyan-500/5 border-cyan-500/30 text-cyan-400 hover:border-cyan-500/50 transition-all">
+            <SelectTrigger className="w-[180px] bg-gradient-to-b from-teal-500/10 to-teal-500/5 border-teal-500/30 text-teal-400 hover:border-teal-500/50 transition-all">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
-            <SelectContent className="bg-[#0A0A0A] border-cyan-500/20">
+            <SelectContent className="bg-[#0A0A0A] border-teal-500/20">
               {categories.map(cat => (
                 <SelectItem 
                   key={cat.value} 
                   value={cat.value} 
-                  className="text-gray-300 focus:bg-cyan-500/10 focus:text-cyan-400 data-[state=checked]:text-cyan-400 cursor-pointer"
+                  className="text-gray-300 focus:bg-teal-500/10 focus:text-teal-400 data-[state=checked]:text-teal-400 cursor-pointer"
                 >
                   {cat.label}
                 </SelectItem>
@@ -54,14 +54,14 @@ export default function CourseFilters({
             </SelectContent>
           </Select>
           <Select value={selectedDifficulty} onValueChange={onDifficultyChange}>
-            <SelectTrigger className="w-[140px] bg-gradient-to-b from-cyan-500/10 to-cyan-500/5 border-cyan-500/30 text-cyan-400 hover:border-cyan-500/50 transition-all">
+            <SelectTrigger className="w-[140px] bg-gradient-to-b from-teal-500/10 to-teal-500/5 border-teal-500/30 text-teal-400 hover:border-teal-500/50 transition-all">
               <SelectValue placeholder="Level" />
             </SelectTrigger>
-            <SelectContent className="bg-[#0A0A0A] border-cyan-500/20">
-              <SelectItem value="all" className="text-gray-300 focus:bg-cyan-500/10 focus:text-cyan-400 data-[state=checked]:text-cyan-400 cursor-pointer">All Levels</SelectItem>
-              <SelectItem value="beginner" className="text-gray-300 focus:bg-cyan-500/10 focus:text-cyan-400 data-[state=checked]:text-cyan-400 cursor-pointer">Beginner</SelectItem>
-              <SelectItem value="intermediate" className="text-gray-300 focus:bg-cyan-500/10 focus:text-cyan-400 data-[state=checked]:text-cyan-400 cursor-pointer">Intermediate</SelectItem>
-              <SelectItem value="advanced" className="text-gray-300 focus:bg-cyan-500/10 focus:text-cyan-400 data-[state=checked]:text-cyan-400 cursor-pointer">Advanced</SelectItem>
+            <SelectContent className="bg-[#0A0A0A] border-teal-500/20">
+              <SelectItem value="all" className="text-gray-300 focus:bg-teal-500/10 focus:text-teal-400 data-[state=checked]:text-teal-400 cursor-pointer">All Levels</SelectItem>
+              <SelectItem value="beginner" className="text-gray-300 focus:bg-teal-500/10 focus:text-teal-400 data-[state=checked]:text-teal-400 cursor-pointer">Beginner</SelectItem>
+              <SelectItem value="intermediate" className="text-gray-300 focus:bg-teal-500/10 focus:text-teal-400 data-[state=checked]:text-teal-400 cursor-pointer">Intermediate</SelectItem>
+              <SelectItem value="advanced" className="text-gray-300 focus:bg-teal-500/10 focus:text-teal-400 data-[state=checked]:text-teal-400 cursor-pointer">Advanced</SelectItem>
             </SelectContent>
           </Select>
         </div>

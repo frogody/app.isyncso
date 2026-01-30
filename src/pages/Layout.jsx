@@ -420,7 +420,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       path.startsWith('/certificate') || path.startsWith('/skill') || path.startsWith('/leaderboard')) {
     return {
       title: 'LEARN',
-      color: 'cyan',
+      color: 'teal',
       agent: 'learn',
       items: [
         { label: 'Dashboard', path: createPageUrl('LearnDashboard'), icon: LayoutDashboard },
@@ -485,6 +485,13 @@ const COLOR_CLASSES = {
     glow: THEME_COLORS.growth.glow
   },
   cyan: {
+    text: THEME_COLORS.learn.text,
+    bg: THEME_COLORS.learn.bg,
+    border: THEME_COLORS.learn.border,
+    borderSolid: THEME_COLORS.learn.solid,
+    glow: THEME_COLORS.learn.glow
+  },
+  teal: {
     text: THEME_COLORS.learn.text,
     bg: THEME_COLORS.learn.bg,
     border: THEME_COLORS.learn.border,
@@ -978,7 +985,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
 
             // Get the appropriate color classes for this engine
             const getEngineColors = () => {
-              if (isLearn) return { text: 'text-cyan-400', bg: 'bg-cyan-950/30', solid: 'bg-cyan-500', glow: 'shadow-[0_0_10px_rgba(6,182,212,0.5)]' };
+              if (isLearn) return { text: 'text-teal-400', bg: 'bg-teal-950/30', solid: 'bg-teal-500', glow: 'shadow-[0_0_10px_rgba(20,184,166,0.5)]' };
               if (isSentinel) return { text: 'text-[#86EFAC]', bg: 'bg-[#86EFAC]/10', solid: 'bg-[#86EFAC]', glow: 'shadow-[0_0_10px_rgba(134,239,172,0.5)]' };
               if (isGrowth) return { text: 'text-indigo-400', bg: 'bg-indigo-950/30', solid: 'bg-indigo-500', glow: 'shadow-[0_0_10px_rgba(99,102,241,0.5)]' };
               if (isSync) return { text: 'text-purple-400', bg: 'bg-purple-950/30', solid: 'bg-purple-500', glow: 'shadow-[0_0_10px_rgba(168,85,247,0.5)]' };

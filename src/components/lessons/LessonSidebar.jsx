@@ -43,8 +43,8 @@ export default function LessonSidebar({
         </Link>
         
         <div className="flex items-start gap-3">
-          <div className="p-2 rounded-xl bg-cyan-500/20 border border-cyan-500/30">
-            <BookOpen className="w-5 h-5 text-cyan-400" />
+          <div className="p-2 rounded-xl bg-teal-500/20 border border-teal-500/30">
+            <BookOpen className="w-5 h-5 text-teal-400" />
           </div>
           <div className="flex-1 min-w-0">
             <h2 className="font-semibold text-white text-sm leading-tight line-clamp-2 mb-2">
@@ -103,7 +103,7 @@ export default function LessonSidebar({
                       className={cn(
                         "w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 relative group",
                         isCurrent
-                          ? "bg-cyan-500/15 text-white"
+                          ? "bg-teal-500/15 text-white"
                           : isCompleted
                           ? "text-zinc-400 hover:bg-zinc-900/50 hover:text-white"
                           : "text-zinc-500 hover:bg-zinc-900/50 hover:text-zinc-300"
@@ -113,7 +113,7 @@ export default function LessonSidebar({
                       <div className={cn(
                         "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-colors",
                         isCurrent 
-                          ? "bg-cyan-500 text-white" 
+                          ? "bg-teal-500 text-white" 
                           : isCompleted 
                           ? "bg-green-500/20 text-green-400 border border-green-500/30"
                           : "bg-zinc-800 text-zinc-500 border border-zinc-700"
@@ -146,7 +146,7 @@ export default function LessonSidebar({
                       {isCurrent && (
                         <motion.div 
                           layoutId="activeLesson"
-                          className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-cyan-500 rounded-l-full"
+                          className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-teal-500 rounded-l-full"
                         />
                       )}
                     </motion.button>
@@ -166,7 +166,7 @@ export default function LessonSidebar({
             <span>{completedCount} of {totalLessons} complete</span>
           </div>
           {progressPercent === 100 && (
-            <div className="flex items-center gap-1 text-cyan-400">
+            <div className="flex items-center gap-1 text-teal-400">
               <Sparkles className="w-3.5 h-3.5" />
               <span className="font-medium">Done!</span>
             </div>

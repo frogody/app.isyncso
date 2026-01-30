@@ -90,13 +90,13 @@ function LearnProgressPreview() {
   return (
     <div className="space-y-2 transform scale-[0.85] origin-top-left">
       <div className="flex items-center gap-2 mb-3">
-        <GraduationCap className="w-4 h-4 text-cyan-400" />
+        <GraduationCap className="w-4 h-4 text-teal-400" />
         <span className="text-xs font-medium text-zinc-300">Continue Learning</span>
       </div>
       {[75, 45, 20].map((val, i) => (
         <div key={i} className="p-2 rounded-lg bg-zinc-800/60 border border-zinc-700/50">
           <div className="flex items-center gap-2 mb-1.5">
-            <div className="w-2 h-2 rounded-full bg-cyan-400" />
+            <div className="w-2 h-2 rounded-full bg-teal-400" />
             <span className="text-[10px] text-zinc-400">Course {i + 1}</span>
           </div>
           <Progress value={val} className="h-1" />
@@ -109,8 +109,8 @@ function LearnProgressPreview() {
 function LearnStatsPreview() {
   return (
     <div className="transform scale-[0.85] origin-top-left">
-      <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center mb-2">
-        <GraduationCap className="w-4 h-4 text-cyan-400" />
+      <div className="w-8 h-8 rounded-lg bg-teal-500/20 border border-teal-500/30 flex items-center justify-center mb-2">
+        <GraduationCap className="w-4 h-4 text-teal-400" />
       </div>
       <div className="text-lg font-bold text-white">24h</div>
       <div className="text-[10px] text-zinc-500">Learning Hours</div>
@@ -137,12 +137,12 @@ function LearnXPPreview() {
   return (
     <div className="transform scale-[0.85] origin-top-left">
       <div className="flex items-center justify-between mb-2">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center text-white font-bold text-sm">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center text-white font-bold text-sm">
           5
         </div>
-        <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400">Level 5</span>
+        <span className="text-[9px] px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-400">Level 5</span>
       </div>
-      <div className="text-lg font-bold text-cyan-400">2,450</div>
+      <div className="text-lg font-bold text-teal-400">2,450</div>
       <div className="text-[10px] text-zinc-500">Total XP</div>
       <Progress value={45} className="h-1 mt-1.5" />
     </div>
@@ -153,14 +153,14 @@ function LearnSkillsPreview() {
   return (
     <div className="transform scale-[0.85] origin-top-left">
       <div className="flex items-center gap-2 mb-3">
-        <Target className="w-4 h-4 text-cyan-400" />
+        <Target className="w-4 h-4 text-teal-400" />
         <span className="text-xs font-medium text-zinc-300">Top Skills</span>
       </div>
       {['AI Basics', 'Prompting', 'Data'].map((skill, i) => (
         <div key={i} className="mb-2">
           <div className="flex justify-between text-[10px] mb-1">
             <span className="text-zinc-400">{skill}</span>
-            <span className="text-cyan-400">{85 - i * 15}%</span>
+            <span className="text-teal-400">{85 - i * 15}%</span>
           </div>
           <Progress value={85 - i * 15} className="h-1" />
         </div>
@@ -414,7 +414,7 @@ function QuickActionsPreview() {
       </div>
       {[
         { label: 'View Pipeline', color: 'border-indigo-500/30 bg-indigo-500/10' },
-        { label: 'Continue Learning', color: 'border-cyan-500/30 bg-cyan-500/10' },
+        { label: 'Continue Learning', color: 'border-teal-500/30 bg-teal-500/10' },
         { label: 'Check Compliance', color: 'border-[#86EFAC]/30 bg-[#86EFAC]/10' }
       ].map((item, i) => (
         <div key={i} className={`p-2 rounded-lg border ${item.color}`}>

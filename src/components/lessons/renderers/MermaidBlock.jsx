@@ -142,7 +142,7 @@ function MermaidBlockInner({ content }) {
       {isLoading && (
         <div className="flex items-center justify-center bg-zinc-900/30 rounded-xl h-32">
           <div className="flex items-center gap-2 text-zinc-400">
-            <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-teal-400 border-t-transparent rounded-full animate-spin" />
             <span className="text-sm">Rendering diagram...</span>
           </div>
         </div>
