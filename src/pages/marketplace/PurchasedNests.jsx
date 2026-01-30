@@ -31,26 +31,25 @@ import {
 import { useUser } from "@/components/context/UserContext";
 import { supabase } from "@/api/supabaseClient";
 import { toast } from "sonner";
-import Layout from "@/pages/Layout";
 
 // Nest type config
 const NEST_TYPE_CONFIG = {
   candidates: {
     icon: Users,
     label: 'Candidates',
-    color: 'text-blue-400 bg-blue-500/20 border-blue-500/30',
+    color: 'text-red-400 bg-red-500/20 border-red-500/30',
     destination: '/talent/candidates',
   },
   prospects: {
     icon: Briefcase,
     label: 'Prospects',
-    color: 'text-green-400 bg-green-500/20 border-green-500/30',
+    color: 'text-red-400 bg-red-500/20 border-red-500/30',
     destination: '/growth/prospects',
   },
   investors: {
     icon: Building2,
     label: 'Investors',
-    color: 'text-purple-400 bg-purple-500/20 border-purple-500/30',
+    color: 'text-red-400 bg-red-500/20 border-red-500/30',
     destination: '/raise/investors',
   },
 };
@@ -121,8 +120,7 @@ export default function PurchasedNests() {
   const totalItems = purchases.reduce((sum, p) => sum + (p.nests?.item_count || 0), 0);
 
   return (
-    <Layout>
-      <div className="min-h-screen bg-black px-4 lg:px-6 py-4 space-y-4">
+      <div className="w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Back Button */}
         <Button
           variant="ghost"
@@ -146,8 +144,8 @@ export default function PurchasedNests() {
           <Card className="bg-zinc-900/50 border-white/5">
             <CardContent className="p-3">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-cyan-500/20 rounded-lg">
-                  <Package className="w-4 h-4 text-cyan-400" />
+                <div className="p-2 bg-red-500/20 rounded-lg">
+                  <Package className="w-4 h-4 text-red-400" />
                 </div>
                 <div>
                   <p className="text-lg font-bold text-white">{purchases.length}</p>
@@ -160,8 +158,8 @@ export default function PurchasedNests() {
           <Card className="bg-zinc-900/50 border-white/5">
             <CardContent className="p-3">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-500/20 rounded-lg">
-                  <Users className="w-4 h-4 text-green-400" />
+                <div className="p-2 bg-red-500/20 rounded-lg">
+                  <Users className="w-4 h-4 text-red-400" />
                 </div>
                 <div>
                   <p className="text-lg font-bold text-white">{totalItems}</p>
@@ -174,8 +172,8 @@ export default function PurchasedNests() {
           <Card className="bg-zinc-900/50 border-white/5">
             <CardContent className="p-3">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-500/20 rounded-lg">
-                  <CheckCircle className="w-4 h-4 text-purple-400" />
+                <div className="p-2 bg-red-500/20 rounded-lg">
+                  <CheckCircle className="w-4 h-4 text-red-400" />
                 </div>
                 <div>
                   <p className="text-lg font-bold text-white">{formatCurrency(totalSpent)}</p>
@@ -191,7 +189,7 @@ export default function PurchasedNests() {
           <CardContent className="p-0">
             {loading ? (
               <div className="flex items-center justify-center py-20">
-                <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+                <Loader2 className="w-8 h-8 text-red-400 animate-spin" />
               </div>
             ) : purchases.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-zinc-400">
@@ -202,7 +200,7 @@ export default function PurchasedNests() {
                 </p>
                 <Button
                   onClick={() => navigate('/marketplace/nests')}
-                  className="mt-4 bg-cyan-600 hover:bg-cyan-700"
+                  className="mt-4 bg-red-600 hover:bg-red-700"
                 >
                   Browse Marketplace
                 </Button>
@@ -275,7 +273,7 @@ export default function PurchasedNests() {
                               variant="outline"
                               size="sm"
                               onClick={() => navigate(config.destination)}
-                              className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
+                              className="border-red-500/30 text-red-400 hover:bg-red-500/10"
                             >
                               <ExternalLink className="w-3 h-3 mr-1" />
                               Open
@@ -291,6 +289,5 @@ export default function PurchasedNests() {
           </CardContent>
         </Card>
       </div>
-    </Layout>
   );
 }

@@ -38,7 +38,7 @@ import {
 import { useUser } from "@/components/context/UserContext";
 import { supabase } from "@/api/supabaseClient";
 import { toast } from "sonner";
-import Layout from "@/pages/Layout";
+
 import { LinkNestToRoleModal } from "@/components/talent";
 
 // Nest type config
@@ -46,19 +46,19 @@ const NEST_TYPE_CONFIG = {
   candidates: {
     icon: Users,
     label: 'Candidates',
-    color: 'text-blue-400 bg-blue-500/20 border-blue-500/30',
+    color: 'text-red-400 bg-red-500/20 border-red-500/30',
     destination: '/talent/candidates',
   },
   prospects: {
     icon: Briefcase,
     label: 'Prospects',
-    color: 'text-green-400 bg-green-500/20 border-green-500/30',
+    color: 'text-red-400 bg-red-500/20 border-red-500/30',
     destination: '/growth/prospects',
   },
   investors: {
     icon: Building2,
     label: 'Investors',
-    color: 'text-purple-400 bg-purple-500/20 border-purple-500/30',
+    color: 'text-red-400 bg-red-500/20 border-red-500/30',
     destination: '/raise/investors',
   },
 };
@@ -239,24 +239,20 @@ export default function NestDetail() {
 
   if (loading) {
     return (
-      <Layout>
-        <div className="min-h-screen bg-black flex items-center justify-center">
-          <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+      <div className="w-full flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 text-red-400 animate-spin" />
         </div>
-      </Layout>
     );
   }
 
   if (!nest) {
     return (
-      <Layout>
-        <div className="min-h-screen bg-black p-6">
+      <div className="w-full p-6">
           <div className="text-center py-20 text-zinc-400">
             <Package className="w-16 h-16 mx-auto mb-4 opacity-50" />
             <p>Nest not found</p>
           </div>
         </div>
-      </Layout>
     );
   }
 
@@ -266,8 +262,7 @@ export default function NestDetail() {
   const nonPreviewCount = (nest.item_count || 0) - previewItems.length;
 
   return (
-    <Layout>
-      <div className="min-h-screen bg-black px-4 lg:px-6 py-4 space-y-4">
+    <div className="w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Back Button */}
         <Button
           variant="ghost"
@@ -303,7 +298,7 @@ export default function NestDetail() {
                     {config.label}
                   </Badge>
                   {isPurchased && (
-                    <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                    <Badge className="bg-red-500/20 text-red-400 border-red-500/30">
                       <CheckCircle className="w-3 h-3 mr-1" />
                       Purchased
                     </Badge>
@@ -354,7 +349,7 @@ export default function NestDetail() {
                 <Button
                   onClick={handlePurchase}
                   disabled={purchasing}
-                  className="bg-cyan-600 hover:bg-cyan-700"
+                  className="bg-red-600 hover:bg-red-700"
                 >
                   {purchasing ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -372,7 +367,7 @@ export default function NestDetail() {
         <Card className="bg-zinc-900/50 border-white/5">
           <CardHeader className="p-3">
             <CardTitle className="text-sm font-semibold text-white flex items-center gap-2">
-              <Eye className="w-5 h-5 text-cyan-400" />
+              <Eye className="w-5 h-5 text-red-400" />
               Preview Items
               <Badge variant="outline" className="ml-2 text-zinc-400 border-zinc-600">
                 {previewItems.length} of {nest.item_count || 0}
@@ -429,7 +424,7 @@ export default function NestDetail() {
                               href={info.linkedin}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-blue-400 hover:text-blue-300"
+                              className="text-red-400 hover:text-red-300"
                             >
                               <Linkedin className="w-4 h-4" />
                             </a>
@@ -460,7 +455,7 @@ export default function NestDetail() {
                   onClick={handlePurchase}
                   disabled={purchasing}
                   variant="outline"
-                  className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
+                  className="border-red-500/30 text-red-400 hover:bg-red-500/10"
                 >
                   {purchasing ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -499,7 +494,7 @@ export default function NestDetail() {
                                 href={info.linkedin}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-blue-400 hover:text-blue-300"
+                                className="text-red-400 hover:text-red-300"
                               >
                                 <Linkedin className="w-4 h-4" />
                               </a>
@@ -514,7 +509,6 @@ export default function NestDetail() {
             )}
           </CardContent>
         </Card>
-      </div>
 
       {/* Link Nest to Role Modal */}
       <LinkNestToRoleModal
@@ -522,7 +516,6 @@ export default function NestDetail() {
         onClose={(linked, campaignId, autoMatch) => {
           setShowLinkModal(false);
           if (linked && campaignId) {
-            // Navigate to the campaign, optionally with autoMatch to trigger matching immediately
             const url = autoMatch
               ? `/TalentCampaignDetail?id=${campaignId}&autoMatch=true`
               : `/TalentCampaignDetail?id=${campaignId}`;
@@ -535,6 +528,6 @@ export default function NestDetail() {
         mode={linkModalMode}
         candidateCount={nest?.item_count || 0}
       />
-    </Layout>
+    </div>
   );
 }

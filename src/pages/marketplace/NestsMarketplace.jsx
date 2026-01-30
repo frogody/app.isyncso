@@ -49,7 +49,6 @@ import {
 import { useUser } from "@/components/context/UserContext";
 import { supabase } from "@/api/supabaseClient";
 import { toast } from "sonner";
-import Layout from "@/pages/Layout";
 
 // Nest type config
 const NEST_TYPE_CONFIG = {
@@ -57,19 +56,19 @@ const NEST_TYPE_CONFIG = {
     icon: Users,
     label: 'Candidate Nests',
     description: 'Curated lists for recruitment',
-    color: 'text-blue-400 bg-blue-500/20 border-blue-500/30',
+    color: 'text-red-400 bg-red-500/20 border-red-500/30',
   },
   prospects: {
     icon: Briefcase,
     label: 'Prospect Nests',
     description: 'Quality leads for sales',
-    color: 'text-green-400 bg-green-500/20 border-green-500/30',
+    color: 'text-red-400 bg-red-500/20 border-red-500/30',
   },
   investors: {
     icon: Building2,
     label: 'Investor Nests',
     description: 'Investor contacts for fundraising',
-    color: 'text-purple-400 bg-purple-500/20 border-purple-500/30',
+    color: 'text-red-400 bg-red-500/20 border-red-500/30',
   },
 };
 
@@ -126,7 +125,7 @@ function NestCard({ nest, isPurchased, onPreview, onViewDetails }) {
             {nest.category || nest.nest_type || 'General'}
           </Badge>
           {isPurchased && (
-            <Badge className="bg-green-500/20 text-green-400 border-green-500/30 text-xs">
+            <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-xs">
               <Check className="w-3 h-3 mr-1" />
               Owned
             </Badge>
@@ -161,11 +160,11 @@ function NestCard({ nest, isPurchased, onPreview, onViewDetails }) {
             <p className="text-[10px] text-zinc-500">Candidates</p>
           </div>
           <div className="text-center p-2 rounded bg-zinc-800/50">
-            <p className="text-lg font-bold text-cyan-400">{nest.avg_intel_score || '--'}</p>
+            <p className="text-lg font-bold text-red-400">{nest.avg_intel_score || '--'}</p>
             <p className="text-[10px] text-zinc-500">Avg Intel</p>
           </div>
           <div className="text-center p-2 rounded bg-zinc-800/50">
-            <p className="text-lg font-bold text-green-400">{nest.purchase_count || 0}</p>
+            <p className="text-lg font-bold text-red-400">{nest.purchase_count || 0}</p>
             <p className="text-[10px] text-zinc-500">Purchased</p>
           </div>
         </div>
@@ -201,7 +200,7 @@ function NestCard({ nest, isPurchased, onPreview, onViewDetails }) {
         <div className="flex items-center justify-between pt-3 border-t border-zinc-800">
           <div>
             {nest.price === 0 ? (
-              <span className="text-green-400 font-medium">Free</span>
+              <span className="text-red-400 font-medium">Free</span>
             ) : (
               <span className="text-white font-medium">{formatCurrency(nest.price, nest.currency)}</span>
             )}
@@ -329,7 +328,7 @@ function NestPreviewModal({ nest, open, onOpenChange }) {
                 {candidate.skills?.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-2">
                     {candidate.skills.slice(0, 4).map((skill, j) => (
-                      <Badge key={j} className="bg-cyan-500/20 text-cyan-400 text-[10px]">
+                      <Badge key={j} className="bg-red-500/20 text-red-400 text-[10px]">
                         {skill}
                       </Badge>
                     ))}
@@ -476,20 +475,20 @@ function FilterSidebar({ filters, setFilters, activeFiltersCount }) {
       {/* Quick Tips */}
       <GlassCard className="p-4">
         <h3 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-yellow-400" />
+          <Sparkles className="w-4 h-4 text-red-400" />
           Tips
         </h3>
         <ul className="space-y-2 text-xs text-zinc-400">
           <li className="flex items-start gap-2">
-            <Star className="w-3 h-3 mt-0.5 text-yellow-400 shrink-0" />
+            <Star className="w-3 h-3 mt-0.5 text-red-400 shrink-0" />
             <span>Higher intel scores mean better candidate data</span>
           </li>
           <li className="flex items-start gap-2">
-            <Eye className="w-3 h-3 mt-0.5 text-cyan-400 shrink-0" />
+            <Eye className="w-3 h-3 mt-0.5 text-red-400 shrink-0" />
             <span>Preview candidates before purchasing</span>
           </li>
           <li className="flex items-start gap-2">
-            <TrendingUp className="w-3 h-3 mt-0.5 text-green-400 shrink-0" />
+            <TrendingUp className="w-3 h-3 mt-0.5 text-red-400 shrink-0" />
             <span>Popular nests are purchased frequently</span>
           </li>
         </ul>
@@ -633,8 +632,7 @@ export default function NestsMarketplace() {
   };
 
   return (
-    <Layout>
-      <div className="min-h-screen bg-black px-4 lg:px-6 py-4 space-y-4">
+      <div className="w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -660,8 +658,8 @@ export default function NestsMarketplace() {
           <Card className="bg-zinc-900/50 border-white/5">
             <CardContent className="p-3">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-cyan-500/20 rounded-lg">
-                  <Package className="w-4 h-4 text-cyan-400" />
+                <div className="p-2 bg-red-500/20 rounded-lg">
+                  <Package className="w-4 h-4 text-red-400" />
                 </div>
                 <div>
                   <p className="text-lg font-bold text-white">{stats.total}</p>
@@ -674,8 +672,8 @@ export default function NestsMarketplace() {
           <Card className="bg-zinc-900/50 border-white/5">
             <CardContent className="p-3">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-500/20 rounded-lg">
-                  <Users className="w-4 h-4 text-blue-400" />
+                <div className="p-2 bg-red-500/20 rounded-lg">
+                  <Users className="w-4 h-4 text-red-400" />
                 </div>
                 <div>
                   <p className="text-lg font-bold text-white">{stats.candidates}</p>
@@ -688,8 +686,8 @@ export default function NestsMarketplace() {
           <Card className="bg-zinc-900/50 border-white/5">
             <CardContent className="p-3">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-500/20 rounded-lg">
-                  <Briefcase className="w-4 h-4 text-green-400" />
+                <div className="p-2 bg-red-500/20 rounded-lg">
+                  <Briefcase className="w-4 h-4 text-red-400" />
                 </div>
                 <div>
                   <p className="text-lg font-bold text-white">{stats.prospects}</p>
@@ -702,8 +700,8 @@ export default function NestsMarketplace() {
           <Card className="bg-zinc-900/50 border-white/5">
             <CardContent className="p-3">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-500/20 rounded-lg">
-                  <Building2 className="w-4 h-4 text-purple-400" />
+                <div className="p-2 bg-red-500/20 rounded-lg">
+                  <Building2 className="w-4 h-4 text-red-400" />
                 </div>
                 <div>
                   <p className="text-lg font-bold text-white">{stats.investors}</p>
@@ -768,7 +766,7 @@ export default function NestsMarketplace() {
 
             {loading ? (
               <div className="flex items-center justify-center py-20">
-                <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+                <Loader2 className="w-8 h-8 text-red-400 animate-spin" />
               </div>
             ) : filteredNests.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-zinc-400">
@@ -809,6 +807,5 @@ export default function NestsMarketplace() {
           onOpenChange={setShowPreview}
         />
       </div>
-    </Layout>
   );
 }
