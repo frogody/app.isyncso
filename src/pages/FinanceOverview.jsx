@@ -199,8 +199,7 @@ export default function FinanceOverview() {
 
   const getColorClasses = (color) => {
     const colors = {
-      amber: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-      red: 'bg-red-500/10 text-red-400 border-red-500/20'
+      amber: 'bg-amber-500/10 text-amber-400 border-amber-500/20'
     };
     return colors[color] || colors.amber;
   };
@@ -308,8 +307,8 @@ export default function FinanceOverview() {
         <div ref={statsGridRef} className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
             { title: 'Total Revenue', value: metrics.totalRevenue, displayValue: `€${metrics.totalRevenue.toLocaleString()}`, change: '+12.5%', trend: 'up', icon: Euro, color: 'amber' },
-            { title: 'Total Expenses', value: metrics.totalExpenses, displayValue: `$${metrics.totalExpenses.toLocaleString()}`, change: '-3.2%', trend: 'down', icon: CreditCard, color: 'red' },
-            { title: 'Pending Invoices', value: metrics.pendingInvoices, displayValue: `$${metrics.pendingInvoices.toLocaleString()}`, change: `${metrics.pendingCount} invoices`, trend: 'neutral', icon: Receipt, color: 'orange' },
+            { title: 'Total Expenses', value: metrics.totalExpenses, displayValue: `$${metrics.totalExpenses.toLocaleString()}`, change: '-3.2%', trend: 'down', icon: CreditCard, color: 'amber' },
+            { title: 'Pending Invoices', value: metrics.pendingInvoices, displayValue: `$${metrics.pendingInvoices.toLocaleString()}`, change: `${metrics.pendingCount} invoices`, trend: 'neutral', icon: Receipt, color: 'amber' },
             { title: 'Monthly Recurring', value: metrics.monthlyRecurring, displayValue: `$${metrics.monthlyRecurring.toLocaleString()}`, change: `${metrics.activeSubscriptions} active`, trend: 'up', icon: TrendingUp, color: 'amber' }
           ].map((metric, index) => (
             <div key={metric.title} className="stat-card">
@@ -326,7 +325,7 @@ export default function FinanceOverview() {
                       </Badge>
                     )}
                     {metric.trend === 'down' && (
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-px text-red-400 border-red-500/30 bg-red-500/10">
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-px text-amber-400 border-amber-500/30 bg-amber-500/10">
                         <ArrowDownRight className="w-2.5 h-2.5 mr-0.5" />
                         {metric.change}
                       </Badge>
@@ -435,11 +434,11 @@ export default function FinanceOverview() {
                   {recentTransactions.map((transaction, index) => (
                     <div key={`${transaction.type}-${transaction.id}`} className="flex items-center justify-between p-3 bg-zinc-800/30 rounded-lg hover:bg-zinc-800/50 transition-colors">
                       <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${transaction.type === 'invoice' ? 'bg-amber-500/10' : 'bg-red-500/10'}`}>
+                        <div className={`p-2 rounded-lg ${transaction.type === 'invoice' ? 'bg-amber-500/10' : 'bg-amber-500/10'}`}>
                           {transaction.type === 'invoice' ? (
                             <FileText className="w-4 h-4 text-amber-400" />
                           ) : (
-                            <CreditCard className="w-4 h-4 text-red-400" />
+                            <CreditCard className="w-4 h-4 text-amber-400" />
                           )}
                         </div>
                         <div>
@@ -453,7 +452,7 @@ export default function FinanceOverview() {
                           </p>
                         </div>
                       </div>
-                      <p className={`font-medium ${transaction.type === 'invoice' ? 'text-amber-400' : 'text-red-400'}`}>
+                      <p className={`font-medium ${transaction.type === 'invoice' ? 'text-amber-400' : 'text-amber-400'}`}>
                         {transaction.type === 'invoice' ? '+' : '-'}${(transaction.total || transaction.amount || 0).toLocaleString()}
                       </p>
                     </div>
@@ -482,16 +481,16 @@ export default function FinanceOverview() {
           </Link>
 
           <Link to={createPageUrl('FinanceExpenses')}>
-            <Card className="bg-zinc-900/50 border-zinc-800 hover:border-red-500/30 transition-colors cursor-pointer group">
+            <Card className="bg-zinc-900/50 border-zinc-800 hover:border-amber-500/30 transition-colors cursor-pointer group">
               <CardContent className="p-6 flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-red-500/10 group-hover:bg-red-500/20 transition-colors">
-                  <CreditCard className="w-6 h-6 text-red-400" />
+                <div className="p-3 rounded-xl bg-amber-500/10 group-hover:bg-amber-500/20 transition-colors">
+                  <CreditCard className="w-6 h-6 text-amber-400" />
                 </div>
                 <div className="flex-1">
                   <h3 className="text-white font-medium">Expenses</h3>
                   <p className="text-sm text-zinc-500">{expenses.length} recorded</p>
                 </div>
-                <ChevronRight className="w-5 h-5 text-zinc-500 group-hover:text-red-400 transition-colors" />
+                <ChevronRight className="w-5 h-5 text-zinc-500 group-hover:text-amber-400 transition-colors" />
               </CardContent>
             </Card>
           </Link>

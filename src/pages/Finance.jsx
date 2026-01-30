@@ -201,7 +201,7 @@ export default function Finance() {
         change: '-3.2%',
         trend: 'down',
         icon: CreditCard,
-        color: 'red'
+        color: 'amber'
       },
       {
         title: 'Pending Invoices',
@@ -226,8 +226,7 @@ export default function Finance() {
 
   const getColorClasses = (color) => {
     const colors = {
-      amber: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-      red: 'bg-red-500/10 text-red-400 border-red-500/20'
+      amber: 'bg-amber-500/10 text-amber-400 border-amber-500/20'
     };
     return colors[color] || colors.amber;
   };
@@ -317,7 +316,7 @@ export default function Finance() {
                     </Badge>
                   )}
                   {metric.trend === 'down' && (
-                    <Badge variant="outline" className="text-red-400 border-red-500/30 bg-red-500/10">
+                    <Badge variant="outline" className="text-amber-400 border-amber-500/30 bg-amber-500/10">
                       <ArrowDownRight className="w-3 h-3 mr-1" />
                       {metric.change}
                     </Badge>
@@ -481,8 +480,8 @@ export default function Finance() {
                   {expenses.map((expense) => (
                     <div key={expense.id} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg">
                       <div className="flex items-center gap-3">
-                        <div className="p-1.5 bg-red-500/10 rounded-lg">
-                          <CreditCard className="w-4 h-4 text-red-400" />
+                        <div className="p-1.5 bg-amber-500/10 rounded-lg">
+                          <CreditCard className="w-4 h-4 text-amber-400" />
                         </div>
                         <div>
                           <p className="text-sm font-medium text-white">{expense.description || 'Expense'}</p>
@@ -490,7 +489,7 @@ export default function Finance() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-medium text-red-400">-${(expense.amount || 0).toLocaleString()}</p>
+                        <p className="text-sm font-medium text-amber-400">-${(expense.amount || 0).toLocaleString()}</p>
                         <p className="text-xs text-zinc-500">{expense.date || 'No date'}</p>
                       </div>
                     </div>

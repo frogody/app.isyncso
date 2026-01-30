@@ -290,7 +290,7 @@ export default function FinanceExpenses() {
   if (loading || permLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500" />
       </div>
     );
   }
@@ -330,7 +330,7 @@ export default function FinanceExpenses() {
             <CardContent className="p-3">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs text-zinc-400">Total Expenses</span>
-                <Wallet className="w-3.5 h-3.5 text-red-400" />
+                <Wallet className="w-3.5 h-3.5 text-amber-400" />
               </div>
               <p className="text-lg font-bold text-white">${stats.total.toLocaleString()}</p>
               <p className="text-[10px] text-zinc-500">{stats.count} expenses</p>
@@ -342,13 +342,13 @@ export default function FinanceExpenses() {
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs text-zinc-400">This Month</span>
                 {monthlyTrend === 'up' ? (
-                  <TrendingUp className="w-3.5 h-3.5 text-red-400" />
+                  <TrendingUp className="w-3.5 h-3.5 text-amber-400" />
                 ) : (
                   <TrendingDown className="w-3.5 h-3.5 text-amber-400" />
                 )}
               </div>
               <p className="text-lg font-bold text-white">${stats.thisMonth.toLocaleString()}</p>
-              <p className={`text-[10px] ${monthlyTrend === 'up' ? 'text-red-400' : 'text-amber-400'}`}>
+              <p className={`text-[10px] text-amber-400`}>
                 {stats.percentChange > 0 ? '+' : ''}{stats.percentChange}% vs last month
               </p>
             </CardContent>
@@ -496,7 +496,7 @@ export default function FinanceExpenses() {
                 </p>
                 {canCreate && !searchQuery && categoryFilter === 'all' && (
                   <Button
-                    className="bg-red-500 hover:bg-red-600"
+                    className="bg-amber-500 hover:bg-amber-600"
                     onClick={() => { resetForm(); setShowCreateModal(true); }}
                   >
                     <Plus className="w-4 h-4 mr-2" />
@@ -548,7 +548,7 @@ export default function FinanceExpenses() {
                         </div>
 
                         <div className="flex items-center gap-3">
-                          <p className="text-sm font-semibold text-red-400">
+                          <p className="text-sm font-semibold text-amber-400">
                             -${(expense.amount || 0).toLocaleString()}
                           </p>
 
@@ -713,7 +713,7 @@ export default function FinanceExpenses() {
               <Button
                 type="submit"
                 disabled={saving}
-                className="bg-red-500 hover:bg-red-600"
+                className="bg-amber-500 hover:bg-amber-600"
               >
                 {saving ? 'Saving...' : (editMode ? 'Update Expense' : 'Add Expense')}
               </Button>

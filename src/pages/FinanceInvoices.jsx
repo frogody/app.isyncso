@@ -437,7 +437,7 @@ export default function FinanceInvoices() {
               <CardContent className="p-3">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs text-zinc-400">{stat.label}</span>
-                  {stat.icon && <stat.icon className={`w-3.5 h-3.5 text-${stat.color}-400`} />}
+                  {stat.icon && <stat.icon className={`w-3.5 h-3.5 ${stat.color === 'amber' ? 'text-amber-400' : stat.color === 'red' ? 'text-red-400' : 'text-zinc-400'}`} />}
                 </div>
                 <p className="text-lg font-bold text-white">{stat.value}</p>
                 {stat.count !== undefined && (
