@@ -81,12 +81,8 @@ export default function SentinelChat() {
   }
 
   return (
-    <div className="min-h-screen bg-black relative">
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 right-1/3 w-96 h-96 bg-[#86EFAC]/5 rounded-full blur-3xl animate-pulse" />
-      </div>
-
-      <div className="relative z-10 w-full max-w-5xl mx-auto px-4 lg:px-6 py-4 space-y-4">
+    <div className="min-h-screen bg-black">
+      <div className="w-full max-w-5xl mx-auto px-4 lg:px-6 py-4 space-y-4">
         <PageHeader
           icon={Shield}
           title="Ask SENTINEL"

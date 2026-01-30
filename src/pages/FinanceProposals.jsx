@@ -33,9 +33,9 @@ const STATUS_CONFIG = {
   draft: { label: 'Draft', color: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30', icon: FileText },
   sent: { label: 'Sent', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', icon: Send },
   viewed: { label: 'Viewed', color: 'bg-purple-500/20 text-purple-400 border-purple-500/30', icon: Eye },
-  accepted: { label: 'Accepted', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30', icon: CheckCircle2 },
+  accepted: { label: 'Accepted', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', icon: CheckCircle2 },
   rejected: { label: 'Rejected', color: 'bg-red-500/20 text-red-400 border-red-500/30', icon: XCircle },
-  expired: { label: 'Expired', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30', icon: Clock }
+  expired: { label: 'Expired', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', icon: Clock }
 };
 
 export default function FinanceProposals() {
@@ -331,11 +331,11 @@ export default function FinanceProposals() {
         title="Proposals"
         subtitle="Create and manage sales proposals"
         icon={FileText}
-        color="amber"
+        color="blue"
         actions={
           <Button
             onClick={handleCreateProposal}
-            className="bg-amber-500 hover:bg-amber-600"
+            className="bg-blue-500 hover:bg-blue-600"
           >
             <Plus className="w-4 h-4 mr-2" />
             New Proposal
@@ -391,10 +391,10 @@ export default function FinanceProposals() {
               {/* Status Filter Tabs */}
               <Tabs value={statusFilter} onValueChange={setStatusFilter}>
                 <TabsList className="bg-zinc-800">
-                  <TabsTrigger value="all" className="data-[state=active]:bg-amber-500">All</TabsTrigger>
+                  <TabsTrigger value="all" className="data-[state=active]:bg-blue-500">All</TabsTrigger>
                   <TabsTrigger value="draft" className="data-[state=active]:bg-zinc-600">Draft</TabsTrigger>
                   <TabsTrigger value="sent" className="data-[state=active]:bg-blue-500">Sent</TabsTrigger>
-                  <TabsTrigger value="accepted" className="data-[state=active]:bg-emerald-500">Accepted</TabsTrigger>
+                  <TabsTrigger value="accepted" className="data-[state=active]:bg-blue-500">Accepted</TabsTrigger>
                 </TabsList>
               </Tabs>
 
@@ -445,7 +445,7 @@ export default function FinanceProposals() {
                   : 'Create your first proposal to get started'}
               </p>
               {!searchQuery && statusFilter === 'all' && (
-                <Button onClick={handleCreateProposal} className="bg-amber-500 hover:bg-amber-600">
+                <Button onClick={handleCreateProposal} className="bg-blue-500 hover:bg-blue-600">
                   <Plus className="w-4 h-4 mr-2" />
                   Create Proposal
                 </Button>
@@ -464,8 +464,8 @@ export default function FinanceProposals() {
                     onClick={() => { setSelectedProposal(proposal); setShowDetailModal(true); }}
                   >
                     {/* Icon */}
-                    <div className="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
-                      <FileText className="w-3.5 h-3.5 text-amber-400" />
+                    <div className="w-7 h-7 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                      <FileText className="w-3.5 h-3.5 text-blue-400" />
                     </div>
 
                     {/* Main Content */}
@@ -479,7 +479,7 @@ export default function FinanceProposals() {
                           {statusConfig.label}
                         </Badge>
                         {proposal.converted_to_invoice_id && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-px bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-px bg-blue-500/20 text-blue-400 border-blue-500/30">
                             <FileCheck className="w-2.5 h-2.5 mr-0.5" />
                             Converted
                           </Badge>
@@ -554,7 +554,7 @@ export default function FinanceProposals() {
                           {!proposal.converted_to_invoice_id && ['accepted', 'viewed', 'sent'].includes(proposal.status) && (
                             <DropdownMenuItem
                               onClick={() => { setSelectedProposal(proposal); handleConvertToInvoice(proposal); }}
-                              className="text-emerald-400 hover:bg-zinc-800"
+                              className="text-blue-400 hover:bg-zinc-800"
                             >
                               <ArrowRight className="w-4 h-4 mr-2" />
                               Convert to Invoice
@@ -584,7 +584,7 @@ export default function FinanceProposals() {
         <DialogContent className="bg-zinc-900 border-zinc-700 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-amber-400" />
+              <FileText className="w-5 h-5 text-blue-400" />
               {selectedProposal?.proposal_number || 'Proposal Details'}
             </DialogTitle>
           </DialogHeader>
@@ -679,7 +679,7 @@ export default function FinanceProposals() {
                     {selectedProposal.discount_amount > 0 && (
                       <div className="flex justify-between text-sm">
                         <span className="text-zinc-400">Discount</span>
-                        <span className="text-emerald-400">-€{selectedProposal.discount_amount.toLocaleString()}</span>
+                        <span className="text-blue-400">-€{selectedProposal.discount_amount.toLocaleString()}</span>
                       </div>
                     )}
                     {selectedProposal.tax_amount > 0 && (
@@ -690,7 +690,7 @@ export default function FinanceProposals() {
                     )}
                     <div className="flex justify-between text-lg font-bold pt-2 border-t border-zinc-600">
                       <span className="text-white">Total</span>
-                      <span className="text-amber-400">€{(selectedProposal.total || 0).toLocaleString()}</span>
+                      <span className="text-blue-400">€{(selectedProposal.total || 0).toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
@@ -741,7 +741,7 @@ export default function FinanceProposals() {
                 )}
                 {!selectedProposal.converted_to_invoice_id && ['accepted', 'viewed', 'sent'].includes(selectedProposal.status) && (
                   <Button
-                    className="flex-1 bg-emerald-500 hover:bg-emerald-600"
+                    className="flex-1 bg-blue-500 hover:bg-blue-600"
                     onClick={() => handleConvertToInvoice(selectedProposal)}
                     disabled={converting}
                   >

@@ -353,14 +353,8 @@ export default function ComplianceRoadmap() {
   }
 
   return (
-    <div className="min-h-screen bg-black relative">
-      {/* Animated Background */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 left-1/4 w-[500px] h-[500px] bg-[#86EFAC]/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-1/4 w-[400px] h-[400px] bg-[#6EE7B7]/5 rounded-full blur-3xl" />
-      </div>
-
-      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
+    <div className="min-h-screen bg-black">
+      <div className="w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <PageHeader
           icon={Map}
@@ -429,7 +423,7 @@ export default function ComplianceRoadmap() {
                 </div>
                 {aiRecommendations.thirty_day_plan && (
                   <div className="mt-4 pt-4 border-t border-zinc-700/50">
-                    <h4 className="text-xs font-semibold text-cyan-400 mb-2 flex items-center gap-2">
+                    <h4 className="text-xs font-semibold text-[#86EFAC] mb-2 flex items-center gap-2">
                       <Calendar className="w-4 h-4" /> 30-Day Plan
                     </h4>
                     <p className="text-xs text-zinc-300">{aiRecommendations.thirty_day_plan}</p>
@@ -512,7 +506,7 @@ export default function ComplianceRoadmap() {
             <TabsTrigger value="systems" className="data-[state=active]:bg-[#86EFAC]/20 data-[state=active]:text-[#86EFAC] rounded-lg px-4">
               <Target className="w-4 h-4 mr-2" />By System ({stats.systemProgress.length})
             </TabsTrigger>
-            <TabsTrigger value="urgent" className="data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-400 rounded-lg px-4">
+            <TabsTrigger value="urgent" className="data-[state=active]:bg-[#86EFAC]/20 data-[state=active]:text-[#86EFAC] rounded-lg px-4">
               <Zap className="w-4 h-4 mr-2" />Urgent ({stats.urgentTasks.length})
             </TabsTrigger>
           </TabsList>
@@ -552,8 +546,8 @@ export default function ComplianceRoadmap() {
           <TabsContent value="urgent" className="space-y-3 mt-4">
             {stats.urgentTasks.length === 0 ? (
               <div className="p-16 text-center rounded-xl bg-zinc-900/50 border border-zinc-800/60">
-                <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-emerald-500/20 to-[#86EFAC]/20 flex items-center justify-center mx-auto mb-6">
-                  <CheckCircle className="w-10 h-10 text-emerald-400/70" />
+                <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-[#86EFAC]/20 to-[#86EFAC]/20 flex items-center justify-center mx-auto mb-6">
+                  <CheckCircle className="w-10 h-10 text-[#86EFAC]/70" />
                 </div>
                 <h3 className="text-2xl font-bold text-white mb-3">All Clear!</h3>
                 <p className="text-zinc-500">No urgent tasks - all upcoming deadlines are under control</p>

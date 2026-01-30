@@ -193,7 +193,7 @@ export default function Finance() {
         change: '+12.5%',
         trend: 'up',
         icon: Euro,
-        color: 'amber'
+        color: 'blue'
       },
       {
         title: 'Total Expenses',
@@ -209,7 +209,7 @@ export default function Finance() {
         change: `${invoices.filter(i => i.status === 'pending').length} invoices`,
         trend: 'neutral',
         icon: Receipt,
-        color: 'amber'
+        color: 'blue'
       },
       {
         title: 'Monthly Recurring',
@@ -226,11 +226,11 @@ export default function Finance() {
 
   const getColorClasses = (color) => {
     const colors = {
-      amber: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+      blue: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
       red: 'bg-red-500/10 text-red-400 border-red-500/20',
       cyan: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
     };
-    return colors[color] || colors.amber;
+    return colors[color] || colors.blue;
   };
 
   // Memoize permission checks - only compute when permissions are loaded
@@ -249,7 +249,7 @@ export default function Finance() {
   if (loading || permLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
       </div>
     );
   }
@@ -269,20 +269,15 @@ export default function Finance() {
   }
 
   return (
-    <div className="min-h-screen bg-black relative">
-      {/* Animated Background */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 left-1/4 w-96 h-96 bg-amber-900/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-amber-950/10 rounded-full blur-3xl" />
-      </div>
+    <div className="min-h-screen bg-black">
 
-      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
+      <div className="w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <PageHeader
           icon={Euro}
           title="Finance"
           subtitle="Track revenue, expenses, and financial metrics"
-          color="amber"
+          color="blue"
           actions={
             <div className="flex gap-3">
               {canExport && (
@@ -292,7 +287,7 @@ export default function Finance() {
                 </Button>
               )}
               {canCreate && (
-                <Button className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30" onClick={() => setShowInvoiceModal(true)}>
+                <Button className="bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30" onClick={() => setShowInvoiceModal(true)}>
                   <Plus className="w-4 h-4 mr-2" />
                   New Transaction
                 </Button>
@@ -317,7 +312,7 @@ export default function Finance() {
                     <metric.icon className="w-4 h-4" />
                   </div>
                   {metric.trend === 'up' && (
-                    <Badge variant="outline" className="text-amber-400 border-amber-500/30 bg-amber-500/10">
+                    <Badge variant="outline" className="text-blue-400 border-blue-500/30 bg-blue-500/10">
                       <ArrowUpRight className="w-3 h-3 mr-1" />
                       {metric.change}
                     </Badge>
@@ -409,7 +404,7 @@ export default function Finance() {
                   <CardTitle className="text-white">Invoices</CardTitle>
                   <CardDescription>{invoices.length} total invoices</CardDescription>
                 </div>
-                <Button size="sm" className="bg-amber-500 hover:bg-amber-600" onClick={() => setShowInvoiceModal(true)}>
+                <Button size="sm" className="bg-blue-500 hover:bg-blue-600" onClick={() => setShowInvoiceModal(true)}>
                   <Plus className="w-4 h-4 mr-2" />
                   New Invoice
                 </Button>
@@ -421,7 +416,7 @@ export default function Finance() {
                   <Receipt className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
                   <h3 className="text-base font-medium text-white mb-2">No invoices yet</h3>
                   <p className="text-xs text-zinc-500 mb-3">Create your first invoice to start tracking revenue</p>
-                  <Button className="bg-amber-500 hover:bg-amber-600" onClick={() => setShowInvoiceModal(true)}>
+                  <Button className="bg-blue-500 hover:bg-blue-600" onClick={() => setShowInvoiceModal(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Create Invoice
                   </Button>
@@ -431,8 +426,8 @@ export default function Finance() {
                   {invoices.map((invoice) => (
                     <div key={invoice.id} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg">
                       <div className="flex items-center gap-3">
-                        <div className="p-1.5 bg-amber-500/10 rounded-lg">
-                          <FileText className="w-4 h-4 text-amber-400" />
+                        <div className="p-1.5 bg-blue-500/10 rounded-lg">
+                          <FileText className="w-4 h-4 text-blue-400" />
                         </div>
                         <div>
                           <p className="text-sm font-medium text-white">{invoice.invoice_number || `INV-${invoice.id?.slice(0, 8)}`}</p>
@@ -442,9 +437,9 @@ export default function Finance() {
                       <div className="text-right">
                         <p className="text-sm font-medium text-white">${(invoice.total || 0).toLocaleString()}</p>
                         <Badge variant="outline" className={
-                          invoice.status === 'paid' ? 'text-amber-400 border-amber-500/30' :
+                          invoice.status === 'paid' ? 'text-blue-400 border-blue-500/30' :
                           invoice.status === 'overdue' ? 'text-red-400 border-red-500/30' :
-                          'text-amber-400 border-amber-500/30'
+                          'text-blue-400 border-blue-500/30'
                         }>
                           {invoice.status || 'pending'}
                         </Badge>
@@ -465,7 +460,7 @@ export default function Finance() {
                   <CardTitle className="text-white">Expenses</CardTitle>
                   <CardDescription>{expenses.length} total expenses</CardDescription>
                 </div>
-                <Button size="sm" className="bg-amber-500 hover:bg-amber-600" onClick={() => setShowExpenseModal(true)}>
+                <Button size="sm" className="bg-blue-500 hover:bg-blue-600" onClick={() => setShowExpenseModal(true)}>
                   <Plus className="w-4 h-4 mr-2" />
                   Add Expense
                 </Button>
@@ -477,7 +472,7 @@ export default function Finance() {
                   <CreditCard className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
                   <h3 className="text-base font-medium text-white mb-2">No expenses recorded</h3>
                   <p className="text-xs text-zinc-500 mb-3">Track your business expenses here</p>
-                  <Button className="bg-amber-500 hover:bg-amber-600" onClick={() => setShowExpenseModal(true)}>
+                  <Button className="bg-blue-500 hover:bg-blue-600" onClick={() => setShowExpenseModal(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Add Expense
                   </Button>
@@ -515,7 +510,7 @@ export default function Finance() {
                   <CardTitle className="text-white">Subscriptions</CardTitle>
                   <CardDescription>{subscriptions.length} active subscriptions</CardDescription>
                 </div>
-                <Button size="sm" className="bg-amber-500 hover:bg-amber-600" onClick={() => setShowSubscriptionModal(true)}>
+                <Button size="sm" className="bg-blue-500 hover:bg-blue-600" onClick={() => setShowSubscriptionModal(true)}>
                   <Plus className="w-4 h-4 mr-2" />
                   Add Subscription
                 </Button>
@@ -527,7 +522,7 @@ export default function Finance() {
                   <BadgeEuro className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
                   <h3 className="text-base font-medium text-white mb-2">No subscriptions</h3>
                   <p className="text-xs text-zinc-500 mb-3">Track recurring revenue from subscriptions</p>
-                  <Button className="bg-amber-500 hover:bg-amber-600" onClick={() => setShowSubscriptionModal(true)}>
+                  <Button className="bg-blue-500 hover:bg-blue-600" onClick={() => setShowSubscriptionModal(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Add Subscription
                   </Button>
@@ -548,7 +543,7 @@ export default function Finance() {
                       <div className="text-right">
                         <p className="text-sm font-medium text-cyan-400">${(sub.amount || 0).toLocaleString()}/mo</p>
                         <Badge variant="outline" className={
-                          sub.status === 'active' ? 'text-amber-400 border-amber-500/30' :
+                          sub.status === 'active' ? 'text-blue-400 border-blue-500/30' :
                           'text-zinc-400 border-zinc-500/30'
                         }>
                           {sub.status || 'active'}
@@ -621,7 +616,7 @@ export default function Finance() {
             <Button type="button" variant="outline" onClick={() => setShowInvoiceModal(false)} className="flex-1 border-zinc-700">
               Cancel
             </Button>
-            <Button type="submit" disabled={saving} className="flex-1 bg-amber-500 hover:bg-amber-600">
+            <Button type="submit" disabled={saving} className="flex-1 bg-blue-500 hover:bg-blue-600">
               {saving ? 'Creating...' : 'Create Invoice'}
             </Button>
           </div>
@@ -693,7 +688,7 @@ export default function Finance() {
             <Button type="button" variant="outline" onClick={() => setShowExpenseModal(false)} className="flex-1 border-zinc-700">
               Cancel
             </Button>
-            <Button type="submit" disabled={saving} className="flex-1 bg-amber-500 hover:bg-amber-600">
+            <Button type="submit" disabled={saving} className="flex-1 bg-blue-500 hover:bg-blue-600">
               {saving ? 'Adding...' : 'Add Expense'}
             </Button>
           </div>
@@ -760,7 +755,7 @@ export default function Finance() {
             <Button type="button" variant="outline" onClick={() => setShowSubscriptionModal(false)} className="flex-1 border-zinc-700">
               Cancel
             </Button>
-            <Button type="submit" disabled={saving} className="flex-1 bg-amber-500 hover:bg-amber-600">
+            <Button type="submit" disabled={saving} className="flex-1 bg-blue-500 hover:bg-blue-600">
               {saving ? 'Adding...' : 'Add Subscription'}
             </Button>
           </div>

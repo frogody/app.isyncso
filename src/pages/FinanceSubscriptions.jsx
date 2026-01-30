@@ -227,10 +227,10 @@ export default function FinanceSubscriptions() {
 
   const getStatusBadge = (status) => {
     const styles = {
-      active: 'text-amber-400 border-amber-500/30 bg-amber-500/10',
+      active: 'text-blue-400 border-blue-500/30 bg-blue-500/10',
       paused: 'text-zinc-400 border-zinc-500/30 bg-zinc-500/10',
       cancelled: 'text-red-400 border-red-500/30 bg-red-500/10',
-      trial: 'text-amber-400 border-amber-500/30 bg-amber-500/10'
+      trial: 'text-blue-400 border-blue-500/30 bg-blue-500/10'
     };
     return styles[status] || styles.active;
   };
@@ -244,7 +244,7 @@ export default function FinanceSubscriptions() {
   if (loading || permLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
       </div>
     );
   }
@@ -260,20 +260,15 @@ export default function FinanceSubscriptions() {
   }
 
   return (
-    <div className="min-h-screen bg-black relative">
-      {/* Animated Background */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 left-1/4 w-96 h-96 bg-amber-900/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-amber-950/10 rounded-full blur-3xl" />
-      </div>
+    <div className="min-h-screen bg-black">
 
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+      <div className="w-full px-6 lg:px-8 py-6 space-y-6">
         {/* Header */}
         <PageHeader
           icon={CreditCard}
           title="Subscriptions"
           subtitle="Manage your recurring subscriptions"
-          color="amber"
+          color="blue"
           actions={
             <div className="flex gap-3">
               <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
@@ -282,7 +277,7 @@ export default function FinanceSubscriptions() {
               </Button>
               {canCreate && (
                 <Button
-                  className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                  className="bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30"
                   onClick={() => { resetForm(); setShowCreateModal(true); }}
                 >
                   <Plus className="w-4 h-4 mr-2" />
@@ -297,15 +292,15 @@ export default function FinanceSubscriptions() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { label: 'Total', value: stats.total, sub: `${stats.active} active`, color: 'zinc' },
-            { label: 'Monthly Cost', value: formatCurrency(stats.monthlyCost), icon: RefreshCw, color: 'amber' },
-            { label: 'Annual Cost', value: formatCurrency(stats.annualCost), icon: Calendar, color: 'amber' },
+            { label: 'Monthly Cost', value: formatCurrency(stats.monthlyCost), icon: RefreshCw, color: 'blue' },
+            { label: 'Annual Cost', value: formatCurrency(stats.annualCost), icon: Calendar, color: 'blue' },
             { label: 'Paused', value: stats.paused, sub: `${stats.cancelled} cancelled`, color: 'zinc' }
           ].map((stat) => (
             <Card key={stat.label} className="bg-zinc-900/50 border-zinc-800">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-zinc-400 text-sm">{stat.label}</p>
-                  {stat.icon && <stat.icon className="w-4 h-4 text-amber-400" />}
+                  {stat.icon && <stat.icon className="w-4 h-4 text-blue-400" />}
                 </div>
                 <p className="text-xl font-bold text-white">{stat.value}</p>
                 {stat.sub && <p className="text-xs text-zinc-500 mt-1">{stat.sub}</p>}
@@ -370,7 +365,7 @@ export default function FinanceSubscriptions() {
                 <p className="text-zinc-500 mb-4">Start tracking your recurring subscriptions</p>
                 {canCreate && (
                   <Button
-                    className="bg-amber-500 hover:bg-amber-600"
+                    className="bg-blue-500 hover:bg-blue-600"
                     onClick={() => { resetForm(); setShowCreateModal(true); }}
                   >
                     <Plus className="w-4 h-4 mr-2" />
@@ -393,8 +388,8 @@ export default function FinanceSubscriptions() {
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                          <div className="p-2 bg-amber-500/10 rounded-lg">
-                            <CreditCard className="w-5 h-5 text-amber-400" />
+                          <div className="p-2 bg-blue-500/10 rounded-lg">
+                            <CreditCard className="w-5 h-5 text-blue-400" />
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
@@ -446,7 +441,7 @@ export default function FinanceSubscriptions() {
                                   </DropdownMenuItem>
                                 )}
                                 {subscription.status === 'paused' && (
-                                  <DropdownMenuItem onClick={() => handleStatusChange(subscription, 'active')} className="text-amber-400">
+                                  <DropdownMenuItem onClick={() => handleStatusChange(subscription, 'active')} className="text-blue-400">
                                     <Play className="w-4 h-4 mr-2" />
                                     Resume
                                   </DropdownMenuItem>
@@ -458,7 +453,7 @@ export default function FinanceSubscriptions() {
                                   </DropdownMenuItem>
                                 )}
                                 {subscription.status === 'cancelled' && (
-                                  <DropdownMenuItem onClick={() => handleStatusChange(subscription, 'active')} className="text-amber-400">
+                                  <DropdownMenuItem onClick={() => handleStatusChange(subscription, 'active')} className="text-blue-400">
                                     <RotateCcw className="w-4 h-4 mr-2" />
                                     Reactivate
                                   </DropdownMenuItem>
@@ -578,7 +573,7 @@ export default function FinanceSubscriptions() {
                 <Button type="button" variant="outline" onClick={() => setShowCreateModal(false)} className="border-zinc-700 text-zinc-300">
                   Cancel
                 </Button>
-                <Button type="submit" disabled={saving} className="bg-amber-500 hover:bg-amber-600">
+                <Button type="submit" disabled={saving} className="bg-blue-500 hover:bg-blue-600">
                   {saving ? 'Saving...' : editMode ? 'Update' : 'Create'}
                 </Button>
               </DialogFooter>

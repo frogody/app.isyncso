@@ -64,7 +64,7 @@ function SystemSelectionCard({ system, isSelected, onClick, index }) {
               HIGH-RISK
             </Badge>
             {isSelected && (
-              <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 border">
+              <Badge className="bg-[#86EFAC]/20 text-[#86EFAC] border-[#86EFAC]/30 border">
                 <CheckCircle className="w-3 h-3 mr-1" />
                 Selected
               </Badge>
@@ -232,12 +232,8 @@ export default function DocumentGenerator() {
   // Step 2: Document Type Selection
   if (selectedSystem) {
     return (
-      <div className="min-h-screen bg-black relative">
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-20 left-1/4 w-[500px] h-[500px] bg-[#86EFAC]/5 rounded-full blur-3xl" />
-        </div>
-
-        <div className="relative z-10 w-full max-w-5xl mx-auto px-4 lg:px-6 py-4 space-y-4">
+      <div className="min-h-screen bg-black">
+        <div className="w-full max-w-5xl mx-auto px-4 lg:px-6 py-4 space-y-4">
           <Button onClick={handleBack} variant="outline" className="border-zinc-700/60 text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Change System
@@ -279,13 +275,8 @@ export default function DocumentGenerator() {
 
   // Step 1: System Selection
   return (
-    <div className="min-h-screen bg-black relative">
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 left-1/4 w-[500px] h-[500px] bg-[#86EFAC]/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-1/4 w-[400px] h-[400px] bg-[#6EE7B7]/5 rounded-full blur-3xl" />
-      </div>
-
-      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
+    <div className="min-h-screen bg-black">
+      <div className="w-full px-4 lg:px-6 py-4 space-y-4">
         <PageHeader
           icon={FileText}
           title="Document Generator"

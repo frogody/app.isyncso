@@ -356,7 +356,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
   if (path.startsWith('/finance') || path.startsWith('/proposal')) {
     return {
       title: 'FINANCE',
-      color: 'amber',
+      color: 'blue',
       agent: 'finance',
       items: [
         { label: 'Dashboard', path: createPageUrl('FinanceOverview'), icon: LayoutDashboard },
@@ -403,7 +403,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
   if (path.startsWith('/raise')) {
     return {
       title: 'RAISE',
-      color: 'orange',
+      color: 'blue',
       agent: 'raise',
       items: [
         { label: 'Dashboard', path: createPageUrl('Raise'), icon: LayoutDashboard },

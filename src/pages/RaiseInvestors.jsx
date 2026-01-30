@@ -85,9 +85,9 @@ export default function RaiseInvestors() {
     const styles = {
       prospecting: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
       contacted: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-      interested: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-      in_discussions: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-      due_diligence: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
+      interested: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+      in_discussions: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+      due_diligence: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
       committed: 'bg-green-500/20 text-green-400 border-green-500/30',
       passed: 'bg-red-500/20 text-red-400 border-red-500/30'
     };
@@ -115,29 +115,23 @@ export default function RaiseInvestors() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black relative">
-      {/* Animated Background */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 left-1/4 w-96 h-96 bg-amber-900/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-amber-950/10 rounded-full blur-3xl" />
-      </div>
-
-      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
+    <div className="min-h-screen bg-black">
+      <div className="w-full px-4 lg:px-6 py-4 space-y-4">
         <PageHeader
           title="Investor Pipeline"
           subtitle="Track and manage investor relationships"
           icon={Building2}
-          color="amber"
+          color="blue"
           actions={
             <Button
               onClick={() => setIsAddDialogOpen(true)}
-              className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30"
+              className="bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Investor
@@ -156,8 +150,8 @@ export default function RaiseInvestors() {
             <Card key={idx} className="bg-zinc-900/50 border-zinc-800">
               <CardContent className="p-3">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                    <stat.icon className="w-4 h-4 text-amber-400" />
+                  <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                    <stat.icon className="w-4 h-4 text-blue-400" />
                   </div>
                   <div>
                     <p className="text-lg font-bold text-white">{stat.value}</p>
@@ -211,7 +205,7 @@ export default function RaiseInvestors() {
                 <p className="text-zinc-500 mb-4">Start building your investor pipeline</p>
                 <Button
                   onClick={() => setIsAddDialogOpen(true)}
-                  className="bg-amber-500 hover:bg-amber-600"
+                  className="bg-blue-500 hover:bg-blue-600"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Add First Investor
@@ -227,8 +221,8 @@ export default function RaiseInvestors() {
                     className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
-                        <Building2 className="w-4 h-4 text-indigo-400" />
+                      <div className="p-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                        <Building2 className="w-4 h-4 text-blue-400" />
                       </div>
                       <div>
                         <p className="font-medium text-white text-sm">{investor.name || 'Unknown'}</p>
@@ -240,7 +234,7 @@ export default function RaiseInvestors() {
                     </div>
                     <div className="flex items-center gap-3">
                       {investor.typical_check_size && (
-                        <span className="text-xs text-amber-400 flex items-center gap-1">
+                        <span className="text-xs text-blue-400 flex items-center gap-1">
                           <Euro className="w-3 h-3" />
                           {investor.typical_check_size}
                         </span>
@@ -383,7 +377,7 @@ export default function RaiseInvestors() {
               <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} className="border-zinc-700">
                 Cancel
               </Button>
-              <Button onClick={handleAddInvestor} className="bg-amber-500 hover:bg-amber-600">
+              <Button onClick={handleAddInvestor} className="bg-blue-500 hover:bg-blue-600">
                 Add Investor
               </Button>
             </div>

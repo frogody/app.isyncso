@@ -275,14 +275,8 @@ export default function AISystemInventory() {
   }
 
   return (
-    <div className="min-h-screen bg-black relative">
-      {/* Animated Background */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 left-1/4 w-[500px] h-[500px] bg-[#86EFAC]/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-1/4 w-[400px] h-[400px] bg-[#6EE7B7]/5 rounded-full blur-3xl" />
-      </div>
-
-      <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
+    <div className="min-h-screen bg-black">
+      <div className="w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <PageHeader
           icon={Cpu}
@@ -332,7 +326,7 @@ export default function AISystemInventory() {
               <div>
                 <p className="text-zinc-500 text-xs">Compliant</p>
                 <p className="text-lg font-bold text-white mt-1">{stats.compliant}</p>
-                <p className="text-[10px] text-emerald-400/80 mt-0.5">{stats.total > 0 ? Math.round((stats.compliant / stats.total) * 100) : 0}% of total</p>
+                <p className="text-[10px] text-[#86EFAC]/80 mt-0.5">{stats.total > 0 ? Math.round((stats.compliant / stats.total) * 100) : 0}% of total</p>
               </div>
               <div className="w-8 h-8 rounded-xl bg-[#86EFAC]/15 flex items-center justify-center">
                 <CheckCircle className="w-4 h-4 text-[#86EFAC]/60" />

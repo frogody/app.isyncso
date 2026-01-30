@@ -81,8 +81,8 @@ export default function RaiseCampaigns() {
     const styles = {
       planning: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
       active: 'bg-green-500/20 text-green-400 border-green-500/30',
-      paused: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-      closed: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
+      paused: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+      closed: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
       cancelled: 'bg-red-500/20 text-red-400 border-red-500/30'
     };
     return styles[status] || styles.planning;
@@ -114,29 +114,23 @@ export default function RaiseCampaigns() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black relative">
-      {/* Animated Background */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 left-1/4 w-96 h-96 bg-amber-900/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-amber-950/10 rounded-full blur-3xl" />
-      </div>
-
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+    <div className="min-h-screen bg-black">
+      <div className="w-full px-6 lg:px-8 py-6 space-y-6">
         <PageHeader
           title="Raise Campaigns"
           subtitle="Manage your fundraising rounds"
           icon={Rocket}
-          color="amber"
+          color="blue"
           actions={
             <Button
               onClick={() => setIsAddDialogOpen(true)}
-              className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30"
+              className="bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30"
             >
               <Plus className="w-4 h-4 mr-2" />
               New Campaign
@@ -155,8 +149,8 @@ export default function RaiseCampaigns() {
             <Card key={idx} className="bg-zinc-900/50 border-zinc-800">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                    <stat.icon className="w-4 h-4 text-amber-400" />
+                  <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                    <stat.icon className="w-4 h-4 text-blue-400" />
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-white">{stat.value}</p>
@@ -193,7 +187,7 @@ export default function RaiseCampaigns() {
                 <p className="text-zinc-500 mb-4">Start your first fundraising campaign</p>
                 <Button
                   onClick={() => setIsAddDialogOpen(true)}
-                  className="bg-amber-500 hover:bg-amber-600"
+                  className="bg-blue-500 hover:bg-blue-600"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Create Campaign
@@ -212,7 +206,7 @@ export default function RaiseCampaigns() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                     >
-                      <div className="p-6 bg-zinc-800/50 rounded-xl border border-zinc-700 hover:border-amber-500/30 transition-colors">
+                      <div className="p-6 bg-zinc-800/50 rounded-xl border border-zinc-700 hover:border-blue-500/30 transition-colors">
                         <div className="flex items-start justify-between mb-4">
                           <div>
                             <h3 className="font-semibold text-white text-lg">{campaign.name || 'Untitled Campaign'}</h3>
@@ -244,7 +238,7 @@ export default function RaiseCampaigns() {
                         <div className="mb-4">
                           <div className="flex justify-between text-sm mb-2">
                             <span className="text-zinc-400">Progress</span>
-                            <span className="text-amber-400 font-medium">{progress}%</span>
+                            <span className="text-blue-400 font-medium">{progress}%</span>
                           </div>
                           <Progress value={progress} className="h-2 bg-zinc-700" />
                           <div className="flex justify-between text-sm mt-2">
@@ -371,7 +365,7 @@ export default function RaiseCampaigns() {
               <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} className="border-zinc-700">
                 Cancel
               </Button>
-              <Button onClick={handleAddCampaign} className="bg-amber-500 hover:bg-amber-600">
+              <Button onClick={handleAddCampaign} className="bg-blue-500 hover:bg-blue-600">
                 Create
               </Button>
             </div>
