@@ -1642,6 +1642,31 @@ export default function Layout({ children, currentPageName }) {
             className="flex-1 md:pt-0 pt-14 sm:pt-16 overflow-auto transition-all duration-300 pb-safe scroll-smooth-ios"
             role="main"
           >
+            {/* SYNC environment top tabs */}
+            {secondaryNavConfig?.title === 'SYNC' && (
+              <div className="sticky top-0 z-10 bg-black/95 backdrop-blur-md border-b border-white/5">
+                <div className="flex items-center gap-1 px-4 lg:px-6 py-2 overflow-x-auto scrollbar-hide">
+                  {secondaryNavConfig.items.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = location.pathname === item.path || location.pathname === item.path?.split('?')[0];
+                    return (
+                      <Link
+                        key={item.label}
+                        to={item.path}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                          isActive
+                            ? 'bg-purple-500/15 text-purple-400 border border-purple-500/30'
+                            : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                        }`}
+                      >
+                        {Icon && <Icon className="w-4 h-4" />}
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             <div className="min-h-full">
               {children}
             </div>
