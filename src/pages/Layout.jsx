@@ -436,8 +436,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
   if (path.startsWith('/sync') || path.startsWith('/aiassistant') || path.startsWith('/actions') ||
       path.startsWith('/activity') || path.startsWith('/desktop') || path.startsWith('/agents') ||
       path.startsWith('/agentdetail') || path.startsWith('/integration') || path.startsWith('/dailyjournal')) {
-    const isActivityPage = path.startsWith('/desktop');
-    const activityItems = isActivityPage ? [
+    const activityItems = [
       { label: 'SYNC Agent', path: createPageUrl('SyncAgent'), icon: Brain },
       { label: 'Agents', path: createPageUrl('Agents'), icon: Bot },
       { label: 'Integrations', path: createPageUrl('Integrations'), icon: Plug },
@@ -446,12 +445,6 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       { label: 'Daily Journals', path: createPageUrl('DesktopActivity') + '?tab=journals', icon: BookOpen },
       { label: 'Timeline', path: createPageUrl('DesktopActivity') + '?tab=timeline', icon: Activity },
       { label: 'Deep Context', path: createPageUrl('DesktopActivity') + '?tab=context', icon: Brain },
-    ] : [
-      { label: 'SYNC Agent', path: createPageUrl('SyncAgent'), icon: Brain },
-      { label: 'Agents', path: createPageUrl('Agents'), icon: Bot },
-      { label: 'Integrations', path: createPageUrl('Integrations'), icon: Plug },
-      { label: 'Activity', path: createPageUrl('DesktopActivity'), icon: Monitor },
-      { label: 'Daily Journals', path: createPageUrl('DailyJournal'), icon: BookOpen },
     ];
     return {
       title: 'SYNC',
@@ -1693,24 +1686,26 @@ export default function Layout({ children, currentPageName }) {
                 </div>
               </div>
             )}
-            {/* TALENT environment quick action buttons — floats top-right like CRM */}
+            {/* TALENT environment quick action buttons — inline toolbar */}
             {secondaryNavConfig?.title === 'TALENT' && (
-              <div className="absolute top-2 right-4 lg:right-6 z-10 flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => navigate(createPageUrl("TalentProjects"))} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
-                  <FolderPlus className="w-4 h-4 mr-1" /> Create Role
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => navigate("/marketplace/nests")} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
-                  <Package className="w-4 h-4 mr-1" /> Browse Nests
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => navigate(`${createPageUrl("TalentCampaignDetail")}?new=true`)} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
-                  <Sparkles className="w-4 h-4 mr-1" /> Run Matching
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => navigate(createPageUrl("TalentCampaigns"))} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
-                  <Mail className="w-4 h-4 mr-1" /> Launch Outreach
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => navigate(`${createPageUrl("TalentCandidates")}?addNew=true`)} className="border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20">
-                  <Plus className="w-4 h-4 mr-1" /> Add Candidate
-                </Button>
+              <div className="px-4 lg:px-6 pt-3 flex justify-end">
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => navigate(createPageUrl("TalentProjects"))} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
+                    <FolderPlus className="w-4 h-4 mr-1" /> Create Role
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => navigate("/marketplace/nests")} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
+                    <Package className="w-4 h-4 mr-1" /> Browse Nests
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => navigate(`${createPageUrl("TalentCampaignDetail")}?new=true`)} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
+                    <Sparkles className="w-4 h-4 mr-1" /> Run Matching
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => navigate(createPageUrl("TalentCampaigns"))} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
+                    <Mail className="w-4 h-4 mr-1" /> Launch Outreach
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => navigate(`${createPageUrl("TalentCandidates")}?addNew=true`)} className="border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20">
+                    <Plus className="w-4 h-4 mr-1" /> Add Candidate
+                  </Button>
+                </div>
               </div>
             )}
             <div className="min-h-full">
