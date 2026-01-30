@@ -9,7 +9,7 @@ import anime from '@/lib/anime-wrapper';
 const animate = anime;
 const stagger = anime.stagger;
 import { prefersReducedMotion } from '@/lib/animations';
-import { Plus, LayoutGrid, Users, TrendingUp, Award, Target, BookOpen, Briefcase, Shield, DollarSign, AlertTriangle, FileCheck, Activity, PieChart } from "lucide-react";
+import { Plus, LayoutGrid, Users, TrendingUp, Award, Target, BookOpen, Briefcase, Shield, Euro, AlertTriangle, FileCheck, Activity, PieChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -740,7 +740,7 @@ export default function Dashboard() {
                   <Card className="bg-zinc-900/50 border-zinc-800 hover:border-emerald-500/30 transition-colors">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-2">
-                        <DollarSign className="w-5 h-5 text-emerald-400" />
+                        <Euro className="w-5 h-5 text-emerald-400" />
                       </div>
                       <p className="text-lg font-bold text-white">${(teamData.pipelineValue / 1000).toFixed(0)}k</p>
                       <p className="text-sm text-zinc-400">Pipeline Value</p>
@@ -866,7 +866,7 @@ export default function Dashboard() {
                   <Card className="bg-zinc-900/50 border-zinc-800">
                     <CardHeader className="border-b border-zinc-800 py-3">
                       <CardTitle className="text-white flex items-center gap-2 text-base">
-                        <DollarSign className="w-5 h-5 text-cyan-400" />
+                        <Euro className="w-5 h-5 text-cyan-400" />
                         Finance
                       </CardTitle>
                     </CardHeader>
@@ -930,7 +930,7 @@ export default function Dashboard() {
                       </Link>
                       <Link to={createPageUrl("FinanceOverview")}>
                         <Button variant="outline" size="sm" className="w-full justify-start border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white text-xs">
-                          <DollarSign className="w-4 h-4 mr-1.5" />
+                          <Euro className="w-4 h-4 mr-1.5" />
                           Finance
                         </Button>
                       </Link>

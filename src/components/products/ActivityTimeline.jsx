@@ -1,7 +1,7 @@
 import React from 'react';
 import { format, formatDistanceToNow } from 'date-fns';
 import {
-  Package, Edit, DollarSign, Truck, Upload, Archive,
+  Package, Edit, Euro, Truck, Upload, Archive,
   CheckCircle, AlertTriangle, Plus, Minus, FileText, User
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -10,7 +10,7 @@ const ACTIVITY_ICONS = {
   created: Plus,
   updated: Edit,
   stock_adjusted: Package,
-  price_changed: DollarSign,
+  price_changed: Euro,
   shipped: Truck,
   image_added: Upload,
   archived: Archive,

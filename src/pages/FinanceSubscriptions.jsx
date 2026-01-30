@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
-  CreditCard, Plus, Search, Filter, MoreVertical, Calendar, DollarSign,
+  CreditCard, Plus, Search, Filter, MoreVertical, Calendar, Euro,
   RefreshCw, Edit, Trash2, Pause, Play, Clock, AlertCircle, CheckCircle2,
   XCircle, RotateCcw, ExternalLink, Download, ArrowUpDown
 } from 'lucide-react';

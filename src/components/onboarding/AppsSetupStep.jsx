@@ -4,7 +4,7 @@ import {
   GraduationCap, Rocket, Shield, Sparkles, Check,
   ChevronLeft, ChevronRight, Plus, LayoutGrid,
   Users, Palette, TrendingUp, Lock, Clock, Brain,
-  DollarSign, Package
+  Euro, Package
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -63,7 +63,7 @@ const ALL_APPS = [
     name: 'Finance',
     shortDesc: 'Business finances',
     description: 'Invoice management, expense tracking, and financial reporting with AI-powered insights.',
-    icon: DollarSign,
+    icon: Euro,
     features: ['Invoice creation', 'Expense tracking', 'Financial reports', 'Subscription management'],
     recommendedFor: ['manage-work', 'grow-sales'],
     color: 'amber'

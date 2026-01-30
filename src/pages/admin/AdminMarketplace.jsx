@@ -17,7 +17,7 @@ import {
   Star,
   Download,
   ShoppingCart,
-  DollarSign,
+  Euro,
   TrendingUp,
   Database,
   Tag,
@@ -572,7 +572,7 @@ export default function AdminMarketplace() {
                 </p>
               </div>
               <div className="w-8 h-8 rounded-lg bg-green-500/20 border border-green-500/30 flex items-center justify-center">
-                <DollarSign className="w-4 h-4 text-green-400" />
+                <Euro className="w-4 h-4 text-green-400" />
               </div>
             </div>
           </CardContent>

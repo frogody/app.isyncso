@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Receipt, Plus, Search, Filter, Download, Send, Check, Clock, AlertCircle,
   FileText, MoreVertical, Eye, Edit2, Trash2, Mail, X, ChevronDown,
-  ArrowUpDown, Calendar, DollarSign, Building2, User, Package, RefreshCw, Zap,
+  ArrowUpDown, Calendar, Euro, Building2, User, Package, RefreshCw, Zap,
   FileDown, Printer
 } from 'lucide-react';
 import { downloadInvoicePDF, previewInvoicePDF } from '@/utils/generateInvoicePDF';

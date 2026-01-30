@@ -16,7 +16,7 @@ import {
   GraduationCap,
   Award,
   TrendingUp,
-  DollarSign,
+  Euro,
   Lightbulb,
   Users,
   Search,
@@ -44,7 +44,7 @@ const CATEGORY_META = {
   location: { label: "Location", icon: MapPin, color: "text-red-400" },
   contact: { label: "Contact Status", icon: Mail, color: "text-red-400" },
   skills: { label: "Skills", icon: Award, color: "text-red-400" },
-  compensation: { label: "Compensation", icon: DollarSign, color: "text-red-400" },
+  compensation: { label: "Compensation", icon: Euro, color: "text-red-400" },
   education: { label: "Education", icon: GraduationCap, color: "text-red-400" },
   insights: { label: "AI Insights", icon: Lightbulb, color: "text-red-400" },
   company: { label: "Company Intel", icon: Building2, color: "text-red-400" }
@@ -652,7 +652,7 @@ const ProfileSummaryCard = ({
               {/* Salary */}
               {showSalary && (
                 <MetricRow
-                  icon={DollarSign}
+                  icon={Euro}
                   label="Salary"
                   value={typeof candidate.salary_range === 'number' ? `$${candidate.salary_range.toLocaleString()}` : candidate.salary_range}
                   color="red"

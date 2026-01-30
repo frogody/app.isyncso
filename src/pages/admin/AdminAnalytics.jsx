@@ -10,7 +10,7 @@ import { useAdmin } from '@/components/admin/AdminGuard';
 import {
   Users,
   Building2,
-  DollarSign,
+  Euro,
   Activity,
   TrendingUp,
   TrendingDown,
@@ -671,7 +671,7 @@ export default function AdminAnalytics() {
             change={stats.revenueChange}
             changeType={parseFloat(stats.revenueChange) >= 0 ? 'increase' : 'decrease'}
             subtitle={`${stats.appLicenses} active licenses`}
-            icon={DollarSign}
+            icon={Euro}
             color="orange"
           />
         </div>
@@ -753,7 +753,7 @@ export default function AdminAnalytics() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-white text-sm flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-orange-400" />
+                  <Euro className="w-4 h-4 text-orange-400" />
                   Revenue Breakdown
                 </CardTitle>
                 <CardDescription className="text-zinc-500 text-[10px] mt-0.5">

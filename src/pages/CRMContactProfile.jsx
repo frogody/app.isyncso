@@ -28,7 +28,7 @@ import {
   Clock,
   MessageSquare,
   FileText,
-  DollarSign,
+  Euro,
   Target,
   TrendingUp,
   Loader2,
@@ -54,7 +54,7 @@ import {
   Layers,
   Server,
   Banknote,
-  CircleDollarSign,
+  BadgeEuro,
   BadgeCheck,
   TrendingDown,
   Building2,
@@ -218,7 +218,7 @@ const getTechCategoryIcon = (category) => {
     advertising: Zap,
     'customer support': MessageSquare,
     hr: Users,
-    accounting: CircleDollarSign,
+    accounting: BadgeEuro,
     'project management': Layers,
     security: Shield,
     cloud: Cloud,
@@ -454,7 +454,7 @@ export default function CRMContactProfile() {
     { id: 'skills', label: 'Skills & Career', mobileLabel: 'Skills', icon: Award },
     { id: 'company', label: 'Company', mobileLabel: 'Company', icon: Building },
     { id: 'techstack', label: 'Tech Stack', mobileLabel: 'Tech', icon: Cpu },
-    { id: 'funding', label: 'Funding', mobileLabel: 'Funding', icon: DollarSign },
+    { id: 'funding', label: 'Funding', mobileLabel: 'Funding', icon: Euro },
     { id: 'social', label: 'Social', mobileLabel: 'Social', icon: Share2 },
   ];
 
@@ -1234,7 +1234,7 @@ export default function CRMContactProfile() {
                         value={contact.company_employee_count?.toLocaleString() || contact.company_size}
                       />
                       <StatCard
-                        icon={DollarSign}
+                        icon={Euro}
                         label="Revenue"
                         value={contact.company_revenue}
                       />
@@ -1442,7 +1442,7 @@ export default function CRMContactProfile() {
                   {/* Funding Overview */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     <StatCard
-                      icon={DollarSign}
+                      icon={Euro}
                       label="Total Funding"
                       value={contact.company_funding_total || '-'}
                       color="green"
@@ -1478,7 +1478,7 @@ export default function CRMContactProfile() {
                             className="flex gap-3 p-3 bg-white/[0.02] rounded-xl border border-white/[0.04] hover:bg-white/[0.04] transition-colors"
                           >
                             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-green-500/20 to-green-600/20 flex items-center justify-center border border-green-500/30 flex-shrink-0">
-                              <CircleDollarSign className="w-4 h-4 text-green-400" />
+                              <BadgeEuro className="w-4 h-4 text-green-400" />
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
@@ -1541,7 +1541,7 @@ export default function CRMContactProfile() {
                 </>
               ) : (
                 <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-12 text-center">
-                  <DollarSign className="w-16 h-16 text-white/20 mx-auto mb-4" />
+                  <Euro className="w-16 h-16 text-white/20 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-white mb-2">No Funding Data</h3>
                   <p className="text-white/60">Funding information will appear here once enriched.</p>
                 </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Package, Plus, Edit2, Trash2, Copy, MoreHorizontal,
-  Layers, DollarSign, Tag, ChevronRight, Search,
+  Layers, Euro, Tag, ChevronRight, Search,
   Filter, ArrowUpDown, CheckCircle, Clock, Archive,
   Percent, ShoppingCart, Sparkles
 } from 'lucide-react';
@@ -47,7 +47,7 @@ const BUNDLE_TYPE_CONFIG = {
 
 const PRICING_STRATEGY_CONFIG = {
   sum: { label: 'Sum of Items', icon: Plus },
-  fixed: { label: 'Fixed Price', icon: DollarSign },
+  fixed: { label: 'Fixed Price', icon: Euro },
   discount: { label: 'Discounted Total', icon: Percent },
 };
 

@@ -2,8 +2,8 @@ import React from 'react';
 import {
   GraduationCap, BookOpen, Target, Rocket, Shield, Cpu,
   ListTodo, Zap, TrendingUp, CheckCircle, AlertTriangle,
-  Flame, Award, Bell, Send, DollarSign, Percent, Clock, FileText, Layers,
-  CreditCard, Receipt, CircleDollarSign, Users, Calendar, PieChart
+  Flame, Award, Bell, Send, Euro, Percent, Clock, FileText, Layers,
+  CreditCard, Receipt, BadgeEuro, Users, Calendar, PieChart
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 
@@ -204,7 +204,7 @@ function GrowthStatsPreview() {
     <div className="transform scale-[0.85] origin-top-left">
       <div className="flex items-center justify-between mb-2">
         <div className="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
-          <DollarSign className="w-4 h-4 text-indigo-400" />
+          <Euro className="w-4 h-4 text-indigo-400" />
         </div>
         <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-500/20 text-green-400">+12%</span>
       </div>
@@ -466,7 +466,7 @@ function FinanceRevenuePreview() {
     <div className="transform scale-[0.85] origin-top-left">
       <div className="flex items-center justify-between mb-2">
         <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
-          <DollarSign className="w-4 h-4 text-emerald-400" />
+          <Euro className="w-4 h-4 text-emerald-400" />
         </div>
         <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">+12%</span>
       </div>
@@ -511,7 +511,7 @@ function FinanceMRRPreview() {
     <div className="transform scale-[0.85] origin-top-left">
       <div className="flex items-center justify-between mb-2">
         <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
-          <CircleDollarSign className="w-4 h-4 text-emerald-400" />
+          <BadgeEuro className="w-4 h-4 text-emerald-400" />
         </div>
         <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">5 active</span>
       </div>
@@ -578,7 +578,7 @@ function RaiseCommittedPreview() {
     <div className="transform scale-[0.85] origin-top-left">
       <div className="flex items-center justify-between mb-2">
         <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
-          <DollarSign className="w-4 h-4 text-emerald-400" />
+          <Euro className="w-4 h-4 text-emerald-400" />
         </div>
         <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">70%</span>
       </div>

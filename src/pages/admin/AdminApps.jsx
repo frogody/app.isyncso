@@ -12,7 +12,7 @@ import {
   Key,
   Building2,
   Users,
-  DollarSign,
+  Euro,
   Plus,
   Search,
   Filter,
@@ -652,7 +652,7 @@ export default function AdminApps() {
         <StatCard
           title="Monthly Revenue"
           value={`$${(stats?.monthly_revenue || 0).toLocaleString()}`}
-          icon={DollarSign}
+          icon={Euro}
           color="orange"
           change={stats?.revenue_change}
         />

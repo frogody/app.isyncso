@@ -23,7 +23,7 @@ import {
   Calendar,
   Sparkles,
   Clock,
-  DollarSign,
+  Euro,
   Target,
   TrendingUp,
   Users,
@@ -556,7 +556,7 @@ export default function CRMCompanyProfile() {
               {(company.funding_total || company.funding_stage) && (
                 <SectionCard icon={Banknote} title="Funding">
                   <div className="space-y-1">
-                    <InfoRow icon={DollarSign} label="Total Funding" value={company.funding_total} />
+                    <InfoRow icon={Euro} label="Total Funding" value={company.funding_total} />
                     <InfoRow icon={TrendingUp} label="Stage" value={company.funding_stage} />
                     {company.investors && company.investors.length > 0 && (
                       <div className="pt-3 mt-3 border-t border-white/[0.04]">
@@ -645,7 +645,7 @@ export default function CRMCompanyProfile() {
         {activeTab === 'deals' && (
           <motion.div variants={itemVariants}>
             <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-8 text-center">
-              <DollarSign className="w-12 h-12 text-white/20 mx-auto mb-4" />
+              <Euro className="w-12 h-12 text-white/20 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-white mb-2">Deals Coming Soon</h3>
               <p className="text-white/60">
                 Track opportunities and deals associated with this company.

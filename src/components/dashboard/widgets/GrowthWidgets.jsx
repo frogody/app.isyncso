@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { 
   Target, Rocket, ArrowRight, TrendingUp, Bell, 
-  Send, DollarSign, Percent, Users
+  Send, Euro, Percent, Users
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -102,7 +102,7 @@ export function GrowthValueWidget({ totalValue = 0, change = null }) {
     <GlassCard className="p-5">
       <div className="flex items-start justify-between mb-3">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-indigo-500/20 border-indigo-500/30 border">
-          <DollarSign className="w-5 h-5 text-indigo-400" />
+          <Euro className="w-5 h-5 text-indigo-400" />
         </div>
         {change !== null && (
           <Badge className={`${change >= 0 ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'} text-xs`}>

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import {
   TrendingUp, Users, FileText, FolderOpen,
-  Target, DollarSign, Briefcase, Calendar
+  Target, Euro, Briefcase, Calendar
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -136,7 +136,7 @@ export function RaiseCommittedWidget({ committedAmount = 0, targetAmount = 0 }) 
     <GlassCard className="p-5">
       <div className="flex items-start justify-between mb-3">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-emerald-500/20 border-emerald-500/30 border">
-          <DollarSign className="w-5 h-5 text-emerald-400" />
+          <Euro className="w-5 h-5 text-emerald-400" />
         </div>
         <span className="text-xs px-2 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
           {progress.toFixed(0)}%

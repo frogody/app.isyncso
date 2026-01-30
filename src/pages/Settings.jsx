@@ -19,7 +19,7 @@ import {
   FileText, Plus, X, Mail, Users, Book, Wrench, Brain, Sparkles,
   CheckCircle, Globe, Linkedin, Clock, Target, Shield, Loader2,
   ChevronRight, Award, Zap, LogOut, MapPin, Calendar, Cpu,
-  DollarSign, Phone, Twitter, Facebook, TrendingUp, BarChart3, Plug,
+  Euro, Phone, Twitter, Facebook, TrendingUp, BarChart3, Plug,
   UserCog, ExternalLink
 } from "lucide-react";
 import { createPageUrl } from "@/utils";
@@ -1194,7 +1194,7 @@ export default function Settings() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                       {companyData.total_funding && (
                         <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30 flex items-center gap-3">
-                          <DollarSign className="w-5 h-5 text-green-400" />
+                          <Euro className="w-5 h-5 text-green-400" />
                           <div>
                             <div className="text-lg font-bold text-green-400">
                               {typeof companyData.total_funding === 'number'

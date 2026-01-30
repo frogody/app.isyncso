@@ -4,7 +4,7 @@ import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import {
   Receipt, Search, Filter, Clock, Check, X, AlertTriangle,
   Eye, FileText, Upload, Sparkles, ChevronRight, Edit2,
-  CheckCircle2, XCircle, RefreshCw, DollarSign, Calendar,
+  CheckCircle2, XCircle, RefreshCw, Euro, Calendar,
   Building, Percent, ExternalLink, Image, FileUp, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -1123,7 +1123,7 @@ export default function InventoryExpenses() {
           </div>
           <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
             <div className="flex items-center gap-2 mb-1">
-              <DollarSign className="w-4 h-4 text-purple-400" />
+              <Euro className="w-4 h-4 text-purple-400" />
               <span className="text-xs text-zinc-500">Total bedrag</span>
             </div>
             <p className="text-lg font-bold text-white">&euro; {stats.totalAmount.toFixed(0)}</p>

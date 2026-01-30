@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Search, Users, Building2, ArrowRight, ArrowLeft, Check,
   Filter, Download, Save, Sparkles, Globe, MapPin, Briefcase,
-  DollarSign, Loader2, ChevronDown
+  Euro, Loader2, ChevronDown
 } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -362,7 +362,7 @@ export default function GrowthResearch() {
 
                         <div>
                           <label className="text-xs text-zinc-400 mb-2 block flex items-center gap-2">
-                            <DollarSign className="w-4 h-4" /> Revenue
+                            <Euro className="w-4 h-4" /> Revenue
                           </label>
                           <Input
                             value={filters.revenue}

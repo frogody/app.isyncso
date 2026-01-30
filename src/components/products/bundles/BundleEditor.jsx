@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   X, Save, Plus, Trash2, Search, Package, Layers,
-  DollarSign, Percent, GripVertical, Check, AlertCircle,
+  Euro, Percent, GripVertical, Check, AlertCircle,
   CreditCard, Zap, ChevronDown, ChevronUp, Info
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -462,7 +462,7 @@ export default function BundleEditor({
             <div className="p-6 rounded-xl bg-zinc-900/50 border border-white/5 space-y-4">
               <CollapsibleTrigger className="flex items-center justify-between w-full">
                 <h3 className="font-medium text-white flex items-center gap-2">
-                  <DollarSign className="w-5 h-5 text-cyan-400" />
+                  <Euro className="w-5 h-5 text-cyan-400" />
                   Pricing Strategy
                 </h3>
                 {pricingOpen ? (

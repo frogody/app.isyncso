@@ -6,7 +6,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import {
   FileText, Save, Eye, Send, X, Plus, Trash2, ArrowLeft, ChevronDown,
-  Building2, User, Mail, Calendar, DollarSign, Percent, Package,
+  Building2, User, Mail, Calendar, Euro, Percent, Package,
   FileCheck, GripVertical, Settings, Sparkles, RefreshCw, Copy,
   Loader2, CheckCircle2, Type, Image, List, PenTool, Download
 } from 'lucide-react';
@@ -740,7 +740,7 @@ export default function FinanceProposalBuilder() {
           <Card className="bg-zinc-900/50 border-zinc-800 sticky top-4">
             <CardHeader className="pb-2">
               <CardTitle className="text-white flex items-center gap-2 text-sm">
-                <DollarSign className="w-4 h-4 text-amber-400" />
+                <Euro className="w-4 h-4 text-amber-400" />
                 Pricing Summary
               </CardTitle>
             </CardHeader>

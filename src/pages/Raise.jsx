@@ -3,7 +3,7 @@ import { db, supabase } from '@/api/supabaseClient';
 import { useUser } from '@/components/context/UserContext';
 import { motion } from 'framer-motion';
 import {
-  TrendingUp, DollarSign, Users, FileText, Target, Rocket,
+  TrendingUp, Euro, Users, FileText, Target, Rocket,
   Building2, Calendar, ArrowUpRight, Plus, Filter, Download,
   PieChart, BarChart3, Briefcase, HandshakeIcon, MessageSquare,
   CheckCircle2, Clock, AlertCircle, ExternalLink, Mail, Phone,
@@ -270,7 +270,7 @@ export default function Raise() {
       title: 'Amount Raised',
       value: `$${(raisedAmount / 1000000).toFixed(1)}M`,
       subtitle: `${progressPercent}% of target`,
-      icon: DollarSign,
+      icon: Euro,
       color: 'amber'
     },
     {

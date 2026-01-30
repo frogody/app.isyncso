@@ -20,7 +20,7 @@ import {
   Check,
   Loader2,
   TrendingUp,
-  DollarSign,
+  Euro,
   MapPin,
   Sparkles,
   X,

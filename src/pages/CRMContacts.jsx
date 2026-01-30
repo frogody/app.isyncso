@@ -27,7 +27,7 @@ import {
   Download, Upload, Trash2, Tag, User, Calendar, MessageSquare, ExternalLink,
   ChevronDown, ChevronRight, Clock, Star, StarOff, FileText, Briefcase,
   TrendingUp, Activity, Edit2, CheckCircle2, XCircle, Users, Globe, Eye,
-  LayoutGrid, List, Kanban, BarChart3, Target, DollarSign, ArrowUpRight,
+  LayoutGrid, List, Kanban, BarChart3, Target, Euro, ArrowUpRight,
   ArrowDownRight, Minus, PieChart, LineChart, Send, PhoneCall, Video,
   UserPlus, Settings2, Zap, Sparkles, Award, AlertCircle, ArrowRight,
   Table2, RefreshCw, Copy, Link2, Linkedin, Twitter, SlidersHorizontal,
@@ -308,7 +308,7 @@ function PipelineCard({ contact, index, onEdit, onDelete }) {
 
             {contact.deal_value && (
               <div className="flex items-center gap-1 text-sm font-medium text-cyan-400/80 ml-6 mb-2">
-                <DollarSign className="w-3.5 h-3.5" />
+                <Euro className="w-3.5 h-3.5" />
                 {parseFloat(contact.deal_value).toLocaleString()}
               </div>
             )}
@@ -663,7 +663,7 @@ function CRMAnalytics({ contacts }) {
 
         <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl sm:rounded-2xl p-3 sm:p-4">
           <div className="flex items-center justify-between mb-1 sm:mb-2">
-            <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400/70" />
+            <Euro className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400/70" />
           </div>
           <div className="text-xl sm:text-2xl font-bold text-white">${(stats.totalValue / 1000).toFixed(0)}k</div>
           <div className="text-[10px] sm:text-xs text-zinc-500">Pipeline Value</div>

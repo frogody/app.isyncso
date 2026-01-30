@@ -8,7 +8,7 @@ import { supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
 import { createPageUrl } from "@/utils";
 import {
-  Plus, Building2, User, DollarSign, Mail, Phone, ExternalLink, Trash2,
+  Plus, Building2, User, Euro, Mail, Phone, ExternalLink, Trash2,
   Search, Edit2, Eye, Loader2, MoreHorizontal, MapPin, Globe, Briefcase,
   Users, TrendingUp, Calendar, Filter, X, Grid3X3, List, ArrowUpDown, Sparkles
 } from "lucide-react";
@@ -839,7 +839,7 @@ export default function TalentClients() {
               {/* Fee Structure */}
               <div className="p-3 rounded-lg bg-red-500/5 border border-red-500/20 space-y-3">
                 <div className="flex items-center gap-2 text-xs font-medium text-red-400">
-                  <DollarSign className="w-3 h-3" />
+                  <Euro className="w-3 h-3" />
                   Default Fee Structure
                 </div>
                 <div className="grid grid-cols-2 gap-3">

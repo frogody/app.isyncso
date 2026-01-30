@@ -45,7 +45,7 @@ import {
   Edit2,
   Check,
   X,
-  DollarSign,
+  Euro,
 } from "lucide-react";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -565,7 +565,7 @@ export default function PhoneNumberManager({ onNumberSelected }) {
 
       {/* Pricing Info */}
       <div className="p-4 rounded-lg border flex items-start gap-3 bg-zinc-900/50 border-zinc-800">
-        <DollarSign className="w-5 h-5 mt-0.5 text-red-400" />
+        <Euro className="w-5 h-5 mt-0.5 text-red-400" />
         <div>
           <div className="text-sm font-medium text-white">
             Simple Pricing

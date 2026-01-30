@@ -25,7 +25,7 @@ import { Product, DigitalProduct, PhysicalProduct, ProductCategory } from '@/api
 import { useUser } from '@/components/context/UserContext';
 import { toast } from 'sonner';
 import {
-  Loader2, Cloud, Package, Save, Image as ImageIcon, Tags, DollarSign, Settings,
+  Loader2, Cloud, Package, Save, Image as ImageIcon, Tags, Euro, Settings,
   FileText, Globe, Truck, BarChart3, ChevronRight, Plus, X, Upload, Barcode,
   Users, History, Star, Calendar, Receipt, Trash2
 } from 'lucide-react';
@@ -626,7 +626,7 @@ export default function ProductModal({
               <ImageIcon className="w-4 h-4 mr-2" /> Media
             </TabsTrigger>
             <TabsTrigger value="pricing" className="data-[state=active]:bg-zinc-700 text-zinc-400 data-[state=active]:text-white">
-              <DollarSign className="w-4 h-4 mr-2" /> Pricing
+              <Euro className="w-4 h-4 mr-2" /> Pricing
             </TabsTrigger>
             {productType === 'physical' && (
               <TabsTrigger value="inventory" className="data-[state=active]:bg-zinc-700 text-zinc-400 data-[state=active]:text-white">

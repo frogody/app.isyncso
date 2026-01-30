@@ -29,7 +29,7 @@ import {
   ChevronRight,
   ChevronDown,
   ChevronUp,
-  DollarSign,
+  Euro,
   Users,
   Star,
   Code2,
@@ -538,7 +538,7 @@ const CompanyTab = ({ candidate, isSectionEnabled = () => true }) => {
             {companyIntel.funding.total_raised && (
               <div className="flex items-center justify-between">
                 <span className="text-sm text-zinc-400 flex items-center gap-1">
-                  <DollarSign className="w-4 h-4" />
+                  <Euro className="w-4 h-4" />
                   Total Raised
                 </span>
                 <span className="text-white font-medium">{companyIntel.funding.total_raised}</span>

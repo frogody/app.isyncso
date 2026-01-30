@@ -25,7 +25,7 @@ import {
   Phone,
   MapPin,
   Briefcase,
-  DollarSign,
+  Euro,
   Calendar,
   CheckCircle,
   AlertCircle,
@@ -49,7 +49,7 @@ import {
 
 // Mock data
 const mockMetrics = [
-  { label: 'Total Revenue', value: '$124,592', change: '+12.5%', trend: 'up', icon: DollarSign },
+  { label: 'Total Revenue', value: '€124,592', change: '+12.5%', trend: 'up', icon: Euro },
   { label: 'Active Deals', value: '48', change: '+8.2%', trend: 'up', icon: Target },
   { label: 'Response Rate', value: '67%', change: '-3.1%', trend: 'down', icon: Mail },
   { label: 'Conversion', value: '24%', change: '+5.4%', trend: 'up', icon: TrendingUp }

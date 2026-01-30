@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, TrendingDown, DollarSign, Users, Mail, Target, Calendar } from 'lucide-react';
+import { TrendingUp, TrendingDown, Euro, Users, Mail, Target, Calendar } from 'lucide-react';
 
 const mockMetrics = [
-  { label: 'Total Revenue', value: '$248,592', change: '+12.5%', trend: 'up', icon: DollarSign },
+  { label: 'Total Revenue', value: '€248,592', change: '+12.5%', trend: 'up', icon: Euro },
   { label: 'Deals Closed', value: '48', change: '+8.2%', trend: 'up', icon: Target },
   { label: 'Email Open Rate', value: '67%', change: '-3.1%', trend: 'down', icon: Mail },
   { label: 'New Contacts', value: '156', change: '+24.5%', trend: 'up', icon: Users }

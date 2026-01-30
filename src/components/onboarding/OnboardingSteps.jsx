@@ -4,7 +4,7 @@ import {
   User, Building2, Target, Brain, Zap, CheckCircle2, Loader2,
   ChevronRight, ChevronLeft, Globe, Users, Rocket, Shield,
   Linkedin, ExternalLink, Sparkles, Bot, Briefcase, GraduationCap,
-  TrendingUp, UserPlus, DollarSign, Scale, Palette, MapPin,
+  TrendingUp, UserPlus, Euro, Scale, Palette, MapPin,
   Calendar, Cpu, Banknote, Award, BookOpen, Code, Lightbulb
 } from "lucide-react";
 // Loader2 is already imported above
@@ -372,7 +372,7 @@ export function GoalsStep({ data, onChange, onNext, onBack }) {
       id: 'finance',
       label: 'Finance',
       description: 'Invoice management, expense tracking, and financial reporting',
-      icon: DollarSign,
+      icon: Euro,
       color: 'finance'
     },
     {
@@ -826,7 +826,7 @@ export function ReviewStep({ data, dossier, profileData, companyEnrichment, onCh
             )}
             {dossier?.revenue_range && (
               <div className="flex items-center gap-2 text-xs text-zinc-400">
-                <DollarSign className="w-3 h-3 text-zinc-500" />
+                <Euro className="w-3 h-3 text-zinc-500" />
                 <span>{dossier.revenue_range} revenue</span>
               </div>
             )}
@@ -970,7 +970,7 @@ export function ReviewStep({ data, dossier, profileData, companyEnrichment, onCh
                   learn: { name: 'Learn', icon: GraduationCap, color: 'cyan' },
                   growth: { name: 'Growth', icon: Rocket, color: 'indigo' },
                   talent: { name: 'Talent', icon: UserPlus, color: 'violet' },
-                  finance: { name: 'Finance', icon: DollarSign, color: 'amber' },
+                  finance: { name: 'Finance', icon: Euro, color: 'amber' },
                   sentinel: { name: 'Sentinel', icon: Shield, color: 'sage' },
                   raise: { name: 'Raise', icon: TrendingUp, color: 'orange' },
                   products: { name: 'Products', icon: Briefcase, color: 'teal' },

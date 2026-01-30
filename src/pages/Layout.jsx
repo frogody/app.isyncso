@@ -49,7 +49,7 @@ import {
   ListTodo,
   Contact,
   Activity,
-  DollarSign,
+  Euro,
   TrendingUp,
   Receipt,
   CreditCard,
@@ -212,7 +212,7 @@ const ENGINE_ITEMS_CONFIG = {
   finance: {
     title: "Finance",
     url: createPageUrl("FinanceOverview"),
-    icon: DollarSign,
+    icon: Euro,
     id: 'finance',
     permission: "finance.view",
     matchPatterns: ["/finance", "/proposal"],
@@ -362,7 +362,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
         { label: 'Dashboard', path: createPageUrl('FinanceOverview'), icon: LayoutDashboard },
         { label: 'Invoices', path: createPageUrl('FinanceInvoices'), icon: Receipt },
         { label: 'Proposals', path: createPageUrl('FinanceProposals'), icon: FileText },
-        { label: 'Business Expenses', path: createPageUrl('FinanceExpenses'), icon: DollarSign },
+        { label: 'Business Expenses', path: createPageUrl('FinanceExpenses'), icon: Euro },
         { label: 'Subscriptions', path: createPageUrl('FinanceSubscriptions'), icon: CreditCard },
       ]
     };

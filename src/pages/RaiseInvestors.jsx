@@ -3,7 +3,7 @@ import { db } from '@/api/supabaseClient';
 import { motion } from 'framer-motion';
 import {
   Building2, Plus, Search, Filter, Mail, Phone, Globe,
-  DollarSign, CheckCircle2, Clock, AlertCircle, MessageSquare,
+  Euro, CheckCircle2, Clock, AlertCircle, MessageSquare,
   Linkedin, ArrowUpRight, MoreHorizontal, UserPlus, Users,
   Target, TrendingUp, Calendar, ExternalLink, Edit2, Trash2
 } from 'lucide-react';
@@ -241,7 +241,7 @@ export default function RaiseInvestors() {
                     <div className="flex items-center gap-3">
                       {investor.typical_check_size && (
                         <span className="text-xs text-amber-400 flex items-center gap-1">
-                          <DollarSign className="w-3 h-3" />
+                          <Euro className="w-3 h-3" />
                           {investor.typical_check_size}
                         </span>
                       )}

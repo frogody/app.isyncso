@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { db } from '@/api/supabaseClient';
 import {
-  Building2, Globe, Users, DollarSign, MapPin, Linkedin, TrendingUp,
+  Building2, Globe, Users, Euro, MapPin, Linkedin, TrendingUp,
   Server, ChevronLeft, ExternalLink, Briefcase, Calendar, Award,
   Layers, Shield, ChevronDown, ChevronUp, Plus, Loader2
 } from 'lucide-react';
@@ -178,7 +178,7 @@ export default function CompanyProfile() {
                       )}
                       {(company.revenue_range || firmographics.yearly_revenue_range) && (
                         <span className="flex items-center gap-1 text-zinc-400">
-                          <DollarSign className="w-4 h-4" />
+                          <Euro className="w-4 h-4" />
                           {company.revenue_range || firmographics.yearly_revenue_range}
                         </span>
                       )}
@@ -260,7 +260,7 @@ export default function CompanyProfile() {
                     <div className="text-[10px] text-zinc-500">Employees</div>
                   </div>
                   <div className="p-3 rounded-lg bg-zinc-800/50 text-center">
-                    <DollarSign className="w-4 h-4 text-green-400 mx-auto mb-1" />
+                    <Euro className="w-4 h-4 text-green-400 mx-auto mb-1" />
                     <div className="text-lg font-bold text-white">{firmographics.yearly_revenue_range || 'N/A'}</div>
                     <div className="text-[10px] text-zinc-500">Revenue</div>
                   </div>
@@ -328,7 +328,7 @@ export default function CompanyProfile() {
               {/* Funding Summary */}
               <GlassCard className="p-4">
                 <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                  <DollarSign className="w-5 h-5 text-green-400" />
+                  <Euro className="w-5 h-5 text-green-400" />
                   Funding Summary
                 </h3>
                 <div className="space-y-3">

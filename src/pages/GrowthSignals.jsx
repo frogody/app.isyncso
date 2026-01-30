@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
   Bell, Filter, ExternalLink, Plus, Check, AlertTriangle, Zap, TrendingUp,
-  Building2, Users, DollarSign, Briefcase, Cpu, ChevronRight, Sparkles,
+  Building2, Users, Euro, Briefcase, Cpu, ChevronRight, Sparkles,
   Clock, Eye, EyeOff, ArrowRight, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,7 @@ const SIGNAL_CONFIG = {
     priority: 'medium' 
   },
   funding: { 
-    icon: DollarSign, 
+    icon: Euro, 
     emoji: '💰', 
     label: 'Funding', 
     color: 'from-indigo-500/80 to-indigo-600/80',

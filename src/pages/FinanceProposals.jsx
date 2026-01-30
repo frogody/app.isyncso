@@ -7,7 +7,7 @@ import { createPageUrl } from '@/utils';
 import {
   FileText, Plus, Search, Filter, Download, Send, Check, Clock, AlertCircle,
   MoreVertical, Eye, Edit2, Trash2, Copy, ArrowRight, X, ChevronDown,
-  ArrowUpDown, Calendar, DollarSign, Building2, User, Mail, CheckCircle2,
+  ArrowUpDown, Calendar, Euro, Building2, User, Mail, CheckCircle2,
   XCircle, FileCheck, Loader2, RefreshCw
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -354,7 +354,7 @@ export default function FinanceProposals() {
         <StatCard
           label="Total Value"
           value={`€${stats.totalValue.toLocaleString()}`}
-          icon={DollarSign}
+          icon={Euro}
           color="sage"
         />
         <StatCard

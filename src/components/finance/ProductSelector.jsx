@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  Search, Package, Zap, CreditCard, DollarSign, Clock,
+  Search, Package, Zap, CreditCard, Euro, Clock,
   ChevronRight, Check, X, Plus, RefreshCw, Gift, Layers,
   Filter, Star
 } from 'lucide-react';

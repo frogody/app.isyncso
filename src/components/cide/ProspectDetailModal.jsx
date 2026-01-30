@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { 
   Building2, Globe, Users, TrendingUp, Mail, CheckCircle2, 
-  AlertCircle, ExternalLink, DollarSign, Cpu, Briefcase
+  AlertCircle, ExternalLink, Euro, Cpu, Briefcase
 } from "lucide-react";
 
 export default function ProspectDetailModal({ prospect, open, onClose, onStatusChange }) {
@@ -79,7 +79,7 @@ export default function ProspectDetailModal({ prospect, open, onClose, onStatusC
               <div>
                 <div className="text-xs text-gray-500 mb-1">Revenue</div>
                 <div className="text-white flex items-center gap-1">
-                  <DollarSign className="w-3 h-3 text-gray-400" />
+                  <Euro className="w-3 h-3 text-gray-400" />
                   {firmographics.revenue_range}
                 </div>
               </div>

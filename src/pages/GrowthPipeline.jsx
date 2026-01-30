@@ -7,7 +7,7 @@ import { prefersReducedMotion } from '@/lib/animations';
 import { db } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
 import {
-  Plus, GripVertical, Building2, User, DollarSign, Calendar, Target, Clock,
+  Plus, GripVertical, Building2, User, Euro, Calendar, Target, Clock,
   TrendingUp, ArrowRight, MoreHorizontal, Mail, Phone, ExternalLink, Trash2,
   Sparkles, Filter, ChevronDown, AlertCircle, CheckCircle2, Zap
 } from "lucide-react";
@@ -552,7 +552,7 @@ export default function GrowthPipeline() {
                 <p className="stat-number text-lg font-bold text-white mt-0.5" data-value={stats.totalPipeline} data-prefix="€">€0</p>
               </div>
               <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
-                <DollarSign className="w-4 h-4 text-indigo-400/70" />
+                <Euro className="w-4 h-4 text-indigo-400/70" />
               </div>
             </div>
           </div>
@@ -683,7 +683,7 @@ export default function GrowthPipeline() {
               {/* Deal Info Section */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-sm font-medium text-indigo-400">
-                  <DollarSign className="w-4 h-4" />
+                  <Euro className="w-4 h-4" />
                   Deal Information
                 </div>
                 <div className="pl-6 space-y-4">

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
   Box, Plus, Search, Filter, Grid3X3, List, Tag, Eye, Edit2,
-  Barcode, Package, Truck, Building2, DollarSign, AlertTriangle,
+  Barcode, Package, Truck, Building2, Euro, AlertTriangle,
   ChevronDown, MoreHorizontal, Archive, Trash2, Copy, CheckCircle, XCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";

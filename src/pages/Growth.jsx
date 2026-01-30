@@ -4,7 +4,7 @@ import { db } from "@/api/supabaseClient";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
-  TrendingUp, TrendingDown, DollarSign, Target, Calendar, ArrowRight,
+  TrendingUp, TrendingDown, Euro, Target, Calendar, ArrowRight,
   Bell, Send, BarChart3, Plus, Users, Clock, Zap, Search, UserPlus, Layers
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -244,7 +244,7 @@ export default function Growth() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard icon={DollarSign} label="Pipeline Value" value={`€${totalPipeline.toLocaleString()}`} color="indigo" delay={0} />
+          <StatCard icon={Euro} label="Pipeline Value" value={`€${totalPipeline.toLocaleString()}`} color="indigo" delay={0} />
           <StatCard icon={Users} label="Total Prospects" value={totalProspects} color="indigo" delay={0.1} />
           <StatCard icon={Target} label="Won Revenue" value={`€${wonValue.toLocaleString()}`} color="indigo" delay={0.2} />
           <StatCard icon={Bell} label="New Signals" value={signals.length} color="indigo" delay={0.3} />
@@ -438,7 +438,7 @@ export default function Growth() {
           <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-indigo-400/70" />
+                <Euro className="w-4 h-4 text-indigo-400/70" />
                 Top Deals
               </h3>
               <Link to={createPageUrl('GrowthPipeline')} className="text-indigo-400/80 text-xs hover:text-indigo-300 flex items-center gap-1">

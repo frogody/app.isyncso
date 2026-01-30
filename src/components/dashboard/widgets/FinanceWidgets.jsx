@@ -2,8 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import {
-  DollarSign, CreditCard, Receipt, TrendingUp,
-  PieChart, ArrowUpRight, ArrowDownRight, CircleDollarSign
+  Euro, CreditCard, Receipt, TrendingUp,
+  PieChart, ArrowUpRight, ArrowDownRight, BadgeEuro
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -104,7 +104,7 @@ export function FinanceRevenueWidget({ totalRevenue = 0, change = null }) {
     <GlassCard className="p-5">
       <div className="flex items-start justify-between mb-3">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-emerald-500/20 border-emerald-500/30 border">
-          <DollarSign className="w-5 h-5 text-emerald-400" />
+          <Euro className="w-5 h-5 text-emerald-400" />
         </div>
         {change !== null && (
           <Badge className={`${change >= 0 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'} text-xs border`}>
@@ -167,7 +167,7 @@ export function FinanceMRRWidget({ mrr = 0, activeCount = 0 }) {
     <GlassCard className="p-5">
       <div className="flex items-start justify-between mb-3">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-emerald-500/20 border-emerald-500/30 border">
-          <CircleDollarSign className="w-5 h-5 text-emerald-400" />
+          <BadgeEuro className="w-5 h-5 text-emerald-400" />
         </div>
         {activeCount > 0 && (
           <span className="text-xs px-2 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">

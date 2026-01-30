@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Layers, Plus, Trash2, Edit2, Check, X, ChevronDown,
-  ChevronUp, GripVertical, Package, DollarSign, Image
+  ChevronUp, GripVertical, Package, Euro, Image
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

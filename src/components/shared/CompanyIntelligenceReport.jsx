@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import {
   Building2,
   Users,
-  DollarSign,
+  Euro,
   Calendar,
   Globe,
   Linkedin,
@@ -350,7 +350,7 @@ export const CompanyIntelligenceReport = ({
               <div className="divide-y divide-white/[0.04]">
                 <DataRow label="Industry" value={firmographics.industry} icon={Factory} />
                 <DataRow label="Employees" value={firmographics.employee_count_range || firmographics.employee_count?.toLocaleString()} icon={Users} />
-                <DataRow label="Revenue" value={firmographics.revenue_range} icon={DollarSign} />
+                <DataRow label="Revenue" value={firmographics.revenue_range} icon={Euro} />
                 <DataRow label="Founded" value={firmographics.founded_year} icon={Calendar} />
                 <DataRow label="Type" value={firmographics.company_type} icon={Building} />
                 <DataRow label="Headquarters" value={firmographics.headquarters} icon={MapPin} />

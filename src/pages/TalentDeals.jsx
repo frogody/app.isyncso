@@ -7,7 +7,7 @@ import { supabase } from "@/api/supabaseClient";
 import { useUser } from "@/components/context/UserContext";
 import { createPageUrl } from "@/utils";
 import {
-  Plus, GripVertical, Building2, User, DollarSign, Calendar, Target, Clock,
+  Plus, GripVertical, Building2, User, Euro, Calendar, Target, Clock,
   TrendingUp, ArrowRight, MoreHorizontal, Mail, Phone, ExternalLink, Trash2,
   Sparkles, Filter, ChevronDown, AlertCircle, CheckCircle2, Zap, Users,
   Briefcase, UserPlus, Handshake, Search, Edit2, Eye, Loader2
@@ -641,7 +641,7 @@ export default function TalentDeals() {
                 <p className="text-lg font-bold text-white mt-0.5">€{stats.totalPipeline.toLocaleString()}</p>
               </div>
               <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
-                <DollarSign className="w-4 h-4 text-red-400/70" />
+                <Euro className="w-4 h-4 text-red-400/70" />
               </div>
             </div>
           </div>
@@ -827,7 +827,7 @@ export default function TalentDeals() {
               {/* Fee Structure */}
               <div className="p-4 rounded-xl bg-red-500/5 border border-red-500/20 space-y-4">
                 <div className="flex items-center gap-2 text-sm font-medium text-red-400">
-                  <DollarSign className="w-4 h-4" />
+                  <Euro className="w-4 h-4" />
                   Fee Structure
                 </div>
                 <div className="grid grid-cols-3 gap-4">

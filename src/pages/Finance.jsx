@@ -2,10 +2,10 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { db } from '@/api/supabaseClient';
 import { motion } from 'framer-motion';
 import {
-  DollarSign, TrendingUp, TrendingDown, CreditCard, Receipt,
+  Euro, TrendingUp, TrendingDown, CreditCard, Receipt,
   PieChart, BarChart3, ArrowUpRight, ArrowDownRight, Plus,
   Filter, Download, Calendar, Building2, Users, FileText,
-  Wallet, BanknoteIcon, CircleDollarSign, Percent, X
+  Wallet, BanknoteIcon, BadgeEuro, Percent, X
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -192,7 +192,7 @@ export default function Finance() {
         value: `$${totalRevenue.toLocaleString()}`,
         change: '+12.5%',
         trend: 'up',
-        icon: DollarSign,
+        icon: Euro,
         color: 'amber'
       },
       {
@@ -279,7 +279,7 @@ export default function Finance() {
       <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <PageHeader
-          icon={DollarSign}
+          icon={Euro}
           title="Finance"
           subtitle="Track revenue, expenses, and financial metrics"
           color="amber"
@@ -360,7 +360,7 @@ export default function Finance() {
             Expenses
           </TabsTrigger>
           <TabsTrigger value="subscriptions" className="data-[state=active]:bg-zinc-800">
-            <CircleDollarSign className="w-4 h-4 mr-2" />
+            <BadgeEuro className="w-4 h-4 mr-2" />
             Subscriptions
           </TabsTrigger>
         </TabsList>
@@ -524,7 +524,7 @@ export default function Finance() {
             <CardContent>
               {subscriptions.length === 0 ? (
                 <div className="text-center py-8">
-                  <CircleDollarSign className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
+                  <BadgeEuro className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
                   <h3 className="text-base font-medium text-white mb-2">No subscriptions</h3>
                   <p className="text-xs text-zinc-500 mb-3">Track recurring revenue from subscriptions</p>
                   <Button className="bg-amber-500 hover:bg-amber-600" onClick={() => setShowSubscriptionModal(true)}>
@@ -538,7 +538,7 @@ export default function Finance() {
                     <div key={sub.id} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg">
                       <div className="flex items-center gap-3">
                         <div className="p-1.5 bg-cyan-500/10 rounded-lg">
-                          <CircleDollarSign className="w-4 h-4 text-cyan-400" />
+                          <BadgeEuro className="w-4 h-4 text-cyan-400" />
                         </div>
                         <div>
                           <p className="text-sm font-medium text-white">{sub.name || 'Subscription'}</p>

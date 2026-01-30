@@ -7,9 +7,9 @@ const animate = anime;
 const stagger = anime.stagger;
 import { prefersReducedMotion } from '@/lib/animations';
 import {
-  DollarSign, TrendingUp, TrendingDown, CreditCard, Receipt,
+  Euro, TrendingUp, TrendingDown, CreditCard, Receipt,
   PieChart, BarChart3, ArrowUpRight, ArrowDownRight, Plus,
-  Download, Calendar, FileText, CircleDollarSign, ChevronRight,
+  Download, Calendar, FileText, BadgeEuro, ChevronRight,
   Wallet, Target, AlertCircle
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -296,7 +296,7 @@ export default function FinanceOverview() {
       <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <PageHeader
-          icon={DollarSign}
+          icon={Euro}
           title="Finance Overview"
           subtitle="Track revenue, expenses, and financial health"
           color="amber"
@@ -313,7 +313,7 @@ export default function FinanceOverview() {
         {/* Key Metrics Grid */}
         <div ref={statsGridRef} className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
-            { title: 'Total Revenue', value: metrics.totalRevenue, displayValue: `$${metrics.totalRevenue.toLocaleString()}`, change: '+12.5%', trend: 'up', icon: DollarSign, color: 'amber' },
+            { title: 'Total Revenue', value: metrics.totalRevenue, displayValue: `€${metrics.totalRevenue.toLocaleString()}`, change: '+12.5%', trend: 'up', icon: Euro, color: 'amber' },
             { title: 'Total Expenses', value: metrics.totalExpenses, displayValue: `$${metrics.totalExpenses.toLocaleString()}`, change: '-3.2%', trend: 'down', icon: CreditCard, color: 'red' },
             { title: 'Pending Invoices', value: metrics.pendingInvoices, displayValue: `$${metrics.pendingInvoices.toLocaleString()}`, change: `${metrics.pendingCount} invoices`, trend: 'neutral', icon: Receipt, color: 'orange' },
             { title: 'Monthly Recurring', value: metrics.monthlyRecurring, displayValue: `$${metrics.monthlyRecurring.toLocaleString()}`, change: `${metrics.activeSubscriptions} active`, trend: 'up', icon: TrendingUp, color: 'amber' }
@@ -506,7 +506,7 @@ export default function FinanceOverview() {
             <Card className="bg-zinc-900/50 border-zinc-800 hover:border-amber-500/30 transition-colors cursor-pointer group">
               <CardContent className="p-6 flex items-center gap-4">
                 <div className="p-3 rounded-xl bg-amber-500/10 group-hover:bg-amber-500/20 transition-colors">
-                  <CircleDollarSign className="w-6 h-6 text-amber-400" />
+                  <BadgeEuro className="w-6 h-6 text-amber-400" />
                 </div>
                 <div className="flex-1">
                   <h3 className="text-white font-medium">Subscriptions</h3>

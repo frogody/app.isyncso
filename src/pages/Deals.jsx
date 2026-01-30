@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, DollarSign, Calendar, User, X, Building, MoreVertical, Users } from 'lucide-react';
+import { Plus, Euro, Calendar, User, X, Building, MoreVertical, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import ContactSelector from '@/components/shared/ContactSelector';
 import { Label } from '@/components/ui/label';
@@ -220,7 +220,7 @@ export default function Deals() {
                   <span className="text-zinc-300">Close: {selectedDeal.closeDate}</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
-                  <DollarSign className="w-3 h-3 text-zinc-500" />
+                  <Euro className="w-3 h-3 text-zinc-500" />
                   <span className="text-zinc-300">{selectedDeal.probability}% probability</span>
                 </div>
               </div>

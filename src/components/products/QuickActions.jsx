@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Package, Copy, Archive, ExternalLink, QrCode, Download,
-  Printer, Share2, MoreHorizontal, Truck, DollarSign,
+  Printer, Share2, MoreHorizontal, Truck, Euro,
   TrendingUp, Eye, EyeOff, Trash2, RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';

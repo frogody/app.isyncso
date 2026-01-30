@@ -10,7 +10,7 @@ import { useAdmin } from '@/components/admin/AdminGuard';
 import {
   Users,
   Building2,
-  DollarSign,
+  Euro,
   Activity,
   TrendingUp,
   TrendingDown,
@@ -305,7 +305,7 @@ export default function AdminDashboard() {
           value={`$${stats.monthlyRevenue.toLocaleString()}`}
           change={changes.revenue}
           changeType={getChangeType(changes.revenue)}
-          icon={DollarSign}
+          icon={Euro}
           color="orange"
         />
       </div>

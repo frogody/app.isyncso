@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { 
   Users, MessageSquare, Calendar, TrendingUp, Plus, Minus,
-  CheckCircle2, DollarSign
+  CheckCircle2, Euro
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -141,7 +141,7 @@ export default function CampaignMetricsPanel({ campaign, onUpdate }) {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs text-red-400/70 mb-1 flex items-center gap-1.5">
-              <DollarSign className="w-3.5 h-3.5" />
+              <Euro className="w-3.5 h-3.5" />
               Revenue Attributed
             </p>
             <p className="text-2xl font-bold text-white">

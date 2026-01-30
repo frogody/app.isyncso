@@ -6,7 +6,7 @@ import {
   GraduationCap, Rocket, Shield, Sparkles, LayoutGrid, Eye, EyeOff,
   Users, Palette, TrendingUp, Clock, Lock, Zap, Target, BookOpen,
   Brain, Trophy, BarChart3, LineChart, Mail, Search, FileText,
-  DollarSign, Wallet, Receipt, CreditCard, PieChart
+  Euro, Wallet, Receipt, CreditCard, PieChart
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -82,7 +82,7 @@ const AVAILABLE_APPS = [
     id: 'finance',
     name: 'Finance',
     description: 'Revenue, expenses, and financial tracking',
-    icon: DollarSign,
+    icon: Euro,
     color: 'blue',
     defaultEnabled: false,
     widgets: FINANCE_WIDGETS,

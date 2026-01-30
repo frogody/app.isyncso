@@ -1,5 +1,5 @@
 import React from "react";
-import { BarChart3, DollarSign, Calendar, Award, TrendingUp, MapPin, Building2, GraduationCap } from "lucide-react";
+import { BarChart3, Euro, Calendar, Award, TrendingUp, MapPin, Building2, GraduationCap } from "lucide-react";
 import WidgetWrapper from "./WidgetWrapper";
 
 /**
@@ -51,7 +51,7 @@ const QuickStatsWidget = ({ candidate, editMode, onRemove, dragHandleProps }) =>
     >
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
         <StatItem
-          icon={DollarSign}
+          icon={Euro}
           label="Salary"
           value={formatSalary(salary)}
           color="red"

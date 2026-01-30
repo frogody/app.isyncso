@@ -10,7 +10,7 @@ import {
   Plus, Search, Filter, Folder, FolderOpen, Calendar, Users, MoreVertical, X,
   Clock, CheckCircle2, Circle, AlertCircle, ChevronRight, ChevronDown, ChevronLeft,
   Trash2, Edit2, ExternalLink, Target, TrendingUp, BarChart3, List, Columns,
-  LayoutGrid, Play, Pause, Archive, Flag, DollarSign, Wallet, Timer,
+  LayoutGrid, Play, Pause, Archive, Flag, Euro, Wallet, Timer,
   CalendarDays, CalendarRange, Milestone, GitBranch, Link2, FileText, Paperclip,
   MessageSquare, Send, GripVertical, ArrowRight, ArrowUpRight, Settings2,
   PieChart, Activity, Layers, UserPlus, Eye, EyeOff, Copy, Share2, Upload, Image,
@@ -599,7 +599,7 @@ function ShareSettingsPanel({ project, onUpdateSettings, onGenerateLink }) {
             { key: 'show_tasks', label: 'Tasks & Progress', desc: 'Show task completion status', icon: CheckSquare },
             { key: 'show_milestones', label: 'Milestones', desc: 'Display project milestones', icon: Milestone },
             { key: 'show_timeline', label: 'Timeline', desc: 'Show project schedule', icon: CalendarRange },
-            { key: 'show_budget', label: 'Budget Information', desc: 'Reveal financial details', icon: DollarSign },
+            { key: 'show_budget', label: 'Budget Information', desc: 'Reveal financial details', icon: Euro },
             { key: 'allow_comments', label: 'Allow Comments', desc: 'Let clients leave feedback', icon: MessageSquare },
           ].map(({ key, label, desc, icon: Icon }) => (
             <div
@@ -2952,7 +2952,7 @@ function ProjectAnalytics({ projects, tasks }) {
 
       <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
         <div className="flex items-center justify-between mb-2">
-          <DollarSign className="w-4 h-4 text-cyan-400/70" />
+          <Euro className="w-4 h-4 text-cyan-400/70" />
         </div>
         <div className="text-lg font-bold text-white">${(stats.totalBudget / 1000).toFixed(0)}k</div>
         <div className="text-[10px] text-zinc-500">Total Budget</div>

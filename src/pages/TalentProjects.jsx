@@ -61,7 +61,7 @@ import {
   Building2,
   MapPin,
   Calendar,
-  DollarSign,
+  Euro,
   Clock,
   CheckCircle2,
   XCircle,
@@ -541,7 +541,7 @@ const SmartQuickAddModal = ({ isOpen, onClose, clients, projects, onCreateRole, 
                 )}
                 {parsedJob.salary_range && (
                   <Badge className="bg-red-600/20 text-red-400 border-red-500/30">
-                    <DollarSign className="w-3 h-3 mr-1" />
+                    <Euro className="w-3 h-3 mr-1" />
                     {parsedJob.salary_range}
                   </Badge>
                 )}
@@ -897,7 +897,7 @@ const RoleCard = ({ role, onEdit, onDelete, onStartCampaign }) => {
         )}
         {role.salary_range && (
           <span className="flex items-center gap-1">
-            <DollarSign className="w-3.5 h-3.5" />
+            <Euro className="w-3.5 h-3.5" />
             {role.salary_range}
           </span>
         )}

@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import {
-  DollarSign, Percent, TrendingDown, Package,
+  Euro, Percent, TrendingDown, Package,
   ShoppingCart, Tag, Calculator, Sparkles
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -211,7 +211,7 @@ export default function BundlePricingCalculator({
           <div className="flex items-center gap-2 text-xs text-zinc-500">
             {bundle.pricing_strategy === 'fixed' && (
               <>
-                <DollarSign className="w-3.5 h-3.5" />
+                <Euro className="w-3.5 h-3.5" />
                 Fixed bundle price
               </>
             )}

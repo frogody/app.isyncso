@@ -25,7 +25,7 @@ import {
   CheckCircle,
   XCircle,
   Briefcase,
-  DollarSign,
+  Euro,
   Link as LinkIcon,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -235,7 +235,7 @@ function OrganizationDetailModal({ org, open, onClose, onUpdate, adminRole }) {
               </div>
               <div className="space-y-1">
                 <Label className="text-zinc-400 text-xs flex items-center gap-1">
-                  <DollarSign className="w-3 h-3" /> Revenue
+                  <Euro className="w-3 h-3" /> Revenue
                 </Label>
                 <p className="text-white">{org.revenue || '-'}</p>
               </div>

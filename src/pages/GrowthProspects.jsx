@@ -16,7 +16,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Users, Plus, Search, Download, Trash2, ArrowRight, ArrowLeft, Filter,
   Building2, Mail, MoreVertical, Send, FileText, Edit, X, Save,
-  MapPin, Briefcase, Globe, DollarSign, Loader2, ChevronDown, Sparkles, Check
+  MapPin, Briefcase, Globe, Euro, Loader2, ChevronDown, Sparkles, Check
 } from "lucide-react";
 import { GlassCard, StatCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -947,7 +947,7 @@ export default function GrowthProspects() {
 
                             <div>
                               <label className="text-sm text-zinc-400 mb-2 block flex items-center gap-2">
-                                <DollarSign className="w-4 h-4" /> Revenue
+                                <Euro className="w-4 h-4" /> Revenue
                               </label>
                               <Input
                                 value={filters.revenue}

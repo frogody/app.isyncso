@@ -36,7 +36,7 @@ import {
   History,
   Sparkles,
   Loader2,
-  DollarSign,
+  Euro,
   Users,
   Calendar,
   Smile,

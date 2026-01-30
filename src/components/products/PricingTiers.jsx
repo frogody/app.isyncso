@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  DollarSign, Plus, Trash2, TrendingDown, Percent,
+  Euro, Plus, Trash2, TrendingDown, Percent,
   Edit2, Check, X, Calculator, Package
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -167,7 +167,7 @@ export default function PricingTiers({
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="p-3 rounded-lg bg-zinc-900/50 border border-white/5">
           <div className="flex items-center gap-2 text-zinc-500 mb-1">
-            <DollarSign className="w-4 h-4" />
+            <Euro className="w-4 h-4" />
             <span className="text-xs">Base Price</span>
           </div>
           <p className="text-lg font-semibold text-white">{formatPrice(basePrice, currency)}</p>

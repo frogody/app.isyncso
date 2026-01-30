@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { db } from '@/api/supabaseClient';
 import { motion } from 'framer-motion';
 import {
-  Rocket, Plus, Search, Target, DollarSign, Calendar,
+  Rocket, Plus, Search, Target, Euro, Calendar,
   Users, TrendingUp, MoreHorizontal, Clock, CheckCircle,
   AlertCircle, Play, Pause, BarChart3, Edit2
 } from 'lucide-react';
@@ -150,7 +150,7 @@ export default function RaiseCampaigns() {
             { label: 'Total Campaigns', value: stats.total, icon: Rocket },
             { label: 'Active', value: stats.active, icon: Play },
             { label: 'Total Target', value: formatCurrency(stats.totalTarget), icon: Target },
-            { label: 'Total Raised', value: formatCurrency(stats.totalRaised), icon: DollarSign }
+            { label: 'Total Raised', value: formatCurrency(stats.totalRaised), icon: Euro }
           ].map((stat, idx) => (
             <Card key={idx} className="bg-zinc-900/50 border-zinc-800">
               <CardContent className="p-4">

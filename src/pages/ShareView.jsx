@@ -5,7 +5,7 @@ import { db } from "@/api/supabaseClient";
 import {
   Folder, FolderOpen, Calendar, Clock, CheckCircle2, Circle, AlertCircle,
   ChevronRight, Target, Lock, Paperclip, Download, File, FileText, FileCode,
-  FileSpreadsheet, Image, FileVideo, FileAudio, FileArchive, DollarSign, MessageSquare
+  FileSpreadsheet, Image, FileVideo, FileAudio, FileArchive, Euro, MessageSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -327,7 +327,7 @@ function SharedProjectView({ project, tasks }) {
         {settings.show_budget && (project.budget || project.spent !== undefined) && (
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-4">
-              <DollarSign className="w-4 h-4 text-zinc-500" />
+              <Euro className="w-4 h-4 text-zinc-500" />
               <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wide">Budget</h2>
             </div>
             <div className="rounded-xl bg-zinc-900/50 border border-zinc-800 p-6">

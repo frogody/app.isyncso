@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
   Cloud, Plus, Search, Filter, Grid3X3, List, Tag, Eye, Edit2,
-  Play, ExternalLink, FileText, DollarSign, Zap, Users, Star,
+  Play, ExternalLink, FileText, Euro, Zap, Users, Star,
   ChevronDown, MoreHorizontal, Archive, Trash2, Copy
 } from "lucide-react";
 import { Button } from "@/components/ui/button";

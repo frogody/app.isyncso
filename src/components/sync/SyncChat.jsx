@@ -16,7 +16,7 @@ import {
   GraduationCap,
   TrendingUp,
   Shield,
-  DollarSign,
+  Euro,
   Rocket,
   Palette,
   Brain,
@@ -37,7 +37,7 @@ const AGENT_ICONS = {
   learn: GraduationCap,
   growth: TrendingUp,
   sentinel: Shield,
-  finance: DollarSign,
+  finance: Euro,
   raise: Rocket,
   create: Palette,
 };

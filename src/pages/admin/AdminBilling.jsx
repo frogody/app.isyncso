@@ -3,7 +3,7 @@ import { supabase } from '@/api/supabaseClient';
 import { toast } from 'sonner';
 import { getIconColor, getStatusColor, BUTTON_STYLES } from '@/lib/adminTheme';
 import {
-  DollarSign,
+  Euro,
   TrendingUp,
   CreditCard,
   FileText,
@@ -624,7 +624,7 @@ export default function AdminBilling() {
         <StatCard
           title="MRR"
           value={formatCurrency(overview?.mrr)}
-          icon={DollarSign}
+          icon={Euro}
           color="green"
           subtitle="Monthly Recurring Revenue"
         />

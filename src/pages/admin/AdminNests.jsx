@@ -16,7 +16,7 @@ import {
   Edit,
   Trash2,
   Upload,
-  DollarSign,
+  Euro,
   Users,
   TrendingUp,
   Briefcase,
@@ -538,7 +538,7 @@ export default function AdminNests() {
                 <p className="text-lg font-semibold text-white">{formatCurrency(stats.total_revenue)}</p>
               </div>
               <div className="p-2 bg-yellow-500/20 rounded-lg">
-                <DollarSign className="w-4 h-4 text-yellow-400" />
+                <Euro className="w-4 h-4 text-yellow-400" />
               </div>
             </div>
           </CardContent>
