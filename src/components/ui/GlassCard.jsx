@@ -75,6 +75,7 @@ export function StatCard({
 }) {
   const colorClasses = {
     cyan: { icon: 'text-cyan-400', bg: 'bg-cyan-500/20', border: 'border-cyan-500/30' },
+    teal: { icon: 'text-teal-400', bg: 'bg-teal-500/20', border: 'border-teal-500/30' },
     sage: { icon: 'text-[#86EFAC]', bg: 'bg-[#86EFAC]/20', border: 'border-[#86EFAC]/30' },
     indigo: { icon: 'text-indigo-400', bg: 'bg-indigo-500/20', border: 'border-indigo-500/30' },
     orange: { icon: 'text-orange-400', bg: 'bg-orange-500/20', border: 'border-orange-500/30' },
@@ -150,6 +151,7 @@ export function ProgressRing({ value, size = 120, strokeWidth = 8, color = 'cyan
 
   const colorClasses = {
     cyan: 'stroke-cyan-500',
+    teal: 'stroke-teal-500',
     sage: 'stroke-[#86EFAC]',
     indigo: 'stroke-indigo-500',
     orange: 'stroke-orange-500',

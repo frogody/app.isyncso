@@ -21,6 +21,7 @@ export function ActivityHeatmap({ userId, color = 'cyan' }) {
 
   const colorClasses = {
     cyan: ['bg-zinc-800/60', 'bg-cyan-950/50', 'bg-cyan-900/50', 'bg-cyan-800/60', 'bg-cyan-700/70'],
+    teal: ['bg-zinc-800/60', 'bg-teal-950/50', 'bg-teal-900/50', 'bg-teal-800/60', 'bg-teal-700/70'],
     sage: ['bg-zinc-800/60', 'bg-[#86EFAC]/10', 'bg-[#86EFAC]/20', 'bg-[#86EFAC]/30', 'bg-[#86EFAC]/40'],
     indigo: ['bg-zinc-800/60', 'bg-indigo-950/50', 'bg-indigo-900/50', 'bg-indigo-800/60', 'bg-indigo-700/70'],
     orange: ['bg-zinc-800/60', 'bg-orange-950/50', 'bg-orange-900/50', 'bg-orange-800/60', 'bg-orange-700/70'],

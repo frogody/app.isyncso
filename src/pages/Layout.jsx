@@ -436,16 +436,27 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
   if (path.startsWith('/sync') || path.startsWith('/aiassistant') || path.startsWith('/actions') ||
       path.startsWith('/activity') || path.startsWith('/desktop') || path.startsWith('/agents') ||
       path.startsWith('/agentdetail') || path.startsWith('/integration') || path.startsWith('/dailyjournal')) {
+    const isActivityPage = path.startsWith('/desktop');
+    const activityItems = isActivityPage ? [
+      { label: 'SYNC Agent', path: createPageUrl('SyncAgent'), icon: Brain },
+      { label: 'Agents', path: createPageUrl('Agents'), icon: Bot },
+      { label: 'Integrations', path: createPageUrl('Integrations'), icon: Plug },
+      { label: 'Overview', path: createPageUrl('DesktopActivity') + '?tab=overview', icon: BarChart3, matchPath: '/desktopactivity' },
+      { label: 'Apps', path: createPageUrl('DesktopActivity') + '?tab=apps', icon: Monitor },
+      { label: 'Daily Journals', path: createPageUrl('DesktopActivity') + '?tab=journals', icon: BookOpen },
+      { label: 'Timeline', path: createPageUrl('DesktopActivity') + '?tab=timeline', icon: Activity },
+      { label: 'Deep Context', path: createPageUrl('DesktopActivity') + '?tab=context', icon: Brain },
+    ] : [
+      { label: 'SYNC Agent', path: createPageUrl('SyncAgent'), icon: Brain },
+      { label: 'Agents', path: createPageUrl('Agents'), icon: Bot },
+      { label: 'Integrations', path: createPageUrl('Integrations'), icon: Plug },
+      { label: 'Activity', path: createPageUrl('DesktopActivity'), icon: Monitor },
+      { label: 'Daily Journals', path: createPageUrl('DailyJournal'), icon: BookOpen },
+    ];
     return {
       title: 'SYNC',
       color: 'cyan',
-      items: [
-        { label: 'SYNC Agent', path: createPageUrl('SyncAgent'), icon: Brain },
-        { label: 'Agents', path: createPageUrl('Agents'), icon: Bot },
-        { label: 'Integrations', path: createPageUrl('Integrations'), icon: Plug },
-        { label: 'Activity', path: createPageUrl('DesktopActivity'), icon: Monitor },
-        { label: 'Daily Journals', path: createPageUrl('DailyJournal'), icon: BookOpen },
-      ]
+      items: activityItems
     };
   }
 
@@ -1652,28 +1663,29 @@ export default function Layout({ children, currentPageName }) {
             className="relative flex-1 md:pt-0 pt-14 sm:pt-16 overflow-auto transition-all duration-300 pb-safe scroll-smooth-ios"
             role="main"
           >
-            {/* SYNC environment top tabs */}
+            {/* SYNC environment top tabs — bordered pill style */}
             {secondaryNavConfig?.title === 'SYNC' && (
-              <div className="sticky top-0 z-10 bg-zinc-950/80 backdrop-blur-xl border-b border-white/[0.06]">
-                <div className="flex items-center gap-0.5 px-4 lg:px-6 overflow-x-auto scrollbar-hide">
+              <div className="px-4 lg:px-6 pt-4">
+                <div className="inline-flex items-center gap-1 bg-zinc-900/60 border border-zinc-800/60 rounded-lg p-1.5 overflow-x-auto scrollbar-hide">
                   {secondaryNavConfig.items.map((item) => {
                     const Icon = item.icon;
-                    const isActive = location.pathname === item.path || location.pathname === item.path?.split('?')[0];
+                    const fullUrl = location.pathname + location.search;
+                    const itemBase = item.path?.split('?')[0];
+                    const isActive = item.path?.includes('?')
+                      ? fullUrl === item.path || (fullUrl === itemBase && item.matchPath)
+                      : location.pathname === item.path;
                     return (
                       <Link
                         key={item.label}
                         to={item.path}
-                        className={`relative flex items-center gap-2 px-4 py-3 text-[13px] font-medium whitespace-nowrap transition-colors ${
+                        className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
                           isActive
-                            ? 'text-cyan-400'
+                            ? 'bg-zinc-800/80 text-cyan-300/90'
                             : 'text-zinc-500 hover:text-zinc-300'
                         }`}
                       >
-                        {Icon && <Icon className="w-3.5 h-3.5" />}
+                        {Icon && <Icon className="w-4 h-4" />}
                         {item.label}
-                        {isActive && (
-                          <span className="absolute bottom-0 left-3 right-3 h-[2px] rounded-full bg-cyan-500" />
-                        )}
                       </Link>
                     );
                   })}

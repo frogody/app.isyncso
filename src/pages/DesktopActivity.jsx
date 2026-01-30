@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Monitor, Clock, Zap, TrendingUp, Calendar, BarChart3, PieChart,
@@ -79,8 +79,14 @@ export default function DesktopActivity() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [searchParams] = useSearchParams();
+  const urlTab = searchParams.get('tab') || 'overview';
+  const [activeTab, setActiveTab] = useState(urlTab);
   const [dateRange, setDateRange] = useState('7d');
+
+  useEffect(() => {
+    setActiveTab(urlTab);
+  }, [urlTab]);
   const [activityLogs, setActivityLogs] = useState([]);
   const [journals, setJournals] = useState([]);
   const [stats, setStats] = useState({
@@ -562,23 +568,7 @@ export default function DesktopActivity() {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="bg-zinc-900/60 border border-zinc-800/60 p-1.5 gap-1">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-blue-300/90 text-zinc-500 px-4">
-              <BarChart3 className="w-4 h-4 mr-2" />Overview
-            </TabsTrigger>
-            <TabsTrigger value="apps" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-blue-300/90 text-zinc-500 px-4">
-              <Monitor className="w-4 h-4 mr-2" />Apps
-            </TabsTrigger>
-            <TabsTrigger value="journals" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-blue-300/90 text-zinc-500 px-4">
-              <FileText className="w-4 h-4 mr-2" />Daily Journals
-            </TabsTrigger>
-            <TabsTrigger value="timeline" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-blue-300/90 text-zinc-500 px-4">
-              <Activity className="w-4 h-4 mr-2" />Timeline
-            </TabsTrigger>
-            <TabsTrigger value="context" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-purple-300/90 text-zinc-500 px-4">
-              <Brain className="w-4 h-4 mr-2" />Deep Context
-            </TabsTrigger>
-          </TabsList>
+          {/* TabsList removed — navigation handled by Layout SYNC top tabs */}
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="mt-6 space-y-6">
