@@ -111,67 +111,6 @@ const MetricCard = ({ title, value, subtitle, icon: Icon, color = "red", trend }
   );
 };
 
-// Workflow Quick Action Card
-const WorkflowActionCard = ({ icon: Icon, title, description, action, actionLabel, color, stepNumber }) => {
-  const colorStyles = {
-    blue: {
-      card: "border-red-500/20 hover:border-red-500/40",
-      iconBg: "bg-red-500/10",
-      icon: "text-red-300",
-      button: "bg-red-500 hover:bg-red-600",
-    },
-    cyan: {
-      card: "border-red-500/25 hover:border-red-500/45",
-      iconBg: "bg-red-500/15",
-      icon: "text-red-400/70",
-      button: "bg-red-500 hover:bg-red-600",
-    },
-    red: {
-      card: "border-red-500/30 hover:border-red-500/50",
-      iconBg: "bg-red-500/20",
-      icon: "text-red-400",
-      button: "bg-red-500 hover:bg-red-600",
-    },
-    green: {
-      card: "border-red-500/35 hover:border-red-500/55",
-      iconBg: "bg-red-500/25",
-      icon: "text-red-400/90",
-      button: "bg-red-500 hover:bg-red-600",
-    },
-    purple: {
-      card: "border-red-500/35 hover:border-red-500/55",
-      iconBg: "bg-red-500/25",
-      icon: "text-red-400/90",
-      button: "bg-red-500 hover:bg-red-600",
-    },
-  };
-
-  const styles = colorStyles[color] || colorStyles.red;
-
-  return (
-    <motion.div
-
-      className="cursor-pointer"
-      onClick={action}
-    >
-      <GlassCard className={`p-4 h-full ${styles.card} transition-all relative overflow-hidden`}>
-        {/* Step number badge */}
-        <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center">
-          <span className="text-xs font-bold text-zinc-400">{stepNumber}</span>
-        </div>
-
-        <div className={`w-10 h-10 rounded-lg ${styles.iconBg} flex items-center justify-center mb-3`}>
-          <Icon className={`w-5 h-5 ${styles.icon}`} />
-        </div>
-        <h3 className="font-medium text-white mb-1">{title}</h3>
-        <p className="text-sm text-zinc-400 mb-3 line-clamp-2">{description}</p>
-        <Button size="sm" className={styles.button}>
-          {actionLabel}
-        </Button>
-      </GlassCard>
-    </motion.div>
-  );
-};
 
 // Intelligence Distribution Component
 const IntelligenceDistribution = ({ data }) => {
@@ -489,55 +428,6 @@ const RecommendedNests = ({ nests, loading }) => {
   );
 };
 
-// Workflow Quick Actions Section
-const WorkflowQuickActions = ({ navigate }) => {
-  const quickActions = [
-    {
-      icon: FolderPlus,
-      title: "Create Role",
-      description: "Define a new position you're hiring for",
-      action: () => navigate(createPageUrl("TalentProjects")),
-      actionLabel: "New Role",
-      color: "blue",
-      stepNumber: 1,
-    },
-    {
-      icon: Package,
-      title: "Browse Nests",
-      description: "Find curated talent pools to source from",
-      action: () => navigate("/marketplace/nests"),
-      actionLabel: "Marketplace",
-      color: "cyan",
-      stepNumber: 2,
-    },
-    {
-      icon: Sparkles,
-      title: "Run Matching",
-      description: "AI-match candidates to your open roles",
-      action: () => navigate(`${createPageUrl("TalentCampaignDetail")}?new=true`),
-      actionLabel: "New Campaign",
-      color: "red",
-      stepNumber: 3,
-    },
-    {
-      icon: Mail,
-      title: "Launch Outreach",
-      description: "Send personalized messages to candidates",
-      action: () => navigate(createPageUrl("TalentCampaigns")),
-      actionLabel: "View Campaigns",
-      color: "green",
-      stepNumber: 4,
-    },
-  ];
-
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      {quickActions.map((action, index) => (
-        <WorkflowActionCard key={index} {...action} />
-      ))}
-    </div>
-  );
-};
 
 // Analytics Overview Component
 const AnalyticsOverview = ({ campaigns, outreachTasks, metrics }) => {
@@ -997,27 +887,29 @@ export default function TalentDashboard() {
           }
         />
 
-        {/* Workflow Quick Actions */}
-        <motion.div variants={containerVariants} initial="hidden" animate="visible">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                <Zap className="w-5 h-5 text-red-400" />
-                Quick Workflow
-              </h2>
-              <p className="text-sm text-zinc-400">Follow these steps to source and engage talent</p>
-            </div>
-            <Button
-              variant="outline"
-              onClick={() => setShowAddCandidate(true)}
-              className="border-red-500/30 text-red-400 hover:bg-red-500/10"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Candidate
-            </Button>
-          </div>
-          <WorkflowQuickActions navigate={navigate} />
-        </motion.div>
+        {/* Quick Actions Bar */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button variant="outline" size="sm" onClick={() => navigate(createPageUrl("TalentProjects"))} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
+            <FolderPlus className="w-4 h-4 mr-1" /> Create Role
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => navigate("/marketplace/nests")} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
+            <Package className="w-4 h-4 mr-1" /> Browse Nests
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => navigate(`${createPageUrl("TalentCampaignDetail")}?new=true`)} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
+            <Sparkles className="w-4 h-4 mr-1" /> Run Matching
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => navigate(createPageUrl("TalentCampaigns"))} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
+            <Mail className="w-4 h-4 mr-1" /> Launch Outreach
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAddCandidate(true)}
+            className="border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20"
+          >
+            <Plus className="w-4 h-4 mr-1" /> Add Candidate
+          </Button>
+        </div>
 
         {/* Key Metrics */}
         <motion.div
