@@ -28,12 +28,12 @@ import { toast } from 'sonner';
 const EXPENSE_CATEGORIES = [
   { value: 'software', label: 'Software & Tools', color: 'indigo', icon: '💻' },
   { value: 'marketing', label: 'Marketing', color: 'pink', icon: '📣' },
-  { value: 'office', label: 'Office & Equipment', color: 'blue', icon: '🏢' },
+  { value: 'office', label: 'Office & Equipment', color: 'amber', icon: '🏢' },
   { value: 'travel', label: 'Travel', color: 'cyan', icon: '✈️' },
   { value: 'salary', label: 'Salaries', color: 'emerald', icon: '👥' },
   { value: 'contractors', label: 'Contractors', color: 'purple', icon: '🤝' },
   { value: 'utilities', label: 'Utilities', color: 'orange', icon: '⚡' },
-  { value: 'insurance', label: 'Insurance', color: 'blue', icon: '🛡️' },
+  { value: 'insurance', label: 'Insurance', color: 'amber', icon: '🛡️' },
   { value: 'legal', label: 'Legal & Professional', color: 'slate', icon: '⚖️' },
   { value: 'other', label: 'Other', color: 'zinc', icon: '📦' }
 ];
@@ -304,7 +304,7 @@ export default function FinanceExpenses() {
           icon={CreditCard}
           title="Expenses"
           subtitle="Track and categorize your business expenses"
-          color="blue"
+          color="amber"
           actions={
             <div className="flex gap-3">
               <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
@@ -313,7 +313,7 @@ export default function FinanceExpenses() {
               </Button>
               {canCreate && (
                 <Button
-                  className="bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                  className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30"
                   onClick={() => { resetForm(); setShowCreateModal(true); }}
                 >
                   <Plus className="w-4 h-4 mr-2" />
@@ -344,11 +344,11 @@ export default function FinanceExpenses() {
                 {monthlyTrend === 'up' ? (
                   <TrendingUp className="w-3.5 h-3.5 text-red-400" />
                 ) : (
-                  <TrendingDown className="w-3.5 h-3.5 text-blue-400" />
+                  <TrendingDown className="w-3.5 h-3.5 text-amber-400" />
                 )}
               </div>
               <p className="text-lg font-bold text-white">${stats.thisMonth.toLocaleString()}</p>
-              <p className={`text-[10px] ${monthlyTrend === 'up' ? 'text-red-400' : 'text-blue-400'}`}>
+              <p className={`text-[10px] ${monthlyTrend === 'up' ? 'text-red-400' : 'text-amber-400'}`}>
                 {stats.percentChange > 0 ? '+' : ''}{stats.percentChange}% vs last month
               </p>
             </CardContent>
@@ -527,7 +527,7 @@ export default function FinanceExpenses() {
                                 {catConfig.label}
                               </Badge>
                               {expense.tax_deductible && (
-                                <Badge variant="outline" size="xs" className="text-blue-400 border-blue-500/30">
+                                <Badge variant="outline" size="xs" className="text-amber-400 border-amber-500/30">
                                   Tax Deductible
                                 </Badge>
                               )}
@@ -685,7 +685,7 @@ export default function FinanceExpenses() {
                   type="checkbox"
                   checked={formData.tax_deductible}
                   onChange={(e) => setFormData(prev => ({ ...prev, tax_deductible: e.target.checked }))}
-                  className="rounded border-zinc-600 bg-zinc-800 text-blue-500"
+                  className="rounded border-zinc-600 bg-zinc-800 text-amber-500"
                 />
                 <span className="text-sm text-zinc-300">Tax Deductible</span>
               </label>
@@ -695,7 +695,7 @@ export default function FinanceExpenses() {
                   type="checkbox"
                   checked={formData.is_recurring}
                   onChange={(e) => setFormData(prev => ({ ...prev, is_recurring: e.target.checked }))}
-                  className="rounded border-zinc-600 bg-zinc-800 text-blue-500"
+                  className="rounded border-zinc-600 bg-zinc-800 text-amber-500"
                 />
                 <span className="text-sm text-zinc-300">Recurring Expense</span>
               </label>

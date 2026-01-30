@@ -283,7 +283,7 @@ export default function CreateBranding() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-rose-400 animate-spin" />
+        <Loader2 className="w-8 h-8 text-yellow-400 animate-spin" />
       </div>
     );
   }
@@ -295,14 +295,14 @@ export default function CreateBranding() {
           title="Brand Assets"
           subtitle="Configure your brand identity for AI-generated content"
           icon={Palette}
-          color="rose"
+          color="yellow"
           badge={
             hasChanges ? (
-              <Badge variant="outline" className="border-rose-500/50 text-rose-400 bg-rose-500/10">
+              <Badge variant="outline" className="border-yellow-500/50 text-yellow-400 bg-yellow-500/10">
                 Unsaved changes
               </Badge>
             ) : saving ? (
-              <Badge variant="outline" className="border-rose-500/50 text-rose-400 bg-rose-500/10">
+              <Badge variant="outline" className="border-yellow-500/50 text-yellow-400 bg-yellow-500/10">
                 Saving...
               </Badge>
             ) : null
@@ -311,7 +311,7 @@ export default function CreateBranding() {
             <Button
               onClick={saveBrandAssets}
               disabled={saving || !hasChanges}
-              className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 border-0"
+              className="bg-gradient-to-r from-yellow-500 to-yellow-400 hover:from-yellow-600 hover:to-yellow-500 border-0"
             >
               <Save className="w-4 h-4 mr-2" />
               Save Changes
@@ -326,23 +326,23 @@ export default function CreateBranding() {
         >
           <Tabs defaultValue="logos" className="space-y-4">
             <TabsList className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-1">
-              <TabsTrigger value="logos" className="data-[state=active]:bg-rose-500/20 data-[state=active]:text-rose-400 rounded-lg">
+              <TabsTrigger value="logos" className="data-[state=active]:bg-yellow-500/20 data-[state=active]:text-yellow-400 rounded-lg">
                 <ImageIcon className="w-4 h-4 mr-2" />
                 Logos
               </TabsTrigger>
-              <TabsTrigger value="colors" className="data-[state=active]:bg-rose-500/20 data-[state=active]:text-rose-400 rounded-lg">
+              <TabsTrigger value="colors" className="data-[state=active]:bg-yellow-500/20 data-[state=active]:text-yellow-400 rounded-lg">
                 <Palette className="w-4 h-4 mr-2" />
                 Colors
               </TabsTrigger>
-              <TabsTrigger value="typography" className="data-[state=active]:bg-rose-500/20 data-[state=active]:text-rose-400 rounded-lg">
+              <TabsTrigger value="typography" className="data-[state=active]:bg-yellow-500/20 data-[state=active]:text-yellow-400 rounded-lg">
                 <Type className="w-4 h-4 mr-2" />
                 Typography
               </TabsTrigger>
-              <TabsTrigger value="voice" className="data-[state=active]:bg-rose-500/20 data-[state=active]:text-rose-400 rounded-lg">
+              <TabsTrigger value="voice" className="data-[state=active]:bg-yellow-500/20 data-[state=active]:text-yellow-400 rounded-lg">
                 <MessageSquare className="w-4 h-4 mr-2" />
                 Voice & Tone
               </TabsTrigger>
-              <TabsTrigger value="visual" className="data-[state=active]:bg-rose-500/20 data-[state=active]:text-rose-400 rounded-lg">
+              <TabsTrigger value="visual" className="data-[state=active]:bg-yellow-500/20 data-[state=active]:text-yellow-400 rounded-lg">
                 <Sparkles className="w-4 h-4 mr-2" />
                 Visual Style
               </TabsTrigger>
@@ -410,7 +410,7 @@ export default function CreateBranding() {
                               className="hidden"
                               disabled={uploadingLogo}
                             />
-                            <div className="aspect-video bg-zinc-800/50 rounded-xl border-2 border-dashed border-zinc-700 hover:border-rose-500/50 transition-colors flex flex-col items-center justify-center gap-2">
+                            <div className="aspect-video bg-zinc-800/50 rounded-xl border-2 border-dashed border-zinc-700 hover:border-yellow-500/50 transition-colors flex flex-col items-center justify-center gap-2">
                               <Upload className="w-4 h-4 text-zinc-600" />
                               <span className="text-xs text-zinc-500">
                                 {uploadingLogo ? 'Uploading...' : 'Click to upload'}
@@ -458,7 +458,7 @@ export default function CreateBranding() {
                       <Input
                         value={value}
                         onChange={(e) => updateField('colors', key, e.target.value)}
-                        className="bg-zinc-800/50 border-zinc-700 text-white font-mono text-sm focus:border-rose-500/50"
+                        className="bg-zinc-800/50 border-zinc-700 text-white font-mono text-sm focus:border-yellow-500/50"
                         placeholder="#000000"
                       />
                     </div>
@@ -519,7 +519,7 @@ export default function CreateBranding() {
                         value={brandData.typography.primary_font}
                         onValueChange={(value) => updateField('typography', 'primary_font', value)}
                       >
-                        <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white focus:border-rose-500/50">
+                        <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white focus:border-yellow-500/50">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="bg-zinc-900 border-zinc-700">
@@ -538,7 +538,7 @@ export default function CreateBranding() {
                         value={brandData.typography.secondary_font}
                         onValueChange={(value) => updateField('typography', 'secondary_font', value)}
                       >
-                        <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white focus:border-rose-500/50">
+                        <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white focus:border-yellow-500/50">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="bg-zinc-900 border-zinc-700">
@@ -594,7 +594,7 @@ export default function CreateBranding() {
                         value={brandData.voice.tone}
                         onValueChange={(value) => updateField('voice', 'tone', value)}
                       >
-                        <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white focus:border-rose-500/50">
+                        <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white focus:border-yellow-500/50">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="bg-zinc-900 border-zinc-700">
@@ -615,7 +615,7 @@ export default function CreateBranding() {
                           onChange={(e) => setNewKeyword(e.target.value)}
                           onKeyPress={(e) => e.key === 'Enter' && addKeyword()}
                           placeholder="Add a keyword..."
-                          className="bg-zinc-800/50 border-zinc-700 text-white focus:border-rose-500/50"
+                          className="bg-zinc-800/50 border-zinc-700 text-white focus:border-yellow-500/50"
                         />
                         <Button onClick={addKeyword} variant="outline" className="border-zinc-700 hover:bg-zinc-800">
                           <Plus className="w-4 h-4" />
@@ -626,7 +626,7 @@ export default function CreateBranding() {
                           <Badge
                             key={keyword}
                             variant="secondary"
-                            className="bg-rose-500/20 text-rose-400 cursor-pointer hover:bg-rose-500/30 transition-colors"
+                            className="bg-yellow-500/20 text-yellow-400 cursor-pointer hover:bg-yellow-500/30 transition-colors"
                             onClick={() => removeKeyword(keyword)}
                           >
                             {keyword}
@@ -643,7 +643,7 @@ export default function CreateBranding() {
                       value={brandData.voice.style_guide}
                       onChange={(e) => updateField('voice', 'style_guide', e.target.value)}
                       placeholder="Describe your brand's writing style, preferred phrases, things to avoid..."
-                      className="bg-zinc-800/50 border-zinc-700 text-white min-h-[80px] focus:border-rose-500/50"
+                      className="bg-zinc-800/50 border-zinc-700 text-white min-h-[80px] focus:border-yellow-500/50"
                     />
                   </div>
 
@@ -653,7 +653,7 @@ export default function CreateBranding() {
                       value={brandData.voice.sample_copy}
                       onChange={(e) => updateField('voice', 'sample_copy', e.target.value)}
                       placeholder="Paste examples of your brand's writing that represent the ideal tone..."
-                      className="bg-zinc-800/50 border-zinc-700 text-white min-h-[120px] focus:border-rose-500/50"
+                      className="bg-zinc-800/50 border-zinc-700 text-white min-h-[120px] focus:border-yellow-500/50"
                     />
                   </div>
                 </div>
@@ -682,7 +682,7 @@ export default function CreateBranding() {
                         value={brandData.visual_style.mood}
                         onValueChange={(value) => updateField('visual_style', 'mood', value)}
                       >
-                        <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white focus:border-rose-500/50">
+                        <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white focus:border-yellow-500/50">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="bg-zinc-900 border-zinc-700">
@@ -701,7 +701,7 @@ export default function CreateBranding() {
                         value={brandData.visual_style.image_style}
                         onChange={(e) => updateField('visual_style', 'image_style', e.target.value)}
                         placeholder="e.g., clean, minimal, vibrant..."
-                        className="bg-zinc-800/50 border-zinc-700 text-white focus:border-rose-500/50"
+                        className="bg-zinc-800/50 border-zinc-700 text-white focus:border-yellow-500/50"
                       />
                     </div>
                   </div>
@@ -715,7 +715,7 @@ export default function CreateBranding() {
                           onChange={(e) => setNewTheme(e.target.value)}
                           onKeyPress={(e) => e.key === 'Enter' && addTheme(false)}
                           placeholder="Add a theme..."
-                          className="bg-zinc-800/50 border-zinc-700 text-white focus:border-rose-500/50"
+                          className="bg-zinc-800/50 border-zinc-700 text-white focus:border-yellow-500/50"
                         />
                         <Button onClick={() => addTheme(false)} variant="outline" className="border-zinc-700 hover:bg-zinc-800">
                           <Plus className="w-4 h-4" />
@@ -726,7 +726,7 @@ export default function CreateBranding() {
                           <Badge
                             key={theme}
                             variant="secondary"
-                            className="bg-rose-500/20 text-rose-400 cursor-pointer hover:bg-rose-500/30 transition-colors"
+                            className="bg-yellow-500/20 text-yellow-400 cursor-pointer hover:bg-yellow-500/30 transition-colors"
                             onClick={() => removeTheme(theme, false)}
                           >
                             <Check className="w-3 h-3 mr-1" />
@@ -745,7 +745,7 @@ export default function CreateBranding() {
                           onChange={(e) => setNewAvoidTheme(e.target.value)}
                           onKeyPress={(e) => e.key === 'Enter' && addTheme(true)}
                           placeholder="Add a theme to avoid..."
-                          className="bg-zinc-800/50 border-zinc-700 text-white focus:border-rose-500/50"
+                          className="bg-zinc-800/50 border-zinc-700 text-white focus:border-yellow-500/50"
                         />
                         <Button onClick={() => addTheme(true)} variant="outline" className="border-zinc-700 hover:bg-zinc-800">
                           <Plus className="w-4 h-4" />

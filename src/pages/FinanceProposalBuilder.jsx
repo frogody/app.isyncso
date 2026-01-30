@@ -341,7 +341,7 @@ export default function FinanceProposalBuilder() {
           </Button>
           <div>
             <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-              <FileText className="w-6 h-6 text-blue-400" />
+              <FileText className="w-6 h-6 text-amber-400" />
               {proposalId ? 'Edit Proposal' : 'New Proposal'}
             </h1>
             {proposal.proposal_number && (
@@ -371,7 +371,7 @@ export default function FinanceProposalBuilder() {
           <Button
             onClick={() => handleSave(true)}
             disabled={saving}
-            className="bg-blue-500 hover:bg-blue-600"
+            className="bg-amber-500 hover:bg-amber-600"
           >
             <Send className="w-4 h-4 mr-2" />
             Save & Send
@@ -386,16 +386,16 @@ export default function FinanceProposalBuilder() {
             <CardContent className="p-4">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="bg-zinc-800 mb-4">
-                  <TabsTrigger value="details" className="data-[state=active]:bg-blue-500">
+                  <TabsTrigger value="details" className="data-[state=active]:bg-amber-500">
                     Details
                   </TabsTrigger>
-                  <TabsTrigger value="content" className="data-[state=active]:bg-blue-500">
+                  <TabsTrigger value="content" className="data-[state=active]:bg-amber-500">
                     Content
                   </TabsTrigger>
-                  <TabsTrigger value="pricing" className="data-[state=active]:bg-blue-500">
+                  <TabsTrigger value="pricing" className="data-[state=active]:bg-amber-500">
                     Products & Pricing
                   </TabsTrigger>
-                  <TabsTrigger value="settings" className="data-[state=active]:bg-blue-500">
+                  <TabsTrigger value="settings" className="data-[state=active]:bg-amber-500">
                     Settings
                   </TabsTrigger>
                 </TabsList>
@@ -740,7 +740,7 @@ export default function FinanceProposalBuilder() {
           <Card className="bg-zinc-900/50 border-zinc-800 sticky top-4">
             <CardHeader className="pb-2">
               <CardTitle className="text-white flex items-center gap-2 text-sm">
-                <Euro className="w-4 h-4 text-blue-400" />
+                <Euro className="w-4 h-4 text-amber-400" />
                 Pricing Summary
               </CardTitle>
             </CardHeader>
@@ -763,7 +763,7 @@ export default function FinanceProposalBuilder() {
                   <span className="text-zinc-400">
                     Discount {proposal.discount_type === 'percent' ? `(${proposal.discount_value}%)` : ''}
                   </span>
-                  <span className="text-blue-400">-€{pricing.discountAmount.toLocaleString()}</span>
+                  <span className="text-amber-400">-€{pricing.discountAmount.toLocaleString()}</span>
                 </div>
               )}
 
@@ -778,7 +778,7 @@ export default function FinanceProposalBuilder() {
               <div className="border-t border-zinc-700 pt-2">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-white">Total</span>
-                  <span className="text-lg font-bold text-blue-400">
+                  <span className="text-lg font-bold text-amber-400">
                     €{pricing.total.toLocaleString()}
                   </span>
                 </div>
@@ -839,7 +839,7 @@ export default function FinanceProposalBuilder() {
         <DialogContent className="bg-zinc-900 border-zinc-700 text-white max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Eye className="w-5 h-5 text-blue-400" />
+              <Eye className="w-5 h-5 text-amber-400" />
               Proposal Preview
             </DialogTitle>
           </DialogHeader>
@@ -913,7 +913,7 @@ export default function FinanceProposalBuilder() {
                     <span className="w-24">€{pricing.subtotal.toLocaleString()}</span>
                   </div>
                   {pricing.discountAmount > 0 && (
-                    <div className="flex justify-end gap-4 text-blue-600">
+                    <div className="flex justify-end gap-4 text-amber-600">
                       <span>Discount:</span>
                       <span className="w-24">-€{pricing.discountAmount.toLocaleString()}</span>
                     </div>
@@ -926,7 +926,7 @@ export default function FinanceProposalBuilder() {
                   )}
                   <div className="flex justify-end gap-4 text-base font-bold border-t border-zinc-200 pt-2">
                     <span>Total:</span>
-                    <span className="w-24 text-blue-600">€{pricing.total.toLocaleString()}</span>
+                    <span className="w-24 text-amber-600">€{pricing.total.toLocaleString()}</span>
                   </div>
                 </div>
               </div>

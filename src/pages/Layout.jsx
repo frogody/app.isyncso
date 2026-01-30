@@ -356,7 +356,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
   if (path.startsWith('/finance') || path.startsWith('/proposal')) {
     return {
       title: 'FINANCE',
-      color: 'blue',
+      color: 'amber',
       agent: 'finance',
       items: [
         { label: 'Dashboard', path: createPageUrl('FinanceOverview'), icon: LayoutDashboard },
@@ -403,7 +403,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
   if (path.startsWith('/raise')) {
     return {
       title: 'RAISE',
-      color: 'blue',
+      color: 'orange',
       agent: 'raise',
       items: [
         { label: 'Dashboard', path: createPageUrl('Raise'), icon: LayoutDashboard },
@@ -457,7 +457,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
   if (path.startsWith('/create')) {
     return {
       title: 'CREATE',
-      color: 'rose',
+      color: 'yellow',
       agent: 'create',
       items: [
         { label: 'Dashboard', path: createPageUrl('Create'), icon: LayoutDashboard },
@@ -524,6 +524,13 @@ const COLOR_CLASSES = {
     glow: THEME_COLORS.sync.glow
   },
   rose: {
+    text: THEME_COLORS.create.text,
+    bg: THEME_COLORS.create.bg,
+    border: THEME_COLORS.create.border,
+    borderSolid: THEME_COLORS.create.solid,
+    glow: THEME_COLORS.create.glow
+  },
+  yellow: {
     text: THEME_COLORS.create.text,
     bg: THEME_COLORS.create.bg,
     border: THEME_COLORS.create.border,
@@ -996,7 +1003,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
               if (isFinance) return { text: 'text-amber-400', bg: 'bg-amber-950/30', solid: 'bg-amber-500', glow: 'shadow-[0_0_10px_rgba(245,158,11,0.5)]' };
               if (isRaise) return { text: 'text-orange-400', bg: 'bg-orange-950/30', solid: 'bg-orange-500', glow: 'shadow-[0_0_10px_rgba(249,115,22,0.5)]' };
               if (isTalent) return { text: 'text-red-400', bg: 'bg-red-950/30', solid: 'bg-red-500', glow: 'shadow-[0_0_10px_rgba(239,68,68,0.5)]' };
-              if (isCreate) return { text: 'text-rose-400', bg: 'bg-rose-950/30', solid: 'bg-rose-500', glow: 'shadow-[0_0_10px_rgba(244,63,94,0.5)]' };
+              if (isCreate) return { text: 'text-yellow-400', bg: 'bg-yellow-950/30', solid: 'bg-yellow-500', glow: 'shadow-[0_0_10px_rgba(234,179,8,0.5)]' };
               return { text: 'text-cyan-400', bg: 'bg-cyan-950/30', solid: 'bg-cyan-500', glow: 'shadow-[0_0_10px_rgba(6,182,212,0.5)]' };
             };
             const colors = getEngineColors();

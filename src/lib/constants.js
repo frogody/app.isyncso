@@ -66,12 +66,12 @@ export const THEME_COLORS = {
     glow: 'shadow-[0_0_10px_rgba(249,115,22,0.5)]'
   },
   create: {
-    // Rose/Pink
-    text: 'text-rose-400',
-    bg: 'bg-rose-500/10',
-    border: 'border-rose-500/20',
-    solid: 'bg-rose-500',
-    glow: 'shadow-[0_0_10px_rgba(244,63,94,0.5)]'
+    // Neon Yellow
+    text: 'text-yellow-400',
+    bg: 'bg-yellow-500/10',
+    border: 'border-yellow-500/20',
+    solid: 'bg-yellow-500',
+    glow: 'shadow-[0_0_10px_rgba(234,179,8,0.5)]'
   },
   talent: {
     // Red

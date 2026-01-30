@@ -28,9 +28,9 @@ import {
 // Investor Pipeline Stages
 const INVESTOR_STAGES = [
   { id: 'contacted', label: 'Contacted', color: 'from-zinc-500 to-zinc-600', accent: 'text-zinc-400', bgAccent: 'bg-zinc-500' },
-  { id: 'interested', label: 'Interested', color: 'from-blue-500 to-blue-600', accent: 'text-blue-400', bgAccent: 'bg-blue-500' },
-  { id: 'in_discussions', label: 'In Discussions', color: 'from-blue-400 to-blue-500', accent: 'text-blue-400', bgAccent: 'bg-blue-400' },
-  { id: 'due_diligence', label: 'Due Diligence', color: 'from-blue-500 to-blue-600', accent: 'text-blue-400', bgAccent: 'bg-blue-500' },
+  { id: 'interested', label: 'Interested', color: 'from-orange-500 to-orange-600', accent: 'text-orange-400', bgAccent: 'bg-orange-500' },
+  { id: 'in_discussions', label: 'In Discussions', color: 'from-orange-400 to-orange-500', accent: 'text-orange-400', bgAccent: 'bg-orange-400' },
+  { id: 'due_diligence', label: 'Due Diligence', color: 'from-orange-500 to-orange-600', accent: 'text-orange-400', bgAccent: 'bg-orange-500' },
   { id: 'committed', label: 'Committed', color: 'from-green-500 to-green-600', accent: 'text-green-400', bgAccent: 'bg-green-500' },
   { id: 'passed', label: 'Passed', color: 'from-red-500 to-red-600', accent: 'text-red-400', bgAccent: 'bg-red-500' },
 ];
@@ -51,7 +51,7 @@ function InvestorCard({ investor, index, stageConfig, onEdit, onDelete }) {
           }}
           className={`group relative bg-zinc-900/60 backdrop-blur-sm rounded-xl border ${
             snapshot.isDragging
-              ? 'shadow-2xl shadow-blue-500/20 border-blue-500/50 z-50'
+              ? 'shadow-2xl shadow-orange-500/20 border-orange-500/50 z-50'
               : 'border-zinc-800/60 hover:border-zinc-700/60'
           }`}
         >
@@ -161,7 +161,7 @@ function InvestorStageColumn({ stage, investors, onAddInvestor, onEdit, onDelete
 
           <div className="space-y-1">
             <div className="flex items-baseline justify-between">
-              <span className="text-lg font-bold text-blue-400/80">${(totalCheckSize / 1000).toLocaleString()}k</span>
+              <span className="text-lg font-bold text-orange-400/80">${(totalCheckSize / 1000).toLocaleString()}k</span>
               <span className="text-xs text-zinc-600">potential</span>
             </div>
           </div>
@@ -176,7 +176,7 @@ function InvestorStageColumn({ stage, investors, onAddInvestor, onEdit, onDelete
             {...provided.droppableProps}
             className={`space-y-3 min-h-[300px] rounded-xl p-2 transition-colors duration-200 ${
               snapshot.isDraggingOver
-                ? 'bg-blue-500/5 border-2 border-dashed border-blue-500/40'
+                ? 'bg-orange-500/5 border-2 border-dashed border-orange-500/40'
                 : 'border-2 border-transparent'
             }`}
           >
@@ -264,44 +264,44 @@ export default function Raise() {
       value: `$${(targetAmount / 1000000).toFixed(1)}M`,
       subtitle: activeCampaign?.name || 'No active campaign',
       icon: Target,
-      color: 'blue'
+      color: 'orange'
     },
     {
       title: 'Amount Raised',
       value: `$${(raisedAmount / 1000000).toFixed(1)}M`,
       subtitle: `${progressPercent}% of target`,
       icon: Euro,
-      color: 'blue'
+      color: 'orange'
     },
     {
       title: 'Investor Pipeline',
       value: totalInvestors,
       subtitle: `${interestedInvestors} interested, ${committedInvestors} committed`,
       icon: Users,
-      color: 'blue'
+      color: 'orange'
     },
     {
       title: 'Pitch Decks',
       value: pitchDecks.length,
       subtitle: `${dataRooms.length} data rooms`,
       icon: FileText,
-      color: 'blue'
+      color: 'orange'
     }
   ];
 
   const getColorClasses = (color) => {
     const colors = {
-      blue: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+      orange: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
     };
-    return colors[color] || colors.blue;
+    return colors[color] || colors.orange;
   };
 
   const getStatusColor = (status) => {
     const statusColors = {
-      'interested': 'text-blue-400 border-blue-500/30 bg-blue-500/10',
-      'in_discussions': 'text-blue-400 border-blue-500/30 bg-blue-500/10',
-      'due_diligence': 'text-blue-400 border-blue-500/30 bg-blue-500/10',
-      'committed': 'text-blue-400 border-blue-500/30 bg-blue-500/10',
+      'interested': 'text-orange-400 border-orange-500/30 bg-orange-500/10',
+      'in_discussions': 'text-orange-400 border-orange-500/30 bg-orange-500/10',
+      'due_diligence': 'text-orange-400 border-orange-500/30 bg-orange-500/10',
+      'committed': 'text-orange-400 border-orange-500/30 bg-orange-500/10',
       'passed': 'text-zinc-400 border-zinc-500/30 bg-zinc-500/10'
     };
     return statusColors[status] || statusColors.interested;
@@ -446,7 +446,7 @@ export default function Raise() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500" />
       </div>
     );
   }
@@ -459,14 +459,14 @@ export default function Raise() {
           icon={Rocket}
           title="Raise"
           subtitle="Fundraising toolkit & investor management"
-          color="blue"
+          color="orange"
           actions={
             <div className="flex gap-2">
               <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800" onClick={handleExport}>
                 <Download className="w-4 h-4 mr-2" />
                 Export
               </Button>
-              <Button className="bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30">
+              <Button className="bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/30">
                 <Plus className="w-4 h-4 mr-2" />
                 New Campaign
               </Button>
@@ -476,14 +476,14 @@ export default function Raise() {
 
       {/* Progress Bar for Active Campaign */}
       {activeCampaign && (
-        <Card className="bg-gradient-to-r from-blue-950/50 to-blue-950/50 border-blue-500/20 mb-6">
+        <Card className="bg-gradient-to-r from-orange-950/50 to-orange-950/50 border-orange-500/20 mb-6">
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-semibold text-white">{activeCampaign.name}</h3>
                 <p className="text-sm text-zinc-400">{activeCampaign.round_type || 'Funding Round'}</p>
               </div>
-              <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+              <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
                 Active
               </Badge>
             </div>
@@ -561,10 +561,10 @@ export default function Raise() {
                 <div className="space-y-3">
                   {[
                     { stage: 'Contacted', count: investors.filter(i => i.status === 'contacted').length, color: 'zinc' },
-                    { stage: 'Interested', count: investors.filter(i => i.status === 'interested').length, color: 'blue' },
-                    { stage: 'In Discussions', count: investors.filter(i => i.status === 'in_discussions').length, color: 'blue' },
-                    { stage: 'Due Diligence', count: investors.filter(i => i.status === 'due_diligence').length, color: 'blue' },
-                    { stage: 'Committed', count: investors.filter(i => i.status === 'committed').length, color: 'blue' }
+                    { stage: 'Interested', count: investors.filter(i => i.status === 'interested').length, color: 'orange' },
+                    { stage: 'In Discussions', count: investors.filter(i => i.status === 'in_discussions').length, color: 'orange' },
+                    { stage: 'Due Diligence', count: investors.filter(i => i.status === 'due_diligence').length, color: 'orange' },
+                    { stage: 'Committed', count: investors.filter(i => i.status === 'committed').length, color: 'orange' }
                   ].map((stage) => (
                     <div key={stage.stage} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -594,8 +594,8 @@ export default function Raise() {
                   ) : (
                     investors.slice(0, 5).map((investor) => (
                       <div key={investor.id} className="flex items-start gap-2 p-2 bg-zinc-800/50 rounded-lg">
-                        <div className="p-1.5 bg-blue-500/10 rounded-lg">
-                          <Building2 className="w-3 h-3 text-blue-400" />
+                        <div className="p-1.5 bg-orange-500/10 rounded-lg">
+                          <Building2 className="w-3 h-3 text-orange-400" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-medium text-white truncate">{investor.name || 'Unknown Investor'}</p>
@@ -642,7 +642,7 @@ export default function Raise() {
                     List
                   </Button>
                 </div>
-                <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-xs">
+                <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-xs">
                   <Plus className="w-3 h-3 mr-1" />
                   Add
                 </Button>
@@ -656,7 +656,7 @@ export default function Raise() {
                     <Users className="w-8 h-8 text-zinc-600 mx-auto mb-3" />
                     <h3 className="text-sm font-medium text-white mb-1">No investors yet</h3>
                     <p className="text-zinc-500 text-xs mb-3">Start building your investor pipeline</p>
-                    <Button className="bg-blue-500 hover:bg-blue-600 text-xs">
+                    <Button className="bg-orange-500 hover:bg-orange-600 text-xs">
                       <Plus className="w-3 h-3 mr-1" />
                       Add First Investor
                     </Button>
@@ -685,8 +685,8 @@ export default function Raise() {
                     {investors.map((investor) => (
                       <div key={investor.id} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition-colors">
                         <div className="flex items-center gap-2">
-                          <div className="p-1.5 bg-blue-500/10 rounded-lg">
-                            <Building2 className="w-4 h-4 text-blue-400" />
+                          <div className="p-1.5 bg-orange-500/10 rounded-lg">
+                            <Building2 className="w-4 h-4 text-orange-400" />
                           </div>
                           <div>
                             <p className="text-sm font-medium text-white">{investor.name || 'Unknown'}</p>
@@ -732,7 +732,7 @@ export default function Raise() {
                   <CardTitle className="text-white">Pitch Materials</CardTitle>
                   <CardDescription>Decks, one-pagers, and presentations</CardDescription>
                 </div>
-                <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-xs">
+                <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-xs">
                   <Plus className="w-3 h-3 mr-1" />
                   Upload
                 </Button>
@@ -744,7 +744,7 @@ export default function Raise() {
                   <FileText className="w-8 h-8 text-zinc-600 mx-auto mb-3" />
                   <h3 className="text-sm font-medium text-white mb-1">No pitch materials</h3>
                   <p className="text-zinc-500 text-xs mb-3">Upload your pitch deck and other materials</p>
-                  <Button className="bg-blue-500 hover:bg-blue-600 text-xs">
+                  <Button className="bg-orange-500 hover:bg-orange-600 text-xs">
                     <Plus className="w-3 h-3 mr-1" />
                     Upload Pitch Deck
                   </Button>
@@ -752,10 +752,10 @@ export default function Raise() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {pitchDecks.map((deck) => (
-                    <div key={deck.id} className="p-3 bg-zinc-800/50 rounded-lg border border-zinc-700 hover:border-blue-500/50 transition-colors cursor-pointer">
+                    <div key={deck.id} className="p-3 bg-zinc-800/50 rounded-lg border border-zinc-700 hover:border-orange-500/50 transition-colors cursor-pointer">
                       <div className="flex items-start justify-between mb-2">
-                        <div className="p-1.5 bg-blue-500/10 rounded-lg">
-                          <FileText className="w-4 h-4 text-blue-400" />
+                        <div className="p-1.5 bg-orange-500/10 rounded-lg">
+                          <FileText className="w-4 h-4 text-orange-400" />
                         </div>
                         <Badge variant="outline" className="text-zinc-400 text-xs">
                           {deck.version || 'v1.0'}
@@ -779,7 +779,7 @@ export default function Raise() {
                   <CardTitle className="text-white">Data Rooms</CardTitle>
                   <CardDescription>Secure document sharing with investors</CardDescription>
                 </div>
-                <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-xs">
+                <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-xs">
                   <Plus className="w-3 h-3 mr-1" />
                   Create
                 </Button>
@@ -791,7 +791,7 @@ export default function Raise() {
                   <Briefcase className="w-8 h-8 text-zinc-600 mx-auto mb-3" />
                   <h3 className="text-sm font-medium text-white mb-1">No data rooms</h3>
                   <p className="text-zinc-500 text-xs mb-3">Create a secure data room for due diligence</p>
-                  <Button className="bg-blue-500 hover:bg-blue-600 text-xs">
+                  <Button className="bg-orange-500 hover:bg-orange-600 text-xs">
                     <Plus className="w-3 h-3 mr-1" />
                     Create Data Room
                   </Button>
@@ -801,8 +801,8 @@ export default function Raise() {
                   {dataRooms.map((room) => (
                     <div key={room.id} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg">
                       <div className="flex items-center gap-2">
-                        <div className="p-1.5 bg-blue-500/10 rounded-lg">
-                          <Briefcase className="w-4 h-4 text-blue-400" />
+                        <div className="p-1.5 bg-orange-500/10 rounded-lg">
+                          <Briefcase className="w-4 h-4 text-orange-400" />
                         </div>
                         <div>
                           <p className="text-sm font-medium text-white">{room.name || 'Data Room'}</p>

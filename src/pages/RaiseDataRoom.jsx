@@ -78,7 +78,7 @@ export default function RaiseDataRoom() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500" />
       </div>
     );
   }
@@ -90,11 +90,11 @@ export default function RaiseDataRoom() {
           title="Data Room"
           subtitle="Secure document sharing for due diligence"
           icon={Briefcase}
-          color="blue"
+          color="orange"
           actions={
             <Button
               onClick={() => setIsAddDialogOpen(true)}
-              className="bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30"
+              className="bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/30"
             >
               <Plus className="w-4 h-4 mr-2" />
               New Data Room
@@ -113,8 +113,8 @@ export default function RaiseDataRoom() {
             <Card key={idx} className="bg-zinc-900/50 border-zinc-800">
               <CardContent className="p-3">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                    <stat.icon className="w-4 h-4 text-blue-400" />
+                  <div className="p-2 rounded-lg bg-orange-500/10 border border-orange-500/20">
+                    <stat.icon className="w-4 h-4 text-orange-400" />
                   </div>
                   <div>
                     <p className="text-lg font-bold text-white">{stat.value}</p>
@@ -151,7 +151,7 @@ export default function RaiseDataRoom() {
                 <p className="text-zinc-500 mb-4">Create a secure space for due diligence documents</p>
                 <Button
                   onClick={() => setIsAddDialogOpen(true)}
-                  className="bg-blue-500 hover:bg-blue-600"
+                  className="bg-orange-500 hover:bg-orange-600"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Create Data Room
@@ -167,14 +167,14 @@ export default function RaiseDataRoom() {
                     className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                        <Briefcase className="w-4 h-4 text-blue-400" />
+                      <div className="p-2 bg-orange-500/10 rounded-lg border border-orange-500/20">
+                        <Briefcase className="w-4 h-4 text-orange-400" />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
                           <p className="font-medium text-white">{room.name || 'Data Room'}</p>
                           {room.requires_nda && (
-                            <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30 text-xs">
+                            <Badge variant="outline" className="bg-orange-500/10 text-orange-400 border-orange-500/30 text-xs">
                               NDA Required
                             </Badge>
                           )}
@@ -282,7 +282,7 @@ export default function RaiseDataRoom() {
               <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} className="border-zinc-700">
                 Cancel
               </Button>
-              <Button onClick={handleAddRoom} className="bg-blue-500 hover:bg-blue-600">
+              <Button onClick={handleAddRoom} className="bg-orange-500 hover:bg-orange-600">
                 Create
               </Button>
             </div>

@@ -374,9 +374,9 @@ export default function FinanceInvoices() {
   const getStatusBadge = (status) => {
     const styles = {
       draft: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
-      sent: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-      pending: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-      paid: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+      sent: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+      pending: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+      paid: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
       overdue: 'bg-red-500/20 text-red-400 border-red-500/30',
       cancelled: 'bg-zinc-500/20 text-zinc-500 border-zinc-500/30'
     };
@@ -391,7 +391,7 @@ export default function FinanceInvoices() {
   if (loading || permLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500" />
       </div>
     );
   }
@@ -405,7 +405,7 @@ export default function FinanceInvoices() {
           icon={Receipt}
           title="Invoices"
           subtitle="Create, send, and track your invoices"
-          color="blue"
+          color="amber"
           actions={
             <div className="flex gap-3">
               <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
@@ -414,7 +414,7 @@ export default function FinanceInvoices() {
               </Button>
               {canCreate && (
                 <Button
-                  className="bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                  className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30"
                   onClick={() => { resetForm(); setShowCreateModal(true); }}
                 >
                   <Plus className="w-4 h-4 mr-2" />
@@ -531,7 +531,7 @@ export default function FinanceInvoices() {
                 </p>
                 {canCreate && !searchQuery && statusFilter === 'all' && (
                   <Button
-                    className="bg-blue-500 hover:bg-blue-600"
+                    className="bg-amber-500 hover:bg-amber-600"
                     onClick={() => { resetForm(); setShowCreateModal(true); }}
                   >
                     <Plus className="w-4 h-4 mr-2" />
@@ -548,8 +548,8 @@ export default function FinanceInvoices() {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 flex-1">
-                        <div className="p-1.5 bg-blue-500/10 rounded-lg">
-                          <FileText className="w-4 h-4 text-blue-400" />
+                        <div className="p-1.5 bg-amber-500/10 rounded-lg">
+                          <FileText className="w-4 h-4 text-amber-400" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
@@ -619,7 +619,7 @@ export default function FinanceInvoices() {
                             {invoice.status === 'draft' && invoice.client_email && (
                               <DropdownMenuItem
                                 onClick={() => handleSendInvoice(invoice)}
-                                className="text-blue-400 hover:bg-zinc-800"
+                                className="text-amber-400 hover:bg-zinc-800"
                               >
                                 <Send className="w-4 h-4 mr-2" />
                                 Send Invoice
@@ -628,7 +628,7 @@ export default function FinanceInvoices() {
                             {invoice.status !== 'paid' && (
                               <DropdownMenuItem
                                 onClick={() => handleUpdateStatus(invoice, 'paid')}
-                                className="text-blue-400 hover:bg-zinc-800"
+                                className="text-amber-400 hover:bg-zinc-800"
                               >
                                 <Check className="w-4 h-4 mr-2" />
                                 Mark as Paid
@@ -741,7 +741,7 @@ export default function FinanceInvoices() {
                             {item.is_subscription ? (
                               <RefreshCw className="w-4 h-4 text-cyan-400" />
                             ) : item.product_id ? (
-                              <Zap className="w-4 h-4 text-blue-400" />
+                              <Zap className="w-4 h-4 text-amber-400" />
                             ) : (
                               <Package className="w-4 h-4 text-zinc-400" />
                             )}
@@ -780,9 +780,9 @@ export default function FinanceInvoices() {
                     ))}
 
                     {/* Total from items */}
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                      <span className="text-sm text-blue-400">Calculated Total</span>
-                      <span className="text-lg font-bold text-blue-400">
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                      <span className="text-sm text-amber-400">Calculated Total</span>
+                      <span className="text-lg font-bold text-amber-400">
                         ${calculateTotal().toFixed(2)}
                       </span>
                     </div>
@@ -835,7 +835,7 @@ export default function FinanceInvoices() {
               <Button
                 type="submit"
                 disabled={saving}
-                className="bg-blue-500 hover:bg-blue-600"
+                className="bg-amber-500 hover:bg-amber-600"
               >
                 {saving ? 'Saving...' : (editMode ? 'Update Invoice' : 'Create Invoice')}
               </Button>
@@ -849,7 +849,7 @@ export default function FinanceInvoices() {
         <DialogContent className="bg-zinc-900 border-zinc-700 text-white max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-blue-400" />
+              <FileText className="w-5 h-5 text-amber-400" />
               {selectedInvoice?.invoice_number || 'Invoice Details'}
             </DialogTitle>
           </DialogHeader>
@@ -953,7 +953,7 @@ export default function FinanceInvoices() {
               <div className="flex gap-3">
                 {selectedInvoice.status === 'draft' && selectedInvoice.client_email && (
                   <Button
-                    className="flex-1 bg-blue-500 hover:bg-blue-600"
+                    className="flex-1 bg-amber-500 hover:bg-amber-600"
                     onClick={() => { handleSendInvoice(selectedInvoice); setShowDetailModal(false); }}
                   >
                     <Send className="w-4 h-4 mr-2" />
@@ -962,7 +962,7 @@ export default function FinanceInvoices() {
                 )}
                 {selectedInvoice.status !== 'paid' && (
                   <Button
-                    className="flex-1 bg-blue-500 hover:bg-blue-600"
+                    className="flex-1 bg-amber-500 hover:bg-amber-600"
                     onClick={() => { handleUpdateStatus(selectedInvoice, 'paid'); setShowDetailModal(false); }}
                   >
                     <Check className="w-4 h-4 mr-2" />
