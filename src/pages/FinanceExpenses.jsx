@@ -26,15 +26,15 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { toast } from 'sonner';
 
 const EXPENSE_CATEGORIES = [
-  { value: 'software', label: 'Software & Tools', color: 'indigo', icon: '💻' },
-  { value: 'marketing', label: 'Marketing', color: 'pink', icon: '📣' },
+  { value: 'software', label: 'Software & Tools', color: 'amber', icon: '💻' },
+  { value: 'marketing', label: 'Marketing', color: 'amber', icon: '📣' },
   { value: 'office', label: 'Office & Equipment', color: 'amber', icon: '🏢' },
-  { value: 'travel', label: 'Travel', color: 'cyan', icon: '✈️' },
-  { value: 'salary', label: 'Salaries', color: 'emerald', icon: '👥' },
-  { value: 'contractors', label: 'Contractors', color: 'purple', icon: '🤝' },
-  { value: 'utilities', label: 'Utilities', color: 'orange', icon: '⚡' },
+  { value: 'travel', label: 'Travel', color: 'amber', icon: '✈️' },
+  { value: 'salary', label: 'Salaries', color: 'amber', icon: '👥' },
+  { value: 'contractors', label: 'Contractors', color: 'amber', icon: '🤝' },
+  { value: 'utilities', label: 'Utilities', color: 'amber', icon: '⚡' },
   { value: 'insurance', label: 'Insurance', color: 'amber', icon: '🛡️' },
-  { value: 'legal', label: 'Legal & Professional', color: 'slate', icon: '⚖️' },
+  { value: 'legal', label: 'Legal & Professional', color: 'amber', icon: '⚖️' },
   { value: 'other', label: 'Other', color: 'zinc', icon: '📦' }
 ];
 

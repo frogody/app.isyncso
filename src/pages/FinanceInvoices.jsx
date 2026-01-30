@@ -429,8 +429,8 @@ export default function FinanceInvoices() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
             { label: 'Total', value: `$${stats.total.toLocaleString()}`, count: stats.count, color: 'zinc' },
-            { label: 'Paid', value: `$${stats.paid.toLocaleString()}`, icon: Check, color: 'blue' },
-            { label: 'Pending', value: `$${stats.pending.toLocaleString()}`, icon: Clock, color: 'blue' },
+            { label: 'Paid', value: `$${stats.paid.toLocaleString()}`, icon: Check, color: 'amber' },
+            { label: 'Pending', value: `$${stats.pending.toLocaleString()}`, icon: Clock, color: 'amber' },
             { label: 'Overdue', value: `$${stats.overdue.toLocaleString()}`, icon: AlertCircle, color: 'red' }
           ].map((stat) => (
             <Card key={stat.label} className="bg-zinc-900/50 border-zinc-800">
@@ -721,7 +721,7 @@ export default function FinanceInvoices() {
                     variant="outline"
                     size="sm"
                     onClick={() => setShowProductSelector(true)}
-                    className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
+                    className="border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
                   >
                     <Plus className="w-4 h-4 mr-1" />
                     Add Product
@@ -739,7 +739,7 @@ export default function FinanceInvoices() {
                         >
                           <div className="w-8 h-8 rounded flex items-center justify-center bg-zinc-700/50">
                             {item.is_subscription ? (
-                              <RefreshCw className="w-4 h-4 text-cyan-400" />
+                              <RefreshCw className="w-4 h-4 text-amber-400" />
                             ) : item.product_id ? (
                               <Zap className="w-4 h-4 text-amber-400" />
                             ) : (
@@ -751,7 +751,7 @@ export default function FinanceInvoices() {
                               {item.name || item.description}
                             </p>
                             {item.is_subscription && (
-                              <p className="text-xs text-cyan-400">
+                              <p className="text-xs text-amber-400">
                                 {item.plan_name} ({item.billing_cycle})
                               </p>
                             )}
@@ -897,14 +897,14 @@ export default function FinanceInvoices() {
                       <div key={idx} className="flex items-center justify-between py-2 border-b border-zinc-700/50 last:border-0">
                         <div className="flex items-center gap-2">
                           {item.is_subscription ? (
-                            <RefreshCw className="w-4 h-4 text-cyan-400" />
+                            <RefreshCw className="w-4 h-4 text-amber-400" />
                           ) : (
                             <Package className="w-4 h-4 text-zinc-400" />
                           )}
                           <div>
                             <p className="text-white text-sm">{item.name || item.description}</p>
                             {item.is_subscription && (
-                              <p className="text-xs text-cyan-400">{item.plan_name} ({item.billing_cycle})</p>
+                              <p className="text-xs text-amber-400">{item.plan_name} ({item.billing_cycle})</p>
                             )}
                           </div>
                         </div>

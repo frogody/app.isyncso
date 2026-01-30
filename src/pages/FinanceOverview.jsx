@@ -199,21 +199,20 @@ export default function FinanceOverview() {
 
   const getColorClasses = (color) => {
     const colors = {
-      blue: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-      red: 'bg-red-500/10 text-red-400 border-red-500/20',
-      orange: 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+      amber: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+      red: 'bg-red-500/10 text-red-400 border-red-500/20'
     };
-    return colors[color] || colors.blue;
+    return colors[color] || colors.amber;
   };
 
   const getCategoryColor = (category) => {
     const colors = {
-      software: 'bg-indigo-500',
-      marketing: 'bg-pink-500',
+      software: 'bg-amber-500',
+      marketing: 'bg-amber-400',
       office: 'bg-amber-500',
       travel: 'bg-amber-500',
       salary: 'bg-amber-500',
-      contractors: 'bg-purple-500',
+      contractors: 'bg-amber-600',
       utilities: 'bg-amber-500',
       other: 'bg-zinc-500'
     };
@@ -308,10 +307,10 @@ export default function FinanceOverview() {
         {/* Key Metrics Grid */}
         <div ref={statsGridRef} className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
-            { title: 'Total Revenue', value: metrics.totalRevenue, displayValue: `€${metrics.totalRevenue.toLocaleString()}`, change: '+12.5%', trend: 'up', icon: Euro, color: 'blue' },
+            { title: 'Total Revenue', value: metrics.totalRevenue, displayValue: `€${metrics.totalRevenue.toLocaleString()}`, change: '+12.5%', trend: 'up', icon: Euro, color: 'amber' },
             { title: 'Total Expenses', value: metrics.totalExpenses, displayValue: `$${metrics.totalExpenses.toLocaleString()}`, change: '-3.2%', trend: 'down', icon: CreditCard, color: 'red' },
             { title: 'Pending Invoices', value: metrics.pendingInvoices, displayValue: `$${metrics.pendingInvoices.toLocaleString()}`, change: `${metrics.pendingCount} invoices`, trend: 'neutral', icon: Receipt, color: 'orange' },
-            { title: 'Monthly Recurring', value: metrics.monthlyRecurring, displayValue: `$${metrics.monthlyRecurring.toLocaleString()}`, change: `${metrics.activeSubscriptions} active`, trend: 'up', icon: TrendingUp, color: 'blue' }
+            { title: 'Monthly Recurring', value: metrics.monthlyRecurring, displayValue: `$${metrics.monthlyRecurring.toLocaleString()}`, change: `${metrics.activeSubscriptions} active`, trend: 'up', icon: TrendingUp, color: 'amber' }
           ].map((metric, index) => (
             <div key={metric.title} className="stat-card">
               <Card className="bg-zinc-900/50 border-zinc-800 hover:border-zinc-700 transition-colors">

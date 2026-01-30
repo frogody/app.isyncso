@@ -105,7 +105,7 @@ const USE_CASES = {
     requiresReferenceImage: false,
     costTier: 'premium',
     estimatedCost: 0.04,
-    color: 'rose'
+    color: 'yellow'
   }
 };
 

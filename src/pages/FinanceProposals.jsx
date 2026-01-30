@@ -32,7 +32,7 @@ import { useUser } from '@/components/context/UserContext';
 const STATUS_CONFIG = {
   draft: { label: 'Draft', color: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30', icon: FileText },
   sent: { label: 'Sent', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30', icon: Send },
-  viewed: { label: 'Viewed', color: 'bg-purple-500/20 text-purple-400 border-purple-500/30', icon: Eye },
+  viewed: { label: 'Viewed', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30', icon: Eye },
   accepted: { label: 'Accepted', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30', icon: CheckCircle2 },
   rejected: { label: 'Rejected', color: 'bg-red-500/20 text-red-400 border-red-500/30', icon: XCircle },
   expired: { label: 'Expired', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30', icon: Clock }
@@ -349,25 +349,25 @@ export default function FinanceProposals() {
           label="Total Proposals"
           value={stats.total}
           icon={FileText}
-          color="cyan"
+          color="amber"
         />
         <StatCard
           label="Total Value"
           value={`€${stats.totalValue.toLocaleString()}`}
           icon={Euro}
-          color="sage"
+          color="amber"
         />
         <StatCard
           label="Accepted"
           value={`${stats.accepted} (€${stats.acceptedValue.toLocaleString()})`}
           icon={CheckCircle2}
-          color="sage"
+          color="amber"
         />
         <StatCard
           label="Conversion Rate"
           value={`${stats.conversionRate}%`}
           icon={ArrowRight}
-          color="indigo"
+          color="amber"
         />
       </div>
 
@@ -647,14 +647,14 @@ export default function FinanceProposals() {
                       <div key={idx} className="flex items-center justify-between py-2 border-b border-zinc-700/50 last:border-0">
                         <div className="flex items-center gap-3">
                           {item.is_subscription ? (
-                            <RefreshCw className="w-4 h-4 text-cyan-400" />
+                            <RefreshCw className="w-4 h-4 text-amber-400" />
                           ) : (
                             <FileText className="w-4 h-4 text-zinc-400" />
                           )}
                           <div>
                             <p className="text-white text-sm">{item.name || item.description}</p>
                             {item.is_subscription && (
-                              <p className="text-xs text-cyan-400">{item.billing_cycle}</p>
+                              <p className="text-xs text-amber-400">{item.billing_cycle}</p>
                             )}
                           </div>
                         </div>

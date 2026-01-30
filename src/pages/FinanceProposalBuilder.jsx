@@ -416,7 +416,7 @@ export default function FinanceProposalBuilder() {
                   {/* Link to CRM Contact */}
                   <div>
                     <Label className="text-zinc-300 flex items-center gap-2">
-                      <User className="w-4 h-4 text-cyan-400" />
+                      <User className="w-4 h-4 text-amber-400" />
                       Select from CRM Contacts
                     </Label>
                     <p className="text-xs text-zinc-500 mb-2 mt-1">
@@ -598,7 +598,7 @@ export default function FinanceProposalBuilder() {
                         variant="outline"
                         size="sm"
                         onClick={() => setShowProductSelector(true)}
-                        className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
+                        className="border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
                       >
                         <Plus className="w-4 h-4 mr-2" />
                         Add Product
@@ -622,7 +622,7 @@ export default function FinanceProposalBuilder() {
                           >
                             <div className="w-8 h-8 rounded flex items-center justify-center bg-zinc-700/50">
                               {item.is_subscription ? (
-                                <RefreshCw className="w-4 h-4 text-cyan-400" />
+                                <RefreshCw className="w-4 h-4 text-amber-400" />
                               ) : (
                                 <Package className="w-4 h-4 text-zinc-400" />
                               )}
@@ -632,7 +632,7 @@ export default function FinanceProposalBuilder() {
                                 {item.name || item.description}
                               </p>
                               {item.is_subscription && (
-                                <p className="text-xs text-cyan-400">
+                                <p className="text-xs text-amber-400">
                                   {item.plan_name} ({item.billing_cycle})
                                 </p>
                               )}
@@ -786,9 +786,9 @@ export default function FinanceProposalBuilder() {
 
               {/* Subscription indicator */}
               {proposal.line_items.some(i => i.is_subscription) && (
-                <div className="flex items-center gap-2 p-2 bg-cyan-500/10 rounded-lg border border-cyan-500/20">
-                  <RefreshCw className="w-3 h-3 text-cyan-400" />
-                  <span className="text-xs text-cyan-400">
+                <div className="flex items-center gap-2 p-2 bg-amber-500/10 rounded-lg border border-amber-500/20">
+                  <RefreshCw className="w-3 h-3 text-amber-400" />
+                  <span className="text-xs text-amber-400">
                     Includes recurring subscriptions
                   </span>
                 </div>
@@ -895,7 +895,7 @@ export default function FinanceProposalBuilder() {
                         <td className="py-2">
                           {item.name || item.description}
                           {item.is_subscription && (
-                            <span className="text-xs text-cyan-600 ml-2">({item.billing_cycle})</span>
+                            <span className="text-xs text-amber-600 ml-2">({item.billing_cycle})</span>
                           )}
                         </td>
                         <td className="text-right py-2">{item.quantity || 1}</td>

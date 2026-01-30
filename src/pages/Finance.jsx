@@ -193,7 +193,7 @@ export default function Finance() {
         change: '+12.5%',
         trend: 'up',
         icon: Euro,
-        color: 'blue'
+        color: 'amber'
       },
       {
         title: 'Total Expenses',
@@ -209,7 +209,7 @@ export default function Finance() {
         change: `${invoices.filter(i => i.status === 'pending').length} invoices`,
         trend: 'neutral',
         icon: Receipt,
-        color: 'blue'
+        color: 'amber'
       },
       {
         title: 'Monthly Recurring',
@@ -217,7 +217,7 @@ export default function Finance() {
         change: `${subscriptions.filter(s => s.status === 'active').length} active`,
         trend: 'up',
         icon: TrendingUp,
-        color: 'cyan'
+        color: 'amber'
       }
     ];
 
@@ -226,11 +226,10 @@ export default function Finance() {
 
   const getColorClasses = (color) => {
     const colors = {
-      blue: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-      red: 'bg-red-500/10 text-red-400 border-red-500/20',
-      cyan: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
+      amber: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+      red: 'bg-red-500/10 text-red-400 border-red-500/20'
     };
-    return colors[color] || colors.blue;
+    return colors[color] || colors.amber;
   };
 
   // Memoize permission checks - only compute when permissions are loaded
@@ -532,8 +531,8 @@ export default function Finance() {
                   {subscriptions.map((sub) => (
                     <div key={sub.id} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg">
                       <div className="flex items-center gap-3">
-                        <div className="p-1.5 bg-cyan-500/10 rounded-lg">
-                          <BadgeEuro className="w-4 h-4 text-cyan-400" />
+                        <div className="p-1.5 bg-amber-500/10 rounded-lg">
+                          <BadgeEuro className="w-4 h-4 text-amber-400" />
                         </div>
                         <div>
                           <p className="text-sm font-medium text-white">{sub.name || 'Subscription'}</p>
@@ -541,7 +540,7 @@ export default function Finance() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-medium text-cyan-400">${(sub.amount || 0).toLocaleString()}/mo</p>
+                        <p className="text-sm font-medium text-amber-400">${(sub.amount || 0).toLocaleString()}/mo</p>
                         <Badge variant="outline" className={
                           sub.status === 'active' ? 'text-amber-400 border-amber-500/30' :
                           'text-zinc-400 border-zinc-500/30'

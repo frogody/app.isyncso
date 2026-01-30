@@ -120,7 +120,7 @@ function InvestorCard({ investor, index, stageConfig, onEdit, onDelete }) {
                 </span>
               )}
               {investor.linkedin && (
-                <a href={investor.linkedin} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-zinc-500 hover:text-blue-400">
+                <a href={investor.linkedin} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-zinc-500 hover:text-orange-400">
                   <ExternalLink className="w-3 h-3" />
                   LinkedIn
                 </a>
