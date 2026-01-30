@@ -1916,6 +1916,7 @@ npx supabase functions deploy analyzeCampaignProject --project-ref sfxpmzicgpaxf
 
 ---
 
+<<<<<<< HEAD
 ## UI Color Palette Unification (Jan 30, 2026)
 
 ### Overview
@@ -1987,3 +1988,168 @@ The SYNC avatar in the sidebar (`src/components/icons/SyncAvatarMini.jsx`) uses 
 - `1ccfcc9` - fix: unify ProductDetail and ActivityTimeline to cyan/blue palette
 - `eef1287` - fix: migrate all 19 product components to cyan/blue palette
 - `d894e2d` - fix: migrate Integrations and Workspace pages to cyan/blue palette
+
+---
+
+## SENTINEL - EU AI Act Compliance Module (Jan 31, 2026)
+
+<!-- LAST_UPDATED -->Last updated: 2026-01-31 (Branch: main)<!-- /LAST_UPDATED -->
+
+### Overview
+
+**SENTINEL** is an EU AI Act Compliance Management tool that helps organizations track AI systems, assess risks, and generate compliance documentation.
+
+### Tech Stack
+
+| Property | Value |
+|----------|-------|
+| **Framework** | React 18 + Vite |
+| **Database** | Supabase (`sfxpmzicgpaxfntqleig`) |
+| **Routing** | React Router DOM v7 |
+| **Animations** | Framer Motion (in progress), animated.js |
+| **Design** | Dark theme, Mint green (#86EFAC), Glass morphism |
+
+### File Structure
+
+#### Pages (`/src/pages/`)
+
+| File | Route | Purpose |
+|------|-------|---------|
+| `Sentinel.jsx` | `/sentinel` | Entry/landing page |
+| `SentinelDashboard.jsx` | `/sentineldashboard` | Main compliance dashboard with gauge, stats, workflow stepper |
+| `AISystemInventory.jsx` | `/aisysteminventory` | Browse, filter, register AI systems (paginated, 12/page) |
+| `ComplianceRoadmap.jsx` | `/complianceroadmap` | Timeline & obligation tracker with AI Action Plan generator |
+| `DocumentGenerator.jsx` | `/documentgenerator` | Generate Annex IV tech docs & Article 47 conformity declarations |
+
+#### Components (`/src/components/sentinel/`)
+
+| Component | Purpose |
+|-----------|---------|
+| `AISystemModal.jsx` | Registration modal with optional CIDE AI research pre-fill |
+| `RiskAssessmentWizard.jsx` | Multi-step EU AI Act classification (5 steps) |
+| `EnhancedSystemCard.jsx` | AI system display card |
+| `QuickActions.jsx` | Dashboard quick action cards |
+| `WorkflowStepper.jsx` | 4-step compliance workflow |
+| `RiskClassificationBadge.jsx` | Color-coded risk level badges |
+| `TechnicalDocTemplate.jsx` | Annex IV technical documentation template |
+| `DeclarationOfConformity.jsx` | Article 47 conformity declaration template |
+
+#### Data Layer (`/src/api/`)
+
+| File | Exports |
+|------|---------|
+| `entities.js` | `AISystem`, `Obligation`, `ComplianceRequirement`, `RegulatoryDocument` |
+| `supabaseClient.js` | Supabase instance |
+
+#### Utilities
+
+| File | Purpose |
+|------|---------|
+| `/src/utils/index.ts` | `createPageUrl()` routing helper |
+| `/src/lib/agents/agents/compliance.ts` | LLM compliance agent (demo artifact, not wired into frontend) |
+
+### Architecture Patterns
+
+1. **No state management library** — local React state + `useMemo` for derived data
+2. **No custom hooks** — data fetching done inline with `db.entities.*` calls
+3. **No caching or realtime subscriptions** — fresh fetch on mount/action
+4. **Classification logic priority**: prohibited → high-risk → GPAI → limited-risk → minimal-risk
+5. **CIDE integration** in AISystemModal calls `analyzeAISystem` edge function to auto-fill registration + assessment answers
+6. **Design system**: sage/mint green (#86EFAC) on black, glass morphism cards, Framer Motion animations
+
+### Data Flow
+
+```
+Component → db.entities.AISystem.list/create/update
+  → Supabase Client → REST API → PostgreSQL (with RLS)
+  → Response → State → Re-render
+```
+
+### Database Tables
+
+| Table | Purpose |
+|-------|---------|
+| `ai_systems` | Main AI systems inventory |
+| `users` | User profiles |
+| `user_app_configs` | Per-user app settings |
+| `companies` | Company data |
+| `team_members` | Team membership |
+| `teams` | Team structure |
+| `organizations` | Organization hierarchy |
+| `user_notifications` | Notifications |
+
+### RPC Functions
+- `get_user_effective_apps`
+- `get_user_roles`
+- `get_user_permissions`
+
+### Design Tokens
+
+```css
+/* Current Sentinel Theme */
+--theme-primary: #86EFAC;        /* Mint green */
+--theme-primary-tint-10: rgba(134, 239, 172, 0.1);
+--theme-primary-tint-20: rgba(134, 239, 172, 0.2);
+--bg-page: #000000;              /* Black */
+--bg-surface: rgba(39, 39, 42, 0.5);   /* zinc-900/50 */
+--bg-elevated: rgba(39, 39, 42, 0.6);  /* zinc-900/60 */
+--border-default: rgba(63, 63, 70, 0.6); /* zinc-800/60 */
+--text-primary: #FFFFFF;
+--text-muted: #9CA3AF;
+```
+
+### Known Technical Debt
+
+- [ ] No test files detected
+- [ ] No TypeScript on page/component files (only utilities)
+- [ ] No error boundaries or granular error handling
+- [ ] No custom hooks to deduplicate repeated fetch logic
+- [ ] No caching strategy
+
+### Rebuild Plan (Design System Alignment)
+
+#### Phase 1: Foundation
+1. Create design tokens (`/src/tokens/sentinel.ts`)
+2. Define SENTINEL Blue as primary color (per design system)
+3. Update border radius to 20px for cards
+
+#### Phase 2: Components
+1. Migrate StatCard, ActionCard to design system specs
+2. Update RiskBadge with standardized colors
+3. Implement Framer Motion animations
+4. Standardize buttons to pill style (9999px radius)
+
+#### Phase 3: Data Layer
+1. Create custom hooks (`useAISystems`, `useCompliance`)
+2. Add React Query for caching
+3. Implement error boundaries
+
+#### Phase 4: Testing
+1. Add component tests
+2. Add integration tests
+3. Add E2E tests for critical flows
+
+### Claude Code Prompts for Sentinel
+
+#### Get Database Schema
+```
+Show the full Supabase schema for ai_systems table including columns, types, constraints, and RLS policies.
+```
+
+#### Analyze Component
+```
+Read /src/components/sentinel/[ComponentName].jsx and explain:
+- Props interface
+- State usage
+- Data fetching pattern
+- Animation usage
+```
+
+#### Find Animation Usage
+```
+Search for all framer-motion and animated.js usage in /src/components/sentinel/ and /src/pages/ related to Sentinel
+```
+
+---
+
+<!-- SENTINEL_ANALYSIS_END -->
