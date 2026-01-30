@@ -404,7 +404,23 @@ export default function TalentDashboard() {
           subtitle="Your recruitment command center"
           color="red"
           actions={
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => navigate(createPageUrl("TalentProjects"))} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700 text-xs h-8">
+                <Briefcase className="w-3.5 h-3.5 mr-1" /> Create Role
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => navigate("/marketplace/nests")} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700 text-xs h-8">
+                <Package className="w-3.5 h-3.5 mr-1" /> Browse Nests
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => navigate(`${createPageUrl("TalentCampaignDetail")}?new=true`)} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700 text-xs h-8">
+                <Sparkles className="w-3.5 h-3.5 mr-1" /> Run Matching
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => navigate(createPageUrl("TalentCampaigns"))} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700 text-xs h-8">
+                <Send className="w-3.5 h-3.5 mr-1" /> Launch Outreach
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => navigate(`${createPageUrl("TalentCandidates")}?addNew=true`)} className="border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 text-xs h-8">
+                <Users className="w-3.5 h-3.5 mr-1" /> Add Candidate
+              </Button>
+              <div className="h-5 w-px bg-zinc-700 mx-1" />
               <Select value={timeRange} onValueChange={setTimeRange}>
                 <SelectTrigger className="w-[120px] bg-zinc-900/60 border-zinc-800 text-white text-xs h-8">
                   <SelectValue />
