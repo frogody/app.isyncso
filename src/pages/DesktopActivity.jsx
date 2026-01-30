@@ -29,6 +29,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Copy, Check, ExternalLink } from 'lucide-react';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 // App icon mapping
 const APP_ICONS = {
@@ -354,13 +356,13 @@ export default function DesktopActivity() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <Skeleton className="h-32 w-full bg-zinc-800 rounded-2xl" />
+      <div className="min-h-screen bg-black p-5">
+        <div className="max-w-7xl mx-auto space-y-5">
+          <Skeleton className="h-12 w-full bg-zinc-800 rounded-xl" />
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[1,2,3,4].map(i => <Skeleton key={i} className="h-32 bg-zinc-800 rounded-2xl" />)}
+            {[1,2,3,4].map(i => <Skeleton key={i} className="h-28 bg-zinc-800 rounded-xl" />)}
           </div>
-          <Skeleton className="h-96 bg-zinc-800 rounded-2xl" />
+          <Skeleton className="h-96 bg-zinc-800 rounded-xl" />
         </div>
       </div>
     );
@@ -369,36 +371,15 @@ export default function DesktopActivity() {
   const maxDailyMinutes = Math.max(...stats.dailyBreakdown.map(d => d.minutes), 1);
 
   return (
-    <div className="min-h-screen bg-black relative">
-      {/* Background */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 right-1/4 w-96 h-96 bg-cyan-900/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-cyan-900/5 rounded-full blur-3xl" />
-      </div>
-
-      <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
+    <div className="min-h-screen bg-black">
+      <div className="w-full px-4 lg:px-6 py-4 space-y-5">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-2xl bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/60 p-6"
-        >
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full blur-3xl opacity-10 bg-blue-600" />
-          </div>
-
-          <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 flex items-center justify-center border border-cyan-500/20">
-                <Laptop className="w-7 h-7 text-cyan-400" />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-white">Activity</h1>
-                <p className="text-zinc-500 mt-1">Track your productivity across all devices</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
+        <PageHeader
+          title="Activity"
+          subtitle="Track your productivity across all devices"
+          color="cyan"
+          actions={
+            <>
               <Select value={dateRange} onValueChange={setDateRange}>
                 <SelectTrigger className="w-32 bg-zinc-800/50 border-zinc-700/60 text-zinc-200">
                   <SelectValue placeholder="Date range" />
@@ -428,66 +409,57 @@ export default function DesktopActivity() {
               >
                 {refreshing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
               </Button>
-            </div>
-          </div>
-        </motion.div>
+            </>
+          }
+        />
 
         {/* Download SYNC Desktop Banner */}
         {activityLogs.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-cyan-950/40 via-zinc-900/60 to-zinc-900/60 border border-cyan-500/20 p-6"
-          >
-            <div className="absolute inset-0 pointer-events-none overflow-hidden">
-              <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full blur-3xl opacity-20 bg-cyan-500" />
-              <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full blur-3xl opacity-10 bg-cyan-400" />
-            </div>
-
-            <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+          <GlassCard hover={false} animated={true} className="p-5" glow="cyan">
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
               <div className="flex items-start gap-5">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500/30 to-cyan-600/20 flex items-center justify-center border border-cyan-500/30 flex-shrink-0">
-                  <Download className="w-8 h-8 text-cyan-400" />
+                <div className="w-14 h-14 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-800/60 flex-shrink-0">
+                  <Download className="w-7 h-7 text-cyan-400" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-zinc-100 mb-2">Download SYNC Desktop</h2>
-                  <p className="text-zinc-400 mb-4 max-w-xl">
+                  <h2 className="text-lg font-bold text-white mb-2">Download SYNC Desktop</h2>
+                  <p className="text-zinc-400 mb-4 max-w-xl text-sm">
                     Unlock powerful productivity tracking with the SYNC Desktop companion app.
                     Get detailed insights into your work patterns and let SYNC understand your context.
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                     <div className="flex items-center gap-2 text-zinc-300">
-                      <div className="w-5 h-5 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                      <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
                         <Activity className="w-3 h-3 text-cyan-400" />
                       </div>
                       <span>Automatic activity tracking</span>
                     </div>
                     <div className="flex items-center gap-2 text-zinc-300">
-                      <div className="w-5 h-5 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                      <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
                         <Target className="w-3 h-3 text-cyan-400" />
                       </div>
                       <span>Focus score calculation</span>
                     </div>
                     <div className="flex items-center gap-2 text-zinc-300">
-                      <div className="w-5 h-5 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                      <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
                         <Brain className="w-3 h-3 text-cyan-400" />
                       </div>
                       <span>AI-generated daily journals</span>
                     </div>
                     <div className="flex items-center gap-2 text-zinc-300">
-                      <div className="w-5 h-5 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                      <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
                         <MessageSquare className="w-3 h-3 text-cyan-400" />
                       </div>
                       <span>Context-aware SYNC chat</span>
                     </div>
                     <div className="flex items-center gap-2 text-zinc-300">
-                      <div className="w-5 h-5 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                      <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
                         <Clock className="w-3 h-3 text-cyan-400" />
                       </div>
                       <span>Hourly productivity summaries</span>
                     </div>
                     <div className="flex items-center gap-2 text-zinc-300">
-                      <div className="w-5 h-5 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                      <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
                         <Sparkles className="w-3 h-3 text-cyan-400" />
                       </div>
                       <span>Floating avatar widget</span>
@@ -507,60 +479,60 @@ export default function DesktopActivity() {
                 <p className="text-xs text-zinc-500 text-center">Windows coming soon</p>
               </div>
             </div>
-          </motion.div>
+          </GlassCard>
         )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
-            <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+            <div className="p-5 rounded-xl bg-zinc-900/60 border border-zinc-800/60">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-11 h-11 rounded-xl bg-blue-950/60 border border-blue-800/40 flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-blue-400" />
+                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-800/60 flex items-center justify-center">
+                  <Clock className="w-5 h-5 text-cyan-400" />
                 </div>
                 {stats.totalMinutes > 0 && (
-                  <Badge className="bg-blue-950/40 text-blue-300/80 border-blue-800/30 text-xs">Active</Badge>
+                  <Badge className="bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-xs">Active</Badge>
                 )}
               </div>
-              <div className="text-2xl font-bold text-zinc-100">{formatDuration(stats.totalMinutes)}</div>
+              <div className="text-2xl font-bold text-white">{formatDuration(stats.totalMinutes)}</div>
               <div className="text-sm text-zinc-500">Total Active Time</div>
             </div>
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+            <div className="p-5 rounded-xl bg-zinc-900/60 border border-zinc-800/60">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-11 h-11 rounded-xl bg-cyan-950/60 border border-cyan-800/40 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-800/60 flex items-center justify-center">
                   <Target className="w-5 h-5 text-cyan-400" />
                 </div>
               </div>
-              <div className="text-2xl font-bold text-zinc-100">{Math.round(stats.avgFocusScore * 100)}%</div>
+              <div className="text-2xl font-bold text-white">{Math.round(stats.avgFocusScore * 100)}%</div>
               <div className="text-sm text-zinc-500">Avg Focus Score</div>
               <Progress value={stats.avgFocusScore * 100} className="mt-2 h-1 bg-zinc-800" />
             </div>
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-            <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+            <div className="p-5 rounded-xl bg-zinc-900/60 border border-zinc-800/60">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-11 h-11 rounded-xl bg-green-950/60 border border-green-800/40 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-green-400" />
+                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-800/60 flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-cyan-400" />
                 </div>
               </div>
-              <div className="text-2xl font-bold text-zinc-100">{Math.round(stats.avgProductivity * 100)}%</div>
+              <div className="text-2xl font-bold text-white">{Math.round(stats.avgProductivity * 100)}%</div>
               <div className="text-sm text-zinc-500">Avg Productivity</div>
               <Progress value={stats.avgProductivity * 100} className="mt-2 h-1 bg-zinc-800" />
             </div>
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-            <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+            <div className="p-5 rounded-xl bg-zinc-900/60 border border-zinc-800/60">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-11 h-11 rounded-xl bg-amber-950/60 border border-amber-800/40 flex items-center justify-center">
-                  <Monitor className="w-5 h-5 text-amber-400" />
+                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-800/60 flex items-center justify-center">
+                  <Monitor className="w-5 h-5 text-cyan-400" />
                 </div>
               </div>
-              <div className="text-2xl font-bold text-zinc-100">{stats.topApps.length}</div>
+              <div className="text-2xl font-bold text-white">{stats.topApps.length}</div>
               <div className="text-sm text-zinc-500">Apps Tracked</div>
             </div>
           </motion.div>
@@ -571,13 +543,14 @@ export default function DesktopActivity() {
           {/* TabsList removed — navigation handled by Layout SYNC top tabs */}
 
           {/* Overview Tab */}
-          <TabsContent value="overview" className="mt-6 space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <TabsContent value="overview" className="mt-5 space-y-5">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               {/* Daily Activity Chart */}
-              <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
-                <h3 className="text-lg font-semibold text-zinc-200 mb-6 flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-blue-400" />
-                  Daily Activity
+              <GlassCard hover={false} animated={false} className="p-5">
+                <div className="text-xs text-zinc-500 font-medium uppercase tracking-wider mb-3">Daily Activity</div>
+                <h3 className="text-base font-semibold text-white mb-5 flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-cyan-400" />
+                  Activity Over Time
                 </h3>
 
                 {stats.dailyBreakdown.length === 0 ? (
@@ -611,13 +584,14 @@ export default function DesktopActivity() {
                     ))}
                   </div>
                 )}
-              </div>
+              </GlassCard>
 
               {/* Top Apps */}
-              <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
-                <h3 className="text-lg font-semibold text-zinc-200 mb-6 flex items-center gap-2">
+              <GlassCard hover={false} animated={false} className="p-5">
+                <div className="text-xs text-zinc-500 font-medium uppercase tracking-wider mb-3">Top Applications</div>
+                <h3 className="text-base font-semibold text-white mb-5 flex items-center gap-2">
                   <PieChart className="w-5 h-5 text-cyan-400" />
-                  Top Applications
+                  Most Used Apps
                 </h3>
 
                 {stats.topApps.length === 0 ? (
@@ -643,7 +617,7 @@ export default function DesktopActivity() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm font-medium text-zinc-200 truncate">{item.app}</span>
+                              <span className="text-sm font-medium text-white truncate">{item.app}</span>
                               <span className="text-sm text-zinc-400 ml-2">{formatDuration(item.minutes)}</span>
                             </div>
                             <Progress value={percentage} className="h-1.5 bg-zinc-700" />
@@ -653,28 +627,29 @@ export default function DesktopActivity() {
                     })}
                   </div>
                 )}
-              </div>
+              </GlassCard>
             </div>
           </TabsContent>
 
           {/* Apps Tab */}
-          <TabsContent value="apps" className="mt-6">
-            <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
-              <h3 className="text-lg font-semibold text-zinc-200 mb-6 flex items-center gap-2">
-                <Monitor className="w-5 h-5 text-blue-400" />
-                All Applications
+          <TabsContent value="apps" className="mt-5">
+            <GlassCard hover={false} animated={false} className="p-5">
+              <div className="text-xs text-zinc-500 font-medium uppercase tracking-wider mb-3">All Applications</div>
+              <h3 className="text-base font-semibold text-white mb-5 flex items-center gap-2">
+                <Monitor className="w-5 h-5 text-cyan-400" />
+                Application Usage
               </h3>
 
               {stats.topApps.length === 0 ? (
                 <div className="text-center py-16">
                   <Monitor className="w-16 h-16 text-zinc-600 mx-auto mb-4" />
-                  <h4 className="text-lg font-semibold text-zinc-100 mb-2">No Applications Tracked</h4>
+                  <h4 className="text-lg font-semibold text-white mb-2">No Applications Tracked</h4>
                   <p className="text-zinc-500 max-w-sm mx-auto mb-6">
                     Install and run SYNC Desktop Companion to start tracking your application usage.
                   </p>
                   <Button
                     onClick={() => window.open('/DownloadApp', '_self')}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    className="bg-cyan-600 hover:bg-cyan-700 text-white"
                   >
                     <Download className="w-4 h-4 mr-2" />
                     Download SYNC Desktop
@@ -698,11 +673,11 @@ export default function DesktopActivity() {
                             <AppIcon className="w-6 h-6 text-white" />
                           </div>
                           <div className="flex-1">
-                            <h4 className="font-medium text-zinc-200 truncate">{item.app}</h4>
+                            <h4 className="font-medium text-white truncate">{item.app}</h4>
                             <p className="text-sm text-zinc-500">{percentage.toFixed(1)}% of total</p>
                           </div>
                         </div>
-                        <div className="text-2xl font-bold text-zinc-100 mb-2">
+                        <div className="text-2xl font-bold text-white mb-2">
                           {formatDuration(item.minutes)}
                         </div>
                         <Progress value={percentage} className="h-2 bg-zinc-700" />
@@ -711,20 +686,20 @@ export default function DesktopActivity() {
                   })}
                 </div>
               )}
-            </div>
+            </GlassCard>
           </TabsContent>
 
           {/* Journals Tab */}
-          <TabsContent value="journals" className="mt-6">
+          <TabsContent value="journals" className="mt-5">
             <div className="space-y-4">
               {/* Quick Actions Header */}
-              <div className="flex items-center justify-between p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+              <div className="flex items-center justify-between p-4 rounded-xl bg-zinc-900/60 border border-zinc-800/60">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 flex items-center justify-center border border-cyan-500/20">
+                  <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-800/60">
                     <Sparkles className="w-5 h-5 text-cyan-400" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold text-zinc-200">Daily Journals</h3>
+                    <h3 className="text-sm font-semibold text-white">Daily Journals</h3>
                     <p className="text-xs text-zinc-500">AI-powered productivity reflections</p>
                   </div>
                 </div>
@@ -759,9 +734,9 @@ export default function DesktopActivity() {
 
               {/* Latest Journal Preview */}
               {journals.length === 0 ? (
-                <div className="p-8 rounded-2xl bg-zinc-900/50 border border-zinc-800/60 text-center">
+                <GlassCard hover={false} animated={false} className="p-5 text-center">
                   <FileText className="w-16 h-16 text-zinc-600 mx-auto mb-4" />
-                  <h4 className="text-lg font-semibold text-zinc-100 mb-2">No Daily Journals Yet</h4>
+                  <h4 className="text-lg font-semibold text-white mb-2">No Daily Journals Yet</h4>
                   <p className="text-zinc-500 max-w-sm mx-auto mb-6">
                     Generate your first journal to see AI-powered insights about your productivity.
                   </p>
@@ -782,16 +757,12 @@ export default function DesktopActivity() {
                       </>
                     )}
                   </Button>
-                </div>
+                </GlassCard>
               ) : (
                 <Link to={createPageUrl('DailyJournal')} className="block group">
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60 group-hover:border-cyan-500/30 transition-all cursor-pointer"
-                  >
+                  <GlassCard hover={true} animated={true} className="p-5 group-hover:border-cyan-500/30 transition-all cursor-pointer" glow="cyan">
                     <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2 text-xs text-zinc-500 uppercase tracking-wider">
+                      <div className="text-xs text-zinc-500 font-medium uppercase tracking-wider flex items-center gap-2">
                         <BookOpen className="w-3.5 h-3.5" />
                         Latest Journal
                       </div>
@@ -803,11 +774,11 @@ export default function DesktopActivity() {
 
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 flex items-center justify-center border border-cyan-500/20">
+                        <div className="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-800/60">
                           <Calendar className="w-6 h-6 text-cyan-400" />
                         </div>
                         <div>
-                          <h4 className="text-lg font-semibold text-zinc-100">
+                          <h4 className="text-lg font-semibold text-white">
                             {new Date(journals[0].journal_date).toLocaleDateString('en-US', {
                               weekday: 'long',
                               month: 'long',
@@ -826,7 +797,7 @@ export default function DesktopActivity() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-2xl font-bold text-zinc-100">
+                        <div className="text-2xl font-bold text-white">
                           {Math.round((journals[0].productivity_score || 0) * 100)}%
                         </div>
                         <div className="text-sm text-zinc-500">Productivity</div>
@@ -843,41 +814,42 @@ export default function DesktopActivity() {
                     <div className="mt-4 pt-4 border-t border-zinc-800/60 flex items-center gap-6 text-sm text-zinc-500">
                       {journals[0].top_apps && journals[0].top_apps.length > 0 && (
                         <div className="flex items-center gap-2">
-                          <Monitor className="w-4 h-4 text-blue-400" />
+                          <Monitor className="w-4 h-4 text-cyan-400" />
                           <span>{journals[0].top_apps.length} apps tracked</span>
                         </div>
                       )}
                       {journals[0].focus_areas && journals[0].focus_areas.length > 0 && (
                         <div className="flex items-center gap-2">
-                          <Target className="w-4 h-4 text-green-400" />
+                          <Target className="w-4 h-4 text-cyan-400" />
                           <span>{journals[0].focus_areas.length} focus areas</span>
                         </div>
                       )}
                       {journals[0].highlights && journals[0].highlights.length > 0 && (
                         <div className="flex items-center gap-2">
-                          <Zap className="w-4 h-4 text-amber-400" />
+                          <Zap className="w-4 h-4 text-cyan-400" />
                           <span>{journals[0].highlights.length} highlights</span>
                         </div>
                       )}
                     </div>
-                  </motion.div>
+                  </GlassCard>
                 </Link>
               )}
             </div>
           </TabsContent>
 
           {/* Timeline Tab */}
-          <TabsContent value="timeline" className="mt-6">
-            <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
-              <h3 className="text-lg font-semibold text-zinc-200 mb-6 flex items-center gap-2">
-                <Activity className="w-5 h-5 text-blue-400" />
-                Activity Timeline
+          <TabsContent value="timeline" className="mt-5">
+            <GlassCard hover={false} animated={false} className="p-5">
+              <div className="text-xs text-zinc-500 font-medium uppercase tracking-wider mb-3">Activity Timeline</div>
+              <h3 className="text-base font-semibold text-white mb-5 flex items-center gap-2">
+                <Activity className="w-5 h-5 text-cyan-400" />
+                Recent Activity
               </h3>
 
               {activityLogs.length === 0 ? (
                 <div className="text-center py-16">
                   <Clock className="w-16 h-16 text-zinc-600 mx-auto mb-4" />
-                  <h4 className="text-lg font-semibold text-zinc-100 mb-2">No Activity Recorded</h4>
+                  <h4 className="text-lg font-semibold text-white mb-2">No Activity Recorded</h4>
                   <p className="text-zinc-500 max-w-sm mx-auto">
                     Activity data will appear here once SYNC Desktop starts tracking your usage.
                   </p>
@@ -892,12 +864,12 @@ export default function DesktopActivity() {
                       transition={{ delay: i * 0.02 }}
                       className="flex items-start gap-4 p-4 rounded-xl bg-zinc-800/30 hover:bg-zinc-800/50 transition-all border border-zinc-700/30"
                     >
-                      <div className="w-10 h-10 rounded-xl bg-zinc-800/80 border border-zinc-700/40 flex items-center justify-center flex-shrink-0">
-                        <Clock className="w-5 h-5 text-blue-400" />
+                      <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-800/60 flex items-center justify-center flex-shrink-0">
+                        <Clock className="w-5 h-5 text-cyan-400" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-medium text-zinc-200">
+                          <span className="text-sm font-medium text-white">
                             {new Date(log.hour_start).toLocaleString('en-US', {
                               weekday: 'short',
                               month: 'short',
@@ -906,7 +878,7 @@ export default function DesktopActivity() {
                               minute: '2-digit',
                             })}
                           </span>
-                          <Badge className="bg-blue-950/40 text-blue-300/80 border-blue-800/30 text-xs">
+                          <Badge className="bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-xs">
                             {formatDuration(log.total_minutes)}
                           </Badge>
                           <Badge className="bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-xs">
@@ -939,18 +911,19 @@ export default function DesktopActivity() {
                   ))}
                 </div>
               )}
-            </div>
+            </GlassCard>
           </TabsContent>
 
           {/* Deep Context Tab */}
-          <TabsContent value="context" className="mt-6 space-y-6">
+          <TabsContent value="context" className="mt-5 space-y-5">
             {/* Work Pattern Analysis */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               {/* Focus Time Heatmap */}
-              <div className="p-6 rounded-2xl bg-gradient-to-br from-purple-950/30 to-zinc-900/50 border border-purple-800/30">
-                <h3 className="text-lg font-semibold text-zinc-200 mb-6 flex items-center gap-2">
-                  <Brain className="w-5 h-5 text-purple-400" />
-                  Focus Patterns
+              <GlassCard hover={false} animated={false} className="p-5 bg-gradient-to-br from-cyan-950/30 to-zinc-900/60 border-cyan-800/30">
+                <div className="text-xs text-zinc-500 font-medium uppercase tracking-wider mb-3">Focus Patterns</div>
+                <h3 className="text-base font-semibold text-white mb-5 flex items-center gap-2">
+                  <Brain className="w-5 h-5 text-cyan-400" />
+                  Focus Analysis
                 </h3>
                 <div className="space-y-4">
                   {stats.dailyBreakdown.length === 0 ? (
@@ -963,7 +936,7 @@ export default function DesktopActivity() {
                     <>
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-zinc-400">Peak Focus Time</span>
-                        <Badge className="bg-purple-950/50 text-purple-300 border-purple-800/40">
+                        <Badge className="bg-cyan-950/50 text-cyan-300 border-cyan-800/40">
                           {(() => {
                             const peakHour = activityLogs.reduce((max, log) =>
                               (log.focus_score || 0) > (max.focus_score || 0) ? log : max
@@ -982,7 +955,7 @@ export default function DesktopActivity() {
                             <div key={period}>
                               <div className="flex justify-between text-sm mb-1">
                                 <span className="text-zinc-400">{period}</span>
-                                <span className="text-purple-300">{Math.round(value)}%</span>
+                                <span className="text-cyan-300">{Math.round(value)}%</span>
                               </div>
                               <Progress value={value} className="h-2 bg-zinc-800" />
                             </div>
@@ -992,13 +965,14 @@ export default function DesktopActivity() {
                     </>
                   )}
                 </div>
-              </div>
+              </GlassCard>
 
               {/* App Categories Breakdown */}
-              <div className="p-6 rounded-2xl bg-gradient-to-br from-blue-950/30 to-zinc-900/50 border border-blue-800/30">
-                <h3 className="text-lg font-semibold text-zinc-200 mb-6 flex items-center gap-2">
-                  <PieChart className="w-5 h-5 text-blue-400" />
-                  Work Categories
+              <GlassCard hover={false} animated={false} className="p-5 bg-gradient-to-br from-cyan-950/30 to-zinc-900/60 border-cyan-800/30">
+                <div className="text-xs text-zinc-500 font-medium uppercase tracking-wider mb-3">Work Categories</div>
+                <h3 className="text-base font-semibold text-white mb-5 flex items-center gap-2">
+                  <PieChart className="w-5 h-5 text-cyan-400" />
+                  Category Breakdown
                 </h3>
                 <div className="space-y-3">
                   {stats.topApps.length === 0 ? (
@@ -1022,9 +996,9 @@ export default function DesktopActivity() {
 
                         const colors = {
                           'Development': 'from-blue-500 to-cyan-500',
-                          'Communication': 'from-purple-500 to-pink-500',
-                          'Browsing': 'from-green-500 to-emerald-500',
-                          'Writing': 'from-amber-500 to-orange-500'
+                          'Communication': 'from-cyan-500 to-cyan-400',
+                          'Browsing': 'from-cyan-500 to-blue-500',
+                          'Writing': 'from-blue-500 to-blue-400'
                         };
 
                         return (
@@ -1043,20 +1017,21 @@ export default function DesktopActivity() {
                     </>
                   )}
                 </div>
-              </div>
+              </GlassCard>
             </div>
 
             {/* Detailed App Usage with Context */}
-            <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
-              <h3 className="text-lg font-semibold text-zinc-200 mb-6 flex items-center gap-2">
+            <GlassCard hover={false} animated={false} className="p-5">
+              <div className="text-xs text-zinc-500 font-medium uppercase tracking-wider mb-3">Detailed Usage</div>
+              <h3 className="text-base font-semibold text-white mb-5 flex items-center gap-2">
                 <Monitor className="w-5 h-5 text-cyan-400" />
-                Detailed App Usage & Context
+                App Usage & Context
               </h3>
 
               {activityLogs.length === 0 ? (
                 <div className="text-center py-16">
                   <Brain className="w-16 h-16 text-zinc-600 mx-auto mb-4" />
-                  <h4 className="text-lg font-semibold text-zinc-100 mb-2">Deep Context Coming Soon</h4>
+                  <h4 className="text-lg font-semibold text-white mb-2">Deep Context Coming Soon</h4>
                   <p className="text-zinc-500 max-w-sm mx-auto">
                     OCR text, semantic analysis, and work context will appear here as you use SYNC Desktop.
                   </p>
@@ -1074,11 +1049,11 @@ export default function DesktopActivity() {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.05 }}
-                        className="p-4 rounded-xl bg-zinc-800/40 border border-zinc-700/40 hover:border-purple-700/40 transition-all group"
+                        className="p-4 rounded-xl bg-zinc-800/40 border border-zinc-700/40 hover:border-cyan-700/40 transition-all group"
                       >
                         <div className="flex items-start justify-between mb-3">
                           <div>
-                            <div className="text-sm font-medium text-zinc-200">
+                            <div className="text-sm font-medium text-white">
                               {new Date(log.hour_start).toLocaleString('en-US', {
                                 weekday: 'short',
                                 month: 'short',
@@ -1087,10 +1062,10 @@ export default function DesktopActivity() {
                               })}
                             </div>
                             <div className="flex items-center gap-2 mt-1">
-                              <Badge className="bg-blue-950/40 text-blue-300/80 border-blue-800/30 text-xs">
+                              <Badge className="bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-xs">
                                 {formatDuration(log.total_minutes)}
                               </Badge>
-                              <Badge className="bg-purple-950/40 text-purple-300/80 border-purple-800/30 text-xs">
+                              <Badge className="bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-xs">
                                 {Math.round((log.focus_score || 0) * 100)}% focus
                               </Badge>
                             </div>
@@ -1098,7 +1073,7 @@ export default function DesktopActivity() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="opacity-0 group-hover:opacity-100 transition-opacity text-purple-300 hover:text-purple-200"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity text-cyan-300 hover:text-cyan-200"
                           >
                             <BookOpen className="w-4 h-4 mr-1" />
                             View Details
@@ -1120,8 +1095,8 @@ export default function DesktopActivity() {
                         {log.semantic_category && (
                           <div className="mt-3 pt-3 border-t border-zinc-700/40">
                             <div className="flex items-center gap-2 text-sm text-zinc-400">
-                              <Brain className="w-4 h-4 text-purple-400" />
-                              <span>Category: <span className="text-purple-300">{log.semantic_category}</span></span>
+                              <Brain className="w-4 h-4 text-cyan-400" />
+                              <span>Category: <span className="text-cyan-300">{log.semantic_category}</span></span>
                             </div>
                           </div>
                         )}
@@ -1140,7 +1115,7 @@ export default function DesktopActivity() {
                   })}
                 </div>
               )}
-            </div>
+            </GlassCard>
           </TabsContent>
         </Tabs>
       </div>
@@ -1198,7 +1173,7 @@ export default function DesktopActivity() {
                   </Button>
                 </div>
                 <p className="text-xs text-zinc-500 mt-2">
-                  Press <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-zinc-400">⌘ + Space</kbd>, type "Terminal", press Enter, then paste the command.
+                  Press <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-zinc-400">Cmd + Space</kbd>, type "Terminal", press Enter, then paste the command.
                 </p>
               </div>
             </div>
