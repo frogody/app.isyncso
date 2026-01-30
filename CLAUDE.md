@@ -1916,7 +1916,6 @@ npx supabase functions deploy analyzeCampaignProject --project-ref sfxpmzicgpaxf
 
 ---
 
-<<<<<<< HEAD
 ## UI Color Palette Unification (Jan 30, 2026)
 
 ### Overview
