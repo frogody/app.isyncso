@@ -74,8 +74,8 @@ const CURRENCY_OPTIONS = [
 ];
 
 const STATUS_COLORS = {
-  published: { bg: 'bg-green-500/10', text: 'text-green-400', border: 'border-green-500/30', label: 'Published', dot: 'bg-green-400' },
-  draft: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/30', label: 'Draft', dot: 'bg-amber-400' },
+  published: { bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/30', label: 'Published', dot: 'bg-cyan-400' },
+  draft: { bg: 'bg-zinc-500/10', text: 'text-zinc-400', border: 'border-zinc-500/30', label: 'Draft', dot: 'bg-zinc-400' },
   archived: { bg: 'bg-zinc-500/10', text: 'text-zinc-400', border: 'border-zinc-500/30', label: 'Archived', dot: 'bg-zinc-400' },
 };
 
@@ -99,8 +99,8 @@ function getStockStatus(inventory) {
   const percent = Math.min((qty / max) * 100, 100);
 
   if (qty <= 0) return { status: 'out', label: 'Out of Stock', color: 'text-red-400', bgColor: 'bg-red-500/10', icon: XCircle, percent: 0 };
-  if (qty <= low) return { status: 'low', label: `Low Stock (${qty})`, color: 'text-amber-400', bgColor: 'bg-amber-500/10', icon: AlertTriangle, percent };
-  return { status: 'in', label: `In Stock (${qty})`, color: 'text-green-400', bgColor: 'bg-green-500/10', icon: CheckCircle, percent };
+  if (qty <= low) return { status: 'low', label: `Low Stock (${qty})`, color: 'text-cyan-300', bgColor: 'bg-cyan-500/10', icon: AlertTriangle, percent };
+  return { status: 'in', label: `In Stock (${qty})`, color: 'text-cyan-400', bgColor: 'bg-cyan-500/10', icon: CheckCircle, percent };
 }
 
 function formatPrice(price, currency = 'EUR') {
@@ -133,10 +133,7 @@ function StatusBadge({ status }) {
 function StatCard({ icon: Icon, label, value, subtext, trend, color = "cyan" }) {
   const colors = {
     cyan: "bg-cyan-500/10 border-cyan-500/20 text-cyan-400",
-    green: "bg-green-500/10 border-green-500/20 text-green-400",
     blue: "bg-blue-500/10 border-blue-500/20 text-blue-400",
-    purple: "bg-purple-500/10 border-purple-500/20 text-purple-400",
-    amber: "bg-amber-500/10 border-amber-500/20 text-amber-400",
     red: "bg-red-500/10 border-red-500/20 text-red-400",
   };
 
@@ -149,7 +146,7 @@ function StatCard({ icon: Icon, label, value, subtext, trend, color = "cyan" }) 
         {trend && (
           <Badge variant="outline" className={cn(
             "text-[10px]",
-            trend > 0 ? "border-green-500/30 text-green-400" : "border-red-500/30 text-red-400"
+            trend > 0 ? "border-cyan-500/30 text-cyan-400" : "border-red-500/30 text-red-400"
           )}>
             {trend > 0 ? '+' : ''}{trend}%
           </Badge>
@@ -262,7 +259,7 @@ function OverviewSection({
               <p className="text-xs text-zinc-500">Margin</p>
               <p className={cn(
                 "text-xl font-bold mt-1",
-                margin > 30 ? "text-green-400" : margin > 15 ? "text-amber-400" : "text-red-400"
+                margin > 30 ? "text-cyan-400" : margin > 15 ? "text-cyan-300" : "text-red-400"
               )}>
                 {margin ? `${margin}%` : '-'}
               </p>
@@ -588,7 +585,7 @@ function PricingSection({ details, onDetailsUpdate, currency }) {
                     <span className="text-zinc-400">Profit Margin</span>
                     <span className={cn(
                       "text-lg font-bold",
-                      margin > 30 ? "text-green-400" : margin > 15 ? "text-amber-400" : "text-red-400"
+                      margin > 30 ? "text-cyan-400" : margin > 15 ? "text-cyan-300" : "text-red-400"
                     )}>
                       {margin}%
                     </span>
@@ -1038,7 +1035,7 @@ function InventorySection({ product, details, onDetailsUpdate, currency }) {
           icon={Package}
           label="Current Stock"
           value={formatNumber(mergedInventory.quantity)}
-          color={stock.status === 'out' ? 'red' : stock.status === 'low' ? 'amber' : 'cyan'}
+          color={stock.status === 'out' ? 'red' : 'cyan'}
         />
         <StatCard
           icon={AlertTriangle}

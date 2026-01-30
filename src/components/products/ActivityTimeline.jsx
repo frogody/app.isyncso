@@ -21,16 +21,16 @@ const ACTIVITY_ICONS = {
 };
 
 const ACTIVITY_COLORS = {
-  created: 'bg-green-500/20 text-green-400 border-green-500/30',
+  created: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
   updated: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  stock_adjusted: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-  price_changed: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+  stock_adjusted: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  price_changed: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30',
   shipped: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
-  image_added: 'bg-pink-500/20 text-pink-400 border-pink-500/30',
+  image_added: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
   archived: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
-  published: 'bg-green-500/20 text-green-400 border-green-500/30',
+  published: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
   low_stock: 'bg-red-500/20 text-red-400 border-red-500/30',
-  document_added: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
+  document_added: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
   default: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'
 };
 
