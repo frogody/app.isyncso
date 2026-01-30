@@ -1211,6 +1211,7 @@ function SidebarContent({ currentPageName, isMobile = false, secondaryNavConfig,
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const [secondaryNavStats, setSecondaryNavStats] = useState({});
   const [enabledApps, setEnabledApps] = useState(FEATURES.DEFAULT_ENABLED_APPS);
   const [appsManagerOpen, setAppsManagerOpen] = useState(false);
