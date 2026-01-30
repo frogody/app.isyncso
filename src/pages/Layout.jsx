@@ -1642,7 +1642,7 @@ export default function Layout({ children, currentPageName }) {
           {/* Main Content - Mobile optimized with safe areas */}
           <main
             id="main-content"
-            className="flex-1 md:pt-0 pt-14 sm:pt-16 overflow-auto transition-all duration-300 pb-safe scroll-smooth-ios"
+            className="relative flex-1 md:pt-0 pt-14 sm:pt-16 overflow-auto transition-all duration-300 pb-safe scroll-smooth-ios"
             role="main"
           >
             {/* SYNC environment top tabs */}
@@ -1658,14 +1658,14 @@ export default function Layout({ children, currentPageName }) {
                         to={item.path}
                         className={`relative flex items-center gap-2 px-4 py-3 text-[13px] font-medium whitespace-nowrap transition-colors ${
                           isActive
-                            ? 'text-purple-400'
+                            ? 'text-cyan-400'
                             : 'text-zinc-500 hover:text-zinc-300'
                         }`}
                       >
                         {Icon && <Icon className="w-3.5 h-3.5" />}
                         {item.label}
                         {isActive && (
-                          <span className="absolute bottom-0 left-3 right-3 h-[2px] rounded-full bg-purple-500" />
+                          <span className="absolute bottom-0 left-3 right-3 h-[2px] rounded-full bg-cyan-500" />
                         )}
                       </Link>
                     );
@@ -1673,26 +1673,24 @@ export default function Layout({ children, currentPageName }) {
                 </div>
               </div>
             )}
-            {/* TALENT environment quick action buttons */}
+            {/* TALENT environment quick action buttons — floats top-right like CRM */}
             {secondaryNavConfig?.title === 'TALENT' && (
-              <div className="sticky top-0 z-10 bg-zinc-950/80 backdrop-blur-xl border-b border-white/[0.06]">
-                <div className="flex items-center justify-end gap-2 px-4 lg:px-6 py-2 overflow-x-auto scrollbar-hide">
-                  <Button variant="outline" size="sm" onClick={() => navigate(createPageUrl("TalentProjects"))} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
-                    <FolderPlus className="w-4 h-4 mr-1" /> Create Role
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => navigate("/marketplace/nests")} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
-                    <Package className="w-4 h-4 mr-1" /> Browse Nests
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => navigate(`${createPageUrl("TalentCampaignDetail")}?new=true`)} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
-                    <Sparkles className="w-4 h-4 mr-1" /> Run Matching
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => navigate(createPageUrl("TalentCampaigns"))} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
-                    <Mail className="w-4 h-4 mr-1" /> Launch Outreach
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => navigate(`${createPageUrl("TalentCandidates")}?addNew=true`)} className="border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20">
-                    <Plus className="w-4 h-4 mr-1" /> Add Candidate
-                  </Button>
-                </div>
+              <div className="absolute top-2 right-4 lg:right-6 z-10 flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => navigate(createPageUrl("TalentProjects"))} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
+                  <FolderPlus className="w-4 h-4 mr-1" /> Create Role
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => navigate("/marketplace/nests")} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
+                  <Package className="w-4 h-4 mr-1" /> Browse Nests
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => navigate(`${createPageUrl("TalentCampaignDetail")}?new=true`)} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
+                  <Sparkles className="w-4 h-4 mr-1" /> Run Matching
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => navigate(createPageUrl("TalentCampaigns"))} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
+                  <Mail className="w-4 h-4 mr-1" /> Launch Outreach
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => navigate(`${createPageUrl("TalentCandidates")}?addNew=true`)} className="border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20">
+                  <Plus className="w-4 h-4 mr-1" /> Add Candidate
+                </Button>
               </div>
             )}
             <div className="min-h-full">
