@@ -89,6 +89,7 @@ import {
   Rocket,
 } from "lucide-react";
 import { TalentOnboardingChecklist, ReadyForOutreachWidget, TalentActivityFeed, IntelligenceQueueWidget } from "@/components/talent";
+import { TalentActionButtons } from '@/components/talent/TalentActionButtons';
 
 
 // ============================================================================
@@ -1875,26 +1876,31 @@ export default function TalentProjects() {
           subtitle="Manage hiring projects and open roles"
           color="red"
           actions={
-            <div className="flex items-center gap-3">
-              <Button
-                onClick={() => setQuickAddModalOpen(true)}
-                className="bg-red-600 hover:bg-red-700"
-              >
-                <Zap className="w-4 h-4 mr-2" />
-                Quick Add Role
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setEditingProject(null);
-                  setProjectModalOpen(true);
-                }}
-                className="border-zinc-700 text-white hover:bg-zinc-800"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                New Project
-              </Button>
-            </div>
+            <TalentActionButtons extra={
+              <>
+                <div className="w-px h-6 bg-zinc-700" />
+                <Button
+                  onClick={() => setQuickAddModalOpen(true)}
+                  size="sm"
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  <Zap className="w-4 h-4 mr-2" />
+                  Quick Add Role
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setEditingProject(null);
+                    setProjectModalOpen(true);
+                  }}
+                  className="border-zinc-700 text-white hover:bg-zinc-800"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Project
+                </Button>
+              </>
+            } />
           }
         />
 

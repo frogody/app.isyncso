@@ -52,6 +52,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { TalentActionButtons } from '@/components/talent/TalentActionButtons';
 
 // Animation variants
 const containerVariants = {
@@ -699,21 +700,27 @@ export default function TalentCampaigns() {
   return (
     <div className="min-h-screen bg-black relative">
       <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
-      <div className="flex items-center justify-between">
         <PageHeader
           title="Campaigns"
           subtitle="Manage your outreach campaigns"
           icon={Megaphone}
           color="red"
+          actions={
+            <TalentActionButtons extra={
+              <>
+                <div className="w-px h-6 bg-zinc-700" />
+                <Button
+                  onClick={() => setShowCreateModal(true)}
+                  className="bg-red-500 hover:bg-red-600"
+                  size="sm"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Campaign
+                </Button>
+              </>
+            } />
+          }
         />
-        <Button
-          onClick={() => setShowCreateModal(true)}
-          className="bg-red-500 hover:bg-red-600"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          New Campaign
-        </Button>
-      </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">

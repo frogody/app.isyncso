@@ -51,6 +51,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { AddCandidateModal, ActivityFeed } from "@/components/talent";
+import { TalentActionButtons } from '@/components/talent/TalentActionButtons';
 
 // Animation variants
 const containerVariants = {
@@ -861,6 +862,27 @@ export default function TalentDashboard() {
           title="Talent Dashboard"
           subtitle="Your recruitment command center"
           color="red"
+          actions={
+            <TalentActionButtons extra={
+              <>
+                <div className="w-px h-6 bg-zinc-700" />
+                <Select value={timeRange} onValueChange={setTimeRange}>
+                  <SelectTrigger className="w-28 bg-zinc-800/50 border-zinc-700 text-white text-xs h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-white/10">
+                    <SelectItem value="7d">Last 7 days</SelectItem>
+                    <SelectItem value="30d">Last 30 days</SelectItem>
+                    <SelectItem value="90d">Last 90 days</SelectItem>
+                    <SelectItem value="all">All time</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button variant="ghost" size="sm" onClick={fetchData} className="text-white/60 hover:text-white h-8 w-8 p-0">
+                  <RefreshCw className="w-3.5 h-3.5" />
+                </Button>
+              </>
+            } />
+          }
         />
 
         {/* Key Metrics — compact 8-up grid */}
@@ -886,30 +908,12 @@ export default function TalentDashboard() {
           initial="hidden"
           animate="visible"
         >
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-red-400" />
-                Analytics Overview
-              </h2>
-              <p className="text-sm text-zinc-400">Performance metrics across all campaigns</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Select value={timeRange} onValueChange={setTimeRange}>
-                <SelectTrigger className="w-28 bg-zinc-800/50 border-zinc-700 text-white text-xs h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-white/10">
-                  <SelectItem value="7d">Last 7 days</SelectItem>
-                  <SelectItem value="30d">Last 30 days</SelectItem>
-                  <SelectItem value="90d">Last 90 days</SelectItem>
-                  <SelectItem value="all">All time</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button variant="ghost" size="sm" onClick={fetchData} className="text-white/60 hover:text-white h-8 w-8 p-0">
-                <RefreshCw className="w-3.5 h-3.5" />
-              </Button>
-            </div>
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-red-400" />
+              Analytics Overview
+            </h2>
+            <p className="text-sm text-zinc-400">Performance metrics across all campaigns</p>
           </div>
           <AnalyticsOverview
             campaigns={campaigns}

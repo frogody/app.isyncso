@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { toast } from 'sonner';
+import { TalentActionButtons } from '@/components/talent/TalentActionButtons';
 
 // Recruitment Pipeline Stages
 const STAGES = [
@@ -621,13 +622,19 @@ export default function TalentDeals() {
             subtitle={`${stats.activeDeals} active deals · €${stats.totalPipeline.toLocaleString()} in pipeline`}
             color="red"
             actions={
-              <Button
-                onClick={() => openNewModal()}
-                className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Deal
-              </Button>
+              <TalentActionButtons extra={
+                <>
+                  <div className="w-px h-6 bg-zinc-700" />
+                  <Button
+                    onClick={() => openNewModal()}
+                    className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30"
+                    size="sm"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Deal
+                  </Button>
+                </>
+              } />
             }
           />
         </div>

@@ -42,6 +42,7 @@ import { createPageUrl } from "@/utils";
 import { AddCandidateModal, EditCandidateModal, CandidateImportModal, CandidateDetailDrawer, BulkActionBar, AddToCampaignModal, SearchFilterBar } from "@/components/talent";
 import { IntelligenceGauge, IntelligenceLevelBadge, ApproachBadge, IntelStatusBadge } from "@/components/talent/IntelligenceGauge";
 import { useCandidateFilters, extractFilterOptions, countActiveFilters, getDefaultFilters } from "@/hooks/useCandidateFilters";
+import { TalentActionButtons } from '@/components/talent/TalentActionButtons';
 import { useShortcut } from "@/contexts/KeyboardShortcutsContext";
 
 // Animation variants
@@ -628,31 +629,36 @@ export default function TalentCandidates() {
   return (
     <div className="min-h-screen bg-black relative">
       <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
-      <div className="flex items-center justify-between">
         <PageHeader
           title="Candidates"
           subtitle={`${filteredCandidates.length} candidates in your talent pool`}
           icon={Users}
           color="red"
+          actions={
+            <TalentActionButtons extra={
+              <>
+                <div className="w-px h-6 bg-zinc-700" />
+                <Button
+                  onClick={() => setShowImportModal(true)}
+                  variant="outline"
+                  size="sm"
+                  className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Import CSV
+                </Button>
+                <Button
+                  onClick={() => setShowAddModal(true)}
+                  size="sm"
+                  className="bg-red-500 hover:bg-red-600"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Candidate
+                </Button>
+              </>
+            } />
+          }
         />
-        <div className="flex gap-2">
-          <Button
-            onClick={() => setShowImportModal(true)}
-            variant="outline"
-            className="border-red-500/30 text-red-400 hover:bg-red-500/10"
-          >
-            <Upload className="w-4 h-4 mr-2" />
-            Import CSV
-          </Button>
-          <Button
-            onClick={() => setShowAddModal(true)}
-            className="bg-red-500 hover:bg-red-600"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Candidate
-          </Button>
-        </div>
-      </div>
 
       {/* Smart Search & Filters */}
       <SearchFilterBar
