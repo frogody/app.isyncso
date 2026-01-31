@@ -1603,12 +1603,9 @@ export default function Layout({ children, currentPageName }) {
           [data-sentinel-light] .bg-cyan-950\\/30 {
             background: rgba(8,145,178,0.08) !important;
           }
-          /* Sidebar bottom gradient */
-          [data-sentinel-light] .from-black {
-            --tw-gradient-from: #FFFFFF !important;
-          }
-          [data-sentinel-light] .via-black {
-            --tw-gradient-via: #FFFFFF !important;
+          /* Sidebar bottom section — nuke the gradient entirely */
+          [data-sentinel-light] .bg-gradient-to-t.from-black {
+            background: #FFFFFF !important;
           }
           /* Dividers */
           [data-sentinel-light] .bg-white\\/5 {
