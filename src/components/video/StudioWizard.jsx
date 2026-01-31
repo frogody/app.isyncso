@@ -85,7 +85,7 @@ async function edgeFn(fnName, body) {
 
 // Submit a shot to fal.ai then poll until done (avoids edge function timeout)
 async function generateOneShot({ projectId, description, model, duration_seconds, camera_direction, aspect_ratio }) {
-  // Step 1: Submit — returns immediately with request_id
+  // Step 1: Submit — returns immediately with request_id + poll URLs
   const submitData = await edgeFn("generate-shot", {
     action: "submit",
     project_id: projectId,
@@ -96,7 +96,7 @@ async function generateOneShot({ projectId, description, model, duration_seconds
     aspect_ratio,
   });
 
-  const { request_id, model: usedModel } = submitData;
+  const { request_id, status_url, response_url } = submitData;
   if (!request_id) throw new Error("No request_id from submit");
 
   // Step 2: Poll every 5s until completed/failed (max 5 min)
@@ -106,7 +106,8 @@ async function generateOneShot({ projectId, description, model, duration_seconds
     const pollData = await edgeFn("generate-shot", {
       action: "poll",
       request_id,
-      model: usedModel || model || "kling",
+      status_url,
+      response_url,
       project_id: projectId,
     });
 

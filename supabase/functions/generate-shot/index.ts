@@ -102,6 +102,8 @@ serve(async (req) => {
 
       const data = await response.json();
       const requestId = data.request_id;
+      const statusUrl = data.status_url;
+      const responseUrl = data.response_url;
 
       if (shot_id) {
         await supabase
@@ -110,19 +112,21 @@ serve(async (req) => {
           .eq("id", shot_id);
       }
 
-      return ok({ request_id: requestId, model, endpoint });
+      return ok({ request_id: requestId, model, status_url: statusUrl, response_url: responseUrl });
     }
 
     // ── POLL: check fal.ai queue status ──
     if (action === "poll") {
-      const { request_id, model = "kling" } = body;
-      if (!request_id) return err("request_id is required", 400);
+      const { request_id, status_url, response_url } = body;
+      if (!request_id && !status_url) return err("request_id or status_url is required", 400);
 
-      const endpoint = MODELS[model] || MODELS.kling;
-      const statusRes = await fetch(
-        `https://queue.fal.run/${endpoint}/requests/${request_id}/status`,
-        { headers: { Authorization: `Key ${FAL_KEY}` } }
-      );
+      // Use the exact URLs fal.ai gave us (they differ from submit URLs)
+      const checkUrl = status_url || `https://queue.fal.run/fal-ai/kling-video/requests/${request_id}/status`;
+      const resultUrl = response_url || `https://queue.fal.run/fal-ai/kling-video/requests/${request_id}`;
+
+      const statusRes = await fetch(checkUrl, {
+        headers: { Authorization: `Key ${FAL_KEY}` },
+      });
 
       if (!statusRes.ok) {
         return ok({ status: "IN_QUEUE" });
@@ -131,11 +135,10 @@ serve(async (req) => {
       const status = await statusRes.json();
 
       if (status.status === "COMPLETED") {
-        // Fetch result
-        const resultRes = await fetch(
-          `https://queue.fal.run/${endpoint}/requests/${request_id}`,
-          { headers: { Authorization: `Key ${FAL_KEY}` } }
-        );
+        // Fetch result using the response_url
+        const resultRes = await fetch(resultUrl, {
+          headers: { Authorization: `Key ${FAL_KEY}` },
+        });
         if (!resultRes.ok) throw new Error("Failed to fetch result");
         const result = await resultRes.json();
 
