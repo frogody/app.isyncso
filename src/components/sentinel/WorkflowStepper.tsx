@@ -4,13 +4,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { CheckCircle, Circle, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface AISystem {
-  id: string;
-  risk_classification: string;
-  compliance_status: string;
-  [key: string]: unknown;
-}
+import type { AISystemRecord } from '@/tokens/sentinel';
 
 interface WorkflowStep {
   id: number;
@@ -23,7 +17,7 @@ interface WorkflowStep {
 }
 
 interface WorkflowStepperProps {
-  systems?: AISystem[];
+  systems?: AISystemRecord[];
 }
 
 export default function WorkflowStepper({ systems = [] }: WorkflowStepperProps) {

@@ -4,6 +4,7 @@ import { useUser } from '@/components/context/UserContext';
 import { Shield, FileText, AlertTriangle, CheckCircle } from 'lucide-react';
 import { ChatInterface } from '@/components/ui/ChatInterface';
 import { SentinelCardSkeleton } from '@/components/sentinel/ui/SentinelCard';
+import { SentinelPageTransition } from '@/components/sentinel/ui/SentinelPageTransition';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -89,7 +90,7 @@ export default function SentinelChat() {
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <SentinelPageTransition className="min-h-screen bg-black">
       <div className="w-full max-w-5xl mx-auto px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <div className="flex items-center gap-3">
@@ -115,6 +116,6 @@ export default function SentinelChat() {
           />
         </div>
       </div>
-    </div>
+    </SentinelPageTransition>
   );
 }

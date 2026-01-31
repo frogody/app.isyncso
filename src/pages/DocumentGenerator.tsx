@@ -15,6 +15,7 @@ import { SentinelEmptyState } from '@/components/sentinel/ui/SentinelErrorBounda
 import { StatCard } from '@/components/sentinel/ui/StatCard';
 import TechnicalDocTemplate from '@/components/sentinel/TechnicalDocTemplate';
 import DeclarationOfConformity from '@/components/sentinel/DeclarationOfConformity';
+import { SentinelPageTransition } from '@/components/sentinel/ui/SentinelPageTransition';
 import type { AISystemRecord } from '@/tokens/sentinel';
 
 const DOC_TYPES = [
@@ -126,7 +127,7 @@ export default function DocumentGenerator() {
     systems, filtered, selectedSystem, docType, searchTerm,
     loading, error,
     setSelectedSystem, setDocType, setSearchTerm, goBack,
-  } = useDocumentGenerator();
+  } = useDocumentGenerator() as any;
 
   if (loading) {
     return (
@@ -157,17 +158,17 @@ export default function DocumentGenerator() {
   // Step 3: Document Generation
   if (docType && selectedSystem) {
     return (
-      <div className="min-h-screen bg-black">
+      <SentinelPageTransition className="min-h-screen bg-black">
         {docType === 'technical' && <TechnicalDocTemplate system={selectedSystem} onBack={goBack} />}
         {docType === 'declaration' && <DeclarationOfConformity system={selectedSystem as any} onBack={goBack} />}
-      </div>
+      </SentinelPageTransition>
     );
   }
 
   // Step 2: Document Type Selection
   if (selectedSystem) {
     return (
-      <div className="min-h-screen bg-black">
+      <SentinelPageTransition className="min-h-screen bg-black">
         <div className="w-full max-w-5xl mx-auto px-4 lg:px-6 py-4 space-y-4">
           <SentinelButton variant="secondary" onClick={goBack} icon={<ArrowLeft className="w-4 h-4" />}>
             Change System
@@ -195,13 +196,13 @@ export default function DocumentGenerator() {
             </div>
           </div>
         </div>
-      </div>
+      </SentinelPageTransition>
     );
   }
 
   // Step 1: System Selection
   return (
-    <div className="min-h-screen bg-black">
+    <SentinelPageTransition className="min-h-screen bg-black">
       <div className="w-full px-4 lg:px-6 py-4 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -265,6 +266,6 @@ export default function DocumentGenerator() {
           </>
         )}
       </div>
-    </div>
+    </SentinelPageTransition>
   );
 }

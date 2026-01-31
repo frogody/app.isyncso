@@ -3,14 +3,10 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Plus, Calendar, FileText, AlertTriangle } from 'lucide-react';
 import { SentinelCard } from './ui/SentinelCard';
-
-interface AISystem {
-  risk_classification: string;
-  [key: string]: unknown;
-}
+import type { AISystemRecord } from '@/tokens/sentinel';
 
 interface QuickActionsProps {
-  systems?: AISystem[];
+  systems?: AISystemRecord[];
   taskCount?: number;
 }
 

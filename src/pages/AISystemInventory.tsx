@@ -24,6 +24,7 @@ import { SentinelCard, SentinelCardSkeleton } from '@/components/sentinel/ui/Sen
 import { SentinelEmptyState } from '@/components/sentinel/ui/SentinelErrorBoundary';
 import { StatCard } from '@/components/sentinel/ui/StatCard';
 import RiskClassificationBadge from '@/components/sentinel/RiskClassificationBadge';
+import { SentinelPageTransition } from '@/components/sentinel/ui/SentinelPageTransition';
 import type { AISystemRecord, RiskClassification, ComplianceStatus } from '@/tokens/sentinel';
 
 const AISystemModal = lazy(() => import('@/components/sentinel/AISystemModal'));
@@ -208,7 +209,7 @@ export default function AISystemInventory() {
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <SentinelPageTransition className="min-h-screen bg-black">
       <div className="w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -359,6 +360,6 @@ export default function AISystemInventory() {
           />
         </Suspense>
       )}
-    </div>
+    </SentinelPageTransition>
   );
 }

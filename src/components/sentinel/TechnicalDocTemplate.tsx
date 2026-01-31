@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { db } from '@/api/supabaseClient';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -153,13 +154,27 @@ Format as markdown with clear section headings.`;
 
       {/* Document Content */}
       {generating ? (
-        <SentinelCard padding="lg" className="text-center">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="w-8 h-8 border-4 border-sky-400/30 border-t-sky-400 rounded-full animate-spin" />
-          </div>
-          <h3 className="text-lg font-semibold text-white mb-2">Generating Technical Documentation</h3>
-          <p className="text-sm text-zinc-400">AI is analyzing system information and drafting Annex IV compliant documentation...</p>
-        </SentinelCard>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <SentinelCard padding="lg" className="text-center">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="w-8 h-8 border-4 border-sky-400/30 border-t-sky-400 rounded-full animate-spin" />
+            </div>
+            <h3 className="text-lg font-semibold text-white mb-2">Generating Technical Documentation</h3>
+            <p className="text-sm text-zinc-400 mb-4">AI is analyzing system information and drafting Annex IV compliant documentation...</p>
+            <div className="w-full max-w-xs mx-auto h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+              <motion.div
+                className="h-full bg-gradient-to-r from-sky-500 to-sky-400 rounded-full"
+                initial={{ width: '0%' }}
+                animate={{ width: '90%' }}
+                transition={{ duration: 25, ease: 'easeOut' }}
+              />
+            </div>
+          </SentinelCard>
+        </motion.div>
       ) : content ? (
         <SentinelCard padding="md">
           {editMode ? (

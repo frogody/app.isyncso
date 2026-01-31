@@ -12,6 +12,7 @@ import { SentinelButton } from '@/components/sentinel/ui/SentinelButton';
 import { SentinelBadge } from '@/components/sentinel/ui/SentinelBadge';
 import { SentinelEmptyState } from '@/components/sentinel/ui/SentinelErrorBoundary';
 import { StatCard } from '@/components/sentinel/ui/StatCard';
+import { SentinelPageTransition } from '@/components/sentinel/ui/SentinelPageTransition';
 import { ComplianceScoreGauge } from '@/components/sentinel/ComplianceScoreGauge';
 import WorkflowStepper from '@/components/sentinel/WorkflowStepper';
 import QuickActions from '@/components/sentinel/QuickActions';
@@ -51,7 +52,7 @@ export default function SentinelDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <SentinelPageTransition className="min-h-screen bg-black">
       <div className="w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -185,16 +186,18 @@ export default function SentinelDashboard() {
         {/* Empty State */}
         {systems.length === 0 && (
           <SentinelEmptyState
-            icon={Shield}
+            icon={<Shield className="w-8 h-8 text-sky-400" />}
             title="Welcome to SENTINEL"
             message="Track AI systems, assess risks, and generate compliance documentation for the EU AI Act."
-            actionLabel="Register Your First AI System"
-            onAction={() => {
-              window.location.href = createPageUrl('AISystemInventory');
+            action={{
+              label: 'Register Your First AI System',
+              onClick: () => {
+                window.location.href = createPageUrl('AISystemInventory');
+              },
             }}
           />
         )}
       </div>
-    </div>
+    </SentinelPageTransition>
   );
 }

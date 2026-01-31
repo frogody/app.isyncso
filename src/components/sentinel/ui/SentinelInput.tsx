@@ -13,7 +13,7 @@ export const SentinelInput = forwardRef<HTMLInputElement, SentinelInputProps>(
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1.5">
+          <label className="block text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1.5" htmlFor={props.id}>
             {label}
           </label>
         )}
@@ -23,6 +23,8 @@ export const SentinelInput = forwardRef<HTMLInputElement, SentinelInputProps>(
           )}
           <input
             ref={ref}
+            aria-invalid={!!error}
+            aria-describedby={error ? `${props.id || 'input'}-error` : undefined}
             className={cn(
               'w-full h-11 bg-zinc-900/40 border rounded-xl px-4 text-white text-sm',
               'placeholder:text-zinc-500',
@@ -35,7 +37,7 @@ export const SentinelInput = forwardRef<HTMLInputElement, SentinelInputProps>(
             {...props}
           />
         </div>
-        {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
+        {error && <p id={`${props.id || 'input'}-error`} role="alert" className="mt-1 text-xs text-red-400">{error}</p>}
       </div>
     );
   }

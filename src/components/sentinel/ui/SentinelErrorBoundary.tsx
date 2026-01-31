@@ -1,4 +1,4 @@
-import { Component, type ErrorInfo, type ReactNode } from 'react';
+import React, { Component, type ErrorInfo, type ReactNode } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface Props {
@@ -81,27 +81,42 @@ export function SentinelErrorState({
 }
 
 interface SentinelEmptyStateProps {
-  icon?: ReactNode;
+  icon?: React.ComponentType<{ className?: string }> | ReactNode;
   title: string;
   message: string;
   action?: {
     label: string;
     onClick: () => void;
   };
+  actionLabel?: string;
+  onAction?: () => void;
 }
 
-export function SentinelEmptyState({ icon, title, message, action }: SentinelEmptyStateProps) {
+export function SentinelEmptyState({ icon, title, message, action, actionLabel, onAction }: SentinelEmptyStateProps) {
+  const resolvedAction = action || (actionLabel && onAction ? { label: actionLabel, onClick: onAction } : null);
+
+  // Render icon: if it's a component type (function), instantiate it; otherwise render as ReactNode
+  let iconElement: ReactNode = null;
+  if (icon) {
+    if (typeof icon === 'function' || (typeof icon === 'object' && icon !== null && '$$typeof' in icon && 'render' in (icon as any))) {
+      const IconComponent = icon as React.ComponentType<{ className?: string }>;
+      iconElement = <IconComponent className="w-8 h-8 text-sky-400" />;
+    } else {
+      iconElement = icon;
+    }
+  }
+
   return (
     <div className="flex flex-col items-center justify-center py-16 px-6">
-      {icon && <div className="p-4 bg-zinc-800/50 rounded-full mb-4">{icon}</div>}
+      {iconElement && <div className="p-4 bg-zinc-800/50 rounded-full mb-4">{iconElement}</div>}
       <h3 className="text-lg font-medium text-white mb-1">{title}</h3>
       <p className="text-sm text-zinc-400 text-center max-w-md mb-4">{message}</p>
-      {action && (
+      {resolvedAction && (
         <button
-          onClick={action.onClick}
+          onClick={resolvedAction.onClick}
           className="inline-flex items-center gap-2 h-10 px-6 text-sm font-medium bg-sky-500 text-white hover:bg-sky-600 rounded-full transition-colors duration-200"
         >
-          {action.label}
+          {resolvedAction.label}
         </button>
       )}
     </div>

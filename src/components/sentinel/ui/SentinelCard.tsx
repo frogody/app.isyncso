@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { motion, type HTMLMotionProps } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -12,12 +13,27 @@ export function SentinelCard({
   padding = 'md',
   className,
   children,
+  onClick,
   ...props
 }: SentinelCardProps) {
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (variant === 'interactive' && onClick && (e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        (onClick as (e: any) => void)(e);
+      }
+    },
+    [variant, onClick],
+  );
+
   return (
     <motion.div
+      role={variant === 'interactive' ? 'button' : undefined}
+      tabIndex={variant === 'interactive' ? 0 : undefined}
+      onKeyDown={variant === 'interactive' ? handleKeyDown : undefined}
+      onClick={onClick}
       className={cn(
-        'bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] backdrop-blur-sm',
+        'relative bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] backdrop-blur-sm',
         {
           'p-0': padding === 'none',
           'p-4': padding === 'sm',
@@ -26,7 +42,7 @@ export function SentinelCard({
         },
         {
           'hover:border-zinc-700/60 transition-colors duration-200': variant === 'default',
-          'cursor-pointer hover:bg-zinc-900/60 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200': variant === 'interactive',
+          'cursor-pointer hover:bg-zinc-900/60 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40 focus-visible:border-sky-500/50 transition-all duration-200': variant === 'interactive',
           'bg-zinc-800/60 shadow-lg': variant === 'elevated',
         },
         className

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { db } from '@/api/supabaseClient';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -258,8 +259,15 @@ export default function AISystemModal({ system, onClose, onSave, onCreateAndAsse
           </DialogTitle>
         </DialogHeader>
 
+        <AnimatePresence mode="wait">
         {showResearchStep ? (
-          <div className="space-y-6 mt-4">
+          <motion.div
+            key="research"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-6 mt-4">
             {error && (
               <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-red-400 text-sm">
                 {error}
@@ -326,9 +334,16 @@ export default function AISystemModal({ system, onClose, onSave, onCreateAndAsse
                 Or <button type="button" onClick={() => setShowResearchStep(false)} className="text-sky-400 hover:text-sky-300 underline">skip to manual entry</button>
               </p>
             </div>
-          </div>
+          </motion.div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-6 mt-4">
+          <motion.form
+            key="form"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            onSubmit={handleSubmit}
+            className="space-y-6 mt-4">
             {error && (
               <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-red-400 text-sm">
                 {error}
@@ -402,8 +417,9 @@ export default function AISystemModal({ system, onClose, onSave, onCreateAndAsse
                 {saving ? 'Saving...' : system ? 'Update System' : 'Save & Continue to Assessment'}
               </SentinelButton>
             </div>
-          </form>
+          </motion.form>
         )}
+        </AnimatePresence>
       </DialogContent>
     </Dialog>
   );
