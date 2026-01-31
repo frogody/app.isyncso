@@ -20,6 +20,11 @@ module.exports = {
   			sm: 'calc(var(--radius) - 4px)'
   		},
   		colors: {
+  			sentinel: {
+  				primary: '#0EA5E9',
+  				'primary-shade': '#0284C7',
+  				'primary-light': '#38BDF8',
+  			},
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {
@@ -70,6 +75,10 @@ module.exports = {
   				border: 'hsl(var(--sidebar-border))',
   				ring: 'hsl(var(--sidebar-ring))'
   			}
+  		},
+  		boxShadow: {
+  			'glow': '0 0 20px rgba(14, 165, 233, 0.15)',
+  			'glow-strong': '0 0 30px rgba(14, 165, 233, 0.25)',
   		},
   		keyframes: {
   			'accordion-down': {
