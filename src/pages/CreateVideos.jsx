@@ -73,6 +73,7 @@ import { UIShowcase } from '../remotion/compositions/UIShowcase';
 import { KeynoteShowcase } from '../remotion/compositions/KeynoteShowcase';
 import { analyzeScreenshots } from '../lib/screenshotAnalyzer';
 import DesignAnalysisPanel from '../components/video/DesignAnalysisPanel';
+import StudioWizard from '../components/video/StudioWizard';
 
 const STYLE_PRESETS = [
   { id: 'cinematic', label: 'Cinematic', icon: Film },
@@ -681,8 +682,26 @@ export default function CreateVideos() {
             <LayoutTemplate className="w-4 h-4" />
             Templates
           </button>
+          <button
+            onClick={() => setMode('studio')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              mode === 'studio'
+                ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
+            }`}
+          >
+            <Clapperboard className="w-4 h-4" />
+            AI Studio
+          </button>
         </div>
 
+        {mode === 'studio' ? (
+          <StudioWizard
+            products={products}
+            brandAssets={brandAssets}
+            onProjectCreated={() => {}}
+          />
+        ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Left Panel - Controls */}
           <motion.div
@@ -1453,6 +1472,7 @@ export default function CreateVideos() {
             )}
           </motion.div>
         </div>
+        )}
 
         <RenderProgressModal
           isOpen={!!renderJob}

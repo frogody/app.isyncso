@@ -120,6 +120,8 @@ export const Proposal = db.entities.Proposal;
 export const BrandAssets = db.entities.BrandAssets;
 export const GeneratedContent = db.entities.GeneratedContent;
 export const RenderJob = db.entities.RenderJob;
+export const VideoProject = db.entities.VideoProject;
+export const VideoShot = db.entities.VideoShot;
 
 // === Auth SDK ===
 export const User = db.auth;

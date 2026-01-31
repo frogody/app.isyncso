@@ -105,3 +105,12 @@ verify_jwt = false
 
 [functions.render-video]
 verify_jwt = false
+
+[functions.generate-storyboard]
+verify_jwt = false
+
+[functions.generate-shot]
+verify_jwt = false
+
+[functions.assemble-video]
+verify_jwt = false

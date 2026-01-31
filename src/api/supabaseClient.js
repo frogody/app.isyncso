@@ -138,6 +138,8 @@ const tableNameMap = {
   'BrandAssets': 'brand_assets',
   'GeneratedContent': 'generated_content',
   'RenderJob': 'render_jobs',
+  'VideoProject': 'video_projects',
+  'VideoShot': 'video_shots',
 
   // === Talent (Recruitment) ===
   'Candidate': 'candidates',
@@ -460,6 +462,8 @@ export const entities = {
   BrandAssets: createEntityWrapper('BrandAssets'),
   GeneratedContent: createEntityWrapper('GeneratedContent'),
   RenderJob: createEntityWrapper('RenderJob'),
+  VideoProject: createEntityWrapper('VideoProject'),
+  VideoShot: createEntityWrapper('VideoShot'),
 
   // === Tasks ===
   Task: createEntityWrapper('Task'),
