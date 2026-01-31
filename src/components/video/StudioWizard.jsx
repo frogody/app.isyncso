@@ -83,6 +83,44 @@ async function edgeFn(fnName, body) {
   return res.json();
 }
 
+// Submit a shot to fal.ai then poll until done (avoids edge function timeout)
+async function generateOneShot({ projectId, description, model, duration_seconds, camera_direction, aspect_ratio }) {
+  // Step 1: Submit — returns immediately with request_id
+  const submitData = await edgeFn("generate-shot", {
+    action: "submit",
+    project_id: projectId,
+    description,
+    model: model || "kling",
+    duration_seconds: duration_seconds || 5,
+    camera_direction,
+    aspect_ratio,
+  });
+
+  const { request_id, model: usedModel } = submitData;
+  if (!request_id) throw new Error("No request_id from submit");
+
+  // Step 2: Poll every 5s until completed/failed (max 5 min)
+  const maxAttempts = 60;
+  for (let i = 0; i < maxAttempts; i++) {
+    await new Promise((r) => setTimeout(r, 5000));
+    const pollData = await edgeFn("generate-shot", {
+      action: "poll",
+      request_id,
+      model: usedModel || model || "kling",
+      project_id: projectId,
+    });
+
+    if (pollData.status === "COMPLETED") {
+      return { video_url: pollData.video_url };
+    }
+    if (pollData.status === "FAILED") {
+      throw new Error(pollData.error || "Shot generation failed");
+    }
+    // Otherwise keep polling (IN_QUEUE, IN_PROGRESS, etc.)
+  }
+  throw new Error("Shot generation timed out after 5 minutes");
+}
+
 // ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
@@ -372,8 +410,8 @@ export default function StudioWizard({
           prev.map((s, i) => (i === idx ? { ...s, status: "generating" } : s))
         );
         try {
-          const data = await edgeFn("generate-shot", {
-            project_id: projectId,
+          const data = await generateOneShot({
+            projectId,
             description: shot.description,
             model: shot.model || "kling",
             duration_seconds: shot.duration_seconds || 5,
@@ -386,7 +424,7 @@ export default function StudioWizard({
                 ? {
                     ...s,
                     status: "completed",
-                    thumbnail: data.thumbnail_url || data.video_url || null,
+                    thumbnail: data.video_url || null,
                     video_url: data.video_url || null,
                     shot_id: data.shot_id || data.id || null,
                   }
@@ -423,8 +461,8 @@ export default function StudioWizard({
       );
 
       try {
-        const data = await edgeFn("generate-shot", {
-          project_id: projectId,
+        const data = await generateOneShot({
+          projectId,
           description: shot.description,
           model: shot.model || "kling",
           duration_seconds: shot.duration_seconds || 5,
@@ -437,7 +475,7 @@ export default function StudioWizard({
               ? {
                   ...s,
                   status: "completed",
-                  thumbnail: data.thumbnail_url || data.video_url || null,
+                  thumbnail: data.video_url || null,
                   video_url: data.video_url || null,
                 }
               : s
