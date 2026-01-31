@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
+const TOGETHER_API_KEY = Deno.env.get("TOGETHER_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
@@ -106,15 +106,15 @@ serve(async (req) => {
 
     userPrompt += `\n\nGenerate the storyboard as JSON. Make it compelling and cinematic.`;
 
-    // Call Groq
-    const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    // Call Together.ai
+    const response = await fetch("https://api.together.xyz/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${GROQ_API_KEY}`,
+        Authorization: `Bearer ${TOGETHER_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "llama-3.3-70b-specdec",
+        model: "moonshotai/Kimi-K2-Instruct",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: userPrompt },
@@ -125,15 +125,15 @@ serve(async (req) => {
       }),
     });
 
-    if (!groqResponse.ok) {
-      const err = await groqResponse.text();
-      throw new Error(`Groq API error: ${err}`);
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error(`Together API error: ${err}`);
     }
 
-    const groqData = await groqResponse.json();
-    const content = groqData.choices?.[0]?.message?.content;
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content;
 
-    if (!content) throw new Error("No content in Groq response");
+    if (!content) throw new Error("No content in LLM response");
 
     const storyboard = JSON.parse(content);
 

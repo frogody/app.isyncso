@@ -374,8 +374,10 @@ export default function StudioWizard({
         try {
           const data = await edgeFn("generate-shot", {
             project_id: projectId,
-            shot,
-            style,
+            description: shot.description,
+            model: shot.model || "kling",
+            duration_seconds: shot.duration_seconds || 5,
+            camera_direction: shot.camera,
             aspect_ratio: aspectRatio,
           });
           setShots((prev) =>
@@ -423,8 +425,10 @@ export default function StudioWizard({
       try {
         const data = await edgeFn("generate-shot", {
           project_id: projectId,
-          shot,
-          style,
+          description: shot.description,
+          model: shot.model || "kling",
+          duration_seconds: shot.duration_seconds || 5,
+          camera_direction: shot.camera,
           aspect_ratio: aspectRatio,
         });
         setShots((prev) =>
