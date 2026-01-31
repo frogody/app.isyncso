@@ -56,7 +56,7 @@ function GalleryItem({ item, index }) {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: index * 0.05, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       whileHover={{ scale: 1.04, y: -4 }}
-      className="relative aspect-[4/5] rounded-2xl overflow-hidden group cursor-pointer ring-1 ring-white/[0.04]"
+      className="relative aspect-[4/3] rounded-2xl overflow-hidden group cursor-pointer ring-1 ring-white/[0.04]"
     >
       {isVideoFile ? (
         <video src={mediaUrl} muted preload="metadata" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
@@ -289,31 +289,22 @@ export default function Create() {
             </div>
           </motion.section>
 
-          {/* ── Creative Tools ── */}
-          <section>
-            <div className="flex items-center justify-between mb-5">
-              <div>
-                <h2 className="text-xl font-bold text-white tracking-tight">Creative Tools</h2>
-                <p className="text-xs text-zinc-600 mt-0.5">Choose your canvas</p>
-              </div>
-              <div className="flex items-center gap-1.5 text-[10px] text-zinc-700 font-medium uppercase tracking-wider">
-                <Zap className="w-3 h-3 text-yellow-500/40" />
-                FLUX &middot; Kling &middot; Minimax
-              </div>
-            </div>
+          {/* ── Bento Grid: Tools + Gallery ── */}
+          <section className="grid grid-cols-1 lg:grid-cols-12 gap-4 auto-rows-auto">
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Tools — left column, stacked */}
+            <div className="lg:col-span-5 flex flex-col gap-4">
               {TOOLS.map((tool, i) => (
                 <Link key={tool.key} to={createPageUrl(tool.route)}>
                   <motion.div
-                    initial={{ opacity: 0, y: 24 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.1 + i * 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                    whileHover={{ y: -8, transition: { duration: 0.3, ease: 'easeOut' } }}
+                    whileHover={{ x: 6, transition: { duration: 0.25 } }}
                     whileTap={{ scale: 0.98 }}
                     onHoverStart={() => setHoveredTool(tool.key)}
                     onHoverEnd={() => setHoveredTool(null)}
-                    className="relative overflow-hidden rounded-[22px] border border-white/[0.04] p-6 lg:p-7 cursor-pointer group h-full bg-zinc-950/80"
+                    className="relative overflow-hidden rounded-[20px] border border-white/[0.04] p-5 cursor-pointer group bg-zinc-950/80"
                   >
                     {/* Hover glow */}
                     <AnimatePresence>
@@ -322,130 +313,113 @@ export default function Create() {
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
-                          transition={{ duration: 0.3 }}
                           className="absolute inset-0 pointer-events-none"
-                          style={{ background: 'radial-gradient(ellipse at 30% 0%, rgba(250,204,21,0.06) 0%, transparent 60%)' }}
+                          style={{ background: 'radial-gradient(ellipse at 0% 50%, rgba(250,204,21,0.05) 0%, transparent 60%)' }}
                         />
                       )}
                     </AnimatePresence>
-                    {/* Top edge glow on hover */}
-                    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-yellow-500/0 group-hover:via-yellow-500/30 to-transparent transition-all duration-500" />
+                    {/* Left accent bar */}
+                    <div className="absolute left-0 top-3 bottom-3 w-[2px] bg-gradient-to-b from-yellow-500/0 group-hover:from-yellow-500/40 via-yellow-500/0 group-hover:via-yellow-500/20 to-yellow-500/0 group-hover:to-yellow-500/0 transition-all duration-500" />
 
-                    <div className="relative z-10">
-                      <div className="flex items-start justify-between mb-5">
-                        <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${tool.gradient} flex items-center justify-center shadow-lg shadow-yellow-500/10`}>
-                          <tool.icon className="w-5 h-5 text-black" />
-                        </div>
-                        <motion.div
-                          animate={hoveredTool === tool.key ? { x: 0, opacity: 1 } : { x: -4, opacity: 0 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          <ArrowUpRight className="w-5 h-5 text-yellow-400/60" />
-                        </motion.div>
+                    <div className="relative z-10 flex items-start gap-4">
+                      <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${tool.gradient} flex items-center justify-center shadow-lg shadow-yellow-500/10 flex-shrink-0`}>
+                        <tool.icon className="w-5 h-5 text-black" />
                       </div>
-
-                      <h3 className="text-[15px] font-bold text-white mb-0.5 tracking-tight">{tool.title}</h3>
-                      <p className="text-[10px] font-semibold text-yellow-500/40 uppercase tracking-[0.15em] mb-3">{tool.subtitle}</p>
-                      <p className="text-[13px] text-zinc-500 leading-relaxed mb-5">{tool.description}</p>
-
-                      <div className="flex flex-wrap gap-2">
-                        {tool.features.map(f => (
-                          <span key={f} className="text-[10px] font-medium px-3 py-1.5 rounded-full bg-yellow-500/[0.05] border border-yellow-500/[0.08] text-yellow-500/60 tracking-wide">
-                            {f}
-                          </span>
-                        ))}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <h3 className="text-[14px] font-bold text-white tracking-tight">{tool.title}</h3>
+                          <motion.div
+                            animate={hoveredTool === tool.key ? { x: 0, opacity: 1 } : { x: -4, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <ArrowUpRight className="w-4 h-4 text-yellow-400/50" />
+                          </motion.div>
+                        </div>
+                        <p className="text-[11px] text-zinc-500 leading-relaxed mb-2.5">{tool.description}</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {tool.features.map(f => (
+                            <span key={f} className="text-[9px] font-medium px-2 py-1 rounded-full bg-yellow-500/[0.04] border border-yellow-500/[0.07] text-yellow-500/50">
+                              {f}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </motion.div>
                 </Link>
               ))}
-            </div>
-          </section>
 
-          {/* ── Gallery ── */}
-          <section>
-            <div className="flex items-center justify-between mb-5">
-              <div>
-                <h2 className="text-xl font-bold text-white tracking-tight">Recent Creations</h2>
-                <p className="text-xs text-zinc-600 mt-0.5">Your latest AI-generated content</p>
-              </div>
+              {/* Library quick link */}
               <Link to={createPageUrl('CreateLibrary')}>
-                <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="flex items-center gap-1.5 text-xs text-yellow-400/70 hover:text-yellow-400 transition-colors font-semibold">
-                  View All <ArrowRight className="w-3.5 h-3.5" />
-                </motion.button>
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.35, duration: 0.5 }}
+                  whileHover={{ x: 6 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex items-center gap-4 p-5 rounded-[20px] border border-white/[0.04] bg-zinc-950/80 cursor-pointer group"
+                >
+                  <div className="w-11 h-11 rounded-xl bg-white/[0.04] border border-white/[0.06] flex items-center justify-center flex-shrink-0 group-hover:bg-yellow-500/[0.06] group-hover:border-yellow-500/[0.1] transition-all duration-300">
+                    <FolderOpen className="w-5 h-5 text-zinc-500 group-hover:text-yellow-400 transition-colors" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-[14px] font-bold text-white tracking-tight">Content Library</h3>
+                    <p className="text-[11px] text-zinc-600">Browse, download, and manage all your generated content</p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-zinc-800 group-hover:text-yellow-500/40 transition-colors" />
+                </motion.div>
               </Link>
             </div>
 
-            {loading ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                {[1,2,3,4,5,6,7,8].map(i => (
-                  <div key={i} className="aspect-[4/5] rounded-2xl bg-zinc-900/60 ring-1 ring-white/[0.03] animate-pulse" />
-                ))}
-              </div>
-            ) : galleryItems.length === 0 ? (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="relative overflow-hidden rounded-[24px] border border-dashed border-yellow-500/[0.12] py-20 text-center bg-yellow-500/[0.01]"
-              >
-                <motion.div
-                  animate={{ y: [0, -10, 0] }}
-                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                  className="w-16 h-16 rounded-2xl bg-yellow-500/[0.06] border border-yellow-500/[0.1] flex items-center justify-center mx-auto mb-5"
-                >
-                  <Sparkles className="w-7 h-7 text-yellow-400/60" />
-                </motion.div>
-                <p className="text-lg font-semibold text-white mb-1">Your canvas awaits</p>
-                <p className="text-sm text-zinc-600 mb-6 max-w-xs mx-auto">Create your first piece and watch your gallery come alive</p>
-                <Link to={createPageUrl('CreateImages')}>
-                  <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} className="inline-flex items-center gap-2 px-6 py-3 bg-yellow-400 text-black font-bold text-sm rounded-full shadow-[0_0_30px_rgba(250,204,21,0.15)]">
-                    <Wand2 className="w-4 h-4" />
-                    Generate First Image
+            {/* Gallery — right column */}
+            <div className="lg:col-span-7">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-white tracking-tight">Recent Creations</h2>
+                <Link to={createPageUrl('CreateLibrary')}>
+                  <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="flex items-center gap-1.5 text-xs text-yellow-400/60 hover:text-yellow-400 transition-colors font-semibold">
+                    View All <ArrowRight className="w-3.5 h-3.5" />
                   </motion.button>
                 </Link>
-              </motion.div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                {galleryItems.map((item, i) => (
-                  <GalleryItem key={item.id} item={item} index={i} />
-                ))}
               </div>
-            )}
-          </section>
 
-          {/* ── Quick Access ── */}
-          <motion.section
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="pb-6"
-          >
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              {[
-                { label: 'Generate Image', icon: Camera, route: 'CreateImages', desc: 'AI-powered visuals' },
-                { label: 'Create Video', icon: Clapperboard, route: 'CreateVideos', desc: 'Cinematic production' },
-                { label: 'Design Brand', icon: Brush, route: 'CreateBranding', desc: 'Full brand identity' },
-                { label: 'Content Library', icon: FolderOpen, route: 'CreateLibrary', desc: 'Browse all content' },
-              ].map((a) => (
-                <Link key={a.label} to={createPageUrl(a.route)}>
+              {loading ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {[1,2,3,4,5,6].map(i => (
+                    <div key={i} className="aspect-[4/3] rounded-2xl bg-zinc-900/60 ring-1 ring-white/[0.03] animate-pulse" />
+                  ))}
+                </div>
+              ) : galleryItems.length === 0 ? (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="relative overflow-hidden rounded-[20px] border border-dashed border-yellow-500/[0.1] py-20 text-center bg-yellow-500/[0.01] h-full flex flex-col items-center justify-center"
+                >
                   <motion.div
-                    whileHover={{ y: -3, transition: { duration: 0.2 } }}
-                    whileTap={{ scale: 0.98 }}
-                    className="flex items-center gap-3 px-4 py-4 rounded-2xl bg-white/[0.015] border border-white/[0.04] hover:border-yellow-500/[0.15] hover:bg-yellow-500/[0.02] transition-all duration-300 cursor-pointer group"
+                    animate={{ y: [0, -10, 0] }}
+                    transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                    className="w-14 h-14 rounded-2xl bg-yellow-500/[0.06] border border-yellow-500/[0.1] flex items-center justify-center mb-5"
                   >
-                    <div className="w-10 h-10 rounded-xl bg-yellow-500/[0.06] flex items-center justify-center group-hover:bg-yellow-500/[0.1] transition-colors duration-300">
-                      <a.icon className="w-4.5 h-4.5 text-yellow-500/60 group-hover:text-yellow-400 transition-colors" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-zinc-300 group-hover:text-white transition-colors">{a.label}</p>
-                      <p className="text-[10px] text-zinc-700">{a.desc}</p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-zinc-800 group-hover:text-yellow-500/40 transition-colors" />
+                    <Sparkles className="w-6 h-6 text-yellow-400/50" />
                   </motion.div>
-                </Link>
-              ))}
+                  <p className="text-base font-semibold text-white mb-1">Your canvas awaits</p>
+                  <p className="text-sm text-zinc-600 mb-5 max-w-xs">Generate your first image or video to see it here</p>
+                  <Link to={createPageUrl('CreateImages')}>
+                    <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} className="inline-flex items-center gap-2 px-5 py-2.5 bg-yellow-400 text-black font-bold text-sm rounded-full shadow-[0_0_24px_rgba(250,204,21,0.12)]">
+                      <Wand2 className="w-4 h-4" />
+                      Start Creating
+                    </motion.button>
+                  </Link>
+                </motion.div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {galleryItems.map((item, i) => (
+                    <GalleryItem key={item.id} item={item} index={i} />
+                  ))}
+                </div>
+              )}
             </div>
-          </motion.section>
+
+          </section>
 
         </div>
       </div>
