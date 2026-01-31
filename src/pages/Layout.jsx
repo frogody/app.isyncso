@@ -1447,39 +1447,127 @@ export default function Layout({ children, currentPageName }) {
           .border-white { border-color: rgba(255,255,255,.08) !important; }
 
           /* ── Sentinel Light Theme ─────────────────────────────────
-             Override ALL global dark !important rules inside [data-sentinel-light].
-             These use [data-sentinel-light] prefix for higher specificity + !important. */
+             Comprehensive overrides for ALL dark classes used in Sentinel.
+             html[data-sentinel-light] targets body/wrapper; [data-sentinel-light] targets descendants. */
+
+          /* Page & body */
           html[data-sentinel-light] body { background: #F8FAFC !important; color: #0F172A !important; }
           html[data-sentinel-light] .min-h-screen.bg-black { background: #F8FAFC !important; }
           [data-sentinel-light] { background: #F8FAFC !important; color: #0F172A !important; }
+
+          /* Backgrounds — white/slate */
           [data-sentinel-light] .bg-white,
-          [data-sentinel-light] .bg-white\\/95,[data-sentinel-light] .bg-white\\/90,[data-sentinel-light] .bg-white\\/80 { background: #FFFFFF !important; border-color: #E2E8F0 !important; }
+          [data-sentinel-light] .bg-white\\/95,[data-sentinel-light] .bg-white\\/90,[data-sentinel-light] .bg-white\\/80,
+          [data-sentinel-light] .bg-white\\/70,[data-sentinel-light] .bg-white\\/60 { background: #FFFFFF !important; border-color: #E2E8F0 !important; }
           [data-sentinel-light] .bg-slate-50 { background: #F8FAFC !important; }
           [data-sentinel-light] .bg-slate-100 { background: #F1F5F9 !important; }
+          [data-sentinel-light] .bg-slate-200 { background: #E2E8F0 !important; }
+
+          /* Backgrounds — dark surfaces → light */
           [data-sentinel-light] .bg-black { background: #F8FAFC !important; }
-          [data-sentinel-light] .bg-zinc-900\\/50 { background: #FFFFFF !important; border-color: #E2E8F0 !important; }
-          [data-sentinel-light] .bg-zinc-900\\/60 { background: #FFFFFF !important; }
-          [data-sentinel-light] .bg-zinc-800\\/60 { background: #F1F5F9 !important; }
-          [data-sentinel-light] .bg-zinc-800 { background: #E2E8F0 !important; }
           [data-sentinel-light] .bg-zinc-950 { background: #F8FAFC !important; }
+          [data-sentinel-light] .bg-zinc-900 { background: #FFFFFF !important; }
+          [data-sentinel-light] .bg-zinc-900\\/50 { background: #FFFFFF !important; border-color: #E2E8F0 !important; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04) !important; }
+          [data-sentinel-light] .bg-zinc-900\\/60 { background: #FFFFFF !important; box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important; }
+          [data-sentinel-light] .bg-zinc-800 { background: #E2E8F0 !important; }
+          [data-sentinel-light] .bg-zinc-800\\/60 { background: #F1F5F9 !important; }
+          [data-sentinel-light] .bg-zinc-800\\/50 { background: #F1F5F9 !important; }
+          [data-sentinel-light] .bg-zinc-800\\/30 { background: #F8FAFC !important; border-color: #E2E8F0 !important; box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important; }
+          [data-sentinel-light] .bg-zinc-700 { background: #CBD5E1 !important; }
+          [data-sentinel-light] .bg-zinc-700\\/30 { background: #F1F5F9 !important; }
+
+          /* Backgrounds — emerald tints (keep emerald but lighter) */
+          [data-sentinel-light] .bg-emerald-500\\/10 { background: rgba(16,185,129,0.08) !important; }
+          [data-sentinel-light] .bg-emerald-500\\/5 { background: rgba(16,185,129,0.04) !important; }
+          [data-sentinel-light] .bg-emerald-500\\/20 { background: rgba(16,185,129,0.12) !important; }
+          [data-sentinel-light] .bg-emerald-400\\/10 { background: rgba(52,211,153,0.1) !important; }
+          [data-sentinel-light] .bg-emerald-400\\/15 { background: rgba(52,211,153,0.12) !important; }
+          [data-sentinel-light] .bg-emerald-400\\/20 { background: rgba(52,211,153,0.15) !important; }
+          [data-sentinel-light] .bg-emerald-50 { background: #ECFDF5 !important; }
+          [data-sentinel-light] .bg-emerald-50\\/50 { background: rgba(236,253,245,0.5) !important; }
+          [data-sentinel-light] .bg-emerald-100 { background: #D1FAE5 !important; }
+
+          /* Backgrounds — green/red tints */
+          [data-sentinel-light] .bg-green-500\\/20 { background: rgba(34,197,94,0.15) !important; }
+          [data-sentinel-light] .bg-red-500\\/5 { background: rgba(239,68,68,0.05) !important; }
+
+          /* Text — primary */
           [data-sentinel-light] .text-white { color: #0F172A !important; }
           [data-sentinel-light] .text-black { color: #0F172A !important; }
-          [data-sentinel-light] .text-zinc-400 { color: #64748B !important; }
-          [data-sentinel-light] .text-zinc-500 { color: #94A3B8 !important; }
+
+          /* Text — zinc grays → slate equivalents */
           [data-sentinel-light] .text-zinc-300 { color: #475569 !important; }
-          [data-sentinel-light] .text-zinc-600 { color: #94A3B8 !important; }
+          [data-sentinel-light] .text-zinc-400 { color: #64748B !important; }
+          [data-sentinel-light] .text-zinc-500 { color: #64748B !important; }
+          [data-sentinel-light] .text-zinc-600 { color: #475569 !important; }
+
+          /* Text — gray */
           [data-sentinel-light] .text-gray-300,[data-sentinel-light] .text-gray-400 { color: #64748B !important; }
+
+          /* Text — slate (ensure these pass through correctly) */
+          [data-sentinel-light] .text-slate-900 { color: #0F172A !important; }
+          [data-sentinel-light] .text-slate-800 { color: #1E293B !important; }
+          [data-sentinel-light] .text-slate-700 { color: #334155 !important; }
+          [data-sentinel-light] .text-slate-600 { color: #475569 !important; }
+          [data-sentinel-light] .text-slate-500 { color: #64748B !important; }
+          [data-sentinel-light] .text-slate-400 { color: #94A3B8 !important; }
+
+          /* Borders — zinc → slate */
           [data-sentinel-light] .border-zinc-800\\/60 { border-color: #E2E8F0 !important; }
-          [data-sentinel-light] .border-zinc-700 { border-color: #CBD5E1 !important; }
+          [data-sentinel-light] .border-zinc-800\\/50 { border-color: #E2E8F0 !important; }
           [data-sentinel-light] .border-zinc-800 { border-color: #E2E8F0 !important; }
+          [data-sentinel-light] .border-zinc-700 { border-color: #CBD5E1 !important; }
+          [data-sentinel-light] .border-zinc-700\\/30 { border-color: #E2E8F0 !important; }
+          [data-sentinel-light] .border-zinc-700\\/50 { border-color: #E2E8F0 !important; }
+          [data-sentinel-light] .border-zinc-600 { border-color: #CBD5E1 !important; }
           [data-sentinel-light] .border-white { border-color: #E2E8F0 !important; }
-          [data-sentinel-light] .shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important; }
-          [data-sentinel-light] .shadow-lg { box-shadow: 0 10px 15px rgba(0,0,0,0.1) !important; }
-          [data-sentinel-light] input, [data-sentinel-light] textarea, [data-sentinel-light] select { background: #FFFFFF !important; color: #0F172A !important; border: 1px solid #E2E8F0 !important; border-radius: 8px !important; }
-          [data-sentinel-light] input:focus, [data-sentinel-light] textarea:focus, [data-sentinel-light] select:focus { border-color: #86EFAC !important; box-shadow: 0 0 0 2px rgba(134,239,172,0.2) !important; }
+          [data-sentinel-light] .border-slate-200 { border-color: #E2E8F0 !important; }
+          [data-sentinel-light] .border-slate-300 { border-color: #CBD5E1 !important; }
+
+          /* Borders — emerald */
+          [data-sentinel-light] .border-emerald-500\\/20 { border-color: rgba(16,185,129,0.25) !important; }
+          [data-sentinel-light] .border-emerald-500\\/30 { border-color: rgba(16,185,129,0.35) !important; }
+          [data-sentinel-light] .border-emerald-500\\/40 { border-color: rgba(16,185,129,0.45) !important; }
+          [data-sentinel-light] .border-emerald-300 { border-color: #6EE7B7 !important; }
+          [data-sentinel-light] .border-emerald-200 { border-color: #A7F3D0 !important; }
+
+          /* Shadows — proper light mode depth */
+          [data-sentinel-light] .shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,0.06) !important; }
+          [data-sentinel-light] .shadow-md { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -2px rgba(0,0,0,0.05) !important; }
+          [data-sentinel-light] .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04) !important; }
+          [data-sentinel-light] .shadow-glow { box-shadow: 0 4px 12px rgba(16,185,129,0.15) !important; }
+
+          /* Inputs */
+          [data-sentinel-light] input, [data-sentinel-light] textarea, [data-sentinel-light] select { background: #FFFFFF !important; color: #0F172A !important; border: 1px solid #CBD5E1 !important; border-radius: 8px !important; }
+          [data-sentinel-light] input:focus, [data-sentinel-light] textarea:focus, [data-sentinel-light] select:focus { border-color: #10B981 !important; box-shadow: 0 0 0 3px rgba(16,185,129,0.15) !important; }
           [data-sentinel-light] input::placeholder, [data-sentinel-light] textarea::placeholder { color: #94A3B8 !important; }
+
+          /* Glass card */
           [data-sentinel-light] .glass-card { background: #FFFFFF !important; border: 1px solid #E2E8F0 !important; box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important; }
+
+          /* Backdrop */
           [data-sentinel-light] .backdrop-blur-sm { backdrop-filter: none !important; }
+
+          /* Dialogs/Sheets */
+          [data-sentinel-light] .SheetContent, [data-sentinel-light] .DialogContent { background: #FFFFFF !important; border-color: #E2E8F0 !important; }
+
+          /* Progress bars */
+          [data-sentinel-light] div[role="progressbar"] { background: #E2E8F0 !important; }
+          [data-sentinel-light] div[role="progressbar"] > div { box-shadow: none !important; }
+
+          /* Hover states */
+          [data-sentinel-light] .hover\\:bg-zinc-800:hover { background: #F1F5F9 !important; }
+          [data-sentinel-light] .hover\\:bg-zinc-900\\/60:hover { background: #F8FAFC !important; }
+          [data-sentinel-light] .hover\\:border-zinc-700\\/60:hover { border-color: #CBD5E1 !important; }
+          [data-sentinel-light] .hover\\:border-emerald-500\\/30:hover { border-color: rgba(16,185,129,0.4) !important; }
+          [data-sentinel-light] .hover\\:border-emerald-300:hover { border-color: #6EE7B7 !important; }
+
+          /* Radix UI select content */
+          [data-sentinel-light] [role="listbox"] { background: #FFFFFF !important; border: 1px solid #E2E8F0 !important; }
+          [data-sentinel-light] [role="option"]:hover, [data-sentinel-light] [role="option"][data-highlighted] { background: #F1F5F9 !important; }
+
+          /* Animate pulse skeleton */
+          [data-sentinel-light] .animate-pulse { opacity: 0.6 !important; }
 
           /* Surfaces */
           .glass-card {
@@ -1558,6 +1646,32 @@ export default function Layout({ children, currentPageName }) {
             color: #06B6D4 !important;
             border: 1px solid rgba(6,182,212,0.2) !important;
             border-radius: 6px !important;
+          }
+          [data-sentinel-light] .badge, [data-sentinel-light] .pill {
+            background: rgba(16,185,129,0.1) !important;
+            color: #059669 !important;
+            border: 1px solid rgba(16,185,129,0.2) !important;
+          }
+          [data-sentinel-light] .btn-primary {
+            background: linear-gradient(180deg, rgba(16,185,129,0.15), rgba(16,185,129,0.08)) !important;
+            color: #059669 !important;
+            border: 1px solid rgba(16,185,129,0.3) !important;
+            box-shadow: none !important;
+          }
+          [data-sentinel-light] .btn-primary:hover {
+            background: linear-gradient(180deg, rgba(16,185,129,0.25), rgba(16,185,129,0.15)) !important;
+            border-color: rgba(16,185,129,0.5) !important;
+            color: #047857 !important;
+          }
+          [data-sentinel-light] .btn-outline {
+            border: 1px solid #CBD5E1 !important;
+            color: #475569 !important;
+            background: transparent !important;
+          }
+          [data-sentinel-light] .btn-outline:hover {
+            border-color: #94A3B8 !important;
+            color: #0F172A !important;
+            background: #F8FAFC !important;
           }
 
           /* Emerald Gradient replacements */
