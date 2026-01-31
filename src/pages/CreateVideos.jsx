@@ -682,7 +682,7 @@ export default function CreateVideos() {
   return (
     <CreatePageTransition>
       <div className="min-h-screen bg-[#09090b]">
-        <div className="w-full max-w-6xl mx-auto px-4 lg:px-6 py-5 space-y-5">
+        <div className="w-full px-4 lg:px-6 py-5 space-y-5">
 
           {/* ───── 1. Back Nav + Page Header ───── */}
           <div className="flex items-center justify-between">

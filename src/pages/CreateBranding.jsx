@@ -443,7 +443,7 @@ export default function CreateBranding() {
   return (
     <CreatePageTransition>
       <div className="min-h-screen bg-[#09090b]">
-        <div className="w-full max-w-5xl mx-auto px-4 lg:px-6 py-5 space-y-5">
+        <div className="w-full px-4 lg:px-6 py-5 space-y-5">
 
           {/* ---- Header Row ---- */}
           <div className="flex items-center justify-between">

@@ -569,7 +569,7 @@ export default function CreateImages() {
   return (
     <CreatePageTransition>
       <div className="min-h-screen bg-[#09090b]">
-        <div className="max-w-5xl mx-auto px-4 lg:px-6 py-6 space-y-5">
+        <div className="w-full px-4 lg:px-6 py-6 space-y-5">
 
           {/* 1. Back nav + Header row */}
           <div className="flex items-center justify-between">
