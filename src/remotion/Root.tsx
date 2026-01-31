@@ -5,6 +5,7 @@ import { SocialAd } from "./compositions/SocialAd";
 import { FeatureShowcase } from "./compositions/FeatureShowcase";
 import { ProductShowcase } from "./compositions/ProductShowcase";
 import { UIShowcase } from "./compositions/UIShowcase";
+import { KeynoteShowcase } from "./compositions/KeynoteShowcase";
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -148,6 +149,32 @@ export const RemotionRoot: React.FC = () => {
             "https://placehold.co/1920x1080/1a1a2e/06b6d4?text=Analytics",
           ],
           designAnalysis: undefined,
+        }}
+      />
+      <Composition
+        id="KeynoteShowcase"
+        component={KeynoteShowcase}
+        durationInFrames={360}
+        fps={30}
+        width={1920}
+        height={1080}
+        defaultProps={{
+          productName: "iSyncSO Platform",
+          tagline: "The all-in-one business operating system",
+          features: [
+            { title: "AI Automation", description: "Smart workflows", icon: "\u26A1" },
+            { title: "Analytics", description: "Real-time insights", icon: "\uD83D\uDCCA" },
+            { title: "Collaboration", description: "Team tools", icon: "\uD83D\uDC65" },
+            { title: "Integrations", description: "Connect everything", icon: "\uD83D\uDD17" },
+          ],
+          screenshots: [],
+          designAnalysis: undefined,
+          metrics: [
+            { label: "Revenue", value: 284500, prefix: "\u20AC" },
+            { label: "Users", value: 12847 },
+            { label: "Growth", value: 23, suffix: "%" },
+            { label: "NPS Score", value: 72 },
+          ],
         }}
       />
     </>

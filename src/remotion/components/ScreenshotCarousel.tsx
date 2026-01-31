@@ -72,8 +72,10 @@ export const ScreenshotCarousel: React.FC<ScreenshotCarouselProps> = ({
               style={{
                 width: "100%",
                 height: "100%",
-                objectFit: "cover",
+                objectFit: "contain",
+                imageRendering: "high-quality" as any,
                 transform: `scale(${scale}) translate(${panX}px, ${panY}px)`,
+                filter: "drop-shadow(0 4px 20px rgba(0,0,0,0.4))",
               }}
             />
           </AbsoluteFill>

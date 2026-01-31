@@ -35,7 +35,7 @@ export const ProductDemo: React.FC<ProductDemoProps> = ({
           flexDirection: "column",
           justifyContent: "flex-start",
           alignItems: "center",
-          padding: 80,
+          padding: "60px 100px",
         }}
       >
         {/* Title: frames 0-30 */}
@@ -59,9 +59,9 @@ export const ProductDemo: React.FC<ProductDemoProps> = ({
 
         {/* Product image: frames 30-90 */}
         <Sequence from={30} durationInFrames={150}>
-          <div style={{ marginTop: 20, marginBottom: 30 }}>
+          <div style={{ marginTop: 10, marginBottom: 20, display: "flex", justifyContent: "center", width: "100%" }}>
             <AnimatedScale delay={0} springConfig={{ damping: 14, stiffness: 80, mass: 1.2 }}>
-              <ProductImage src={productImage} startScale={0.85} endScale={1.0} />
+              <ProductImage src={productImage} startScale={0.85} endScale={1.0} width={1400} height={720} />
             </AnimatedScale>
           </div>
         </Sequence>

@@ -12,15 +12,21 @@ const DEFAULT_ANALYSIS = {
   typography: {
     style: 'modern',
     hasRoundedFonts: true,
+    fontFamily: 'Inter',
+    headingSize: 'medium',
+    headingWeight: 'bold',
   },
   uiStyle: {
     cardStyle: 'elevated',
     borderRadius: 'medium',
     density: 'comfortable',
+    shadowStyle: 'medium',
+    spacing: 'normal',
   },
   components: [],
   layoutPattern: 'dashboard',
   overallVibe: 'professional',
+  iconStyle: 'outlined',
 };
 
 /**
@@ -71,6 +77,7 @@ export async function analyzeScreenshots(screenshots, productName) {
       components: data.analysis.components || DEFAULT_ANALYSIS.components,
       layoutPattern: data.analysis.layoutPattern || DEFAULT_ANALYSIS.layoutPattern,
       overallVibe: data.analysis.overallVibe || DEFAULT_ANALYSIS.overallVibe,
+      iconStyle: data.analysis.iconStyle || DEFAULT_ANALYSIS.iconStyle,
     };
   } catch (error) {
     console.error('Screenshot analysis error:', error);

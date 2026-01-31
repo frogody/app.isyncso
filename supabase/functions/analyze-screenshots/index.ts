@@ -21,12 +21,17 @@ Analyze the provided screenshots holistically and return a JSON object with this
   },
   "typography": {
     "style": "modern" | "classic" | "minimal" | "bold",
-    "hasRoundedFonts": boolean
+    "hasRoundedFonts": boolean,
+    "fontFamily": "Inter" | "SF Pro" | "Roboto" | "system" | string,
+    "headingSize": "small" | "medium" | "large",
+    "headingWeight": "normal" | "semibold" | "bold" | "extrabold"
   },
   "uiStyle": {
     "cardStyle": "flat" | "elevated" | "bordered" | "glass",
     "borderRadius": "none" | "small" | "medium" | "large" | "full",
-    "density": "compact" | "comfortable" | "spacious"
+    "density": "compact" | "comfortable" | "spacious",
+    "shadowStyle": "none" | "subtle" | "medium" | "strong",
+    "spacing": "tight" | "normal" | "relaxed"
   },
   "components": [
     { "type": "navbar", "position": "top", "style": "dark" or "light" },
@@ -37,13 +42,17 @@ Analyze the provided screenshots holistically and return a JSON object with this
     { "type": "charts", "types": ["bar", "line", "pie"] }
   ],
   "layoutPattern": "dashboard" | "landing" | "form" | "list" | "detail" | "mixed",
-  "overallVibe": "professional" | "playful" | "minimal" | "data-heavy" | "creative"
+  "overallVibe": "professional" | "playful" | "minimal" | "data-heavy" | "creative",
+  "iconStyle": "outlined" | "filled" | "duotone" | "line"
 }
 
 Rules:
 - Extract actual hex colors from the screenshots, not guesses
 - Only include components you can actually see
 - If multiple screenshots show different pages, describe the dominant pattern
+- For typography, identify the closest matching font family and describe heading characteristics
+- For uiStyle, assess shadow depth, spacing density, and card treatment
+- For iconStyle, determine whether icons are outlined strokes, filled shapes, duotone, or thin lines
 - Return ONLY valid JSON, no markdown fences or explanation`;
 
 Deno.serve(async (req) => {

@@ -70,6 +70,7 @@ import { SocialAd } from '../remotion/compositions/SocialAd';
 import { FeatureShowcase } from '../remotion/compositions/FeatureShowcase';
 import { ProductShowcase } from '../remotion/compositions/ProductShowcase';
 import { UIShowcase } from '../remotion/compositions/UIShowcase';
+import { KeynoteShowcase } from '../remotion/compositions/KeynoteShowcase';
 import { analyzeScreenshots } from '../lib/screenshotAnalyzer';
 import DesignAnalysisPanel from '../components/video/DesignAnalysisPanel';
 
@@ -104,6 +105,7 @@ const TEMPLATES = [
   { id: 'FeatureShowcase', label: 'Feature Showcase', description: 'Highlight multiple product features', durationFrames: 240, fps: 30, width: 1920, height: 1080 },
   { id: 'ProductShowcase', label: 'Product Showcase', description: 'Showcase your product with screenshots and features', durationFrames: 300, fps: 30, width: 1920, height: 1080 },
   { id: 'UIShowcase', label: 'UI Showcase', description: 'Animated UI based on your product design', durationFrames: 360, fps: 30, width: 1920, height: 1080 },
+  { id: 'KeynoteShowcase', label: 'Keynote Showcase', description: 'Apple Keynote-style animated UI presentation', durationFrames: 360, fps: 30, width: 1920, height: 1080 },
 ];
 
 const COMPONENT_MAP = {
@@ -112,6 +114,7 @@ const COMPONENT_MAP = {
   FeatureShowcase,
   ProductShowcase,
   UIShowcase,
+  KeynoteShowcase,
 };
 
 function getTemplateProps(templateId, selectedProduct, brandAssets, digitalProductData, designAnalysis) {
@@ -210,6 +213,29 @@ function getTemplateProps(templateId, selectedProduct, brandAssets, digitalProdu
         screenshots: selectedProduct?.gallery?.map(img => typeof img === 'string' ? img : img?.url).filter(Boolean) || [],
         designAnalysis: designAnalysis || undefined,
       };
+    case 'KeynoteShowcase':
+      return {
+        productName: selectedProduct?.name || 'Your Product',
+        tagline: selectedProduct?.tagline || selectedProduct?.short_description || 'Built for modern teams',
+        features: digitalProductData?.features?.map(f => ({
+          title: f.name || f.title || 'Feature',
+          description: f.description || '',
+          icon: f.icon || '\u26A1'
+        })) || [
+          { title: "AI Automation", description: "Smart workflows", icon: "\u26A1" },
+          { title: "Analytics", description: "Real-time insights", icon: "\uD83D\uDCCA" },
+          { title: "Collaboration", description: "Team tools", icon: "\uD83D\uDC65" },
+          { title: "Integrations", description: "Connect everything", icon: "\uD83D\uDD17" },
+        ],
+        screenshots: selectedProduct?.gallery?.map(img => typeof img === 'string' ? img : img.url).filter(Boolean) || [],
+        designAnalysis: designAnalysis || undefined,
+        metrics: [
+          { label: "Revenue", value: 284500, prefix: "\u20AC" },
+          { label: "Users", value: 12847 },
+          { label: "Growth", value: 23, suffix: "%" },
+          { label: "NPS Score", value: 72 },
+        ],
+      };
     case 'ProductDemo':
     default:
       return {
@@ -281,6 +307,23 @@ export default function CreateVideos() {
       }
     })();
   }, [selectedProduct?.id]);
+
+  // Auto-analyze screenshots when product is selected
+  useEffect(() => {
+    if (!selectedProduct?.gallery?.length || mode !== 'templates') return;
+
+    const urls = selectedProduct.gallery
+      .map(img => typeof img === 'string' ? img : img.url)
+      .filter(Boolean);
+
+    if (urls.length === 0) return;
+
+    setIsAnalyzing(true);
+    analyzeScreenshots(urls, selectedProduct.name)
+      .then(analysis => setDesignAnalysis(analysis))
+      .catch(e => console.error('Auto-analysis failed:', e))
+      .finally(() => setIsAnalyzing(false));
+  }, [selectedProduct?.id, mode]);
 
   // Measure player container width for responsive sizing
   useEffect(() => {
@@ -984,22 +1027,22 @@ export default function CreateVideos() {
                       </Popover>
                     </div>
 
-                    {/* Analyze Design Button */}
+                    {/* Analyze Design Button (manual re-analyze) */}
                     {selectedProduct?.gallery?.length > 0 && (
                       <button
                         onClick={handleAnalyzeDesign}
                         disabled={isAnalyzing}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 rounded-lg text-sm text-purple-400 transition-colors disabled:opacity-50"
+                        className="flex items-center gap-2 px-3 py-1.5 hover:bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-xs text-zinc-500 transition-colors disabled:opacity-50"
                       >
                         {isAnalyzing ? (
                           <>
-                            <div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
-                            Analyzing...
+                            <div className="w-3 h-3 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+                            <span className="text-purple-400">Analyzing...</span>
                           </>
                         ) : (
                           <>
-                            <Eye className="w-4 h-4" />
-                            Analyze Design
+                            <Eye className="w-3 h-3" />
+                            Re-analyze Design
                           </>
                         )}
                       </button>
@@ -1064,6 +1107,33 @@ export default function CreateVideos() {
                                 <span className="text-zinc-300">{designAnalysis.overallVibe}</span>
                               </div>
                             )}
+                          </>
+                        ) : selectedTemplate === 'KeynoteShowcase' ? (
+                          <>
+                            <div>
+                              <span className="text-zinc-500">Product:</span>
+                              <span className="text-zinc-300 ml-1">{templateProps.productName}</span>
+                            </div>
+                            <div>
+                              <span className="text-zinc-500">Layout:</span>
+                              <span className="text-zinc-300 ml-1">{designAnalysis?.layoutPattern || 'auto'}</span>
+                            </div>
+                            <div>
+                              <span className="text-zinc-500">Vibe:</span>
+                              <span className="text-zinc-300 ml-1">{designAnalysis?.overallVibe || 'professional'}</span>
+                            </div>
+                            <div>
+                              <span className="text-zinc-500">Features:</span>
+                              <span className="text-zinc-300 ml-1">{templateProps.features?.length || 0}</span>
+                            </div>
+                            <div>
+                              <span className="text-zinc-500">Metrics:</span>
+                              <span className="text-zinc-300 ml-1">{templateProps.metrics?.length || 0}</span>
+                            </div>
+                            <div>
+                              <span className="text-zinc-500">Screenshots:</span>
+                              <span className="text-zinc-300 ml-1">{templateProps.screenshots?.length || 0}</span>
+                            </div>
                           </>
                         ) : selectedTemplate === 'ProductShowcase' ? (
                           <>

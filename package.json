@@ -46,6 +46,7 @@
     "@react-pdf/renderer": "^4.3.2",
     "@remotion/bundler": "^4.0.414",
     "@remotion/cli": "^4.0.414",
+    "@remotion/google-fonts": "^4.0.414",
     "@remotion/player": "^4.0.414",
     "@supabase/supabase-js": "^2.49.1",
     "@tanstack/react-query": "^5.90.16",

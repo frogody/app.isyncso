@@ -87,6 +87,8 @@ async function processJob(job) {
       codec: "h264",
       outputLocation: outputPath,
       inputProps: template_props || {},
+      crf: 18,
+      pixelFormat: "yuv420p",
       onProgress: ({ progress }) => {
         // Map rendering progress to 25-90% range
         const mappedProgress = Math.round(25 + progress * 65);

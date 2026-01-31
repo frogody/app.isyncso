@@ -1,4 +1,7 @@
 import { useCurrentFrame, useVideoConfig, spring, interpolate } from "remotion";
+import { loadFont } from "@remotion/google-fonts/Inter";
+
+const { fontFamily } = loadFont();
 
 interface AnimatedTextProps {
   text: string;
@@ -7,6 +10,7 @@ interface AnimatedTextProps {
   fontSize?: number;
   fontWeight?: number | string;
   color?: string;
+  kinetic?: boolean;
 }
 
 export const AnimatedText: React.FC<AnimatedTextProps> = ({
@@ -16,6 +20,7 @@ export const AnimatedText: React.FC<AnimatedTextProps> = ({
   fontSize = 48,
   fontWeight = "bold",
   color = "#ffffff",
+  kinetic = false,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -27,11 +32,10 @@ export const AnimatedText: React.FC<AnimatedTextProps> = ({
     extrapolateLeft: "clamp",
   });
 
-  const translateY = interpolate(
-    spring({ frame: delayedFrame, fps, config: { damping: 12, stiffness: 100 } }),
-    [0, 1],
-    [20, 0]
-  );
+  const springProgress = spring({ frame: delayedFrame, fps, config: { damping: 12, stiffness: 100 } });
+
+  const translateY = kinetic ? 0 : interpolate(springProgress, [0, 1], [20, 0]);
+  const scale = kinetic ? interpolate(springProgress, [0, 1], [1.2, 1]) : 1;
 
   return (
     <div
@@ -40,8 +44,12 @@ export const AnimatedText: React.FC<AnimatedTextProps> = ({
         fontWeight,
         color,
         opacity,
-        transform: `translateY(${translateY}px)`,
-        fontFamily: "Inter, sans-serif",
+        transform: kinetic ? `scale(${scale})` : `translateY(${translateY}px)`,
+        fontFamily,
+        textRendering: "optimizeLegibility",
+        WebkitFontSmoothing: "antialiased",
+        letterSpacing: "-0.02em",
+        lineHeight: 1.2,
         ...style,
       }}
     >
