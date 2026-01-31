@@ -1,122 +1,82 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import {
   Palette, Image, Video, FolderOpen, Plus, ArrowRight, ArrowUpRight,
   Sparkles, Clock, FileImage, Film, Layers, Wand2, Zap, Play,
-  Camera, Clapperboard, Brush, Download, Eye,
+  Camera, Clapperboard, Brush, Download, Eye, ChevronRight, Star,
 } from 'lucide-react';
 import { CreatePageTransition } from '@/components/create/ui';
 import { GeneratedContent, BrandAssets, VideoProject } from '@/api/entities';
-import { MOTION_VARIANTS } from '@/tokens/create';
 import { useUser } from '@/components/context/UserContext';
 
-// Animated mesh gradient background
-function MeshGradient() {
+// ── Neon Yellow Palette ──
+// Primary: #FACC15 (yellow-400)  Glow: #EAB308 (yellow-500)  Dim: #CA8A04 (yellow-600)
+
+function AuroraBackground() {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {/* Primary yellow aurora */}
       <motion.div
-        animate={{
-          x: [0, 30, -20, 0],
-          y: [0, -40, 20, 0],
-          scale: [1, 1.1, 0.95, 1],
-        }}
-        transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
-        className="absolute -top-1/4 -left-1/4 w-[600px] h-[600px] rounded-full"
-        style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.12) 0%, transparent 70%)' }}
+        animate={{ x: [0, 40, -30, 0], y: [0, -50, 30, 0], scale: [1, 1.15, 0.9, 1] }}
+        transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
+        className="absolute -top-[200px] -left-[100px] w-[700px] h-[700px] rounded-full"
+        style={{ background: 'radial-gradient(circle, rgba(250,204,21,0.08) 0%, transparent 65%)' }}
       />
+      {/* Secondary warm glow */}
       <motion.div
-        animate={{
-          x: [0, -30, 20, 0],
-          y: [0, 30, -20, 0],
-          scale: [1, 0.95, 1.1, 1],
-        }}
-        transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
-        className="absolute -bottom-1/4 -right-1/4 w-[500px] h-[500px] rounded-full"
-        style={{ background: 'radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 70%)' }}
+        animate={{ x: [0, -40, 25, 0], y: [0, 35, -25, 0], scale: [1, 0.9, 1.15, 1] }}
+        transition={{ duration: 28, repeat: Infinity, ease: 'easeInOut' }}
+        className="absolute -bottom-[200px] -right-[150px] w-[600px] h-[600px] rounded-full"
+        style={{ background: 'radial-gradient(circle, rgba(234,179,8,0.06) 0%, transparent 65%)' }}
       />
+      {/* Accent amber */}
       <motion.div
-        animate={{
-          x: [0, 20, -10, 0],
-          y: [0, -20, 30, 0],
-        }}
-        transition={{ duration: 30, repeat: Infinity, ease: 'easeInOut' }}
-        className="absolute top-1/3 left-1/2 w-[400px] h-[400px] rounded-full"
-        style={{ background: 'radial-gradient(circle, rgba(244,63,94,0.07) 0%, transparent 70%)' }}
+        animate={{ x: [0, 25, -15, 0], y: [0, -30, 40, 0] }}
+        transition={{ duration: 32, repeat: Infinity, ease: 'easeInOut' }}
+        className="absolute top-1/2 left-1/3 w-[400px] h-[400px] rounded-full"
+        style={{ background: 'radial-gradient(circle, rgba(250,204,21,0.04) 0%, transparent 60%)' }}
       />
+      {/* Subtle noise texture */}
+      <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.5'/%3E%3C/svg%3E")` }} />
     </div>
   );
 }
 
-// Floating particle dots
-function FloatingParticles() {
-  const particles = useMemo(() =>
-    Array.from({ length: 20 }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      size: Math.random() * 3 + 1,
-      duration: Math.random() * 15 + 10,
-      delay: Math.random() * 5,
-      opacity: Math.random() * 0.3 + 0.1,
-    })), []
-  );
-
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {particles.map(p => (
-        <motion.div
-          key={p.id}
-          className="absolute rounded-full bg-cyan-400"
-          style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.size, height: p.size, opacity: 0 }}
-          animate={{
-            y: [0, -60, 0],
-            opacity: [0, p.opacity, 0],
-          }}
-          transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: 'easeInOut' }}
-        />
-      ))}
-    </div>
-  );
-}
-
-// Thumbnail gallery grid item
 function GalleryItem({ item, index }) {
   const isVideo = item.content_type === 'video' || item._type === 'video' || item._type === 'video_project';
   const thumbnailUrl = item.url || item.thumbnail_url || item.final_thumbnail_url;
-  const isImage = thumbnailUrl && (thumbnailUrl.includes('.png') || thumbnailUrl.includes('.jpg') || thumbnailUrl.includes('.jpeg') || thumbnailUrl.includes('.webp') || item.content_type === 'image');
+  const hasImage = thumbnailUrl && (thumbnailUrl.includes('.png') || thumbnailUrl.includes('.jpg') || thumbnailUrl.includes('.jpeg') || thumbnailUrl.includes('.webp') || item.content_type === 'image');
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
+      initial={{ opacity: 0, scale: 0.92 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: index * 0.06, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-      whileHover={{ scale: 1.03, y: -4 }}
-      className="relative aspect-square rounded-2xl overflow-hidden group cursor-pointer"
+      transition={{ delay: index * 0.05, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      whileHover={{ scale: 1.04, y: -4 }}
+      className="relative aspect-[4/5] rounded-2xl overflow-hidden group cursor-pointer ring-1 ring-white/[0.04]"
     >
-      {isImage ? (
-        <img src={thumbnailUrl} alt={item.name || ''} className="w-full h-full object-cover" loading="lazy" />
+      {hasImage ? (
+        <img src={thumbnailUrl} alt={item.name || ''} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
       ) : (
-        <div className={`w-full h-full ${
-          isVideo
-            ? 'bg-gradient-to-br from-rose-950/80 via-zinc-900 to-violet-950/80'
-            : 'bg-gradient-to-br from-cyan-950/80 via-zinc-900 to-blue-950/80'
-        } flex items-center justify-center`}>
-          {isVideo ? <Play className="w-8 h-8 text-white/30" /> : <FileImage className="w-8 h-8 text-white/30" />}
+        <div className={`w-full h-full ${isVideo ? 'bg-gradient-to-br from-yellow-950/40 via-zinc-950 to-zinc-900' : 'bg-gradient-to-br from-zinc-900 via-zinc-950 to-yellow-950/30'} flex items-center justify-center`}>
+          {isVideo ? <Play className="w-10 h-10 text-yellow-500/20" /> : <FileImage className="w-10 h-10 text-yellow-500/20" />}
         </div>
       )}
-      {/* Hover overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end p-3">
-        <p className="text-xs font-medium text-white truncate">{item.name || item.title || 'Untitled'}</p>
-        <div className="flex items-center gap-1 mt-1">
-          {isVideo ? <Film className="w-3 h-3 text-rose-400" /> : <FileImage className="w-3 h-3 text-cyan-400" />}
-          <span className="text-[10px] text-zinc-400">{isVideo ? 'Video' : 'Image'}</span>
+      {/* Bottom gradient */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-400" />
+      {/* Content on hover */}
+      <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+        <p className="text-xs font-semibold text-white truncate">{item.name || item.title || 'Untitled'}</p>
+        <div className="flex items-center gap-1.5 mt-1">
+          {isVideo ? <Film className="w-3 h-3 text-yellow-400" /> : <FileImage className="w-3 h-3 text-yellow-400" />}
+          <span className="text-[10px] text-yellow-400/70 font-medium">{isVideo ? 'Video' : 'Image'}</span>
         </div>
       </div>
       {isVideo && (
-        <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center">
-          <Play className="w-3 h-3 text-white fill-white" />
+        <div className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/50 backdrop-blur-md ring-1 ring-white/10 flex items-center justify-center">
+          <Play className="w-3 h-3 text-white fill-white ml-0.5" />
         </div>
       )}
     </motion.div>
@@ -126,36 +86,33 @@ function GalleryItem({ item, index }) {
 const TOOLS = [
   {
     key: 'images',
-    title: 'AI Images',
+    title: 'AI Image Generation',
     subtitle: 'FLUX Pro & Kontext',
-    description: 'Generate stunning product photos, marketing visuals, and creative imagery with state-of-the-art AI models',
+    description: 'State-of-the-art product photography, marketing visuals, and creative imagery — generated in seconds.',
     icon: Camera,
     route: 'CreateImages',
-    gradient: 'from-violet-600 to-fuchsia-600',
-    bgGlow: 'rgba(139,92,246,0.15)',
-    features: ['Product scenes', 'Marketing banners', 'Social media'],
+    gradient: 'from-yellow-400 to-amber-500',
+    features: ['Product Scenes', 'Marketing', 'Social Content'],
   },
   {
     key: 'videos',
-    title: 'AI Video Studio',
-    subtitle: 'Kling & Minimax',
-    description: 'Create cinematic multi-shot videos with AI storyboarding, per-shot generation, and automatic assembly',
+    title: 'Cinematic Video Studio',
+    subtitle: 'Kling v2.1 & Minimax',
+    description: 'AI storyboarding, multi-shot generation with real people, and automatic video assembly with transitions.',
     icon: Clapperboard,
     route: 'CreateVideos',
-    gradient: 'from-rose-600 to-orange-600',
-    bgGlow: 'rgba(244,63,94,0.15)',
-    features: ['Storyboard AI', 'Multi-shot', 'Auto-edit'],
+    gradient: 'from-amber-500 to-orange-500',
+    features: ['Storyboard AI', 'Multi-Shot', 'Auto-Assembly'],
   },
   {
     key: 'branding',
-    title: 'Brand Designer',
-    subtitle: 'Identity & Assets',
-    description: 'Design complete brand identities with AI-generated logos, color palettes, typography, and brand guidelines',
+    title: 'Brand Identity Designer',
+    subtitle: 'Complete Brand Kits',
+    description: 'Generate full brand identities — logos, palettes, typography systems, and exportable brand guidelines.',
     icon: Brush,
     route: 'CreateBranding',
-    gradient: 'from-cyan-600 to-blue-600',
-    bgGlow: 'rgba(6,182,212,0.15)',
-    features: ['Logo design', 'Color palettes', 'Brand kit'],
+    gradient: 'from-yellow-500 to-yellow-300',
+    features: ['Logo Design', 'Color Systems', 'Brand Kit'],
   },
 ];
 
@@ -180,7 +137,7 @@ export default function Create() {
       if (brandsRes.status === 'fulfilled') setBrandAssets(brandsRes.value || []);
       if (videosRes.status === 'fulfilled') setVideoProjects(videosRes.value || []);
     } catch (e) {
-      console.error('Failed to load create dashboard data:', e);
+      console.error('Failed to load data:', e);
     } finally {
       setLoading(false);
     }
@@ -189,12 +146,7 @@ export default function Create() {
   const stats = useMemo(() => {
     const images = content.filter(c => c.content_type === 'image');
     const videos = content.filter(c => c.content_type === 'video');
-    return {
-      totalImages: images.length,
-      totalVideos: videos.length + videoProjects.length,
-      totalBrands: brandAssets.length,
-      totalContent: content.length,
-    };
+    return { totalImages: images.length, totalVideos: videos.length + videoProjects.length, totalBrands: brandAssets.length, totalContent: content.length };
   }, [content, brandAssets, videoProjects]);
 
   const galleryItems = useMemo(() => {
@@ -206,49 +158,80 @@ export default function Create() {
   }, [content, videoProjects]);
 
   return (
-    <CreatePageTransition className="min-h-screen bg-black">
+    <CreatePageTransition className="min-h-screen bg-[#09090b]">
       <div className="relative w-full">
-        <MeshGradient />
-        <FloatingParticles />
+        <AuroraBackground />
 
-        <div className="relative z-10 w-full px-4 lg:px-6 py-5 space-y-8">
+        <div className="relative z-10 w-full max-w-[1400px] mx-auto px-5 lg:px-8 py-6 space-y-10">
 
-          {/* ── Hero Section ── */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="relative overflow-hidden rounded-[24px] border border-zinc-800/40"
-            style={{ background: 'linear-gradient(135deg, rgba(6,182,212,0.06) 0%, rgba(0,0,0,0.8) 40%, rgba(139,92,246,0.06) 100%)' }}
+          {/* ── Hero ── */}
+          <motion.section
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.7 }}
+            className="relative overflow-hidden rounded-[28px]"
+            style={{ background: 'linear-gradient(145deg, rgba(250,204,21,0.04) 0%, rgba(9,9,11,0.95) 50%, rgba(234,179,8,0.03) 100%)' }}
           >
-            <div className="relative z-10 px-6 lg:px-10 py-8 lg:py-12">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-                <div className="space-y-4 max-w-xl">
-                  <div className="flex items-center gap-2">
-                    <motion.div
-                      animate={{ rotate: [0, 10, -10, 0] }}
-                      transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                    >
-                      <Sparkles className="w-5 h-5 text-cyan-400" />
+            {/* Subtle border */}
+            <div className="absolute inset-0 rounded-[28px] ring-1 ring-inset ring-yellow-500/[0.08] pointer-events-none" />
+            {/* Fine grid */}
+            <div className="absolute inset-0 pointer-events-none opacity-[0.025]" style={{ backgroundImage: 'linear-gradient(rgba(250,204,21,.3) 1px, transparent 1px), linear-gradient(90deg, rgba(250,204,21,.3) 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
+            {/* Top accent line */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/3 h-px bg-gradient-to-r from-transparent via-yellow-500/40 to-transparent" />
+
+            <div className="relative z-10 px-8 lg:px-14 py-12 lg:py-16">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
+                <div className="space-y-5 max-w-2xl">
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2, duration: 0.5 }}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-yellow-500/[0.08] border border-yellow-500/[0.12]"
+                  >
+                    <motion.div animate={{ rotate: [0, 12, -12, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}>
+                      <Sparkles className="w-3.5 h-3.5 text-yellow-400" />
                     </motion.div>
-                    <span className="text-xs font-medium text-cyan-400 tracking-widest uppercase">AI Create Studio</span>
-                  </div>
-                  <h1 className="text-3xl lg:text-4xl font-bold text-white leading-tight">
-                    Bring ideas to life
-                    <br />
-                    <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-violet-400 bg-clip-text text-transparent">
-                      in seconds
+                    <span className="text-[11px] font-semibold text-yellow-400 tracking-[0.15em] uppercase">Create Studio</span>
+                  </motion.div>
+
+                  <motion.h1
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3, duration: 0.6 }}
+                    className="text-4xl lg:text-5xl font-bold text-white leading-[1.1] tracking-tight"
+                  >
+                    Imagine it.{' '}
+                    <span className="relative">
+                      <span className="text-yellow-400">Create it.</span>
+                      <motion.span
+                        initial={{ scaleX: 0 }}
+                        animate={{ scaleX: 1 }}
+                        transition={{ delay: 0.8, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                        className="absolute -bottom-1 left-0 right-0 h-[2px] bg-gradient-to-r from-yellow-400 to-transparent origin-left"
+                      />
                     </span>
-                  </h1>
-                  <p className="text-sm text-zinc-400 leading-relaxed max-w-md">
-                    Generate stunning images, cinematic videos, and complete brand identities using cutting-edge AI models.
-                  </p>
-                  <div className="flex items-center gap-3 pt-2">
+                  </motion.h1>
+
+                  <motion.p
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4, duration: 0.5 }}
+                    className="text-[15px] text-zinc-400 leading-relaxed max-w-lg"
+                  >
+                    Professional images, cinematic videos, and complete brand systems — all powered by the world's most advanced generative AI.
+                  </motion.p>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5, duration: 0.5 }}
+                    className="flex items-center gap-3 pt-1"
+                  >
                     <Link to={createPageUrl('CreateImages')}>
                       <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold text-sm rounded-full shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 transition-shadow"
+                        whileHover={{ scale: 1.04 }}
+                        whileTap={{ scale: 0.96 }}
+                        className="flex items-center gap-2.5 px-6 py-3 bg-yellow-400 text-black font-bold text-sm rounded-full hover:bg-yellow-300 transition-colors shadow-[0_0_30px_rgba(250,204,21,0.2)] hover:shadow-[0_0_40px_rgba(250,204,21,0.3)]"
                       >
                         <Wand2 className="w-4 h-4" />
                         Start Creating
@@ -256,112 +239,115 @@ export default function Create() {
                     </Link>
                     <Link to={createPageUrl('CreateLibrary')}>
                       <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-white/5 border border-white/10 text-white font-medium text-sm rounded-full hover:bg-white/10 transition-colors"
+                        whileHover={{ scale: 1.04 }}
+                        whileTap={{ scale: 0.96 }}
+                        className="flex items-center gap-2.5 px-6 py-3 bg-white/[0.04] border border-white/[0.08] text-zinc-300 font-medium text-sm rounded-full hover:bg-white/[0.07] hover:border-white/[0.12] transition-all"
                       >
                         <FolderOpen className="w-4 h-4" />
                         Library
                       </motion.button>
                     </Link>
-                  </div>
+                  </motion.div>
                 </div>
 
-                {/* Live stats floating cards */}
-                <div className="hidden lg:grid grid-cols-2 gap-3">
+                {/* Stats */}
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.5, duration: 0.6 }}
+                  className="hidden lg:grid grid-cols-2 gap-3"
+                >
                   {[
-                    { label: 'Images Created', value: stats.totalImages, icon: FileImage, color: 'from-violet-500/20 to-purple-500/20', text: 'text-violet-400' },
-                    { label: 'Videos Produced', value: stats.totalVideos, icon: Film, color: 'from-rose-500/20 to-pink-500/20', text: 'text-rose-400' },
-                    { label: 'Brand Assets', value: stats.totalBrands, icon: Palette, color: 'from-cyan-500/20 to-blue-500/20', text: 'text-cyan-400' },
-                    { label: 'Total Content', value: stats.totalContent, icon: Layers, color: 'from-amber-500/20 to-orange-500/20', text: 'text-amber-400' },
+                    { label: 'Images', value: stats.totalImages, icon: FileImage },
+                    { label: 'Videos', value: stats.totalVideos, icon: Film },
+                    { label: 'Brands', value: stats.totalBrands, icon: Palette },
+                    { label: 'Total', value: stats.totalContent, icon: Layers },
                   ].map((s, i) => (
                     <motion.div
                       key={s.label}
-                      initial={{ opacity: 0, scale: 0.9, y: 10 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      transition={{ delay: 0.3 + i * 0.08, duration: 0.4 }}
-                      className="bg-white/[0.04] backdrop-blur-md border border-white/[0.06] rounded-2xl px-4 py-3 min-w-[140px]"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.6 + i * 0.07 }}
+                      className="bg-white/[0.03] backdrop-blur-sm border border-white/[0.05] rounded-2xl px-5 py-4 min-w-[130px]"
                     >
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${s.color} flex items-center justify-center`}>
-                          <s.icon className={`w-3.5 h-3.5 ${s.text}`} />
-                        </div>
+                      <div className="flex items-center gap-2.5 mb-1">
+                        <s.icon className="w-4 h-4 text-yellow-500/60" />
                         {loading ? (
                           <div className="w-6 h-5 bg-zinc-800 rounded animate-pulse" />
                         ) : (
-                          <span className="text-lg font-bold text-white">{s.value}</span>
+                          <span className="text-2xl font-bold text-white tabular-nums">{s.value}</span>
                         )}
                       </div>
-                      <p className="text-[10px] text-zinc-500 uppercase tracking-wider">{s.label}</p>
+                      <p className="text-[10px] text-zinc-600 font-medium uppercase tracking-[0.12em]">{s.label}</p>
                     </motion.div>
                   ))}
-                </div>
+                </motion.div>
+              </div>
+            </div>
+          </motion.section>
+
+          {/* ── Creative Tools ── */}
+          <section>
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="text-xl font-bold text-white tracking-tight">Creative Tools</h2>
+                <p className="text-xs text-zinc-600 mt-0.5">Choose your canvas</p>
+              </div>
+              <div className="flex items-center gap-1.5 text-[10px] text-zinc-700 font-medium uppercase tracking-wider">
+                <Zap className="w-3 h-3 text-yellow-500/40" />
+                FLUX &middot; Kling &middot; Minimax
               </div>
             </div>
 
-            {/* Decorative grid pattern */}
-            <div className="absolute inset-0 pointer-events-none opacity-[0.03]"
-              style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)', backgroundSize: '40px 40px' }}
-            />
-          </motion.div>
-
-          {/* ── Tool Cards ── */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-white">Creative Tools</h2>
-              <div className="flex items-center gap-1 text-xs text-zinc-600">
-                <Zap className="w-3 h-3" />
-                Powered by FLUX, Kling, Minimax
-              </div>
-            </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               {TOOLS.map((tool, i) => (
                 <Link key={tool.key} to={createPageUrl(tool.route)}>
                   <motion.div
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 24 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.15 + i * 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                    whileHover={{ y: -6, transition: { duration: 0.25 } }}
+                    transition={{ delay: 0.1 + i * 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                    whileHover={{ y: -8, transition: { duration: 0.3, ease: 'easeOut' } }}
                     whileTap={{ scale: 0.98 }}
                     onHoverStart={() => setHoveredTool(tool.key)}
                     onHoverEnd={() => setHoveredTool(null)}
-                    className="relative overflow-hidden rounded-[20px] border border-zinc-800/50 p-6 cursor-pointer group h-full"
-                    style={{ background: `linear-gradient(160deg, rgba(24,24,27,0.9) 0%, rgba(0,0,0,0.95) 100%)` }}
+                    className="relative overflow-hidden rounded-[22px] border border-white/[0.04] p-6 lg:p-7 cursor-pointer group h-full bg-zinc-950/80"
                   >
-                    {/* Glow effect on hover */}
+                    {/* Hover glow */}
                     <AnimatePresence>
                       {hoveredTool === tool.key && (
                         <motion.div
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
+                          transition={{ duration: 0.3 }}
                           className="absolute inset-0 pointer-events-none"
-                          style={{ background: `radial-gradient(ellipse at 30% 20%, ${tool.bgGlow} 0%, transparent 70%)` }}
+                          style={{ background: 'radial-gradient(ellipse at 30% 0%, rgba(250,204,21,0.06) 0%, transparent 60%)' }}
                         />
                       )}
                     </AnimatePresence>
+                    {/* Top edge glow on hover */}
+                    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-yellow-500/0 group-hover:via-yellow-500/30 to-transparent transition-all duration-500" />
 
                     <div className="relative z-10">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${tool.gradient} flex items-center justify-center shadow-lg`}>
-                          <tool.icon className="w-6 h-6 text-white" />
+                      <div className="flex items-start justify-between mb-5">
+                        <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${tool.gradient} flex items-center justify-center shadow-lg shadow-yellow-500/10`}>
+                          <tool.icon className="w-5 h-5 text-black" />
                         </div>
                         <motion.div
-                          initial={{ x: -5, opacity: 0 }}
-                          animate={hoveredTool === tool.key ? { x: 0, opacity: 1 } : { x: -5, opacity: 0 }}
-                          className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center"
+                          animate={hoveredTool === tool.key ? { x: 0, opacity: 1 } : { x: -4, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
                         >
-                          <ArrowUpRight className="w-4 h-4 text-white" />
+                          <ArrowUpRight className="w-5 h-5 text-yellow-400/60" />
                         </motion.div>
                       </div>
 
-                      <h3 className="text-base font-bold text-white mb-0.5">{tool.title}</h3>
-                      <p className="text-[10px] font-medium text-zinc-500 uppercase tracking-wider mb-2">{tool.subtitle}</p>
-                      <p className="text-xs text-zinc-400 leading-relaxed mb-4">{tool.description}</p>
+                      <h3 className="text-[15px] font-bold text-white mb-0.5 tracking-tight">{tool.title}</h3>
+                      <p className="text-[10px] font-semibold text-yellow-500/40 uppercase tracking-[0.15em] mb-3">{tool.subtitle}</p>
+                      <p className="text-[13px] text-zinc-500 leading-relaxed mb-5">{tool.description}</p>
 
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className="flex flex-wrap gap-2">
                         {tool.features.map(f => (
-                          <span key={f} className="text-[10px] px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] text-zinc-400">
+                          <span key={f} className="text-[10px] font-medium px-3 py-1.5 rounded-full bg-yellow-500/[0.05] border border-yellow-500/[0.08] text-yellow-500/60 tracking-wide">
                             {f}
                           </span>
                         ))}
@@ -371,20 +357,18 @@ export default function Create() {
                 </Link>
               ))}
             </div>
-          </div>
+          </section>
 
-          {/* ── Gallery Grid ── */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-white">Recent Creations</h2>
+          {/* ── Gallery ── */}
+          <section>
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="text-xl font-bold text-white tracking-tight">Recent Creations</h2>
+                <p className="text-xs text-zinc-600 mt-0.5">Your latest AI-generated content</p>
+              </div>
               <Link to={createPageUrl('CreateLibrary')}>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-300 transition-colors font-medium"
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  View Library
+                <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="flex items-center gap-1.5 text-xs text-yellow-400/70 hover:text-yellow-400 transition-colors font-semibold">
+                  View All <ArrowRight className="w-3.5 h-3.5" />
                 </motion.button>
               </Link>
             </div>
@@ -392,36 +376,30 @@ export default function Create() {
             {loading ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                 {[1,2,3,4,5,6,7,8].map(i => (
-                  <div key={i} className="aspect-square rounded-2xl bg-zinc-900/50 border border-zinc-800/40 animate-pulse" />
+                  <div key={i} className="aspect-[4/5] rounded-2xl bg-zinc-900/60 ring-1 ring-white/[0.03] animate-pulse" />
                 ))}
               </div>
             ) : galleryItems.length === 0 ? (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="relative overflow-hidden rounded-[24px] border border-dashed border-zinc-800/60 py-16 text-center"
+                className="relative overflow-hidden rounded-[24px] border border-dashed border-yellow-500/[0.12] py-20 text-center bg-yellow-500/[0.01]"
               >
-                <div className="relative z-10">
-                  <motion.div
-                    animate={{ y: [0, -8, 0] }}
-                    transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                    className="w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500/10 to-violet-500/10 border border-cyan-500/20 flex items-center justify-center mx-auto mb-4"
-                  >
-                    <Sparkles className="w-7 h-7 text-cyan-400" />
-                  </motion.div>
-                  <p className="text-base font-medium text-white mb-1">Your canvas awaits</p>
-                  <p className="text-sm text-zinc-500 mb-5 max-w-xs mx-auto">Create your first piece of content and watch your gallery come to life</p>
-                  <Link to={createPageUrl('CreateImages')}>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold text-sm rounded-full"
-                    >
-                      <Wand2 className="w-4 h-4" />
-                      Generate First Image
-                    </motion.button>
-                  </Link>
-                </div>
+                <motion.div
+                  animate={{ y: [0, -10, 0] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                  className="w-16 h-16 rounded-2xl bg-yellow-500/[0.06] border border-yellow-500/[0.1] flex items-center justify-center mx-auto mb-5"
+                >
+                  <Sparkles className="w-7 h-7 text-yellow-400/60" />
+                </motion.div>
+                <p className="text-lg font-semibold text-white mb-1">Your canvas awaits</p>
+                <p className="text-sm text-zinc-600 mb-6 max-w-xs mx-auto">Create your first piece and watch your gallery come alive</p>
+                <Link to={createPageUrl('CreateImages')}>
+                  <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }} className="inline-flex items-center gap-2 px-6 py-3 bg-yellow-400 text-black font-bold text-sm rounded-full shadow-[0_0_30px_rgba(250,204,21,0.15)]">
+                    <Wand2 className="w-4 h-4" />
+                    Generate First Image
+                  </motion.button>
+                </Link>
               </motion.div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -430,38 +408,41 @@ export default function Create() {
                 ))}
               </div>
             )}
-          </div>
+          </section>
 
-          {/* ── Quick Actions Footer ── */}
-          <motion.div
+          {/* ── Quick Access ── */}
+          <motion.section
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="grid grid-cols-2 lg:grid-cols-4 gap-3 pb-4"
+            transition={{ delay: 0.5 }}
+            className="pb-6"
           >
-            {[
-              { label: 'Generate Image', icon: Camera, route: 'CreateImages', desc: 'AI-powered visuals' },
-              { label: 'Create Video', icon: Clapperboard, route: 'CreateVideos', desc: 'Cinematic production' },
-              { label: 'Design Brand', icon: Brush, route: 'CreateBranding', desc: 'Full brand identity' },
-              { label: 'Browse Library', icon: Download, route: 'CreateLibrary', desc: 'All your content' },
-            ].map((action, i) => (
-              <Link key={action.label} to={createPageUrl(action.route)}>
-                <motion.div
-                  whileHover={{ scale: 1.02, y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-white/[0.02] border border-zinc-800/40 hover:border-cyan-500/20 hover:bg-white/[0.04] transition-all cursor-pointer group"
-                >
-                  <div className="w-9 h-9 rounded-xl bg-cyan-500/10 flex items-center justify-center group-hover:bg-cyan-500/15 transition-colors">
-                    <action.icon className="w-4 h-4 text-cyan-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-white">{action.label}</p>
-                    <p className="text-[10px] text-zinc-600">{action.desc}</p>
-                  </div>
-                </motion.div>
-              </Link>
-            ))}
-          </motion.div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {[
+                { label: 'Generate Image', icon: Camera, route: 'CreateImages', desc: 'AI-powered visuals' },
+                { label: 'Create Video', icon: Clapperboard, route: 'CreateVideos', desc: 'Cinematic production' },
+                { label: 'Design Brand', icon: Brush, route: 'CreateBranding', desc: 'Full brand identity' },
+                { label: 'Content Library', icon: FolderOpen, route: 'CreateLibrary', desc: 'Browse all content' },
+              ].map((a) => (
+                <Link key={a.label} to={createPageUrl(a.route)}>
+                  <motion.div
+                    whileHover={{ y: -3, transition: { duration: 0.2 } }}
+                    whileTap={{ scale: 0.98 }}
+                    className="flex items-center gap-3 px-4 py-4 rounded-2xl bg-white/[0.015] border border-white/[0.04] hover:border-yellow-500/[0.15] hover:bg-yellow-500/[0.02] transition-all duration-300 cursor-pointer group"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-yellow-500/[0.06] flex items-center justify-center group-hover:bg-yellow-500/[0.1] transition-colors duration-300">
+                      <a.icon className="w-4.5 h-4.5 text-yellow-500/60 group-hover:text-yellow-400 transition-colors" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-zinc-300 group-hover:text-white transition-colors">{a.label}</p>
+                      <p className="text-[10px] text-zinc-700">{a.desc}</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-zinc-800 group-hover:text-yellow-500/40 transition-colors" />
+                  </motion.div>
+                </Link>
+              ))}
+            </div>
+          </motion.section>
 
         </div>
       </div>

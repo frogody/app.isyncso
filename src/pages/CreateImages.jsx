@@ -617,8 +617,8 @@ export default function CreateImages() {
         <div className="flex items-center justify-between mb-2">
           <div>
             <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
-                <Image className="w-5 h-5 text-cyan-400" />
+              <div className="p-2.5 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
+                <Image className="w-5 h-5 text-yellow-400" />
               </div>
               AI Image Generation
             </h1>
@@ -636,7 +636,7 @@ export default function CreateImages() {
               className="p-4 rounded-[20px] bg-zinc-900/50 border border-zinc-800/60"
             >
               <h3 className="text-base font-semibold text-white flex items-center gap-2 mb-3">
-                <Sparkles className="w-5 h-5 text-cyan-400/70" />
+                <Sparkles className="w-5 h-5 text-yellow-400/70" />
                 What do you want to create?
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -648,7 +648,7 @@ export default function CreateImages() {
                     blue: isSelected ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'hover:border-blue-500/30',
                     purple: isSelected ? 'bg-purple-500/20 border-purple-500/50 text-purple-400' : 'hover:border-purple-500/30',
                     amber: isSelected ? 'bg-amber-500/20 border-amber-500/50 text-amber-400' : 'hover:border-amber-500/30',
-                    rose: isSelected ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400' : 'hover:border-cyan-500/20',
+                    rose: isSelected ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400' : 'hover:border-yellow-500/20',
                   };
                   return (
                     <button
@@ -668,14 +668,14 @@ export default function CreateImages() {
                           variant="outline"
                           className={`text-[10px] px-1.5 py-0 ${
                             useCase.costTier === 'economy' ? 'border-amber-500/30 text-amber-400' :
-                            useCase.costTier === 'premium' ? 'border-cyan-500/20 text-cyan-400' :
+                            useCase.costTier === 'premium' ? 'border-yellow-500/20 text-yellow-400' :
                             'border-zinc-500/30 text-zinc-400'
                           }`}
                         >
                           ${useCase.estimatedCost.toFixed(3)}
                         </Badge>
                         {useCase.requiresReferenceImage && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-cyan-500/30 text-cyan-400">
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-yellow-500/30 text-yellow-400">
                             Needs Image
                           </Badge>
                         )}
@@ -694,7 +694,7 @@ export default function CreateImages() {
               className="p-4 rounded-[20px] bg-zinc-900/50 border border-zinc-800/60"
             >
               <h3 className="text-base font-semibold text-white flex items-center gap-2 mb-3">
-                <Wand2 className="w-5 h-5 text-cyan-400/70" />
+                <Wand2 className="w-5 h-5 text-yellow-400/70" />
                 {USE_CASES[selectedUseCase]?.requiresReferenceImage ? 'Describe the Scene (Optional)' : 'Prompt'}
               </h3>
               <div className="space-y-3">
@@ -703,7 +703,7 @@ export default function CreateImages() {
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     placeholder="Describe the image you want to generate..."
-                    className="min-h-[100px] bg-zinc-800/50 border-zinc-700/50 text-white placeholder:text-zinc-500 focus:border-cyan-500/30 resize-none"
+                    className="min-h-[100px] bg-zinc-800/50 border-zinc-700/50 text-white placeholder:text-zinc-500 focus:border-yellow-500/30 resize-none"
                     maxLength={1000}
                   />
                   <div className="flex justify-between mt-1.5 text-[10px] text-zinc-500">
@@ -714,7 +714,7 @@ export default function CreateImages() {
                           type="checkbox"
                           checked={useBrandContext}
                           onChange={(e) => setUseBrandContext(e.target.checked)}
-                          className="rounded border-zinc-600 bg-zinc-800 text-cyan-500 focus:ring-cyan-500/30"
+                          className="rounded border-zinc-600 bg-zinc-800 text-yellow-500 focus:ring-yellow-500/30"
                         />
                         <Palette className="w-3 h-3" />
                         Apply brand context
@@ -734,7 +734,7 @@ export default function CreateImages() {
                       >
                         {selectedProduct ? (
                           <span className="flex items-center gap-2">
-                            <Package className="w-4 h-4 text-cyan-400/70" />
+                            <Package className="w-4 h-4 text-yellow-400/70" />
                             {selectedProduct.name}
                           </span>
                         ) : (
@@ -749,7 +749,7 @@ export default function CreateImages() {
                         placeholder="Search products..."
                         value={productSearch}
                         onChange={(e) => setProductSearch(e.target.value)}
-                        className="w-full px-3 py-1.5 mb-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-xs focus:outline-none focus:border-cyan-500/30"
+                        className="w-full px-3 py-1.5 mb-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-xs focus:outline-none focus:border-yellow-500/30"
                       />
                       <div className="max-h-60 overflow-y-auto space-y-0.5">
                         {selectedProduct && (
@@ -767,7 +767,7 @@ export default function CreateImages() {
                             onClick={() => handleProductSelect(product)}
                             className={`w-full text-left px-3 py-1.5 text-xs rounded-lg flex items-center justify-between transition-colors ${
                               selectedProduct?.id === product.id
-                                ? 'bg-cyan-500/10 text-cyan-400'
+                                ? 'bg-yellow-500/10 text-yellow-400'
                                 : 'text-white hover:bg-zinc-800'
                             }`}
                           >
@@ -775,7 +775,7 @@ export default function CreateImages() {
                               <Package className="w-4 h-4" />
                               {product.name}
                               {product.type === 'physical' && (
-                                <Badge variant="outline" className="text-[10px] px-1 py-0 border-cyan-500/30 text-cyan-400">
+                                <Badge variant="outline" className="text-[10px] px-1 py-0 border-yellow-500/30 text-yellow-400">
                                   Physical
                                 </Badge>
                               )}
@@ -799,12 +799,12 @@ export default function CreateImages() {
                       className="mt-3 space-y-2"
                     >
                       {/* Product Preservation Notice */}
-                      <div className="p-2.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+                      <div className="p-2.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
                         <div className="flex items-start gap-2">
-                          <ShieldCheck className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
+                          <ShieldCheck className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
                           <div>
-                            <p className="text-xs font-medium text-cyan-400">Product Preservation Mode</p>
-                            <p className="text-[10px] text-cyan-400/70 mt-0.5">
+                            <p className="text-xs font-medium text-yellow-400">Product Preservation Mode</p>
+                            <p className="text-[10px] text-yellow-400/70 mt-0.5">
                               The AI will keep your product exactly as shown in the reference images. Only the background, lighting, and environment will change.
                             </p>
                           </div>
@@ -814,7 +814,7 @@ export default function CreateImages() {
                       {/* Reference Images Grid */}
                       {loadingProductImages ? (
                         <div className="flex items-center justify-center py-3">
-                          <Loader2 className="w-4 h-4 text-cyan-400 animate-spin mr-2" />
+                          <Loader2 className="w-4 h-4 text-yellow-400 animate-spin mr-2" />
                           <span className="text-zinc-400 text-xs">Loading product images...</span>
                         </div>
                       ) : productImages.length > 0 ? (
@@ -830,7 +830,7 @@ export default function CreateImages() {
                                 onClick={() => setSelectedReferenceImage(imageUrl)}
                                 className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
                                   selectedReferenceImage === imageUrl
-                                    ? 'border-cyan-500 ring-2 ring-cyan-500/20'
+                                    ? 'border-yellow-500 ring-2 ring-yellow-500/20'
                                     : 'border-zinc-700/50 hover:border-zinc-500'
                                 }`}
                               >
@@ -840,8 +840,8 @@ export default function CreateImages() {
                                   className="w-full h-full object-cover"
                                 />
                                 {selectedReferenceImage === imageUrl && (
-                                  <div className="absolute inset-0 bg-cyan-500/10 flex items-center justify-center">
-                                    <Check className="w-4 h-4 text-cyan-400" />
+                                  <div className="absolute inset-0 bg-yellow-500/10 flex items-center justify-center">
+                                    <Check className="w-4 h-4 text-yellow-400" />
                                   </div>
                                 )}
                               </button>
@@ -852,12 +852,12 @@ export default function CreateImages() {
                           </p>
                         </div>
                       ) : (
-                        <div className="p-2.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+                        <div className="p-2.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
                           <div className="flex items-start gap-2">
-                            <AlertCircle className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
+                            <AlertCircle className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
                             <div>
-                              <p className="text-xs font-medium text-cyan-400">No Reference Images</p>
-                              <p className="text-[10px] text-cyan-400/70 mt-0.5">
+                              <p className="text-xs font-medium text-yellow-400">No Reference Images</p>
+                              <p className="text-[10px] text-yellow-400/70 mt-0.5">
                                 This product has no images. Add images in the Products page for best results. The AI will generate based on the product name and description only.
                               </p>
                             </div>
@@ -878,7 +878,7 @@ export default function CreateImages() {
               className="p-4 rounded-[20px] bg-zinc-900/50 border border-zinc-800/60"
             >
               <h3 className="text-base font-semibold text-white flex items-center gap-2 mb-3">
-                <Settings2 className="w-5 h-5 text-cyan-400/70" />
+                <Settings2 className="w-5 h-5 text-yellow-400/70" />
                 Style & Settings
               </h3>
               <div className="space-y-3">
@@ -894,7 +894,7 @@ export default function CreateImages() {
                           onClick={() => setSelectedStyle(style.id)}
                           className={`p-2.5 rounded-lg border text-center transition-all ${
                             selectedStyle === style.id
-                              ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400'
+                              ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400'
                               : 'bg-zinc-800/30 border-zinc-700/30 text-zinc-400 hover:border-zinc-600 hover:text-zinc-300'
                           }`}
                         >
@@ -910,7 +910,7 @@ export default function CreateImages() {
                 <div>
                   <Label className="text-zinc-400 mb-2 block text-xs">Aspect Ratio</Label>
                   <Select value={aspectRatio} onValueChange={setAspectRatio}>
-                    <SelectTrigger className="bg-zinc-800/50 border-zinc-700/50 text-white focus:ring-cyan-500/30">
+                    <SelectTrigger className="bg-zinc-800/50 border-zinc-700/50 text-white focus:ring-yellow-500/30">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-zinc-900 border-zinc-800">
@@ -937,7 +937,7 @@ export default function CreateImages() {
                         variant="outline"
                         className={`${
                           USE_CASES[selectedUseCase]?.costTier === 'economy' ? 'border-amber-500/30 text-amber-400' :
-                          USE_CASES[selectedUseCase]?.costTier === 'premium' ? 'border-cyan-500/20 text-cyan-400' :
+                          USE_CASES[selectedUseCase]?.costTier === 'premium' ? 'border-yellow-500/20 text-yellow-400' :
                           'border-zinc-500/30 text-zinc-400'
                         }`}
                       >
@@ -954,7 +954,7 @@ export default function CreateImages() {
                   <Button
                     onClick={handleGenerate}
                     disabled={isGenerating || (!USE_CASES[selectedUseCase]?.requiresReferenceImage && !prompt.trim()) || (USE_CASES[selectedUseCase]?.requiresReferenceImage && !selectedReferenceImage)}
-                    className="w-full bg-cyan-500/10 hover:bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 hover:border-cyan-500/30 transition-all"
+                    className="w-full bg-yellow-500/10 hover:bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 hover:border-yellow-500/30 transition-all"
                     size="lg"
                   >
                     {isGenerating ? (
@@ -1000,7 +1000,7 @@ export default function CreateImages() {
             >
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-base font-semibold text-white flex items-center gap-2">
-                  <Image className="w-5 h-5 text-cyan-400/70" />
+                  <Image className="w-5 h-5 text-yellow-400/70" />
                   Preview
                 </h3>
                 {generatedImage && (
@@ -1033,9 +1033,9 @@ export default function CreateImages() {
                 {isGenerating ? (
                   <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-800/30">
                     <div className="relative">
-                      <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+                      <Loader2 className="w-8 h-8 text-yellow-400 animate-spin" />
                       {isEnhancing && (
-                        <Wand2 className="w-4 h-4 text-cyan-300 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                        <Wand2 className="w-4 h-4 text-yellow-300 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                       )}
                     </div>
                     <p className="text-zinc-300 mt-3 font-medium text-sm">
@@ -1065,10 +1065,10 @@ export default function CreateImages() {
               {generatedImage?.enhanced_prompt && (
                 <div className="mt-3 p-3 bg-gradient-to-br from-zinc-800/50 to-zinc-900/50 rounded-lg border border-zinc-700/30">
                   <div className="flex items-center gap-2 mb-2">
-                    <Wand2 className="w-3.5 h-3.5 text-cyan-400" />
-                    <Label className="text-cyan-400 text-[10px] font-medium">AI-Enhanced Prompt</Label>
+                    <Wand2 className="w-3.5 h-3.5 text-yellow-400" />
+                    <Label className="text-yellow-400 text-[10px] font-medium">AI-Enhanced Prompt</Label>
                     {generatedImage.ai_enhancement && !generatedImage.ai_enhancement.fallback && (
-                      <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-400 border-cyan-500/20">
+                      <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-400 border-yellow-500/20">
                         AI Optimized
                       </Badge>
                     )}
@@ -1106,14 +1106,14 @@ export default function CreateImages() {
                 className="p-4 rounded-[20px] bg-zinc-900/50 border border-zinc-800/60"
               >
                 <h3 className="text-base font-semibold text-white flex items-center gap-2 mb-3">
-                  <History className="w-5 h-5 text-cyan-400/70" />
+                  <History className="w-5 h-5 text-yellow-400/70" />
                   Recent Generations
                 </h3>
                 <div className="grid grid-cols-3 gap-2 max-h-[400px] overflow-y-auto">
                   {generationHistory.map(item => (
                     <div
                       key={item.id}
-                      className="group relative aspect-square rounded-lg overflow-hidden border border-zinc-700/30 cursor-pointer hover:border-cyan-500/30 transition-colors"
+                      className="group relative aspect-square rounded-lg overflow-hidden border border-zinc-700/30 cursor-pointer hover:border-yellow-500/30 transition-colors"
                       onClick={() => setPreviewImage(item)}
                     >
                       <img
@@ -1188,7 +1188,7 @@ export default function CreateImages() {
               <div className="flex gap-1.5">
                 <Button
                   onClick={() => handleDownload(previewImage.url, previewImage.name)}
-                  className="bg-cyan-500/10 hover:bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-xs"
+                  className="bg-yellow-500/10 hover:bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 text-xs"
                   size="sm"
                 >
                   <Download className="w-3.5 h-3.5 mr-1" />

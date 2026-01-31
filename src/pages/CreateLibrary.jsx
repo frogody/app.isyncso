@@ -188,8 +188,8 @@ export default function CreateLibrary() {
         <div className="flex items-center justify-between mb-2">
           <div>
             <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
-                <FolderOpen className="w-5 h-5 text-cyan-400" />
+              <div className="p-2.5 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
+                <FolderOpen className="w-5 h-5 text-yellow-400" />
               </div>
               Content Library
             </h1>
@@ -212,7 +212,7 @@ export default function CreateLibrary() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by name, prompt, or tags..."
-                className="pl-10 bg-zinc-900/50 border-zinc-700 text-white placeholder:text-zinc-500 focus:border-cyan-500/50 focus:ring-cyan-500/20"
+                className="pl-10 bg-zinc-900/50 border-zinc-700 text-white placeholder:text-zinc-500 focus:border-yellow-500/50 focus:ring-yellow-500/20"
               />
             </div>
 
@@ -249,13 +249,13 @@ export default function CreateLibrary() {
               <div className="flex border border-zinc-700 rounded-xl overflow-hidden">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`p-2 transition-colors ${viewMode === 'grid' ? 'bg-cyan-500 text-white' : 'bg-zinc-900/50 text-zinc-400 hover:text-zinc-300'}`}
+                  className={`p-2 transition-colors ${viewMode === 'grid' ? 'bg-yellow-500 text-white' : 'bg-zinc-900/50 text-zinc-400 hover:text-zinc-300'}`}
                 >
                   <Grid className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`p-2 transition-colors ${viewMode === 'list' ? 'bg-cyan-500 text-white' : 'bg-zinc-900/50 text-zinc-400 hover:text-zinc-300'}`}
+                  className={`p-2 transition-colors ${viewMode === 'list' ? 'bg-yellow-500 text-white' : 'bg-zinc-900/50 text-zinc-400 hover:text-zinc-300'}`}
                 >
                   <List className="w-4 h-4" />
                 </button>
@@ -312,7 +312,7 @@ export default function CreateLibrary() {
         {/* Content Grid/List */}
         {loading ? (
           <div className="text-center py-12">
-            <Loader2 className="w-12 h-12 text-cyan-400 animate-spin mx-auto mb-4" />
+            <Loader2 className="w-12 h-12 text-yellow-400 animate-spin mx-auto mb-4" />
             <p className="text-zinc-400">Loading content...</p>
           </div>
         ) : filteredContent.length === 0 ? (
@@ -332,7 +332,7 @@ export default function CreateLibrary() {
             <div className="flex justify-center gap-2">
               <Button
                 onClick={() => navigate(createPageUrl('CreateImages'))}
-                className="bg-gradient-to-r from-cyan-500 to-cyan-500 hover:from-cyan-600 hover:to-cyan-600 border-0"
+                className="bg-gradient-to-r from-yellow-500 to-yellow-500 hover:from-yellow-600 hover:to-yellow-600 border-0"
               >
                 <Image className="w-4 h-4 mr-2" />
                 Create Image
@@ -362,7 +362,7 @@ export default function CreateLibrary() {
                 transition={{ duration: 0.3, delay: index * 0.03 }}
                 className={`group relative aspect-square rounded-[20px] overflow-hidden border transition-all cursor-pointer ${
                   selectedItems.includes(item.id)
-                    ? 'border-cyan-500 ring-2 ring-cyan-500/50'
+                    ? 'border-yellow-500 ring-2 ring-yellow-500/50'
                     : 'border-zinc-700/50 hover:border-zinc-600'
                 }`}
               >
@@ -377,7 +377,7 @@ export default function CreateLibrary() {
                   }`}
                 >
                   {selectedItems.includes(item.id) ? (
-                    <CheckSquare className="w-5 h-5 text-cyan-400" />
+                    <CheckSquare className="w-5 h-5 text-yellow-400" />
                   ) : (
                     <Square className="w-5 h-5 text-white bg-black/50 rounded" />
                   )}
@@ -385,7 +385,7 @@ export default function CreateLibrary() {
 
                 {/* Content type badge */}
                 <div className="absolute top-2 right-2 z-10">
-                  <Badge className={`${item.content_type === 'video' ? 'bg-cyan-500/80' : 'bg-cyan-500/80'} text-white text-xs border-0`}>
+                  <Badge className={`${item.content_type === 'video' ? 'bg-yellow-500/80' : 'bg-yellow-500/80'} text-white text-xs border-0`}>
                     {item.content_type === 'video' ? (
                       <Video className="w-3 h-3" />
                     ) : (
@@ -481,7 +481,7 @@ export default function CreateLibrary() {
                 transition={{ duration: 0.3, delay: index * 0.03 }}
                 className={`bg-zinc-900/50 border rounded-[20px] transition-all cursor-pointer ${
                   selectedItems.includes(item.id)
-                    ? 'border-cyan-500 ring-1 ring-cyan-500/50'
+                    ? 'border-yellow-500 ring-1 ring-yellow-500/50'
                     : 'border-zinc-800/60 hover:border-zinc-700'
                 }`}
               >
@@ -494,7 +494,7 @@ export default function CreateLibrary() {
                     }}
                   >
                     {selectedItems.includes(item.id) ? (
-                      <CheckSquare className="w-5 h-5 text-cyan-400" />
+                      <CheckSquare className="w-5 h-5 text-yellow-400" />
                     ) : (
                       <Square className="w-5 h-5 text-zinc-500 hover:text-zinc-400" />
                     )}
@@ -526,7 +526,7 @@ export default function CreateLibrary() {
                     </p>
                     <div className="flex items-center gap-2 mt-1">
                       <Badge variant="outline" className={`text-xs ${
-                        item.content_type === 'video' ? 'border-cyan-500/50 text-cyan-400' : 'border-cyan-500/50 text-cyan-400'
+                        item.content_type === 'video' ? 'border-yellow-500/50 text-yellow-400' : 'border-yellow-500/50 text-yellow-400'
                       }`}>
                         {item.content_type === 'video' ? <Video className="w-3 h-3 mr-1" /> : <Image className="w-3 h-3 mr-1" />}
                         {item.content_type}
@@ -602,9 +602,9 @@ export default function CreateLibrary() {
             <DialogHeader>
               <DialogTitle className="text-white flex items-center gap-2">
                 {previewItem?.content_type === 'video' ? (
-                  <Video className="w-5 h-5 text-cyan-400" />
+                  <Video className="w-5 h-5 text-yellow-400" />
                 ) : (
-                  <Image className="w-5 h-5 text-cyan-400" />
+                  <Image className="w-5 h-5 text-yellow-400" />
                 )}
                 {previewItem?.name || 'Generated Content'}
               </DialogTitle>
@@ -677,7 +677,7 @@ export default function CreateLibrary() {
                 <div className="flex gap-2 flex-wrap">
                   <Button
                     onClick={() => handleDownload(previewItem)}
-                    className="bg-gradient-to-r from-cyan-500 to-cyan-500 hover:from-cyan-600 hover:to-cyan-600 border-0"
+                    className="bg-gradient-to-r from-yellow-500 to-yellow-500 hover:from-yellow-600 hover:to-yellow-600 border-0"
                   >
                     <Download className="w-4 h-4 mr-2" />
                     Download

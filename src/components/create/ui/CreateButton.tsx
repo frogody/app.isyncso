@@ -39,8 +39,8 @@ export const CreateButton = forwardRef<HTMLButtonElement, CreateButtonProps>(
           },
           {
             [ct(
-              'bg-cyan-500 text-white hover:bg-cyan-600 active:bg-cyan-700',
-              'bg-cyan-500 text-white hover:bg-cyan-600 active:bg-cyan-700',
+              'bg-yellow-500 text-white hover:bg-yellow-600 active:bg-yellow-700',
+              'bg-yellow-500 text-white hover:bg-yellow-600 active:bg-yellow-700',
             )]: variant === 'primary',
             [ct(
               'bg-transparent text-slate-700 border border-slate-300 hover:bg-slate-100',
@@ -54,8 +54,8 @@ export const CreateButton = forwardRef<HTMLButtonElement, CreateButtonProps>(
           },
           'disabled:opacity-50 disabled:cursor-not-allowed',
           ct(
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40 focus-visible:ring-offset-1 focus-visible:ring-offset-white',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40 focus-visible:ring-offset-1 focus-visible:ring-offset-black',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-500/40 focus-visible:ring-offset-1 focus-visible:ring-offset-white',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-500/40 focus-visible:ring-offset-1 focus-visible:ring-offset-black',
           ),
           className
         )}

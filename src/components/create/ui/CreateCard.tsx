@@ -49,7 +49,7 @@ export function CreateCard({
         },
         {
           [ct('hover:border-slate-300', 'hover:border-zinc-700/60') + ' transition-colors duration-200']: variant === 'default',
-          ['cursor-pointer ' + ct('hover:bg-slate-50 hover:shadow-md', 'hover:bg-zinc-900/60') + ' hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 ' + ct('focus-visible:ring-cyan-500/40 focus-visible:border-cyan-500/50', 'focus-visible:ring-cyan-500/40 focus-visible:border-cyan-500/50') + ' transition-all duration-200']: variant === 'interactive',
+          ['cursor-pointer ' + ct('hover:bg-slate-50 hover:shadow-md', 'hover:bg-zinc-900/60') + ' hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 ' + ct('focus-visible:ring-yellow-500/40 focus-visible:border-yellow-500/50', 'focus-visible:ring-yellow-500/40 focus-visible:border-yellow-500/50') + ' transition-all duration-200']: variant === 'interactive',
           [ct('bg-slate-50 shadow-md', 'bg-zinc-800/60 shadow-lg')]: variant === 'elevated',
         },
         className

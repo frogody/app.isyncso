@@ -654,8 +654,8 @@ export default function CreateVideos() {
         <div className="flex items-center justify-between mb-2">
           <div>
             <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
-                <Video className="w-5 h-5 text-cyan-400" />
+              <div className="p-2.5 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
+                <Video className="w-5 h-5 text-yellow-400" />
               </div>
               AI Video Generation
             </h1>
@@ -669,7 +669,7 @@ export default function CreateVideos() {
             onClick={() => setMode('ai')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               mode === 'ai'
-                ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
                 : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
             }`}
           >
@@ -680,7 +680,7 @@ export default function CreateVideos() {
             onClick={() => setMode('templates')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               mode === 'templates'
-                ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
                 : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
             }`}
           >
@@ -691,7 +691,7 @@ export default function CreateVideos() {
             onClick={() => setMode('studio')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               mode === 'studio'
-                ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
                 : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
             }`}
           >
@@ -720,7 +720,7 @@ export default function CreateVideos() {
                 {/* Prompt Input */}
                 <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <Wand2 className="w-5 h-5 text-cyan-400" />
+                    <Wand2 className="w-5 h-5 text-yellow-400" />
                     <h3 className="text-white font-semibold">Prompt</h3>
                   </div>
                   <div className="space-y-3">
@@ -729,7 +729,7 @@ export default function CreateVideos() {
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
                         placeholder="Describe the video you want to generate..."
-                        className="min-h-[120px] bg-zinc-900/50 border-zinc-700 text-white placeholder:text-zinc-500 focus:border-cyan-500/50 focus:ring-cyan-500/20"
+                        className="min-h-[120px] bg-zinc-900/50 border-zinc-700 text-white placeholder:text-zinc-500 focus:border-yellow-500/50 focus:ring-yellow-500/20"
                         maxLength={1000}
                       />
                       <div className="flex justify-between mt-2 text-xs text-zinc-500">
@@ -740,7 +740,7 @@ export default function CreateVideos() {
                               type="checkbox"
                               checked={useBrandContext}
                               onChange={(e) => setUseBrandContext(e.target.checked)}
-                              className="rounded border-zinc-600 bg-zinc-800 text-cyan-500 focus:ring-cyan-500/20"
+                              className="rounded border-zinc-600 bg-zinc-800 text-yellow-500 focus:ring-yellow-500/20"
                             />
                             <Palette className="w-3 h-3" />
                             Apply brand context
@@ -760,7 +760,7 @@ export default function CreateVideos() {
                           >
                             {selectedProduct ? (
                               <span className="flex items-center gap-2">
-                                <Package className="w-4 h-4 text-cyan-400" />
+                                <Package className="w-4 h-4 text-yellow-400" />
                                 {selectedProduct.name}
                               </span>
                             ) : (
@@ -775,7 +775,7 @@ export default function CreateVideos() {
                             placeholder="Search products..."
                             value={productSearch}
                             onChange={(e) => setProductSearch(e.target.value)}
-                            className="w-full px-3 py-2 mb-2 bg-zinc-800 border border-zinc-700 rounded text-white text-sm focus:border-cyan-500/50 focus:ring-cyan-500/20"
+                            className="w-full px-3 py-2 mb-2 bg-zinc-800 border border-zinc-700 rounded text-white text-sm focus:border-yellow-500/50 focus:ring-yellow-500/20"
                           />
                           <div className="max-h-60 overflow-y-auto space-y-1">
                             {selectedProduct && (
@@ -799,7 +799,7 @@ export default function CreateVideos() {
                                 }}
                                 className={`w-full text-left px-3 py-2 text-sm rounded flex items-center justify-between transition-colors ${
                                   selectedProduct?.id === product.id
-                                    ? 'bg-cyan-500/20 text-cyan-400'
+                                    ? 'bg-yellow-500/20 text-yellow-400'
                                     : 'text-white hover:bg-zinc-800'
                                 }`}
                               >
@@ -823,7 +823,7 @@ export default function CreateVideos() {
                 {/* Style & Settings */}
                 <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <Settings2 className="w-5 h-5 text-cyan-400" />
+                    <Settings2 className="w-5 h-5 text-yellow-400" />
                     <h3 className="text-white font-semibold">Style & Settings</h3>
                   </div>
                   <div className="space-y-4">
@@ -839,7 +839,7 @@ export default function CreateVideos() {
                               onClick={() => setSelectedStyle(style.id)}
                               className={`p-2 rounded-xl border text-center transition-all ${
                                 selectedStyle === style.id
-                                  ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400'
+                                  ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400'
                                   : 'bg-zinc-900/50 border-zinc-700 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800/50'
                               }`}
                             >
@@ -854,7 +854,7 @@ export default function CreateVideos() {
                     {/* Duration */}
                     <div>
                       <Label className="text-zinc-300 mb-3 block flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-cyan-400" />
+                        <Clock className="w-4 h-4 text-yellow-400" />
                         Duration
                       </Label>
                       <div className="grid grid-cols-4 gap-2">
@@ -864,7 +864,7 @@ export default function CreateVideos() {
                             onClick={() => setDuration(dur.id)}
                             className={`p-2 rounded-xl border text-center transition-all ${
                               duration === dur.id
-                                ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400'
+                                ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400'
                                 : 'bg-zinc-900/50 border-zinc-700 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800/50'
                             }`}
                           >
@@ -886,7 +886,7 @@ export default function CreateVideos() {
                               onClick={() => setAspectRatio(ratio.id)}
                               className={`p-2 rounded-xl border text-center transition-all ${
                                 aspectRatio === ratio.id
-                                  ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400'
+                                  ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400'
                                   : 'bg-zinc-900/50 border-zinc-700 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800/50'
                               }`}
                             >
@@ -903,7 +903,7 @@ export default function CreateVideos() {
                     <Button
                       onClick={handleGenerate}
                       disabled={isGenerating || !prompt.trim()}
-                      className="w-full bg-gradient-to-r from-cyan-500 to-cyan-500 hover:from-cyan-600 hover:to-cyan-600 text-white border-0 h-12"
+                      className="w-full bg-gradient-to-r from-yellow-500 to-yellow-500 hover:from-yellow-600 hover:to-yellow-600 text-white border-0 h-12"
                       size="lg"
                     >
                       {isGenerating ? (
@@ -943,18 +943,18 @@ export default function CreateVideos() {
                 {/* Template Selector */}
                 <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <LayoutTemplate className="w-5 h-5 text-cyan-400" />
+                    <LayoutTemplate className="w-5 h-5 text-yellow-400" />
                     <h3 className="text-white font-semibold">Template</h3>
                   </div>
                   <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
-                    <SelectTrigger className="w-full bg-zinc-900/50 border-zinc-700 text-white focus:ring-cyan-500/20 focus:border-cyan-500/50">
+                    <SelectTrigger className="w-full bg-zinc-900/50 border-zinc-700 text-white focus:ring-yellow-500/20 focus:border-yellow-500/50">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-zinc-900 border-zinc-700">
                       {TEMPLATES.map(t => (
                         <SelectItem key={t.id} value={t.id} className="text-white">
                           <div className="flex items-center gap-2">
-                            <Film className="w-4 h-4 text-cyan-400" />
+                            <Film className="w-4 h-4 text-yellow-400" />
                             {t.label}
                           </div>
                         </SelectItem>
@@ -978,7 +978,7 @@ export default function CreateVideos() {
                 {/* Product & Brand Context for Templates */}
                 <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <Package className="w-5 h-5 text-cyan-400" />
+                    <Package className="w-5 h-5 text-yellow-400" />
                     <h3 className="text-white font-semibold">Content</h3>
                   </div>
                   <div className="space-y-3">
@@ -992,7 +992,7 @@ export default function CreateVideos() {
                           >
                             {selectedProduct ? (
                               <span className="flex items-center gap-2">
-                                <Package className="w-4 h-4 text-cyan-400" />
+                                <Package className="w-4 h-4 text-yellow-400" />
                                 {selectedProduct.name}
                               </span>
                             ) : (
@@ -1007,7 +1007,7 @@ export default function CreateVideos() {
                             placeholder="Search products..."
                             value={productSearch}
                             onChange={(e) => setProductSearch(e.target.value)}
-                            className="w-full px-3 py-2 mb-2 bg-zinc-800 border border-zinc-700 rounded text-white text-sm focus:border-cyan-500/50 focus:ring-cyan-500/20"
+                            className="w-full px-3 py-2 mb-2 bg-zinc-800 border border-zinc-700 rounded text-white text-sm focus:border-yellow-500/50 focus:ring-yellow-500/20"
                           />
                           <div className="max-h-60 overflow-y-auto space-y-1">
                             {selectedProduct && (
@@ -1031,7 +1031,7 @@ export default function CreateVideos() {
                                 }}
                                 className={`w-full text-left px-3 py-2 text-sm rounded flex items-center justify-between transition-colors ${
                                   selectedProduct?.id === product.id
-                                    ? 'bg-cyan-500/20 text-cyan-400'
+                                    ? 'bg-yellow-500/20 text-yellow-400'
                                     : 'text-white hover:bg-zinc-800'
                                 }`}
                               >
@@ -1206,7 +1206,7 @@ export default function CreateVideos() {
                 <Button
                   onClick={handleStartRender}
                   disabled={isRendering}
-                  className="w-full bg-gradient-to-r from-cyan-500 to-cyan-500 hover:from-cyan-600 hover:to-cyan-600 text-white border-0 h-12 disabled:opacity-50"
+                  className="w-full bg-gradient-to-r from-yellow-500 to-yellow-500 hover:from-yellow-600 hover:to-yellow-600 text-white border-0 h-12 disabled:opacity-50"
                   size="lg"
                 >
                   {isRendering ? (
@@ -1240,14 +1240,14 @@ export default function CreateVideos() {
                             <span className={`text-xs px-2 py-0.5 rounded-full ${
                               job.status === 'completed' ? 'bg-green-500/10 text-green-400' :
                               job.status === 'failed' ? 'bg-red-500/10 text-red-400' :
-                              job.status === 'rendering' ? 'bg-cyan-500/10 text-cyan-400' :
+                              job.status === 'rendering' ? 'bg-yellow-500/10 text-yellow-400' :
                               'bg-zinc-500/10 text-zinc-400'
                             }`}>
                               {job.status}
                             </span>
                             {job.status === 'completed' && job.output_url && (
                               <a href={job.output_url} download className="p-1 hover:bg-white/10 rounded transition-colors">
-                                <Download className="w-4 h-4 text-cyan-400" />
+                                <Download className="w-4 h-4 text-yellow-400" />
                               </a>
                             )}
                             {job.status === 'completed' && !job.output_url && (
@@ -1286,7 +1286,7 @@ export default function CreateVideos() {
               <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <Play className="w-5 h-5 text-cyan-400" />
+                    <Play className="w-5 h-5 text-yellow-400" />
                     <h3 className="text-white font-semibold">Live Preview</h3>
                   </div>
                   <Badge variant="outline" className="border-zinc-700 text-zinc-400 bg-zinc-800/50 text-xs">
@@ -1324,7 +1324,7 @@ export default function CreateVideos() {
                 <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <Video className="w-5 h-5 text-cyan-400" />
+                      <Video className="w-5 h-5 text-yellow-400" />
                       <h3 className="text-white font-semibold">Preview</h3>
                     </div>
                     {generatedVideo && (
@@ -1356,11 +1356,11 @@ export default function CreateVideos() {
                   >
                     {isGenerating ? (
                       <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900/70">
-                        <Loader2 className="w-12 h-12 text-cyan-400 animate-spin mb-4" />
+                        <Loader2 className="w-12 h-12 text-yellow-400 animate-spin mb-4" />
                         <p className="text-zinc-400">Creating your video...</p>
                         <p className="text-zinc-500 text-sm mt-2">This may take 1-3 minutes</p>
                         <div className="w-48 h-2 bg-zinc-800 rounded-full mt-4 overflow-hidden">
-                          <div className="h-full bg-gradient-to-r from-cyan-500 to-cyan-500 rounded-full animate-pulse" style={{ width: '60%' }}></div>
+                          <div className="h-full bg-gradient-to-r from-yellow-500 to-yellow-500 rounded-full animate-pulse" style={{ width: '60%' }}></div>
                         </div>
                       </div>
                     ) : generatedVideo ? (
@@ -1407,14 +1407,14 @@ export default function CreateVideos() {
                     className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-4"
                   >
                     <div className="flex items-center gap-2 mb-3">
-                      <History className="w-5 h-5 text-cyan-400" />
+                      <History className="w-5 h-5 text-yellow-400" />
                       <h3 className="text-white font-semibold">Recent Generations</h3>
                     </div>
                     <div className="grid grid-cols-2 gap-2 max-h-[400px] overflow-y-auto">
                       {generationHistory.map(item => (
                         <div
                           key={item.id}
-                          className="group relative aspect-video rounded-xl overflow-hidden border border-zinc-700/50 cursor-pointer hover:border-cyan-500/50 transition-colors"
+                          className="group relative aspect-video rounded-xl overflow-hidden border border-zinc-700/50 cursor-pointer hover:border-yellow-500/50 transition-colors"
                           onClick={() => setPreviewVideo(item)}
                         >
                           {item.thumbnail_url ? (
@@ -1524,7 +1524,7 @@ export default function CreateVideos() {
                 <div className="flex gap-2">
                   <Button
                     onClick={() => handleDownload(previewVideo.url, previewVideo.name)}
-                    className="bg-gradient-to-r from-cyan-500 to-cyan-500 hover:from-cyan-600 hover:to-cyan-600 border-0"
+                    className="bg-gradient-to-r from-yellow-500 to-yellow-500 hover:from-yellow-600 hover:to-yellow-600 border-0"
                   >
                     <Download className="w-4 h-4 mr-2" />
                     Download

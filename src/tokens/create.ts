@@ -5,12 +5,12 @@
 
 export const CREATE_COLORS = {
   primary: {
-    DEFAULT: '#06B6D4', // cyan-500
-    shade: '#0891B2',   // cyan-600
-    light: '#22D3EE',   // cyan-400
-    tint10: 'rgba(6, 182, 212, 0.1)',
-    tint15: 'rgba(6, 182, 212, 0.15)',
-    tint20: 'rgba(6, 182, 212, 0.2)',
+    DEFAULT: '#EAB308', // yellow-500
+    shade: '#CA8A04',   // yellow-600
+    light: '#FACC15',   // yellow-400
+    tint10: 'rgba(234, 179, 8, 0.1)',
+    tint15: 'rgba(234, 179, 8, 0.15)',
+    tint20: 'rgba(234, 179, 8, 0.2)',
   },
 } as const;
 
@@ -23,7 +23,7 @@ export const CREATE_BUTTON_STYLES = {
     lg: 'h-12 px-7 text-base',
   },
   variants: {
-    primary: 'bg-cyan-500 text-white hover:bg-cyan-600 active:bg-cyan-700 disabled:bg-cyan-500/50 disabled:cursor-not-allowed rounded-full transition-colors duration-200',
+    primary: 'bg-yellow-400 text-black hover:bg-yellow-300 active:bg-yellow-500 disabled:bg-yellow-500/50 disabled:cursor-not-allowed rounded-full transition-colors duration-200',
     secondary: 'bg-transparent text-white border border-zinc-700 hover:bg-zinc-800/50 active:bg-zinc-800 rounded-full transition-colors duration-200',
     ghost: 'bg-transparent text-zinc-400 hover:text-white hover:bg-zinc-800/30 rounded-full transition-colors duration-200',
     danger: 'bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 rounded-full transition-colors duration-200',
@@ -39,9 +39,9 @@ export const CREATE_CARD_STYLES = {
 export const CREATE_BADGE_STYLES = {
   base: 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
   variants: {
-    primary: 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30',
+    primary: 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/30',
     success: 'bg-green-500/10 text-green-400 border border-green-500/30',
-    warning: 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/30',
+    warning: 'bg-amber-500/10 text-amber-400 border border-amber-500/30',
     error: 'bg-red-500/10 text-red-400 border border-red-500/30',
     neutral: 'bg-zinc-700/30 text-zinc-400 border border-zinc-600/30',
   },

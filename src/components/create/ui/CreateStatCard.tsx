@@ -31,8 +31,8 @@ export function CreateStatCard({ label, value, subtitle, icon: Icon, trend, load
     >
       <div className="flex items-center justify-between mb-2">
         <span className={cn('text-xs', ct('text-slate-500', 'text-zinc-400'))}>{label}</span>
-        <div className={cn('p-2 rounded-xl border', ct('bg-cyan-100 border-cyan-200', 'bg-cyan-500/10 border-cyan-500/20'))}>
-          <Icon className={cn('w-4 h-4', ct('text-cyan-600', 'text-cyan-400'))} />
+        <div className={cn('p-2 rounded-xl border', ct('bg-yellow-100 border-yellow-200', 'bg-yellow-500/10 border-yellow-500/20'))}>
+          <Icon className={cn('w-4 h-4', ct('text-yellow-600', 'text-yellow-400'))} />
         </div>
       </div>
       <motion.div
