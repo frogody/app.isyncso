@@ -165,7 +165,7 @@ export default function Create() {
       <div className="relative w-full">
         <AuroraBackground />
 
-        <div className="relative z-10 w-full px-4 lg:px-6 py-6 space-y-10">
+        <div className="relative z-10 w-full px-4 lg:px-6 py-6 space-y-6">
 
           {/* ── Hero ── */}
           <motion.section
@@ -182,83 +182,27 @@ export default function Create() {
             {/* Top accent line */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/3 h-px bg-gradient-to-r from-transparent via-yellow-500/40 to-transparent" />
 
-            <div className="relative z-10 px-8 lg:px-14 py-12 lg:py-16">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
-                <div className="space-y-5 max-w-2xl">
-                  <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2, duration: 0.5 }}
-                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-yellow-500/[0.08] border border-yellow-500/[0.12]"
-                  >
-                    <motion.div animate={{ rotate: [0, 12, -12, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}>
-                      <Sparkles className="w-3.5 h-3.5 text-yellow-400" />
-                    </motion.div>
-                    <span className="text-[11px] font-semibold text-yellow-400 tracking-[0.15em] uppercase">Create Studio</span>
+            <div className="relative z-10 px-8 lg:px-14 py-8 lg:py-10">
+              {/* Badge + Stats row */}
+              <div className="flex items-center justify-between mb-4">
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2, duration: 0.5 }}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-yellow-500/[0.08] border border-yellow-500/[0.12]"
+                >
+                  <motion.div animate={{ rotate: [0, 12, -12, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}>
+                    <Sparkles className="w-3.5 h-3.5 text-yellow-400" />
                   </motion.div>
+                  <span className="text-[11px] font-semibold text-yellow-400 tracking-[0.15em] uppercase">Create Studio</span>
+                </motion.div>
 
-                  <motion.h1
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3, duration: 0.6 }}
-                    className="text-4xl lg:text-5xl font-bold text-white leading-[1.1] tracking-tight"
-                  >
-                    Imagine it.{' '}
-                    <span className="relative">
-                      <span className="text-yellow-400">Create it.</span>
-                      <motion.span
-                        initial={{ scaleX: 0 }}
-                        animate={{ scaleX: 1 }}
-                        transition={{ delay: 0.8, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                        className="absolute -bottom-1 left-0 right-0 h-[2px] bg-gradient-to-r from-yellow-400 to-transparent origin-left"
-                      />
-                    </span>
-                  </motion.h1>
-
-                  <motion.p
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4, duration: 0.5 }}
-                    className="text-[15px] text-zinc-400 leading-relaxed max-w-lg"
-                  >
-                    Professional images, cinematic videos, and complete brand systems — all powered by the world's most advanced generative AI.
-                  </motion.p>
-
-                  <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5, duration: 0.5 }}
-                    className="flex items-center gap-3 pt-1"
-                  >
-                    <Link to={createPageUrl('CreateImages')}>
-                      <motion.button
-                        whileHover={{ scale: 1.04 }}
-                        whileTap={{ scale: 0.96 }}
-                        className="flex items-center gap-2.5 px-6 py-3 bg-yellow-400 text-black font-bold text-sm rounded-full hover:bg-yellow-300 transition-colors shadow-[0_0_30px_rgba(250,204,21,0.2)] hover:shadow-[0_0_40px_rgba(250,204,21,0.3)]"
-                      >
-                        <Wand2 className="w-4 h-4" />
-                        Start Creating
-                      </motion.button>
-                    </Link>
-                    <Link to={createPageUrl('CreateLibrary')}>
-                      <motion.button
-                        whileHover={{ scale: 1.04 }}
-                        whileTap={{ scale: 0.96 }}
-                        className="flex items-center gap-2.5 px-6 py-3 bg-white/[0.04] border border-white/[0.08] text-zinc-300 font-medium text-sm rounded-full hover:bg-white/[0.07] hover:border-white/[0.12] transition-all"
-                      >
-                        <FolderOpen className="w-4 h-4" />
-                        Library
-                      </motion.button>
-                    </Link>
-                  </motion.div>
-                </div>
-
-                {/* Stats */}
+                {/* Inline stats */}
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.5, duration: 0.6 }}
-                  className="hidden lg:grid grid-cols-2 gap-3"
+                  transition={{ delay: 0.4, duration: 0.6 }}
+                  className="hidden md:flex items-center gap-6"
                 >
                   {[
                     { label: 'Images', value: stats.totalImages, icon: FileImage },
@@ -268,24 +212,78 @@ export default function Create() {
                   ].map((s, i) => (
                     <motion.div
                       key={s.label}
-                      initial={{ opacity: 0, y: 10 }}
+                      initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.6 + i * 0.07 }}
-                      className="bg-white/[0.03] backdrop-blur-sm border border-white/[0.05] rounded-2xl px-5 py-4 min-w-[130px]"
+                      transition={{ delay: 0.5 + i * 0.06 }}
+                      className="flex items-center gap-2"
                     >
-                      <div className="flex items-center gap-2.5 mb-1">
-                        <s.icon className="w-4 h-4 text-yellow-500/60" />
-                        {loading ? (
-                          <div className="w-6 h-5 bg-zinc-800 rounded animate-pulse" />
-                        ) : (
-                          <span className="text-2xl font-bold text-white tabular-nums">{s.value}</span>
-                        )}
-                      </div>
-                      <p className="text-[10px] text-zinc-600 font-medium uppercase tracking-[0.12em]">{s.label}</p>
+                      <s.icon className="w-3.5 h-3.5 text-yellow-500/40" />
+                      {loading ? (
+                        <div className="w-5 h-4 bg-zinc-800 rounded animate-pulse" />
+                      ) : (
+                        <span className="text-sm font-bold text-white tabular-nums">{s.value}</span>
+                      )}
+                      <span className="text-[10px] text-zinc-600 font-medium uppercase tracking-wider">{s.label}</span>
                     </motion.div>
                   ))}
                 </motion.div>
               </div>
+
+              {/* Heading + description + buttons */}
+              <motion.h1
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.6 }}
+                className="text-3xl lg:text-4xl font-bold text-white leading-[1.1] tracking-tight mb-3"
+              >
+                Imagine it.{' '}
+                <span className="relative">
+                  <span className="text-yellow-400">Create it.</span>
+                  <motion.span
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: 1 }}
+                    transition={{ delay: 0.8, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                    className="absolute -bottom-1 left-0 right-0 h-[2px] bg-gradient-to-r from-yellow-400 to-transparent origin-left"
+                  />
+                </span>
+              </motion.h1>
+
+              <motion.p
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
+                className="text-[14px] text-zinc-400 leading-relaxed max-w-lg mb-5"
+              >
+                Professional images, cinematic videos, and complete brand systems — all powered by the world's most advanced generative AI.
+              </motion.p>
+
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, duration: 0.5 }}
+                className="flex items-center gap-3"
+              >
+                <Link to={createPageUrl('CreateImages')}>
+                  <motion.button
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.96 }}
+                    className="flex items-center gap-2.5 px-6 py-2.5 bg-yellow-400 text-black font-bold text-sm rounded-full hover:bg-yellow-300 transition-colors shadow-[0_0_30px_rgba(250,204,21,0.2)] hover:shadow-[0_0_40px_rgba(250,204,21,0.3)]"
+                  >
+                    <Wand2 className="w-4 h-4" />
+                    Start Creating
+                  </motion.button>
+                </Link>
+                <Link to={createPageUrl('CreateLibrary')}>
+                  <motion.button
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.96 }}
+                    className="flex items-center gap-2.5 px-6 py-2.5 bg-white/[0.04] border border-white/[0.08] text-zinc-300 font-medium text-sm rounded-full hover:bg-white/[0.07] hover:border-white/[0.12] transition-all"
+                  >
+                    <FolderOpen className="w-4 h-4" />
+                    Library
+                  </motion.button>
+                </Link>
+              </motion.div>
             </div>
           </motion.section>
 
