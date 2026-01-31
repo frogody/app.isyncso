@@ -7,11 +7,32 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const SYSTEM_PROMPT = `You are a UI/UX design analyst. You analyze product screenshots to extract design system information that will be used to generate matching marketing videos.
+const SYSTEM_PROMPT = `You are a UI/UX design analyst and product intelligence expert. You analyze product screenshots to extract BOTH design system information AND semantic product understanding. This data drives marketing video generation.
 
 Analyze the provided screenshots holistically and return a JSON object with this exact structure:
 
 {
+  "productUnderstanding": {
+    "purpose": "One sentence describing what this product does",
+    "targetAudience": "Who uses this product",
+    "valueProposition": "The core value it delivers",
+    "productCategory": "saas" | "mobile-app" | "marketplace" | "tool" | "platform" | "analytics" | "compliance" | "other"
+  },
+  "extractedFeatures": [
+    {
+      "name": "Exact feature name visible in the UI",
+      "description": "What this feature does based on what's shown",
+      "screenIndex": 0
+    }
+  ],
+  "keyScreens": [
+    {
+      "index": 0,
+      "screenType": "dashboard" | "settings" | "list" | "detail" | "form" | "landing" | "onboarding" | "analytics" | "other",
+      "title": "Title or heading visible on this screen",
+      "description": "What this screen shows and its purpose"
+    }
+  ],
   "colorPalette": {
     "primary": "#hex",
     "secondary": "#hex",
@@ -49,6 +70,9 @@ Analyze the provided screenshots holistically and return a JSON object with this
 Rules:
 - Extract actual hex colors from the screenshots, not guesses
 - Only include components you can actually see
+- For extractedFeatures: read the ACTUAL text labels, menu items, headings, and tab names visible in the UI. Do NOT invent generic feature names. If the sidebar says "Compliance Roadmap", that's the feature name.
+- For keyScreens: describe what each screenshot actually shows. If the product context says it's a "compliance platform", interpret screens through that lens.
+- For productUnderstanding: use both the visual evidence and any product context provided to determine what the product does.
 - If multiple screenshots show different pages, describe the dominant pattern
 - For typography, identify the closest matching font family and describe heading characteristics
 - For uiStyle, assess shadow depth, spacing density, and card treatment
@@ -61,7 +85,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { screenshots, productName } = await req.json();
+    const { screenshots, productName, productDescription, productTags, productFeatures, productAiContext } = await req.json();
 
     if (!screenshots?.length) {
       return new Response(
@@ -115,10 +139,45 @@ Deno.serve(async (req) => {
       );
     }
 
-    content.push({
-      type: "text",
-      text: `Analyze these ${content.length} screenshot(s) from the product "${productName || "Unknown Product"}". Extract the design system information as specified.`,
-    });
+    // Build context-rich user message
+    let userMessage = `Analyze these ${content.length} screenshot(s) from the product "${productName || "Unknown Product"}".`;
+    if (productDescription) {
+      userMessage += `\n\nProduct description: ${productDescription}`;
+    }
+    if (productTags?.length) {
+      userMessage += `\nTags: ${productTags.join(", ")}`;
+    }
+    if (productFeatures?.length) {
+      const featureNames = productFeatures.map((f: string | { title?: string; name?: string }) =>
+        typeof f === "string" ? f : f.title || f.name || ""
+      ).filter(Boolean);
+      if (featureNames.length) {
+        userMessage += `\nKnown features: ${featureNames.join(", ")}`;
+      }
+    }
+    // Add AI context if available
+    if (productAiContext?.targetPersona?.jobTitles?.length) {
+      userMessage += `\nTarget audience: ${productAiContext.targetPersona.jobTitles.join(", ")}`;
+    }
+    if (productAiContext?.targetPersona?.painPoints?.length) {
+      userMessage += `\nPain points solved: ${productAiContext.targetPersona.painPoints.join(", ")}`;
+    }
+    if (productAiContext?.positioning?.uniqueValue) {
+      userMessage += `\nUnique value: ${productAiContext.positioning.uniqueValue}`;
+    }
+    if (productAiContext?.positioning?.differentiators?.length) {
+      userMessage += `\nDifferentiators: ${productAiContext.positioning.differentiators.join(", ")}`;
+    }
+    if (productAiContext?.industry?.vertical) {
+      userMessage += `\nIndustry: ${productAiContext.industry.vertical}`;
+    }
+    if (productAiContext?.industry?.regulations?.length) {
+      userMessage += `\nRelevant regulations: ${productAiContext.industry.regulations.join(", ")}`;
+    }
+
+    userMessage += `\n\nExtract the full design system AND semantic product understanding as specified. Use the product context above to correctly interpret what you see in the screenshots.`;
+
+    content.push({ type: "text", text: userMessage });
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -129,7 +188,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
-        max_tokens: 2000,
+        max_tokens: 4000,
         system: SYSTEM_PROMPT,
         messages: [{ role: "user", content }],
       }),

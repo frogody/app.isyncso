@@ -216,25 +216,14 @@ function getTemplateProps(templateId, selectedProduct, brandAssets, digitalProdu
     case 'KeynoteShowcase':
       return {
         productName: selectedProduct?.name || 'Your Product',
-        tagline: selectedProduct?.tagline || selectedProduct?.short_description || 'Built for modern teams',
+        tagline: selectedProduct?.tagline || selectedProduct?.short_description || selectedProduct?.description?.slice(0, 80) || 'Built for modern teams',
         features: digitalProductData?.features?.map(f => ({
           title: f.name || f.title || 'Feature',
           description: f.description || '',
-          icon: f.icon || '\u26A1'
-        })) || [
-          { title: "AI Automation", description: "Smart workflows", icon: "\u26A1" },
-          { title: "Analytics", description: "Real-time insights", icon: "\uD83D\uDCCA" },
-          { title: "Collaboration", description: "Team tools", icon: "\uD83D\uDC65" },
-          { title: "Integrations", description: "Connect everything", icon: "\uD83D\uDD17" },
-        ],
+          icon: f.icon || '◆'
+        })) || [],
         screenshots: selectedProduct?.gallery?.map(img => typeof img === 'string' ? img : img.url).filter(Boolean) || [],
         designAnalysis: designAnalysis || undefined,
-        metrics: [
-          { label: "Revenue", value: 284500, prefix: "\u20AC" },
-          { label: "Users", value: 12847 },
-          { label: "Growth", value: 23, suffix: "%" },
-          { label: "NPS Score", value: 72 },
-        ],
       };
     case 'ProductDemo':
     default:
@@ -319,7 +308,12 @@ export default function CreateVideos() {
     if (urls.length === 0) return;
 
     setIsAnalyzing(true);
-    analyzeScreenshots(urls, selectedProduct.name)
+    analyzeScreenshots(urls, selectedProduct.name, {
+      description: selectedProduct.description,
+      tags: selectedProduct.tags,
+      features: selectedProduct.features,
+      aiContext: digitalProductData?.ai_context || {},
+    })
       .then(analysis => setDesignAnalysis(analysis))
       .catch(e => console.error('Auto-analysis failed:', e))
       .finally(() => setIsAnalyzing(false));
@@ -561,7 +555,12 @@ export default function CreateVideos() {
       const screenshotUrls = selectedProduct.gallery
         .map(img => typeof img === 'string' ? img : img?.url)
         .filter(Boolean);
-      const analysis = await analyzeScreenshots(screenshotUrls, selectedProduct.name);
+      const analysis = await analyzeScreenshots(screenshotUrls, selectedProduct.name, {
+        description: selectedProduct.description,
+        tags: selectedProduct.tags,
+        features: selectedProduct.features,
+        aiContext: digitalProductData?.ai_context || {},
+      });
       setDesignAnalysis(analysis);
     } catch (e) {
       console.error('Design analysis failed:', e);

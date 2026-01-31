@@ -26,8 +26,8 @@ import { useUser } from '@/components/context/UserContext';
 import { toast } from 'sonner';
 import {
   Loader2, Cloud, Package, Save, Image as ImageIcon, Tags, Euro, Settings,
-  FileText, Globe, Truck, BarChart3, ChevronRight, Plus, X, Upload, Barcode,
-  Users, History, Star, Calendar, Receipt, Trash2
+  FileText, Globe, Truck, BarChart3, ChevronRight, ChevronDown, ChevronUp, Plus, X, Upload, Barcode,
+  Users, History, Star, Calendar, Receipt, Trash2, Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ProductImageUploader from './ProductImageUploader';
@@ -136,6 +136,22 @@ export default function ProductModal({
   const [newTag, setNewTag] = useState('');
   const [newFeature, setNewFeature] = useState('');
 
+  // AI Brief state
+  const DEFAULT_AI_CONTEXT = {
+    targetPersona: { jobTitles: [], painPoints: [], goals: [] },
+    positioning: { competitors: [], differentiators: [], uniqueValue: '' },
+    useCases: [],
+    socialProof: { customerCount: null, keyMetrics: [], testimonialHighlights: [] },
+    brandVoice: { tone: 'professional', keywords: [], avoidWords: [] },
+    industry: { vertical: '', regulations: [], terminology: [] },
+  };
+  const [aiContext, setAiContext] = useState(DEFAULT_AI_CONTEXT);
+  const [expandedSections, setExpandedSections] = useState({
+    targetPersona: true, positioning: false, useCases: false,
+    socialProof: false, brandVoice: false, industry: false,
+  });
+  const toggleSection = (key) => setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));
+
   // Supplier management state
   const [productSuppliers, setProductSuppliers] = useState([]);
   const [pendingSuppliers, setPendingSuppliers] = useState([]); // For new products before save
@@ -202,6 +218,16 @@ export default function ProductModal({
           documentation_url: product.digitalDetails.documentation_url || '',
           features: product.digitalDetails.features || [],
           integrations: product.digitalDetails.integrations || [],
+        });
+        // Load AI context
+        const saved = product.digitalDetails.ai_context || {};
+        setAiContext({
+          targetPersona: { ...DEFAULT_AI_CONTEXT.targetPersona, ...saved.targetPersona },
+          positioning: { ...DEFAULT_AI_CONTEXT.positioning, ...saved.positioning },
+          useCases: saved.useCases || [],
+          socialProof: { ...DEFAULT_AI_CONTEXT.socialProof, ...saved.socialProof },
+          brandVoice: { ...DEFAULT_AI_CONTEXT.brandVoice, ...saved.brandVoice },
+          industry: { ...DEFAULT_AI_CONTEXT.industry, ...saved.industry },
         });
       }
 
@@ -284,6 +310,7 @@ export default function ProductModal({
         },
         country_of_origin: '',
       });
+      setAiContext(DEFAULT_AI_CONTEXT);
       // Reset supplier state for new products
       setPendingSuppliers([]);
       setProductSuppliers([]);
@@ -546,6 +573,7 @@ export default function ProductModal({
       if (productType === 'digital') {
         const digitalPayload = {
           ...digitalData,
+          ai_context: aiContext,
           product_id: savedProduct.id,
         };
         if (isEdit) {
@@ -636,6 +664,11 @@ export default function ProductModal({
             {productType === 'digital' && (
               <TabsTrigger value="features" className="data-[state=active]:bg-zinc-700 text-zinc-400 data-[state=active]:text-white">
                 <Settings className="w-4 h-4 mr-2" /> Features
+              </TabsTrigger>
+            )}
+            {productType === 'digital' && (
+              <TabsTrigger value="ai-brief" className="data-[state=active]:bg-zinc-700 text-zinc-400 data-[state=active]:text-white">
+                <Sparkles className="w-4 h-4 mr-2" /> AI Brief
               </TabsTrigger>
             )}
             <TabsTrigger value="seo" className="data-[state=active]:bg-zinc-700 text-zinc-400 data-[state=active]:text-white">
@@ -1478,6 +1511,283 @@ export default function ProductModal({
                     ))}
                   </div>
                 )}
+              </TabsContent>
+            )}
+
+            {/* AI Brief Tab (Digital only) */}
+            {productType === 'digital' && (
+              <TabsContent value="ai-brief" className="space-y-3 m-0">
+                {/* Helper components for AI Brief */}
+                {(() => {
+                  // Tag input helper
+                  const TagInput = ({ tags, onAdd, onRemove, placeholder }) => {
+                    const [val, setVal] = React.useState('');
+                    return (
+                      <div>
+                        <div className="flex gap-2">
+                          <input
+                            value={val}
+                            onChange={(e) => setVal(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && val.trim()) {
+                                e.preventDefault();
+                                if (!tags.includes(val.trim())) onAdd(val.trim());
+                                setVal('');
+                              }
+                            }}
+                            placeholder={placeholder}
+                            className="flex-1 px-3 py-2 bg-white/[0.05] border border-white/[0.08] rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:border-cyan-500/50"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (val.trim() && !tags.includes(val.trim())) onAdd(val.trim());
+                              setVal('');
+                            }}
+                            className="px-2 text-cyan-400 hover:text-cyan-300"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
+                        {tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mt-2">
+                            {tags.map(tag => (
+                              <span key={tag} className="inline-flex items-center gap-1 bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 rounded-full px-3 py-1 text-xs">
+                                {tag}
+                                <button type="button" onClick={() => onRemove(tag)} className="hover:text-white"><X className="w-3 h-3" /></button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  };
+
+                  // List input helper (array of strings with + button)
+                  const ListInput = ({ items, onUpdate, placeholder }) => (
+                    <div className="space-y-2">
+                      {items.map((item, i) => (
+                        <div key={i} className="flex gap-2">
+                          <input
+                            value={item}
+                            onChange={(e) => { const n = [...items]; n[i] = e.target.value; onUpdate(n); }}
+                            placeholder={placeholder}
+                            className="flex-1 px-3 py-2 bg-white/[0.05] border border-white/[0.08] rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:border-cyan-500/50"
+                          />
+                          <button type="button" onClick={() => onUpdate(items.filter((_, j) => j !== i))} className="text-zinc-500 hover:text-red-400"><X className="w-4 h-4" /></button>
+                        </div>
+                      ))}
+                      <button type="button" onClick={() => onUpdate([...items, ''])} className="text-cyan-400 hover:text-cyan-300 text-sm flex items-center gap-1">
+                        <Plus className="w-3 h-3" /> Add
+                      </button>
+                    </div>
+                  );
+
+                  // Section wrapper
+                  const Section = ({ id, title, children }) => (
+                    <div className="rounded-xl border border-white/[0.06] bg-zinc-800/30">
+                      <button type="button" onClick={() => toggleSection(id)} className="w-full flex items-center justify-between px-4 py-3">
+                        <span className="text-white font-semibold text-sm">{title}</span>
+                        {expandedSections[id] ? <ChevronUp className="w-4 h-4 text-zinc-400" /> : <ChevronDown className="w-4 h-4 text-zinc-400" />}
+                      </button>
+                      {expandedSections[id] && <div className="px-4 pb-4 space-y-3">{children}</div>}
+                    </div>
+                  );
+
+                  const updateCtx = (section, field, value) => {
+                    setAiContext(prev => ({
+                      ...prev,
+                      [section]: { ...prev[section], [field]: value },
+                    }));
+                  };
+
+                  return (
+                    <>
+                      <Section id="targetPersona" title="Target Persona">
+                        <div>
+                          <label className="text-zinc-400 text-xs mb-1 block">Job Titles</label>
+                          <TagInput
+                            tags={aiContext.targetPersona.jobTitles}
+                            onAdd={(t) => updateCtx('targetPersona', 'jobTitles', [...aiContext.targetPersona.jobTitles, t])}
+                            onRemove={(t) => updateCtx('targetPersona', 'jobTitles', aiContext.targetPersona.jobTitles.filter(x => x !== t))}
+                            placeholder="e.g. Compliance Officer"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-zinc-400 text-xs mb-1 block">Pain Points</label>
+                          <ListInput
+                            items={aiContext.targetPersona.painPoints}
+                            onUpdate={(v) => updateCtx('targetPersona', 'painPoints', v)}
+                            placeholder="e.g. Complex EU AI Act requirements"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-zinc-400 text-xs mb-1 block">Goals</label>
+                          <ListInput
+                            items={aiContext.targetPersona.goals}
+                            onUpdate={(v) => updateCtx('targetPersona', 'goals', v)}
+                            placeholder="e.g. Automated compliance monitoring"
+                          />
+                        </div>
+                      </Section>
+
+                      <Section id="positioning" title="Positioning">
+                        <div>
+                          <label className="text-zinc-400 text-xs mb-1 block">Competitors</label>
+                          <TagInput
+                            tags={aiContext.positioning.competitors}
+                            onAdd={(t) => updateCtx('positioning', 'competitors', [...aiContext.positioning.competitors, t])}
+                            onRemove={(t) => updateCtx('positioning', 'competitors', aiContext.positioning.competitors.filter(x => x !== t))}
+                            placeholder="e.g. OneTrust"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-zinc-400 text-xs mb-1 block">Differentiators</label>
+                          <ListInput
+                            items={aiContext.positioning.differentiators}
+                            onUpdate={(v) => updateCtx('positioning', 'differentiators', v)}
+                            placeholder="e.g. Automated EU AI Act compliance"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-zinc-400 text-xs mb-1 block">Unique Value Proposition</label>
+                          <textarea
+                            value={aiContext.positioning.uniqueValue}
+                            onChange={(e) => updateCtx('positioning', 'uniqueValue', e.target.value)}
+                            placeholder="The only platform that..."
+                            className="w-full px-3 py-2 bg-white/[0.05] border border-white/[0.08] rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:border-cyan-500/50 min-h-[60px]"
+                          />
+                        </div>
+                      </Section>
+
+                      <Section id="useCases" title="Use Cases">
+                        <div className="space-y-3">
+                          {aiContext.useCases.map((uc, i) => (
+                            <div key={i} className="p-3 bg-white/[0.03] rounded-lg border border-white/[0.05] space-y-2">
+                              <div className="flex gap-2">
+                                <input
+                                  value={uc.title}
+                                  onChange={(e) => {
+                                    const n = [...aiContext.useCases]; n[i] = { ...n[i], title: e.target.value };
+                                    setAiContext(prev => ({ ...prev, useCases: n }));
+                                  }}
+                                  placeholder="Use case title"
+                                  className="flex-1 px-3 py-2 bg-white/[0.05] border border-white/[0.08] rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:border-cyan-500/50"
+                                />
+                                <button type="button" onClick={() => setAiContext(prev => ({ ...prev, useCases: prev.useCases.filter((_, j) => j !== i) }))} className="text-zinc-500 hover:text-red-400"><X className="w-4 h-4" /></button>
+                              </div>
+                              <textarea
+                                value={uc.description}
+                                onChange={(e) => {
+                                  const n = [...aiContext.useCases]; n[i] = { ...n[i], description: e.target.value };
+                                  setAiContext(prev => ({ ...prev, useCases: n }));
+                                }}
+                                placeholder="Description"
+                                className="w-full px-3 py-2 bg-white/[0.05] border border-white/[0.08] rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:border-cyan-500/50 min-h-[50px]"
+                              />
+                            </div>
+                          ))}
+                          <button type="button" onClick={() => setAiContext(prev => ({ ...prev, useCases: [...prev.useCases, { title: '', description: '' }] }))} className="text-cyan-400 hover:text-cyan-300 text-sm flex items-center gap-1">
+                            <Plus className="w-3 h-3" /> Add Use Case
+                          </button>
+                        </div>
+                      </Section>
+
+                      <Section id="socialProof" title="Social Proof">
+                        <div>
+                          <label className="text-zinc-400 text-xs mb-1 block">Customer Count</label>
+                          <input
+                            type="number"
+                            value={aiContext.socialProof.customerCount || ''}
+                            onChange={(e) => updateCtx('socialProof', 'customerCount', e.target.value ? parseInt(e.target.value) : null)}
+                            placeholder="e.g. 150"
+                            className="w-32 px-3 py-2 bg-white/[0.05] border border-white/[0.08] rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:border-cyan-500/50"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-zinc-400 text-xs mb-1 block">Key Metrics</label>
+                          <TagInput
+                            tags={aiContext.socialProof.keyMetrics}
+                            onAdd={(t) => updateCtx('socialProof', 'keyMetrics', [...aiContext.socialProof.keyMetrics, t])}
+                            onRemove={(t) => updateCtx('socialProof', 'keyMetrics', aiContext.socialProof.keyMetrics.filter(x => x !== t))}
+                            placeholder="e.g. 80% cost reduction"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-zinc-400 text-xs mb-1 block">Testimonial Highlights</label>
+                          <ListInput
+                            items={aiContext.socialProof.testimonialHighlights}
+                            onUpdate={(v) => updateCtx('socialProof', 'testimonialHighlights', v)}
+                            placeholder="Short quote"
+                          />
+                        </div>
+                      </Section>
+
+                      <Section id="brandVoice" title="Brand Voice">
+                        <div>
+                          <label className="text-zinc-400 text-xs mb-1 block">Tone</label>
+                          <select
+                            value={aiContext.brandVoice.tone}
+                            onChange={(e) => updateCtx('brandVoice', 'tone', e.target.value)}
+                            className="px-3 py-2 bg-white/[0.05] border border-white/[0.08] rounded-lg text-white text-sm focus:outline-none focus:border-cyan-500/50"
+                          >
+                            {['professional', 'casual', 'technical', 'friendly', 'authoritative', 'playful'].map(t => (
+                              <option key={t} value={t} className="bg-zinc-800">{t.charAt(0).toUpperCase() + t.slice(1)}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-zinc-400 text-xs mb-1 block">Keywords</label>
+                          <TagInput
+                            tags={aiContext.brandVoice.keywords}
+                            onAdd={(t) => updateCtx('brandVoice', 'keywords', [...aiContext.brandVoice.keywords, t])}
+                            onRemove={(t) => updateCtx('brandVoice', 'keywords', aiContext.brandVoice.keywords.filter(x => x !== t))}
+                            placeholder="e.g. compliance"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-zinc-400 text-xs mb-1 block">Words to Avoid</label>
+                          <TagInput
+                            tags={aiContext.brandVoice.avoidWords}
+                            onAdd={(t) => updateCtx('brandVoice', 'avoidWords', [...aiContext.brandVoice.avoidWords, t])}
+                            onRemove={(t) => updateCtx('brandVoice', 'avoidWords', aiContext.brandVoice.avoidWords.filter(x => x !== t))}
+                            placeholder="e.g. simple"
+                          />
+                        </div>
+                      </Section>
+
+                      <Section id="industry" title="Industry Context">
+                        <div>
+                          <label className="text-zinc-400 text-xs mb-1 block">Vertical</label>
+                          <input
+                            value={aiContext.industry.vertical}
+                            onChange={(e) => updateCtx('industry', 'vertical', e.target.value)}
+                            placeholder="e.g. RegTech"
+                            className="w-full px-3 py-2 bg-white/[0.05] border border-white/[0.08] rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:border-cyan-500/50"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-zinc-400 text-xs mb-1 block">Regulations</label>
+                          <TagInput
+                            tags={aiContext.industry.regulations}
+                            onAdd={(t) => updateCtx('industry', 'regulations', [...aiContext.industry.regulations, t])}
+                            onRemove={(t) => updateCtx('industry', 'regulations', aiContext.industry.regulations.filter(x => x !== t))}
+                            placeholder="e.g. EU AI Act"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-zinc-400 text-xs mb-1 block">Terminology</label>
+                          <TagInput
+                            tags={aiContext.industry.terminology}
+                            onAdd={(t) => updateCtx('industry', 'terminology', [...aiContext.industry.terminology, t])}
+                            onRemove={(t) => updateCtx('industry', 'terminology', aiContext.industry.terminology.filter(x => x !== t))}
+                            placeholder="e.g. high-risk AI"
+                          />
+                        </div>
+                      </Section>
+                    </>
+                  );
+                })()}
               </TabsContent>
             )}
 

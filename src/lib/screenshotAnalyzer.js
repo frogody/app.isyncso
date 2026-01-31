@@ -2,6 +2,14 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 const DEFAULT_ANALYSIS = {
+  productUnderstanding: {
+    purpose: '',
+    targetAudience: '',
+    valueProposition: '',
+    productCategory: 'saas',
+  },
+  extractedFeatures: [],
+  keyScreens: [],
   colorPalette: {
     primary: '#06b6d4',
     secondary: '#1a1a2e',
@@ -30,16 +38,18 @@ const DEFAULT_ANALYSIS = {
 };
 
 /**
- * Analyzes product screenshots using AI vision to extract design system information.
- * Returns a structured analysis object with colors, typography, UI style, and layout info.
- *
- * Requires a working Anthropic API key configured on the edge function.
+ * Analyzes product screenshots using AI vision to extract design system information
+ * and semantic product understanding.
  *
  * @param {string[]} screenshots - Array of screenshot URLs
  * @param {string} productName - Product name for context
- * @returns {Promise<object>} Design analysis object
+ * @param {object} [productContext] - Additional product context
+ * @param {string} [productContext.description] - Product description
+ * @param {string[]} [productContext.tags] - Product tags
+ * @param {Array} [productContext.features] - Product features
+ * @returns {Promise<object>} Design + semantic analysis object
  */
-export async function analyzeScreenshots(screenshots, productName) {
+export async function analyzeScreenshots(screenshots, productName, productContext = {}) {
   if (!screenshots?.length) {
     return { ...DEFAULT_ANALYSIS };
   }
@@ -53,7 +63,14 @@ export async function analyzeScreenshots(screenshots, productName) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
         },
-        body: JSON.stringify({ screenshots, productName }),
+        body: JSON.stringify({
+          screenshots,
+          productName,
+          productDescription: productContext.description || '',
+          productTags: productContext.tags || [],
+          productFeatures: productContext.features || [],
+          productAiContext: productContext.aiContext || {},
+        }),
       }
     );
 
@@ -71,6 +88,9 @@ export async function analyzeScreenshots(screenshots, productName) {
 
     // Merge with defaults to fill any missing fields
     return {
+      productUnderstanding: { ...DEFAULT_ANALYSIS.productUnderstanding, ...data.analysis.productUnderstanding },
+      extractedFeatures: data.analysis.extractedFeatures || DEFAULT_ANALYSIS.extractedFeatures,
+      keyScreens: data.analysis.keyScreens || DEFAULT_ANALYSIS.keyScreens,
       colorPalette: { ...DEFAULT_ANALYSIS.colorPalette, ...data.analysis.colorPalette },
       typography: { ...DEFAULT_ANALYSIS.typography, ...data.analysis.typography },
       uiStyle: { ...DEFAULT_ANALYSIS.uiStyle, ...data.analysis.uiStyle },
