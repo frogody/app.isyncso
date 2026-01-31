@@ -52,7 +52,7 @@ describe('SentinelButton', () => {
 
   it('applies primary variant by default', () => {
     const { container } = render(<SentinelButton>Primary</SentinelButton>);
-    expect(container.firstChild).toHaveClass('bg-sky-500');
+    expect(container.firstChild).toHaveClass('bg-emerald-400');
   });
 
   it('applies secondary variant', () => {

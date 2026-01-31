@@ -15,7 +15,7 @@ describe('SentinelBadge', () => {
 
   it('applies primary variant', () => {
     const { container } = render(<SentinelBadge variant="primary">Primary</SentinelBadge>);
-    expect(container.firstChild).toHaveClass('text-sky-400');
+    expect(container.firstChild).toHaveClass('text-emerald-400');
   });
 
   it('applies success variant', () => {

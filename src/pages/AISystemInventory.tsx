@@ -34,7 +34,7 @@ const AISystemModal = lazy(() => import('@/components/sentinel/AISystemModal'));
 
 const STATUS_PROGRESS: Record<string, { label: string; color: string; progress: number }> = {
   'not-started': { label: 'Not Started', color: 'text-zinc-500', progress: 0 },
-  'in-progress': { label: 'In Progress', color: 'text-sky-400', progress: 50 },
+  'in-progress': { label: 'In Progress', color: 'text-emerald-400', progress: 50 },
   compliant: { label: 'Compliant', color: 'text-green-400', progress: 100 },
   'non-compliant': { label: 'Non-Compliant', color: 'text-red-400', progress: 25 },
 };
@@ -67,7 +67,7 @@ function SystemCard({ system, onEdit, onDelete, onAssess, index }: SystemCardPro
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="min-w-0">
             <h3
-              className={cn('font-semibold truncate transition-colors cursor-pointer', st('text-slate-900 group-hover:text-violet-500', 'text-white group-hover:text-sky-400'))}
+              className={cn('font-semibold truncate transition-colors cursor-pointer', st('text-slate-900 group-hover:text-emerald-500', 'text-white group-hover:text-emerald-400'))}
               onClick={() => onEdit(system)}
             >
               {system.name}
@@ -80,17 +80,17 @@ function SystemCard({ system, onEdit, onDelete, onAssess, index }: SystemCardPro
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                <MoreHorizontal className="w-4 h-4 text-zinc-400" />
+                <MoreHorizontal className={cn('w-4 h-4', st('text-slate-400', 'text-zinc-400'))} />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
-              <DropdownMenuItem onClick={() => onEdit(system)} className="text-zinc-300 focus:text-white focus:bg-zinc-800">
+            <DropdownMenuContent align="end" className={cn(st('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800'))}>
+              <DropdownMenuItem onClick={() => onEdit(system)} className={cn(st('text-slate-700 focus:text-slate-900 focus:bg-slate-100', 'text-zinc-300 focus:text-white focus:bg-zinc-800'))}>
                 <Edit className="w-4 h-4 mr-2" /> Edit Details
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onAssess(system.id)} className="text-zinc-300 focus:text-white focus:bg-zinc-800">
+              <DropdownMenuItem onClick={() => onAssess(system.id)} className={cn(st('text-slate-700 focus:text-slate-900 focus:bg-slate-100', 'text-zinc-300 focus:text-white focus:bg-zinc-800'))}>
                 <Target className="w-4 h-4 mr-2" /> Risk Assessment
               </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-zinc-800" />
+              <DropdownMenuSeparator className={cn(st('bg-slate-200', 'bg-zinc-800'))} />
               <DropdownMenuItem onClick={() => onDelete(system.id)} className="text-red-400 focus:text-red-300 focus:bg-red-950/30">
                 <Trash2 className="w-4 h-4 mr-2" /> Delete System
               </DropdownMenuItem>
@@ -105,14 +105,14 @@ function SystemCard({ system, onEdit, onDelete, onAssess, index }: SystemCardPro
         <div className="mb-3">
           <div className="flex items-center justify-between text-[10px] mb-1.5">
             <span className={`font-medium ${statusConfig.color}`}>{statusConfig.label}</span>
-            <span className="text-zinc-500">{statusConfig.progress}%</span>
+            <span className={cn(st('text-slate-500', 'text-zinc-500'))}>{statusConfig.progress}%</span>
           </div>
-          <Progress value={statusConfig.progress} className="h-1.5 bg-zinc-800" />
+          <Progress value={statusConfig.progress} className={cn('h-1.5', st('bg-slate-200', 'bg-zinc-800'))} />
         </div>
 
         {/* Footer */}
         <div className={cn('flex items-center justify-between pt-2 border-t', st('border-slate-200', 'border-zinc-800/50'))}>
-          <div className="flex items-center gap-2 text-[10px] text-zinc-500">
+          <div className={cn('flex items-center gap-2 text-[10px]', st('text-slate-500', 'text-zinc-500'))}>
             <span className="flex items-center gap-1">
               <Clock className="w-3 h-3" />
               {daysRegistered}d ago
@@ -220,8 +220,8 @@ export default function AISystemInventory() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={cn('w-10 h-10 rounded-[20px] flex items-center justify-center', st('bg-violet-100', 'bg-sky-500/10'))}>
-              <Cpu className={cn('w-5 h-5', st('text-violet-500', 'text-sky-400'))} />
+            <div className={cn('w-10 h-10 rounded-[20px] flex items-center justify-center', st('bg-emerald-100', 'bg-emerald-400/10'))}>
+              <Cpu className={cn('w-5 h-5', st('text-emerald-500', 'text-emerald-400'))} />
             </div>
             <div>
               <h1 className={cn('text-xl font-semibold', st('text-slate-900', 'text-white'))}>AI System Inventory</h1>
@@ -256,7 +256,7 @@ export default function AISystemInventory() {
               placeholder="Search AI systems..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className={cn('pl-10', st('bg-white border-slate-300 text-slate-900 focus:border-violet-500/40', 'bg-zinc-900/60 border-zinc-800/60 text-white focus:border-sky-500/40'))}
+              className={cn('pl-10', st('bg-white border-slate-300 text-slate-900 focus:border-emerald-500/40', 'bg-zinc-900/60 border-zinc-800/60 text-white focus:border-emerald-400/40'))}
             />
           </div>
 
@@ -357,7 +357,7 @@ export default function AISystemInventory() {
         <Suspense
           fallback={
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-400" />
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400" />
             </div>
           }
         >

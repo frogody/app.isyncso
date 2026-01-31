@@ -49,7 +49,7 @@ export function SentinelCard({
         },
         {
           [st('hover:border-slate-300', 'hover:border-zinc-700/60') + ' transition-colors duration-200']: variant === 'default',
-          ['cursor-pointer ' + st('hover:bg-slate-50 hover:shadow-md', 'hover:bg-zinc-900/60') + ' hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 ' + st('focus-visible:ring-violet-500/40 focus-visible:border-violet-500/50', 'focus-visible:ring-sky-500/40 focus-visible:border-sky-500/50') + ' transition-all duration-200']: variant === 'interactive',
+          ['cursor-pointer ' + st('hover:bg-slate-50 hover:shadow-md', 'hover:bg-zinc-900/60') + ' hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 ' + st('focus-visible:ring-emerald-500/40 focus-visible:border-emerald-500/50', 'focus-visible:ring-emerald-400/40 focus-visible:border-emerald-400/50') + ' transition-all duration-200']: variant === 'interactive',
           [st('bg-slate-50 shadow-md', 'bg-zinc-800/60 shadow-lg')]: variant === 'elevated',
         },
         className

@@ -39,8 +39,8 @@ export const SentinelButton = forwardRef<HTMLButtonElement, SentinelButtonProps>
           },
           {
             [st(
-              'bg-violet-500 text-white hover:bg-violet-600 active:bg-violet-700',
-              'bg-sky-500 text-white hover:bg-sky-600 active:bg-sky-700',
+              'bg-emerald-500 text-white hover:bg-emerald-600 active:bg-emerald-700',
+              'bg-emerald-400 text-white hover:bg-emerald-500 active:bg-emerald-600',
             )]: variant === 'primary',
             [st(
               'bg-transparent text-slate-700 border border-slate-300 hover:bg-slate-100',
@@ -54,8 +54,8 @@ export const SentinelButton = forwardRef<HTMLButtonElement, SentinelButtonProps>
           },
           'disabled:opacity-50 disabled:cursor-not-allowed',
           st(
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 focus-visible:ring-offset-1 focus-visible:ring-offset-white',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40 focus-visible:ring-offset-1 focus-visible:ring-offset-black',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 focus-visible:ring-offset-1 focus-visible:ring-offset-white',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 focus-visible:ring-offset-1 focus-visible:ring-offset-black',
           ),
           className
         )}

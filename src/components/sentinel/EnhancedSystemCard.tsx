@@ -18,6 +18,7 @@ import { SentinelCard } from './ui/SentinelCard';
 import { SentinelButton } from './ui/SentinelButton';
 import RiskClassificationBadge from './RiskClassificationBadge';
 import type { RiskClassification } from '@/tokens/sentinel';
+import { useSentinelTheme } from '@/contexts/SentinelThemeContext';
 
 interface Obligation {
   id: string;
@@ -48,6 +49,7 @@ interface EnhancedSystemCardProps {
 }
 
 export default function EnhancedSystemCard({ system, onEdit }: EnhancedSystemCardProps) {
+  const { st } = useSentinelTheme();
   const [obligations, setObligations] = useState<Obligation[]>([]);
   const [loadingObligations, setLoadingObligations] = useState(true);
 
@@ -105,7 +107,13 @@ export default function EnhancedSystemCard({ system, onEdit }: EnhancedSystemCar
     ? Math.ceil((new Date(nextObligation.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
     : null;
 
-  const actionBtnClass = 'bg-transparent text-sky-400 border border-sky-500/30 hover:bg-sky-500/10 hover:border-sky-500/50 rounded-full text-xs h-8 px-3 transition-colors duration-200';
+  const actionBtnClass = cn(
+    'bg-transparent border rounded-full text-xs h-8 px-3 transition-colors duration-200',
+    st(
+      'text-emerald-600 border-emerald-300 hover:bg-emerald-50 hover:border-emerald-400',
+      'text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10 hover:border-emerald-500/50'
+    )
+  );
 
   const dropdownMenu = (
     <DropdownMenu>
@@ -114,11 +122,11 @@ export default function EnhancedSystemCard({ system, onEdit }: EnhancedSystemCar
           <MoreVertical className="w-4 h-4" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-700">
-        <DropdownMenuItem onClick={() => onEdit(system)} className="text-zinc-300 hover:bg-zinc-800 cursor-pointer">
+      <DropdownMenuContent align="end" className={cn(st('bg-white border-slate-200', 'bg-zinc-900 border-zinc-700'))}>
+        <DropdownMenuItem onClick={() => onEdit(system)} className={cn(st('text-slate-700 hover:bg-slate-100', 'text-zinc-300 hover:bg-zinc-800'), 'cursor-pointer')}>
           <Eye className="w-4 h-4 mr-2" /> View Details
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => {}} className="text-zinc-300 hover:bg-zinc-800 cursor-pointer">
+        <DropdownMenuItem onClick={() => {}} className={cn(st('text-slate-700 hover:bg-slate-100', 'text-zinc-300 hover:bg-zinc-800'), 'cursor-pointer')}>
           <Copy className="w-4 h-4 mr-2" /> Duplicate System
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleDelete} className="text-red-400 hover:bg-zinc-800 cursor-pointer">
@@ -128,27 +136,29 @@ export default function EnhancedSystemCard({ system, onEdit }: EnhancedSystemCar
     </DropdownMenu>
   );
 
+  const sectionBorder = cn('border-t pt-4', st('border-slate-200', 'border-zinc-800/60'));
+
   // ── Unclassified ──
   if (system.risk_classification === 'unclassified') {
     return (
       <SentinelCard padding="md">
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-bold text-white mb-1 truncate">{system.name}</h3>
-            <p className="text-sm text-zinc-400 line-clamp-2">{system.purpose}</p>
+            <h3 className={cn('text-lg font-bold mb-1 truncate', st('text-slate-900', 'text-white'))}>{system.name}</h3>
+            <p className={cn('text-sm line-clamp-2', st('text-slate-500', 'text-zinc-400'))}>{system.purpose}</p>
           </div>
           <RiskClassificationBadge classification="unclassified" showHelp={false} size="sm" />
         </div>
-        <div className="border-t border-zinc-800/60 pt-4 pb-4 mb-4">
-          <div className="flex items-center gap-3 text-sky-400">
+        <div className={cn(sectionBorder, 'pb-4 mb-4')}>
+          <div className={cn('flex items-center gap-3', st('text-emerald-600', 'text-emerald-400'))}>
             <AlertTriangle className="w-5 h-5 flex-shrink-0" />
             <div>
               <div className="font-semibold text-sm">Classification required</div>
-              <div className="text-xs text-zinc-500">Run the assessment wizard to determine obligations</div>
+              <div className={cn('text-xs', st('text-slate-500', 'text-zinc-500'))}>Run the assessment wizard to determine obligations</div>
             </div>
           </div>
         </div>
-        <div className="border-t border-zinc-800/60 pt-4 flex items-center gap-2">
+        <div className={cn(sectionBorder, 'flex items-center gap-2')}>
           <Link to={createPageUrl(`RiskAssessment?systemId=${system.id}`)} className="flex-1">
             <SentinelButton size="sm" className="w-full">Start Assessment</SentinelButton>
           </Link>
@@ -167,21 +177,21 @@ export default function EnhancedSystemCard({ system, onEdit }: EnhancedSystemCar
         <div className="relative">
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1 min-w-0">
-              <h3 className="text-lg font-bold text-white mb-1 truncate">{system.name}</h3>
-              <p className="text-sm text-zinc-400 line-clamp-2">{system.purpose}</p>
+              <h3 className={cn('text-lg font-bold mb-1 truncate', st('text-slate-900', 'text-white'))}>{system.name}</h3>
+              <p className={cn('text-sm line-clamp-2', st('text-slate-500', 'text-zinc-400'))}>{system.purpose}</p>
             </div>
             <RiskClassificationBadge classification="prohibited" showHelp={false} size="sm" />
           </div>
-          <div className="border-t border-zinc-800/60 pt-4 pb-4 mb-4">
+          <div className={cn(sectionBorder, 'pb-4 mb-4')}>
             <div className="flex items-center gap-3 text-red-400">
               <AlertTriangle className="w-5 h-5 flex-shrink-0" />
               <div>
                 <div className="font-semibold text-sm">Review Required — Deployment may be banned</div>
-                <div className="text-xs text-zinc-500">This system falls under EU AI Act prohibited practices</div>
+                <div className={cn('text-xs', st('text-slate-500', 'text-zinc-500'))}>This system falls under EU AI Act prohibited practices</div>
               </div>
             </div>
           </div>
-          <div className="border-t border-zinc-800/60 pt-4 flex items-center gap-2">
+          <div className={cn(sectionBorder, 'flex items-center gap-2')}>
             <SentinelButton variant="danger" size="sm" className="flex-1">
               <List className="w-4 h-4 mr-1" /> View Restrictions
             </SentinelButton>
@@ -199,21 +209,21 @@ export default function EnhancedSystemCard({ system, onEdit }: EnhancedSystemCar
       <SentinelCard padding="md">
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-bold text-white mb-1 truncate">{system.name}</h3>
-            <p className="text-sm text-zinc-400 line-clamp-2">{system.purpose}</p>
+            <h3 className={cn('text-lg font-bold mb-1 truncate', st('text-slate-900', 'text-white'))}>{system.name}</h3>
+            <p className={cn('text-sm line-clamp-2', st('text-slate-500', 'text-zinc-400'))}>{system.purpose}</p>
           </div>
           <RiskClassificationBadge classification="minimal-risk" showHelp={false} size="sm" />
         </div>
-        <div className="border-t border-zinc-800/60 pt-4 pb-4 mb-4">
+        <div className={cn(sectionBorder, 'pb-4 mb-4')}>
           <div className="flex items-center gap-3 text-green-400">
             <CheckCircle className="w-5 h-5 flex-shrink-0" />
             <div>
               <div className="font-semibold text-sm">Minimal requirements</div>
-              <div className="text-xs text-zinc-500">No specific AI Act obligations</div>
+              <div className={cn('text-xs', st('text-slate-500', 'text-zinc-500'))}>No specific AI Act obligations</div>
             </div>
           </div>
         </div>
-        <div className="border-t border-zinc-800/60 pt-4 flex items-center gap-2">
+        <div className={cn(sectionBorder, 'flex items-center gap-2')}>
           <SentinelButton variant="secondary" size="sm" className="flex-1">View Details</SentinelButton>
           <button onClick={() => onEdit(system)} className={actionBtnClass}><Edit className="w-4 h-4" /></button>
           {dropdownMenu}
@@ -227,8 +237,8 @@ export default function EnhancedSystemCard({ system, onEdit }: EnhancedSystemCar
     <SentinelCard padding="md">
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-bold text-white mb-1 truncate">{system.name}</h3>
-          <p className="text-sm text-zinc-400 line-clamp-1">
+          <h3 className={cn('text-lg font-bold mb-1 truncate', st('text-slate-900', 'text-white'))}>{system.name}</h3>
+          <p className={cn('text-sm line-clamp-1', st('text-slate-500', 'text-zinc-400'))}>
             {system.classification_reasoning || system.purpose}
           </p>
         </div>
@@ -237,16 +247,16 @@ export default function EnhancedSystemCard({ system, onEdit }: EnhancedSystemCar
 
       {/* Progress */}
       {!loadingObligations && totalObligations > 0 && (
-        <div className="border-t border-zinc-800/60 pt-4 pb-4 mb-4">
+        <div className={cn(sectionBorder, 'pb-4 mb-4')}>
           <div className="flex items-center justify-between mb-2 text-sm">
-            <span className="text-zinc-400">Compliance Progress</span>
-            <span className="text-sky-400">
+            <span className={cn(st('text-slate-500', 'text-zinc-400'))}>Compliance Progress</span>
+            <span className={cn(st('text-emerald-600', 'text-emerald-400'))}>
               {completedObligations}/{totalObligations} obligations · {progressPercent}%
             </span>
           </div>
-          <div className="w-full bg-zinc-800 rounded-full h-2">
+          <div className={cn('w-full rounded-full h-2', st('bg-slate-200', 'bg-zinc-800'))}>
             <motion.div
-              className="bg-sky-500 h-2 rounded-full"
+              className="bg-emerald-500 h-2 rounded-full"
               initial={{ width: 0 }}
               animate={{ width: `${progressPercent}%` }}
               transition={{ duration: 0.6, ease: 'easeOut' }}
@@ -257,14 +267,14 @@ export default function EnhancedSystemCard({ system, onEdit }: EnhancedSystemCar
 
       {/* Next Action */}
       {nextObligation && (
-        <div className="border-t border-zinc-800/60 pt-4 pb-4 mb-4">
+        <div className={cn(sectionBorder, 'pb-4 mb-4')}>
           <div className="flex items-start gap-3">
-            <AlertTriangle className="w-4 h-4 text-sky-400 mt-0.5 flex-shrink-0" />
+            <AlertTriangle className={cn('w-4 h-4 mt-0.5 flex-shrink-0', st('text-emerald-600', 'text-emerald-400'))} />
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-white mb-1">
+              <div className={cn('text-sm font-semibold mb-1', st('text-slate-900', 'text-white'))}>
                 Next: {nextObligation.obligation_title}
               </div>
-              <div className="flex items-center gap-2 text-xs text-zinc-400">
+              <div className={cn('flex items-center gap-2 text-xs', st('text-slate-500', 'text-zinc-400'))}>
                 <Clock className="w-3 h-3" />
                 <span>
                   Due: {new Date(nextObligation.deadline).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
@@ -272,7 +282,7 @@ export default function EnhancedSystemCard({ system, onEdit }: EnhancedSystemCar
                 {daysRemaining !== null && (
                   <>
                     <span>·</span>
-                    <span className={daysRemaining < 180 ? 'text-sky-400 font-semibold' : ''}>
+                    <span className={daysRemaining < 180 ? cn(st('text-emerald-600 font-semibold', 'text-emerald-400 font-semibold')) : ''}>
                       {daysRemaining} days remaining
                     </span>
                   </>
@@ -284,7 +294,7 @@ export default function EnhancedSystemCard({ system, onEdit }: EnhancedSystemCar
       )}
 
       {/* Actions */}
-      <div className="border-t border-zinc-800/60 pt-4 flex items-center gap-2">
+      <div className={cn(sectionBorder, 'flex items-center gap-2')}>
         <Link to={createPageUrl('ComplianceRoadmap')} className="flex-1">
           <SentinelButton variant="secondary" size="sm" className="w-full">
             <List className="w-4 h-4 mr-1" /> View Obligations

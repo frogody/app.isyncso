@@ -75,7 +75,7 @@ export function SentinelErrorState({
           onClick={onRetry}
           className={cn(
             'inline-flex items-center gap-2 h-10 px-6 text-sm font-medium text-white rounded-full transition-colors duration-200',
-            st('bg-violet-500 hover:bg-violet-600', 'bg-sky-500 hover:bg-sky-600'),
+            st('bg-emerald-500 hover:bg-emerald-600', 'bg-emerald-400 hover:bg-emerald-500'),
           )}
         >
           <RefreshCw className="w-4 h-4" />
@@ -107,7 +107,7 @@ export function SentinelEmptyState({ icon, title, message, action, actionLabel, 
   if (icon) {
     if (typeof icon === 'function' || (typeof icon === 'object' && icon !== null && '$$typeof' in icon && 'render' in (icon as any))) {
       const IconComponent = icon as React.ComponentType<{ className?: string }>;
-      iconElement = <IconComponent className={cn('w-8 h-8', st('text-violet-500', 'text-sky-400'))} />;
+      iconElement = <IconComponent className={cn('w-8 h-8', st('text-emerald-500', 'text-emerald-400'))} />;
     } else {
       iconElement = icon;
     }
@@ -123,7 +123,7 @@ export function SentinelEmptyState({ icon, title, message, action, actionLabel, 
           onClick={resolvedAction.onClick}
           className={cn(
             'inline-flex items-center gap-2 h-10 px-6 text-sm font-medium text-white rounded-full transition-colors duration-200',
-            st('bg-violet-500 hover:bg-violet-600', 'bg-sky-500 hover:bg-sky-600'),
+            st('bg-emerald-500 hover:bg-emerald-600', 'bg-emerald-400 hover:bg-emerald-500'),
           )}
         >
           {resolvedAction.label}

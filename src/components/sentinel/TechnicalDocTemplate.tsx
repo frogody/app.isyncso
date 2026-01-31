@@ -161,13 +161,13 @@ Format as markdown with clear section headings.`;
         >
           <SentinelCard padding="lg" className="text-center">
             <div className="flex items-center justify-center gap-3 mb-4">
-              <div className="w-8 h-8 border-4 border-sky-400/30 border-t-sky-400 rounded-full animate-spin" />
+              <div className="w-8 h-8 border-4 border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin" />
             </div>
             <h3 className="text-lg font-semibold text-white mb-2">Generating Technical Documentation</h3>
             <p className="text-sm text-zinc-400 mb-4">AI is analyzing system information and drafting Annex IV compliant documentation...</p>
             <div className="w-full max-w-xs mx-auto h-1.5 bg-zinc-800 rounded-full overflow-hidden">
               <motion.div
-                className="h-full bg-gradient-to-r from-sky-500 to-sky-400 rounded-full"
+                className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full"
                 initial={{ width: '0%' }}
                 animate={{ width: '90%' }}
                 transition={{ duration: 25, ease: 'easeOut' }}
@@ -185,7 +185,7 @@ Format as markdown with clear section headings.`;
               placeholder="Edit document content..."
             />
           ) : (
-            <div className="prose prose-invert prose-sky max-w-none">
+            <div className="prose prose-invert prose-emerald max-w-none">
               <ReactMarkdown
                 components={{
                   h1: ({ children }) => <h1 className="text-2xl font-bold text-white mt-6 mb-4">{children}</h1>,
@@ -197,10 +197,10 @@ Format as markdown with clear section headings.`;
                   li: ({ children }) => <li className="text-zinc-300">{children}</li>,
                   strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
                   code: ({ children, ...props }) => (
-                    <code className="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-400 text-sm font-mono">{children}</code>
+                    <code className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-sm font-mono">{children}</code>
                   ),
                   blockquote: ({ children }) => (
-                    <blockquote className="border-l-4 border-sky-500/50 pl-4 italic text-zinc-400 my-4">{children}</blockquote>
+                    <blockquote className="border-l-4 border-emerald-500/50 pl-4 italic text-zinc-400 my-4">{children}</blockquote>
                   ),
                 }}
               >

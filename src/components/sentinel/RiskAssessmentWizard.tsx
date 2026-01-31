@@ -9,6 +9,8 @@ import { SentinelButton } from './ui/SentinelButton';
 import { SentinelBadge } from './ui/SentinelBadge';
 import RiskClassificationBadge from './RiskClassificationBadge';
 import type { RiskClassification } from '@/tokens/sentinel';
+import { useSentinelTheme } from '@/contexts/SentinelThemeContext';
+import { cn } from '@/lib/utils';
 
 interface RiskAssessmentWizardProps {
   systemId: string;
@@ -73,6 +75,7 @@ const stepTransition = {
 };
 
 export default function RiskAssessmentWizard({ systemId, onComplete }: RiskAssessmentWizardProps) {
+  const { st } = useSentinelTheme();
   const [step, setStep] = useState(0);
   const [urls, setUrls] = useState({ website: '', product: '' });
   const [researching, setResearching] = useState(false);
@@ -162,19 +165,35 @@ export default function RiskAssessmentWizard({ systemId, onComplete }: RiskAsses
   }, [urls]);
 
   const prefilledBanner = systemData?.assessment_answers && (
-    <div className="bg-sky-500/10 border border-sky-500/20 rounded-xl p-3 mt-3">
-      <p className="text-xs text-sky-400">Pre-filled by CIDE research. Review and adjust if needed.</p>
+    <div className={cn('border rounded-xl p-3 mt-3', st('bg-emerald-50 border-emerald-200', 'bg-emerald-500/10 border-emerald-500/20'))}>
+      <p className={cn('text-xs', st('text-emerald-700', 'text-emerald-400'))}>Pre-filled by CIDE research. Review and adjust if needed.</p>
     </div>
   );
 
   const yesNoButtons = (category: keyof Answers, id: string, activeColor: string) => (
     <div className="flex gap-2">
-      <button onClick={() => handleAnswer(category, id, true)} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${answers[category][id] === true ? `${activeColor} text-white` : 'bg-zinc-800/50 border border-zinc-700/50 text-zinc-400 hover:bg-zinc-800'}`}>Yes</button>
-      <button onClick={() => handleAnswer(category, id, false)} className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${answers[category][id] === false ? 'bg-green-500 text-white' : 'bg-zinc-800/50 border border-zinc-700/50 text-zinc-400 hover:bg-zinc-800'}`}>No</button>
+      <button onClick={() => handleAnswer(category, id, true)} className={cn(
+        'px-4 py-1.5 rounded-full text-sm font-medium transition-colors',
+        answers[category][id] === true
+          ? `${activeColor} text-white`
+          : st('bg-slate-100 border border-slate-300 text-slate-500 hover:bg-slate-200', 'bg-zinc-800/50 border border-zinc-700/50 text-zinc-400 hover:bg-zinc-800')
+      )}>Yes</button>
+      <button onClick={() => handleAnswer(category, id, false)} className={cn(
+        'px-4 py-1.5 rounded-full text-sm font-medium transition-colors',
+        answers[category][id] === false
+          ? 'bg-green-500 text-white'
+          : st('bg-slate-100 border border-slate-300 text-slate-500 hover:bg-slate-200', 'bg-zinc-800/50 border border-zinc-700/50 text-zinc-400 hover:bg-zinc-800')
+      )}>No</button>
     </div>
   );
 
-  const inputClass = 'w-full h-11 bg-zinc-900/40 border border-zinc-800/60 rounded-xl px-4 text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:border-sky-500/50 focus:ring-2 focus:ring-sky-500/20 transition-all duration-200';
+  const inputClass = cn(
+    'w-full h-11 border rounded-xl px-4 text-sm transition-all duration-200',
+    st(
+      'bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20',
+      'bg-zinc-900/40 border-zinc-800/60 text-white placeholder:text-zinc-500 focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20'
+    )
+  );
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -182,7 +201,7 @@ export default function RiskAssessmentWizard({ systemId, onComplete }: RiskAsses
       {step > 0 && step < 5 && (
         <div className="flex items-center gap-2">
           {[1, 2, 3, 4].map(s => (
-            <motion.div key={s} className={`flex-1 h-2 rounded-full ${s <= step ? 'bg-sky-500' : 'bg-zinc-800'}`} initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: s * 0.05 }} />
+            <motion.div key={s} className={cn('flex-1 h-2 rounded-full', s <= step ? 'bg-emerald-500' : st('bg-slate-200', 'bg-zinc-800'))} initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: s * 0.05 }} />
           ))}
         </div>
       )}
@@ -193,33 +212,33 @@ export default function RiskAssessmentWizard({ systemId, onComplete }: RiskAsses
           <motion.div key="step0" {...stepTransition}>
             <SentinelCard padding="md">
               <div className="mb-4">
-                <h2 className="text-xl font-semibold text-white flex items-center gap-2 mb-1">
-                  <Shield className="w-5 h-5 text-sky-400" /> AI-Powered Risk Assessment
+                <h2 className={cn('text-xl font-semibold flex items-center gap-2 mb-1', st('text-slate-900', 'text-white'))}>
+                  <Shield className={cn('w-5 h-5', st('text-emerald-600', 'text-emerald-400'))} /> AI-Powered Risk Assessment
                 </h2>
-                <p className="text-sm text-zinc-400">
+                <p className={cn('text-sm', st('text-slate-500', 'text-zinc-400'))}>
                   {systemData?.provider_url || systemData?.product_url
                     ? 'URLs loaded from system registration. Verify or edit before continuing.'
                     : 'Provide website URLs and let Sentinel AI research and classify your system automatically'}
                 </p>
               </div>
 
-              <div className="bg-sky-500/5 border border-sky-500/20 rounded-xl p-4 mb-6">
-                <h4 className="text-sky-400 font-semibold mb-2 flex items-center gap-2"><Sparkles className="w-4 h-4" /> How it works</h4>
-                <ul className="text-sm text-zinc-300 space-y-1">
-                  <li>• Sentinel AI researches your company and product</li>
-                  <li>• Auto-classifies against EU AI Act categories</li>
-                  <li>• Pre-fills assessment questions based on findings</li>
-                  <li>• You review and confirm the classification</li>
+              <div className={cn('border rounded-xl p-4 mb-6', st('bg-emerald-50 border-emerald-200', 'bg-emerald-500/5 border-emerald-500/20'))}>
+                <h4 className={cn('font-semibold mb-2 flex items-center gap-2', st('text-emerald-700', 'text-emerald-400'))}><Sparkles className="w-4 h-4" /> How it works</h4>
+                <ul className={cn('text-sm space-y-1', st('text-slate-600', 'text-zinc-300'))}>
+                  <li>Sentinel AI researches your company and product</li>
+                  <li>Auto-classifies against EU AI Act categories</li>
+                  <li>Pre-fills assessment questions based on findings</li>
+                  <li>You review and confirm the classification</li>
                 </ul>
               </div>
 
               <div className="space-y-4 mb-6">
                 <div>
-                  <label className="block text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1.5">Company Website</label>
+                  <label className={cn('block text-xs font-medium uppercase tracking-wider mb-1.5', st('text-slate-500', 'text-zinc-400'))}>Company Website</label>
                   <input type="url" value={urls.website} onChange={(e) => setUrls(prev => ({ ...prev, website: e.target.value }))} placeholder="https://example.com" className={inputClass} />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1.5">Product/Software Page</label>
+                  <label className={cn('block text-xs font-medium uppercase tracking-wider mb-1.5', st('text-slate-500', 'text-zinc-400'))}>Product/Software Page</label>
                   <input type="url" value={urls.product} onChange={(e) => setUrls(prev => ({ ...prev, product: e.target.value }))} placeholder="https://example.com/product" className={inputClass} />
                 </div>
               </div>
@@ -227,8 +246,8 @@ export default function RiskAssessmentWizard({ systemId, onComplete }: RiskAsses
               <SentinelButton onClick={handleAutoAssess} disabled={researching || (!urls.website && !urls.product)} loading={researching} icon={!researching ? <Sparkles className="w-4 h-4" /> : undefined} className="w-full mb-3">
                 {researching ? 'Analyzing...' : 'Continue with AI Assessment'}
               </SentinelButton>
-              <p className="text-xs text-center text-zinc-500">
-                Or <button type="button" onClick={() => setStep(1)} className="text-sky-400 hover:text-sky-300 underline">skip to manual assessment</button>
+              <p className={cn('text-xs text-center', st('text-slate-500', 'text-zinc-500'))}>
+                Or <button type="button" onClick={() => setStep(1)} className={cn('underline', st('text-emerald-600 hover:text-emerald-700', 'text-emerald-400 hover:text-emerald-300'))}>skip to manual assessment</button>
               </p>
             </SentinelCard>
           </motion.div>
@@ -238,17 +257,17 @@ export default function RiskAssessmentWizard({ systemId, onComplete }: RiskAsses
         {step === 1 && (
           <motion.div key="step1" {...stepTransition}>
             <SentinelCard padding="md" className="border-red-500/20">
-              <h2 className="text-xl font-semibold text-white flex items-center gap-2 mb-1">
+              <h2 className={cn('text-xl font-semibold flex items-center gap-2 mb-1', st('text-slate-900', 'text-white'))}>
                 <AlertTriangle className="w-5 h-5 text-red-400" /> Step 1: Prohibited Practices Check
               </h2>
-              <p className="text-sm text-zinc-400 mb-2">These AI practices are banned under the EU AI Act.</p>
+              <p className={cn('text-sm mb-2', st('text-slate-500', 'text-zinc-400'))}>These AI practices are banned under the EU AI Act.</p>
               {prefilledBanner}
               <div className="space-y-5 mt-6">
                 {PROHIBITED_CHECKS.map(check => (
                   <div key={check.id} className="flex items-start justify-between gap-4">
                     <div className="flex-1">
-                      <p className="text-white text-sm mb-0.5">{check.question}</p>
-                      <p className="text-xs text-zinc-500">{check.article}</p>
+                      <p className={cn('text-sm mb-0.5', st('text-slate-900', 'text-white'))}>{check.question}</p>
+                      <p className={cn('text-xs', st('text-slate-400', 'text-zinc-500'))}>{check.article}</p>
                     </div>
                     {yesNoButtons('prohibited', check.id, 'bg-red-500')}
                   </div>
@@ -265,22 +284,27 @@ export default function RiskAssessmentWizard({ systemId, onComplete }: RiskAsses
         {step === 2 && (
           <motion.div key="step2" {...stepTransition}>
             <SentinelCard padding="md" className="border-orange-500/20">
-              <h2 className="text-xl font-semibold text-white flex items-center gap-2 mb-1">
+              <h2 className={cn('text-xl font-semibold flex items-center gap-2 mb-1', st('text-slate-900', 'text-white'))}>
                 <Shield className="w-5 h-5 text-orange-400" /> Step 2: High-Risk Categories (Annex III)
               </h2>
-              <p className="text-sm text-zinc-400 mb-2">Select any categories that apply.</p>
+              <p className={cn('text-sm mb-2', st('text-slate-500', 'text-zinc-400'))}>Select any categories that apply.</p>
               {prefilledBanner}
               <div className="space-y-3 mt-6">
                 {HIGH_RISK_CATEGORIES.map(cat => (
-                  <button key={cat.id} type="button" onClick={() => handleAnswer('highRisk', cat.id, !answers.highRisk[cat.id])} className={`w-full text-left p-4 rounded-[20px] border transition-all ${answers.highRisk[cat.id] ? 'border-orange-500/50 bg-orange-500/10' : 'border-zinc-800/60 hover:border-zinc-700'}`}>
+                  <button key={cat.id} type="button" onClick={() => handleAnswer('highRisk', cat.id, !answers.highRisk[cat.id])} className={cn(
+                    'w-full text-left p-4 rounded-[20px] border transition-all',
+                    answers.highRisk[cat.id]
+                      ? 'border-orange-500/50 bg-orange-500/10'
+                      : st('border-slate-200 hover:border-slate-300', 'border-zinc-800/60 hover:border-zinc-700')
+                  )}>
                     <div className="flex items-start gap-3">
-                      <div className={`w-5 h-5 rounded border flex items-center justify-center mt-0.5 flex-shrink-0 ${answers.highRisk[cat.id] ? 'border-orange-500 bg-orange-500' : 'border-zinc-700'}`}>
+                      <div className={cn('w-5 h-5 rounded border flex items-center justify-center mt-0.5 flex-shrink-0', answers.highRisk[cat.id] ? 'border-orange-500 bg-orange-500' : st('border-slate-300', 'border-zinc-700'))}>
                         {answers.highRisk[cat.id] && <CheckCircle className="w-4 h-4 text-white" />}
                       </div>
                       <div>
-                        <h4 className="font-semibold text-white text-sm mb-0.5">{cat.title}</h4>
-                        <p className="text-xs text-zinc-400 mb-0.5">{cat.description}</p>
-                        <p className="text-[10px] text-zinc-500">{cat.annex}</p>
+                        <h4 className={cn('font-semibold text-sm mb-0.5', st('text-slate-900', 'text-white'))}>{cat.title}</h4>
+                        <p className={cn('text-xs mb-0.5', st('text-slate-500', 'text-zinc-400'))}>{cat.description}</p>
+                        <p className={cn('text-[10px]', st('text-slate-400', 'text-zinc-500'))}>{cat.annex}</p>
                       </div>
                     </div>
                   </button>
@@ -298,20 +322,20 @@ export default function RiskAssessmentWizard({ systemId, onComplete }: RiskAsses
         {step === 3 && (
           <motion.div key="step3" {...stepTransition}>
             <SentinelCard padding="md" className="border-purple-500/20">
-              <h2 className="text-xl font-semibold text-white flex items-center gap-2 mb-1">
+              <h2 className={cn('text-xl font-semibold flex items-center gap-2 mb-1', st('text-slate-900', 'text-white'))}>
                 <Info className="w-5 h-5 text-purple-400" /> Step 3: General-Purpose AI Check
               </h2>
               {prefilledBanner}
               <div className="space-y-6 mt-6">
                 <div>
-                  <p className="text-white text-sm mb-1">Is this a general-purpose AI model?</p>
-                  <p className="text-xs text-zinc-400 mb-3">A model trained on large amounts of data that can perform a wide range of tasks</p>
+                  <p className={cn('text-sm mb-1', st('text-slate-900', 'text-white'))}>Is this a general-purpose AI model?</p>
+                  <p className={cn('text-xs mb-3', st('text-slate-500', 'text-zinc-400'))}>A model trained on large amounts of data that can perform a wide range of tasks</p>
                   {yesNoButtons('gpai', 'is_gpai', 'bg-purple-500')}
                 </div>
                 {answers.gpai.is_gpai === true && (
                   <div>
-                    <p className="text-white text-sm mb-1">Does it have systemic risk?</p>
-                    <p className="text-xs text-zinc-400 mb-3">Training compute &gt; 10^25 FLOPs or assessed as having systemic risk</p>
+                    <p className={cn('text-sm mb-1', st('text-slate-900', 'text-white'))}>Does it have systemic risk?</p>
+                    <p className={cn('text-xs mb-3', st('text-slate-500', 'text-zinc-400'))}>Training compute &gt; 10^25 FLOPs or assessed as having systemic risk</p>
                     {yesNoButtons('gpai', 'systemic_risk', 'bg-purple-500')}
                   </div>
                 )}
@@ -328,7 +352,7 @@ export default function RiskAssessmentWizard({ systemId, onComplete }: RiskAsses
         {step === 4 && (
           <motion.div key="step4" {...stepTransition}>
             <SentinelCard padding="md" className="border-yellow-500/20">
-              <h2 className="text-xl font-semibold text-white flex items-center gap-2 mb-1">
+              <h2 className={cn('text-xl font-semibold flex items-center gap-2 mb-1', st('text-slate-900', 'text-white'))}>
                 <Info className="w-5 h-5 text-yellow-400" /> Step 4: Transparency Requirements
               </h2>
               {prefilledBanner}
@@ -336,8 +360,8 @@ export default function RiskAssessmentWizard({ systemId, onComplete }: RiskAsses
                 {TRANSPARENCY_CHECKS.map(check => (
                   <div key={check.id} className="flex items-start justify-between gap-4">
                     <div className="flex-1">
-                      <p className="text-white text-sm mb-0.5">{check.question}</p>
-                      <p className="text-xs text-zinc-500">{check.article}</p>
+                      <p className={cn('text-sm mb-0.5', st('text-slate-900', 'text-white'))}>{check.question}</p>
+                      <p className={cn('text-xs', st('text-slate-400', 'text-zinc-500'))}>{check.article}</p>
                     </div>
                     {yesNoButtons('transparency', check.id, 'bg-yellow-500')}
                   </div>
@@ -357,17 +381,17 @@ export default function RiskAssessmentWizard({ systemId, onComplete }: RiskAsses
         {step === 5 && result && (
           <motion.div key="step5" {...stepTransition}>
             <SentinelCard padding="md">
-              <h2 className="text-xl font-semibold text-white flex items-center gap-2 mb-6">
-                <CheckCircle className="w-5 h-5 text-sky-400" /> Assessment Complete
+              <h2 className={cn('text-xl font-semibold flex items-center gap-2 mb-6', st('text-slate-900', 'text-white'))}>
+                <CheckCircle className={cn('w-5 h-5', st('text-emerald-600', 'text-emerald-400'))} /> Assessment Complete
               </h2>
 
               <div className="text-center py-6">
                 <RiskClassificationBadge classification={result.classification} showHelp={false} size="md" />
               </div>
 
-              <div className="bg-zinc-800/30 rounded-[20px] p-6 border border-zinc-700/30 mb-6">
-                <h3 className="font-semibold text-white mb-2">Classification Reasoning</h3>
-                <p className="text-zinc-300 leading-relaxed text-sm">{result.reasoning}</p>
+              <div className={cn('rounded-[20px] p-6 border mb-6', st('bg-slate-50 border-slate-200', 'bg-zinc-800/30 border-zinc-700/30'))}>
+                <h3 className={cn('font-semibold mb-2', st('text-slate-900', 'text-white'))}>Classification Reasoning</h3>
+                <p className={cn('leading-relaxed text-sm', st('text-slate-600', 'text-zinc-300'))}>{result.reasoning}</p>
               </div>
 
               {result.classification === 'prohibited' && (
@@ -384,7 +408,7 @@ export default function RiskAssessmentWizard({ systemId, onComplete }: RiskAsses
                     <BookOpen className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
                     <div className="flex-1">
                       <h4 className="text-yellow-400 font-semibold mb-1 text-sm">Compliance Training Recommended</h4>
-                      <p className="text-zinc-300 text-sm mb-3">{trainingRecommendation.course.title}</p>
+                      <p className={cn('text-sm mb-3', st('text-slate-600', 'text-zinc-300'))}>{trainingRecommendation.course.title}</p>
                       <Link to={createPageUrl(`CourseDetail?id=${trainingRecommendation.course_id}`)}>
                         <SentinelButton size="sm" variant="secondary" icon={<ArrowRight className="w-4 h-4" />}>
                           Start Training

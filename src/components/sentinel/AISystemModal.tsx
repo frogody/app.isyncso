@@ -7,6 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Sparkles, Globe, Building2, Box, Database } from 'lucide-react';
 import { SentinelButton } from './ui/SentinelButton';
+import { useSentinelTheme } from '@/contexts/SentinelThemeContext';
+import { cn } from '@/lib/utils';
 
 interface AISystem {
   id?: string;
@@ -68,6 +70,8 @@ const AI_TECHNIQUE_OPTIONS = [
 ] as const;
 
 export default function AISystemModal({ system, onClose, onSave, onCreateAndAssess }: AISystemModalProps) {
+  const { st } = useSentinelTheme();
+
   const [formData, setFormData] = useState<FormData>({
     name: system?.name || '',
     description: system?.description || '',
@@ -248,13 +252,22 @@ export default function AISystemModal({ system, onClose, onSave, onCreateAndAsse
     }
   }, [formData, system, onCreateAndAssess, onSave]);
 
-  const inputClass = 'bg-zinc-900/40 border-zinc-800/60 text-white placeholder:text-zinc-500';
+  const inputClass = cn(
+    'rounded-xl',
+    st(
+      'bg-white border-slate-300 text-slate-900 placeholder:text-slate-400',
+      'bg-zinc-900/40 border-zinc-800/60 text-white placeholder:text-zinc-500'
+    )
+  );
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="bg-black border border-sky-500/20 text-white max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className={cn(
+        'border max-w-4xl max-h-[90vh] overflow-y-auto',
+        st('bg-white border-emerald-200 text-slate-900', 'bg-black border-emerald-500/20 text-white')
+      )}>
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-white">
+          <DialogTitle className={cn('text-2xl font-bold', st('text-slate-900', 'text-white'))}>
             {system ? 'Edit AI System' : 'Register New AI System'}
           </DialogTitle>
         </DialogHeader>
@@ -276,46 +289,46 @@ export default function AISystemModal({ system, onClose, onSave, onCreateAndAsse
 
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
-                <Label className="text-white mb-2 block flex items-center gap-2">
-                  <Box className="w-4 h-4 text-sky-400" /> Product Name *
+                <Label className={cn('mb-2 block flex items-center gap-2', st('text-slate-900', 'text-white'))}>
+                  <Box className={cn('w-4 h-4', st('text-emerald-600', 'text-emerald-400'))} /> Product Name *
                 </Label>
                 <Input value={researchData.productName} onChange={(e) => setResearchData(prev => ({ ...prev, productName: e.target.value }))} placeholder="e.g., Einstein GPT" className={inputClass} />
               </div>
               <div className="col-span-2">
-                <Label className="text-white mb-2 block flex items-center gap-2">
-                  <Globe className="w-4 h-4 text-sky-400" /> Product Page URL
+                <Label className={cn('mb-2 block flex items-center gap-2', st('text-slate-900', 'text-white'))}>
+                  <Globe className={cn('w-4 h-4', st('text-emerald-600', 'text-emerald-400'))} /> Product Page URL
                 </Label>
                 <Input value={researchData.productUrl} onChange={(e) => setResearchData(prev => ({ ...prev, productUrl: e.target.value }))} placeholder="https://salesforce.com/einstein" className={inputClass} />
               </div>
               <div className="col-span-2">
-                <Label className="text-white mb-2 block flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-sky-400" /> Provider / Company Name *
+                <Label className={cn('mb-2 block flex items-center gap-2', st('text-slate-900', 'text-white'))}>
+                  <Building2 className={cn('w-4 h-4', st('text-emerald-600', 'text-emerald-400'))} /> Provider / Company Name *
                 </Label>
                 <Input value={researchData.providerName} onChange={(e) => setResearchData(prev => ({ ...prev, providerName: e.target.value }))} placeholder="e.g., Salesforce" className={inputClass} />
               </div>
               <div className="col-span-2">
-                <Label className="text-white mb-2 block flex items-center gap-2">
-                  <Globe className="w-4 h-4 text-sky-400" /> Provider Website
+                <Label className={cn('mb-2 block flex items-center gap-2', st('text-slate-900', 'text-white'))}>
+                  <Globe className={cn('w-4 h-4', st('text-emerald-600', 'text-emerald-400'))} /> Provider Website
                 </Label>
                 <Input value={researchData.providerUrl} onChange={(e) => setResearchData(prev => ({ ...prev, providerUrl: e.target.value }))} placeholder="https://salesforce.com" className={inputClass} />
               </div>
             </div>
 
-            <div className="bg-sky-500/5 border border-sky-500/20 rounded-[20px] p-4">
-              <h4 className="text-sky-400 font-semibold mb-3 flex items-center gap-2">
+            <div className={cn('border rounded-[20px] p-4', st('bg-emerald-50 border-emerald-200', 'bg-emerald-500/5 border-emerald-500/20'))}>
+              <h4 className={cn('font-semibold mb-3 flex items-center gap-2', st('text-emerald-700', 'text-emerald-400'))}>
                 <Database className="w-4 h-4" /> Research with CIDE
               </h4>
-              <p className="text-sm text-zinc-300 mb-3">
+              <p className={cn('text-sm mb-3', st('text-slate-600', 'text-zinc-300'))}>
                 CIDE will conduct comprehensive research, analyze the AI system against all EU AI Act criteria, and pre-answer all risk assessment questions.
               </p>
-              <div className="bg-zinc-900/40 rounded-xl p-3 mb-3">
-                <p className="text-xs text-zinc-400 mb-2">What CIDE will research:</p>
-                <ul className="text-xs text-zinc-300 space-y-1">
-                  <li>• System capabilities and technical architecture</li>
-                  <li>• Prohibited practices (Article 5)</li>
-                  <li>• High-risk categories (Annex III)</li>
-                  <li>• GPAI classification (Chapter V)</li>
-                  <li>• Transparency requirements (Article 50)</li>
+              <div className={cn('rounded-xl p-3 mb-3', st('bg-white border border-slate-200', 'bg-zinc-900/40'))}>
+                <p className={cn('text-xs mb-2', st('text-slate-500', 'text-zinc-400'))}>What CIDE will research:</p>
+                <ul className={cn('text-xs space-y-1', st('text-slate-600', 'text-zinc-300'))}>
+                  <li>System capabilities and technical architecture</li>
+                  <li>Prohibited practices (Article 5)</li>
+                  <li>High-risk categories (Annex III)</li>
+                  <li>GPAI classification (Chapter V)</li>
+                  <li>Transparency requirements (Article 50)</li>
                 </ul>
               </div>
               <SentinelButton
@@ -330,8 +343,8 @@ export default function AISystemModal({ system, onClose, onSave, onCreateAndAsse
             </div>
 
             <div className="pt-2">
-              <p className="text-xs text-center text-zinc-500">
-                Or <button type="button" onClick={() => setShowResearchStep(false)} className="text-sky-400 hover:text-sky-300 underline">skip to manual entry</button>
+              <p className={cn('text-xs text-center', st('text-slate-500', 'text-zinc-500'))}>
+                Or <button type="button" onClick={() => setShowResearchStep(false)} className={cn('underline', st('text-emerald-600 hover:text-emerald-700', 'text-emerald-400 hover:text-emerald-300'))}>skip to manual entry</button>
               </p>
             </div>
           </motion.div>
@@ -351,23 +364,29 @@ export default function AISystemModal({ system, onClose, onSave, onCreateAndAsse
             )}
 
             <div>
-              <Label htmlFor="name" className="text-white mb-2 block">System Name *</Label>
+              <Label htmlFor="name" className={cn('mb-2 block', st('text-slate-900', 'text-white'))}>System Name *</Label>
               <Input id="name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="e.g., Customer Support Chatbot" required className={inputClass} />
             </div>
 
             <div>
-              <Label htmlFor="purpose" className="text-white mb-2 block">Purpose *</Label>
+              <Label htmlFor="purpose" className={cn('mb-2 block', st('text-slate-900', 'text-white'))}>Purpose *</Label>
               <Textarea id="purpose" value={formData.purpose} onChange={(e) => setFormData({ ...formData, purpose: e.target.value })} placeholder="What does this AI system do?" required rows={3} className={inputClass} />
             </div>
 
             <div>
-              <Label htmlFor="description" className="text-white mb-2 block">Description</Label>
+              <Label htmlFor="description" className={cn('mb-2 block', st('text-slate-900', 'text-white'))}>Description</Label>
               <Textarea id="description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Detailed description of the system" rows={3} className={inputClass} />
             </div>
 
             <div>
-              <Label className="text-white mb-2 block">Deployment Context</Label>
-              <select value={formData.deployment_context} onChange={(e) => setFormData({ ...formData, deployment_context: e.target.value })} className="w-full px-4 h-11 bg-zinc-900/40 border border-zinc-800/60 rounded-xl text-white text-sm focus:outline-none focus:border-sky-500/50 focus:ring-2 focus:ring-sky-500/20 transition-all duration-200">
+              <Label className={cn('mb-2 block', st('text-slate-900', 'text-white'))}>Deployment Context</Label>
+              <select value={formData.deployment_context} onChange={(e) => setFormData({ ...formData, deployment_context: e.target.value })} className={cn(
+                'w-full px-4 h-11 border rounded-xl text-sm transition-all duration-200',
+                st(
+                  'bg-white border-slate-300 text-slate-900 focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20',
+                  'bg-zinc-900/40 border-zinc-800/60 text-white focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20'
+                )
+              )}>
                 <option value="internal">Internal Use</option>
                 <option value="customer-facing">Customer-Facing</option>
                 <option value="embedded-in-product">Embedded in Product</option>
@@ -375,18 +394,22 @@ export default function AISystemModal({ system, onClose, onSave, onCreateAndAsse
             </div>
 
             <div>
-              <Label className="text-white mb-2 block">AI Techniques Used</Label>
+              <Label className={cn('mb-2 block', st('text-slate-900', 'text-white'))}>AI Techniques Used</Label>
               <div className="grid grid-cols-2 gap-2">
                 {AI_TECHNIQUE_OPTIONS.map(option => (
                   <button
                     key={option.value}
                     type="button"
                     onClick={() => handleTechniqueToggle(option.value)}
-                    className={`px-4 py-2 rounded-full border text-sm transition-colors ${
+                    className={cn(
+                      'px-4 py-2 rounded-full border text-sm transition-colors',
                       formData.ai_techniques.includes(option.value)
-                        ? 'bg-sky-500/20 border-sky-500/50 text-sky-400'
-                        : 'bg-zinc-900/40 border-zinc-800/60 text-zinc-400 hover:bg-zinc-800/50'
-                    }`}
+                        ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400'
+                        : st(
+                            'bg-slate-50 border-slate-300 text-slate-500 hover:bg-slate-100',
+                            'bg-zinc-900/40 border-zinc-800/60 text-zinc-400 hover:bg-zinc-800/50'
+                          )
+                    )}
                   >
                     {option.label}
                   </button>
@@ -395,12 +418,12 @@ export default function AISystemModal({ system, onClose, onSave, onCreateAndAsse
             </div>
 
             <div>
-              <Label htmlFor="data_inputs" className="text-white mb-2 block">Data Inputs</Label>
+              <Label htmlFor="data_inputs" className={cn('mb-2 block', st('text-slate-900', 'text-white'))}>Data Inputs</Label>
               <Textarea id="data_inputs" value={formData.data_inputs} onChange={(e) => setFormData({ ...formData, data_inputs: e.target.value })} placeholder="What data does this system process?" rows={2} className={inputClass} />
             </div>
 
             <div>
-              <Label htmlFor="decision_impact" className="text-white mb-2 block">Decision Impact</Label>
+              <Label htmlFor="decision_impact" className={cn('mb-2 block', st('text-slate-900', 'text-white'))}>Decision Impact</Label>
               <Textarea id="decision_impact" value={formData.decision_impact} onChange={(e) => setFormData({ ...formData, decision_impact: e.target.value })} placeholder="What decisions does this system influence?" rows={2} className={inputClass} />
             </div>
 

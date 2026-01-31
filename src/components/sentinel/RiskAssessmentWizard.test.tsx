@@ -145,7 +145,7 @@ describe('RiskAssessmentWizard', () => {
     expect(screen.queryByRole('progressbar')).toBeNull();
     // Move to step 1
     await userEvent.click(screen.getByText('skip to manual assessment'));
-    // Progress bar is 4 divs with bg-sky-500 or bg-zinc-800
+    // Progress bar is 4 divs with bg-emerald-500 or bg-zinc-800
     const { container } = render(
       <MemoryRouter>
         <RiskAssessmentWizard systemId="sys-1" />

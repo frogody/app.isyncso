@@ -5,10 +5,10 @@ import { db } from "@/api/supabaseClient";
 import { createPageUrl } from "@/utils";
 import { ArrowLeft, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { GlassCard } from "@/components/ui/GlassCard";
-import { PageHeader } from "@/components/ui/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import RiskAssessmentWizard from "@/components/sentinel/RiskAssessmentWizard";
+import { useSentinelTheme } from "@/contexts/SentinelThemeContext";
+import { cn } from "@/lib/utils";
 
 export default function RiskAssessment() {
   const [searchParams] = useSearchParams();
@@ -16,6 +16,7 @@ export default function RiskAssessment() {
   const systemId = searchParams.get("systemId");
   const [system, setSystem] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { st } = useSentinelTheme();
 
   const loadSystem = React.useCallback(async () => {
     if (!systemId) {
@@ -44,19 +45,19 @@ export default function RiskAssessment() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-6">
+      <div className={cn("min-h-screen p-6", st("bg-slate-50", "bg-black"))}>
         <div className="max-w-7xl mx-auto space-y-6">
-          <Skeleton className="h-24 w-full bg-zinc-800 rounded-2xl" />
-          <Skeleton className="h-96 bg-zinc-800 rounded-2xl" />
+          <Skeleton className={cn("h-24 w-full rounded-2xl", st("bg-slate-200", "bg-zinc-800"))} />
+          <Skeleton className={cn("h-96 rounded-2xl", st("bg-slate-200", "bg-zinc-800"))} />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black relative">
+    <div className={cn("min-h-screen relative", st("bg-slate-50", "bg-black"))}>
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 left-1/4 w-96 h-96 bg-[#86EFAC]/5 rounded-full blur-3xl animate-pulse" />
+        <div className={cn("absolute top-20 left-1/4 w-96 h-96 rounded-full blur-3xl animate-pulse", st("bg-emerald-200/20", "bg-[#86EFAC]/5"))} />
       </div>
 
       <div className="relative z-10 w-full px-6 lg:px-8 py-6 space-y-6">
@@ -69,16 +70,16 @@ export default function RiskAssessment() {
             variant="ghost"
             size="icon"
             onClick={() => navigate(createPageUrl("AISystemInventory"))}
-            className="text-zinc-400 hover:text-white hover:bg-zinc-800"
+            className={cn(st("text-slate-400 hover:text-slate-900 hover:bg-slate-100", "text-zinc-400 hover:text-white hover:bg-zinc-800"))}
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
-            <h1 className="text-lg font-bold text-white flex items-center gap-3">
+            <h1 className={cn("text-lg font-bold flex items-center gap-3", st("text-slate-900", "text-white"))}>
               <Shield className="w-8 h-8 text-[#86EFAC]" />
               Risk Assessment
             </h1>
-            <p className="text-zinc-400">{system?.name}</p>
+            <p className={cn(st("text-slate-500", "text-zinc-400"))}>{system?.name}</p>
           </div>
         </motion.div>
 

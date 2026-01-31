@@ -33,8 +33,8 @@ export const SentinelInput = forwardRef<HTMLInputElement, SentinelInputProps>(
               st('bg-white text-slate-900', 'bg-zinc-900/40 text-white'),
               st('placeholder:text-slate-400', 'placeholder:text-zinc-500'),
               st(
-                'focus:outline-none focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20',
-                'focus:outline-none focus:border-sky-500/50 focus:ring-2 focus:ring-sky-500/20',
+                'focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20',
+                'focus:outline-none focus:border-emerald-400/50 focus:ring-2 focus:ring-emerald-400/20',
               ),
               'transition-all duration-200',
               error ? 'border-red-500/50' : st('border-slate-300', 'border-zinc-800/60'),

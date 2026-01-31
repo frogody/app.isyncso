@@ -15,7 +15,7 @@ const SIZE_CONFIG = {
 } as const;
 
 function getRiskLevel(score: number) {
-  if (score >= 80) return { label: 'Low Risk', color: '#22C55E', textClass: 'text-green-400 bg-green-500/10 border-green-500/30', Icon: CheckCircle };
+  if (score >= 80) return { label: 'Low Risk', color: '#86EFAC', textClass: 'text-green-400 bg-green-500/10 border-green-500/30', Icon: CheckCircle };
   if (score >= 50) return { label: 'Medium Risk', color: '#EAB308', textClass: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30', Icon: AlertTriangle };
   if (score >= 25) return { label: 'High Risk', color: '#F97316', textClass: 'text-orange-400 bg-orange-500/10 border-orange-500/30', Icon: AlertTriangle };
   return { label: 'Critical', color: '#EF4444', textClass: 'text-red-400 bg-red-500/10 border-red-500/30', Icon: AlertTriangle };

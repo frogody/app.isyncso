@@ -6,12 +6,12 @@
 
 export const SENTINEL_COLORS = {
   primary: {
-    DEFAULT: '#0EA5E9',
-    shade: '#0284C7',
-    light: '#38BDF8',
-    tint10: 'rgba(14, 165, 233, 0.1)',
-    tint15: 'rgba(14, 165, 233, 0.15)',
-    tint20: 'rgba(14, 165, 233, 0.2)',
+    DEFAULT: '#86EFAC',
+    shade: '#4ADE80',
+    light: '#BBF7D0',
+    tint10: 'rgba(134, 239, 172, 0.1)',
+    tint15: 'rgba(134, 239, 172, 0.15)',
+    tint20: 'rgba(134, 239, 172, 0.2)',
   },
 } as const;
 
@@ -26,7 +26,7 @@ export const NEUTRAL_TOKENS = {
   border: {
     default: 'rgba(63, 63, 70, 0.6)',
     subtle: 'rgba(63, 63, 70, 0.3)',
-    focus: 'rgba(14, 165, 233, 0.5)',
+    focus: 'rgba(134, 239, 172, 0.5)',
   },
   text: {
     primary: '#FFFFFF',
@@ -161,8 +161,8 @@ export const SHADOWS = {
   sm: '0px 1px 2px rgba(0, 0, 0, 0.05)',
   md: '0px 4px 12px rgba(0, 0, 0, 0.08)',
   lg: '0px 12px 24px rgba(0, 0, 0, 0.12)',
-  glow: '0 0 20px rgba(14, 165, 233, 0.15)',
-  glowStrong: '0 0 30px rgba(14, 165, 233, 0.25)',
+  glow: '0 0 20px rgba(134, 239, 172, 0.15)',
+  glowStrong: '0 0 30px rgba(134, 239, 172, 0.25)',
 } as const;
 
 // ─── Component Tokens ─────────────────────────────────────
@@ -174,7 +174,7 @@ export const BUTTON_STYLES = {
     lg: 'h-12 px-7 text-base',
   },
   variants: {
-    primary: 'bg-sky-500 text-white hover:bg-sky-600 active:bg-sky-700 disabled:bg-sky-500/50 disabled:cursor-not-allowed rounded-full transition-colors duration-200',
+    primary: 'bg-emerald-400 text-black hover:bg-emerald-300 active:bg-emerald-500 disabled:bg-emerald-400/50 disabled:cursor-not-allowed rounded-full transition-colors duration-200',
     secondary: 'bg-transparent text-white border border-zinc-700 hover:bg-zinc-800/50 active:bg-zinc-800 rounded-full transition-colors duration-200',
     ghost: 'bg-transparent text-zinc-400 hover:text-white hover:bg-zinc-800/30 rounded-full transition-colors duration-200',
     danger: 'bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 rounded-full transition-colors duration-200',
@@ -188,13 +188,13 @@ export const CARD_STYLES = {
 } as const;
 
 export const INPUT_STYLES = {
-  base: 'h-11 bg-zinc-900/40 border border-zinc-800/60 rounded-xl px-4 text-white placeholder:text-zinc-500 focus:outline-none focus:border-sky-500/50 focus:ring-2 focus:ring-sky-500/20 transition-all duration-200',
+  base: 'h-11 bg-zinc-900/40 border border-zinc-800/60 rounded-xl px-4 text-white placeholder:text-zinc-500 focus:outline-none focus:border-emerald-400/50 focus:ring-2 focus:ring-emerald-400/20 transition-all duration-200',
 } as const;
 
 export const BADGE_STYLES = {
   base: 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
   variants: {
-    primary: 'bg-sky-500/10 text-sky-400 border border-sky-500/30',
+    primary: 'bg-emerald-400/10 text-emerald-400 border border-emerald-400/30',
     success: 'bg-green-500/10 text-green-400 border border-green-500/30',
     warning: 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/30',
     error: 'bg-red-500/10 text-red-400 border border-red-500/30',

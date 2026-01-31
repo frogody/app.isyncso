@@ -134,7 +134,7 @@ This Declaration of Conformity is issued in accordance with Article 47 of Regula
     URL.revokeObjectURL(url);
   }, [generateDocument, system.name]);
 
-  const inputClass = 'bg-zinc-900/40 border-zinc-800/60 text-white placeholder:text-zinc-500 focus:border-sky-500/50 focus:ring-sky-500/20';
+  const inputClass = 'bg-zinc-900/40 border-zinc-800/60 text-white placeholder:text-zinc-500 focus:border-emerald-500/50 focus:ring-emerald-500/20';
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
@@ -221,7 +221,7 @@ This Declaration of Conformity is issued in accordance with Article 47 of Regula
               <select
                 value={formData.conformityProcedure}
                 onChange={(e) => handleChange('conformityProcedure', e.target.value)}
-                className="w-full px-4 h-11 bg-zinc-900/40 border border-zinc-800/60 rounded-xl text-white text-sm focus:outline-none focus:border-sky-500/50 focus:ring-2 focus:ring-sky-500/20 transition-all duration-200"
+                className="w-full px-4 h-11 bg-zinc-900/40 border border-zinc-800/60 rounded-xl text-white text-sm focus:outline-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 transition-all duration-200"
               >
                 <option value="Internal control (Article 43)">Internal control (Article 43)</option>
                 <option value="Quality management assessment (Article 43)">Quality management assessment (Article 43)</option>

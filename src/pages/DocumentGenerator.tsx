@@ -56,9 +56,9 @@ function SystemSelectionCard({
       onClick={onClick}
       className="cursor-pointer"
     >
-      <SentinelCard variant="interactive" padding="sm" className={isSelected ? st('border-violet-300', 'border-sky-500/30') : ''}>
+      <SentinelCard variant="interactive" padding="sm" className={isSelected ? st('border-emerald-300', 'border-emerald-500/30') : ''}>
         {isSelected && (
-          <div className={cn('absolute top-0 left-0 right-0 h-1 rounded-t-[20px] bg-gradient-to-r', st('from-violet-500 to-violet-400', 'from-sky-500 to-sky-400'))} />
+          <div className={cn('absolute top-0 left-0 right-0 h-1 rounded-t-[20px] bg-gradient-to-r', st('from-emerald-500 to-emerald-400', 'from-emerald-500 to-emerald-400'))} />
         )}
         <div className="flex items-start justify-between">
           <div className="flex-1">
@@ -69,8 +69,8 @@ function SystemSelectionCard({
             <h3 className={cn('text-base font-semibold mb-1', st('text-slate-900', 'text-white'))}>{system.name}</h3>
             <p className={cn('text-xs line-clamp-2', st('text-slate-400', 'text-zinc-400'))}>{system.purpose}</p>
           </div>
-          <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ml-4', isSelected ? st('bg-violet-100', 'bg-sky-500/20') : st('bg-slate-100', 'bg-zinc-800'))}>
-            <Cpu className={cn('w-4 h-4', isSelected ? st('text-violet-500', 'text-sky-400') : st('text-slate-400', 'text-zinc-500'))} />
+          <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ml-4', isSelected ? st('bg-emerald-100', 'bg-emerald-400/20') : st('bg-slate-100', 'bg-zinc-800'))}>
+            <Cpu className={cn('w-4 h-4', isSelected ? st('text-emerald-500', 'text-emerald-400') : st('text-slate-400', 'text-zinc-500'))} />
           </div>
         </div>
       </SentinelCard>
@@ -91,11 +91,11 @@ function DocTypeCard({ docType, onClick, index }: { docType: typeof DOC_TYPES[0]
     >
       <SentinelCard variant="interactive" padding="md">
         <div className="flex items-start gap-3 mb-3">
-          <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center', st('bg-violet-100', 'bg-sky-500/15'))}>
-            <Icon className={cn('w-5 h-5', st('text-violet-500', 'text-sky-400'))} />
+          <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center', st('bg-emerald-100', 'bg-emerald-400/15'))}>
+            <Icon className={cn('w-5 h-5', st('text-emerald-500', 'text-emerald-400'))} />
           </div>
           <div>
-            <h3 className={cn('text-base font-semibold mb-1 transition-colors', st('text-slate-900 group-hover:text-violet-500', 'text-white group-hover:text-sky-400'))}>
+            <h3 className={cn('text-base font-semibold mb-1 transition-colors', st('text-slate-900 group-hover:text-emerald-500', 'text-white group-hover:text-emerald-400'))}>
               {docType.title}
             </h3>
             <SentinelBadge variant="neutral">{docType.subtitle}</SentinelBadge>
@@ -105,14 +105,14 @@ function DocTypeCard({ docType, onClick, index }: { docType: typeof DOC_TYPES[0]
         <div className="grid grid-cols-2 gap-2 mb-3">
           {docType.features.map((feature, i) => (
             <div key={i} className={cn('flex items-center gap-2 text-[10px]', st('text-slate-500', 'text-zinc-600'))}>
-              <ChevronRight className={cn('w-3 h-3', st('text-violet-400', 'text-sky-400'))} />
+              <ChevronRight className={cn('w-3 h-3', st('text-emerald-400', 'text-emerald-400'))} />
               {feature}
             </div>
           ))}
         </div>
         <div className={cn('flex items-center justify-between pt-3 border-t', st('border-slate-200', 'border-zinc-800/50'))}>
           {docType.aiPowered ? (
-            <span className={cn('flex items-center gap-1.5 text-xs', st('text-violet-500', 'text-sky-400'))}>
+            <span className={cn('flex items-center gap-1.5 text-xs', st('text-emerald-500', 'text-emerald-400'))}>
               <Sparkles className="w-3 h-3" /> AI-powered draft
             </span>
           ) : (
@@ -120,7 +120,7 @@ function DocTypeCard({ docType, onClick, index }: { docType: typeof DOC_TYPES[0]
               <FileText className="w-3 h-3" /> Template-based
             </span>
           )}
-          <ArrowRight className={cn('w-4 h-4 transition-colors', st('text-slate-400 group-hover:text-violet-500', 'text-zinc-600 group-hover:text-sky-400'))} />
+          <ArrowRight className={cn('w-4 h-4 transition-colors', st('text-slate-400 group-hover:text-emerald-500', 'text-zinc-600 group-hover:text-emerald-400'))} />
         </div>
       </SentinelCard>
     </motion.div>
@@ -183,8 +183,8 @@ export default function DocumentGenerator() {
 
           <SentinelCard padding="md">
             <div className="flex items-center gap-3">
-              <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center', st('bg-violet-100', 'bg-sky-500/20'))}>
-                <Cpu className={cn('w-4 h-4', st('text-violet-500', 'text-sky-400'))} />
+              <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center', st('bg-emerald-100', 'bg-emerald-400/20'))}>
+                <Cpu className={cn('w-4 h-4', st('text-emerald-500', 'text-emerald-400'))} />
               </div>
               <div className="flex-1">
                 <h3 className={cn('text-base font-semibold', st('text-slate-900', 'text-white'))}>{selectedSystem.name}</h3>
@@ -213,8 +213,8 @@ export default function DocumentGenerator() {
       <div className="w-full px-4 lg:px-6 py-4 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={cn('w-10 h-10 rounded-[20px] flex items-center justify-center', st('bg-violet-100', 'bg-sky-500/10'))}>
-              <FileText className={cn('w-5 h-5', st('text-violet-500', 'text-sky-400'))} />
+            <div className={cn('w-10 h-10 rounded-[20px] flex items-center justify-center', st('bg-emerald-100', 'bg-emerald-400/10'))}>
+              <FileText className={cn('w-5 h-5', st('text-emerald-500', 'text-emerald-400'))} />
             </div>
             <div>
               <h1 className={cn('text-xl font-semibold', st('text-slate-900', 'text-white'))}>Document Generator</h1>
@@ -256,7 +256,7 @@ export default function DocumentGenerator() {
                 placeholder="Search systems..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className={cn('pl-10', st('bg-white border-slate-300 text-slate-900 focus:border-violet-500/40', 'bg-zinc-900/60 border-zinc-800/60 text-white focus:border-sky-500/40'))}
+                className={cn('pl-10', st('bg-white border-slate-300 text-slate-900 focus:border-emerald-500/40', 'bg-zinc-900/60 border-zinc-800/60 text-white focus:border-emerald-400/40'))}
               />
             </div>
             <div>

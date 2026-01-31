@@ -5,6 +5,8 @@ import { Shield, FileText, AlertTriangle, CheckCircle } from 'lucide-react';
 import { ChatInterface } from '@/components/ui/ChatInterface';
 import { SentinelCardSkeleton } from '@/components/sentinel/ui/SentinelCard';
 import { SentinelPageTransition } from '@/components/sentinel/ui/SentinelPageTransition';
+import { useSentinelTheme } from '@/contexts/SentinelThemeContext';
+import { cn } from '@/lib/utils';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -26,6 +28,7 @@ const QUICK_ACTIONS: QuickAction[] = [
 
 export default function SentinelChat() {
   const { user, isLoading: userLoading } = useUser();
+  const { st } = useSentinelTheme();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -80,7 +83,7 @@ export default function SentinelChat() {
 
   if (userLoading) {
     return (
-      <div className="min-h-screen bg-black p-4">
+      <div className={cn('min-h-screen p-4', st('bg-slate-50', 'bg-black'))}>
         <div className="max-w-4xl mx-auto space-y-4">
           <SentinelCardSkeleton className="h-24" />
           <SentinelCardSkeleton className="h-[600px]" />
@@ -90,16 +93,16 @@ export default function SentinelChat() {
   }
 
   return (
-    <SentinelPageTransition className="min-h-screen bg-black">
+    <SentinelPageTransition className={cn('min-h-screen', st('bg-slate-50', 'bg-black'))}>
       <div className="w-full max-w-5xl mx-auto px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-[20px] bg-sky-500/10 flex items-center justify-center">
-            <Shield className="w-5 h-5 text-sky-400" />
+          <div className={cn('w-10 h-10 rounded-[20px] flex items-center justify-center', st('bg-emerald-100', 'bg-emerald-400/10'))}>
+            <Shield className={cn('w-5 h-5', st('text-emerald-600', 'text-emerald-400'))} />
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-white">Ask SENTINEL</h1>
-            <p className="text-xs text-zinc-500">Your AI compliance assistant for EU AI Act guidance</p>
+            <h1 className={cn('text-xl font-semibold', st('text-slate-900', 'text-white'))}>Ask SENTINEL</h1>
+            <p className={cn('text-xs', st('text-slate-500', 'text-zinc-500'))}>Your AI compliance assistant for EU AI Act guidance</p>
           </div>
         </div>
 

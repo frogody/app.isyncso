@@ -21,7 +21,7 @@ interface SentinelBadgeProps {
 }
 
 const darkStyles: Record<BadgeVariant, string> = {
-  primary: 'bg-sky-500/10 text-sky-400 border-sky-500/30',
+  primary: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
   success: 'bg-green-500/10 text-green-400 border-green-500/30',
   warning: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30',
   error: 'bg-red-500/10 text-red-400 border-red-500/30',
@@ -34,7 +34,7 @@ const darkStyles: Record<BadgeVariant, string> = {
 };
 
 const lightStyles: Record<BadgeVariant, string> = {
-  primary: 'bg-violet-100 text-violet-700 border-violet-200',
+  primary: 'bg-emerald-100 text-emerald-700 border-emerald-200',
   success: 'bg-green-100 text-green-700 border-green-200',
   warning: 'bg-yellow-100 text-yellow-700 border-yellow-200',
   error: 'bg-red-100 text-red-700 border-red-200',
