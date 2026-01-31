@@ -227,7 +227,7 @@ const ENGINE_ITEMS_CONFIG = {
   },
   create: {
     title: "Create",
-    url: createPageUrl("CreateBranding"),
+    url: createPageUrl("Create"),
     icon: Palette,
     id: 'create',
     permission: null, // Always visible - content creation feature

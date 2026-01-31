@@ -200,6 +200,8 @@ import ProductsPhysical from "./ProductsPhysical";
 
 import ProductDetail from "./ProductDetail";
 
+import Create from "./Create";
+
 import CreateBranding from "./CreateBranding";
 
 import CreateImages from "./CreateImages";
@@ -479,6 +481,8 @@ const PAGES = {
     ProductsPhysical: ProductsPhysical,
 
     ProductDetail: ProductDetail,
+
+    Create: Create,
 
     CreateBranding: CreateBranding,
 
@@ -829,6 +833,8 @@ function PagesContent() {
                 <Route path="/ProductsPhysical" element={<ProductsPhysical />} />
 
                 <Route path="/ProductDetail" element={<ProductDetail />} />
+
+                <Route path="/Create" element={<Create />} />
 
                 <Route path="/CreateBranding" element={<CreateBranding />} />
 
