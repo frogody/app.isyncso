@@ -70,11 +70,11 @@ export default function QuickActions({ systems = [], taskCount = 0 }: QuickActio
               <SentinelCard
                 variant="interactive"
                 padding="md"
-                className={action.highlight ? st('ring-1 ring-violet-500/40 ring-offset-2 ring-offset-white', 'ring-1 ring-sky-500/40 ring-offset-2 ring-offset-black') : ''}
+                className={action.highlight ? st('ring-1 ring-purple-500/40 ring-offset-2 ring-offset-white', 'ring-1 ring-sky-500/40 ring-offset-2 ring-offset-black') : ''}
               >
                 <div className="flex items-start gap-4 relative">
-                  <div className={cn('w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 border', st('bg-violet-100 border-violet-200', 'bg-sky-500/10 border-sky-500/20'))}>
-                    <Icon className={cn('w-6 h-6', st('text-violet-500', 'text-sky-400'))} />
+                  <div className={cn('w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 border', st('bg-purple-100 border-purple-200', 'bg-sky-500/10 border-sky-500/20'))}>
+                    <Icon className={cn('w-6 h-6', st('text-purple-500', 'text-sky-400'))} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className={cn('text-base font-bold mb-1', st('text-slate-900', 'text-white'))}>{action.title}</h3>
@@ -83,7 +83,7 @@ export default function QuickActions({ systems = [], taskCount = 0 }: QuickActio
 
                   {action.highlight && (
                     <div className="absolute -top-3 -right-3">
-                      <div className={cn('w-6 h-6 rounded-full flex items-center justify-center animate-pulse', st('bg-violet-500', 'bg-sky-500'))}>
+                      <div className={cn('w-6 h-6 rounded-full flex items-center justify-center animate-pulse', st('bg-purple-500', 'bg-sky-500'))}>
                         <AlertTriangle className="w-3.5 h-3.5 text-white" />
                       </div>
                     </div>

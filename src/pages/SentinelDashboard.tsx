@@ -42,7 +42,7 @@ export default function SentinelDashboard() {
 
   if (loading) {
     return (
-      <div className={cn('min-h-screen p-4', st('bg-slate-50', 'bg-black'))}>
+      <div className={cn('min-h-screen p-4', st('bg-[#F8FAFC]', 'bg-black'))}>
         <div className="max-w-7xl mx-auto space-y-4">
           <SentinelCardSkeleton className="h-20" />
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -57,13 +57,13 @@ export default function SentinelDashboard() {
   }
 
   return (
-    <SentinelPageTransition className={cn('min-h-screen', st('bg-slate-50', 'bg-black'))}>
+    <SentinelPageTransition className={cn('min-h-screen', st('bg-[#F8FAFC]', 'bg-black'))}>
       <div className="w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={cn('w-10 h-10 rounded-[20px] flex items-center justify-center', st('bg-violet-100', 'bg-sky-500/10'))}>
-              <Shield className={cn('w-5 h-5', st('text-violet-500', 'text-sky-400'))} />
+            <div className={cn('w-10 h-10 rounded-[20px] flex items-center justify-center', st('bg-purple-100', 'bg-sky-500/10'))}>
+              <Shield className={cn('w-5 h-5', st('text-purple-500', 'text-sky-400'))} />
             </div>
             <div>
               <h1 className={cn('text-xl font-semibold', st('text-slate-900', 'text-white'))}>EU AI Act Compliance</h1>
@@ -108,7 +108,7 @@ export default function SentinelDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <SentinelCard padding="md">
             <h3 className={cn('text-base font-semibold flex items-center gap-2 mb-3', st('text-slate-900', 'text-white'))}>
-              <Shield className={cn('w-4 h-4', st('text-violet-500', 'text-sky-400'))} />
+              <Shield className={cn('w-4 h-4', st('text-purple-500', 'text-sky-400'))} />
               Risk Classification
             </h3>
             <div className="space-y-2">
@@ -118,7 +118,7 @@ export default function SentinelDashboard() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.6 + i * 0.05 }}
-                  className={cn('flex items-center justify-between p-2 rounded-lg border', st('bg-slate-50 border-slate-200', 'bg-zinc-800/30 border-zinc-700/30'))}
+                  className={cn('flex items-center justify-between p-2 rounded-lg border', st('bg-slate-50/80 border-slate-100', 'bg-zinc-800/30 border-zinc-700/30'))}
                 >
                   <RiskClassificationBadge classification={classification} />
                   <span className={cn('text-sm font-bold', st('text-slate-900', 'text-white'))}>
@@ -131,7 +131,7 @@ export default function SentinelDashboard() {
 
           <SentinelCard padding="md">
             <h3 className={cn('text-base font-semibold flex items-center gap-2 mb-3', st('text-slate-900', 'text-white'))}>
-              <FileText className={cn('w-4 h-4', st('text-violet-500', 'text-sky-400'))} />
+              <FileText className={cn('w-4 h-4', st('text-purple-500', 'text-sky-400'))} />
               Compliance Status
             </h3>
             <div className="space-y-2">
@@ -141,7 +141,7 @@ export default function SentinelDashboard() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.6 + i * 0.05 }}
-                  className={cn('flex items-center justify-between p-2 rounded-lg border', st('bg-slate-50 border-slate-200', 'bg-zinc-800/30 border-zinc-700/30'))}
+                  className={cn('flex items-center justify-between p-2 rounded-lg border', st('bg-slate-50/80 border-slate-100', 'bg-zinc-800/30 border-zinc-700/30'))}
                 >
                   <SentinelBadge variant={status.variant}>{status.label}</SentinelBadge>
                   <span className={cn('text-sm font-bold', st('text-slate-900', 'text-white'))}>{byStatus[status.key]}</span>
@@ -158,7 +158,7 @@ export default function SentinelDashboard() {
               <h3 className={cn('text-base font-semibold', st('text-slate-900', 'text-white'))}>Recent AI Systems</h3>
               <Link
                 to={createPageUrl('AISystemInventory')}
-                className={cn('text-xs flex items-center gap-1', st('text-violet-500 hover:text-violet-600', 'text-sky-400 hover:text-sky-300'))}
+                className={cn('text-xs flex items-center gap-1', st('text-purple-500 hover:text-purple-600', 'text-sky-400 hover:text-sky-300'))}
               >
                 View All <ArrowRight className="w-3 h-3" />
               </Link>
@@ -173,10 +173,10 @@ export default function SentinelDashboard() {
                 >
                   <Link
                     to={createPageUrl(`RiskAssessment?systemId=${system.id}`)}
-                    className={cn('flex items-center justify-between p-3 rounded-lg border transition-all group', st('bg-slate-50 border-slate-200 hover:border-violet-300', 'bg-zinc-800/30 border-zinc-700/30 hover:border-sky-500/30'))}
+                    className={cn('flex items-center justify-between p-3 rounded-lg border transition-all group', st('bg-slate-50 border-slate-200 hover:border-purple-300', 'bg-zinc-800/30 border-zinc-700/30 hover:border-sky-500/30'))}
                   >
                     <div className="flex-1">
-                      <h4 className={cn('text-sm font-semibold mb-1 transition-colors', st('text-slate-900 group-hover:text-violet-500', 'text-white group-hover:text-sky-400'))}>
+                      <h4 className={cn('text-sm font-semibold mb-1 transition-colors', st('text-slate-900 group-hover:text-purple-500', 'text-white group-hover:text-sky-400'))}>
                         {system.name}
                       </h4>
                       <p className={cn('text-xs line-clamp-1', st('text-slate-400', 'text-zinc-500'))}>{system.purpose}</p>

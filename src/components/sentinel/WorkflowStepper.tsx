@@ -71,7 +71,7 @@ export default function WorkflowStepper({ systems = [] }: WorkflowStepperProps) 
   const { st } = useSentinelTheme();
 
   return (
-    <div className={cn('rounded-[20px] p-6 backdrop-blur-sm border', st('bg-white border-slate-200 shadow-sm', 'bg-zinc-900/50 border-zinc-800/60'))}>
+    <div className={cn('rounded-2xl p-6 border', st('bg-white border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.06)]', 'bg-zinc-900/50 border-zinc-800/60 backdrop-blur-sm'))}>
       <div className="flex items-center justify-between gap-4">
         {steps.map((step, idx) => {
           const isLast = idx === steps.length - 1;
@@ -95,16 +95,16 @@ export default function WorkflowStepper({ systems = [] }: WorkflowStepperProps) 
                   <div className={cn(
                     'relative p-4 rounded-[20px] border transition-all',
                     step.isCurrent
-                      ? st('bg-violet-50 border-violet-300 shadow-md', 'bg-sky-500/10 border-sky-500/40 shadow-glow')
+                      ? st('bg-purple-50 border-purple-300 shadow-md', 'bg-sky-500/10 border-sky-500/40 shadow-glow')
                       : step.isComplete
-                      ? st('bg-violet-50/50 border-violet-200', 'bg-sky-500/5 border-sky-500/20')
+                      ? st('bg-purple-50/50 border-purple-200', 'bg-sky-500/5 border-sky-500/20')
                       : st('bg-slate-50 border-slate-200', 'bg-zinc-800/30 border-zinc-700/30')
                   )}>
                     <div className="flex items-start gap-3">
                       <div className={cn(
                         'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors',
                         step.isCurrent
-                          ? st('bg-violet-100 text-violet-500', 'bg-sky-500/20 text-sky-400')
+                          ? st('bg-purple-100 text-purple-500', 'bg-sky-500/20 text-sky-400')
                           : step.isComplete
                           ? 'bg-green-500/20 text-green-400'
                           : st('bg-slate-100 text-slate-400', 'bg-zinc-700/30 text-zinc-500')
@@ -114,14 +114,14 @@ export default function WorkflowStepper({ systems = [] }: WorkflowStepperProps) 
                       <div className="flex-1 min-w-0">
                         <span className={cn(
                           'font-bold text-sm block mb-0.5',
-                          step.isCurrent ? st('text-violet-600', 'text-sky-400') : step.isComplete ? st('text-slate-900', 'text-white') : st('text-slate-400', 'text-zinc-400')
+                          step.isCurrent ? st('text-purple-600', 'text-sky-400') : step.isComplete ? st('text-slate-900', 'text-white') : st('text-slate-400', 'text-zinc-400')
                         )}>
                           {step.title}
                         </span>
                         <div className={cn('text-xs mb-1', st('text-slate-400', 'text-zinc-500'))}>{step.subtitle}</div>
                         <div className={cn(
                           'text-xs font-medium',
-                          step.isCurrent ? st('text-violet-500', 'text-sky-300') : step.isComplete ? st('text-violet-400', 'text-sky-300/70') : st('text-slate-400', 'text-zinc-500')
+                          step.isCurrent ? st('text-purple-500', 'text-sky-300') : step.isComplete ? st('text-purple-400', 'text-sky-300/70') : st('text-slate-400', 'text-zinc-500')
                         )}>
                           {step.count}
                         </div>
@@ -130,7 +130,7 @@ export default function WorkflowStepper({ systems = [] }: WorkflowStepperProps) 
 
                     {step.isCurrent && systems.length === 0 && (
                       <motion.div
-                        className={cn('absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 text-white text-[10px] font-bold rounded-full whitespace-nowrap', st('bg-violet-500', 'bg-sky-500'))}
+                        className={cn('absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 text-white text-[10px] font-bold rounded-full whitespace-nowrap', st('bg-purple-500', 'bg-sky-500'))}
                         initial={{ opacity: 0, y: -4 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.6 }}
@@ -142,7 +142,7 @@ export default function WorkflowStepper({ systems = [] }: WorkflowStepperProps) 
                     {/* Active step indicator */}
                     {step.isCurrent && (
                       <motion.div
-                        className={cn('absolute -bottom-px left-4 right-4 h-0.5 rounded-full', st('bg-violet-500', 'bg-sky-500'))}
+                        className={cn('absolute -bottom-px left-4 right-4 h-0.5 rounded-full', st('bg-purple-500', 'bg-sky-500'))}
                         layoutId="activeWorkflowStep"
                       />
                     )}

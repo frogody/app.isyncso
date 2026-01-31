@@ -34,16 +34,16 @@ const darkStyles: Record<BadgeVariant, string> = {
 };
 
 const lightStyles: Record<BadgeVariant, string> = {
-  primary: 'bg-violet-100 text-violet-700 border-violet-200',
-  success: 'bg-green-100 text-green-700 border-green-200',
-  warning: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-  error: 'bg-red-100 text-red-700 border-red-200',
-  neutral: 'bg-slate-100 text-slate-600 border-slate-200',
-  prohibited: 'bg-red-100 text-red-700 border-red-200',
-  highRisk: 'bg-orange-100 text-orange-700 border-orange-200',
-  gpai: 'bg-purple-100 text-purple-700 border-purple-200',
-  limitedRisk: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-  minimalRisk: 'bg-green-100 text-green-700 border-green-200',
+  primary: 'bg-purple-50 text-purple-700 border-transparent',
+  success: 'bg-emerald-50 text-emerald-700 border-transparent',
+  warning: 'bg-amber-50 text-amber-700 border-transparent',
+  error: 'bg-red-50 text-red-700 border-transparent',
+  neutral: 'bg-slate-100 text-slate-600 border-transparent',
+  prohibited: 'bg-red-50 text-red-700 border-transparent',
+  highRisk: 'bg-orange-50 text-orange-700 border-transparent',
+  gpai: 'bg-blue-50 text-blue-700 border-transparent',
+  limitedRisk: 'bg-amber-50 text-amber-700 border-transparent',
+  minimalRisk: 'bg-emerald-50 text-emerald-700 border-transparent',
 };
 
 export function SentinelBadge({
@@ -58,8 +58,8 @@ export function SentinelBadge({
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full border font-medium',
-        size === 'sm' ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-0.5 text-xs',
+        'inline-flex items-center rounded-full border font-semibold tracking-wide',
+        size === 'sm' ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-0.5 text-[11px]',
         styles[variant],
         className
       )}

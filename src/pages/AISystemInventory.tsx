@@ -67,7 +67,7 @@ function SystemCard({ system, onEdit, onDelete, onAssess, index }: SystemCardPro
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="min-w-0">
             <h3
-              className={cn('font-semibold truncate transition-colors cursor-pointer', st('text-slate-900 group-hover:text-violet-500', 'text-white group-hover:text-sky-400'))}
+              className={cn('font-semibold truncate transition-colors cursor-pointer', st('text-slate-900 group-hover:text-purple-500', 'text-white group-hover:text-sky-400'))}
               onClick={() => onEdit(system)}
             >
               {system.name}
@@ -200,7 +200,7 @@ export default function AISystemInventory() {
 
   if (loading) {
     return (
-      <div className={cn('min-h-screen p-4', st('bg-slate-50', 'bg-black'))}>
+      <div className={cn('min-h-screen p-4', st('bg-[#F8FAFC]', 'bg-black'))}>
         <div className="space-y-4">
           <SentinelCardSkeleton className="h-28" />
           <div className="grid grid-cols-4 gap-3">
@@ -215,13 +215,13 @@ export default function AISystemInventory() {
   }
 
   return (
-    <SentinelPageTransition className={cn('min-h-screen', st('bg-slate-50', 'bg-black'))}>
+    <SentinelPageTransition className={cn('min-h-screen', st('bg-[#F8FAFC]', 'bg-black'))}>
       <div className="w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={cn('w-10 h-10 rounded-[20px] flex items-center justify-center', st('bg-violet-100', 'bg-sky-500/10'))}>
-              <Cpu className={cn('w-5 h-5', st('text-violet-500', 'text-sky-400'))} />
+            <div className={cn('w-10 h-10 rounded-[20px] flex items-center justify-center', st('bg-purple-100', 'bg-sky-500/10'))}>
+              <Cpu className={cn('w-5 h-5', st('text-purple-500', 'text-sky-400'))} />
             </div>
             <div>
               <h1 className={cn('text-xl font-semibold', st('text-slate-900', 'text-white'))}>AI System Inventory</h1>
@@ -256,7 +256,7 @@ export default function AISystemInventory() {
               placeholder="Search AI systems..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className={cn('pl-10', st('bg-white border-slate-300 text-slate-900 focus:border-violet-500/40', 'bg-zinc-900/60 border-zinc-800/60 text-white focus:border-sky-500/40'))}
+              className={cn('pl-10', st('bg-white border-slate-300 text-slate-900 focus:border-purple-500/40', 'bg-zinc-900/60 border-zinc-800/60 text-white focus:border-sky-500/40'))}
             />
           </div>
 

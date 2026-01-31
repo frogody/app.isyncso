@@ -71,16 +71,16 @@ function MilestoneCard({ milestone, index }: { milestone: typeof ENFORCEMENT_MIL
       className="relative"
     >
       {index < ENFORCEMENT_MILESTONES.length - 1 && (
-        <div className={cn('absolute left-6 top-20 bottom-0 w-0.5 bg-gradient-to-b', st('from-violet-300/50 to-slate-200', 'from-sky-500/30 to-zinc-800/60'))} />
+        <div className={cn('absolute left-6 top-20 bottom-0 w-0.5 bg-gradient-to-b', st('from-purple-300/50 to-slate-200', 'from-sky-500/30 to-zinc-800/60'))} />
       )}
 
-      <SentinelCard padding="md" className={isPast ? st('border-violet-300', 'border-sky-500/30') : ''}>
+      <SentinelCard padding="md" className={isPast ? st('border-purple-300', 'border-sky-500/30') : ''}>
         {isPast && (
-          <div className={cn('absolute top-0 left-0 right-0 h-1 rounded-t-[20px] bg-gradient-to-r', st('from-violet-500 to-violet-400', 'from-sky-500 to-sky-400'))} />
+          <div className={cn('absolute top-0 left-0 right-0 h-1 rounded-t-[20px] bg-gradient-to-r', st('from-purple-500 to-purple-400', 'from-sky-500 to-sky-400'))} />
         )}
         <div className="flex items-start gap-3">
-          <div className={cn('w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0', isPast ? st('bg-violet-100', 'bg-sky-500/20') : st('bg-slate-100', 'bg-zinc-800'))}>
-            <Icon className={cn('w-4 h-4', isPast ? st('text-violet-500', 'text-sky-400') : st('text-slate-400', 'text-zinc-500'))} />
+          <div className={cn('w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0', isPast ? st('bg-purple-100', 'bg-sky-500/20') : st('bg-slate-100', 'bg-zinc-800'))}>
+            <Icon className={cn('w-4 h-4', isPast ? st('text-purple-500', 'text-sky-400') : st('text-slate-400', 'text-zinc-500'))} />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-3">
@@ -130,7 +130,7 @@ function SystemProgressCard({ item, index }: { item: any; index: number }) {
             </div>
           </div>
           <div className="text-right">
-            <div className={cn('text-xl font-bold', st('text-violet-500', 'text-sky-400'))}>{Math.round(item.progress)}%</div>
+            <div className={cn('text-xl font-bold', st('text-purple-500', 'text-sky-400'))}>{Math.round(item.progress)}%</div>
             <div className={cn('text-[10px]', st('text-slate-400', 'text-zinc-600'))}>Complete</div>
           </div>
         </div>
@@ -216,7 +216,7 @@ export default function ComplianceRoadmap() {
 
   if (loading) {
     return (
-      <div className={cn('min-h-screen p-4', st('bg-slate-50', 'bg-black'))}>
+      <div className={cn('min-h-screen p-4', st('bg-[#F8FAFC]', 'bg-black'))}>
         <div className="space-y-4">
           <SentinelCardSkeleton className="h-28" />
           <div className="grid grid-cols-5 gap-3">
@@ -229,13 +229,13 @@ export default function ComplianceRoadmap() {
   }
 
   return (
-    <SentinelPageTransition className={cn('min-h-screen', st('bg-slate-50', 'bg-black'))}>
+    <SentinelPageTransition className={cn('min-h-screen', st('bg-[#F8FAFC]', 'bg-black'))}>
       <div className="w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={cn('w-10 h-10 rounded-[20px] flex items-center justify-center', st('bg-violet-100', 'bg-sky-500/10'))}>
-              <Map className={cn('w-5 h-5', st('text-violet-500', 'text-sky-400'))} />
+            <div className={cn('w-10 h-10 rounded-[20px] flex items-center justify-center', st('bg-purple-100', 'bg-sky-500/10'))}>
+              <Map className={cn('w-5 h-5', st('text-purple-500', 'text-sky-400'))} />
             </div>
             <div>
               <h1 className={cn('text-xl font-semibold', st('text-slate-900', 'text-white'))}>Compliance Roadmap</h1>
@@ -320,13 +320,13 @@ export default function ComplianceRoadmap() {
         {/* Tabs */}
         <Tabs value={view} onValueChange={setView}>
           <TabsList className={cn('p-1 rounded-xl border', st('bg-white border-slate-200', 'bg-zinc-900/60 border-zinc-800/60'))}>
-            <TabsTrigger value="roadmap" className={cn('rounded-lg px-4', st('data-[state=active]:bg-violet-100 data-[state=active]:text-violet-600', 'data-[state=active]:bg-sky-500/20 data-[state=active]:text-sky-400'))}>
+            <TabsTrigger value="roadmap" className={cn('rounded-lg px-4', st('data-[state=active]:bg-purple-100 data-[state=active]:text-purple-600', 'data-[state=active]:bg-sky-500/20 data-[state=active]:text-sky-400'))}>
               <Calendar className="w-4 h-4 mr-2" />Timeline
             </TabsTrigger>
-            <TabsTrigger value="systems" className={cn('rounded-lg px-4', st('data-[state=active]:bg-violet-100 data-[state=active]:text-violet-600', 'data-[state=active]:bg-sky-500/20 data-[state=active]:text-sky-400'))}>
+            <TabsTrigger value="systems" className={cn('rounded-lg px-4', st('data-[state=active]:bg-purple-100 data-[state=active]:text-purple-600', 'data-[state=active]:bg-sky-500/20 data-[state=active]:text-sky-400'))}>
               <Target className="w-4 h-4 mr-2" />By System ({stats.systemProgress.length})
             </TabsTrigger>
-            <TabsTrigger value="urgent" className={cn('rounded-lg px-4', st('data-[state=active]:bg-violet-100 data-[state=active]:text-violet-600', 'data-[state=active]:bg-sky-500/20 data-[state=active]:text-sky-400'))}>
+            <TabsTrigger value="urgent" className={cn('rounded-lg px-4', st('data-[state=active]:bg-purple-100 data-[state=active]:text-purple-600', 'data-[state=active]:bg-sky-500/20 data-[state=active]:text-sky-400'))}>
               <Zap className="w-4 h-4 mr-2" />Urgent ({stats.urgentTasks.length})
             </TabsTrigger>
           </TabsList>

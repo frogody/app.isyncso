@@ -14,15 +14,35 @@ const SIZE_CONFIG = {
   lg: { width: 260, strokeWidth: 18, fontSize: 'text-6xl', label: 'text-base' },
 } as const;
 
-function getRiskLevel(score: number) {
-  if (score >= 80) return { label: 'Low Risk', color: '#22C55E', textClass: 'text-green-400 bg-green-500/10 border-green-500/30', Icon: CheckCircle };
-  if (score >= 50) return { label: 'Medium Risk', color: '#EAB308', textClass: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30', Icon: AlertTriangle };
-  if (score >= 25) return { label: 'High Risk', color: '#F97316', textClass: 'text-orange-400 bg-orange-500/10 border-orange-500/30', Icon: AlertTriangle };
-  return { label: 'Critical', color: '#EF4444', textClass: 'text-red-400 bg-red-500/10 border-red-500/30', Icon: AlertTriangle };
+function getRiskLevel(score: number, isLight: boolean) {
+  if (score >= 80) return {
+    label: 'Low Risk',
+    color: isLight ? '#16A34A' : '#22C55E',
+    textClass: isLight ? 'text-emerald-700 bg-emerald-50 border-transparent' : 'text-green-400 bg-green-500/10 border-green-500/30',
+    Icon: CheckCircle,
+  };
+  if (score >= 50) return {
+    label: 'Medium Risk',
+    color: isLight ? '#CA8A04' : '#EAB308',
+    textClass: isLight ? 'text-amber-700 bg-amber-50 border-transparent' : 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30',
+    Icon: AlertTriangle,
+  };
+  if (score >= 25) return {
+    label: 'High Risk',
+    color: isLight ? '#EA580C' : '#F97316',
+    textClass: isLight ? 'text-orange-700 bg-orange-50 border-transparent' : 'text-orange-400 bg-orange-500/10 border-orange-500/30',
+    Icon: AlertTriangle,
+  };
+  return {
+    label: 'Critical',
+    color: isLight ? '#DC2626' : '#EF4444',
+    textClass: isLight ? 'text-red-700 bg-red-50 border-transparent' : 'text-red-400 bg-red-500/10 border-red-500/30',
+    Icon: AlertTriangle,
+  };
 }
 
 export function ComplianceScoreGauge({ score = 0, size = 'md' }: ComplianceScoreGaugeProps) {
-  const { st } = useSentinelTheme();
+  const { st, theme } = useSentinelTheme();
   const config = SIZE_CONFIG[size];
   const svgWidth = config.width;
   const strokeWidth = config.strokeWidth;
@@ -30,7 +50,7 @@ export function ComplianceScoreGauge({ score = 0, size = 'md' }: ComplianceScore
   const circumference = radius * Math.PI; // half-circle
   const offset = circumference - (score / 100) * circumference;
 
-  const risk = getRiskLevel(score);
+  const risk = getRiskLevel(score, theme === 'light');
   const Icon = risk.Icon;
 
   return (
