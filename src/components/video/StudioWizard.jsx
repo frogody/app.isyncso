@@ -506,20 +506,39 @@ export default function StudioWizard({
   const handleAssemble = useCallback(async () => {
     setAssembling(true);
     try {
-      const data = await edgeFn("assemble-video", {
+      // Step 1: Submit render to Shotstack
+      const submitData = await edgeFn("assemble-video", {
+        action: "submit",
         project_id: projectId,
-        shots: shots.map((s) => ({
-          shot_id: s.shot_id,
-          video_url: s.video_url,
-          transition: s.transition,
-          duration: s.duration,
-        })),
       });
-      setAssembledVideoUrl(data.video_url || null);
-      setProjectStatus(data.status || "completed");
-      if (onProjectCreated) onProjectCreated(data);
-      setStep(4);
-      toast.success("Video assembled successfully");
+
+      const { render_id } = submitData;
+      if (!render_id) throw new Error("No render_id from Shotstack");
+
+      toast.info("Assembling video... this may take a minute");
+
+      // Step 2: Poll every 5s until done (max 5 min)
+      for (let i = 0; i < 60; i++) {
+        await new Promise((r) => setTimeout(r, 5000));
+        const pollData = await edgeFn("assemble-video", {
+          action: "poll",
+          render_id,
+          project_id: projectId,
+        });
+
+        if (pollData.status === "completed") {
+          setAssembledVideoUrl(pollData.video_url || null);
+          setProjectStatus("completed");
+          if (onProjectCreated) onProjectCreated(pollData);
+          setStep(4);
+          toast.success("Video assembled successfully");
+          return;
+        }
+        if (pollData.status === "failed") {
+          throw new Error(pollData.error || "Render failed");
+        }
+      }
+      throw new Error("Assembly timed out after 5 minutes");
     } catch (err) {
       toast.error(err.message || "Failed to assemble video");
     } finally {
@@ -890,10 +909,14 @@ export default function StudioWizard({
 
                   {/* Thumbnail / placeholder */}
                   <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-zinc-900">
-                    {shot.status === "completed" && shot.thumbnail ? (
-                      <img
-                        src={shot.thumbnail}
-                        alt={`Shot ${shot.shot_number}`}
+                    {shot.status === "completed" && shot.video_url ? (
+                      <video
+                        src={shot.video_url}
+                        muted
+                        loop
+                        playsInline
+                        onMouseEnter={(e) => e.target.play()}
+                        onMouseLeave={(e) => { e.target.pause(); e.target.currentTime = 0; }}
                         className="h-full w-full object-cover"
                       />
                     ) : shot.status === "generating" ? (
