@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/api/supabaseClient";
+import { useUser } from "@/components/context/UserContext";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -185,6 +186,7 @@ export default function StudioWizard({
   brandAssets = {},
   onProjectCreated,
 }) {
+  const { user } = useUser();
   // Wizard step
   const [step, setStep] = useState(1);
 
@@ -223,37 +225,78 @@ export default function StudioWizard({
     }
     setGeneratingStoryboard(true);
     try {
+      // Find the product object for context
+      const productObj = products.find((p) => p.id === selectedProduct || p.name === selectedProduct);
+      const productContext = productObj
+        ? {
+            name: productObj.name,
+            description: productObj.description || productObj.short_description,
+            tagline: productObj.tagline,
+            features: productObj.features,
+          }
+        : undefined;
+
+      // Create project in DB first
+      const { data: project, error: projErr } = await supabase
+        .from("video_projects")
+        .insert({
+          company_id: user?.company_id || undefined,
+          created_by: user?.id || undefined,
+          brief,
+          status: "storyboarding",
+          settings: {
+            style,
+            aspect_ratio: aspectRatio,
+            duration_target: Number(duration),
+          },
+          product_id: productObj?.id || undefined,
+          brand_context: brandAssets || undefined,
+        })
+        .select()
+        .single();
+
+      if (projErr) throw new Error(`Failed to create project: ${projErr.message}`);
+
+      const pid = project.id;
+      setProjectId(pid);
+
       const data = await edgeFn("generate-storyboard", {
+        project_id: pid,
         brief,
-        product_id: selectedProduct || undefined,
+        product_context: productContext,
+        brand_context: brandAssets || undefined,
+        target_duration: Number(duration),
         style,
-        duration: Number(duration),
         aspect_ratio: aspectRatio,
-        brand_assets: brandAssets,
       });
 
-      const board = (data.storyboard || data.shots || []).map((s, i) => ({
+      // The edge function returns { storyboard: { shots: [...], ... } }
+      const rawShots =
+        data.storyboard?.shots || data.storyboard || data.shots || [];
+
+      const board = rawShots.map((s, i) => ({
         id: crypto.randomUUID(),
         shot_number: i + 1,
-        scene_title: s.scene_title || s.title || `Shot ${i + 1}`,
+        scene_title: s.scene || s.scene_title || s.title || `Shot ${i + 1}`,
         description: s.description || "",
-        camera_direction: s.camera_direction || s.camera || "",
-        duration: s.duration || Math.round(Number(duration) / ((data.storyboard || data.shots).length || 1)),
+        camera_direction: s.camera || s.camera_direction || "",
+        duration: s.duration_seconds || s.duration || 5,
         mood: s.mood || "",
-        transition: s.transition || "cut",
+        transition: s.transition_to_next || s.transition || "cut",
+        text_overlay: s.text_overlay || null,
         model: "kling",
       }));
 
-      if (data.project_id) setProjectId(data.project_id);
       setStoryboard(board);
       setStep(2);
-      toast.success("Storyboard generated");
+      toast.success("Storyboard generated!");
     } catch (err) {
+      console.error("Storyboard generation error:", err);
       toast.error(err.message || "Failed to generate storyboard");
     } finally {
       setGeneratingStoryboard(false);
     }
-  }, [brief, selectedProduct, style, duration, aspectRatio, brandAssets]);
+  }, [brief, selectedProduct, style, duration, aspectRatio, brandAssets, products]);
 
   // ------ Storyboard editing helpers ------
 
