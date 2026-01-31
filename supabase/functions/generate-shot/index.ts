@@ -182,6 +182,36 @@ serve(async (req) => {
             .eq("id", shot_id);
         }
 
+        // Also insert into generated_content so it shows in Content Library
+        if (project_id) {
+          const { data: project } = await supabase
+            .from("video_projects")
+            .select("company_id, created_by, name")
+            .eq("id", project_id)
+            .single();
+
+          if (project) {
+            const { data: shotRecord } = shot_id
+              ? await supabase.from("video_shots").select("description, shot_number, prompt").eq("id", shot_id).single()
+              : { data: null };
+
+            await supabase.from("generated_content").insert({
+              company_id: project.company_id,
+              created_by: project.created_by,
+              content_type: "video",
+              name: shotRecord?.description?.slice(0, 80) || `${project.name || "Video"} - Shot`,
+              url: publicUrl,
+              generation_config: {
+                prompt: shotRecord?.prompt || shotRecord?.description || "",
+                model: body.model || "kling",
+                source: "ai_studio",
+                project_id,
+                shot_number: shotRecord?.shot_number,
+              },
+            });
+          }
+        }
+
         return ok({ status: "COMPLETED", video_url: publicUrl });
       }
 
