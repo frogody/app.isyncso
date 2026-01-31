@@ -1,43 +1,30 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '@/components/context/UserContext';
 import { BrandAssets } from '@/api/entities';
 import { storage } from '@/api/supabaseClient';
 import { toast } from 'sonner';
+import { createPageUrl } from '@/utils';
 import {
   Palette,
   Upload,
   Type,
   MessageSquare,
   Sparkles,
-  Save,
   Trash2,
   Plus,
   Image as ImageIcon,
   Check,
   X,
   Loader2,
+  ChevronDown,
+  ChevronLeft,
+  Paintbrush,
+  Camera,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { CreatePageTransition } from '@/components/create/ui';
-import { MOTION_VARIANTS } from '@/tokens/create';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 
 const BRAND_BUCKET = 'brand-assets';
 
@@ -77,15 +64,17 @@ const TONE_OPTIONS = [
   { value: 'formal', label: 'Formal' },
   { value: 'playful', label: 'Playful' },
   { value: 'authoritative', label: 'Authoritative' },
+  { value: 'bold', label: 'Bold' },
 ];
 
 const MOOD_OPTIONS = [
   { value: 'modern', label: 'Modern' },
   { value: 'classic', label: 'Classic' },
-  { value: 'minimalist', label: 'Minimalist' },
+  { value: 'minimalist', label: 'Minimal' },
   { value: 'bold', label: 'Bold' },
   { value: 'elegant', label: 'Elegant' },
-  { value: 'tech', label: 'Tech-focused' },
+  { value: 'tech', label: 'Tech' },
+  { value: 'playful', label: 'Playful' },
 ];
 
 const FONT_OPTIONS = [
@@ -94,6 +83,215 @@ const FONT_OPTIONS = [
   'Merriweather', 'DM Sans', 'Space Grotesk'
 ];
 
+const COLOR_LABELS = {
+  primary: 'Primary',
+  secondary: 'Secondary',
+  accent: 'Accent',
+  background: 'Background',
+  text: 'Text',
+};
+
+// --- Collapsible Section ---
+function Section({ icon: Icon, title, defaultOpen = true, children }) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <div className="rounded-[20px] bg-zinc-900/50 border border-zinc-800/60 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-white/[0.02] transition-colors"
+      >
+        <div className="p-2 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
+          <Icon className="w-4 h-4 text-yellow-400" />
+        </div>
+        <span className="text-white font-semibold text-sm flex-1">{title}</span>
+        <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }}>
+          <ChevronDown className="w-4 h-4 text-zinc-500" />
+        </motion.div>
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: 'easeInOut' }}
+            className="overflow-hidden"
+          >
+            <div className="px-5 pb-5 pt-1">{children}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// --- Logo Upload Slot ---
+function LogoSlot({ logo, logoType, label, description, onUpload, onRemove, uploading }) {
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer?.files?.[0];
+    if (file) onUpload({ target: { files: [file] } }, logoType);
+  };
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-medium text-zinc-400">{label}</p>
+      {logo ? (
+        <div className="relative group aspect-video bg-zinc-800/50 rounded-xl border border-zinc-700/50 flex items-center justify-center overflow-hidden">
+          <img src={logo.url} alt={logo.name} className="max-w-full max-h-full object-contain" />
+          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+            <label className="cursor-pointer">
+              <input type="file" accept="image/*" onChange={(e) => onUpload(e, logoType)} className="hidden" disabled={uploading} />
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-zinc-700 text-white hover:bg-zinc-600 transition-colors">
+                Replace
+              </span>
+            </label>
+            <button
+              onClick={() => onRemove(logoType)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-red-500/80 text-white hover:bg-red-500 transition-colors"
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+      ) : (
+        <label
+          className="cursor-pointer block"
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={handleDrop}
+        >
+          <input type="file" accept="image/*" onChange={(e) => onUpload(e, logoType)} className="hidden" disabled={uploading} />
+          <div className="aspect-video bg-zinc-800/30 rounded-xl border-2 border-dashed border-zinc-700/60 hover:border-yellow-500/40 transition-colors flex flex-col items-center justify-center gap-2">
+            <Camera className="w-5 h-5 text-zinc-600" />
+            <span className="text-xs text-zinc-500">{uploading ? 'Uploading...' : 'Drop or click'}</span>
+          </div>
+        </label>
+      )}
+      <p className="text-[11px] text-zinc-600">{description}</p>
+    </div>
+  );
+}
+
+// --- Font Picker Popover ---
+function FontPicker({ value, onChange, label }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-medium text-zinc-400">{label}</p>
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setOpen(o => !o)}
+          className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-zinc-800/50 border border-zinc-700/60 hover:border-zinc-600 transition-colors text-left"
+        >
+          <span className="text-white text-sm" style={{ fontFamily: value }}>{value}</span>
+          <ChevronDown className="w-4 h-4 text-zinc-500" />
+        </button>
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.15 }}
+              className="absolute z-30 top-full mt-1 w-full max-h-56 overflow-y-auto rounded-xl bg-zinc-900 border border-zinc-700/60 shadow-xl"
+            >
+              {FONT_OPTIONS.map(font => (
+                <button
+                  key={font}
+                  type="button"
+                  onClick={() => { onChange(font); setOpen(false); }}
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-white/[0.04] transition-colors ${font === value ? 'text-yellow-400 bg-yellow-500/5' : 'text-zinc-300'}`}
+                  style={{ fontFamily: font }}
+                >
+                  {font}
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
+
+// --- Pill Select ---
+function PillSelect({ options, value, onChange }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map(opt => (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => onChange(opt.value)}
+          className={`px-4 py-1.5 text-xs font-medium rounded-full border transition-all ${
+            value === opt.value
+              ? 'bg-yellow-500/15 border-yellow-500/40 text-yellow-400'
+              : 'bg-zinc-800/40 border-zinc-700/50 text-zinc-400 hover:border-zinc-600 hover:text-zinc-300'
+          }`}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// --- Chip Input ---
+function ChipInput({ items, onAdd, onRemove, placeholder, variant = 'yellow' }) {
+  const [val, setVal] = useState('');
+  const colors = variant === 'red'
+    ? 'bg-red-500/10 text-red-400 border-red-500/20'
+    : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
+
+  const handleAdd = () => {
+    if (!val.trim()) return;
+    onAdd(val.trim());
+    setVal('');
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <Input
+          value={val}
+          onChange={e => setVal(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAdd())}
+          placeholder={placeholder}
+          className="bg-zinc-800/50 border-zinc-700/60 text-white text-sm focus:border-yellow-500/40 rounded-xl"
+        />
+        <button
+          type="button"
+          onClick={handleAdd}
+          className="shrink-0 p-2.5 rounded-xl bg-zinc-800/50 border border-zinc-700/60 text-zinc-400 hover:text-white hover:border-zinc-600 transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+        </button>
+      </div>
+      {items?.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {items.map(item => (
+            <span
+              key={item}
+              className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full border cursor-pointer hover:opacity-80 transition-opacity ${colors}`}
+              onClick={() => onRemove(item)}
+            >
+              {item}
+              <X className="w-3 h-3" />
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// =====================
+// MAIN COMPONENT
+// =====================
 export default function CreateBranding() {
   const { user } = useUser();
   const [brandAsset, setBrandAsset] = useState(null);
@@ -101,19 +299,16 @@ export default function CreateBranding() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
-  const [newKeyword, setNewKeyword] = useState('');
-  const [newTheme, setNewTheme] = useState('');
-  const [newAvoidTheme, setNewAvoidTheme] = useState('');
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [savedIndicator, setSavedIndicator] = useState(false);
 
+  // Load brand assets
   useEffect(() => {
     const loadBrandAssets = async () => {
       if (!user?.company_id) return;
-
       try {
         setLoading(true);
         const assets = await BrandAssets.filter({ company_id: user.company_id });
-
         if (assets && assets.length > 0) {
           setBrandAsset(assets[0]);
           setBrandData({
@@ -131,26 +326,22 @@ export default function CreateBranding() {
         setLoading(false);
       }
     };
-
     loadBrandAssets();
   }, [user?.company_id]);
 
+  // Auto-save with debounce
   useEffect(() => {
     if (!hasChanges || !user?.company_id) return;
-
     const timer = setTimeout(async () => {
       await saveBrandAssets();
     }, 2000);
-
     return () => clearTimeout(timer);
   }, [brandData, hasChanges]);
 
   const saveBrandAssets = async () => {
     if (!user?.company_id) return;
-
     try {
       setSaving(true);
-
       const data = {
         company_id: user.company_id,
         logos: brandData.logos,
@@ -159,16 +350,15 @@ export default function CreateBranding() {
         voice: brandData.voice,
         visual_style: brandData.visual_style
       };
-
       if (brandAsset?.id) {
         await BrandAssets.update(brandAsset.id, data);
       } else {
         const newAsset = await BrandAssets.create(data);
         setBrandAsset(newAsset);
       }
-
       setHasChanges(false);
-      toast.success('Brand settings saved');
+      setSavedIndicator(true);
+      setTimeout(() => setSavedIndicator(false), 2500);
     } catch (error) {
       console.error('Failed to save brand assets:', error);
       toast.error('Failed to save brand settings');
@@ -180,10 +370,7 @@ export default function CreateBranding() {
   const updateField = useCallback((section, field, value) => {
     setBrandData(prev => ({
       ...prev,
-      [section]: {
-        ...prev[section],
-        [field]: value
-      }
+      [section]: { ...prev[section], [field]: value }
     }));
     setHasChanges(true);
   }, []);
@@ -191,43 +378,19 @@ export default function CreateBranding() {
   const handleLogoUpload = async (e, logoType) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file');
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('File size must be less than 5MB');
-      return;
-    }
-
+    if (!file.type.startsWith('image/')) { toast.error('Please upload an image file'); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error('File size must be less than 5MB'); return; }
     try {
       setUploadingLogo(true);
       const fileId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       const ext = file.name.split('.').pop();
       const path = `${user?.company_id || 'public'}/logos/${logoType}/${fileId}.${ext}`;
-
       const result = await storage.upload(BRAND_BUCKET, path, file);
-
-      const newLogo = {
-        id: fileId,
-        type: logoType,
-        name: file.name,
-        url: result.url,
-        path: result.path,
-        uploadedAt: new Date().toISOString()
-      };
-
+      const newLogo = { id: fileId, type: logoType, name: file.name, url: result.url, path: result.path, uploadedAt: new Date().toISOString() };
       const existingIndex = brandData.logos.findIndex(l => l.type === logoType);
       let updatedLogos;
-      if (existingIndex >= 0) {
-        updatedLogos = [...brandData.logos];
-        updatedLogos[existingIndex] = newLogo;
-      } else {
-        updatedLogos = [...brandData.logos, newLogo];
-      }
-
+      if (existingIndex >= 0) { updatedLogos = [...brandData.logos]; updatedLogos[existingIndex] = newLogo; }
+      else { updatedLogos = [...brandData.logos, newLogo]; }
       setBrandData(prev => ({ ...prev, logos: updatedLogos }));
       setHasChanges(true);
       toast.success('Logo uploaded successfully');
@@ -246,531 +409,321 @@ export default function CreateBranding() {
     toast.success('Logo removed');
   };
 
-  const addKeyword = () => {
-    if (!newKeyword.trim()) return;
-    const keywords = [...(brandData.voice.keywords || []), newKeyword.trim()];
+  const addKeyword = (keyword) => {
+    const keywords = [...(brandData.voice.keywords || []), keyword];
     updateField('voice', 'keywords', keywords);
-    setNewKeyword('');
   };
-
   const removeKeyword = (keyword) => {
-    const keywords = brandData.voice.keywords.filter(k => k !== keyword);
-    updateField('voice', 'keywords', keywords);
+    updateField('voice', 'keywords', brandData.voice.keywords.filter(k => k !== keyword));
   };
 
-  const addTheme = (isAvoid = false) => {
-    const theme = isAvoid ? newAvoidTheme : newTheme;
-    if (!theme.trim()) return;
-
+  const addTheme = (theme, isAvoid = false) => {
     const field = isAvoid ? 'avoid_themes' : 'preferred_themes';
-    const themes = [...(brandData.visual_style[field] || []), theme.trim()];
+    const themes = [...(brandData.visual_style[field] || []), theme];
     updateField('visual_style', field, themes);
-
-    if (isAvoid) {
-      setNewAvoidTheme('');
-    } else {
-      setNewTheme('');
-    }
   };
-
   const removeTheme = (theme, isAvoid = false) => {
     const field = isAvoid ? 'avoid_themes' : 'preferred_themes';
-    const themes = brandData.visual_style[field].filter(t => t !== theme);
-    updateField('visual_style', field, themes);
+    updateField('visual_style', field, brandData.visual_style[field].filter(t => t !== theme));
   };
 
   const getLogo = (type) => brandData.logos.find(l => l.type === type);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-[#09090b] flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-yellow-400 animate-spin" />
       </div>
     );
   }
 
+  const primaryLogo = getLogo('primary');
+  const toneLabel = TONE_OPTIONS.find(t => t.value === brandData.voice.tone)?.label || brandData.voice.tone;
+
   return (
     <CreatePageTransition>
-      <div className="w-full px-4 lg:px-6 py-4 space-y-4">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
-                <Palette className="w-5 h-5 text-yellow-400" />
-              </div>
-              Brand Assets
-            </h1>
-            <p className="text-sm text-zinc-400 mt-1">Configure your brand identity for AI-generated content</p>
-          </div>
-          <div className="flex items-center gap-3">
-            {hasChanges && <span className="text-xs text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 px-3 py-1 rounded-full">Unsaved changes</span>}
-            {saving && <span className="text-xs text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 px-3 py-1 rounded-full">Saving...</span>}
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={saveBrandAssets}
-              disabled={saving || !hasChanges}
-              className="inline-flex items-center gap-2 h-10 px-6 text-sm font-medium rounded-full bg-yellow-500 text-black hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <Save className="w-4 h-4" />
-              Save Changes
-            </motion.button>
-          </div>
-        </div>
+      <div className="min-h-screen bg-[#09090b]">
+        <div className="w-full max-w-5xl mx-auto px-4 lg:px-6 py-5 space-y-5">
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Tabs defaultValue="logos" className="space-y-4">
-            <TabsList className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-1">
-              <TabsTrigger value="logos" className="data-[state=active]:bg-yellow-500/20 data-[state=active]:text-yellow-400 rounded-lg">
-                <ImageIcon className="w-4 h-4 mr-2" />
-                Logos
-              </TabsTrigger>
-              <TabsTrigger value="colors" className="data-[state=active]:bg-yellow-500/20 data-[state=active]:text-yellow-400 rounded-lg">
-                <Palette className="w-4 h-4 mr-2" />
-                Colors
-              </TabsTrigger>
-              <TabsTrigger value="typography" className="data-[state=active]:bg-yellow-500/20 data-[state=active]:text-yellow-400 rounded-lg">
-                <Type className="w-4 h-4 mr-2" />
-                Typography
-              </TabsTrigger>
-              <TabsTrigger value="voice" className="data-[state=active]:bg-yellow-500/20 data-[state=active]:text-yellow-400 rounded-lg">
-                <MessageSquare className="w-4 h-4 mr-2" />
-                Voice & Tone
-              </TabsTrigger>
-              <TabsTrigger value="visual" className="data-[state=active]:bg-yellow-500/20 data-[state=active]:text-yellow-400 rounded-lg">
-                <Sparkles className="w-4 h-4 mr-2" />
-                Visual Style
-              </TabsTrigger>
-            </TabsList>
-
-            {/* Logos Tab */}
-            <TabsContent value="logos">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {['primary', 'secondary', 'icon'].map((logoType, index) => {
-                  const logo = getLogo(logoType);
-                  return (
-                    <motion.div
-                      key={logoType}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.1 }}
-                      className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-4"
-                    >
-                      <div className="mb-4">
-                        <h3 className="text-white font-semibold capitalize">{logoType} Logo</h3>
-                        <p className="text-zinc-500 text-xs mt-1">
-                          {logoType === 'primary' && 'Main logo for headers and documents'}
-                          {logoType === 'secondary' && 'Alternative version for dark/light backgrounds'}
-                          {logoType === 'icon' && 'Square icon for favicons and apps'}
-                        </p>
-                      </div>
-                      <div>
-                        {logo ? (
-                          <div className="relative group">
-                            <div className="aspect-video bg-zinc-800/50 rounded-xl flex items-center justify-center overflow-hidden border border-zinc-700/50">
-                              <img
-                                src={logo.url}
-                                alt={logo.name}
-                                className="max-w-full max-h-full object-contain"
-                              />
-                            </div>
-                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2">
-                              <label className="cursor-pointer">
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  onChange={(e) => handleLogoUpload(e, logoType)}
-                                  className="hidden"
-                                  disabled={uploadingLogo}
-                                />
-                                <Button size="sm" variant="secondary" className="bg-zinc-700 hover:bg-zinc-600">
-                                  Replace
-                                </Button>
-                              </label>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => removeLogo(logoType)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        ) : (
-                          <label className="cursor-pointer">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={(e) => handleLogoUpload(e, logoType)}
-                              className="hidden"
-                              disabled={uploadingLogo}
-                            />
-                            <div className="aspect-video bg-zinc-800/50 rounded-xl border-2 border-dashed border-zinc-700 hover:border-yellow-500/30 transition-colors flex flex-col items-center justify-center gap-2">
-                              <Upload className="w-4 h-4 text-zinc-600" />
-                              <span className="text-xs text-zinc-500">
-                                {uploadingLogo ? 'Uploading...' : 'Click to upload'}
-                              </span>
-                            </div>
-                          </label>
-                        )}
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </TabsContent>
-
-            {/* Colors Tab */}
-            <TabsContent value="colors">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-4"
+          {/* ---- Header Row ---- */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <a
+                href={createPageUrl('Create')}
+                className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
               >
-                <div className="mb-4">
-                  <h3 className="text-white font-semibold">Brand Colors</h3>
-                  <p className="text-zinc-500 text-xs mt-1">
-                    Define your brand's color palette for consistent AI-generated content
-                  </p>
+                <ChevronLeft className="w-3.5 h-3.5" />
+                Create Studio
+              </a>
+              <div className="w-px h-5 bg-zinc-800" />
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
+                  <Paintbrush className="w-4 h-4 text-yellow-400" />
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                  {Object.entries(brandData.colors).map(([key, value]) => (
-                    <div key={key} className="space-y-2">
-                      <Label className="text-zinc-400 capitalize">{key.replace('_', ' ')}</Label>
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-8 h-8 rounded-xl border border-zinc-700/50"
-                          style={{ backgroundColor: value }}
-                        />
-                        <Input
-                          type="color"
-                          value={value}
-                          onChange={(e) => updateField('colors', key, e.target.value)}
-                          className="w-8 h-8 p-1 cursor-pointer bg-transparent border-0"
-                        />
-                      </div>
-                      <Input
-                        value={value}
-                        onChange={(e) => updateField('colors', key, e.target.value)}
-                        className="bg-zinc-800/50 border-zinc-700 text-white font-mono text-sm focus:border-yellow-500/30"
-                        placeholder="#000000"
+                <div>
+                  <h1 className="text-base font-semibold text-white leading-tight">Brand Identity Designer</h1>
+                  <p className="text-[11px] text-zinc-500">Complete Brand Kits</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <AnimatePresence mode="wait">
+                {saving && (
+                  <motion.span
+                    key="saving"
+                    initial={{ opacity: 0, x: 8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 8 }}
+                    className="text-xs text-yellow-400/80 flex items-center gap-1.5"
+                  >
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Saving...
+                  </motion.span>
+                )}
+                {!saving && savedIndicator && (
+                  <motion.span
+                    key="saved"
+                    initial={{ opacity: 0, x: 8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 8 }}
+                    className="text-xs text-emerald-400/80 flex items-center gap-1.5"
+                  >
+                    <Check className="w-3 h-3" />
+                    Saved
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+
+          {/* ---- Live Brand Preview ---- */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="rounded-[20px] bg-zinc-900/50 border border-yellow-500/10 shadow-[0_0_40px_-12px_rgba(234,179,8,0.06)] p-5"
+          >
+            <div className="flex items-center gap-6 flex-wrap">
+              {/* Logo */}
+              <div className="w-16 h-16 rounded-xl bg-zinc-800/60 border border-zinc-700/40 flex items-center justify-center overflow-hidden shrink-0">
+                {primaryLogo ? (
+                  <img src={primaryLogo.url} alt="Logo" className="max-w-full max-h-full object-contain" />
+                ) : (
+                  <ImageIcon className="w-5 h-5 text-zinc-600" />
+                )}
+              </div>
+
+              {/* Color swatches */}
+              <div className="flex items-center gap-2">
+                {Object.entries(brandData.colors).map(([key, color]) => (
+                  <div
+                    key={key}
+                    className="w-8 h-8 rounded-full border-2 border-zinc-800"
+                    style={{ backgroundColor: color }}
+                    title={`${COLOR_LABELS[key]}: ${color}`}
+                  />
+                ))}
+              </div>
+
+              {/* Typography preview */}
+              <div className="flex-1 min-w-[180px]">
+                <p className="text-sm font-bold text-white truncate" style={{ fontFamily: brandData.typography.primary_font }}>
+                  {brandData.typography.primary_font}
+                </p>
+                <p className="text-xs text-zinc-400 truncate" style={{ fontFamily: brandData.typography.secondary_font }}>
+                  Body text in {brandData.typography.secondary_font}
+                </p>
+              </div>
+
+              {/* Tone badge */}
+              <span className="px-3 py-1 text-xs font-medium rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 capitalize shrink-0">
+                {toneLabel}
+              </span>
+            </div>
+          </motion.div>
+
+          {/* ---- Section 1: Logos ---- */}
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+            <Section icon={ImageIcon} title="Brand Identity (Logos)">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <LogoSlot logo={getLogo('primary')} logoType="primary" label="Primary Logo" description="Main logo for headers and documents" onUpload={handleLogoUpload} onRemove={removeLogo} uploading={uploadingLogo} />
+                <LogoSlot logo={getLogo('secondary')} logoType="secondary" label="Secondary Logo" description="Alternative for dark/light backgrounds" onUpload={handleLogoUpload} onRemove={removeLogo} uploading={uploadingLogo} />
+                <LogoSlot logo={getLogo('icon')} logoType="icon" label="Icon" description="Square icon for favicons and apps" onUpload={handleLogoUpload} onRemove={removeLogo} uploading={uploadingLogo} />
+              </div>
+            </Section>
+          </motion.div>
+
+          {/* ---- Section 2: Colors ---- */}
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            <Section icon={Palette} title="Color Palette">
+              <div className="flex items-start gap-5 flex-wrap">
+                {Object.entries(brandData.colors).map(([key, color]) => (
+                  <div key={key} className="flex flex-col items-center gap-2 min-w-[72px]">
+                    <label className="relative cursor-pointer group">
+                      <div
+                        className="w-14 h-14 rounded-full border-2 border-zinc-700/60 group-hover:border-zinc-500 transition-colors shadow-lg"
+                        style={{ backgroundColor: color }}
                       />
-                    </div>
+                      <input
+                        type="color"
+                        value={color}
+                        onChange={e => updateField('colors', key, e.target.value)}
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                      />
+                    </label>
+                    <span className="text-[11px] text-zinc-500 capitalize">{COLOR_LABELS[key]}</span>
+                    <Input
+                      value={color}
+                      onChange={e => updateField('colors', key, e.target.value)}
+                      className="w-20 text-center text-[11px] font-mono bg-zinc-800/50 border-zinc-700/40 text-zinc-300 rounded-lg px-1.5 py-1 h-auto focus:border-yellow-500/40"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* Preview */}
+              <div className="mt-5 p-4 rounded-xl border border-zinc-700/40" style={{ backgroundColor: brandData.colors.background }}>
+                <h4 className="text-sm font-bold mb-2" style={{ color: brandData.colors.primary }}>Preview Header</h4>
+                <p className="text-xs mb-3" style={{ color: brandData.colors.text }}>This is how your brand colors will look in generated content.</p>
+                <div className="flex gap-2 flex-wrap">
+                  {['primary', 'secondary', 'accent'].map(key => (
+                    <span
+                      key={key}
+                      className="px-4 py-1.5 rounded-full text-xs font-medium"
+                      style={{ backgroundColor: brandData.colors[key], color: brandData.colors.background }}
+                    >
+                      {COLOR_LABELS[key]}
+                    </span>
                   ))}
                 </div>
+              </div>
+            </Section>
+          </motion.div>
 
-                {/* Preview */}
-                <div className="mt-4 p-4 rounded-xl border border-zinc-700/50" style={{ backgroundColor: brandData.colors.background }}>
-                  <h3 className="text-base font-bold mb-2" style={{ color: brandData.colors.primary }}>
-                    Preview Header
-                  </h3>
-                  <p style={{ color: brandData.colors.text }}>
-                    This is how your brand colors will look in content.
-                  </p>
-                  <div className="flex gap-1 mt-2">
-                    <div
-                      className="px-4 py-2 rounded-xl font-medium transition-transform"
-                      style={{ backgroundColor: brandData.colors.primary, color: brandData.colors.background }}
-                    >
-                      Primary Button
-                    </div>
-                    <div
-                      className="px-4 py-2 rounded-xl font-medium transition-transform"
-                      style={{ backgroundColor: brandData.colors.secondary, color: brandData.colors.background }}
-                    >
-                      Secondary Button
-                    </div>
-                    <div
-                      className="px-4 py-2 rounded-xl font-medium transition-transform"
-                      style={{ backgroundColor: brandData.colors.accent, color: brandData.colors.background }}
-                    >
-                      Accent Button
-                    </div>
-                  </div>
+          {/* ---- Section 3: Typography ---- */}
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+            <Section icon={Type} title="Typography">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FontPicker
+                  label="Heading Font"
+                  value={brandData.typography.primary_font}
+                  onChange={v => updateField('typography', 'primary_font', v)}
+                />
+                <FontPicker
+                  label="Body Font"
+                  value={brandData.typography.secondary_font}
+                  onChange={v => updateField('typography', 'secondary_font', v)}
+                />
+              </div>
+              <div className="mt-4 p-4 bg-zinc-800/30 rounded-xl border border-zinc-700/40 space-y-1.5">
+                <h4
+                  className="text-lg font-bold text-white"
+                  style={{ fontFamily: brandData.typography.primary_font }}
+                >
+                  Your Heading
+                </h4>
+                <p
+                  className="text-sm text-zinc-400 leading-relaxed"
+                  style={{ fontFamily: brandData.typography.secondary_font }}
+                >
+                  Your body text looks like this. It should be easy to read and reflect your brand personality across all generated content.
+                </p>
+              </div>
+            </Section>
+          </motion.div>
+
+          {/* ---- Section 4: Voice & Tone ---- */}
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <Section icon={MessageSquare} title="Voice & Tone">
+              <div className="space-y-4">
+                <div>
+                  <p className="text-xs font-medium text-zinc-400 mb-2">Tone</p>
+                  <PillSelect
+                    options={TONE_OPTIONS}
+                    value={brandData.voice.tone}
+                    onChange={v => updateField('voice', 'tone', v)}
+                  />
                 </div>
-              </motion.div>
-            </TabsContent>
-
-            {/* Typography Tab */}
-            <TabsContent value="typography">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-4"
-              >
-                <div className="mb-4">
-                  <h3 className="text-white font-semibold">Typography</h3>
-                  <p className="text-zinc-500 text-xs mt-1">
-                    Select fonts and styles for your brand
-                  </p>
+                <div>
+                  <p className="text-xs font-medium text-zinc-400 mb-2">Keywords</p>
+                  <ChipInput
+                    items={brandData.voice.keywords}
+                    onAdd={addKeyword}
+                    onRemove={removeKeyword}
+                    placeholder="Add a keyword..."
+                  />
                 </div>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-zinc-400">Primary Font</Label>
-                      <Select
-                        value={brandData.typography.primary_font}
-                        onValueChange={(value) => updateField('typography', 'primary_font', value)}
-                      >
-                        <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white focus:border-yellow-500/30">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-zinc-900 border-zinc-700">
-                          {FONT_OPTIONS.map((font) => (
-                            <SelectItem key={font} value={font} className="text-white hover:bg-zinc-800">
-                              <span style={{ fontFamily: font }}>{font}</span>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-zinc-400">Secondary Font</Label>
-                      <Select
-                        value={brandData.typography.secondary_font}
-                        onValueChange={(value) => updateField('typography', 'secondary_font', value)}
-                      >
-                        <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white focus:border-yellow-500/30">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-zinc-900 border-zinc-700">
-                          {FONT_OPTIONS.map((font) => (
-                            <SelectItem key={font} value={font} className="text-white hover:bg-zinc-800">
-                              <span style={{ fontFamily: font }}>{font}</span>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  {/* Preview */}
-                  <div className="p-4 bg-zinc-800/50 rounded-xl border border-zinc-700/50 space-y-2">
-                    <h3
-                      className="text-lg font-bold text-white"
-                      style={{ fontFamily: brandData.typography.primary_font }}
-                    >
-                      Heading in {brandData.typography.primary_font}
-                    </h3>
-                    <p
-                      className="text-zinc-300"
-                      style={{ fontFamily: brandData.typography.secondary_font }}
-                    >
-                      Body text in {brandData.typography.secondary_font}. This is how your content will appear
-                      when using these font selections.
-                    </p>
-                  </div>
+                <div>
+                  <p className="text-xs font-medium text-zinc-400 mb-1.5">Style Guide</p>
+                  <Textarea
+                    value={brandData.voice.style_guide}
+                    onChange={e => updateField('voice', 'style_guide', e.target.value)}
+                    placeholder="Describe your brand's writing style, preferred phrases, things to avoid..."
+                    className="bg-zinc-800/50 border-zinc-700/60 text-white text-sm min-h-[80px] rounded-xl focus:border-yellow-500/40"
+                  />
                 </div>
-              </motion.div>
-            </TabsContent>
-
-            {/* Voice & Tone Tab */}
-            <TabsContent value="voice">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-4"
-              >
-                <div className="mb-4">
-                  <h3 className="text-white font-semibold">Voice & Tone</h3>
-                  <p className="text-zinc-500 text-xs mt-1">
-                    Define how your brand should sound in AI-generated content
-                  </p>
+                <div>
+                  <p className="text-xs font-medium text-zinc-400 mb-1.5">Sample Copy</p>
+                  <Textarea
+                    value={brandData.voice.sample_copy}
+                    onChange={e => updateField('voice', 'sample_copy', e.target.value)}
+                    placeholder="Paste examples of your brand's writing that represent the ideal tone..."
+                    className="bg-zinc-800/50 border-zinc-700/60 text-white text-sm min-h-[100px] rounded-xl focus:border-yellow-500/40"
+                  />
                 </div>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-zinc-400">Tone</Label>
-                      <Select
-                        value={brandData.voice.tone}
-                        onValueChange={(value) => updateField('voice', 'tone', value)}
-                      >
-                        <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white focus:border-yellow-500/30">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-zinc-900 border-zinc-700">
-                          {TONE_OPTIONS.map((option) => (
-                            <SelectItem key={option.value} value={option.value} className="text-white hover:bg-zinc-800">
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+              </div>
+            </Section>
+          </motion.div>
 
-                    <div className="space-y-2">
-                      <Label className="text-zinc-400">Brand Keywords</Label>
-                      <div className="flex gap-1">
-                        <Input
-                          value={newKeyword}
-                          onChange={(e) => setNewKeyword(e.target.value)}
-                          onKeyPress={(e) => e.key === 'Enter' && addKeyword()}
-                          placeholder="Add a keyword..."
-                          className="bg-zinc-800/50 border-zinc-700 text-white focus:border-yellow-500/30"
-                        />
-                        <Button onClick={addKeyword} variant="outline" className="border-zinc-700 hover:bg-zinc-800">
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {brandData.voice.keywords?.map((keyword) => (
-                          <Badge
-                            key={keyword}
-                            variant="secondary"
-                            className="bg-yellow-500/10 text-yellow-400 cursor-pointer hover:bg-yellow-500/20 transition-colors"
-                            onClick={() => removeKeyword(keyword)}
-                          >
-                            {keyword}
-                            <X className="w-3 h-3 ml-1" />
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-zinc-400">Style Guide</Label>
-                    <Textarea
-                      value={brandData.voice.style_guide}
-                      onChange={(e) => updateField('voice', 'style_guide', e.target.value)}
-                      placeholder="Describe your brand's writing style, preferred phrases, things to avoid..."
-                      className="bg-zinc-800/50 border-zinc-700 text-white min-h-[80px] focus:border-yellow-500/30"
+          {/* ---- Section 5: Visual Style ---- */}
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+            <Section icon={Sparkles} title="Visual Style">
+              <div className="space-y-4">
+                <div>
+                  <p className="text-xs font-medium text-zinc-400 mb-2">Mood</p>
+                  <PillSelect
+                    options={MOOD_OPTIONS}
+                    value={brandData.visual_style.mood}
+                    onChange={v => updateField('visual_style', 'mood', v)}
+                  />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-zinc-400 mb-1.5">Image Style</p>
+                  <Input
+                    value={brandData.visual_style.image_style}
+                    onChange={e => updateField('visual_style', 'image_style', e.target.value)}
+                    placeholder="e.g., clean, minimal, vibrant..."
+                    className="bg-zinc-800/50 border-zinc-700/60 text-white text-sm rounded-xl focus:border-yellow-500/40"
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs font-medium text-zinc-400 mb-2">Preferred Themes</p>
+                    <ChipInput
+                      items={brandData.visual_style.preferred_themes}
+                      onAdd={t => addTheme(t, false)}
+                      onRemove={t => removeTheme(t, false)}
+                      placeholder="Add a theme..."
                     />
                   </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-zinc-400">Sample Copy</Label>
-                    <Textarea
-                      value={brandData.voice.sample_copy}
-                      onChange={(e) => updateField('voice', 'sample_copy', e.target.value)}
-                      placeholder="Paste examples of your brand's writing that represent the ideal tone..."
-                      className="bg-zinc-800/50 border-zinc-700 text-white min-h-[120px] focus:border-yellow-500/30"
+                  <div>
+                    <p className="text-xs font-medium text-zinc-400 mb-2">Themes to Avoid</p>
+                    <ChipInput
+                      items={brandData.visual_style.avoid_themes}
+                      onAdd={t => addTheme(t, true)}
+                      onRemove={t => removeTheme(t, true)}
+                      placeholder="Add a theme to avoid..."
+                      variant="red"
                     />
                   </div>
                 </div>
-              </motion.div>
-            </TabsContent>
+              </div>
+            </Section>
+          </motion.div>
 
-            {/* Visual Style Tab */}
-            <TabsContent value="visual">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-4"
-              >
-                <div className="mb-4">
-                  <h3 className="text-white font-semibold">Visual Style</h3>
-                  <p className="text-zinc-500 text-xs mt-1">
-                    Define the visual aesthetic for AI-generated images and videos
-                  </p>
-                </div>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-zinc-400">Overall Mood</Label>
-                      <Select
-                        value={brandData.visual_style.mood}
-                        onValueChange={(value) => updateField('visual_style', 'mood', value)}
-                      >
-                        <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white focus:border-yellow-500/30">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-zinc-900 border-zinc-700">
-                          {MOOD_OPTIONS.map((option) => (
-                            <SelectItem key={option.value} value={option.value} className="text-white hover:bg-zinc-800">
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-zinc-400">Image Style</Label>
-                      <Input
-                        value={brandData.visual_style.image_style}
-                        onChange={(e) => updateField('visual_style', 'image_style', e.target.value)}
-                        placeholder="e.g., clean, minimal, vibrant..."
-                        className="bg-zinc-800/50 border-zinc-700 text-white focus:border-yellow-500/30"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-zinc-400">Preferred Themes</Label>
-                      <div className="flex gap-1">
-                        <Input
-                          value={newTheme}
-                          onChange={(e) => setNewTheme(e.target.value)}
-                          onKeyPress={(e) => e.key === 'Enter' && addTheme(false)}
-                          placeholder="Add a theme..."
-                          className="bg-zinc-800/50 border-zinc-700 text-white focus:border-yellow-500/30"
-                        />
-                        <Button onClick={() => addTheme(false)} variant="outline" className="border-zinc-700 hover:bg-zinc-800">
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {brandData.visual_style.preferred_themes?.map((theme) => (
-                          <Badge
-                            key={theme}
-                            variant="secondary"
-                            className="bg-yellow-500/10 text-yellow-400 cursor-pointer hover:bg-yellow-500/20 transition-colors"
-                            onClick={() => removeTheme(theme, false)}
-                          >
-                            <Check className="w-3 h-3 mr-1" />
-                            {theme}
-                            <X className="w-3 h-3 ml-1" />
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-zinc-400">Themes to Avoid</Label>
-                      <div className="flex gap-1">
-                        <Input
-                          value={newAvoidTheme}
-                          onChange={(e) => setNewAvoidTheme(e.target.value)}
-                          onKeyPress={(e) => e.key === 'Enter' && addTheme(true)}
-                          placeholder="Add a theme to avoid..."
-                          className="bg-zinc-800/50 border-zinc-700 text-white focus:border-yellow-500/30"
-                        />
-                        <Button onClick={() => addTheme(true)} variant="outline" className="border-zinc-700 hover:bg-zinc-800">
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {brandData.visual_style.avoid_themes?.map((theme) => (
-                          <Badge
-                            key={theme}
-                            variant="secondary"
-                            className="bg-red-500/20 text-red-400 cursor-pointer hover:bg-red-500/30 transition-colors"
-                            onClick={() => removeTheme(theme, true)}
-                          >
-                            <X className="w-3 h-3 mr-1" />
-                            {theme}
-                            <X className="w-3 h-3 ml-1" />
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            </TabsContent>
-          </Tabs>
-        </motion.div>
+          {/* Bottom spacer */}
+          <div className="h-8" />
+        </div>
       </div>
     </CreatePageTransition>
   );

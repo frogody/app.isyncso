@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '@/components/context/UserContext';
 import { BrandAssets, GeneratedContent, Product, PhysicalProduct } from '@/api/entities';
 import {
@@ -14,7 +14,6 @@ import {
   Check,
   Trash2,
   ChevronDown,
-  Settings2,
   History,
   Palette,
   Camera,
@@ -27,22 +26,20 @@ import {
   Film,
   ShieldCheck,
   ImageIcon,
-  AlertCircle
+  AlertCircle,
+  ArrowLeft,
+  Zap,
+  Upload,
+  Save,
+  ChevronRight,
+  BookmarkPlus,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { CreatePageTransition } from '@/components/create/ui';
-import { MOTION_VARIANTS } from '@/tokens/create';
 import { toast } from 'sonner';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Popover,
   PopoverContent,
@@ -55,6 +52,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { supabase } from '@/api/supabaseClient';
+import { createPageUrl } from '@/utils';
 
 // Use case definitions with model selection
 const USE_CASES = {
@@ -111,23 +109,63 @@ const USE_CASES = {
 };
 
 const STYLE_PRESETS = [
-  { id: 'photorealistic', label: 'Photorealistic', icon: Camera },
-  { id: 'illustration', label: 'Illustration', icon: Paintbrush },
-  { id: '3d_render', label: '3D Render', icon: Box },
-  { id: 'digital_art', label: 'Digital Art', icon: Monitor },
-  { id: 'watercolor', label: 'Watercolor', icon: Droplets },
-  { id: 'minimalist', label: 'Minimalist', icon: Square },
+  { id: 'photorealistic', label: 'Photo', icon: Camera },
+  { id: 'illustration', label: 'Illustr.', icon: Paintbrush },
+  { id: '3d_render', label: '3D', icon: Box },
+  { id: 'digital_art', label: 'Digital', icon: Monitor },
+  { id: 'watercolor', label: 'Water', icon: Droplets },
+  { id: 'minimalist', label: 'Minimal', icon: Square },
   { id: 'vintage', label: 'Vintage', icon: Clock },
-  { id: 'cinematic', label: 'Cinematic', icon: Film },
+  { id: 'cinematic', label: 'Cinema', icon: Film },
 ];
 
 const ASPECT_RATIOS = [
-  { id: '1:1', label: 'Square (1:1)', width: 1024, height: 1024 },
-  { id: '16:9', label: 'Landscape (16:9)', width: 1792, height: 1024 },
-  { id: '9:16', label: 'Portrait (9:16)', width: 1024, height: 1792 },
-  { id: '4:3', label: 'Standard (4:3)', width: 1365, height: 1024 },
-  { id: '3:4', label: 'Portrait (3:4)', width: 1024, height: 1365 },
+  { id: '1:1', label: '1:1', width: 1024, height: 1024, shape: 'w-5 h-5' },
+  { id: '16:9', label: '16:9', width: 1792, height: 1024, shape: 'w-7 h-4' },
+  { id: '9:16', label: '9:16', width: 1024, height: 1792, shape: 'w-4 h-7' },
+  { id: '4:3', label: '4:3', width: 1365, height: 1024, shape: 'w-6 h-5' },
+  { id: '3:4', label: '3:4', width: 1024, height: 1365, shape: 'w-5 h-6' },
 ];
+
+const QUICK_SUGGESTIONS = [
+  'Product on marble',
+  'Lifestyle scene',
+  'Social media post',
+  'Marketing banner',
+  'Portrait photo',
+];
+
+// Mode mapping: group old use cases into 3 modes
+const MODES = [
+  {
+    id: 'product',
+    label: 'Product Shot',
+    description: 'Best for product photography with reference images',
+    icon: Camera,
+    useCases: ['product_variation', 'product_scene'],
+    defaultUseCase: 'product_variation',
+  },
+  {
+    id: 'marketing',
+    label: 'Marketing Creative',
+    description: 'Text-to-image for ads, social content & marketing',
+    icon: Sparkles,
+    useCases: ['marketing_creative', 'premium_quality'],
+    defaultUseCase: 'marketing_creative',
+  },
+  {
+    id: 'draft',
+    label: 'Quick Draft',
+    description: 'Fast generation for brainstorming & concepts',
+    icon: Zap,
+    useCases: ['quick_draft'],
+    defaultUseCase: 'quick_draft',
+  },
+];
+
+function getModeFromUseCase(useCaseId) {
+  return MODES.find(m => m.useCases.includes(useCaseId)) || MODES[1];
+}
 
 export default function CreateImages() {
   const { user } = useUser();
@@ -148,6 +186,13 @@ export default function CreateImages() {
   const [loadingProductImages, setLoadingProductImages] = useState(false);
   const [selectedUseCase, setSelectedUseCase] = useState('marketing_creative');
   const [selectedReferenceImage, setSelectedReferenceImage] = useState(null);
+  const [showEnhancedPrompt, setShowEnhancedPrompt] = useState(false);
+
+  const selectedMode = getModeFromUseCase(selectedUseCase);
+
+  const handleModeSelect = (mode) => {
+    setSelectedUseCase(mode.defaultUseCase);
+  };
 
   useEffect(() => {
     if (user?.company_id) {
@@ -189,51 +234,32 @@ export default function CreateImages() {
     }
   };
 
-  // Load product images when a physical product is selected
   const loadProductImages = async (product) => {
     if (!product || product.type !== 'physical') {
       setProductImages([]);
       return;
     }
-
     setLoadingProductImages(true);
     try {
-      // Get physical product details which contain the gallery
       const physicalProducts = await PhysicalProduct.filter({ product_id: product.id });
       const physicalDetails = physicalProducts?.[0];
-
       const images = [];
-
-      // Add featured image first if exists
       if (product.featured_image?.url) {
         images.push(product.featured_image.url);
       }
-
-      // Add gallery images
       if (product.gallery && Array.isArray(product.gallery)) {
         product.gallery.forEach(img => {
-          if (img.url && !images.includes(img.url)) {
-            images.push(img.url);
-          }
+          if (img.url && !images.includes(img.url)) images.push(img.url);
         });
       }
-
-      // Also check physical product details for additional images
       if (physicalDetails?.images && Array.isArray(physicalDetails.images)) {
         physicalDetails.images.forEach(img => {
           const url = typeof img === 'string' ? img : img.url;
-          if (url && !images.includes(url)) {
-            images.push(url);
-          }
+          if (url && !images.includes(url)) images.push(url);
         });
       }
-
       setProductImages(images);
-      // Auto-select the first image as reference
-      if (images.length > 0) {
-        setSelectedReferenceImage(images[0]);
-      }
-      console.log(`Loaded ${images.length} reference images for product:`, product.name);
+      if (images.length > 0) setSelectedReferenceImage(images[0]);
     } catch (error) {
       console.error('Error loading product images:', error);
       setProductImages([]);
@@ -243,38 +269,28 @@ export default function CreateImages() {
     }
   };
 
-  // Handle product selection
   const handleProductSelect = async (product) => {
     setSelectedProduct(product);
     setProductSearch('');
     if (product) {
       await loadProductImages(product);
-      // Auto-switch to product variation use case for physical products
-      if (product.type === 'physical') {
-        setSelectedUseCase('product_variation');
-      }
+      if (product.type === 'physical') setSelectedUseCase('product_variation');
     } else {
       setProductImages([]);
       setSelectedReferenceImage(null);
     }
   };
 
-  // Helper: Convert hex color to natural description
   const hexToColorDescription = (hex) => {
     if (!hex) return null;
     const colorMap = {
-      // Common color patterns
       '#000': 'black', '#fff': 'white', '#f00': 'red', '#0f0': 'green', '#00f': 'blue',
       '#ff0': 'yellow', '#0ff': 'cyan', '#f0f': 'magenta',
     };
-
-    // Check exact matches first
     const normalized = hex.toLowerCase().replace('#', '');
     for (const [key, value] of Object.entries(colorMap)) {
       if (key.replace('#', '') === normalized) return value;
     }
-
-    // Parse RGB and describe
     let r, g, b;
     if (normalized.length === 3) {
       r = parseInt(normalized[0] + normalized[0], 16);
@@ -287,25 +303,19 @@ export default function CreateImages() {
     } else {
       return null;
     }
-
-    // Determine color family and intensity
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
     const lightness = (max + min) / 2 / 255;
-
     let intensity = '';
     if (lightness < 0.2) intensity = 'dark ';
     else if (lightness < 0.4) intensity = 'deep ';
     else if (lightness > 0.8) intensity = 'light ';
     else if (lightness > 0.6) intensity = 'soft ';
-
-    // Determine hue
     if (max - min < 30) {
       if (lightness < 0.3) return 'charcoal';
       if (lightness > 0.7) return 'off-white';
       return 'gray';
     }
-
     if (r >= g && r >= b) {
       if (g > b * 1.5) return intensity + 'orange';
       if (b > 100 && r > 200) return intensity + 'pink';
@@ -324,7 +334,6 @@ export default function CreateImages() {
     return null;
   };
 
-  // Style-specific enhancements
   const getStyleEnhancements = (styleId) => {
     const styleEnhancements = {
       photorealistic: 'ultra-realistic photograph, professional photography, sharp focus, high resolution, natural textures',
@@ -339,17 +348,14 @@ export default function CreateImages() {
     return styleEnhancements[styleId] || '';
   };
 
-  // Use case specific prompt templates
   const getUseCaseEnhancements = (useCaseId, hasReferenceImage) => {
     if (hasReferenceImage) {
-      // For in-context editing, keep the prompt focused on the scene/environment
       const enhancements = {
         product_variation: 'maintaining exact product appearance, only changing the background and environment',
         product_scene: 'preserving product details while placing in lifestyle context',
       };
       return enhancements[useCaseId] || '';
     }
-
     const enhancements = {
       marketing_creative: 'professional marketing imagery, commercial quality, brand-aligned aesthetic',
       quick_draft: 'concept visualization',
@@ -361,36 +367,18 @@ export default function CreateImages() {
   const buildEnhancedPrompt = () => {
     const useCase = USE_CASES[selectedUseCase];
     const hasReferenceImage = useCase?.requiresReferenceImage && selectedReferenceImage;
-
-    // Start with base prompt
     let parts = [];
-
-    // For reference image modes, the prompt describes the desired scene/background
     if (hasReferenceImage) {
-      if (prompt.trim()) {
-        parts.push(prompt.trim());
-      }
+      if (prompt.trim()) parts.push(prompt.trim());
       parts.push(getUseCaseEnhancements(selectedUseCase, true));
     } else {
-      // For text-to-image, build a comprehensive prompt
-      if (prompt.trim()) {
-        parts.push(prompt.trim());
-      }
-
-      // Add product context naturally
+      if (prompt.trim()) parts.push(prompt.trim());
       if (selectedProduct) {
-        const productType = selectedProduct.type === 'physical' ? 'product' : 'software interface';
         parts.push(`featuring ${selectedProduct.name}`);
       }
     }
-
-    // Add style enhancements
     const styleEnhancement = getStyleEnhancements(selectedStyle);
-    if (styleEnhancement) {
-      parts.push(styleEnhancement);
-    }
-
-    // Add brand context naturally (not raw hex codes)
+    if (styleEnhancement) parts.push(styleEnhancement);
     if (useBrandContext && brandAssets) {
       const colorDescriptions = [];
       if (brandAssets.colors?.primary) {
@@ -399,63 +387,40 @@ export default function CreateImages() {
       }
       if (brandAssets.colors?.secondary) {
         const secondaryColor = hexToColorDescription(brandAssets.colors.secondary);
-        if (secondaryColor && secondaryColor !== colorDescriptions[0]) {
-          colorDescriptions.push(secondaryColor);
-        }
+        if (secondaryColor && secondaryColor !== colorDescriptions[0]) colorDescriptions.push(secondaryColor);
       }
-      if (colorDescriptions.length > 0) {
-        parts.push(`color palette featuring ${colorDescriptions.join(' and ')}`);
-      }
-
-      if (brandAssets.visual_style?.mood) {
-        parts.push(`${brandAssets.visual_style.mood} atmosphere`);
-      }
+      if (colorDescriptions.length > 0) parts.push(`color palette featuring ${colorDescriptions.join(' and ')}`);
+      if (brandAssets.visual_style?.mood) parts.push(`${brandAssets.visual_style.mood} atmosphere`);
     }
-
-    // Add use case quality enhancements
     if (!hasReferenceImage) {
       const useCaseEnhancement = getUseCaseEnhancements(selectedUseCase, false);
-      if (useCaseEnhancement) {
-        parts.push(useCaseEnhancement);
-      }
+      if (useCaseEnhancement) parts.push(useCaseEnhancement);
     }
-
-    // Combine all parts naturally
     return parts.filter(p => p).join(', ');
   };
 
-  // State for AI-enhanced prompt
   const [aiEnhancedPrompt, setAiEnhancedPrompt] = useState(null);
   const [isEnhancing, setIsEnhancing] = useState(false);
 
   const handleGenerate = async () => {
     const useCase = USE_CASES[selectedUseCase];
-
-    // Validate prompt for non-image-to-image use cases
     if (!useCase.requiresReferenceImage && !prompt.trim()) {
       toast.error('Please enter a prompt');
       return;
     }
-
-    // Validate reference image for image-to-image use cases
     if (useCase.requiresReferenceImage && !selectedReferenceImage) {
       toast.error('Please select a reference image for this use case');
       return;
     }
-
     setIsGenerating(true);
     setIsEnhancing(true);
     setGeneratedImage(null);
     setAiEnhancedPrompt(null);
-
     try {
-      // Step 1: AI-enhance the prompt
       let finalPrompt = prompt;
       let enhancementData = null;
-
       try {
-        toast.info('🪄 AI is enhancing your prompt...', { duration: 2000 });
-
+        toast.info('AI is enhancing your prompt...', { duration: 2000 });
         const { data: enhanceData, error: enhanceError } = await supabase.functions.invoke('enhance-prompt', {
           body: {
             prompt: prompt,
@@ -467,37 +432,24 @@ export default function CreateImages() {
             has_reference_image: !!selectedReferenceImage
           }
         });
-
         if (!enhanceError && enhanceData?.enhanced_prompt) {
           finalPrompt = enhanceData.enhanced_prompt;
           enhancementData = enhanceData;
           setAiEnhancedPrompt(enhanceData);
-          console.log('AI Enhanced Prompt:', enhanceData);
         } else {
-          // Fallback to rule-based enhancement
           finalPrompt = buildEnhancedPrompt();
-          console.log('Using fallback enhancement');
         }
       } catch (enhanceErr) {
         console.warn('AI enhancement failed, using fallback:', enhanceErr);
         finalPrompt = buildEnhancedPrompt();
       }
-
       setIsEnhancing(false);
-
       const aspectConfig = ASPECT_RATIOS.find(a => a.id === aspectRatio);
-
-      // Determine if this is a physical product with reference images
       const isPhysicalProduct = selectedProduct?.type === 'physical';
-
-      // Step 2: Generate the image with enhanced prompt
       const { data, error } = await supabase.functions.invoke('generate-image', {
         body: {
-          // New multi-model params
           use_case: selectedUseCase,
           reference_image_url: selectedReferenceImage,
-
-          // Use AI-enhanced prompt
           prompt: finalPrompt,
           original_prompt: prompt,
           style: selectedStyle,
@@ -505,25 +457,15 @@ export default function CreateImages() {
           width: aspectConfig?.width || 1024,
           height: aspectConfig?.height || 1024,
           brand_context: useBrandContext ? brandAssets : null,
-          product_context: selectedProduct ? {
-            ...selectedProduct,
-            type: selectedProduct.type,
-          } : null,
-          // Legacy params (for backward compatibility)
+          product_context: selectedProduct ? { ...selectedProduct, type: selectedProduct.type } : null,
           product_images: isPhysicalProduct ? productImages : [],
           is_physical_product: isPhysicalProduct,
-
-          // Cost tracking
           company_id: user.company_id,
           user_id: user.id,
         }
       });
-
       if (error) throw error;
-      if (data?.error) {
-        throw new Error(data.details || data.error);
-      }
-
+      if (data?.error) throw new Error(data.details || data.error);
       if (data?.url) {
         const savedContent = await GeneratedContent.create({
           company_id: user.company_id,
@@ -550,7 +492,6 @@ export default function CreateImages() {
           dimensions: { width: aspectConfig?.width, height: aspectConfig?.height },
           created_by: user.id
         });
-
         setGeneratedImage({
           url: data.url,
           id: savedContent.id,
@@ -606,611 +547,605 @@ export default function CreateImages() {
     toast.info('Settings loaded. Click Generate to create a new image.');
   };
 
+  const handleSaveToLibrary = async () => {
+    if (!generatedImage) return;
+    toast.success('Image saved to library');
+  };
+
+  const handleUseAsReference = () => {
+    if (!generatedImage) return;
+    setSelectedReferenceImage(generatedImage.url);
+    setSelectedUseCase('product_variation');
+    toast.info('Image set as reference. Switch to Product Shot mode to use it.');
+  };
+
   const filteredProducts = products.filter(p =>
     p.name?.toLowerCase().includes(productSearch.toLowerCase())
   );
 
+  const currentUseCase = USE_CASES[selectedUseCase];
+  const isProductMode = selectedMode.id === 'product';
+
   return (
     <CreatePageTransition>
-      <div className="w-full px-4 lg:px-6 py-4 space-y-4">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
-                <Image className="w-5 h-5 text-yellow-400" />
+      <div className="min-h-screen bg-[#09090b]">
+        <div className="max-w-5xl mx-auto px-4 lg:px-6 py-6 space-y-5">
+
+          {/* 1. Back nav + Header row */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <a
+                href={createPageUrl('Create')}
+                className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-300 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Create Studio
+              </a>
+              <div className="w-px h-5 bg-zinc-800" />
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
+                  <Camera className="w-4 h-4 text-yellow-400" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-bold text-white leading-tight">AI Image Generation</h1>
+                  <p className="text-xs text-zinc-500">FLUX Pro & Kontext</p>
+                </div>
               </div>
-              AI Image Generation
-            </h1>
-            <p className="text-sm text-zinc-400 mt-1">Generate images with AI, enhanced with your brand and product context</p>
+            </div>
+            <button
+              onClick={() => setShowHistory(!showHistory)}
+              className={`p-2.5 rounded-full border transition-all ${
+                showHistory
+                  ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400'
+                  : 'bg-zinc-900/50 border-zinc-800/60 text-zinc-500 hover:text-zinc-300 hover:border-zinc-700'
+              }`}
+            >
+              <History className="w-4 h-4" />
+            </button>
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Left Panel - Controls */}
-          <div className="space-y-4">
-            {/* Use Case Selector */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="p-4 rounded-[20px] bg-zinc-900/50 border border-zinc-800/60"
-            >
-              <h3 className="text-base font-semibold text-white flex items-center gap-2 mb-3">
-                <Sparkles className="w-5 h-5 text-yellow-400/70" />
-                What do you want to create?
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {Object.values(USE_CASES).map(useCase => {
-                  const IconComponent = useCase.icon;
-                  const isSelected = selectedUseCase === useCase.id;
-                  const colorClasses = {
-                    emerald: isSelected ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' : 'hover:border-emerald-500/30',
-                    blue: isSelected ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'hover:border-blue-500/30',
-                    purple: isSelected ? 'bg-purple-500/20 border-purple-500/50 text-purple-400' : 'hover:border-purple-500/30',
-                    amber: isSelected ? 'bg-amber-500/20 border-amber-500/50 text-amber-400' : 'hover:border-amber-500/30',
-                    rose: isSelected ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400' : 'hover:border-yellow-500/20',
-                  };
-                  return (
-                    <button
-                      key={useCase.id}
-                      onClick={() => setSelectedUseCase(useCase.id)}
-                      className={`p-3 rounded-xl border text-left transition-all ${
-                        isSelected
-                          ? colorClasses[useCase.color]
-                          : `bg-zinc-800/30 border-zinc-700/30 text-zinc-400 ${colorClasses[useCase.color]}`
-                      }`}
-                    >
-                      <IconComponent className="w-4 h-4 mb-1.5" />
-                      <div className="text-xs font-medium">{useCase.name}</div>
-                      <div className="text-[10px] opacity-60 mt-0.5">{useCase.description}</div>
-                      <div className="mt-2 flex items-center gap-2">
-                        <Badge
-                          variant="outline"
-                          className={`text-[10px] px-1.5 py-0 ${
-                            useCase.costTier === 'economy' ? 'border-amber-500/30 text-amber-400' :
-                            useCase.costTier === 'premium' ? 'border-yellow-500/20 text-yellow-400' :
-                            'border-zinc-500/30 text-zinc-400'
-                          }`}
-                        >
-                          ${useCase.estimatedCost.toFixed(3)}
-                        </Badge>
-                        {useCase.requiresReferenceImage && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-yellow-500/30 text-yellow-400">
-                            Needs Image
-                          </Badge>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
+          {/* 2. Hero Prompt Area */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+            className="rounded-[20px] bg-zinc-900/50 border border-zinc-800/60 p-5"
+          >
+            <Textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Describe the image you want to create..."
+              className="min-h-[80px] bg-transparent border-none text-white text-base placeholder:text-zinc-600 focus:ring-0 focus-visible:ring-0 resize-none p-0 shadow-none"
+              maxLength={1000}
+            />
+            <div className="flex items-center justify-between mt-3 pt-3 border-t border-zinc-800/40">
+              <div className="flex flex-wrap gap-1.5">
+                {QUICK_SUGGESTIONS.map(chip => (
+                  <button
+                    key={chip}
+                    onClick={() => setPrompt(prev => prev ? `${prev}, ${chip.toLowerCase()}` : chip)}
+                    className="px-3 py-1 text-xs rounded-full bg-zinc-800/60 border border-zinc-700/40 text-zinc-400 hover:text-yellow-400 hover:border-yellow-500/30 transition-all"
+                  >
+                    {chip}
+                  </button>
+                ))}
               </div>
-            </motion.div>
+              <span className="text-[10px] text-zinc-600 flex-shrink-0 ml-3">{prompt.length}/1000</span>
+            </div>
+          </motion.div>
 
-            {/* Prompt Input */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.05 }}
-              className="p-4 rounded-[20px] bg-zinc-900/50 border border-zinc-800/60"
-            >
-              <h3 className="text-base font-semibold text-white flex items-center gap-2 mb-3">
-                <Wand2 className="w-5 h-5 text-yellow-400/70" />
-                {USE_CASES[selectedUseCase]?.requiresReferenceImage ? 'Describe the Scene (Optional)' : 'Prompt'}
-              </h3>
-              <div className="space-y-3">
-                <div>
-                  <Textarea
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    placeholder="Describe the image you want to generate..."
-                    className="min-h-[100px] bg-zinc-800/50 border-zinc-700/50 text-white placeholder:text-zinc-500 focus:border-yellow-500/30 resize-none"
-                    maxLength={1000}
-                  />
-                  <div className="flex justify-between mt-1.5 text-[10px] text-zinc-500">
-                    <span>{prompt.length}/1000 characters</span>
-                    {brandAssets && (
-                      <label className="flex items-center gap-2 cursor-pointer hover:text-zinc-400 transition-colors">
-                        <input
-                          type="checkbox"
-                          checked={useBrandContext}
-                          onChange={(e) => setUseBrandContext(e.target.checked)}
-                          className="rounded border-zinc-600 bg-zinc-800 text-yellow-500 focus:ring-yellow-500/30"
-                        />
-                        <Palette className="w-3 h-3" />
-                        Apply brand context
-                      </label>
-                    )}
-                  </div>
-                </div>
-
-                {/* Product Context Selector */}
-                <div>
-                  <Label className="text-zinc-400 mb-2 block text-xs">Product Context (Optional)</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-between bg-zinc-800/50 border-zinc-700/50 text-white hover:bg-zinc-800 hover:border-zinc-600"
-                      >
-                        {selectedProduct ? (
-                          <span className="flex items-center gap-2">
-                            <Package className="w-4 h-4 text-yellow-400/70" />
-                            {selectedProduct.name}
-                          </span>
-                        ) : (
-                          <span className="text-zinc-500">Select a product...</span>
-                        )}
-                        <ChevronDown className="w-4 h-4 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80 bg-zinc-900 border-zinc-800 p-2">
-                      <input
-                        type="text"
-                        placeholder="Search products..."
-                        value={productSearch}
-                        onChange={(e) => setProductSearch(e.target.value)}
-                        className="w-full px-3 py-1.5 mb-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-xs focus:outline-none focus:border-yellow-500/30"
-                      />
-                      <div className="max-h-60 overflow-y-auto space-y-0.5">
-                        {selectedProduct && (
-                          <button
-                            onClick={() => handleProductSelect(null)}
-                            className="w-full text-left px-3 py-1.5 text-xs text-zinc-400 hover:bg-zinc-800 rounded-lg flex items-center gap-2"
-                          >
-                            <X className="w-3 h-3" />
-                            Clear selection
-                          </button>
-                        )}
-                        {filteredProducts.map(product => (
-                          <button
-                            key={product.id}
-                            onClick={() => handleProductSelect(product)}
-                            className={`w-full text-left px-3 py-1.5 text-xs rounded-lg flex items-center justify-between transition-colors ${
-                              selectedProduct?.id === product.id
-                                ? 'bg-yellow-500/10 text-yellow-400'
-                                : 'text-white hover:bg-zinc-800'
-                            }`}
-                          >
-                            <span className="flex items-center gap-2">
-                              <Package className="w-4 h-4" />
-                              {product.name}
-                              {product.type === 'physical' && (
-                                <Badge variant="outline" className="text-[10px] px-1 py-0 border-yellow-500/30 text-yellow-400">
-                                  Physical
-                                </Badge>
-                              )}
-                            </span>
-                            {selectedProduct?.id === product.id && <Check className="w-4 h-4" />}
-                          </button>
-                        ))}
-                        {filteredProducts.length === 0 && (
-                          <p className="text-zinc-500 text-xs text-center py-3">No products found</p>
-                        )}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-
-                  {/* Product Reference Images Display */}
-                  {selectedProduct?.type === 'physical' && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="mt-3 space-y-2"
-                    >
-                      {/* Product Preservation Notice */}
-                      <div className="p-2.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-                        <div className="flex items-start gap-2">
-                          <ShieldCheck className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
-                          <div>
-                            <p className="text-xs font-medium text-yellow-400">Product Preservation Mode</p>
-                            <p className="text-[10px] text-yellow-400/70 mt-0.5">
-                              The AI will keep your product exactly as shown in the reference images. Only the background, lighting, and environment will change.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Reference Images Grid */}
-                      {loadingProductImages ? (
-                        <div className="flex items-center justify-center py-3">
-                          <Loader2 className="w-4 h-4 text-yellow-400 animate-spin mr-2" />
-                          <span className="text-zinc-400 text-xs">Loading product images...</span>
-                        </div>
-                      ) : productImages.length > 0 ? (
-                        <div>
-                          <Label className="text-zinc-400 mb-1.5 block text-xs flex items-center gap-2">
-                            <ImageIcon className="w-3.5 h-3.5" />
-                            Select Reference Image ({productImages.length} available)
-                          </Label>
-                          <div className="grid grid-cols-4 gap-1.5">
-                            {productImages.slice(0, 8).map((imageUrl, index) => (
-                              <button
-                                key={index}
-                                onClick={() => setSelectedReferenceImage(imageUrl)}
-                                className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
-                                  selectedReferenceImage === imageUrl
-                                    ? 'border-yellow-500 ring-2 ring-yellow-500/20'
-                                    : 'border-zinc-700/50 hover:border-zinc-500'
-                                }`}
-                              >
-                                <img
-                                  src={imageUrl}
-                                  alt={`Product reference ${index + 1}`}
-                                  className="w-full h-full object-cover"
-                                />
-                                {selectedReferenceImage === imageUrl && (
-                                  <div className="absolute inset-0 bg-yellow-500/10 flex items-center justify-center">
-                                    <Check className="w-4 h-4 text-yellow-400" />
-                                  </div>
-                                )}
-                              </button>
-                            ))}
-                          </div>
-                          <p className="text-[10px] text-zinc-500 mt-1.5">
-                            Click to select the image that best represents your product. This will be preserved exactly in the generated image.
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="p-2.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-                          <div className="flex items-start gap-2">
-                            <AlertCircle className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
-                            <div>
-                              <p className="text-xs font-medium text-yellow-400">No Reference Images</p>
-                              <p className="text-[10px] text-yellow-400/70 mt-0.5">
-                                This product has no images. Add images in the Products page for best results. The AI will generate based on the product name and description only.
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </motion.div>
+          {/* 3. Mode Selector */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.05 }}
+            className="grid grid-cols-3 gap-3"
+          >
+            {MODES.map(mode => {
+              const IconComp = mode.icon;
+              const isSelected = selectedMode.id === mode.id;
+              return (
+                <button
+                  key={mode.id}
+                  onClick={() => handleModeSelect(mode)}
+                  className={`relative rounded-[20px] p-4 text-left transition-all border ${
+                    isSelected
+                      ? 'bg-yellow-500/[0.03] border-yellow-500/30'
+                      : 'bg-zinc-900/50 border-zinc-800/60 hover:border-zinc-700'
+                  }`}
+                >
+                  {isSelected && (
+                    <div className="absolute left-0 top-4 bottom-4 w-[3px] rounded-full bg-yellow-500" />
                   )}
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Style & Settings */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="p-4 rounded-[20px] bg-zinc-900/50 border border-zinc-800/60"
-            >
-              <h3 className="text-base font-semibold text-white flex items-center gap-2 mb-3">
-                <Settings2 className="w-5 h-5 text-yellow-400/70" />
-                Style & Settings
-              </h3>
-              <div className="space-y-3">
-                {/* Style Presets */}
-                <div>
-                  <Label className="text-zinc-400 mb-2 block text-xs">Style</Label>
-                  <div className="grid grid-cols-4 gap-1.5">
-                    {STYLE_PRESETS.map(style => {
-                      const IconComponent = style.icon;
-                      return (
-                        <button
-                          key={style.id}
-                          onClick={() => setSelectedStyle(style.id)}
-                          className={`p-2.5 rounded-lg border text-center transition-all ${
-                            selectedStyle === style.id
-                              ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400'
-                              : 'bg-zinc-800/30 border-zinc-700/30 text-zinc-400 hover:border-zinc-600 hover:text-zinc-300'
-                          }`}
-                        >
-                          <IconComponent className="w-4 h-4 mx-auto mb-1" />
-                          <div className="text-[10px]">{style.label}</div>
-                        </button>
-                      );
-                    })}
+                  <IconComp className={`w-5 h-5 mb-2 ${isSelected ? 'text-yellow-400' : 'text-zinc-500'}`} />
+                  <div className={`text-sm font-semibold ${isSelected ? 'text-white' : 'text-zinc-300'}`}>
+                    {mode.label}
                   </div>
-                </div>
+                  <div className="text-[11px] text-zinc-500 mt-0.5 leading-snug">{mode.description}</div>
+                </button>
+              );
+            })}
+          </motion.div>
 
-                {/* Aspect Ratio */}
-                <div>
-                  <Label className="text-zinc-400 mb-2 block text-xs">Aspect Ratio</Label>
-                  <Select value={aspectRatio} onValueChange={setAspectRatio}>
-                    <SelectTrigger className="bg-zinc-800/50 border-zinc-700/50 text-white focus:ring-yellow-500/30">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-zinc-900 border-zinc-800">
-                      {ASPECT_RATIOS.map(ratio => (
-                        <SelectItem
-                          key={ratio.id}
-                          value={ratio.id}
-                          className="text-white hover:bg-zinc-800 focus:bg-zinc-800"
-                        >
-                          {ratio.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Cost Estimate & Generate Button */}
-                <div className="space-y-2">
-                  {/* Cost Estimate */}
-                  <div className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-800/30 border border-zinc-700/30">
-                    <div className="flex items-center gap-2">
-                      <span className="text-zinc-400 text-xs">Estimated cost:</span>
-                      <Badge
-                        variant="outline"
-                        className={`${
-                          USE_CASES[selectedUseCase]?.costTier === 'economy' ? 'border-amber-500/30 text-amber-400' :
-                          USE_CASES[selectedUseCase]?.costTier === 'premium' ? 'border-yellow-500/20 text-yellow-400' :
-                          'border-zinc-500/30 text-zinc-400'
+          {/* 4. Settings Row */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.1 }}
+            className="rounded-[20px] bg-zinc-900/50 border border-zinc-800/60 p-4"
+          >
+            <div className="flex flex-wrap items-start gap-6">
+              {/* Style swatches */}
+              <div className="space-y-1.5">
+                <Label className="text-zinc-500 text-[11px] uppercase tracking-wider">Style</Label>
+                <div className="flex gap-1.5">
+                  {STYLE_PRESETS.map(style => {
+                    const Ic = style.icon;
+                    const isSel = selectedStyle === style.id;
+                    return (
+                      <button
+                        key={style.id}
+                        onClick={() => setSelectedStyle(style.id)}
+                        title={style.label}
+                        className={`p-2 rounded-lg transition-all ${
+                          isSel
+                            ? 'bg-yellow-500/10 ring-2 ring-yellow-500/40 text-yellow-400'
+                            : 'bg-zinc-800/40 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800'
                         }`}
                       >
-                        ${USE_CASES[selectedUseCase]?.estimatedCost?.toFixed(3) || '0.025'}
-                      </Badge>
-                    </div>
-                    <span className="text-zinc-500 text-[10px]">
-                      {USE_CASES[selectedUseCase]?.costTier === 'economy' ? '⚡ Fast & cheap' :
-                       USE_CASES[selectedUseCase]?.costTier === 'premium' ? '✨ Highest quality' :
-                       '🎯 Balanced'}
-                    </span>
-                  </div>
-
-                  <Button
-                    onClick={handleGenerate}
-                    disabled={isGenerating || (!USE_CASES[selectedUseCase]?.requiresReferenceImage && !prompt.trim()) || (USE_CASES[selectedUseCase]?.requiresReferenceImage && !selectedReferenceImage)}
-                    className="w-full bg-yellow-500/10 hover:bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 hover:border-yellow-500/30 transition-all"
-                    size="lg"
-                  >
-                    {isGenerating ? (
-                      <>
-                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                        {isEnhancing ? 'Enhancing prompt...' : 'Generating image...'}
-                      </>
-                    ) : (
-                      <>
-                        <Wand2 className="w-5 h-5 mr-2" />
-                        Generate with AI
-                      </>
-                    )}
-                  </Button>
+                        <Ic className="w-4 h-4" />
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-            </motion.div>
 
-            {/* History Toggle */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <Button
-                variant="outline"
-                onClick={() => setShowHistory(!showHistory)}
-                className="w-full border-zinc-700/50 text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-300 text-xs"
-              >
-                <History className="w-3.5 h-3.5 mr-1.5" />
-                {showHistory ? 'Hide' : 'Show'} Generation History ({generationHistory.length})
-              </Button>
-            </motion.div>
-          </div>
-
-          {/* Right Panel - Preview */}
-          <div className="space-y-4">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="p-4 rounded-[20px] bg-zinc-900/50 border border-zinc-800/60"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-base font-semibold text-white flex items-center gap-2">
-                  <Image className="w-5 h-5 text-yellow-400/70" />
-                  Preview
-                </h3>
-                {generatedImage && (
-                  <div className="flex gap-1.5">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleDownload(generatedImage.url)}
-                      className="border-zinc-700/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300"
-                    >
-                      <Download className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleGenerate}
-                      className="border-zinc-700/50 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300"
-                    >
-                      <RefreshCw className="w-4 h-4" />
-                    </Button>
-                  </div>
-                )}
+              {/* Aspect Ratio */}
+              <div className="space-y-1.5">
+                <Label className="text-zinc-500 text-[11px] uppercase tracking-wider">Ratio</Label>
+                <div className="flex gap-1.5">
+                  {ASPECT_RATIOS.map(ratio => {
+                    const isSel = aspectRatio === ratio.id;
+                    return (
+                      <button
+                        key={ratio.id}
+                        onClick={() => setAspectRatio(ratio.id)}
+                        title={ratio.label}
+                        className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
+                          isSel
+                            ? 'bg-yellow-400 text-black'
+                            : 'bg-zinc-800/40 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800'
+                        }`}
+                      >
+                        <div className={`border-2 rounded-sm ${isSel ? 'border-black' : 'border-current'} ${ratio.shape}`} />
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
-              <div
-                className={`aspect-square rounded-lg overflow-hidden border border-zinc-700/30 ${
-                  !generatedImage && !isGenerating ? 'flex items-center justify-center bg-zinc-800/30' : ''
-                }`}
-              >
-                {isGenerating ? (
-                  <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-800/30">
-                    <div className="relative">
-                      <Loader2 className="w-8 h-8 text-yellow-400 animate-spin" />
-                      {isEnhancing && (
-                        <Wand2 className="w-4 h-4 text-yellow-300 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-                      )}
-                    </div>
-                    <p className="text-zinc-300 mt-3 font-medium text-sm">
-                      {isEnhancing ? '🪄 AI is optimizing your prompt...' : '🎨 Generating your image...'}
-                    </p>
-                    <p className="text-zinc-500 text-sm mt-2">
-                      {isEnhancing ? 'Transforming your idea into the perfect prompt' : 'This may take a moment'}
-                    </p>
-                  </div>
-                ) : generatedImage ? (
-                  <img
-                    src={generatedImage.url}
-                    alt="Generated"
-                    className="w-full h-full object-contain bg-zinc-900 cursor-pointer"
-                    onClick={() => setPreviewImage(generatedImage)}
-                  />
-                ) : (
-                  <div className="text-center p-6">
-                    <Image className="w-12 h-12 text-zinc-700 mx-auto mb-3" />
-                    <p className="text-zinc-400 text-sm">Your generated image will appear here</p>
-                    <p className="text-zinc-500 text-xs mt-1.5">Enter a prompt and click Generate</p>
-                  </div>
+              {/* Product selector (only in product mode) */}
+              <AnimatePresence>
+                {isProductMode && (
+                  <motion.div
+                    initial={{ opacity: 0, width: 0 }}
+                    animate={{ opacity: 1, width: 'auto' }}
+                    exit={{ opacity: 0, width: 0 }}
+                    className="space-y-1.5 overflow-hidden"
+                  >
+                    <Label className="text-zinc-500 text-[11px] uppercase tracking-wider">Product</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-800/40 border border-zinc-700/40 text-sm text-zinc-300 hover:border-zinc-600 transition-colors min-w-[160px]">
+                          <Package className="w-3.5 h-3.5 text-yellow-400/70" />
+                          <span className="truncate">{selectedProduct?.name || 'Select...'}</span>
+                          <ChevronDown className="w-3 h-3 opacity-50 ml-auto" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-72 bg-zinc-900 border-zinc-800 p-2">
+                        <input
+                          type="text"
+                          placeholder="Search products..."
+                          value={productSearch}
+                          onChange={(e) => setProductSearch(e.target.value)}
+                          className="w-full px-3 py-1.5 mb-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-xs focus:outline-none focus:border-yellow-500/30"
+                        />
+                        <div className="max-h-48 overflow-y-auto space-y-0.5">
+                          {selectedProduct && (
+                            <button
+                              onClick={() => handleProductSelect(null)}
+                              className="w-full text-left px-3 py-1.5 text-xs text-zinc-400 hover:bg-zinc-800 rounded-lg flex items-center gap-2"
+                            >
+                              <X className="w-3 h-3" /> Clear
+                            </button>
+                          )}
+                          {filteredProducts.map(product => (
+                            <button
+                              key={product.id}
+                              onClick={() => handleProductSelect(product)}
+                              className={`w-full text-left px-3 py-1.5 text-xs rounded-lg flex items-center justify-between ${
+                                selectedProduct?.id === product.id
+                                  ? 'bg-yellow-500/10 text-yellow-400'
+                                  : 'text-white hover:bg-zinc-800'
+                              }`}
+                            >
+                              <span className="flex items-center gap-2 truncate">
+                                <Package className="w-3.5 h-3.5 flex-shrink-0" />
+                                {product.name}
+                              </span>
+                              {selectedProduct?.id === product.id && <Check className="w-3.5 h-3.5 flex-shrink-0" />}
+                            </button>
+                          ))}
+                          {filteredProducts.length === 0 && (
+                            <p className="text-zinc-500 text-xs text-center py-3">No products found</p>
+                          )}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </motion.div>
                 )}
-              </div>
+              </AnimatePresence>
 
-              {/* AI Enhanced Prompt Display */}
-              {generatedImage?.enhanced_prompt && (
-                <div className="mt-3 p-3 bg-gradient-to-br from-zinc-800/50 to-zinc-900/50 rounded-lg border border-zinc-700/30">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Wand2 className="w-3.5 h-3.5 text-yellow-400" />
-                    <Label className="text-yellow-400 text-[10px] font-medium">AI-Enhanced Prompt</Label>
-                    {generatedImage.ai_enhancement && !generatedImage.ai_enhancement.fallback && (
-                      <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-400 border-yellow-500/20">
-                        AI Optimized
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-zinc-200 text-xs leading-relaxed">{generatedImage.enhanced_prompt}</p>
-
-                  {/* Style Tags */}
-                  {generatedImage.ai_enhancement?.style_tags?.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {generatedImage.ai_enhancement.style_tags.map((tag, i) => (
-                        <span key={i} className="px-1.5 py-0.5 text-[10px] rounded-full bg-zinc-700/50 text-zinc-400">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Composition Notes */}
-                  {generatedImage.ai_enhancement?.composition_notes && (
-                    <div className="mt-2 pt-2 border-t border-zinc-700/30">
-                      <p className="text-zinc-500 text-[10px]">
-                        <span className="text-zinc-400">Composition:</span> {generatedImage.ai_enhancement.composition_notes}
-                      </p>
-                    </div>
-                  )}
+              {/* Brand context toggle */}
+              {brandAssets && (
+                <div className="space-y-1.5">
+                  <Label className="text-zinc-500 text-[11px] uppercase tracking-wider">Brand</Label>
+                  <button
+                    onClick={() => setUseBrandContext(!useBrandContext)}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all text-sm ${
+                      useBrandContext
+                        ? 'bg-yellow-500/10 border border-yellow-500/30 text-yellow-400'
+                        : 'bg-zinc-800/40 border border-zinc-700/40 text-zinc-500'
+                    }`}
+                  >
+                    <Palette className="w-3.5 h-3.5" />
+                    {useBrandContext ? 'On' : 'Off'}
+                  </button>
                 </div>
               )}
-            </motion.div>
+            </div>
 
-            {/* Generation History */}
-            {showHistory && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="p-4 rounded-[20px] bg-zinc-900/50 border border-zinc-800/60"
-              >
-                <h3 className="text-base font-semibold text-white flex items-center gap-2 mb-3">
-                  <History className="w-5 h-5 text-yellow-400/70" />
-                  Recent Generations
-                </h3>
-                <div className="grid grid-cols-3 gap-2 max-h-[400px] overflow-y-auto">
-                  {generationHistory.map(item => (
-                    <div
-                      key={item.id}
-                      className="group relative aspect-square rounded-lg overflow-hidden border border-zinc-700/30 cursor-pointer hover:border-yellow-500/30 transition-colors"
-                      onClick={() => setPreviewImage(item)}
-                    >
-                      <img
-                        src={item.thumbnail_url || item.url}
-                        alt={item.name}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRegenerate(item);
-                          }}
-                          className="p-1.5 bg-zinc-800 rounded-md hover:bg-zinc-700 transition-colors"
-                        >
-                          <RefreshCw className="w-3.5 h-3.5 text-white" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDownload(item.url, item.name);
-                          }}
-                          className="p-1.5 bg-zinc-800 rounded-md hover:bg-zinc-700 transition-colors"
-                        >
-                          <Download className="w-3.5 h-3.5 text-white" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteFromHistory(item.id);
-                          }}
-                          className="p-1.5 bg-zinc-800 rounded-md hover:bg-red-900 transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5 text-white" />
-                        </button>
-                      </div>
+            {/* Reference image area (product mode) */}
+            <AnimatePresence>
+              {isProductMode && selectedProduct?.type === 'physical' && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mt-4 pt-4 border-t border-zinc-800/40"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <ShieldCheck className="w-4 h-4 text-yellow-400" />
+                    <span className="text-xs font-medium text-yellow-400">Product Preservation Mode</span>
+                    <span className="text-[10px] text-zinc-500">- Only background changes</span>
+                  </div>
+                  {loadingProductImages ? (
+                    <div className="flex items-center gap-2 py-3">
+                      <Loader2 className="w-4 h-4 text-yellow-400 animate-spin" />
+                      <span className="text-zinc-400 text-xs">Loading images...</span>
                     </div>
+                  ) : productImages.length > 0 ? (
+                    <div className="flex gap-2 overflow-x-auto pb-1">
+                      {productImages.slice(0, 8).map((imageUrl, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setSelectedReferenceImage(imageUrl)}
+                          className={`relative w-16 h-16 rounded-lg overflow-hidden border-2 flex-shrink-0 transition-all ${
+                            selectedReferenceImage === imageUrl
+                              ? 'border-yellow-500 ring-2 ring-yellow-500/20'
+                              : 'border-zinc-700/50 hover:border-zinc-500'
+                          }`}
+                        >
+                          <img src={imageUrl} alt={`Ref ${index + 1}`} className="w-full h-full object-cover" />
+                          {selectedReferenceImage === imageUrl && (
+                            <div className="absolute inset-0 bg-yellow-500/10 flex items-center justify-center">
+                              <Check className="w-3.5 h-3.5 text-yellow-400" />
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 p-2.5 rounded-lg bg-yellow-500/5 border border-yellow-500/10">
+                      <AlertCircle className="w-4 h-4 text-yellow-400 flex-shrink-0" />
+                      <span className="text-xs text-yellow-400/70">No reference images. Add images in Products page for best results.</span>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+
+          {/* 5. Generate Button */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.15 }}
+            className="flex items-center justify-center gap-3"
+          >
+            <button
+              onClick={handleGenerate}
+              disabled={isGenerating || (!currentUseCase?.requiresReferenceImage && !prompt.trim()) || (currentUseCase?.requiresReferenceImage && !selectedReferenceImage)}
+              className="bg-yellow-400 hover:bg-yellow-300 disabled:bg-zinc-800 disabled:text-zinc-600 text-black font-bold rounded-full px-8 py-3 text-sm transition-all flex items-center gap-2 disabled:cursor-not-allowed"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {isEnhancing ? 'Enhancing prompt...' : 'Generating...'}
+                </>
+              ) : (
+                <>
+                  <Wand2 className="w-4 h-4" />
+                  Generate Image
+                </>
+              )}
+            </button>
+            <Badge
+              variant="outline"
+              className={`text-xs px-2.5 py-1 rounded-full ${
+                currentUseCase?.costTier === 'economy' ? 'border-zinc-700 text-zinc-400' :
+                currentUseCase?.costTier === 'premium' ? 'border-yellow-500/30 text-yellow-400' :
+                'border-zinc-700 text-zinc-400'
+              }`}
+            >
+              ~${currentUseCase?.estimatedCost?.toFixed(3) || '0.025'}
+            </Badge>
+          </motion.div>
+
+          {/* 6. Output Area */}
+          <AnimatePresence>
+            {(generatedImage || isGenerating) && (
+              <motion.div
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 24 }}
+                transition={{ duration: 0.4 }}
+                className="rounded-[20px] bg-zinc-900/50 border border-zinc-800/60 overflow-hidden"
+              >
+                {/* Image */}
+                <div className="relative aspect-auto max-h-[560px] flex items-center justify-center bg-zinc-950">
+                  {isGenerating ? (
+                    <div className="py-24 flex flex-col items-center gap-3">
+                      <div className="relative">
+                        <Loader2 className="w-10 h-10 text-yellow-400 animate-spin" />
+                        {isEnhancing && (
+                          <Wand2 className="w-4 h-4 text-yellow-300 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                        )}
+                      </div>
+                      <p className="text-sm text-zinc-300 font-medium">
+                        {isEnhancing ? 'AI is optimizing your prompt...' : 'Generating your image...'}
+                      </p>
+                      <p className="text-xs text-zinc-600">This may take a moment</p>
+                    </div>
+                  ) : generatedImage ? (
+                    <img
+                      src={generatedImage.url}
+                      alt="Generated"
+                      className="w-full max-h-[560px] object-contain cursor-pointer"
+                      onClick={() => setPreviewImage(generatedImage)}
+                    />
+                  ) : null}
+                </div>
+
+                {/* Action bar */}
+                {generatedImage && (
+                  <div className="p-4 border-t border-zinc-800/40 flex items-center justify-between">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleDownload(generatedImage.url)}
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-zinc-800 text-zinc-300 text-xs font-medium hover:bg-zinc-700 transition-colors"
+                      >
+                        <Download className="w-3.5 h-3.5" /> Download
+                      </button>
+                      <button
+                        onClick={handleGenerate}
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-zinc-800 text-zinc-300 text-xs font-medium hover:bg-zinc-700 transition-colors"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" /> Regenerate
+                      </button>
+                      <button
+                        onClick={handleSaveToLibrary}
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-zinc-800 text-zinc-300 text-xs font-medium hover:bg-zinc-700 transition-colors"
+                      >
+                        <BookmarkPlus className="w-3.5 h-3.5" /> Save to Library
+                      </button>
+                      <button
+                        onClick={handleUseAsReference}
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-zinc-800 text-zinc-300 text-xs font-medium hover:bg-zinc-700 transition-colors"
+                      >
+                        <ImageIcon className="w-3.5 h-3.5" /> Use as Reference
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Enhanced prompt collapsible */}
+                {generatedImage?.enhanced_prompt && (
+                  <div className="border-t border-zinc-800/40">
+                    <button
+                      onClick={() => setShowEnhancedPrompt(!showEnhancedPrompt)}
+                      className="w-full px-4 py-2.5 flex items-center justify-between text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <Wand2 className="w-3 h-3 text-yellow-400" />
+                        AI-Enhanced Prompt
+                        {generatedImage.ai_enhancement && !generatedImage.ai_enhancement.fallback && (
+                          <span className="px-1.5 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 text-[10px]">AI Optimized</span>
+                        )}
+                      </span>
+                      <ChevronRight className={`w-3 h-3 transition-transform ${showEnhancedPrompt ? 'rotate-90' : ''}`} />
+                    </button>
+                    <AnimatePresence>
+                      {showEnhancedPrompt && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="px-4 pb-4">
+                            <p className="text-xs text-zinc-300 leading-relaxed">{generatedImage.enhanced_prompt}</p>
+                            {generatedImage.ai_enhancement?.style_tags?.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                {generatedImage.ai_enhancement.style_tags.map((tag, i) => (
+                                  <span key={i} className="px-2 py-0.5 text-[10px] rounded-full bg-zinc-800 text-zinc-500">{tag}</span>
+                                ))}
+                              </div>
+                            )}
+                            {generatedImage.ai_enhancement?.composition_notes && (
+                              <p className="mt-2 text-[10px] text-zinc-600">
+                                Composition: {generatedImage.ai_enhancement.composition_notes}
+                              </p>
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Empty state when no generation yet */}
+          {!generatedImage && !isGenerating && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="rounded-[20px] border border-dashed border-zinc-800/60 py-16 flex flex-col items-center justify-center"
+            >
+              <Image className="w-12 h-12 text-zinc-800 mb-3" />
+              <p className="text-zinc-500 text-sm">Your generated image will appear here</p>
+              <p className="text-zinc-700 text-xs mt-1">Enter a prompt and click Generate</p>
+            </motion.div>
+          )}
+        </div>
+
+        {/* 7. History Drawer */}
+        <AnimatePresence>
+          {showHistory && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/40 z-40"
+                onClick={() => setShowHistory(false)}
+              />
+              <motion.div
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                className="fixed top-0 right-0 bottom-0 w-80 bg-zinc-950 border-l border-zinc-800/60 z-50 flex flex-col"
+              >
+                <div className="p-4 border-b border-zinc-800/60 flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                    <History className="w-4 h-4 text-yellow-400" />
+                    Generation History
+                  </h3>
+                  <button
+                    onClick={() => setShowHistory(false)}
+                    className="p-1.5 rounded-full hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                  {generationHistory.map(item => (
+                    <motion.div
+                      key={item.id}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="group rounded-xl bg-zinc-900/60 border border-zinc-800/40 overflow-hidden cursor-pointer hover:border-yellow-500/20 transition-colors"
+                      onClick={() => {
+                        setPreviewImage(item);
+                        setShowHistory(false);
+                      }}
+                    >
+                      <div className="aspect-video relative overflow-hidden">
+                        <img
+                          src={item.thumbnail_url || item.url}
+                          alt={item.name}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-end p-2 gap-1">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleRegenerate(item); }}
+                            className="p-1.5 bg-zinc-900/80 rounded-md hover:bg-zinc-800"
+                          >
+                            <RefreshCw className="w-3 h-3 text-white" />
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleDownload(item.url, item.name); }}
+                            className="p-1.5 bg-zinc-900/80 rounded-md hover:bg-zinc-800"
+                          >
+                            <Download className="w-3 h-3 text-white" />
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleDeleteFromHistory(item.id); }}
+                            className="p-1.5 bg-zinc-900/80 rounded-md hover:bg-red-900/80"
+                          >
+                            <Trash2 className="w-3 h-3 text-white" />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="p-2.5">
+                        <p className="text-[11px] text-zinc-400 line-clamp-2 leading-snug">
+                          {item.generation_config?.prompt || item.name}
+                        </p>
+                        <p className="text-[10px] text-zinc-600 mt-1">
+                          {new Date(item.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </motion.div>
                   ))}
                   {generationHistory.length === 0 && (
-                    <div className="col-span-3 text-center py-6 text-zinc-500 text-xs">
-                      No images generated yet
-                    </div>
+                    <div className="text-center py-12 text-zinc-600 text-xs">No images generated yet</div>
                   )}
                 </div>
               </motion.div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Image Preview Dialog */}
-      <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
-        <DialogContent className="max-w-4xl bg-zinc-900 border-zinc-800">
-          <DialogHeader>
-            <DialogTitle className="text-white text-base">
-              {previewImage?.name || 'Generated Image'}
-            </DialogTitle>
-          </DialogHeader>
-          {previewImage && (
-            <div className="space-y-3">
-              <img
-                src={previewImage.url}
-                alt="Preview"
-                className="w-full rounded-lg"
-              />
-              {previewImage.generation_config?.prompt && (
-                <div className="p-2.5 bg-zinc-800/50 rounded-lg border border-zinc-700/30">
-                  <Label className="text-zinc-500 text-[10px] mb-1 block">Prompt:</Label>
-                  <p className="text-zinc-300 text-xs">{previewImage.generation_config.prompt}</p>
-                </div>
-              )}
-              <div className="flex gap-1.5">
-                <Button
-                  onClick={() => handleDownload(previewImage.url, previewImage.name)}
-                  className="bg-yellow-500/10 hover:bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 text-xs"
-                  size="sm"
-                >
-                  <Download className="w-3.5 h-3.5 mr-1" />
-                  Download
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    handleRegenerate(previewImage);
-                    setPreviewImage(null);
-                  }}
-                  className="border-zinc-700/50 text-zinc-400 hover:bg-zinc-800 text-xs"
-                  size="sm"
-                >
-                  <RefreshCw className="w-3.5 h-3.5 mr-1" />
-                  Use Settings
-                </Button>
-              </div>
-            </div>
+            </>
           )}
-        </DialogContent>
-      </Dialog>
+        </AnimatePresence>
+
+        {/* Image Preview Dialog */}
+        <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
+          <DialogContent className="max-w-4xl bg-zinc-950 border-zinc-800">
+            <DialogHeader>
+              <DialogTitle className="text-white text-sm">
+                {previewImage?.name || 'Generated Image'}
+              </DialogTitle>
+            </DialogHeader>
+            {previewImage && (
+              <div className="space-y-3">
+                <img src={previewImage.url} alt="Preview" className="w-full rounded-xl" />
+                {previewImage.generation_config?.prompt && (
+                  <div className="p-3 bg-zinc-900/60 rounded-xl border border-zinc-800/40">
+                    <Label className="text-zinc-600 text-[10px] mb-1 block">Prompt</Label>
+                    <p className="text-zinc-300 text-xs">{previewImage.generation_config.prompt}</p>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleDownload(previewImage.url, previewImage.name)}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-yellow-400 text-black text-xs font-bold hover:bg-yellow-300 transition-colors"
+                  >
+                    <Download className="w-3.5 h-3.5" /> Download
+                  </button>
+                  <button
+                    onClick={() => { handleRegenerate(previewImage); setPreviewImage(null); }}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-zinc-800 text-zinc-300 text-xs font-medium hover:bg-zinc-700 transition-colors"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" /> Use Settings
+                  </button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
     </CreatePageTransition>
   );
 }

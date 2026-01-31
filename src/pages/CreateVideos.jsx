@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '@/components/context/UserContext';
 import { BrandAssets, GeneratedContent, Product, DigitalProduct, RenderJob } from '@/api/entities';
 import RenderProgressModal from '../components/video/RenderProgressModal';
@@ -38,6 +38,9 @@ import {
   Eye,
   AlertCircle,
   RotateCcw,
+  ArrowLeft,
+  Layers,
+  ChevronRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -74,6 +77,7 @@ import { KeynoteShowcase } from '../remotion/compositions/KeynoteShowcase';
 import { analyzeScreenshots } from '../lib/screenshotAnalyzer';
 import DesignAnalysisPanel from '../components/video/DesignAnalysisPanel';
 import StudioWizard from '../components/video/StudioWizard';
+import { createPageUrl } from '@/utils';
 
 const STYLE_PRESETS = [
   { id: 'cinematic', label: 'Cinematic', icon: Film },
@@ -117,6 +121,14 @@ const COMPONENT_MAP = {
   UIShowcase,
   KeynoteShowcase,
 };
+
+const QUICK_SUGGESTIONS = [
+  'Product showcase',
+  'Talking head',
+  'Cinematic intro',
+  'Social ad',
+  'Explainer',
+];
 
 function getTemplateProps(templateId, selectedProduct, brandAssets, digitalProductData, designAnalysis) {
   const colors = designAnalysis?.colorPalette ? {
@@ -240,6 +252,60 @@ function getTemplateProps(templateId, selectedProduct, brandAssets, digitalProdu
   }
 }
 
+// --- Product Selector Popover (reusable) ---
+function ProductSelector({ selectedProduct, setSelectedProduct, products, productSearch, setProductSearch, filteredProducts }) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-zinc-800/60 bg-zinc-900/50 text-sm text-zinc-300 hover:border-zinc-700 transition-colors">
+          <Package className="w-3.5 h-3.5 text-yellow-400" />
+          {selectedProduct ? selectedProduct.name : 'Product'}
+          <ChevronDown className="w-3 h-3 opacity-50" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72 bg-zinc-900 border-zinc-700 p-2">
+        <input
+          type="text"
+          placeholder="Search products..."
+          value={productSearch}
+          onChange={(e) => setProductSearch(e.target.value)}
+          className="w-full px-3 py-2 mb-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:border-yellow-500/50 focus:ring-yellow-500/20 focus:outline-none"
+        />
+        <div className="max-h-60 overflow-y-auto space-y-0.5">
+          {selectedProduct && (
+            <button
+              onClick={() => { setSelectedProduct(null); setProductSearch(''); }}
+              className="w-full text-left px-3 py-2 text-sm text-zinc-400 hover:bg-zinc-800 rounded-lg flex items-center gap-2"
+            >
+              <X className="w-3 h-3" /> Clear selection
+            </button>
+          )}
+          {filteredProducts.map(product => (
+            <button
+              key={product.id}
+              onClick={() => { setSelectedProduct(product); setProductSearch(''); }}
+              className={`w-full text-left px-3 py-2 text-sm rounded-lg flex items-center justify-between transition-colors ${
+                selectedProduct?.id === product.id
+                  ? 'bg-yellow-500/20 text-yellow-400'
+                  : 'text-white hover:bg-zinc-800'
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <Package className="w-4 h-4" />
+                {product.name}
+              </span>
+              {selectedProduct?.id === product.id && <Check className="w-4 h-4" />}
+            </button>
+          ))}
+          {filteredProducts.length === 0 && (
+            <p className="text-zinc-500 text-sm text-center py-4">No products found</p>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export default function CreateVideos() {
   const { user } = useUser();
   const [mode, setMode] = useState('ai');
@@ -262,12 +328,10 @@ export default function CreateVideos() {
   const [designAnalysis, setDesignAnalysis] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Render queue state
   const [renderJob, setRenderJob] = useState(null);
   const [isRendering, setIsRendering] = useState(false);
   const [recentRenders, setRecentRenders] = useState([]);
 
-  // Template mode state
   const [selectedTemplate, setSelectedTemplate] = useState('ProductDemo');
   const playerRef = useRef(null);
   const playerContainerRef = useRef(null);
@@ -281,7 +345,6 @@ export default function CreateVideos() {
     }
   }, [user?.company_id]);
 
-  // Fetch digital product data when product changes
   useEffect(() => {
     if (!selectedProduct?.id) {
       setDigitalProductData(null);
@@ -298,16 +361,12 @@ export default function CreateVideos() {
     })();
   }, [selectedProduct?.id]);
 
-  // Auto-analyze screenshots when product is selected
   useEffect(() => {
     if (!selectedProduct?.gallery?.length || mode !== 'templates') return;
-
     const urls = selectedProduct.gallery
       .map(img => typeof img === 'string' ? img : img.url)
       .filter(Boolean);
-
     if (urls.length === 0) return;
-
     setIsAnalyzing(true);
     analyzeScreenshots(urls, selectedProduct.name, {
       description: selectedProduct.description,
@@ -320,7 +379,6 @@ export default function CreateVideos() {
       .finally(() => setIsAnalyzing(false));
   }, [selectedProduct?.id, mode]);
 
-  // Measure player container width for responsive sizing
   useEffect(() => {
     if (mode !== 'templates') return;
     const el = playerContainerRef.current;
@@ -350,10 +408,8 @@ export default function CreateVideos() {
     if (user?.company_id) fetchRecentRenders();
   }, [user?.company_id]);
 
-  // Poll active render job
   useEffect(() => {
     if (!renderJob?.id || renderJob?.status === 'completed' || renderJob?.status === 'failed') return;
-
     const interval = setInterval(async () => {
       try {
         const updated = await RenderJob.get(renderJob.id);
@@ -366,7 +422,6 @@ export default function CreateVideos() {
         console.error('Failed to poll render job:', e);
       }
     }, 2000);
-
     return () => clearInterval(interval);
   }, [renderJob?.id, renderJob?.status]);
 
@@ -405,30 +460,20 @@ export default function CreateVideos() {
   const buildEnhancedPrompt = () => {
     let enhanced = prompt;
     const style = STYLE_PRESETS.find(s => s.id === selectedStyle);
-    if (style) {
-      enhanced += ` Style: ${style.label} video.`;
-    }
+    if (style) enhanced += ` Style: ${style.label} video.`;
     const dur = DURATIONS.find(d => d.id === duration);
-    if (dur) {
-      enhanced += ` Duration: ${dur.seconds} seconds.`;
-    }
+    if (dur) enhanced += ` Duration: ${dur.seconds} seconds.`;
     if (useBrandContext && brandAssets) {
       if (brandAssets.colors?.primary) {
         enhanced += ` Brand colors: ${brandAssets.colors.primary}`;
-        if (brandAssets.colors?.secondary) {
-          enhanced += `, ${brandAssets.colors.secondary}`;
-        }
+        if (brandAssets.colors?.secondary) enhanced += `, ${brandAssets.colors.secondary}`;
         enhanced += '.';
       }
-      if (brandAssets.voice?.tone) {
-        enhanced += ` Tone: ${brandAssets.voice.tone}.`;
-      }
+      if (brandAssets.voice?.tone) enhanced += ` Tone: ${brandAssets.voice.tone}.`;
     }
     if (selectedProduct) {
       enhanced += ` Featuring product: ${selectedProduct.name}.`;
-      if (selectedProduct.description) {
-        enhanced += ` ${selectedProduct.description.slice(0, 100)}.`;
-      }
+      if (selectedProduct.description) enhanced += ` ${selectedProduct.description.slice(0, 100)}.`;
     }
     return enhanced;
   };
@@ -438,15 +483,12 @@ export default function CreateVideos() {
       toast.error('Please enter a prompt');
       return;
     }
-
     setIsGenerating(true);
     setGeneratedVideo(null);
-
     try {
       const enhancedPrompt = buildEnhancedPrompt();
       const aspectConfig = ASPECT_RATIOS.find(a => a.id === aspectRatio);
       const durationConfig = DURATIONS.find(d => d.id === duration);
-
       const { data, error } = await supabase.functions.invoke('generate-video', {
         body: {
           prompt: enhancedPrompt,
@@ -460,9 +502,7 @@ export default function CreateVideos() {
           product_context: selectedProduct,
         }
       });
-
       if (error) throw error;
-
       if (data?.url) {
         const savedContent = await GeneratedContent.create({
           company_id: user.company_id,
@@ -491,7 +531,6 @@ export default function CreateVideos() {
           duration: durationConfig?.seconds,
           created_by: user.id
         });
-
         setGeneratedVideo({
           url: data.url,
           thumbnail_url: data.thumbnail_url,
@@ -500,7 +539,6 @@ export default function CreateVideos() {
           enhanced_prompt: enhancedPrompt,
           duration: durationConfig?.seconds
         });
-
         loadGenerationHistory();
         toast.success('Video generated successfully!');
       }
@@ -588,15 +626,11 @@ export default function CreateVideos() {
       toast.error('No company context');
       return;
     }
-
     const templateConfig = TEMPLATES.find(t => t.id === selectedTemplate);
     if (!templateConfig) return;
-
     try {
       setIsRendering(true);
-
       const props = getTemplateProps(selectedTemplate, selectedProduct, brandAssets, digitalProductData, designAnalysis);
-
       const job = await RenderJob.create({
         company_id: user.company_id,
         user_id: user.id,
@@ -609,12 +643,9 @@ export default function CreateVideos() {
         status: 'pending',
         progress: 0,
       });
-
       setRenderJob(job);
-
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
       fetch(`${supabaseUrl}/functions/v1/render-video`, {
         method: 'POST',
         headers: {
@@ -623,7 +654,6 @@ export default function CreateVideos() {
         },
         body: JSON.stringify({ jobId: job.id }),
       }).catch(e => console.error('Failed to trigger render:', e));
-
     } catch (e) {
       console.error('Failed to start render:', e);
       toast.error('Failed to start render');
@@ -642,420 +672,420 @@ export default function CreateVideos() {
   );
 
   const templateProps = getTemplateProps(selectedTemplate, selectedProduct, brandAssets, digitalProductData, designAnalysis);
-
   const currentTemplateConfig = TEMPLATES.find(t => t.id === selectedTemplate) || TEMPLATES[0];
   const aspectRatioValue = currentTemplateConfig.height / currentTemplateConfig.width;
   const playerHeight = playerWidth ? Math.round(playerWidth * aspectRatioValue) : 0;
   const SelectedComponent = COMPONENT_MAP[selectedTemplate] || ProductDemo;
 
+  const durationConfig = DURATIONS.find(d => d.id === duration);
+
   return (
     <CreatePageTransition>
-      <div className="w-full px-4 lg:px-6 py-4 space-y-4">
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
-                <Video className="w-5 h-5 text-yellow-400" />
+      <div className="min-h-screen bg-[#09090b]">
+        <div className="w-full max-w-6xl mx-auto px-4 lg:px-6 py-5 space-y-5">
+
+          {/* ───── 1. Back Nav + Page Header ───── */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <a
+                href={createPageUrl('Create')}
+                className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-300 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Create Studio
+              </a>
+              <div className="w-px h-5 bg-zinc-800" />
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
+                  <Clapperboard className="w-4 h-4 text-yellow-400" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-semibold text-white leading-tight">Cinematic Video Studio</h1>
+                  <p className="text-xs text-zinc-500">Kling v2.1 & Minimax</p>
+                </div>
               </div>
-              AI Video Generation
-            </h1>
-            <p className="text-sm text-zinc-400 mt-1">Create videos with AI templates and cinematic generation</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowHistory(true)}
+                className="p-2 rounded-full border border-zinc-800/60 bg-zinc-900/50 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700 transition-colors"
+              >
+                <Clock className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setMode('templates')}
+                className={`px-3.5 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  mode === 'templates'
+                    ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30'
+                    : 'text-zinc-400 hover:text-zinc-200 border border-zinc-800/60 bg-zinc-900/50 hover:border-zinc-700'
+                }`}
+              >
+                Templates
+              </button>
+            </div>
           </div>
-        </div>
 
-        {/* Mode Toggle */}
-        <div className="flex items-center gap-1 bg-zinc-900/60 border border-zinc-800/60 rounded-xl p-1 w-fit">
-          <button
-            onClick={() => setMode('ai')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              mode === 'ai'
-                ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
-            }`}
-          >
-            <Sparkles className="w-4 h-4" />
-            AI Generation
-          </button>
-          <button
-            onClick={() => setMode('templates')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              mode === 'templates'
-                ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
-            }`}
-          >
-            <LayoutTemplate className="w-4 h-4" />
-            Templates
-          </button>
-          <button
-            onClick={() => setMode('studio')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              mode === 'studio'
-                ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                : 'text-zinc-400 hover:text-zinc-200 border border-transparent'
-            }`}
-          >
-            <Clapperboard className="w-4 h-4" />
-            AI Studio
-          </button>
-        </div>
+          {/* ───── 2. Hero Prompt Area (AI modes only) ───── */}
+          {(mode === 'ai' || mode === 'studio') && mode === 'ai' && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35 }}
+              className="rounded-[20px] bg-zinc-900/50 border border-zinc-800/60 p-5"
+            >
+              <Textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="Describe your video scene..."
+                className="min-h-[100px] bg-transparent border-0 text-white text-base placeholder:text-zinc-600 focus:ring-0 focus-visible:ring-0 resize-none p-0"
+                maxLength={1000}
+              />
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-zinc-800/40">
+                <div className="flex flex-wrap gap-1.5">
+                  {QUICK_SUGGESTIONS.map(s => (
+                    <button
+                      key={s}
+                      onClick={() => setPrompt(prev => prev ? `${prev} ${s.toLowerCase()}` : s)}
+                      className="px-2.5 py-1 rounded-full text-xs text-zinc-500 border border-zinc-800/60 hover:text-zinc-300 hover:border-zinc-700 transition-colors"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+                <span className="text-xs text-zinc-600">{prompt.length}/1000</span>
+              </div>
+            </motion.div>
+          )}
 
-        {mode === 'studio' ? (
-          <StudioWizard
-            products={products}
-            brandAssets={brandAssets}
-            onProjectCreated={() => {}}
-          />
-        ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Left Panel - Controls */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="space-y-4"
-          >
-            {mode === 'ai' ? (
-              <>
-                {/* Prompt Input */}
-                <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Wand2 className="w-5 h-5 text-yellow-400" />
-                    <h3 className="text-white font-semibold">Prompt</h3>
-                  </div>
-                  <div className="space-y-3">
-                    <div>
-                      <Textarea
-                        value={prompt}
-                        onChange={(e) => setPrompt(e.target.value)}
-                        placeholder="Describe the video you want to generate..."
-                        className="min-h-[120px] bg-zinc-900/50 border-zinc-700 text-white placeholder:text-zinc-500 focus:border-yellow-500/50 focus:ring-yellow-500/20"
-                        maxLength={1000}
-                      />
-                      <div className="flex justify-between mt-2 text-xs text-zinc-500">
-                        <span>{prompt.length}/1000 characters</span>
-                        {brandAssets && (
-                          <label className="flex items-center gap-2 cursor-pointer hover:text-zinc-400 transition-colors">
-                            <input
-                              type="checkbox"
-                              checked={useBrandContext}
-                              onChange={(e) => setUseBrandContext(e.target.checked)}
-                              className="rounded border-zinc-600 bg-zinc-800 text-yellow-500 focus:ring-yellow-500/20"
-                            />
-                            <Palette className="w-3 h-3" />
-                            Apply brand context
-                          </label>
-                        )}
-                      </div>
-                    </div>
+          {/* ───── 3. Mode Selector (2 cards) ───── */}
+          {mode !== 'studio' && mode !== 'templates' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                onClick={() => setMode('ai')}
+                className={`text-left p-4 rounded-[20px] border transition-all ${
+                  mode === 'ai'
+                    ? 'border-yellow-500/30 bg-yellow-500/[0.03]'
+                    : 'border-zinc-800/60 bg-zinc-900/50 hover:border-zinc-700'
+                }`}
+              >
+                <div className="flex items-center gap-3 mb-1.5">
+                  <Film className="w-5 h-5 text-yellow-400" />
+                  <span className="text-sm font-medium text-white">AI Video</span>
+                </div>
+                <p className="text-xs text-zinc-500 mb-2">Single-shot video from a text prompt</p>
+                <div className="flex gap-1.5">
+                  {['Kling', 'Minimax', 'Luma'].map(m => (
+                    <span key={m} className="px-2 py-0.5 rounded-full text-[10px] bg-zinc-800/80 text-zinc-400 border border-zinc-700/50">{m}</span>
+                  ))}
+                </div>
+              </button>
+              <button
+                onClick={() => setMode('studio')}
+                className={`text-left p-4 rounded-[20px] border transition-all ${
+                  mode === 'studio'
+                    ? 'border-yellow-500/30 bg-yellow-500/[0.03]'
+                    : 'border-zinc-800/60 bg-zinc-900/50 hover:border-zinc-700'
+                }`}
+              >
+                <div className="flex items-center gap-3 mb-1.5">
+                  <Layers className="w-5 h-5 text-yellow-400" />
+                  <span className="text-sm font-medium text-white">AI Studio</span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">Pro</span>
+                </div>
+                <p className="text-xs text-zinc-500">Multi-shot storyboard with automatic assembly</p>
+              </button>
+            </div>
+          )}
 
-                    {/* Product Context Selector */}
-                    <div>
-                      <Label className="text-zinc-300 mb-2 block">Product Context (Optional)</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className="w-full justify-between bg-zinc-900/50 border-zinc-700 text-white hover:bg-zinc-800 hover:border-zinc-600"
-                          >
-                            {selectedProduct ? (
-                              <span className="flex items-center gap-2">
-                                <Package className="w-4 h-4 text-yellow-400" />
-                                {selectedProduct.name}
-                              </span>
-                            ) : (
-                              <span className="text-zinc-500">Select a product...</span>
-                            )}
-                            <ChevronDown className="w-4 h-4 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-80 bg-zinc-900 border-zinc-700 p-2">
-                          <input
-                            type="text"
-                            placeholder="Search products..."
-                            value={productSearch}
-                            onChange={(e) => setProductSearch(e.target.value)}
-                            className="w-full px-3 py-2 mb-2 bg-zinc-800 border border-zinc-700 rounded text-white text-sm focus:border-yellow-500/50 focus:ring-yellow-500/20"
-                          />
-                          <div className="max-h-60 overflow-y-auto space-y-1">
-                            {selectedProduct && (
-                              <button
-                                onClick={() => {
-                                  setSelectedProduct(null);
-                                  setProductSearch('');
-                                }}
-                                className="w-full text-left px-3 py-2 text-sm text-zinc-400 hover:bg-zinc-800 rounded flex items-center gap-2"
-                              >
-                                <X className="w-3 h-3" />
-                                Clear selection
-                              </button>
-                            )}
-                            {filteredProducts.map(product => (
-                              <button
-                                key={product.id}
-                                onClick={() => {
-                                  setSelectedProduct(product);
-                                  setProductSearch('');
-                                }}
-                                className={`w-full text-left px-3 py-2 text-sm rounded flex items-center justify-between transition-colors ${
-                                  selectedProduct?.id === product.id
-                                    ? 'bg-yellow-500/20 text-yellow-400'
-                                    : 'text-white hover:bg-zinc-800'
-                                }`}
-                              >
-                                <span className="flex items-center gap-2">
-                                  <Package className="w-4 h-4" />
-                                  {product.name}
-                                </span>
-                                {selectedProduct?.id === product.id && <Check className="w-4 h-4" />}
-                              </button>
-                            ))}
-                            {filteredProducts.length === 0 && (
-                              <p className="text-zinc-500 text-sm text-center py-4">No products found</p>
-                            )}
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
+          {/* Back button when in studio or templates mode */}
+          {(mode === 'studio' || mode === 'templates') && (
+            <button
+              onClick={() => setMode('ai')}
+              className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-300 transition-colors"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              Back to modes
+            </button>
+          )}
+
+          {/* ───── AI Studio Mode ───── */}
+          {mode === 'studio' && (
+            <StudioWizard
+              products={products}
+              brandAssets={brandAssets}
+              onProjectCreated={() => {}}
+            />
+          )}
+
+          {/* ───── 4. AI Video Settings Row ───── */}
+          {mode === 'ai' && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: 0.05 }}
+              className="space-y-4"
+            >
+              {/* Settings Row */}
+              <div className="rounded-[20px] bg-zinc-900/50 border border-zinc-800/60 p-4 space-y-4">
+                {/* Style */}
+                <div>
+                  <Label className="text-xs text-zinc-500 uppercase tracking-wider mb-2.5 block">Style</Label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {STYLE_PRESETS.map(style => {
+                      const Icon = style.icon;
+                      return (
+                        <button
+                          key={style.id}
+                          onClick={() => setSelectedStyle(style.id)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                            selectedStyle === style.id
+                              ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/40'
+                              : 'bg-zinc-800/50 text-zinc-400 border border-zinc-700/50 hover:text-zinc-200 hover:border-zinc-600'
+                          }`}
+                        >
+                          <Icon className="w-3 h-3" />
+                          {style.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
-                {/* Style & Settings */}
-                <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Settings2 className="w-5 h-5 text-yellow-400" />
-                    <h3 className="text-white font-semibold">Style & Settings</h3>
-                  </div>
-                  <div className="space-y-4">
-                    {/* Style Presets */}
-                    <div>
-                      <Label className="text-zinc-300 mb-3 block">Style</Label>
-                      <div className="grid grid-cols-4 gap-2">
-                        {STYLE_PRESETS.map(style => {
-                          const IconComponent = style.icon;
-                          return (
-                            <button
-                              key={style.id}
-                              onClick={() => setSelectedStyle(style.id)}
-                              className={`p-2 rounded-xl border text-center transition-all ${
-                                selectedStyle === style.id
-                                  ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400'
-                                  : 'bg-zinc-900/50 border-zinc-700 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800/50'
-                              }`}
-                            >
-                              <IconComponent className="w-4 h-4 mx-auto mb-1" />
-                              <div className="text-[10px]">{style.label}</div>
-                            </button>
-                          );
-                        })}
-                      </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {/* Duration */}
+                  <div>
+                    <Label className="text-xs text-zinc-500 uppercase tracking-wider mb-2.5 block">Duration</Label>
+                    <div className="flex gap-1.5">
+                      {DURATIONS.map(dur => (
+                        <button
+                          key={dur.id}
+                          onClick={() => setDuration(dur.id)}
+                          className={`flex-1 py-1.5 rounded-full text-xs font-medium transition-all text-center ${
+                            duration === dur.id
+                              ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/40'
+                              : 'bg-zinc-800/50 text-zinc-400 border border-zinc-700/50 hover:text-zinc-200 hover:border-zinc-600'
+                          }`}
+                        >
+                          {dur.seconds}s
+                        </button>
+                      ))}
                     </div>
+                  </div>
 
-                    {/* Duration */}
-                    <div>
-                      <Label className="text-zinc-300 mb-3 block flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-yellow-400" />
-                        Duration
-                      </Label>
-                      <div className="grid grid-cols-4 gap-2">
-                        {DURATIONS.map(dur => (
+                  {/* Aspect Ratio */}
+                  <div>
+                    <Label className="text-xs text-zinc-500 uppercase tracking-wider mb-2.5 block">Aspect Ratio</Label>
+                    <div className="flex gap-1.5">
+                      {ASPECT_RATIOS.map(ratio => {
+                        const Icon = ratio.icon;
+                        return (
                           <button
-                            key={dur.id}
-                            onClick={() => setDuration(dur.id)}
-                            className={`p-2 rounded-xl border text-center transition-all ${
-                              duration === dur.id
-                                ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400'
-                                : 'bg-zinc-900/50 border-zinc-700 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800/50'
+                            key={ratio.id}
+                            onClick={() => setAspectRatio(ratio.id)}
+                            className={`flex-1 flex flex-col items-center gap-0.5 py-1.5 rounded-xl text-center transition-all ${
+                              aspectRatio === ratio.id
+                                ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/40'
+                                : 'bg-zinc-800/50 text-zinc-400 border border-zinc-700/50 hover:text-zinc-200 hover:border-zinc-600'
                             }`}
                           >
-                            <div className="text-sm font-medium">{dur.seconds}s</div>
+                            <Icon className="w-3.5 h-3.5" />
+                            <span className="text-[10px]">{ratio.sublabel}</span>
                           </button>
-                        ))}
-                      </div>
+                        );
+                      })}
                     </div>
-
-                    {/* Aspect Ratio */}
-                    <div>
-                      <Label className="text-zinc-300 mb-3 block">Aspect Ratio</Label>
-                      <div className="grid grid-cols-4 gap-2">
-                        {ASPECT_RATIOS.map(ratio => {
-                          const IconComponent = ratio.icon;
-                          return (
-                            <button
-                              key={ratio.id}
-                              onClick={() => setAspectRatio(ratio.id)}
-                              className={`p-2 rounded-xl border text-center transition-all ${
-                                aspectRatio === ratio.id
-                                  ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400'
-                                  : 'bg-zinc-900/50 border-zinc-700 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800/50'
-                              }`}
-                            >
-                              <IconComponent className="w-4 h-4 mx-auto mb-1" />
-                              <div className="text-[10px]">{ratio.label}</div>
-                              <div className="text-[9px] text-zinc-500">{ratio.sublabel}</div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Generate Button */}
-                    <Button
-                      onClick={handleGenerate}
-                      disabled={isGenerating || !prompt.trim()}
-                      className="w-full bg-gradient-to-r from-yellow-500 to-yellow-500 hover:from-yellow-600 hover:to-yellow-600 text-white border-0 h-12"
-                      size="lg"
-                    >
-                      {isGenerating ? (
-                        <>
-                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                          Generating...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="w-5 h-5 mr-2" />
-                          Generate Video
-                        </>
-                      )}
-                    </Button>
-
-                    {isGenerating && (
-                      <p className="text-center text-zinc-500 text-sm">
-                        Video generation may take 1-3 minutes depending on duration
-                      </p>
-                    )}
                   </div>
-                </div>
 
-                {/* History Toggle */}
-                <Button
-                  variant="outline"
-                  onClick={() => setShowHistory(!showHistory)}
-                  className="w-full border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:border-zinc-600"
-                >
-                  <History className="w-4 h-4 mr-2" />
-                  {showHistory ? 'Hide' : 'Show'} Generation History ({generationHistory.length})
-                </Button>
-              </>
-            ) : (
-              /* Template Mode Controls */
-              <>
-                {/* Template Selector */}
-                <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <LayoutTemplate className="w-5 h-5 text-yellow-400" />
-                    <h3 className="text-white font-semibold">Template</h3>
-                  </div>
-                  <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
-                    <SelectTrigger className="w-full bg-zinc-900/50 border-zinc-700 text-white focus:ring-yellow-500/20 focus:border-yellow-500/50">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-zinc-900 border-zinc-700">
-                      {TEMPLATES.map(t => (
-                        <SelectItem key={t.id} value={t.id} className="text-white">
-                          <div className="flex items-center gap-2">
-                            <Film className="w-4 h-4 text-yellow-400" />
-                            {t.label}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-zinc-500 mt-2">{currentTemplateConfig.description}</p>
-                  <div className="flex gap-2 mt-2">
-                    <Badge variant="outline" className="border-zinc-700 text-zinc-400 bg-zinc-800/50 text-xs">
-                      {currentTemplateConfig.fps} fps
-                    </Badge>
-                    <Badge variant="outline" className="border-zinc-700 text-zinc-400 bg-zinc-800/50 text-xs">
-                      {(currentTemplateConfig.durationFrames / currentTemplateConfig.fps).toFixed(0)}s
-                    </Badge>
-                    <Badge variant="outline" className="border-zinc-700 text-zinc-400 bg-zinc-800/50 text-xs">
-                      {currentTemplateConfig.width}×{currentTemplateConfig.height}
-                    </Badge>
-                  </div>
-                </div>
-
-                {/* Product & Brand Context for Templates */}
-                <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Package className="w-5 h-5 text-yellow-400" />
-                    <h3 className="text-white font-semibold">Content</h3>
-                  </div>
-                  <div className="space-y-3">
-                    <div>
-                      <Label className="text-zinc-300 mb-2 block">Product</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className="w-full justify-between bg-zinc-900/50 border-zinc-700 text-white hover:bg-zinc-800 hover:border-zinc-600"
-                          >
-                            {selectedProduct ? (
-                              <span className="flex items-center gap-2">
-                                <Package className="w-4 h-4 text-yellow-400" />
-                                {selectedProduct.name}
-                              </span>
-                            ) : (
-                              <span className="text-zinc-500">Select a product...</span>
-                            )}
-                            <ChevronDown className="w-4 h-4 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-80 bg-zinc-900 border-zinc-700 p-2">
+                  {/* Product + Brand */}
+                  <div>
+                    <Label className="text-xs text-zinc-500 uppercase tracking-wider mb-2.5 block">Context</Label>
+                    <div className="flex items-center gap-2">
+                      <ProductSelector
+                        selectedProduct={selectedProduct}
+                        setSelectedProduct={setSelectedProduct}
+                        products={products}
+                        productSearch={productSearch}
+                        setProductSearch={setProductSearch}
+                        filteredProducts={filteredProducts}
+                      />
+                      {brandAssets && (
+                        <label className="flex items-center gap-1.5 cursor-pointer text-xs text-zinc-400 hover:text-zinc-300 transition-colors">
                           <input
-                            type="text"
-                            placeholder="Search products..."
-                            value={productSearch}
-                            onChange={(e) => setProductSearch(e.target.value)}
-                            className="w-full px-3 py-2 mb-2 bg-zinc-800 border border-zinc-700 rounded text-white text-sm focus:border-yellow-500/50 focus:ring-yellow-500/20"
+                            type="checkbox"
+                            checked={useBrandContext}
+                            onChange={(e) => setUseBrandContext(e.target.checked)}
+                            className="rounded border-zinc-600 bg-zinc-800 text-yellow-500 focus:ring-yellow-500/20 w-3.5 h-3.5"
                           />
-                          <div className="max-h-60 overflow-y-auto space-y-1">
-                            {selectedProduct && (
-                              <button
-                                onClick={() => {
-                                  setSelectedProduct(null);
-                                  setProductSearch('');
-                                }}
-                                className="w-full text-left px-3 py-2 text-sm text-zinc-400 hover:bg-zinc-800 rounded flex items-center gap-2"
-                              >
-                                <X className="w-3 h-3" />
-                                Clear selection
-                              </button>
-                            )}
-                            {filteredProducts.map(product => (
-                              <button
-                                key={product.id}
-                                onClick={() => {
-                                  setSelectedProduct(product);
-                                  setProductSearch('');
-                                }}
-                                className={`w-full text-left px-3 py-2 text-sm rounded flex items-center justify-between transition-colors ${
-                                  selectedProduct?.id === product.id
-                                    ? 'bg-yellow-500/20 text-yellow-400'
-                                    : 'text-white hover:bg-zinc-800'
-                                }`}
-                              >
-                                <span className="flex items-center gap-2">
-                                  <Package className="w-4 h-4" />
-                                  {product.name}
-                                </span>
-                                {selectedProduct?.id === product.id && <Check className="w-4 h-4" />}
-                              </button>
-                            ))}
-                            {filteredProducts.length === 0 && (
-                              <p className="text-zinc-500 text-sm text-center py-4">No products found</p>
-                            )}
+                          <Palette className="w-3 h-3" />
+                          Brand
+                        </label>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ───── 5. Generate Button ───── */}
+              <div className="flex flex-col items-center gap-2">
+                <button
+                  onClick={handleGenerate}
+                  disabled={isGenerating || !prompt.trim()}
+                  className="px-8 py-3 rounded-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 disabled:hover:bg-yellow-500 text-black font-semibold text-sm transition-colors flex items-center gap-2"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      Generate Video
+                    </>
+                  )}
+                </button>
+                <span className="text-xs text-zinc-600">
+                  ~{durationConfig?.seconds || 10}s video &middot; est. 1-3 min
+                </span>
+              </div>
+
+              {/* ───── 6. Output Area ───── */}
+              <AnimatePresence>
+                {(isGenerating || generatedVideo) && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 20 }}
+                    transition={{ duration: 0.4 }}
+                    className="rounded-[20px] bg-zinc-900/50 border border-zinc-800/60 overflow-hidden"
+                  >
+                    <div className="aspect-video relative">
+                      {isGenerating ? (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950/80">
+                          <Loader2 className="w-10 h-10 text-yellow-400 animate-spin mb-3" />
+                          <p className="text-zinc-400 text-sm">Creating your video...</p>
+                          <p className="text-zinc-600 text-xs mt-1">This may take 1-3 minutes</p>
+                          <div className="w-40 h-1.5 bg-zinc-800 rounded-full mt-4 overflow-hidden">
+                            <div className="h-full bg-yellow-500 rounded-full animate-pulse" style={{ width: '60%' }} />
                           </div>
-                        </PopoverContent>
-                      </Popover>
+                        </div>
+                      ) : generatedVideo ? (
+                        <video
+                          src={generatedVideo.url}
+                          controls
+                          className="w-full h-full object-contain bg-black"
+                          poster={generatedVideo.thumbnail_url}
+                        />
+                      ) : null}
                     </div>
 
-                    {/* Analyze Design Button (manual re-analyze) */}
+                    {generatedVideo && (
+                      <div className="p-4 border-t border-zinc-800/40">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="border-zinc-700 text-zinc-300 bg-zinc-800/50 text-xs">
+                              <Clock className="w-3 h-3 mr-1" />
+                              {generatedVideo.duration}s
+                            </Badge>
+                            <Badge variant="outline" className="border-zinc-700 text-zinc-300 bg-zinc-800/50 text-xs">
+                              {aspectRatio}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => handleDownload(generatedVideo.url)}
+                              className="p-2 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+                            >
+                              <Download className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={handleGenerate}
+                              className="p-2 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+                            >
+                              <RefreshCw className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {generatedVideo.enhanced_prompt && (
+                          <details className="mt-3">
+                            <summary className="text-xs text-zinc-500 cursor-pointer hover:text-zinc-400 transition-colors">
+                              Prompt details
+                            </summary>
+                            <p className="text-xs text-zinc-400 mt-2 p-2 bg-zinc-800/50 rounded-xl border border-zinc-700/50">
+                              {generatedVideo.enhanced_prompt}
+                            </p>
+                          </details>
+                        )}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          )}
+
+          {/* ───── 8. Templates Mode ───── */}
+          {mode === 'templates' && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35 }}
+              className="space-y-5"
+            >
+              {/* Template Gallery */}
+              <div>
+                <Label className="text-xs text-zinc-500 uppercase tracking-wider mb-3 block">Choose a Template</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                  {TEMPLATES.map(t => (
+                    <button
+                      key={t.id}
+                      onClick={() => setSelectedTemplate(t.id)}
+                      className={`group relative p-3 rounded-[20px] border text-left transition-all ${
+                        selectedTemplate === t.id
+                          ? 'border-yellow-500/30 bg-yellow-500/[0.03]'
+                          : 'border-zinc-800/60 bg-zinc-900/50 hover:border-zinc-700'
+                      }`}
+                    >
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${
+                        selectedTemplate === t.id ? 'bg-yellow-500/20' : 'bg-zinc-800/50'
+                      }`}>
+                        <Film className={`w-4 h-4 ${selectedTemplate === t.id ? 'text-yellow-400' : 'text-zinc-500'}`} />
+                      </div>
+                      <p className={`text-xs font-medium ${selectedTemplate === t.id ? 'text-white' : 'text-zinc-300'}`}>{t.label}</p>
+                      <p className="text-[10px] text-zinc-600 mt-0.5 line-clamp-2">{t.description}</p>
+                      <div className="flex gap-1 mt-2">
+                        <span className="text-[9px] text-zinc-600 bg-zinc-800/50 px-1.5 py-0.5 rounded-full">{t.fps}fps</span>
+                        <span className="text-[9px] text-zinc-600 bg-zinc-800/50 px-1.5 py-0.5 rounded-full">{(t.durationFrames / t.fps).toFixed(0)}s</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Content row: Product + Analysis + Preview */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {/* Left: Product & Content */}
+                <div className="space-y-4">
+                  <div className="rounded-[20px] bg-zinc-900/50 border border-zinc-800/60 p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Package className="w-4 h-4 text-yellow-400" />
+                      <h3 className="text-sm font-medium text-white">Content</h3>
+                    </div>
+                    <ProductSelector
+                      selectedProduct={selectedProduct}
+                      setSelectedProduct={setSelectedProduct}
+                      products={products}
+                      productSearch={productSearch}
+                      setProductSearch={setProductSearch}
+                      filteredProducts={filteredProducts}
+                    />
+
                     {selectedProduct?.gallery?.length > 0 && (
                       <button
                         onClick={handleAnalyzeDesign}
                         disabled={isAnalyzing}
-                        className="flex items-center gap-2 px-3 py-1.5 hover:bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-xs text-zinc-500 transition-colors disabled:opacity-50"
+                        className="flex items-center gap-2 px-3 py-1.5 hover:bg-zinc-800/50 border border-zinc-700/50 rounded-full text-xs text-zinc-500 transition-colors disabled:opacity-50"
                       >
                         {isAnalyzing ? (
                           <>
@@ -1077,124 +1107,33 @@ export default function CreateVideos() {
                       onApplyColors={handleApplyColors}
                     />
 
-                    {/* Live props preview */}
-                    <div className="p-3 bg-zinc-800/50 rounded-xl border border-zinc-700/50 space-y-2">
-                      <div className="flex items-center gap-2 text-xs text-zinc-500">
+                    {/* Template data preview */}
+                    <div className="p-3 bg-zinc-800/30 rounded-xl border border-zinc-700/30 space-y-1.5">
+                      <div className="flex items-center gap-1.5 text-[10px] text-zinc-600 uppercase tracking-wider">
                         <Info className="w-3 h-3" />
-                        Template data (updates preview live)
+                        Live data
                       </div>
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        {selectedTemplate === 'SocialAd' ? (
-                          <>
-                            <div>
-                              <span className="text-zinc-500">Headline:</span>
-                              <span className="text-zinc-300 ml-1">{templateProps.headline}</span>
-                            </div>
-                            <div>
-                              <span className="text-zinc-500">CTA:</span>
-                              <span className="text-zinc-300 ml-1">{templateProps.ctaText}</span>
-                            </div>
-                          </>
-                        ) : selectedTemplate === 'FeatureShowcase' ? (
-                          <>
-                            <div>
-                              <span className="text-zinc-500">Product:</span>
-                              <span className="text-zinc-300 ml-1">{templateProps.productName}</span>
-                            </div>
-                            <div>
-                              <span className="text-zinc-500">Features:</span>
-                              <span className="text-zinc-300 ml-1">{templateProps.features?.length || 0}</span>
-                            </div>
-                          </>
-                        ) : selectedTemplate === 'UIShowcase' ? (
-                          <>
-                            <div>
-                              <span className="text-zinc-500">Product:</span>
-                              <span className="text-zinc-300 ml-1">{templateProps.productName}</span>
-                            </div>
-                            <div>
-                              <span className="text-zinc-500">Layout:</span>
-                              <span className="text-zinc-300 ml-1">{designAnalysis?.layoutPattern || 'auto'}</span>
-                            </div>
-                            <div>
-                              <span className="text-zinc-500">Screenshots:</span>
-                              <span className="text-zinc-300 ml-1">{templateProps.screenshots?.length || 0}</span>
-                            </div>
-                            <div>
-                              <span className="text-zinc-500">Features:</span>
-                              <span className="text-zinc-300 ml-1">{templateProps.features?.length || 0}</span>
-                            </div>
-                            {designAnalysis && (
-                              <div className="col-span-2 flex items-center gap-2">
-                                <span className="text-zinc-500">Vibe:</span>
-                                <span className="text-zinc-300">{designAnalysis.overallVibe}</span>
-                              </div>
-                            )}
-                          </>
-                        ) : selectedTemplate === 'KeynoteShowcase' ? (
-                          <>
-                            <div>
-                              <span className="text-zinc-500">Product:</span>
-                              <span className="text-zinc-300 ml-1">{templateProps.productName}</span>
-                            </div>
-                            <div>
-                              <span className="text-zinc-500">Layout:</span>
-                              <span className="text-zinc-300 ml-1">{designAnalysis?.layoutPattern || 'auto'}</span>
-                            </div>
-                            <div>
-                              <span className="text-zinc-500">Vibe:</span>
-                              <span className="text-zinc-300 ml-1">{designAnalysis?.overallVibe || 'professional'}</span>
-                            </div>
-                            <div>
-                              <span className="text-zinc-500">Features:</span>
-                              <span className="text-zinc-300 ml-1">{templateProps.features?.length || 0}</span>
-                            </div>
-                            <div>
-                              <span className="text-zinc-500">Metrics:</span>
-                              <span className="text-zinc-300 ml-1">{templateProps.metrics?.length || 0}</span>
-                            </div>
-                            <div>
-                              <span className="text-zinc-500">Screenshots:</span>
-                              <span className="text-zinc-300 ml-1">{templateProps.screenshots?.length || 0}</span>
-                            </div>
-                          </>
-                        ) : selectedTemplate === 'ProductShowcase' ? (
-                          <>
-                            <div>
-                              <span className="text-zinc-500">Product:</span>
-                              <span className="text-zinc-300 ml-1">{templateProps.productName}</span>
-                            </div>
-                            <div>
-                              <span className="text-zinc-500">Screenshots:</span>
-                              <span className="text-zinc-300 ml-1">{templateProps.screenshots?.length || 0}</span>
-                            </div>
-                            <div>
-                              <span className="text-zinc-500">Features:</span>
-                              <span className="text-zinc-300 ml-1">{templateProps.features?.length || 0}</span>
-                            </div>
-                            <div>
-                              <span className="text-zinc-500">CTA:</span>
-                              <span className="text-zinc-300 ml-1">{templateProps.ctaText}</span>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <div>
-                              <span className="text-zinc-500">Name:</span>
-                              <span className="text-zinc-300 ml-1">{templateProps.productName}</span>
-                            </div>
-                            <div>
-                              <span className="text-zinc-500">Features:</span>
-                              <span className="text-zinc-300 ml-1">{templateProps.features?.length || 0}</span>
-                            </div>
-                          </>
+                      <div className="grid grid-cols-2 gap-1.5 text-xs">
+                        <div>
+                          <span className="text-zinc-600">Product:</span>
+                          <span className="text-zinc-400 ml-1">{templateProps.productName || templateProps.headline || '-'}</span>
+                        </div>
+                        <div>
+                          <span className="text-zinc-600">Features:</span>
+                          <span className="text-zinc-400 ml-1">{templateProps.features?.length || 0}</span>
+                        </div>
+                        {templateProps.screenshots && (
+                          <div>
+                            <span className="text-zinc-600">Screenshots:</span>
+                            <span className="text-zinc-400 ml-1">{templateProps.screenshots.length}</span>
+                          </div>
                         )}
-                        <div className="col-span-2 flex items-center gap-2">
-                          <span className="text-zinc-500">Brand:</span>
-                          <div className="flex gap-1">
-                            <div className="w-4 h-4 rounded" style={{ background: templateProps.brandColors?.primary || '#0f0f0f' }} />
-                            <div className="w-4 h-4 rounded" style={{ background: templateProps.brandColors?.secondary || '#1a1a2e' }} />
-                            <div className="w-4 h-4 rounded" style={{ background: templateProps.brandColors?.accent || '#06b6d4' }} />
+                        <div className="col-span-2 flex items-center gap-1.5">
+                          <span className="text-zinc-600">Brand:</span>
+                          <div className="flex gap-0.5">
+                            <div className="w-3 h-3 rounded" style={{ background: templateProps.brandColors?.primary || '#0f0f0f' }} />
+                            <div className="w-3 h-3 rounded" style={{ background: templateProps.brandColors?.secondary || '#1a1a2e' }} />
+                            <div className="w-3 h-3 rounded" style={{ background: templateProps.brandColors?.accent || '#06b6d4' }} />
                           </div>
                         </div>
                       </div>
@@ -1202,283 +1141,214 @@ export default function CreateVideos() {
                   </div>
                 </div>
 
-                {/* Render Button */}
-                <Button
-                  onClick={handleStartRender}
-                  disabled={isRendering}
-                  className="w-full bg-gradient-to-r from-yellow-500 to-yellow-500 hover:from-yellow-600 hover:to-yellow-600 text-white border-0 h-12 disabled:opacity-50"
-                  size="lg"
-                >
-                  {isRendering ? (
-                    <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Rendering...
-                    </>
-                  ) : (
-                    <>
-                      <Film className="w-5 h-5 mr-2" />
-                      Render Video
-                    </>
-                  )}
-                </Button>
+                {/* Center + Right: Preview */}
+                <div className="lg:col-span-2 space-y-4">
+                  <div className="rounded-[20px] bg-zinc-900/50 border border-zinc-800/60 p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Play className="w-4 h-4 text-yellow-400" />
+                        <h3 className="text-sm font-medium text-white">Live Preview</h3>
+                      </div>
+                      <div className="flex gap-1.5">
+                        <Badge variant="outline" className="border-zinc-700 text-zinc-500 bg-zinc-800/50 text-[10px]">
+                          {currentTemplateConfig.durationFrames} frames
+                        </Badge>
+                        <Badge variant="outline" className="border-zinc-700 text-zinc-500 bg-zinc-800/50 text-[10px]">
+                          {currentTemplateConfig.width}x{currentTemplateConfig.height}
+                        </Badge>
+                      </div>
+                    </div>
 
-                {/* Recent Renders */}
-                {recentRenders.length > 0 && (
-                  <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-4">
-                    <h4 className="text-sm font-medium text-zinc-400 mb-3">Recent Renders</h4>
-                    <div className="space-y-2">
-                      {recentRenders.map(job => (
-                        <div key={job.id} className="flex items-center justify-between p-3 bg-zinc-900/50 border border-zinc-800 rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <Film className="w-4 h-4 text-zinc-500" />
-                            <div>
-                              <p className="text-sm text-white">{job.template_id}</p>
-                              <p className="text-xs text-zinc-500">{new Date(job.created_at).toLocaleDateString()}</p>
+                    <div ref={playerContainerRef} className="rounded-xl overflow-hidden border border-zinc-700/50">
+                      {playerWidth > 0 && (
+                        <Player
+                          ref={playerRef}
+                          component={SelectedComponent}
+                          inputProps={templateProps}
+                          durationInFrames={currentTemplateConfig.durationFrames}
+                          compositionWidth={currentTemplateConfig.width}
+                          compositionHeight={currentTemplateConfig.height}
+                          fps={currentTemplateConfig.fps}
+                          style={{ width: '100%', height: playerHeight }}
+                          controls
+                          autoPlay={false}
+                          loop
+                          clickToPlay
+                        />
+                      )}
+                    </div>
+
+                    <p className="text-[10px] text-zinc-600 mt-2">Click the player to play/pause.</p>
+                  </div>
+
+                  {/* Render Button */}
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={handleStartRender}
+                      disabled={isRendering}
+                      className="px-6 py-2.5 rounded-full bg-yellow-500 hover:bg-yellow-400 disabled:opacity-40 text-black font-semibold text-sm transition-colors flex items-center gap-2"
+                    >
+                      {isRendering ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Rendering...
+                        </>
+                      ) : (
+                        <>
+                          <Film className="w-4 h-4" />
+                          Render Video
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Recent Renders */}
+                  {recentRenders.length > 0 && (
+                    <div className="rounded-[20px] bg-zinc-900/50 border border-zinc-800/60 p-4">
+                      <h4 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-3">Recent Renders</h4>
+                      <div className="space-y-1.5">
+                        {recentRenders.map(job => (
+                          <div key={job.id} className="flex items-center justify-between p-2.5 bg-zinc-800/30 border border-zinc-700/30 rounded-xl">
+                            <div className="flex items-center gap-2.5">
+                              <Film className="w-3.5 h-3.5 text-zinc-500" />
+                              <div>
+                                <p className="text-xs text-white">{job.template_id}</p>
+                                <p className="text-[10px] text-zinc-600">{new Date(job.created_at).toLocaleDateString()}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-[10px] px-2 py-0.5 rounded-full ${
+                                job.status === 'completed' ? 'bg-green-500/10 text-green-400' :
+                                job.status === 'failed' ? 'bg-red-500/10 text-red-400' :
+                                job.status === 'rendering' ? 'bg-yellow-500/10 text-yellow-400' :
+                                'bg-zinc-500/10 text-zinc-400'
+                              }`}>
+                                {job.status}
+                              </span>
+                              {job.status === 'completed' && job.output_url && (
+                                <a href={job.output_url} download className="p-1 hover:bg-white/10 rounded-full transition-colors">
+                                  <Download className="w-3.5 h-3.5 text-yellow-400" />
+                                </a>
+                              )}
+                              {job.status === 'completed' && !job.output_url && (
+                                <span className="p-1" title="Simulated render">
+                                  <Info className="w-3.5 h-3.5 text-blue-400" />
+                                </span>
+                              )}
+                              {job.status === 'failed' && (
+                                <button
+                                  onClick={() => setRenderJob(job)}
+                                  className="p-1 hover:bg-white/10 rounded-full transition-colors"
+                                  title={job.error_message || 'View error'}
+                                >
+                                  <AlertCircle className="w-3.5 h-3.5 text-red-400" />
+                                </button>
+                              )}
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <span className={`text-xs px-2 py-0.5 rounded-full ${
-                              job.status === 'completed' ? 'bg-green-500/10 text-green-400' :
-                              job.status === 'failed' ? 'bg-red-500/10 text-red-400' :
-                              job.status === 'rendering' ? 'bg-yellow-500/10 text-yellow-400' :
-                              'bg-zinc-500/10 text-zinc-400'
-                            }`}>
-                              {job.status}
-                            </span>
-                            {job.status === 'completed' && job.output_url && (
-                              <a href={job.output_url} download className="p-1 hover:bg-white/10 rounded transition-colors">
-                                <Download className="w-4 h-4 text-yellow-400" />
-                              </a>
-                            )}
-                            {job.status === 'completed' && !job.output_url && (
-                              <span className="p-1" title="Simulated render — preview in player">
-                                <Info className="w-4 h-4 text-blue-400" />
-                              </span>
-                            )}
-                            {job.status === 'failed' && (
-                              <button
-                                onClick={() => { setRenderJob(job); }}
-                                className="p-1 hover:bg-white/10 rounded transition-colors"
-                                title={job.error_message || 'View error'}
-                              >
-                                <AlertCircle className="w-4 h-4 text-red-400" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </>
-            )}
-          </motion.div>
-
-          {/* Right Panel - Preview */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="space-y-4"
-          >
-            {mode === 'templates' ? (
-              /* Template Preview with Remotion Player */
-              <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <Play className="w-5 h-5 text-yellow-400" />
-                    <h3 className="text-white font-semibold">Live Preview</h3>
-                  </div>
-                  <Badge variant="outline" className="border-zinc-700 text-zinc-400 bg-zinc-800/50 text-xs">
-                    {currentTemplateConfig.durationFrames} frames · {currentTemplateConfig.fps}fps
-                  </Badge>
-                </div>
-
-                <div ref={playerContainerRef} className="rounded-xl overflow-hidden border border-zinc-700/50">
-                  {playerWidth > 0 && (
-                    <Player
-                      ref={playerRef}
-                      component={SelectedComponent}
-                      inputProps={templateProps}
-                      durationInFrames={currentTemplateConfig.durationFrames}
-                      compositionWidth={currentTemplateConfig.width}
-                      compositionHeight={currentTemplateConfig.height}
-                      fps={currentTemplateConfig.fps}
-                      style={{ width: '100%', height: playerHeight }}
-                      controls
-                      autoPlay={false}
-                      loop
-                      clickToPlay
-                    />
                   )}
-                </div>
-
-                <div className="mt-3 flex items-center gap-2 text-xs text-zinc-500">
-                  <Info className="w-3 h-3" />
-                  Click the player to play/pause. Controls are at the bottom.
                 </div>
               </div>
-            ) : (
-              /* AI Generation Preview */
+            </motion.div>
+          )}
+
+          {/* ───── 9. History Drawer ───── */}
+          <AnimatePresence>
+            {showHistory && (
               <>
-                <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-4">
-                  <div className="flex items-center justify-between mb-3">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black/60 z-40"
+                  onClick={() => setShowHistory(false)}
+                />
+                <motion.div
+                  initial={{ x: '100%' }}
+                  animate={{ x: 0 }}
+                  exit={{ x: '100%' }}
+                  transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                  className="fixed top-0 right-0 h-full w-full max-w-md bg-zinc-950 border-l border-zinc-800/60 z-50 flex flex-col"
+                >
+                  <div className="flex items-center justify-between p-4 border-b border-zinc-800/60">
                     <div className="flex items-center gap-2">
-                      <Video className="w-5 h-5 text-yellow-400" />
-                      <h3 className="text-white font-semibold">Preview</h3>
+                      <History className="w-4 h-4 text-yellow-400" />
+                      <h2 className="text-sm font-semibold text-white">Generation History</h2>
+                      <span className="text-xs text-zinc-500">({generationHistory.length})</span>
                     </div>
-                    {generatedVideo && (
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDownload(generatedVideo.url)}
-                          className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
-                        >
-                          <Download className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={handleGenerate}
-                          className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
-                        >
-                          <RefreshCw className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    )}
+                    <button
+                      onClick={() => setShowHistory(false)}
+                      className="p-1.5 rounded-full hover:bg-zinc-800 text-zinc-400 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
-
-                  <div
-                    className={`aspect-video rounded-xl overflow-hidden border border-zinc-700/50 ${
-                      !generatedVideo && !isGenerating ? 'flex items-center justify-center bg-zinc-900/70' : ''
-                    }`}
-                  >
-                    {isGenerating ? (
-                      <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900/70">
-                        <Loader2 className="w-12 h-12 text-yellow-400 animate-spin mb-4" />
-                        <p className="text-zinc-400">Creating your video...</p>
-                        <p className="text-zinc-500 text-sm mt-2">This may take 1-3 minutes</p>
-                        <div className="w-48 h-2 bg-zinc-800 rounded-full mt-4 overflow-hidden">
-                          <div className="h-full bg-gradient-to-r from-yellow-500 to-yellow-500 rounded-full animate-pulse" style={{ width: '60%' }}></div>
-                        </div>
-                      </div>
-                    ) : generatedVideo ? (
-                      <video
-                        src={generatedVideo.url}
-                        controls
-                        className="w-full h-full object-contain bg-black"
-                        poster={generatedVideo.thumbnail_url}
-                      />
-                    ) : (
-                      <div className="text-center p-8">
-                        <Video className="w-16 h-16 text-zinc-700 mx-auto mb-4" />
-                        <p className="text-zinc-400">Your generated video will appear here</p>
-                        <p className="text-zinc-500 text-sm mt-2">Enter a prompt and click Generate</p>
-                      </div>
+                  <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                    {generationHistory.length === 0 && (
+                      <div className="text-center py-12 text-zinc-600 text-sm">No videos generated yet</div>
                     )}
-                  </div>
-
-                  {generatedVideo && (
-                    <div className="mt-4 flex items-center gap-3">
-                      <Badge variant="outline" className="border-zinc-700 text-zinc-300 bg-zinc-800/50">
-                        <Clock className="w-3 h-3 mr-1" />
-                        {generatedVideo.duration}s
-                      </Badge>
-                      <Badge variant="outline" className="border-zinc-700 text-zinc-300 bg-zinc-800/50">
-                        {aspectRatio}
-                      </Badge>
-                    </div>
-                  )}
-
-                  {generatedVideo?.enhanced_prompt && (
-                    <div className="mt-3 p-2 bg-zinc-800/50 rounded-xl border border-zinc-700/50">
-                      <Label className="text-zinc-500 text-[10px] mb-1 block">Enhanced Prompt Used:</Label>
-                      <p className="text-zinc-300 text-xs">{generatedVideo.enhanced_prompt}</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Generation History */}
-                {showHistory && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-4"
-                  >
-                    <div className="flex items-center gap-2 mb-3">
-                      <History className="w-5 h-5 text-yellow-400" />
-                      <h3 className="text-white font-semibold">Recent Generations</h3>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 max-h-[400px] overflow-y-auto">
-                      {generationHistory.map(item => (
-                        <div
-                          key={item.id}
-                          className="group relative aspect-video rounded-xl overflow-hidden border border-zinc-700/50 cursor-pointer hover:border-yellow-500/50 transition-colors"
-                          onClick={() => setPreviewVideo(item)}
-                        >
+                    {generationHistory.map(item => (
+                      <div
+                        key={item.id}
+                        className="group rounded-[16px] border border-zinc-800/60 bg-zinc-900/50 overflow-hidden cursor-pointer hover:border-zinc-700 transition-colors"
+                        onClick={() => { setPreviewVideo(item); setShowHistory(false); }}
+                      >
+                        <div className="relative aspect-video">
                           {item.thumbnail_url ? (
-                            <img
-                              src={item.thumbnail_url}
-                              alt={item.name}
-                              className="w-full h-full object-cover"
-                            />
+                            <img src={item.thumbnail_url} alt={item.name} className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full bg-zinc-900 flex items-center justify-center">
-                              <Video className="w-8 h-8 text-zinc-700" />
+                              <Video className="w-8 h-8 text-zinc-800" />
                             </div>
                           )}
                           <div className="absolute bottom-2 left-2">
-                            <Badge className="bg-black/70 text-white text-xs border-0">
-                              <Clock className="w-3 h-3 mr-1" />
+                            <span className="px-2 py-0.5 rounded-full text-[10px] bg-black/70 text-white border border-white/10">
                               {item.duration || item.generation_config?.duration_seconds}s
-                            </Badge>
+                            </span>
                           </div>
                           <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                             <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRegenerate(item);
-                              }}
-                              className="p-2 bg-zinc-800 rounded-lg hover:bg-zinc-700 transition-colors"
+                              onClick={(e) => { e.stopPropagation(); handleRegenerate(item); }}
+                              className="p-2 bg-zinc-800/80 rounded-full hover:bg-zinc-700 transition-colors"
                             >
-                              <RefreshCw className="w-4 h-4 text-white" />
+                              <RefreshCw className="w-3.5 h-3.5 text-white" />
                             </button>
                             <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDownload(item.url, item.name);
-                              }}
-                              className="p-2 bg-zinc-800 rounded-lg hover:bg-zinc-700 transition-colors"
+                              onClick={(e) => { e.stopPropagation(); handleDownload(item.url, item.name); }}
+                              className="p-2 bg-zinc-800/80 rounded-full hover:bg-zinc-700 transition-colors"
                             >
-                              <Download className="w-4 h-4 text-white" />
+                              <Download className="w-3.5 h-3.5 text-white" />
                             </button>
                             <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteFromHistory(item.id);
-                              }}
-                              className="p-2 bg-zinc-800 rounded-lg hover:bg-red-900 transition-colors"
+                              onClick={(e) => { e.stopPropagation(); handleDeleteFromHistory(item.id); }}
+                              className="p-2 bg-zinc-800/80 rounded-full hover:bg-red-900 transition-colors"
                             >
-                              <Trash2 className="w-4 h-4 text-white" />
+                              <Trash2 className="w-3.5 h-3.5 text-white" />
                             </button>
                           </div>
                         </div>
-                      ))}
-                      {generationHistory.length === 0 && (
-                        <div className="col-span-2 text-center py-8 text-zinc-500">
-                          No videos generated yet
+                        <div className="p-2.5">
+                          <p className="text-xs text-zinc-400 line-clamp-1">{item.generation_config?.prompt || item.name}</p>
+                          <div className="flex gap-1.5 mt-1.5">
+                            <span className="text-[10px] text-zinc-600">{item.generation_config?.style}</span>
+                            <span className="text-[10px] text-zinc-700">&middot;</span>
+                            <span className="text-[10px] text-zinc-600">{item.generation_config?.aspect_ratio}</span>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
               </>
             )}
-          </motion.div>
-        </div>
-        )}
+          </AnimatePresence>
 
+        </div>
+
+        {/* Render Progress Modal */}
         <RenderProgressModal
           isOpen={!!renderJob}
           onClose={() => { setRenderJob(null); setIsRendering(false); }}
@@ -1503,15 +1373,15 @@ export default function CreateVideos() {
                   className="w-full rounded-xl"
                   poster={previewVideo.thumbnail_url}
                 />
-                <div className="flex items-center gap-3">
-                  <Badge variant="outline" className="border-zinc-700 text-zinc-300 bg-zinc-800/50">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="border-zinc-700 text-zinc-300 bg-zinc-800/50 text-xs">
                     <Clock className="w-3 h-3 mr-1" />
                     {previewVideo.duration || previewVideo.generation_config?.duration_seconds}s
                   </Badge>
-                  <Badge variant="outline" className="border-zinc-700 text-zinc-300 bg-zinc-800/50">
+                  <Badge variant="outline" className="border-zinc-700 text-zinc-300 bg-zinc-800/50 text-xs">
                     {previewVideo.generation_config?.aspect_ratio || '16:9'}
                   </Badge>
-                  <Badge variant="outline" className="border-zinc-700 text-zinc-300 bg-zinc-800/50">
+                  <Badge variant="outline" className="border-zinc-700 text-zinc-300 bg-zinc-800/50 text-xs">
                     {previewVideo.generation_config?.style || 'cinematic'}
                   </Badge>
                 </div>
@@ -1522,24 +1392,20 @@ export default function CreateVideos() {
                   </div>
                 )}
                 <div className="flex gap-2">
-                  <Button
+                  <button
                     onClick={() => handleDownload(previewVideo.url, previewVideo.name)}
-                    className="bg-gradient-to-r from-yellow-500 to-yellow-500 hover:from-yellow-600 hover:to-yellow-600 border-0"
+                    className="px-4 py-2 rounded-full bg-yellow-500 hover:bg-yellow-400 text-black font-medium text-sm transition-colors flex items-center gap-2"
                   >
-                    <Download className="w-4 h-4 mr-2" />
+                    <Download className="w-4 h-4" />
                     Download
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      handleRegenerate(previewVideo);
-                      setPreviewVideo(null);
-                    }}
-                    className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                  </button>
+                  <button
+                    onClick={() => { handleRegenerate(previewVideo); setPreviewVideo(null); }}
+                    className="px-4 py-2 rounded-full border border-zinc-700 text-zinc-300 hover:bg-zinc-800 text-sm transition-colors flex items-center gap-2"
                   >
-                    <RefreshCw className="w-4 h-4 mr-2" />
+                    <RefreshCw className="w-4 h-4" />
                     Use Settings
-                  </Button>
+                  </button>
                 </div>
               </div>
             )}
