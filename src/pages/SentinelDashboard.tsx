@@ -28,19 +28,19 @@ const CLASSIFICATION_ORDER: RiskClassification[] = [
 ];
 
 const CLASSIFICATION_BAR_COLORS: Record<RiskClassification, [string, string]> = {
-  'prohibited':   ['bg-red-500', 'bg-red-500'],
-  'high-risk':    ['bg-orange-500', 'bg-orange-500'],
-  'gpai':         ['bg-purple-500', 'bg-purple-500'],
-  'limited-risk': ['bg-yellow-500', 'bg-yellow-400'],
-  'minimal-risk': ['bg-green-500', 'bg-green-500'],
-  'unclassified': ['bg-zinc-400', 'bg-zinc-500'],
+  'prohibited':   ['bg-slate-400', 'bg-zinc-400'],
+  'high-risk':    ['bg-slate-400', 'bg-zinc-400'],
+  'gpai':         ['bg-slate-300', 'bg-zinc-500'],
+  'limited-risk': ['bg-slate-300', 'bg-zinc-500'],
+  'minimal-risk': ['bg-emerald-400', 'bg-emerald-500'],
+  'unclassified': ['bg-slate-300', 'bg-zinc-600'],
 };
 
 const STATUS_CONFIG = [
-  { key: 'not-started' as const, label: 'Not Started', variant: 'neutral' as const, color: ['bg-zinc-400', 'bg-zinc-500'], dot: ['bg-zinc-400', 'bg-zinc-500'] },
-  { key: 'in-progress' as const, label: 'In Progress', variant: 'warning' as const, color: ['bg-yellow-500', 'bg-yellow-400'], dot: ['bg-yellow-500', 'bg-yellow-400'] },
-  { key: 'compliant' as const, label: 'Compliant', variant: 'success' as const, color: ['bg-green-500', 'bg-green-500'], dot: ['bg-green-500', 'bg-green-500'] },
-  { key: 'non-compliant' as const, label: 'Non-Compliant', variant: 'error' as const, color: ['bg-red-500', 'bg-red-500'], dot: ['bg-red-500', 'bg-red-500'] },
+  { key: 'not-started' as const, label: 'Not Started', variant: 'neutral' as const, color: ['bg-slate-300', 'bg-zinc-600'], dot: ['bg-slate-400', 'bg-zinc-500'] },
+  { key: 'in-progress' as const, label: 'In Progress', variant: 'warning' as const, color: ['bg-slate-400', 'bg-zinc-400'], dot: ['bg-slate-400', 'bg-zinc-400'] },
+  { key: 'compliant' as const, label: 'Compliant', variant: 'success' as const, color: ['bg-emerald-400', 'bg-emerald-500'], dot: ['bg-emerald-400', 'bg-emerald-500'] },
+  { key: 'non-compliant' as const, label: 'Non-Compliant', variant: 'error' as const, color: ['bg-slate-400', 'bg-zinc-400'], dot: ['bg-slate-400', 'bg-zinc-400'] },
 ];
 
 export default function SentinelDashboard() {
