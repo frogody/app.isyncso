@@ -22,7 +22,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { PageHeader } from '@/components/ui/PageHeader';
+import { CreatePageTransition } from '@/components/create/ui';
+import { MOTION_VARIANTS } from '@/tokens/create';
 import {
   Tabs,
   TabsContent,
@@ -283,41 +284,39 @@ export default function CreateBranding() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-yellow-400 animate-spin" />
+        <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <CreatePageTransition>
       <div className="w-full px-4 lg:px-6 py-4 space-y-4">
-        <PageHeader
-          title="Brand Assets"
-          subtitle="Configure your brand identity for AI-generated content"
-          icon={Palette}
-          color="yellow"
-          badge={
-            hasChanges ? (
-              <Badge variant="outline" className="border-yellow-500/50 text-yellow-400 bg-yellow-500/10">
-                Unsaved changes
-              </Badge>
-            ) : saving ? (
-              <Badge variant="outline" className="border-yellow-500/50 text-yellow-400 bg-yellow-500/10">
-                Saving...
-              </Badge>
-            ) : null
-          }
-          actions={
-            <Button
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
+                <Palette className="w-5 h-5 text-cyan-400" />
+              </div>
+              Brand Assets
+            </h1>
+            <p className="text-sm text-zinc-400 mt-1">Configure your brand identity for AI-generated content</p>
+          </div>
+          <div className="flex items-center gap-3">
+            {hasChanges && <span className="text-xs text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-3 py-1 rounded-full">Unsaved changes</span>}
+            {saving && <span className="text-xs text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-3 py-1 rounded-full">Saving...</span>}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={saveBrandAssets}
               disabled={saving || !hasChanges}
-              className="bg-gradient-to-r from-yellow-500 to-yellow-400 hover:from-yellow-600 hover:to-yellow-500 border-0"
+              className="inline-flex items-center gap-2 h-10 px-6 text-sm font-medium rounded-full bg-cyan-500 text-white hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              <Save className="w-4 h-4 mr-2" />
+              <Save className="w-4 h-4" />
               Save Changes
-            </Button>
-          }
-        />
+            </motion.button>
+          </div>
+        </div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -326,23 +325,23 @@ export default function CreateBranding() {
         >
           <Tabs defaultValue="logos" className="space-y-4">
             <TabsList className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-1">
-              <TabsTrigger value="logos" className="data-[state=active]:bg-yellow-500/20 data-[state=active]:text-yellow-400 rounded-lg">
+              <TabsTrigger value="logos" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400 rounded-lg">
                 <ImageIcon className="w-4 h-4 mr-2" />
                 Logos
               </TabsTrigger>
-              <TabsTrigger value="colors" className="data-[state=active]:bg-yellow-500/20 data-[state=active]:text-yellow-400 rounded-lg">
+              <TabsTrigger value="colors" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400 rounded-lg">
                 <Palette className="w-4 h-4 mr-2" />
                 Colors
               </TabsTrigger>
-              <TabsTrigger value="typography" className="data-[state=active]:bg-yellow-500/20 data-[state=active]:text-yellow-400 rounded-lg">
+              <TabsTrigger value="typography" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400 rounded-lg">
                 <Type className="w-4 h-4 mr-2" />
                 Typography
               </TabsTrigger>
-              <TabsTrigger value="voice" className="data-[state=active]:bg-yellow-500/20 data-[state=active]:text-yellow-400 rounded-lg">
+              <TabsTrigger value="voice" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400 rounded-lg">
                 <MessageSquare className="w-4 h-4 mr-2" />
                 Voice & Tone
               </TabsTrigger>
-              <TabsTrigger value="visual" className="data-[state=active]:bg-yellow-500/20 data-[state=active]:text-yellow-400 rounded-lg">
+              <TabsTrigger value="visual" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400 rounded-lg">
                 <Sparkles className="w-4 h-4 mr-2" />
                 Visual Style
               </TabsTrigger>
@@ -359,7 +358,7 @@ export default function CreateBranding() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: index * 0.1 }}
-                      className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4"
+                      className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-4"
                     >
                       <div className="mb-4">
                         <h3 className="text-white font-semibold capitalize">{logoType} Logo</h3>
@@ -410,7 +409,7 @@ export default function CreateBranding() {
                               className="hidden"
                               disabled={uploadingLogo}
                             />
-                            <div className="aspect-video bg-zinc-800/50 rounded-xl border-2 border-dashed border-zinc-700 hover:border-yellow-500/50 transition-colors flex flex-col items-center justify-center gap-2">
+                            <div className="aspect-video bg-zinc-800/50 rounded-xl border-2 border-dashed border-zinc-700 hover:border-cyan-500/30 transition-colors flex flex-col items-center justify-center gap-2">
                               <Upload className="w-4 h-4 text-zinc-600" />
                               <span className="text-xs text-zinc-500">
                                 {uploadingLogo ? 'Uploading...' : 'Click to upload'}
@@ -431,7 +430,7 @@ export default function CreateBranding() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
-                className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4"
+                className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-4"
               >
                 <div className="mb-4">
                   <h3 className="text-white font-semibold">Brand Colors</h3>
@@ -458,7 +457,7 @@ export default function CreateBranding() {
                       <Input
                         value={value}
                         onChange={(e) => updateField('colors', key, e.target.value)}
-                        className="bg-zinc-800/50 border-zinc-700 text-white font-mono text-sm focus:border-yellow-500/50"
+                        className="bg-zinc-800/50 border-zinc-700 text-white font-mono text-sm focus:border-cyan-500/30"
                         placeholder="#000000"
                       />
                     </div>
@@ -503,7 +502,7 @@ export default function CreateBranding() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
-                className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4"
+                className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-4"
               >
                 <div className="mb-4">
                   <h3 className="text-white font-semibold">Typography</h3>
@@ -519,7 +518,7 @@ export default function CreateBranding() {
                         value={brandData.typography.primary_font}
                         onValueChange={(value) => updateField('typography', 'primary_font', value)}
                       >
-                        <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white focus:border-yellow-500/50">
+                        <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500/30">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="bg-zinc-900 border-zinc-700">
@@ -538,7 +537,7 @@ export default function CreateBranding() {
                         value={brandData.typography.secondary_font}
                         onValueChange={(value) => updateField('typography', 'secondary_font', value)}
                       >
-                        <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white focus:border-yellow-500/50">
+                        <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500/30">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="bg-zinc-900 border-zinc-700">
@@ -578,7 +577,7 @@ export default function CreateBranding() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
-                className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4"
+                className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-4"
               >
                 <div className="mb-4">
                   <h3 className="text-white font-semibold">Voice & Tone</h3>
@@ -594,7 +593,7 @@ export default function CreateBranding() {
                         value={brandData.voice.tone}
                         onValueChange={(value) => updateField('voice', 'tone', value)}
                       >
-                        <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white focus:border-yellow-500/50">
+                        <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500/30">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="bg-zinc-900 border-zinc-700">
@@ -615,7 +614,7 @@ export default function CreateBranding() {
                           onChange={(e) => setNewKeyword(e.target.value)}
                           onKeyPress={(e) => e.key === 'Enter' && addKeyword()}
                           placeholder="Add a keyword..."
-                          className="bg-zinc-800/50 border-zinc-700 text-white focus:border-yellow-500/50"
+                          className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500/30"
                         />
                         <Button onClick={addKeyword} variant="outline" className="border-zinc-700 hover:bg-zinc-800">
                           <Plus className="w-4 h-4" />
@@ -626,7 +625,7 @@ export default function CreateBranding() {
                           <Badge
                             key={keyword}
                             variant="secondary"
-                            className="bg-yellow-500/20 text-yellow-400 cursor-pointer hover:bg-yellow-500/30 transition-colors"
+                            className="bg-cyan-500/10 text-cyan-400 cursor-pointer hover:bg-cyan-500/20 transition-colors"
                             onClick={() => removeKeyword(keyword)}
                           >
                             {keyword}
@@ -643,7 +642,7 @@ export default function CreateBranding() {
                       value={brandData.voice.style_guide}
                       onChange={(e) => updateField('voice', 'style_guide', e.target.value)}
                       placeholder="Describe your brand's writing style, preferred phrases, things to avoid..."
-                      className="bg-zinc-800/50 border-zinc-700 text-white min-h-[80px] focus:border-yellow-500/50"
+                      className="bg-zinc-800/50 border-zinc-700 text-white min-h-[80px] focus:border-cyan-500/30"
                     />
                   </div>
 
@@ -653,7 +652,7 @@ export default function CreateBranding() {
                       value={brandData.voice.sample_copy}
                       onChange={(e) => updateField('voice', 'sample_copy', e.target.value)}
                       placeholder="Paste examples of your brand's writing that represent the ideal tone..."
-                      className="bg-zinc-800/50 border-zinc-700 text-white min-h-[120px] focus:border-yellow-500/50"
+                      className="bg-zinc-800/50 border-zinc-700 text-white min-h-[120px] focus:border-cyan-500/30"
                     />
                   </div>
                 </div>
@@ -666,7 +665,7 @@ export default function CreateBranding() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
-                className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4"
+                className="bg-zinc-900/50 border border-zinc-800/60 rounded-[20px] p-4"
               >
                 <div className="mb-4">
                   <h3 className="text-white font-semibold">Visual Style</h3>
@@ -682,7 +681,7 @@ export default function CreateBranding() {
                         value={brandData.visual_style.mood}
                         onValueChange={(value) => updateField('visual_style', 'mood', value)}
                       >
-                        <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white focus:border-yellow-500/50">
+                        <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500/30">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="bg-zinc-900 border-zinc-700">
@@ -701,7 +700,7 @@ export default function CreateBranding() {
                         value={brandData.visual_style.image_style}
                         onChange={(e) => updateField('visual_style', 'image_style', e.target.value)}
                         placeholder="e.g., clean, minimal, vibrant..."
-                        className="bg-zinc-800/50 border-zinc-700 text-white focus:border-yellow-500/50"
+                        className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500/30"
                       />
                     </div>
                   </div>
@@ -715,7 +714,7 @@ export default function CreateBranding() {
                           onChange={(e) => setNewTheme(e.target.value)}
                           onKeyPress={(e) => e.key === 'Enter' && addTheme(false)}
                           placeholder="Add a theme..."
-                          className="bg-zinc-800/50 border-zinc-700 text-white focus:border-yellow-500/50"
+                          className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500/30"
                         />
                         <Button onClick={() => addTheme(false)} variant="outline" className="border-zinc-700 hover:bg-zinc-800">
                           <Plus className="w-4 h-4" />
@@ -726,7 +725,7 @@ export default function CreateBranding() {
                           <Badge
                             key={theme}
                             variant="secondary"
-                            className="bg-yellow-500/20 text-yellow-400 cursor-pointer hover:bg-yellow-500/30 transition-colors"
+                            className="bg-cyan-500/10 text-cyan-400 cursor-pointer hover:bg-cyan-500/20 transition-colors"
                             onClick={() => removeTheme(theme, false)}
                           >
                             <Check className="w-3 h-3 mr-1" />
@@ -745,7 +744,7 @@ export default function CreateBranding() {
                           onChange={(e) => setNewAvoidTheme(e.target.value)}
                           onKeyPress={(e) => e.key === 'Enter' && addTheme(true)}
                           placeholder="Add a theme to avoid..."
-                          className="bg-zinc-800/50 border-zinc-700 text-white focus:border-yellow-500/50"
+                          className="bg-zinc-800/50 border-zinc-700 text-white focus:border-cyan-500/30"
                         />
                         <Button onClick={() => addTheme(true)} variant="outline" className="border-zinc-700 hover:bg-zinc-800">
                           <Plus className="w-4 h-4" />
@@ -773,6 +772,6 @@ export default function CreateBranding() {
           </Tabs>
         </motion.div>
       </div>
-    </div>
+    </CreatePageTransition>
   );
 }
