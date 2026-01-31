@@ -70,11 +70,35 @@ function MilestoneCard({ milestone, index }: { milestone: typeof ENFORCEMENT_MIL
       transition={{ delay: index * 0.1 }}
       className="relative"
     >
+      {/* Connecting line: 2px, dashed for future, solid for past */}
       {index < ENFORCEMENT_MILESTONES.length - 1 && (
-        <div className={cn('absolute left-6 top-20 bottom-0 w-0.5 bg-gradient-to-b', st('from-emerald-300/50 to-slate-200', 'from-emerald-500/30 to-zinc-800/60'))} />
+        <div
+          className={cn(
+            'absolute left-6 top-20 bottom-0 w-[2px]',
+            isPast
+              ? st('bg-emerald-400', 'bg-emerald-500/50')
+              : st('border-l-2 border-dashed border-zinc-300 bg-transparent', 'border-l-2 border-dashed border-zinc-700 bg-transparent')
+          )}
+          style={!isPast ? { width: 0 } : undefined}
+        />
       )}
 
-      <SentinelCard padding="md" className={isPast ? st('border-emerald-300', 'border-emerald-500/30') : ''}>
+      {/* Date node circle */}
+      <div className="absolute left-[18px] top-6 z-10">
+        {isPast ? (
+          <div className={cn('w-3 h-3 rounded-full', st('bg-emerald-500', 'bg-emerald-400'))} />
+        ) : (
+          <div className={cn('w-3 h-3 rounded-full border-2', st('border-zinc-400 bg-white', 'border-zinc-500 bg-zinc-900'))} />
+        )}
+      </div>
+
+      <SentinelCard
+        padding="md"
+        className={cn(
+          isPast ? st('border-emerald-300', 'border-emerald-500/30') : '',
+        )}
+        style={isPast ? { borderLeft: '3px solid rgb(52, 211, 153)' } : undefined}
+      >
         {isPast && (
           <div className={cn('absolute top-0 left-0 right-0 h-1 rounded-t-[20px] bg-gradient-to-r', st('from-emerald-500 to-emerald-400', 'from-emerald-500 to-emerald-400'))} />
         )}
@@ -91,10 +115,18 @@ function MilestoneCard({ milestone, index }: { milestone: typeof ENFORCEMENT_MIL
               <div className="flex-shrink-0">
                 {isPast ? (
                   <SentinelBadge variant="success">Active</SentinelBadge>
-                ) : daysUntil <= 180 ? (
-                  <SentinelBadge variant="warning">{daysUntil}d</SentinelBadge>
                 ) : (
-                  <SentinelBadge variant="neutral">{daysUntil}d</SentinelBadge>
+                  <div className="text-center">
+                    <div className={cn(
+                      'text-xl font-bold',
+                      daysUntil <= 180
+                        ? st('text-yellow-600', 'text-yellow-400')
+                        : st('text-slate-500', 'text-zinc-400')
+                    )}>
+                      {daysUntil}
+                    </div>
+                    <div className={cn('text-[10px]', st('text-slate-400', 'text-zinc-600'))}>days</div>
+                  </div>
                 )}
               </div>
             </div>
@@ -111,11 +143,54 @@ function MilestoneCard({ milestone, index }: { milestone: typeof ENFORCEMENT_MIL
   );
 }
 
+function CircularProgress({ value, size = 32 }: { value: number; size?: number }) {
+  const strokeWidth = 3;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (value / 100) * circumference;
+
+  return (
+    <svg width={size} height={size} className="flex-shrink-0">
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={strokeWidth}
+        className="text-zinc-800"
+      />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={strokeWidth}
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+        strokeLinecap="round"
+        className="text-emerald-400"
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+      />
+    </svg>
+  );
+}
+
 function SystemProgressCard({ item, index }: { item: any; index: number }) {
   const { st } = useSentinelTheme();
+
+  const riskBorderColor = (() => {
+    const risk = item.system.risk_classification?.toLowerCase();
+    if (risk?.includes('high')) return st('border-l-red-500', 'border-l-red-400');
+    if (risk?.includes('limited')) return st('border-l-yellow-500', 'border-l-yellow-400');
+    if (risk?.includes('minimal')) return st('border-l-emerald-500', 'border-l-emerald-400');
+    return st('border-l-zinc-400', 'border-l-zinc-600');
+  })();
+
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
-      <SentinelCard padding="md">
+      <SentinelCard padding="md" className={cn('border-l-[3px]', riskBorderColor)}>
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1 min-w-0">
             <h3 className={cn('text-lg font-semibold truncate', st('text-slate-900', 'text-white'))}>{item.system.name}</h3>
@@ -129,9 +204,12 @@ function SystemProgressCard({ item, index }: { item: any; index: number }) {
               )}
             </div>
           </div>
-          <div className="text-right">
-            <div className={cn('text-xl font-bold', st('text-emerald-500', 'text-emerald-400'))}>{Math.round(item.progress)}%</div>
-            <div className={cn('text-[10px]', st('text-slate-400', 'text-zinc-600'))}>Complete</div>
+          <div className="flex items-center gap-2">
+            <CircularProgress value={item.progress} size={32} />
+            <div className="text-right">
+              <div className={cn('text-xl font-bold', st('text-emerald-500', 'text-emerald-400'))}>{Math.round(item.progress)}%</div>
+              <div className={cn('text-[10px]', st('text-slate-400', 'text-zinc-600'))}>Complete</div>
+            </div>
           </div>
         </div>
         <Progress value={item.progress} className={cn('h-2 mb-3', st('bg-slate-200', 'bg-zinc-800'))} />
@@ -259,15 +337,30 @@ export default function ComplianceRoadmap() {
         <AnimatePresence>
           {aiRecommendations && (
             <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
-              <SentinelCard padding="md" className={cn('bg-gradient-to-br', st('from-emerald-50 to-transparent', 'from-emerald-400/5 to-transparent'))}>
+              <SentinelCard
+                padding="md"
+                className={cn('bg-gradient-to-br', st('from-emerald-50 to-transparent', 'from-emerald-400/5 to-transparent'))}
+                style={{ boxShadow: '0 0 20px rgba(134,239,172,0.1)' }}
+              >
                 <div className="flex items-center justify-between mb-3">
                   <h3 className={cn('text-lg font-semibold flex items-center gap-2', st('text-slate-900', 'text-white'))}>
                     <Sparkles className={cn('w-5 h-5', st('text-emerald-600', 'text-emerald-400'))} />
                     AI-Generated Action Plan
                   </h3>
-                  <Button variant="ghost" size="sm" onClick={() => setAiRecommendations(null)} className={cn(st('text-slate-400 hover:text-slate-900', 'text-zinc-400 hover:text-white'))}>
-                    Dismiss
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={generateAIPlan}
+                      disabled={generatingPlan}
+                      className={cn(st('text-emerald-600 hover:text-emerald-700', 'text-emerald-400 hover:text-emerald-300'))}
+                    >
+                      Regenerate Plan
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setAiRecommendations(null)} className={cn(st('text-slate-400 hover:text-slate-900', 'text-zinc-400 hover:text-white'))}>
+                      Dismiss
+                    </Button>
+                  </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -277,7 +370,10 @@ export default function ComplianceRoadmap() {
                     <ul className="space-y-2">
                       {aiRecommendations.immediate_actions?.map((action, i) => (
                         <li key={i} className={cn('text-xs flex items-start gap-2', st('text-slate-600', 'text-zinc-300'))}>
-                          <ChevronRight className={cn('w-4 h-4 flex-shrink-0 mt-0.5', st('text-emerald-600', 'text-emerald-400'))} />{action}
+                          <span className={cn('w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-[10px] font-bold', st('bg-emerald-100 text-emerald-700', 'bg-emerald-400/20 text-emerald-400'))}>
+                            {i + 1}
+                          </span>
+                          {action}
                         </li>
                       ))}
                     </ul>
@@ -289,7 +385,10 @@ export default function ComplianceRoadmap() {
                     <ul className="space-y-2">
                       {aiRecommendations.quick_wins?.map((win, i) => (
                         <li key={i} className={cn('text-xs flex items-start gap-2', st('text-slate-600', 'text-zinc-300'))}>
-                          <ChevronRight className={cn('w-4 h-4 flex-shrink-0 mt-0.5', st('text-emerald-600', 'text-emerald-300'))} />{win}
+                          <span className={cn('w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-[10px] font-bold', st('bg-emerald-100 text-emerald-600', 'bg-emerald-400/15 text-emerald-300'))}>
+                            {i + 1}
+                          </span>
+                          {win}
                         </li>
                       ))}
                     </ul>
@@ -310,11 +409,11 @@ export default function ComplianceRoadmap() {
 
         {/* Stats Row */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-          <StatCard icon={FileText} label="Total Tasks" value={stats.allTasks.length} delay={0} />
-          <StatCard icon={AlertTriangle} label="Overdue" value={stats.overdueCount} delay={0.05} />
-          <StatCard icon={Zap} label="Urgent (90d)" value={stats.urgentTasks.length} delay={0.1} />
-          <StatCard icon={CheckCircle} label="Completed" value={stats.completedCount} delay={0.15} />
-          <StatCard icon={TrendingUp} label="Progress" value={`${stats.progressPercent}%`} delay={0.2} />
+          <StatCard icon={FileText} label="Total Tasks" value={stats.allTasks.length} delay={0} accentColor="emerald" />
+          <StatCard icon={AlertTriangle} label="Overdue" value={stats.overdueCount} delay={0.05} accentColor="red" />
+          <StatCard icon={Zap} label="Urgent (90d)" value={stats.urgentTasks.length} delay={0.1} accentColor="yellow" />
+          <StatCard icon={CheckCircle} label="Completed" value={stats.completedCount} delay={0.15} accentColor="green" />
+          <StatCard icon={TrendingUp} label="Progress" value={`${stats.progressPercent}%`} delay={0.2} accentColor="emerald" />
         </div>
 
         {/* Tabs */}
@@ -326,8 +425,11 @@ export default function ComplianceRoadmap() {
             <TabsTrigger value="systems" className={cn('rounded-lg px-4', st('data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-600', 'data-[state=active]:bg-emerald-400/20 data-[state=active]:text-emerald-400'))}>
               <Target className="w-4 h-4 mr-2" />By System ({stats.systemProgress.length})
             </TabsTrigger>
-            <TabsTrigger value="urgent" className={cn('rounded-lg px-4', st('data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-600', 'data-[state=active]:bg-emerald-400/20 data-[state=active]:text-emerald-400'))}>
+            <TabsTrigger value="urgent" className={cn('rounded-lg px-4 flex items-center', st('data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-600', 'data-[state=active]:bg-emerald-400/20 data-[state=active]:text-emerald-400'))}>
               <Zap className="w-4 h-4 mr-2" />Urgent ({stats.urgentTasks.length})
+              {stats.urgentTasks.length > 0 && (
+                <span className="w-1.5 h-1.5 rounded-full bg-red-400 ml-1" />
+              )}
             </TabsTrigger>
           </TabsList>
 

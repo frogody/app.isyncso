@@ -27,11 +27,20 @@ const CLASSIFICATION_ORDER: RiskClassification[] = [
   'prohibited', 'high-risk', 'gpai', 'limited-risk', 'minimal-risk', 'unclassified',
 ];
 
+const CLASSIFICATION_BAR_COLORS: Record<RiskClassification, [string, string]> = {
+  'prohibited':   ['bg-red-500', 'bg-red-500'],
+  'high-risk':    ['bg-orange-500', 'bg-orange-500'],
+  'gpai':         ['bg-purple-500', 'bg-purple-500'],
+  'limited-risk': ['bg-yellow-500', 'bg-yellow-400'],
+  'minimal-risk': ['bg-green-500', 'bg-green-500'],
+  'unclassified': ['bg-zinc-400', 'bg-zinc-500'],
+};
+
 const STATUS_CONFIG = [
-  { key: 'not-started' as const, label: 'Not Started', variant: 'neutral' as const },
-  { key: 'in-progress' as const, label: 'In Progress', variant: 'warning' as const },
-  { key: 'compliant' as const, label: 'Compliant', variant: 'success' as const },
-  { key: 'non-compliant' as const, label: 'Non-Compliant', variant: 'error' as const },
+  { key: 'not-started' as const, label: 'Not Started', variant: 'neutral' as const, color: ['bg-zinc-400', 'bg-zinc-500'], dot: ['bg-zinc-400', 'bg-zinc-500'] },
+  { key: 'in-progress' as const, label: 'In Progress', variant: 'warning' as const, color: ['bg-yellow-500', 'bg-yellow-400'], dot: ['bg-yellow-500', 'bg-yellow-400'] },
+  { key: 'compliant' as const, label: 'Compliant', variant: 'success' as const, color: ['bg-green-500', 'bg-green-500'], dot: ['bg-green-500', 'bg-green-500'] },
+  { key: 'non-compliant' as const, label: 'Non-Compliant', variant: 'error' as const, color: ['bg-red-500', 'bg-red-500'], dot: ['bg-red-500', 'bg-red-500'] },
 ];
 
 export default function SentinelDashboard() {
@@ -39,6 +48,9 @@ export default function SentinelDashboard() {
   const { totalSystems, complianceScore, byClassification, byStatus } = useComplianceStatus(systems);
 
   const { st } = useSentinelTheme();
+
+  const maxClassification = Math.max(...CLASSIFICATION_ORDER.map(c => byClassification[c]), 1);
+  const maxStatus = Math.max(...STATUS_CONFIG.map(s => byStatus[s.key]), 1);
 
   if (loading) {
     return (
@@ -80,19 +92,29 @@ export default function SentinelDashboard() {
           </div>
         </div>
 
-        {/* Compliance Score & Stats */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <SentinelCard padding="md" className="flex flex-col items-center justify-center">
-            <ComplianceScoreGauge score={complianceScore} size="md" />
-          </SentinelCard>
+        {/* Hero: Gauge + Stats */}
+        <SentinelCard
+          padding="none"
+          className={cn(
+            'overflow-hidden',
+            st('bg-gradient-to-r from-emerald-50 via-white to-white', 'bg-gradient-to-r from-emerald-500/5 via-transparent to-transparent')
+          )}
+        >
+          <div className="flex flex-col lg:flex-row items-center gap-6 p-6">
+            {/* Gauge left */}
+            <div className="flex-shrink-0 flex items-center justify-center">
+              <ComplianceScoreGauge score={complianceScore} size="md" />
+            </div>
 
-          <div className="lg:col-span-2 grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <StatCard icon={Shield} label="AI Systems" value={totalSystems} delay={0} />
-            <StatCard icon={AlertTriangle} label="High-Risk" value={byClassification['high-risk']} delay={0.1} />
-            <StatCard icon={CheckCircle} label="Compliant" value={byStatus.compliant} delay={0.2} />
-            <StatCard icon={Clock} label="In Progress" value={byStatus['in-progress']} delay={0.3} />
+            {/* Stats 2×2 grid right */}
+            <div className="flex-1 grid grid-cols-2 gap-3 w-full">
+              <StatCard icon={Shield} label="AI Systems" value={totalSystems} delay={0} accentColor="emerald" />
+              <StatCard icon={AlertTriangle} label="High-Risk" value={byClassification['high-risk']} delay={0.1} accentColor="orange" />
+              <StatCard icon={CheckCircle} label="Compliant" value={byStatus.compliant} delay={0.2} accentColor="green" />
+              <StatCard icon={Clock} label="In Progress" value={byStatus['in-progress']} delay={0.3} accentColor="yellow" />
+            </div>
           </div>
-        </div>
+        </SentinelCard>
 
         {/* Workflow Stepper */}
         <motion.div {...MOTION_VARIANTS.slideUp} transition={{ delay: 0.4 }}>
@@ -106,47 +128,81 @@ export default function SentinelDashboard() {
 
         {/* Classification Breakdown & Compliance Status */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Risk Classification - bar chart */}
           <SentinelCard padding="md">
-            <h3 className={cn('text-base font-semibold flex items-center gap-2 mb-3', st('text-slate-900', 'text-white'))}>
+            <h3 className={cn('text-base font-semibold flex items-center gap-2 mb-4', st('text-slate-900', 'text-white'))}>
               <Shield className={cn('w-4 h-4', st('text-emerald-500', 'text-emerald-400'))} />
               Risk Classification
             </h3>
-            <div className="space-y-2">
-              {CLASSIFICATION_ORDER.map((classification, i) => (
-                <motion.div
-                  key={classification}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.6 + i * 0.05 }}
-                  className={cn('flex items-center justify-between p-2 rounded-lg border', st('bg-slate-50 border-slate-200', 'bg-zinc-800/30 border-zinc-700/30'))}
-                >
-                  <RiskClassificationBadge classification={classification} />
-                  <span className={cn('text-sm font-bold', st('text-slate-900', 'text-white'))}>
-                    {byClassification[classification]}
-                  </span>
-                </motion.div>
-              ))}
+            <div className="space-y-3">
+              {CLASSIFICATION_ORDER.map((classification, i) => {
+                const count = byClassification[classification];
+                const pct = (count / Math.max(totalSystems, 1)) * 100;
+                const colors = CLASSIFICATION_BAR_COLORS[classification];
+                return (
+                  <motion.div
+                    key={classification}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.6 + i * 0.05 }}
+                    className="flex items-center gap-3"
+                  >
+                    <div className="w-28 flex-shrink-0">
+                      <RiskClassificationBadge classification={classification} />
+                    </div>
+                    <div className={cn('flex-1 h-6 rounded-full overflow-hidden', st('bg-slate-100', 'bg-zinc-800/50'))}>
+                      <motion.div
+                        className={cn('h-full rounded-full', st(colors[0], colors[1]))}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${pct}%` }}
+                        transition={{ duration: 0.6, delay: 0.7 + i * 0.05, ease: 'easeOut' }}
+                      />
+                    </div>
+                    <span className={cn('text-sm font-bold w-8 text-right tabular-nums', st('text-slate-900', 'text-white'))}>
+                      {count}
+                    </span>
+                  </motion.div>
+                );
+              })}
             </div>
           </SentinelCard>
 
+          {/* Compliance Status - bar chart */}
           <SentinelCard padding="md">
-            <h3 className={cn('text-base font-semibold flex items-center gap-2 mb-3', st('text-slate-900', 'text-white'))}>
+            <h3 className={cn('text-base font-semibold flex items-center gap-2 mb-4', st('text-slate-900', 'text-white'))}>
               <FileText className={cn('w-4 h-4', st('text-emerald-500', 'text-emerald-400'))} />
               Compliance Status
             </h3>
-            <div className="space-y-2">
-              {STATUS_CONFIG.map((status, i) => (
-                <motion.div
-                  key={status.key}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.6 + i * 0.05 }}
-                  className={cn('flex items-center justify-between p-2 rounded-lg border', st('bg-slate-50 border-slate-200', 'bg-zinc-800/30 border-zinc-700/30'))}
-                >
-                  <SentinelBadge variant={status.variant}>{status.label}</SentinelBadge>
-                  <span className={cn('text-sm font-bold', st('text-slate-900', 'text-white'))}>{byStatus[status.key]}</span>
-                </motion.div>
-              ))}
+            <div className="space-y-3">
+              {STATUS_CONFIG.map((status, i) => {
+                const count = byStatus[status.key];
+                const pct = (count / Math.max(totalSystems, 1)) * 100;
+                return (
+                  <motion.div
+                    key={status.key}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.6 + i * 0.05 }}
+                    className="flex items-center gap-3"
+                  >
+                    <div className="w-28 flex-shrink-0 flex items-center gap-2">
+                      <div className={cn('w-2 h-2 rounded-full flex-shrink-0', st(status.dot[0], status.dot[1]))} />
+                      <span className={cn('text-sm font-medium', st('text-slate-700', 'text-zinc-300'))}>{status.label}</span>
+                    </div>
+                    <div className={cn('flex-1 h-6 rounded-full overflow-hidden', st('bg-slate-100', 'bg-zinc-800/50'))}>
+                      <motion.div
+                        className={cn('h-full rounded-full', st(status.color[0], status.color[1]))}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${pct}%` }}
+                        transition={{ duration: 0.6, delay: 0.7 + i * 0.05, ease: 'easeOut' }}
+                      />
+                    </div>
+                    <span className={cn('text-sm font-bold w-8 text-right tabular-nums', st('text-slate-900', 'text-white'))}>
+                      {count}
+                    </span>
+                  </motion.div>
+                );
+              })}
             </div>
           </SentinelCard>
         </div>

@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { CheckCircle, Circle, ArrowRight } from 'lucide-react';
+import { CheckCircle, Circle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { AISystemRecord } from '@/tokens/sentinel';
 import { useSentinelTheme } from '@/contexts/SentinelThemeContext';
@@ -70,17 +70,20 @@ export default function WorkflowStepper({ systems = [] }: WorkflowStepperProps) 
 
   const { st } = useSentinelTheme();
 
+  const completedCount = steps.filter(s => s.isComplete).length;
+  const progressPct = (completedCount / steps.length) * 100;
+
   return (
     <div className={cn('rounded-[20px] p-6 backdrop-blur-sm border', st('bg-white border-slate-200 shadow-sm', 'bg-zinc-900/50 border-zinc-800/60'))}>
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center gap-0">
         {steps.map((step, idx) => {
           const isLast = idx === steps.length - 1;
-          const Icon = step.isComplete ? CheckCircle : Circle;
+          const prevComplete = idx === 0 || steps[idx - 1].isComplete;
 
           return (
             <React.Fragment key={step.id}>
               <motion.div
-                className="flex-1"
+                className="flex-1 min-w-0"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.1 }}
@@ -93,24 +96,43 @@ export default function WorkflowStepper({ systems = [] }: WorkflowStepperProps) 
                   )}
                 >
                   <div className={cn(
-                    'relative p-4 rounded-[20px] border transition-all',
+                    'relative p-4 rounded-[20px] border transition-all overflow-hidden',
                     step.isCurrent
                       ? st('bg-emerald-50 border-emerald-300 shadow-md', 'bg-emerald-500/10 border-emerald-500/40 shadow-glow')
                       : step.isComplete
                       ? st('bg-emerald-50/50 border-emerald-200', 'bg-emerald-500/5 border-emerald-500/20')
                       : st('bg-slate-50 border-slate-200', 'bg-zinc-800/30 border-zinc-700/30')
                   )}>
+                    {/* Top emerald accent bar for current step */}
+                    {step.isCurrent && (
+                      <div className={cn('absolute top-0 left-0 right-0 h-[3px]', st('bg-emerald-500', 'bg-emerald-400'))} />
+                    )}
+
                     <div className="flex items-start gap-3">
+                      {/* Step circle with number or check */}
                       <div className={cn(
-                        'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors',
-                        step.isCurrent
-                          ? st('bg-emerald-100 text-emerald-500', 'bg-emerald-500/20 text-emerald-400')
-                          : step.isComplete
-                          ? 'bg-green-500/20 text-green-400'
+                        'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors relative',
+                        step.isComplete
+                          ? 'bg-green-500 text-white'
+                          : step.isCurrent
+                          ? st('bg-emerald-100 text-emerald-600', 'bg-emerald-500/20 text-emerald-400')
                           : st('bg-slate-100 text-slate-400', 'bg-zinc-700/30 text-zinc-500')
                       )}>
-                        <Icon className="w-4 h-4" />
+                        {step.isComplete ? (
+                          <CheckCircle className="w-5 h-5" />
+                        ) : (
+                          <span className="text-xs font-bold">{step.id}</span>
+                        )}
+                        {/* Emerald ring animation for current step */}
+                        {step.isCurrent && (
+                          <motion.div
+                            className={cn('absolute inset-0 rounded-full border-2', st('border-emerald-400', 'border-emerald-500'))}
+                            animate={{ scale: [1, 1.25, 1], opacity: [0.8, 0, 0.8] }}
+                            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                          />
+                        )}
                       </div>
+
                       <div className="flex-1 min-w-0">
                         <span className={cn(
                           'font-bold text-sm block mb-0.5',
@@ -128,12 +150,13 @@ export default function WorkflowStepper({ systems = [] }: WorkflowStepperProps) 
                       </div>
                     </div>
 
+                    {/* START HERE badge with bounce */}
                     {step.isCurrent && systems.length === 0 && (
                       <motion.div
                         className={cn('absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 text-white text-[10px] font-bold rounded-full whitespace-nowrap', st('bg-emerald-500', 'bg-emerald-500'))}
                         initial={{ opacity: 0, y: -4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.6 }}
+                        animate={{ opacity: 1, y: [0, -3, 0] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
                       >
                         START HERE
                       </motion.div>
@@ -150,12 +173,30 @@ export default function WorkflowStepper({ systems = [] }: WorkflowStepperProps) 
                 </Link>
               </motion.div>
 
+              {/* Connecting line between steps */}
               {!isLast && (
-                <ArrowRight className={cn('w-5 h-5 flex-shrink-0', st('text-slate-300', 'text-zinc-600'))} />
+                <div className="w-8 flex-shrink-0 flex items-center justify-center px-1">
+                  <div className={cn(
+                    'h-0.5 flex-1 rounded-full transition-colors',
+                    step.isComplete
+                      ? st('bg-emerald-400', 'bg-emerald-500')
+                      : st('bg-slate-200', 'bg-zinc-700')
+                  )} />
+                </div>
               )}
             </React.Fragment>
           );
         })}
+      </div>
+
+      {/* Progress bar */}
+      <div className={cn('mt-4 h-1 rounded-full overflow-hidden', st('bg-slate-100', 'bg-zinc-800'))}>
+        <motion.div
+          className={cn('h-full rounded-full', st('bg-emerald-500', 'bg-emerald-400'))}
+          initial={{ width: 0 }}
+          animate={{ width: `${progressPct}%` }}
+          transition={{ duration: 0.8, delay: 0.5, ease: 'easeOut' }}
+        />
       </div>
     </div>
   );
