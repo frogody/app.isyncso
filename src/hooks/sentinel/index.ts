@@ -1,2 +1,5 @@
 // Sentinel Custom Hooks - Barrel Export
-// Hooks will be added here as they are created in Phase 4
+export { useAISystems } from './useAISystems';
+export { useComplianceStatus } from './useComplianceStatus';
+export { useRoadmap } from './useRoadmap';
+export { useDocumentGenerator } from './useDocumentGenerator';
