@@ -1437,19 +1437,47 @@ export default function Layout({ children, currentPageName }) {
           }
           body{background:var(--bg); color:var(--txt); font-family: 'Inter', sans-serif;}
 
-          /* Force dark backgrounds everywhere — skip [data-sentinel-light] zones */
-          :not([data-sentinel-light]) .bg-white,
-          :not([data-sentinel-light]) .bg-white\\/95,:not([data-sentinel-light]) .bg-white\\/90,:not([data-sentinel-light]) .bg-white\\/80,:not([data-sentinel-light]) .bg-white\\/70,
-          :not([data-sentinel-light]) .bg-white\\/60,:not([data-sentinel-light]) .bg-white\\/50,:not([data-sentinel-light]) .bg-white\\/40,:not([data-sentinel-light]) .bg-white\\/30,
-          :not([data-sentinel-light]) .bg-white\\/20,:not([data-sentinel-light]) .bg-white\\/10 { background: var(--surface) !important; border-color: rgba(255,255,255,0.08) !important; }
+          /* Force dark backgrounds everywhere */
+          .bg-white,
+          .bg-white\\/95,.bg-white\\/90,.bg-white\\/80,.bg-white\\/70,
+          .bg-white\\/60,.bg-white\\/50,.bg-white\\/40,.bg-white\\/30,
+          .bg-white\\/20,.bg-white\\/10 { background: var(--surface) !important; border-color: rgba(255,255,255,0.08) !important; }
 
-          :not([data-sentinel-light]) .text-black { color: var(--txt) !important; }
+          .text-black { color: var(--txt) !important; }
           .border-white { border-color: rgba(255,255,255,.08) !important; }
 
-          /* Sentinel light theme overrides */
-          [data-sentinel-light] { --bg: #F8FAFC; --surface: #FFFFFF; --surface-hover: #F1F5F9; --txt: #0F172A; --muted: #64748B; }
+          /* ── Sentinel Light Theme ─────────────────────────────────
+             Override ALL global dark !important rules inside [data-sentinel-light].
+             These use [data-sentinel-light] prefix for higher specificity + !important. */
+          [data-sentinel-light] { background: #F8FAFC !important; color: #0F172A !important; }
+          [data-sentinel-light] .bg-white,
+          [data-sentinel-light] .bg-white\\/95,[data-sentinel-light] .bg-white\\/90,[data-sentinel-light] .bg-white\\/80 { background: #FFFFFF !important; border-color: #E2E8F0 !important; }
+          [data-sentinel-light] .bg-slate-50 { background: #F8FAFC !important; }
+          [data-sentinel-light] .bg-slate-100 { background: #F1F5F9 !important; }
+          [data-sentinel-light] .bg-black { background: #F8FAFC !important; }
+          [data-sentinel-light] .bg-zinc-900\\/50 { background: #FFFFFF !important; border-color: #E2E8F0 !important; }
+          [data-sentinel-light] .bg-zinc-900\\/60 { background: #FFFFFF !important; }
+          [data-sentinel-light] .bg-zinc-800\\/60 { background: #F1F5F9 !important; }
+          [data-sentinel-light] .bg-zinc-800 { background: #E2E8F0 !important; }
+          [data-sentinel-light] .bg-zinc-950 { background: #F8FAFC !important; }
+          [data-sentinel-light] .text-white { color: #0F172A !important; }
+          [data-sentinel-light] .text-black { color: #0F172A !important; }
+          [data-sentinel-light] .text-zinc-400 { color: #64748B !important; }
+          [data-sentinel-light] .text-zinc-500 { color: #94A3B8 !important; }
+          [data-sentinel-light] .text-zinc-300 { color: #475569 !important; }
+          [data-sentinel-light] .text-zinc-600 { color: #94A3B8 !important; }
+          [data-sentinel-light] .text-gray-300,[data-sentinel-light] .text-gray-400 { color: #64748B !important; }
+          [data-sentinel-light] .border-zinc-800\\/60 { border-color: #E2E8F0 !important; }
+          [data-sentinel-light] .border-zinc-700 { border-color: #CBD5E1 !important; }
+          [data-sentinel-light] .border-zinc-800 { border-color: #E2E8F0 !important; }
+          [data-sentinel-light] .border-white { border-color: #E2E8F0 !important; }
+          [data-sentinel-light] .shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important; }
+          [data-sentinel-light] .shadow-lg { box-shadow: 0 10px 15px rgba(0,0,0,0.1) !important; }
           [data-sentinel-light] input, [data-sentinel-light] textarea, [data-sentinel-light] select { background: #FFFFFF !important; color: #0F172A !important; border: 1px solid #E2E8F0 !important; border-radius: 8px !important; }
           [data-sentinel-light] input:focus, [data-sentinel-light] textarea:focus, [data-sentinel-light] select:focus { border-color: #86EFAC !important; box-shadow: 0 0 0 2px rgba(134,239,172,0.2) !important; }
+          [data-sentinel-light] input::placeholder, [data-sentinel-light] textarea::placeholder { color: #94A3B8 !important; }
+          [data-sentinel-light] .glass-card { background: #FFFFFF !important; border: 1px solid #E2E8F0 !important; box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important; }
+          [data-sentinel-light] .backdrop-blur-sm { backdrop-filter: none !important; }
 
           /* Surfaces */
           .glass-card {
@@ -1496,22 +1524,22 @@ export default function Layout({ children, currentPageName }) {
             background: rgba(255,255,255,0.02);
           }
 
-          /* Inputs (skip Sentinel light theme) */
-          :not([data-sentinel-light]) input, :not([data-sentinel-light]) textarea, :not([data-sentinel-light]) select {
+          /* Inputs */
+          input, textarea, select {
             background: #080808 !important;
             color: #fff !important;
             border: 1px solid rgba(255,255,255,0.08) !important;
             border-radius: 8px !important;
           }
-          :not([data-sentinel-light]) input:focus, :not([data-sentinel-light]) textarea:focus, :not([data-sentinel-light]) select:focus {
+          input:focus, textarea:focus, select:focus {
             border-color: var(--accent) !important;
             box-shadow: 0 0 0 1px var(--accent-glow);
           }
 
-          /* Global Colors (skip Sentinel light theme) */
-          :not([data-sentinel-light]) .bg-black { background: var(--bg) !important; }
-          :not([data-sentinel-light]) .text-white { color: #fff !important; }
-          :not([data-sentinel-light]) .text-gray-300, :not([data-sentinel-light]) .text-gray-400 { color: #888 !important; }
+          /* Global Colors */
+          .bg-black { background: var(--bg) !important; }
+          .text-white { color: #fff !important; }
+          .text-gray-300, .text-gray-400 { color: #888 !important; }
 
           /* Badges & Pills */
           .badge, .pill {
