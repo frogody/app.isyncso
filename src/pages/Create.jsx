@@ -46,8 +46,9 @@ function AuroraBackground() {
 
 function GalleryItem({ item, index }) {
   const isVideo = item.content_type === 'video' || item._type === 'video' || item._type === 'video_project';
-  const thumbnailUrl = item.url || item.thumbnail_url || item.final_thumbnail_url;
-  const hasImage = thumbnailUrl && (thumbnailUrl.includes('.png') || thumbnailUrl.includes('.jpg') || thumbnailUrl.includes('.jpeg') || thumbnailUrl.includes('.webp') || item.content_type === 'image');
+  const mediaUrl = item.url || item.thumbnail_url || item.final_thumbnail_url;
+  const isVideoFile = mediaUrl && (mediaUrl.includes('.mp4') || mediaUrl.includes('.webm') || mediaUrl.includes('.mov'));
+  const isImageFile = mediaUrl && (mediaUrl.includes('.png') || mediaUrl.includes('.jpg') || mediaUrl.includes('.jpeg') || mediaUrl.includes('.webp') || item.content_type === 'image');
 
   return (
     <motion.div
@@ -57,8 +58,10 @@ function GalleryItem({ item, index }) {
       whileHover={{ scale: 1.04, y: -4 }}
       className="relative aspect-[4/5] rounded-2xl overflow-hidden group cursor-pointer ring-1 ring-white/[0.04]"
     >
-      {hasImage ? (
-        <img src={thumbnailUrl} alt={item.name || ''} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
+      {isVideoFile ? (
+        <video src={mediaUrl} muted preload="metadata" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+      ) : isImageFile ? (
+        <img src={mediaUrl} alt={item.name || ''} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy" />
       ) : (
         <div className={`w-full h-full ${isVideo ? 'bg-gradient-to-br from-yellow-950/40 via-zinc-950 to-zinc-900' : 'bg-gradient-to-br from-zinc-900 via-zinc-950 to-yellow-950/30'} flex items-center justify-center`}>
           {isVideo ? <Play className="w-10 h-10 text-yellow-500/20" /> : <FileImage className="w-10 h-10 text-yellow-500/20" />}
@@ -162,7 +165,7 @@ export default function Create() {
       <div className="relative w-full">
         <AuroraBackground />
 
-        <div className="relative z-10 w-full max-w-[1400px] mx-auto px-5 lg:px-8 py-6 space-y-10">
+        <div className="relative z-10 w-full px-4 lg:px-6 py-6 space-y-10">
 
           {/* ── Hero ── */}
           <motion.section
