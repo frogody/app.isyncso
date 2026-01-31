@@ -19,6 +19,9 @@ import { SentinelBadge } from '@/components/sentinel/ui/SentinelBadge';
 import { SentinelEmptyState } from '@/components/sentinel/ui/SentinelErrorBoundary';
 import { StatCard } from '@/components/sentinel/ui/StatCard';
 import { SentinelPageTransition } from '@/components/sentinel/ui/SentinelPageTransition';
+import { ThemeToggle } from '@/components/sentinel/ThemeToggle';
+import { useSentinelTheme } from '@/contexts/SentinelThemeContext';
+import { cn } from '@/lib/utils';
 
 interface AIPlan {
   immediate_actions?: string[];
@@ -55,6 +58,7 @@ const ENFORCEMENT_MILESTONES = [
 ];
 
 function MilestoneCard({ milestone, index }: { milestone: typeof ENFORCEMENT_MILESTONES[0]; index: number }) {
+  const { st } = useSentinelTheme();
   const isPast = new Date(milestone.date) < new Date();
   const daysUntil = Math.ceil((new Date(milestone.date).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   const Icon = milestone.icon;
@@ -67,22 +71,22 @@ function MilestoneCard({ milestone, index }: { milestone: typeof ENFORCEMENT_MIL
       className="relative"
     >
       {index < ENFORCEMENT_MILESTONES.length - 1 && (
-        <div className="absolute left-6 top-20 bottom-0 w-0.5 bg-gradient-to-b from-sky-500/30 to-zinc-800/60" />
+        <div className={cn('absolute left-6 top-20 bottom-0 w-0.5 bg-gradient-to-b', st('from-violet-300/50 to-slate-200', 'from-sky-500/30 to-zinc-800/60'))} />
       )}
 
-      <SentinelCard padding="md" className={isPast ? 'border-sky-500/30' : ''}>
+      <SentinelCard padding="md" className={isPast ? st('border-violet-300', 'border-sky-500/30') : ''}>
         {isPast && (
-          <div className="absolute top-0 left-0 right-0 h-1 rounded-t-[20px] bg-gradient-to-r from-sky-500 to-sky-400" />
+          <div className={cn('absolute top-0 left-0 right-0 h-1 rounded-t-[20px] bg-gradient-to-r', st('from-violet-500 to-violet-400', 'from-sky-500 to-sky-400'))} />
         )}
         <div className="flex items-start gap-3">
-          <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${isPast ? 'bg-sky-500/20' : 'bg-zinc-800'}`}>
-            <Icon className={`w-4 h-4 ${isPast ? 'text-sky-400' : 'text-zinc-500'}`} />
+          <div className={cn('w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0', isPast ? st('bg-violet-100', 'bg-sky-500/20') : st('bg-slate-100', 'bg-zinc-800'))}>
+            <Icon className={cn('w-4 h-4', isPast ? st('text-violet-500', 'text-sky-400') : st('text-slate-400', 'text-zinc-500'))} />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="font-semibold text-white text-lg">{milestone.title}</h3>
-                <p className="text-xs text-zinc-500 mt-1">{milestone.description}</p>
+                <h3 className={cn('font-semibold text-lg', st('text-slate-900', 'text-white'))}>{milestone.title}</h3>
+                <p className={cn('text-xs mt-1', st('text-slate-400', 'text-zinc-500'))}>{milestone.description}</p>
               </div>
               <div className="flex-shrink-0">
                 {isPast ? (
@@ -108,12 +112,13 @@ function MilestoneCard({ milestone, index }: { milestone: typeof ENFORCEMENT_MIL
 }
 
 function SystemProgressCard({ item, index }: { item: any; index: number }) {
+  const { st } = useSentinelTheme();
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
       <SentinelCard padding="md">
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-semibold text-white truncate">{item.system.name}</h3>
+            <h3 className={cn('text-lg font-semibold truncate', st('text-slate-900', 'text-white'))}>{item.system.name}</h3>
             <div className="flex items-center gap-3 mt-2 flex-wrap">
               <SentinelBadge variant="primary">
                 {item.system.risk_classification?.replace('-', ' ').toUpperCase()}
@@ -125,8 +130,8 @@ function SystemProgressCard({ item, index }: { item: any; index: number }) {
             </div>
           </div>
           <div className="text-right">
-            <div className="text-xl font-bold text-sky-400">{Math.round(item.progress)}%</div>
-            <div className="text-[10px] text-zinc-600">Complete</div>
+            <div className={cn('text-xl font-bold', st('text-violet-500', 'text-sky-400'))}>{Math.round(item.progress)}%</div>
+            <div className={cn('text-[10px]', st('text-slate-400', 'text-zinc-600'))}>Complete</div>
           </div>
         </div>
         <Progress value={item.progress} className="h-2 bg-zinc-800 mb-3" />
@@ -148,6 +153,7 @@ function SystemProgressCard({ item, index }: { item: any; index: number }) {
 }
 
 function UrgentTaskCard({ task, index }: { task: any; index: number }) {
+  const { st } = useSentinelTheme();
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
       <SentinelCard padding="md" className={task.daysRemaining < 0 ? 'border-red-500/30' : ''}>
@@ -163,8 +169,8 @@ function UrgentTaskCard({ task, index }: { task: any; index: number }) {
                 <SentinelBadge variant="warning">{task.daysRemaining} days left</SentinelBadge>
               )}
             </div>
-            <h4 className="font-semibold text-white text-lg mb-1">{task.obligation.obligation_title}</h4>
-            <p className="text-xs text-zinc-500">{task.system.name}</p>
+            <h4 className={cn('font-semibold text-lg mb-1', st('text-slate-900', 'text-white'))}>{task.obligation.obligation_title}</h4>
+            <p className={cn('text-xs', st('text-slate-400', 'text-zinc-500'))}>{task.system.name}</p>
           </div>
           <Link to={`${createPageUrl('DocumentGenerator')}?system=${task.system.id}`}>
             <SentinelButton size="sm" icon={<PlayCircle className="w-4 h-4" />}>Start</SentinelButton>
@@ -206,9 +212,11 @@ export default function ComplianceRoadmap() {
     }
   }, [systems, stats]);
 
+  const { st } = useSentinelTheme();
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-4">
+      <div className={cn('min-h-screen p-4', st('bg-slate-50', 'bg-black'))}>
         <div className="space-y-4">
           <SentinelCardSkeleton className="h-28" />
           <div className="grid grid-cols-5 gap-3">
@@ -221,20 +229,22 @@ export default function ComplianceRoadmap() {
   }
 
   return (
-    <SentinelPageTransition className="min-h-screen bg-black">
+    <SentinelPageTransition className={cn('min-h-screen', st('bg-slate-50', 'bg-black'))}>
       <div className="w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[20px] bg-sky-500/10 flex items-center justify-center">
-              <Map className="w-5 h-5 text-sky-400" />
+            <div className={cn('w-10 h-10 rounded-[20px] flex items-center justify-center', st('bg-violet-100', 'bg-sky-500/10'))}>
+              <Map className={cn('w-5 h-5', st('text-violet-500', 'text-sky-400'))} />
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-white">Compliance Roadmap</h1>
-              <p className="text-xs text-zinc-500">{stats.allTasks.length} tasks · {stats.progressPercent}% complete</p>
+              <h1 className={cn('text-xl font-semibold', st('text-slate-900', 'text-white'))}>Compliance Roadmap</h1>
+              <p className={cn('text-xs', st('text-slate-400', 'text-zinc-500'))}>{stats.allTasks.length} tasks · {stats.progressPercent}% complete</p>
             </div>
           </div>
-          <SentinelButton
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <SentinelButton
             onClick={generateAIPlan}
             disabled={generatingPlan || systems.length === 0}
             loading={generatingPlan}
@@ -242,6 +252,7 @@ export default function ComplianceRoadmap() {
           >
             {generatingPlan ? 'Analyzing...' : 'AI Action Plan'}
           </SentinelButton>
+          </div>
         </div>
 
         {/* AI Recommendations */}
@@ -308,14 +319,14 @@ export default function ComplianceRoadmap() {
 
         {/* Tabs */}
         <Tabs value={view} onValueChange={setView}>
-          <TabsList className="bg-zinc-900/60 border border-zinc-800/60 p-1 rounded-xl">
-            <TabsTrigger value="roadmap" className="data-[state=active]:bg-sky-500/20 data-[state=active]:text-sky-400 rounded-lg px-4">
+          <TabsList className={cn('p-1 rounded-xl border', st('bg-white border-slate-200', 'bg-zinc-900/60 border-zinc-800/60'))}>
+            <TabsTrigger value="roadmap" className={cn('rounded-lg px-4', st('data-[state=active]:bg-violet-100 data-[state=active]:text-violet-600', 'data-[state=active]:bg-sky-500/20 data-[state=active]:text-sky-400'))}>
               <Calendar className="w-4 h-4 mr-2" />Timeline
             </TabsTrigger>
-            <TabsTrigger value="systems" className="data-[state=active]:bg-sky-500/20 data-[state=active]:text-sky-400 rounded-lg px-4">
+            <TabsTrigger value="systems" className={cn('rounded-lg px-4', st('data-[state=active]:bg-violet-100 data-[state=active]:text-violet-600', 'data-[state=active]:bg-sky-500/20 data-[state=active]:text-sky-400'))}>
               <Target className="w-4 h-4 mr-2" />By System ({stats.systemProgress.length})
             </TabsTrigger>
-            <TabsTrigger value="urgent" className="data-[state=active]:bg-sky-500/20 data-[state=active]:text-sky-400 rounded-lg px-4">
+            <TabsTrigger value="urgent" className={cn('rounded-lg px-4', st('data-[state=active]:bg-violet-100 data-[state=active]:text-violet-600', 'data-[state=active]:bg-sky-500/20 data-[state=active]:text-sky-400'))}>
               <Zap className="w-4 h-4 mr-2" />Urgent ({stats.urgentTasks.length})
             </TabsTrigger>
           </TabsList>

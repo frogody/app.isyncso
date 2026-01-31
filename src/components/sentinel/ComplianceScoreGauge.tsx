@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { CheckCircle, AlertTriangle } from 'lucide-react';
+import { useSentinelTheme } from '@/contexts/SentinelThemeContext';
 
 interface ComplianceScoreGaugeProps {
   score: number;
@@ -21,6 +22,7 @@ function getRiskLevel(score: number) {
 }
 
 export function ComplianceScoreGauge({ score = 0, size = 'md' }: ComplianceScoreGaugeProps) {
+  const { st } = useSentinelTheme();
   const config = SIZE_CONFIG[size];
   const svgWidth = config.width;
   const strokeWidth = config.strokeWidth;
@@ -42,7 +44,7 @@ export function ComplianceScoreGauge({ score = 0, size = 'md' }: ComplianceScore
           <path
             d={`M ${strokeWidth / 2} ${svgWidth / 2} A ${radius} ${radius} 0 0 1 ${svgWidth - strokeWidth / 2} ${svgWidth / 2}`}
             fill="none"
-            stroke="rgba(39, 39, 42, 0.6)"
+            stroke={st('rgba(226, 232, 240, 0.8)', 'rgba(39, 39, 42, 0.6)')}
             strokeWidth={strokeWidth}
             strokeLinecap="round"
           />
@@ -67,15 +69,15 @@ export function ComplianceScoreGauge({ score = 0, size = 'md' }: ComplianceScore
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.5, type: 'spring' }}
-            className={cn(config.fontSize, 'font-bold text-white')}
+            className={cn(config.fontSize, 'font-bold', st('text-slate-900', 'text-white'))}
           >
             {score}
           </motion.div>
-          <div className={cn('text-zinc-400', config.label)}>Compliance Score</div>
+          <div className={cn(st('text-slate-500', 'text-zinc-400'), config.label)}>Compliance Score</div>
         </div>
 
         {/* Scale labels */}
-        <div className="absolute bottom-0 left-0 right-0 flex justify-between px-2 text-xs text-zinc-500">
+        <div className={cn('absolute bottom-0 left-0 right-0 flex justify-between px-2 text-xs', st('text-slate-400', 'text-zinc-500'))}>
           <span>0</span>
           <span>50</span>
           <span>100</span>

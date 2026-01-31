@@ -17,6 +17,9 @@ import TechnicalDocTemplate from '@/components/sentinel/TechnicalDocTemplate';
 import DeclarationOfConformity from '@/components/sentinel/DeclarationOfConformity';
 import { SentinelPageTransition } from '@/components/sentinel/ui/SentinelPageTransition';
 import type { AISystemRecord } from '@/tokens/sentinel';
+import { ThemeToggle } from '@/components/sentinel/ThemeToggle';
+import { useSentinelTheme } from '@/contexts/SentinelThemeContext';
+import { cn } from '@/lib/utils';
 
 const DOC_TYPES = [
   {
@@ -44,6 +47,7 @@ function SystemSelectionCard({
 }: {
   system: AISystemRecord; isSelected: boolean; onClick: () => void; index: number;
 }) {
+  const { st } = useSentinelTheme();
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -52,9 +56,9 @@ function SystemSelectionCard({
       onClick={onClick}
       className="cursor-pointer"
     >
-      <SentinelCard variant="interactive" padding="sm" className={isSelected ? 'border-sky-500/30' : ''}>
+      <SentinelCard variant="interactive" padding="sm" className={isSelected ? st('border-violet-300', 'border-sky-500/30') : ''}>
         {isSelected && (
-          <div className="absolute top-0 left-0 right-0 h-1 rounded-t-[20px] bg-gradient-to-r from-sky-500 to-sky-400" />
+          <div className={cn('absolute top-0 left-0 right-0 h-1 rounded-t-[20px] bg-gradient-to-r', st('from-violet-500 to-violet-400', 'from-sky-500 to-sky-400'))} />
         )}
         <div className="flex items-start justify-between">
           <div className="flex-1">
@@ -62,11 +66,11 @@ function SystemSelectionCard({
               <SentinelBadge variant="highRisk">HIGH-RISK</SentinelBadge>
               {isSelected && <SentinelBadge variant="success">Selected</SentinelBadge>}
             </div>
-            <h3 className="text-base font-semibold text-white mb-1">{system.name}</h3>
-            <p className="text-xs text-zinc-400 line-clamp-2">{system.purpose}</p>
+            <h3 className={cn('text-base font-semibold mb-1', st('text-slate-900', 'text-white'))}>{system.name}</h3>
+            <p className={cn('text-xs line-clamp-2', st('text-slate-400', 'text-zinc-400'))}>{system.purpose}</p>
           </div>
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ml-4 ${isSelected ? 'bg-sky-500/20' : 'bg-zinc-800'}`}>
-            <Cpu className={`w-4 h-4 ${isSelected ? 'text-sky-400' : 'text-zinc-500'}`} />
+          <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ml-4', isSelected ? st('bg-violet-100', 'bg-sky-500/20') : st('bg-slate-100', 'bg-zinc-800'))}>
+            <Cpu className={cn('w-4 h-4', isSelected ? st('text-violet-500', 'text-sky-400') : st('text-slate-400', 'text-zinc-500'))} />
           </div>
         </div>
       </SentinelCard>
@@ -75,6 +79,7 @@ function SystemSelectionCard({
 }
 
 function DocTypeCard({ docType, onClick, index }: { docType: typeof DOC_TYPES[0]; onClick: () => void; index: number }) {
+  const { st } = useSentinelTheme();
   const Icon = docType.icon;
   return (
     <motion.div
@@ -86,36 +91,36 @@ function DocTypeCard({ docType, onClick, index }: { docType: typeof DOC_TYPES[0]
     >
       <SentinelCard variant="interactive" padding="md">
         <div className="flex items-start gap-3 mb-3">
-          <div className="w-10 h-10 rounded-lg bg-sky-500/15 flex items-center justify-center">
-            <Icon className="w-5 h-5 text-sky-400" />
+          <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center', st('bg-violet-100', 'bg-sky-500/15'))}>
+            <Icon className={cn('w-5 h-5', st('text-violet-500', 'text-sky-400'))} />
           </div>
           <div>
-            <h3 className="text-base font-semibold text-white mb-1 group-hover:text-sky-400 transition-colors">
+            <h3 className={cn('text-base font-semibold mb-1 transition-colors', st('text-slate-900 group-hover:text-violet-500', 'text-white group-hover:text-sky-400'))}>
               {docType.title}
             </h3>
             <SentinelBadge variant="neutral">{docType.subtitle}</SentinelBadge>
           </div>
         </div>
-        <p className="text-xs text-zinc-500 mb-3">{docType.description}</p>
+        <p className={cn('text-xs mb-3', st('text-slate-400', 'text-zinc-500'))}>{docType.description}</p>
         <div className="grid grid-cols-2 gap-2 mb-3">
           {docType.features.map((feature, i) => (
-            <div key={i} className="flex items-center gap-2 text-[10px] text-zinc-600">
-              <ChevronRight className="w-3 h-3 text-sky-400" />
+            <div key={i} className={cn('flex items-center gap-2 text-[10px]', st('text-slate-500', 'text-zinc-600'))}>
+              <ChevronRight className={cn('w-3 h-3', st('text-violet-400', 'text-sky-400'))} />
               {feature}
             </div>
           ))}
         </div>
-        <div className="flex items-center justify-between pt-3 border-t border-zinc-800/50">
+        <div className={cn('flex items-center justify-between pt-3 border-t', st('border-slate-200', 'border-zinc-800/50'))}>
           {docType.aiPowered ? (
-            <span className="flex items-center gap-1.5 text-xs text-sky-400">
+            <span className={cn('flex items-center gap-1.5 text-xs', st('text-violet-500', 'text-sky-400'))}>
               <Sparkles className="w-3 h-3" /> AI-powered draft
             </span>
           ) : (
-            <span className="flex items-center gap-1.5 text-xs text-zinc-600">
+            <span className={cn('flex items-center gap-1.5 text-xs', st('text-slate-400', 'text-zinc-600'))}>
               <FileText className="w-3 h-3" /> Template-based
             </span>
           )}
-          <ArrowRight className="w-4 h-4 text-zinc-600 group-hover:text-sky-400 transition-colors" />
+          <ArrowRight className={cn('w-4 h-4 transition-colors', st('text-slate-400 group-hover:text-violet-500', 'text-zinc-600 group-hover:text-sky-400'))} />
         </div>
       </SentinelCard>
     </motion.div>
@@ -129,9 +134,11 @@ export default function DocumentGenerator() {
     setSelectedSystem, setDocType, setSearchTerm, goBack,
   } = useDocumentGenerator() as any;
 
+  const { st } = useSentinelTheme();
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-4">
+      <div className={cn('min-h-screen p-4', st('bg-slate-50', 'bg-black'))}>
         <div className="space-y-4">
           <SentinelCardSkeleton className="h-20" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -144,11 +151,11 @@ export default function DocumentGenerator() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-6">
+      <div className={cn('min-h-screen flex items-center justify-center p-6', st('bg-slate-50', 'bg-black'))}>
         <SentinelCard padding="lg" className="text-center max-w-md">
           <AlertTriangle className="w-16 h-16 text-red-400 mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-white mb-2">Error Loading Page</h3>
-          <p className="text-zinc-400 mb-6">{error}</p>
+          <h3 className={cn('text-xl font-bold mb-2', st('text-slate-900', 'text-white'))}>Error Loading Page</h3>
+          <p className={cn('mb-6', st('text-slate-500', 'text-zinc-400'))}>{error}</p>
           <SentinelButton onClick={() => window.location.reload()}>Retry</SentinelButton>
         </SentinelCard>
       </div>
@@ -158,7 +165,7 @@ export default function DocumentGenerator() {
   // Step 3: Document Generation
   if (docType && selectedSystem) {
     return (
-      <SentinelPageTransition className="min-h-screen bg-black">
+      <SentinelPageTransition className={cn('min-h-screen', st('bg-slate-50', 'bg-black'))}>
         {docType === 'technical' && <TechnicalDocTemplate system={selectedSystem} onBack={goBack} />}
         {docType === 'declaration' && <DeclarationOfConformity system={selectedSystem as any} onBack={goBack} />}
       </SentinelPageTransition>
@@ -168,7 +175,7 @@ export default function DocumentGenerator() {
   // Step 2: Document Type Selection
   if (selectedSystem) {
     return (
-      <SentinelPageTransition className="min-h-screen bg-black">
+      <SentinelPageTransition className={cn('min-h-screen', st('bg-slate-50', 'bg-black'))}>
         <div className="w-full max-w-5xl mx-auto px-4 lg:px-6 py-4 space-y-4">
           <SentinelButton variant="secondary" onClick={goBack} icon={<ArrowLeft className="w-4 h-4" />}>
             Change System
@@ -176,19 +183,19 @@ export default function DocumentGenerator() {
 
           <SentinelCard padding="md">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-sky-500/20 flex items-center justify-center">
-                <Cpu className="w-4 h-4 text-sky-400" />
+              <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center', st('bg-violet-100', 'bg-sky-500/20'))}>
+                <Cpu className={cn('w-4 h-4', st('text-violet-500', 'text-sky-400'))} />
               </div>
               <div className="flex-1">
-                <h3 className="text-base font-semibold text-white">{selectedSystem.name}</h3>
-                <p className="text-xs text-zinc-500">{selectedSystem.purpose}</p>
+                <h3 className={cn('text-base font-semibold', st('text-slate-900', 'text-white'))}>{selectedSystem.name}</h3>
+                <p className={cn('text-xs', st('text-slate-400', 'text-zinc-500'))}>{selectedSystem.purpose}</p>
               </div>
               <SentinelBadge variant="highRisk">HIGH-RISK</SentinelBadge>
             </div>
           </SentinelCard>
 
           <div>
-            <h2 className="text-lg font-semibold text-white mb-3">Select Document Type</h2>
+            <h2 className={cn('text-lg font-semibold mb-3', st('text-slate-900', 'text-white'))}>Select Document Type</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {DOC_TYPES.map((dt, i) => (
                 <DocTypeCard key={dt.id} docType={dt} onClick={() => setDocType(dt.id)} index={i} />
@@ -202,23 +209,26 @@ export default function DocumentGenerator() {
 
   // Step 1: System Selection
   return (
-    <SentinelPageTransition className="min-h-screen bg-black">
+    <SentinelPageTransition className={cn('min-h-screen', st('bg-slate-50', 'bg-black'))}>
       <div className="w-full px-4 lg:px-6 py-4 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[20px] bg-sky-500/10 flex items-center justify-center">
-              <FileText className="w-5 h-5 text-sky-400" />
+            <div className={cn('w-10 h-10 rounded-[20px] flex items-center justify-center', st('bg-violet-100', 'bg-sky-500/10'))}>
+              <FileText className={cn('w-5 h-5', st('text-violet-500', 'text-sky-400'))} />
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-white">Document Generator</h1>
-              <p className="text-xs text-zinc-500">{systems.length} high-risk systems ready for documentation</p>
+              <h1 className={cn('text-xl font-semibold', st('text-slate-900', 'text-white'))}>Document Generator</h1>
+              <p className={cn('text-xs', st('text-slate-400', 'text-zinc-500'))}>{systems.length} high-risk systems ready for documentation</p>
             </div>
           </div>
-          <Link to={createPageUrl('SentinelDashboard')}>
-            <SentinelButton variant="secondary" icon={<ArrowLeft className="w-4 h-4" />}>
-              Dashboard
-            </SentinelButton>
-          </Link>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <Link to={createPageUrl('SentinelDashboard')}>
+              <SentinelButton variant="secondary" icon={<ArrowLeft className="w-4 h-4" />}>
+                Dashboard
+              </SentinelButton>
+            </Link>
+          </div>
         </div>
 
         {/* Stats */}
@@ -246,11 +256,11 @@ export default function DocumentGenerator() {
                 placeholder="Search systems..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="pl-10 bg-zinc-900/60 border-zinc-800/60 text-white focus:border-sky-500/40"
+                className={cn('pl-10', st('bg-white border-slate-300 text-slate-900 focus:border-violet-500/40', 'bg-zinc-900/60 border-zinc-800/60 text-white focus:border-sky-500/40'))}
               />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-white mb-3">Select AI System</h2>
+              <h2 className={cn('text-lg font-semibold mb-3', st('text-slate-900', 'text-white'))}>Select AI System</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {filtered.map((system, i) => (
                   <SystemSelectionCard

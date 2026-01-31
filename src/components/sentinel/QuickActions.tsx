@@ -2,8 +2,10 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Plus, Calendar, FileText, AlertTriangle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { SentinelCard } from './ui/SentinelCard';
 import type { AISystemRecord } from '@/tokens/sentinel';
+import { useSentinelTheme } from '@/contexts/SentinelThemeContext';
 
 interface QuickActionsProps {
   systems?: AISystemRecord[];
@@ -50,6 +52,8 @@ export default function QuickActions({ systems = [], taskCount = 0 }: QuickActio
     },
   ];
 
+  const { st } = useSentinelTheme();
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {actions.map((action, idx) => {
@@ -66,20 +70,20 @@ export default function QuickActions({ systems = [], taskCount = 0 }: QuickActio
               <SentinelCard
                 variant="interactive"
                 padding="md"
-                className={action.highlight ? 'ring-1 ring-sky-500/40 ring-offset-2 ring-offset-black' : ''}
+                className={action.highlight ? st('ring-1 ring-violet-500/40 ring-offset-2 ring-offset-white', 'ring-1 ring-sky-500/40 ring-offset-2 ring-offset-black') : ''}
               >
                 <div className="flex items-start gap-4 relative">
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-sky-500/10 border border-sky-500/20">
-                    <Icon className="w-6 h-6 text-sky-400" />
+                  <div className={cn('w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 border', st('bg-violet-100 border-violet-200', 'bg-sky-500/10 border-sky-500/20'))}>
+                    <Icon className={cn('w-6 h-6', st('text-violet-500', 'text-sky-400'))} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-base font-bold text-white mb-1">{action.title}</h3>
-                    <p className="text-sm text-zinc-400">{action.subtitle}</p>
+                    <h3 className={cn('text-base font-bold mb-1', st('text-slate-900', 'text-white'))}>{action.title}</h3>
+                    <p className={cn('text-sm', st('text-slate-500', 'text-zinc-400'))}>{action.subtitle}</p>
                   </div>
 
                   {action.highlight && (
                     <div className="absolute -top-3 -right-3">
-                      <div className="w-6 h-6 bg-sky-500 rounded-full flex items-center justify-center animate-pulse">
+                      <div className={cn('w-6 h-6 rounded-full flex items-center justify-center animate-pulse', st('bg-violet-500', 'bg-sky-500'))}>
                         <AlertTriangle className="w-3.5 h-3.5 text-white" />
                       </div>
                     </div>

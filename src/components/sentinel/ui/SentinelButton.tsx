@@ -2,6 +2,7 @@ import { forwardRef } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
+import { useSentinelTheme } from '@/contexts/SentinelThemeContext';
 
 interface SentinelButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onAnimationStart' | 'onDragStart' | 'onDragEnd' | 'onDrag'> {
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
@@ -24,6 +25,8 @@ export const SentinelButton = forwardRef<HTMLButtonElement, SentinelButtonProps>
     },
     ref
   ) {
+    const { st } = useSentinelTheme();
+
     return (
       <motion.button
         ref={ref}
@@ -35,13 +38,25 @@ export const SentinelButton = forwardRef<HTMLButtonElement, SentinelButtonProps>
             'h-12 px-7 text-base': size === 'lg',
           },
           {
-            'bg-sky-500 text-white hover:bg-sky-600 active:bg-sky-700': variant === 'primary',
-            'bg-transparent text-white border border-zinc-700 hover:bg-zinc-800/50': variant === 'secondary',
-            'bg-transparent text-zinc-400 hover:text-white hover:bg-zinc-800/30': variant === 'ghost',
+            [st(
+              'bg-violet-500 text-white hover:bg-violet-600 active:bg-violet-700',
+              'bg-sky-500 text-white hover:bg-sky-600 active:bg-sky-700',
+            )]: variant === 'primary',
+            [st(
+              'bg-transparent text-slate-700 border border-slate-300 hover:bg-slate-100',
+              'bg-transparent text-white border border-zinc-700 hover:bg-zinc-800/50',
+            )]: variant === 'secondary',
+            [st(
+              'bg-transparent text-slate-500 hover:text-slate-900 hover:bg-slate-100',
+              'bg-transparent text-zinc-400 hover:text-white hover:bg-zinc-800/30',
+            )]: variant === 'ghost',
             'bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20': variant === 'danger',
           },
           'disabled:opacity-50 disabled:cursor-not-allowed',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40 focus-visible:ring-offset-1 focus-visible:ring-offset-black',
+          st(
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 focus-visible:ring-offset-1 focus-visible:ring-offset-white',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/40 focus-visible:ring-offset-1 focus-visible:ring-offset-black',
+          ),
           className
         )}
         disabled={disabled || loading}

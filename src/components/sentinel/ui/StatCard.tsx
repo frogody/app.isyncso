@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion';
 import { type LucideIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { SentinelCard } from './SentinelCard';
+import { useSentinelTheme } from '@/contexts/SentinelThemeContext';
 
 interface StatCardProps {
   label: string;
@@ -13,6 +15,8 @@ interface StatCardProps {
 }
 
 export function StatCard({ label, value, subtitle, icon: Icon, trend, loading, delay = 0 }: StatCardProps) {
+  const { st } = useSentinelTheme();
+
   if (loading) {
     return <StatCardSkeleton />;
   }
@@ -26,13 +30,13 @@ export function StatCard({ label, value, subtitle, icon: Icon, trend, loading, d
       transition={{ duration: 0.4, delay }}
     >
       <div className="flex items-center justify-between mb-2">
-        <span className="text-zinc-400 text-xs">{label}</span>
-        <div className="p-2 bg-sky-500/10 rounded-xl border border-sky-500/20">
-          <Icon className="w-4 h-4 text-sky-400" />
+        <span className={cn('text-xs', st('text-slate-500', 'text-zinc-400'))}>{label}</span>
+        <div className={cn('p-2 rounded-xl border', st('bg-violet-100 border-violet-200', 'bg-sky-500/10 border-sky-500/20'))}>
+          <Icon className={cn('w-4 h-4', st('text-violet-500', 'text-sky-400'))} />
         </div>
       </div>
       <motion.div
-        className="text-2xl font-bold text-white mb-0.5"
+        className={cn('text-2xl font-bold mb-0.5', st('text-slate-900', 'text-white'))}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: delay + 0.1 }}
@@ -40,7 +44,7 @@ export function StatCard({ label, value, subtitle, icon: Icon, trend, loading, d
         {value}
       </motion.div>
       {subtitle && (
-        <div className="text-xs text-zinc-500">{subtitle}</div>
+        <div className={cn('text-xs', st('text-slate-400', 'text-zinc-500'))}>{subtitle}</div>
       )}
       {trend && (
         <div className={`text-xs mt-1 font-medium ${trend.positive ? 'text-green-400' : 'text-red-400'}`}>
@@ -52,14 +56,15 @@ export function StatCard({ label, value, subtitle, icon: Icon, trend, loading, d
 }
 
 function StatCardSkeleton() {
+  const { st } = useSentinelTheme();
   return (
     <SentinelCard padding="md" className="min-w-0">
       <div className="flex items-center justify-between mb-2">
-        <div className="h-3 w-16 bg-zinc-800 rounded animate-pulse" />
-        <div className="h-8 w-8 bg-zinc-800 rounded-xl animate-pulse" />
+        <div className={cn('h-3 w-16 rounded animate-pulse', st('bg-slate-200', 'bg-zinc-800'))} />
+        <div className={cn('h-8 w-8 rounded-xl animate-pulse', st('bg-slate-200', 'bg-zinc-800'))} />
       </div>
-      <div className="h-7 w-12 bg-zinc-800 rounded mt-1 animate-pulse" />
-      <div className="h-3 w-20 bg-zinc-800 rounded mt-2 animate-pulse" />
+      <div className={cn('h-7 w-12 rounded mt-1 animate-pulse', st('bg-slate-200', 'bg-zinc-800'))} />
+      <div className={cn('h-3 w-20 rounded mt-2 animate-pulse', st('bg-slate-200', 'bg-zinc-800'))} />
     </SentinelCard>
   );
 }

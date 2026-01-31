@@ -1,5 +1,7 @@
 import React, { Component, type ErrorInfo, type ReactNode } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useSentinelTheme } from '@/contexts/SentinelThemeContext';
 
 interface Props {
   children: ReactNode;
@@ -58,19 +60,23 @@ export function SentinelErrorState({
   message,
   onRetry,
 }: SentinelErrorStateProps) {
+  const { st } = useSentinelTheme();
   return (
     <div className="flex flex-col items-center justify-center py-16 px-6">
-      <div className="p-4 bg-red-500/10 rounded-full mb-4">
-        <AlertTriangle className="w-8 h-8 text-red-400" />
+      <div className={cn('p-4 rounded-full mb-4', st('bg-red-100', 'bg-red-500/10'))}>
+        <AlertTriangle className={cn('w-8 h-8', st('text-red-500', 'text-red-400'))} />
       </div>
-      <h3 className="text-lg font-medium text-white mb-1">{title}</h3>
-      <p className="text-sm text-zinc-400 text-center max-w-md mb-4">
+      <h3 className={cn('text-lg font-medium mb-1', st('text-slate-900', 'text-white'))}>{title}</h3>
+      <p className={cn('text-sm text-center max-w-md mb-4', st('text-slate-500', 'text-zinc-400'))}>
         {message || error?.message || 'An unexpected error occurred. Please try again.'}
       </p>
       {onRetry && (
         <button
           onClick={onRetry}
-          className="inline-flex items-center gap-2 h-10 px-6 text-sm font-medium bg-sky-500 text-white hover:bg-sky-600 rounded-full transition-colors duration-200"
+          className={cn(
+            'inline-flex items-center gap-2 h-10 px-6 text-sm font-medium text-white rounded-full transition-colors duration-200',
+            st('bg-violet-500 hover:bg-violet-600', 'bg-sky-500 hover:bg-sky-600'),
+          )}
         >
           <RefreshCw className="w-4 h-4" />
           Try again
@@ -93,6 +99,7 @@ interface SentinelEmptyStateProps {
 }
 
 export function SentinelEmptyState({ icon, title, message, action, actionLabel, onAction }: SentinelEmptyStateProps) {
+  const { st } = useSentinelTheme();
   const resolvedAction = action || (actionLabel && onAction ? { label: actionLabel, onClick: onAction } : null);
 
   // Render icon: if it's a component type (function), instantiate it; otherwise render as ReactNode
@@ -100,7 +107,7 @@ export function SentinelEmptyState({ icon, title, message, action, actionLabel, 
   if (icon) {
     if (typeof icon === 'function' || (typeof icon === 'object' && icon !== null && '$$typeof' in icon && 'render' in (icon as any))) {
       const IconComponent = icon as React.ComponentType<{ className?: string }>;
-      iconElement = <IconComponent className="w-8 h-8 text-sky-400" />;
+      iconElement = <IconComponent className={cn('w-8 h-8', st('text-violet-500', 'text-sky-400'))} />;
     } else {
       iconElement = icon;
     }
@@ -108,13 +115,16 @@ export function SentinelEmptyState({ icon, title, message, action, actionLabel, 
 
   return (
     <div className="flex flex-col items-center justify-center py-16 px-6">
-      {iconElement && <div className="p-4 bg-zinc-800/50 rounded-full mb-4">{iconElement}</div>}
-      <h3 className="text-lg font-medium text-white mb-1">{title}</h3>
-      <p className="text-sm text-zinc-400 text-center max-w-md mb-4">{message}</p>
+      {iconElement && <div className={cn('p-4 rounded-full mb-4', st('bg-slate-100', 'bg-zinc-800/50'))}>{iconElement}</div>}
+      <h3 className={cn('text-lg font-medium mb-1', st('text-slate-900', 'text-white'))}>{title}</h3>
+      <p className={cn('text-sm text-center max-w-md mb-4', st('text-slate-500', 'text-zinc-400'))}>{message}</p>
       {resolvedAction && (
         <button
           onClick={resolvedAction.onClick}
-          className="inline-flex items-center gap-2 h-10 px-6 text-sm font-medium bg-sky-500 text-white hover:bg-sky-600 rounded-full transition-colors duration-200"
+          className={cn(
+            'inline-flex items-center gap-2 h-10 px-6 text-sm font-medium text-white rounded-full transition-colors duration-200',
+            st('bg-violet-500 hover:bg-violet-600', 'bg-sky-500 hover:bg-sky-600'),
+          )}
         >
           {resolvedAction.label}
         </button>

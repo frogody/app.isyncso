@@ -26,6 +26,9 @@ import { StatCard } from '@/components/sentinel/ui/StatCard';
 import RiskClassificationBadge from '@/components/sentinel/RiskClassificationBadge';
 import { SentinelPageTransition } from '@/components/sentinel/ui/SentinelPageTransition';
 import type { AISystemRecord, RiskClassification, ComplianceStatus } from '@/tokens/sentinel';
+import { ThemeToggle } from '@/components/sentinel/ThemeToggle';
+import { useSentinelTheme } from '@/contexts/SentinelThemeContext';
+import { cn } from '@/lib/utils';
 
 const AISystemModal = lazy(() => import('@/components/sentinel/AISystemModal'));
 
@@ -45,6 +48,7 @@ interface SystemCardProps {
 }
 
 function SystemCard({ system, onEdit, onDelete, onAssess, index }: SystemCardProps) {
+  const { st } = useSentinelTheme();
   const statusConfig = STATUS_PROGRESS[system.compliance_status] || STATUS_PROGRESS['not-started'];
   const daysRegistered = Math.floor(
     (Date.now() - new Date(system.created_date).getTime()) / (1000 * 60 * 60 * 24),
@@ -63,7 +67,7 @@ function SystemCard({ system, onEdit, onDelete, onAssess, index }: SystemCardPro
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="min-w-0">
             <h3
-              className="font-semibold text-white truncate group-hover:text-sky-400 transition-colors cursor-pointer"
+              className={cn('font-semibold truncate transition-colors cursor-pointer', st('text-slate-900 group-hover:text-violet-500', 'text-white group-hover:text-sky-400'))}
               onClick={() => onEdit(system)}
             >
               {system.name}
@@ -95,7 +99,7 @@ function SystemCard({ system, onEdit, onDelete, onAssess, index }: SystemCardPro
         </div>
 
         {/* Purpose */}
-        <p className="text-xs text-zinc-500 line-clamp-2 mb-3">{system.purpose || 'No purpose defined'}</p>
+        <p className={cn('text-xs line-clamp-2 mb-3', st('text-slate-400', 'text-zinc-500'))}>{system.purpose || 'No purpose defined'}</p>
 
         {/* Compliance Status */}
         <div className="mb-3">
@@ -107,7 +111,7 @@ function SystemCard({ system, onEdit, onDelete, onAssess, index }: SystemCardPro
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-2 border-t border-zinc-800/50">
+        <div className={cn('flex items-center justify-between pt-2 border-t', st('border-slate-200', 'border-zinc-800/50'))}>
           <div className="flex items-center gap-2 text-[10px] text-zinc-500">
             <span className="flex items-center gap-1">
               <Clock className="w-3 h-3" />
@@ -192,9 +196,11 @@ export default function AISystemInventory() {
     navigate(`${createPageUrl('RiskAssessment')}?systemId=${systemId}`);
   }, [navigate]);
 
+  const { st } = useSentinelTheme();
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-4">
+      <div className={cn('min-h-screen p-4', st('bg-slate-50', 'bg-black'))}>
         <div className="space-y-4">
           <SentinelCardSkeleton className="h-28" />
           <div className="grid grid-cols-4 gap-3">
@@ -209,25 +215,28 @@ export default function AISystemInventory() {
   }
 
   return (
-    <SentinelPageTransition className="min-h-screen bg-black">
+    <SentinelPageTransition className={cn('min-h-screen', st('bg-slate-50', 'bg-black'))}>
       <div className="w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[20px] bg-sky-500/10 flex items-center justify-center">
-              <Cpu className="w-5 h-5 text-sky-400" />
+            <div className={cn('w-10 h-10 rounded-[20px] flex items-center justify-center', st('bg-violet-100', 'bg-sky-500/10'))}>
+              <Cpu className={cn('w-5 h-5', st('text-violet-500', 'text-sky-400'))} />
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-white">AI System Inventory</h1>
-              <p className="text-xs text-zinc-500">{stats.total} systems registered · {stats.highRisk} high-risk</p>
+              <h1 className={cn('text-xl font-semibold', st('text-slate-900', 'text-white'))}>AI System Inventory</h1>
+              <p className={cn('text-xs', st('text-slate-400', 'text-zinc-500'))}>{stats.total} systems registered · {stats.highRisk} high-risk</p>
             </div>
           </div>
-          <SentinelButton
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <SentinelButton
             onClick={() => { setEditingSystem(null); setShowModal(true); }}
             icon={<Plus className="w-4 h-4" />}
           >
             Register AI System
           </SentinelButton>
+          </div>
         </div>
 
         {/* Stats Row */}
@@ -247,17 +256,17 @@ export default function AISystemInventory() {
               placeholder="Search AI systems..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="pl-10 bg-zinc-900/60 border-zinc-800/60 text-white focus:border-sky-500/40"
+              className={cn('pl-10', st('bg-white border-slate-300 text-slate-900 focus:border-violet-500/40', 'bg-zinc-900/60 border-zinc-800/60 text-white focus:border-sky-500/40'))}
             />
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
             <Select value={filterClassification} onValueChange={setFilterClassification}>
-              <SelectTrigger className="w-44 bg-zinc-900/60 border-zinc-800/60 text-white">
-                <Shield className="w-4 h-4 mr-2 text-zinc-400" />
+              <SelectTrigger className={cn('w-44', st('bg-white border-slate-300 text-slate-900', 'bg-zinc-900/60 border-zinc-800/60 text-white'))}>
+                <Shield className={cn('w-4 h-4 mr-2', st('text-slate-400', 'text-zinc-400'))} />
                 <SelectValue placeholder="Classification" />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-700">
+              <SelectContent className={st('bg-white border-slate-200', 'bg-zinc-900 border-zinc-700')}>
                 <SelectItem value="all">All Classifications</SelectItem>
                 <SelectItem value="prohibited">Prohibited</SelectItem>
                 <SelectItem value="high-risk">High-Risk</SelectItem>
@@ -269,11 +278,11 @@ export default function AISystemInventory() {
             </Select>
 
             <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-40 bg-zinc-900/60 border-zinc-800/60 text-white">
-                <Zap className="w-4 h-4 mr-2 text-zinc-400" />
+              <SelectTrigger className={cn('w-40', st('bg-white border-slate-300 text-slate-900', 'bg-zinc-900/60 border-zinc-800/60 text-white'))}>
+                <Zap className={cn('w-4 h-4 mr-2', st('text-slate-400', 'text-zinc-400'))} />
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-700">
+              <SelectContent className={st('bg-white border-slate-200', 'bg-zinc-900 border-zinc-700')}>
                 <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="not-started">Not Started</SelectItem>
                 <SelectItem value="in-progress">In Progress</SelectItem>
@@ -307,7 +316,7 @@ export default function AISystemInventory() {
                 <SentinelButton variant="secondary" size="sm" onClick={pagination.prevPage} disabled={!pagination.hasPrev}>
                   Previous
                 </SentinelButton>
-                <span className="text-sm text-zinc-400 px-4">
+                <span className={cn('text-sm px-4', st('text-slate-500', 'text-zinc-400'))}>
                   Page {pagination.currentPage} of {pagination.totalPages}
                 </span>
                 <SentinelButton variant="secondary" size="sm" onClick={pagination.nextPage} disabled={!pagination.hasNext}>

@@ -19,6 +19,9 @@ import QuickActions from '@/components/sentinel/QuickActions';
 import RiskClassificationBadge from '@/components/sentinel/RiskClassificationBadge';
 import type { RiskClassification } from '@/tokens/sentinel';
 import { MOTION_VARIANTS } from '@/tokens/sentinel';
+import { ThemeToggle } from '@/components/sentinel/ThemeToggle';
+import { useSentinelTheme } from '@/contexts/SentinelThemeContext';
+import { cn } from '@/lib/utils';
 
 const CLASSIFICATION_ORDER: RiskClassification[] = [
   'prohibited', 'high-risk', 'gpai', 'limited-risk', 'minimal-risk', 'unclassified',
@@ -35,9 +38,11 @@ export default function SentinelDashboard() {
   const { systems, loading } = useAISystems();
   const { totalSystems, complianceScore, byClassification, byStatus } = useComplianceStatus(systems);
 
+  const { st } = useSentinelTheme();
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-4">
+      <div className={cn('min-h-screen p-4', st('bg-slate-50', 'bg-black'))}>
         <div className="max-w-7xl mx-auto space-y-4">
           <SentinelCardSkeleton className="h-20" />
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -52,24 +57,27 @@ export default function SentinelDashboard() {
   }
 
   return (
-    <SentinelPageTransition className="min-h-screen bg-black">
+    <SentinelPageTransition className={cn('min-h-screen', st('bg-slate-50', 'bg-black'))}>
       <div className="w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[20px] bg-sky-500/10 flex items-center justify-center">
-              <Shield className="w-5 h-5 text-sky-400" />
+            <div className={cn('w-10 h-10 rounded-[20px] flex items-center justify-center', st('bg-violet-100', 'bg-sky-500/10'))}>
+              <Shield className={cn('w-5 h-5', st('text-violet-500', 'text-sky-400'))} />
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-white">EU AI Act Compliance</h1>
-              <p className="text-xs text-zinc-500">Manage and track compliance for all AI systems</p>
+              <h1 className={cn('text-xl font-semibold', st('text-slate-900', 'text-white'))}>EU AI Act Compliance</h1>
+              <p className={cn('text-xs', st('text-slate-400', 'text-zinc-500'))}>Manage and track compliance for all AI systems</p>
             </div>
           </div>
-          <Link to={createPageUrl('AISystemInventory')}>
-            <SentinelButton icon={<Plus className="w-4 h-4" />}>
-              Register AI System
-            </SentinelButton>
-          </Link>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <Link to={createPageUrl('AISystemInventory')}>
+              <SentinelButton icon={<Plus className="w-4 h-4" />}>
+                Register AI System
+              </SentinelButton>
+            </Link>
+          </div>
         </div>
 
         {/* Compliance Score & Stats */}
@@ -99,8 +107,8 @@ export default function SentinelDashboard() {
         {/* Classification Breakdown & Compliance Status */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <SentinelCard padding="md">
-            <h3 className="text-base font-semibold text-white flex items-center gap-2 mb-3">
-              <Shield className="w-4 h-4 text-sky-400" />
+            <h3 className={cn('text-base font-semibold flex items-center gap-2 mb-3', st('text-slate-900', 'text-white'))}>
+              <Shield className={cn('w-4 h-4', st('text-violet-500', 'text-sky-400'))} />
               Risk Classification
             </h3>
             <div className="space-y-2">
@@ -110,10 +118,10 @@ export default function SentinelDashboard() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.6 + i * 0.05 }}
-                  className="flex items-center justify-between p-2 rounded-lg bg-zinc-800/30 border border-zinc-700/30"
+                  className={cn('flex items-center justify-between p-2 rounded-lg border', st('bg-slate-50 border-slate-200', 'bg-zinc-800/30 border-zinc-700/30'))}
                 >
                   <RiskClassificationBadge classification={classification} />
-                  <span className="text-sm font-bold text-white">
+                  <span className={cn('text-sm font-bold', st('text-slate-900', 'text-white'))}>
                     {byClassification[classification]}
                   </span>
                 </motion.div>
@@ -122,8 +130,8 @@ export default function SentinelDashboard() {
           </SentinelCard>
 
           <SentinelCard padding="md">
-            <h3 className="text-base font-semibold text-white flex items-center gap-2 mb-3">
-              <FileText className="w-4 h-4 text-sky-400" />
+            <h3 className={cn('text-base font-semibold flex items-center gap-2 mb-3', st('text-slate-900', 'text-white'))}>
+              <FileText className={cn('w-4 h-4', st('text-violet-500', 'text-sky-400'))} />
               Compliance Status
             </h3>
             <div className="space-y-2">
@@ -133,10 +141,10 @@ export default function SentinelDashboard() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.6 + i * 0.05 }}
-                  className="flex items-center justify-between p-2 rounded-lg bg-zinc-800/30 border border-zinc-700/30"
+                  className={cn('flex items-center justify-between p-2 rounded-lg border', st('bg-slate-50 border-slate-200', 'bg-zinc-800/30 border-zinc-700/30'))}
                 >
                   <SentinelBadge variant={status.variant}>{status.label}</SentinelBadge>
-                  <span className="text-sm font-bold text-white">{byStatus[status.key]}</span>
+                  <span className={cn('text-sm font-bold', st('text-slate-900', 'text-white'))}>{byStatus[status.key]}</span>
                 </motion.div>
               ))}
             </div>
@@ -147,10 +155,10 @@ export default function SentinelDashboard() {
         {systems.length > 0 && (
           <SentinelCard padding="md">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-base font-semibold text-white">Recent AI Systems</h3>
+              <h3 className={cn('text-base font-semibold', st('text-slate-900', 'text-white'))}>Recent AI Systems</h3>
               <Link
                 to={createPageUrl('AISystemInventory')}
-                className="text-sky-400 text-xs hover:text-sky-300 flex items-center gap-1"
+                className={cn('text-xs flex items-center gap-1', st('text-violet-500 hover:text-violet-600', 'text-sky-400 hover:text-sky-300'))}
               >
                 View All <ArrowRight className="w-3 h-3" />
               </Link>
@@ -165,13 +173,13 @@ export default function SentinelDashboard() {
                 >
                   <Link
                     to={createPageUrl(`RiskAssessment?systemId=${system.id}`)}
-                    className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/30 border border-zinc-700/30 hover:border-sky-500/30 transition-all group"
+                    className={cn('flex items-center justify-between p-3 rounded-lg border transition-all group', st('bg-slate-50 border-slate-200 hover:border-violet-300', 'bg-zinc-800/30 border-zinc-700/30 hover:border-sky-500/30'))}
                   >
                     <div className="flex-1">
-                      <h4 className="text-sm font-semibold text-white mb-1 group-hover:text-sky-400 transition-colors">
+                      <h4 className={cn('text-sm font-semibold mb-1 transition-colors', st('text-slate-900 group-hover:text-violet-500', 'text-white group-hover:text-sky-400'))}>
                         {system.name}
                       </h4>
-                      <p className="text-xs text-zinc-500 line-clamp-1">{system.purpose}</p>
+                      <p className={cn('text-xs line-clamp-1', st('text-slate-400', 'text-zinc-500'))}>{system.purpose}</p>
                     </div>
                     <RiskClassificationBadge
                       classification={system.risk_classification || 'unclassified'}
