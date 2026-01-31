@@ -1449,6 +1449,8 @@ export default function Layout({ children, currentPageName }) {
           /* ── Sentinel Light Theme ─────────────────────────────────
              Override ALL global dark !important rules inside [data-sentinel-light].
              These use [data-sentinel-light] prefix for higher specificity + !important. */
+          html[data-sentinel-light] body { background: #F8FAFC !important; color: #0F172A !important; }
+          html[data-sentinel-light] .min-h-screen.bg-black { background: #F8FAFC !important; }
           [data-sentinel-light] { background: #F8FAFC !important; color: #0F172A !important; }
           [data-sentinel-light] .bg-white,
           [data-sentinel-light] .bg-white\\/95,[data-sentinel-light] .bg-white\\/90,[data-sentinel-light] .bg-white\\/80 { background: #FFFFFF !important; border-color: #E2E8F0 !important; }
@@ -1531,6 +1533,11 @@ export default function Layout({ children, currentPageName }) {
             border: 1px solid rgba(255,255,255,0.08) !important;
             border-radius: 8px !important;
           }
+          html[data-sentinel-light] input, html[data-sentinel-light] textarea, html[data-sentinel-light] select {
+            background: #FFFFFF !important;
+            color: #0F172A !important;
+            border: 1px solid #E2E8F0 !important;
+          }
           input:focus, textarea:focus, select:focus {
             border-color: var(--accent) !important;
             box-shadow: 0 0 0 1px var(--accent-glow);
@@ -1538,7 +1545,11 @@ export default function Layout({ children, currentPageName }) {
 
           /* Global Colors */
           .bg-black { background: var(--bg) !important; }
+          html[data-sentinel-light] .bg-black { background: #F8FAFC !important; }
           .text-white { color: #fff !important; }
+          html[data-sentinel-light] .text-white { color: #0F172A !important; }
+          html[data-sentinel-light] .text-black { color: #0F172A !important; }
+          html[data-sentinel-light] .bg-white, html[data-sentinel-light] .bg-white\\/95, html[data-sentinel-light] .bg-white\\/90 { background: #FFFFFF !important; border-color: #E2E8F0 !important; }
           .text-gray-300, .text-gray-400 { color: #888 !important; }
 
           /* Badges & Pills */
