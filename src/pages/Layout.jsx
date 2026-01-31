@@ -1569,6 +1569,64 @@ export default function Layout({ children, currentPageName }) {
           /* Animate pulse skeleton */
           [data-sentinel-light] .animate-pulse { opacity: 0.6 !important; }
 
+          /* ── Sentinel Light: Sidebar & Submenus ──────────────── */
+          html[data-sentinel-light] .sidebar-shell {
+            background: #FFFFFF !important;
+            border-right: 1px solid #E2E8F0 !important;
+          }
+          /* Submenu flyout */
+          [data-sentinel-light] .bg-black\\/95 {
+            background: rgba(255,255,255,0.97) !important;
+            border-color: #E2E8F0 !important;
+          }
+          [data-sentinel-light] .border-white\\/10 {
+            border-color: #E2E8F0 !important;
+          }
+          /* Nav item text */
+          [data-sentinel-light] .text-gray-400 {
+            color: #64748B !important;
+          }
+          /* Nav item hover */
+          [data-sentinel-light] .hover\\:text-white:hover {
+            color: #0F172A !important;
+          }
+          [data-sentinel-light] .hover\\:bg-white\\/5:hover {
+            background: rgba(0,0,0,0.04) !important;
+          }
+          [data-sentinel-light] .active\\:bg-white\\/10:active {
+            background: rgba(0,0,0,0.06) !important;
+          }
+          /* Active nav item (cyan) */
+          [data-sentinel-light] .text-cyan-400 {
+            color: #0891B2 !important;
+          }
+          [data-sentinel-light] .bg-cyan-950\\/30 {
+            background: rgba(8,145,178,0.08) !important;
+          }
+          /* Dividers */
+          [data-sentinel-light] .bg-white\\/5 {
+            background: #E2E8F0 !important;
+          }
+          /* Submenu item active states */
+          [data-sentinel-light] .bg-white\\/10 {
+            background: rgba(0,0,0,0.06) !important;
+          }
+          /* Submenu shadow */
+          [data-sentinel-light] .shadow-2xl {
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15) !important;
+          }
+          /* Sentinel-specific active color in sidebar */
+          [data-sentinel-light] .text-emerald-400 {
+            color: #059669 !important;
+          }
+          [data-sentinel-light] .bg-emerald-950\\/30, [data-sentinel-light] .bg-emerald-900\\/20 {
+            background: rgba(5,150,105,0.08) !important;
+          }
+          /* Notification badge */
+          [data-sentinel-light] .bg-red-500 {
+            background: #EF4444 !important;
+          }
+
           /* Surfaces */
           .glass-card {
             background: #0A0A0A !important;
