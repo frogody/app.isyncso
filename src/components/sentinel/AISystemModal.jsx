@@ -5,25 +5,28 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { X, Sparkles, Globe, Building2, Box, Database } from "lucide-react";
+import { X, Sparkles, Globe, Building2, Box, Database, Check } from "lucide-react";
 import { useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useSentinelTheme } from "@/contexts/SentinelThemeContext";
+import { cn } from "@/lib/utils";
 
 /**
  * AISystemModal - Form for registering/editing AI systems in SENTINEL
- * 
+ *
  * Features:
  * - Creates new AI system or updates existing one
  * - Validates required fields (name, purpose, ai_techniques)
  * - Auto-assigns company_id with multiple fallback strategies
  * - Tracks created_by for audit trail
  * - Seamless flow to risk assessment after creation
- * 
+ *
  * Company Fallback Strategy:
  * 1. Use user.company_id if available
  * 2. Find existing Company by user.company_data.domain
  * 3. Create Company from user.company_data if exists
  * 4. Create Company from email domain as last resort
- * 
+ *
  * @param {Object} props
  * @param {Object} props.system - Existing system to edit (null for new)
  * @param {Function} props.onClose - Callback when modal closes
@@ -31,6 +34,8 @@ import { useEffect } from "react";
  * @param {Function} props.onCreateAndAssess - Optional callback to go directly to assessment
  */
 export default function AISystemModal({ system, onClose, onSave, onCreateAndAssess }) {
+  const { st } = useSentinelTheme();
+
   const [formData, setFormData] = useState({
     name: system?.name || "",
     description: system?.description || "",
@@ -43,7 +48,7 @@ export default function AISystemModal({ system, onClose, onSave, onCreateAndAsse
     provider_url: system?.provider_url || "",
     product_url: system?.product_url || "",
   });
-  
+
   // Research State
   const [showResearchStep, setShowResearchStep] = useState(!system); // Show research step only for new systems
   const [researchData, setResearchData] = useState({
@@ -141,7 +146,7 @@ export default function AISystemModal({ system, onClose, onSave, onCreateAndAsse
         console.log('High risk flags:', data.high_risk_flags);
         console.log('GPAI flags:', data.gpai_flags);
         console.log('Transparency flags:', data.transparency_flags);
-        
+
         // Store complete system data including pre-filled assessment
         setFormData(prev => ({
           ...prev,
@@ -163,14 +168,14 @@ export default function AISystemModal({ system, onClose, onSave, onCreateAndAsse
             transparency: data.transparency_flags || {}
           }
         }));
-        
+
         console.log('Stored assessment answers:', {
           prohibited: data.prohibited_flags || {},
           highRisk: data.high_risk_flags || {},
           gpai: data.gpai_flags || {},
           transparency: data.transparency_flags || {}
         });
-        
+
         setShowResearchStep(false);
       } else {
         throw new Error("No data returned from analysis");
@@ -185,7 +190,7 @@ export default function AISystemModal({ system, onClose, onSave, onCreateAndAsse
 
   const handleSubmit = React.useCallback(async (e) => {
     e.preventDefault();
-    
+
     // Validation
     if (!formData.name?.trim()) {
       setError("System name is required");
@@ -199,16 +204,16 @@ export default function AISystemModal({ system, onClose, onSave, onCreateAndAsse
       setError("Please select at least one AI technique");
       return;
     }
-    
+
     setSaving(true);
     setError(null);
 
     try {
       const user = await db.auth.me();
-      
+
       // Get user's company
       let companyId = user.company_id;
-      
+
       // Fallback: If no company_id but has company_data, try to find/create company
       if (!companyId && user.company_data?.domain) {
         const companies = await db.entities.Company.filter({ domain: user.company_data.domain });
@@ -225,7 +230,7 @@ export default function AISystemModal({ system, onClose, onSave, onCreateAndAsse
           companyId = newCompany.id;
         }
       }
-      
+
       // Final fallback: Create company from email domain
       if (!companyId) {
         const domain = user.email.split('@')[1];
@@ -275,252 +280,323 @@ export default function AISystemModal({ system, onClose, onSave, onCreateAndAsse
     }
   }, [formData, system, onCreateAndAssess, onSave]);
 
+  // Step indicator
+  const currentStep = showResearchStep ? 0 : 1;
+  const steps = [
+    { label: "Research", step: 0 },
+    { label: "Details", step: 1 },
+  ];
+
+  const stepAnim = {
+    initial: { opacity: 0, x: 20 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: -20 },
+    transition: { duration: 0.25 }
+  };
+
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="bg-black border border-[#86EFAC]/20 text-white max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className={cn(
+        "max-w-4xl max-h-[90vh] overflow-y-auto border",
+        st('bg-white text-slate-900 border-slate-200', 'bg-zinc-900 text-white border-zinc-700/60')
+      )}>
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-white">
+          <DialogTitle className={cn("text-2xl font-bold", st('text-slate-900', 'text-white'))}>
             {system ? "Edit AI System" : "Register New AI System"}
           </DialogTitle>
         </DialogHeader>
 
-        {showResearchStep ? (
-          <div className="space-y-6 mt-4">
-            {error && (
-              <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4 text-red-400 text-sm">
-                {error}
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2">
-                <Label className="text-white mb-2 block flex items-center gap-2">
-                  <Box className="w-4 h-4 text-[#86EFAC]" />
-                  Product Name *
-                </Label>
-                <Input
-                  value={researchData.productName}
-                  onChange={(e) => setResearchData(prev => ({ ...prev, productName: e.target.value }))}
-                  placeholder="e.g., Einstein GPT"
-                  className="bg-white/5 border-white/10 text-white"
-                />
-              </div>
-
-              <div className="col-span-2">
-                <Label className="text-white mb-2 block flex items-center gap-2">
-                  <Globe className="w-4 h-4 text-[#86EFAC]" />
-                  Product Page URL
-                </Label>
-                <Input
-                  value={researchData.productUrl}
-                  onChange={(e) => setResearchData(prev => ({ ...prev, productUrl: e.target.value }))}
-                  placeholder="https://salesforce.com/einstein"
-                  className="bg-white/5 border-white/10 text-white"
-                />
-              </div>
-
-              <div className="col-span-2">
-                <Label className="text-white mb-2 block flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-[#86EFAC]" />
-                  Provider / Company Name *
-                </Label>
-                <Input
-                  value={researchData.providerName}
-                  onChange={(e) => setResearchData(prev => ({ ...prev, providerName: e.target.value }))}
-                  placeholder="e.g., Salesforce"
-                  className="bg-white/5 border-white/10 text-white"
-                />
-              </div>
-
-              <div className="col-span-2">
-                <Label className="text-white mb-2 block flex items-center gap-2">
-                  <Globe className="w-4 h-4 text-[#86EFAC]" />
-                  Provider Website
-                </Label>
-                <Input
-                  value={researchData.providerUrl}
-                  onChange={(e) => setResearchData(prev => ({ ...prev, providerUrl: e.target.value }))}
-                  placeholder="https://salesforce.com"
-                  className="bg-white/5 border-white/10 text-white"
-                />
-              </div>
-            </div>
-
-            <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-lg p-4">
-              <h4 className="text-indigo-400 font-semibold mb-3 flex items-center gap-2">
-                <Database className="w-4 h-4" />
-                Research with CIDE
-              </h4>
-              <p className="text-sm text-gray-300 mb-3">
-                CIDE will conduct comprehensive research, analyze the AI system against all EU AI Act criteria, and pre-answer all risk assessment questions.
-              </p>
-              <div className="bg-white/5 rounded-lg p-3 mb-3">
-                <p className="text-xs text-gray-400 mb-2">What CIDE will research:</p>
-                <ul className="text-xs text-gray-300 space-y-1">
-                  <li>• System capabilities and technical architecture</li>
-                  <li>• Prohibited practices (Article 5)</li>
-                  <li>• High-risk categories (Annex III)</li>
-                  <li>• GPAI classification (Chapter V)</li>
-                  <li>• Transparency requirements (Article 50)</li>
-                </ul>
-              </div>
-              <Button
-                onClick={handleAnalyze}
-                disabled={analyzing || !researchData.productName || !researchData.providerName}
-                className="w-full bg-gradient-to-r from-[#86EFAC]/20 to-[#6EE7B7]/10 border border-[#86EFAC]/30 text-[#86EFAC] hover:bg-[#86EFAC]/30"
-              >
-                {analyzing ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                    Researching & Analyzing...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Start CIDE Research
-                  </>
+        {/* Step Indicator */}
+        {!system && (
+          <div className="flex items-center justify-center gap-0 mt-2 mb-2">
+            {steps.map((s, i) => (
+              <React.Fragment key={s.step}>
+                {i > 0 && (
+                  <div className={cn(
+                    "w-12 h-0.5 mx-1",
+                    currentStep > s.step - 1 ? 'bg-emerald-500' : st('bg-slate-200', 'bg-zinc-700')
+                  )} />
                 )}
-              </Button>
-            </div>
-
-            <div className="pt-2">
-              <p className="text-xs text-center text-gray-500">
-                Or <button type="button" onClick={() => setShowResearchStep(false)} className="text-[#86EFAC] hover:text-[#6EE7B7] underline">skip to manual entry</button>
-              </p>
-            </div>
+                <div className="flex flex-col items-center gap-1">
+                  <div className={cn(
+                    "w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold border-2 transition-colors",
+                    currentStep === s.step
+                      ? 'bg-emerald-500 border-emerald-500 text-white'
+                      : currentStep > s.step
+                        ? 'bg-emerald-500 border-emerald-500 text-white'
+                        : st('bg-slate-100 border-slate-300 text-slate-400', 'bg-zinc-800 border-zinc-600 text-zinc-500')
+                  )}>
+                    {currentStep > s.step ? <Check className="w-3.5 h-3.5" /> : s.step + 1}
+                  </div>
+                  <span className={cn(
+                    "text-[10px] font-medium",
+                    currentStep === s.step
+                      ? st('text-emerald-600', 'text-emerald-400')
+                      : st('text-slate-400', 'text-zinc-500')
+                  )}>{s.label}</span>
+                </div>
+              </React.Fragment>
+            ))}
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-6 mt-4">
-          {error && (
-            <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4 text-red-400 text-sm">
-              {error}
-            </div>
-          )}
-
-          <div>
-            <Label htmlFor="name" className="text-white mb-2 block">System Name *</Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="e.g., Customer Support Chatbot"
-              required
-              className="bg-white/5 border-white/10 text-white"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="purpose" className="text-white mb-2 block">Purpose *</Label>
-            <Textarea
-              id="purpose"
-              value={formData.purpose}
-              onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
-              placeholder="What does this AI system do?"
-              required
-              rows={3}
-              className="bg-white/5 border-white/10 text-white"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="description" className="text-white mb-2 block">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Detailed description of the system"
-              rows={3}
-              className="bg-white/5 border-white/10 text-white"
-            />
-          </div>
-
-          <div>
-            <Label className="text-white mb-2 block">Deployment Context</Label>
-            <select
-              value={formData.deployment_context}
-              onChange={(e) => setFormData({ ...formData, deployment_context: e.target.value })}
-              className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white"
-            >
-              <option value="internal">Internal Use</option>
-              <option value="customer-facing">Customer-Facing</option>
-              <option value="embedded-in-product">Embedded in Product</option>
-            </select>
-          </div>
-
-          <div>
-            <Label className="text-white mb-2 block">AI Techniques Used</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {aiTechniqueOptions.map(option => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => handleTechniqueToggle(option.value)}
-                  className={`px-4 py-2 rounded-lg border text-sm transition-colors ${
-                    formData.ai_techniques.includes(option.value)
-                      ? 'bg-[#86EFAC]/20 border-[#86EFAC]/50 text-[#86EFAC]'
-                      : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="data_inputs" className="text-white mb-2 block">Data Inputs</Label>
-            <Textarea
-              id="data_inputs"
-              value={formData.data_inputs}
-              onChange={(e) => setFormData({ ...formData, data_inputs: e.target.value })}
-              placeholder="What data does this system process?"
-              rows={2}
-              className="bg-white/5 border-white/10 text-white"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="decision_impact" className="text-white mb-2 block">Decision Impact</Label>
-            <Textarea
-              id="decision_impact"
-              value={formData.decision_impact}
-              onChange={(e) => setFormData({ ...formData, decision_impact: e.target.value })}
-              placeholder="What decisions does this system influence?"
-              rows={2}
-              className="bg-white/5 border-white/10 text-white"
-            />
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            {!system && (
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setShowResearchStep(true)}
-                className="mr-auto text-[#86EFAC] hover:text-[#6EE7B7] hover:bg-[#86EFAC]/10"
-              >
-                <Sparkles className="w-4 h-4 mr-2" />
-                Back to AI Research
-              </Button>
-            )}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className="flex-1 border-white/10 text-gray-300"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={saving}
-              className="flex-1 bg-gradient-to-b from-[#86EFAC]/10 to-[#86EFAC]/5 border border-[#86EFAC]/30 text-[#86EFAC] hover:border-[#86EFAC]/50"
-            >
-              {saving ? "Saving..." : system ? "Update System" : "Save & Continue to Assessment"}
-            </Button>
-          </div>
-        </form>
         )}
+
+        <AnimatePresence mode="wait">
+          {showResearchStep ? (
+            <motion.div key="research" {...stepAnim} className="space-y-6 mt-4">
+              {error && (
+                <div className={cn(
+                  "rounded-lg p-4 text-sm",
+                  st('bg-red-50 border border-red-200 text-red-600', 'bg-red-500/20 border border-red-500/30 text-red-400')
+                )}>
+                  {error}
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <motion.div className="col-span-2" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
+                  <Label className={cn("mb-2 block flex items-center gap-2", st('text-slate-700', 'text-white'))}>
+                    <Box className="w-4 h-4 text-emerald-500" />
+                    Product Name *
+                  </Label>
+                  <Input
+                    value={researchData.productName}
+                    onChange={(e) => setResearchData(prev => ({ ...prev, productName: e.target.value }))}
+                    placeholder="e.g., Einstein GPT"
+                    className={cn(st('bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400', 'bg-white/5 border-white/10 text-white placeholder-gray-500'))}
+                  />
+                </motion.div>
+
+                <motion.div className="col-span-2" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+                  <Label className={cn("mb-2 block flex items-center gap-2", st('text-slate-700', 'text-white'))}>
+                    <Globe className="w-4 h-4 text-emerald-500" />
+                    Product Page URL
+                  </Label>
+                  <Input
+                    value={researchData.productUrl}
+                    onChange={(e) => setResearchData(prev => ({ ...prev, productUrl: e.target.value }))}
+                    placeholder="https://salesforce.com/einstein"
+                    className={cn(st('bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400', 'bg-white/5 border-white/10 text-white placeholder-gray-500'))}
+                  />
+                </motion.div>
+
+                <motion.div className="col-span-2" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                  <Label className={cn("mb-2 block flex items-center gap-2", st('text-slate-700', 'text-white'))}>
+                    <Building2 className="w-4 h-4 text-emerald-500" />
+                    Provider / Company Name *
+                  </Label>
+                  <Input
+                    value={researchData.providerName}
+                    onChange={(e) => setResearchData(prev => ({ ...prev, providerName: e.target.value }))}
+                    placeholder="e.g., Salesforce"
+                    className={cn(st('bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400', 'bg-white/5 border-white/10 text-white placeholder-gray-500'))}
+                  />
+                </motion.div>
+
+                <motion.div className="col-span-2" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+                  <Label className={cn("mb-2 block flex items-center gap-2", st('text-slate-700', 'text-white'))}>
+                    <Globe className="w-4 h-4 text-emerald-500" />
+                    Provider Website
+                  </Label>
+                  <Input
+                    value={researchData.providerUrl}
+                    onChange={(e) => setResearchData(prev => ({ ...prev, providerUrl: e.target.value }))}
+                    placeholder="https://salesforce.com"
+                    className={cn(st('bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400', 'bg-white/5 border-white/10 text-white placeholder-gray-500'))}
+                  />
+                </motion.div>
+              </div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className={cn(
+                  "rounded-lg p-4 border",
+                  st('bg-emerald-50 border-emerald-200', 'bg-indigo-500/10 border-indigo-500/20')
+                )}
+              >
+                <h4 className={cn("font-semibold mb-3 flex items-center gap-2", st('text-emerald-700', 'text-indigo-400'))}>
+                  <Database className="w-4 h-4" />
+                  Research with CIDE
+                </h4>
+                <p className={cn("text-sm mb-3", st('text-slate-600', 'text-gray-300'))}>
+                  CIDE will conduct comprehensive research, analyze the AI system against all EU AI Act criteria, and pre-answer all risk assessment questions.
+                </p>
+                <div className={cn("rounded-lg p-3 mb-3", st('bg-white border border-slate-200', 'bg-white/5'))}>
+                  <p className={cn("text-xs mb-2", st('text-slate-500', 'text-gray-400'))}>What CIDE will research:</p>
+                  <ul className={cn("text-xs space-y-1", st('text-slate-600', 'text-gray-300'))}>
+                    <li>- System capabilities and technical architecture</li>
+                    <li>- Prohibited practices (Article 5)</li>
+                    <li>- High-risk categories (Annex III)</li>
+                    <li>- GPAI classification (Chapter V)</li>
+                    <li>- Transparency requirements (Article 50)</li>
+                  </ul>
+                </div>
+                <Button
+                  onClick={handleAnalyze}
+                  disabled={analyzing || !researchData.productName || !researchData.providerName}
+                  className="w-full bg-gradient-to-r from-emerald-500/20 to-emerald-600/10 border border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/30"
+                >
+                  {analyzing ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                      Researching & Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Start CIDE Research
+                    </>
+                  )}
+                </Button>
+              </motion.div>
+
+              <div className="pt-2">
+                <p className={cn("text-xs text-center", st('text-slate-400', 'text-gray-500'))}>
+                  Or <button type="button" onClick={() => setShowResearchStep(false)} className={cn("underline", st('text-emerald-600 hover:text-emerald-700', 'text-emerald-400 hover:text-emerald-300'))}>skip to manual entry</button>
+                </p>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.form key="details" {...stepAnim} onSubmit={handleSubmit} className="space-y-6 mt-4">
+              {error && (
+                <div className={cn(
+                  "rounded-lg p-4 text-sm",
+                  st('bg-red-50 border border-red-200 text-red-600', 'bg-red-500/20 border border-red-500/30 text-red-400')
+                )}>
+                  {error}
+                </div>
+              )}
+
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
+                <Label htmlFor="name" className={cn("mb-2 block", st('text-slate-700', 'text-white'))}>System Name *</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="e.g., Customer Support Chatbot"
+                  required
+                  className={cn(st('bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400', 'bg-white/5 border-white/10 text-white placeholder-gray-500'))}
+                />
+              </motion.div>
+
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+                <Label htmlFor="purpose" className={cn("mb-2 block", st('text-slate-700', 'text-white'))}>Purpose *</Label>
+                <Textarea
+                  id="purpose"
+                  value={formData.purpose}
+                  onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
+                  placeholder="What does this AI system do?"
+                  required
+                  rows={3}
+                  className={cn(st('bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400', 'bg-white/5 border-white/10 text-white placeholder-gray-500'))}
+                />
+              </motion.div>
+
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                <Label htmlFor="description" className={cn("mb-2 block", st('text-slate-700', 'text-white'))}>Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Detailed description of the system"
+                  rows={3}
+                  className={cn(st('bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400', 'bg-white/5 border-white/10 text-white placeholder-gray-500'))}
+                />
+              </motion.div>
+
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+                <Label className={cn("mb-2 block", st('text-slate-700', 'text-white'))}>Deployment Context</Label>
+                <select
+                  value={formData.deployment_context}
+                  onChange={(e) => setFormData({ ...formData, deployment_context: e.target.value })}
+                  className={cn(
+                    "w-full px-4 py-2 border rounded-lg",
+                    st('bg-slate-50 border-slate-200 text-slate-900', 'bg-white/5 border-white/10 text-white')
+                  )}
+                >
+                  <option value="internal">Internal Use</option>
+                  <option value="customer-facing">Customer-Facing</option>
+                  <option value="embedded-in-product">Embedded in Product</option>
+                </select>
+              </motion.div>
+
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                <Label className={cn("mb-2 block", st('text-slate-700', 'text-white'))}>AI Techniques Used</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {aiTechniqueOptions.map(option => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => handleTechniqueToggle(option.value)}
+                      className={cn(
+                        "px-4 py-2 rounded-lg border text-sm transition-colors",
+                        formData.ai_techniques.includes(option.value)
+                          ? st('bg-emerald-50 border-emerald-300 text-emerald-700', 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400')
+                          : st('bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100', 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10')
+                      )}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+                <Label htmlFor="data_inputs" className={cn("mb-2 block", st('text-slate-700', 'text-white'))}>Data Inputs</Label>
+                <Textarea
+                  id="data_inputs"
+                  value={formData.data_inputs}
+                  onChange={(e) => setFormData({ ...formData, data_inputs: e.target.value })}
+                  placeholder="What data does this system process?"
+                  rows={2}
+                  className={cn(st('bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400', 'bg-white/5 border-white/10 text-white placeholder-gray-500'))}
+                />
+              </motion.div>
+
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                <Label htmlFor="decision_impact" className={cn("mb-2 block", st('text-slate-700', 'text-white'))}>Decision Impact</Label>
+                <Textarea
+                  id="decision_impact"
+                  value={formData.decision_impact}
+                  onChange={(e) => setFormData({ ...formData, decision_impact: e.target.value })}
+                  placeholder="What decisions does this system influence?"
+                  rows={2}
+                  className={cn(st('bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400', 'bg-white/5 border-white/10 text-white placeholder-gray-500'))}
+                />
+              </motion.div>
+
+              <div className="flex gap-3 pt-4">
+                {!system && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setShowResearchStep(true)}
+                    className={cn("mr-auto", st('text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50', 'text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10'))}
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Back to AI Research
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onClose}
+                  className={cn("flex-1", st('border-slate-200 text-slate-600', 'border-white/10 text-gray-300'))}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={saving}
+                  className="flex-1 bg-gradient-to-b from-emerald-500/10 to-emerald-500/5 border border-emerald-500/30 text-emerald-500 hover:border-emerald-500/50"
+                >
+                  {saving ? "Saving..." : system ? "Update System" : "Save & Continue to Assessment"}
+                </Button>
+              </div>
+            </motion.form>
+          )}
+        </AnimatePresence>
       </DialogContent>
     </Dialog>
   );
