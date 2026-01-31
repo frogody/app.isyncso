@@ -11,7 +11,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const MODELS: Record<string, string> = {
-  kling: "fal-ai/kling-video/v2/standard/text-to-video",
+  kling: "fal-ai/kling-video/v2.1/master/text-to-video",
   minimax: "fal-ai/minimax-video/video-01-live/text-to-video",
   luma: "fal-ai/luma-dream-machine",
   wan: "fal-ai/wan/v2.1/1080p",
@@ -135,11 +135,15 @@ serve(async (req) => {
       const status = await statusRes.json();
 
       if (status.status === "COMPLETED") {
-        // Fetch result using the response_url
+        // Fetch result using the response_url (explicit GET)
         const resultRes = await fetch(resultUrl, {
+          method: "GET",
           headers: { Authorization: `Key ${FAL_KEY}` },
         });
-        if (!resultRes.ok) throw new Error("Failed to fetch result");
+        if (!resultRes.ok) {
+          const errText = await resultRes.text();
+          throw new Error(`Failed to fetch result (${resultRes.status}): ${errText}`);
+        }
         const result = await resultRes.json();
 
         const videoUrl =

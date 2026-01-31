@@ -99,10 +99,10 @@ async function generateOneShot({ projectId, description, model, duration_seconds
   const { request_id, status_url, response_url } = submitData;
   if (!request_id) throw new Error("No request_id from submit");
 
-  // Step 2: Poll every 5s until completed/failed (max 5 min)
+  // Step 2: Poll every 8s until completed/failed (max 8 min for kling v2.1)
   const maxAttempts = 60;
   for (let i = 0; i < maxAttempts; i++) {
-    await new Promise((r) => setTimeout(r, 5000));
+    await new Promise((r) => setTimeout(r, 8000));
     const pollData = await edgeFn("generate-shot", {
       action: "poll",
       request_id,
@@ -119,7 +119,7 @@ async function generateOneShot({ projectId, description, model, duration_seconds
     }
     // Otherwise keep polling (IN_QUEUE, IN_PROGRESS, etc.)
   }
-  throw new Error("Shot generation timed out after 5 minutes");
+  throw new Error("Shot generation timed out after 8 minutes");
 }
 
 // ---------------------------------------------------------------------------
