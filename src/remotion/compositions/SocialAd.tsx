@@ -9,6 +9,7 @@ import {
 } from "remotion";
 import { BrandedBackground } from "../components/BrandedBackground";
 import { PulsingButton } from "../components/PulsingButton";
+import { ease, springs, hexToRgb } from "../lib/animations";
 
 interface SocialAdProps {
   headline: string;
@@ -22,16 +23,43 @@ interface SocialAdProps {
   ctaText: string;
 }
 
+// Animated ring element behind product image
+const AnimatedRing: React.FC<{ accentColor: string }> = ({ accentColor }) => {
+  const frame = useCurrentFrame();
+  const rotation = frame * 0.8;
+  const scale = 1 + Math.sin(frame * 0.06) * 0.05;
+  const opacity = interpolate(frame, [0, 15], [0, 0.3], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        width: 480,
+        height: 480,
+        borderRadius: "50%",
+        border: `2px solid ${accentColor}`,
+        opacity,
+        transform: `rotate(${rotation}deg) scale(${scale})`,
+        background: `conic-gradient(from ${rotation}deg, ${accentColor}00, ${accentColor}30, ${accentColor}00)`,
+      }}
+    />
+  );
+};
+
 const ShimmerOverlay: React.FC<{ primaryColor: string }> = ({ primaryColor }) => {
   const frame = useCurrentFrame();
   const position = interpolate(frame, [0, 90], [-100, 200], {
     extrapolateRight: "clamp",
+    easing: ease.inOutCubic,
   });
 
   return (
     <AbsoluteFill
       style={{
-        background: `linear-gradient(${105}deg, transparent ${position - 30}%, rgba(255,255,255,0.06) ${position}%, transparent ${position + 30}%)`,
+        background: `linear-gradient(105deg, transparent ${position - 30}%, rgba(255,255,255,0.05) ${position}%, transparent ${position + 30}%)`,
         pointerEvents: "none",
       }}
     />
@@ -48,47 +76,53 @@ export const SocialAd: React.FC<SocialAdProps> = ({
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // Headline: 0-15, spring scale + slight rotation
+  const rgb = hexToRgb(brandColors.accent);
+
+  // Headline: dramatic scale from 2x with blur
   const headlineProgress = spring({
-    frame: Math.max(0, frame),
+    frame,
     fps,
-    config: { damping: 10, stiffness: 120, mass: 1 },
+    config: { damping: 12, stiffness: 100, mass: 0.8 },
   });
-  const headlineScale = interpolate(headlineProgress, [0, 1], [0.3, 1]);
-  const headlineRotation = interpolate(headlineProgress, [0, 1], [-8, 0]);
-  const headlineOpacity = interpolate(frame, [0, 8], [0, 1], {
+  const headlineScale = interpolate(headlineProgress, [0, 1], [1.8, 1]);
+  const headlineBlur = interpolate(headlineProgress, [0, 1], [10, 0]);
+  const headlineOpacity = interpolate(frame, [0, 10], [0, 1], {
     extrapolateRight: "clamp",
     extrapolateLeft: "clamp",
   });
 
-  // Product image: 15-45, dramatic zoom with glow
+  // Product image: 3D perspective tilt entrance
   const imgFrame = Math.max(0, frame - 15);
   const imgProgress = spring({
     frame: imgFrame,
     fps,
-    config: { damping: 12, stiffness: 80, mass: 1.2 },
+    config: springs.smooth,
   });
-  const imgScale = interpolate(imgProgress, [0, 1], [0.2, 1]);
-  const imgOpacity = interpolate(imgFrame, [0, 10], [0, 1], {
+  const imgScale = interpolate(imgProgress, [0, 1], [0.3, 1]);
+  const imgRotateY = interpolate(imgProgress, [0, 1], [25, 0]);
+  const imgRotateX = interpolate(imgProgress, [0, 1], [-10, 0]);
+  const imgOpacity = interpolate(imgFrame, [0, 12], [0, 1], {
     extrapolateRight: "clamp",
     extrapolateLeft: "clamp",
   });
-  const imgGlow = interpolate(imgFrame, [0, 20, 30], [0, 30, 15], {
+  const imgGlow = interpolate(imgFrame, [0, 20, 35], [0, 35, 18], {
     extrapolateRight: "clamp",
     extrapolateLeft: "clamp",
   });
 
-  // Subheadline: 45-70, slide from bottom
+  // Subheadline: slide from bottom with blur
   const subFrame = Math.max(0, frame - 45);
-  const subOpacity = interpolate(subFrame, [0, 12], [0, 1], {
+  const subProgress = interpolate(subFrame, [0, 18], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: ease.outCubic,
+  });
+  const subOpacity = interpolate(subFrame, [0, 14], [0, 1], {
     extrapolateRight: "clamp",
     extrapolateLeft: "clamp",
   });
-  const subTranslateY = interpolate(
-    spring({ frame: subFrame, fps, config: { damping: 14, stiffness: 100 } }),
-    [0, 1],
-    [60, 0]
-  );
+  const subTranslateY = interpolate(subProgress, [0, 1], [50, 0]);
+  const subBlur = interpolate(subProgress, [0, 1], [5, 0]);
 
   return (
     <AbsoluteFill>
@@ -107,12 +141,13 @@ export const SocialAd: React.FC<SocialAdProps> = ({
           gap: 30,
         }}
       >
-        {/* Headline: 0-15 */}
+        {/* Headline */}
         <Sequence from={0} durationInFrames={90}>
           <div
             style={{
               opacity: headlineOpacity,
-              transform: `scale(${headlineScale}) rotate(${headlineRotation}deg)`,
+              transform: `scale(${headlineScale})`,
+              filter: `blur(${headlineBlur}px)`,
               textAlign: "center",
             }}
           >
@@ -123,7 +158,8 @@ export const SocialAd: React.FC<SocialAdProps> = ({
                 color: brandColors.accent,
                 fontFamily: "Inter, sans-serif",
                 lineHeight: 1.1,
-                textShadow: `0 0 40px rgba(${hexToRgb(brandColors.accent)}, 0.3)`,
+                textShadow: `0 0 40px rgba(${rgb}, 0.3)`,
+                letterSpacing: "-0.03em",
               }}
             >
               {headline}
@@ -131,34 +167,46 @@ export const SocialAd: React.FC<SocialAdProps> = ({
           </div>
         </Sequence>
 
-        {/* Product image: 15-45 */}
+        {/* Product image with 3D entrance + ring */}
         <Sequence from={15} durationInFrames={75}>
           <div
             style={{
-              opacity: imgOpacity,
-              transform: `scale(${imgScale})`,
-              borderRadius: 20,
-              overflow: "hidden",
-              boxShadow: `0 0 ${imgGlow}px ${imgGlow / 2}px rgba(${hexToRgb(brandColors.accent)}, 0.4)`,
+              position: "relative",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              perspective: 800,
             }}
           >
-            <Img
-              src={productImage}
+            <AnimatedRing accentColor={brandColors.accent} />
+            <div
               style={{
-                width: 400,
-                height: 400,
-                objectFit: "cover",
+                opacity: imgOpacity,
+                transform: `scale(${imgScale}) rotateY(${imgRotateY}deg) rotateX(${imgRotateX}deg)`,
+                borderRadius: 24,
+                overflow: "hidden",
+                boxShadow: `0 0 ${imgGlow}px ${imgGlow / 2}px rgba(${rgb}, 0.35), 0 20px 40px rgba(0,0,0,0.4)`,
               }}
-            />
+            >
+              <Img
+                src={productImage}
+                style={{
+                  width: 380,
+                  height: 380,
+                  objectFit: "cover",
+                }}
+              />
+            </div>
           </div>
         </Sequence>
 
-        {/* Subheadline: 45-70 */}
+        {/* Subheadline */}
         <Sequence from={45} durationInFrames={45}>
           <div
             style={{
               opacity: subOpacity,
               transform: `translateY(${subTranslateY}px)`,
+              filter: `blur(${subBlur}px)`,
               textAlign: "center",
             }}
           >
@@ -168,6 +216,7 @@ export const SocialAd: React.FC<SocialAdProps> = ({
                 fontWeight: 500,
                 color: "#e4e4e7",
                 fontFamily: "Inter, sans-serif",
+                letterSpacing: "-0.01em",
               }}
             >
               {subheadline}
@@ -175,8 +224,8 @@ export const SocialAd: React.FC<SocialAdProps> = ({
           </div>
         </Sequence>
 
-        {/* CTA: 70-90 */}
-        <Sequence from={70} durationInFrames={20}>
+        {/* CTA */}
+        <Sequence from={68} durationInFrames={22}>
           <PulsingButton
             text={ctaText}
             backgroundColor={brandColors.accent}
@@ -188,11 +237,3 @@ export const SocialAd: React.FC<SocialAdProps> = ({
     </AbsoluteFill>
   );
 };
-
-function hexToRgb(hex: string): string {
-  const cleaned = hex.replace("#", "");
-  const r = parseInt(cleaned.substring(0, 2), 16);
-  const g = parseInt(cleaned.substring(2, 4), 16);
-  const b = parseInt(cleaned.substring(4, 6), 16);
-  return `${r}, ${g}, ${b}`;
-}

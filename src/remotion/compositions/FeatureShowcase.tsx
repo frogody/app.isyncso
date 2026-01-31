@@ -1,14 +1,17 @@
 import {
   AbsoluteFill,
-  Sequence,
   useCurrentFrame,
   useVideoConfig,
   spring,
   interpolate,
 } from "remotion";
+import { loadFont } from "@remotion/google-fonts/Inter";
 import { BrandedBackground } from "../components/BrandedBackground";
 import { AnimatedText } from "../components/AnimatedText";
 import { PulsingButton } from "../components/PulsingButton";
+import { ease, springs, crossfade, hexToRgb, blurReveal, stagger } from "../lib/animations";
+
+const { fontFamily } = loadFont();
 
 interface Feature {
   title: string;
@@ -27,46 +30,55 @@ interface FeatureShowcaseProps {
   logoUrl?: string;
 }
 
+// Each feature crossfades with the next (overlap window)
 const FeatureSlide: React.FC<{
   feature: Feature;
   accentColor: string;
-}> = ({ feature, accentColor }) => {
+  index: number;
+}> = ({ feature, accentColor, index }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // Icon pops in
-  const iconScale = spring({
-    frame,
+  // Icon: bouncy spring with overshoot
+  const iconProgress = spring({
+    frame: Math.max(0, frame - 3),
     fps,
-    config: { damping: 10, stiffness: 120, mass: 0.8 },
+    config: springs.bouncy,
   });
+  const iconScale = interpolate(iconProgress, [0, 1], [0, 1]);
+  const iconRotation = interpolate(iconProgress, [0, 0.5, 1], [0, -8, 0]);
 
-  // Title slides in from left
-  const titleProgress = spring({
-    frame: Math.max(0, frame - 5),
-    fps,
-    config: { damping: 14, stiffness: 100 },
+  // Title: slide from left with blur
+  const titleProgress = interpolate(frame, [5, 22], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: ease.outCubic,
   });
-  const titleX = interpolate(titleProgress, [0, 1], [-40, 0]);
-  const titleOpacity = interpolate(frame, [3, 15], [0, 1], {
+  const titleX = interpolate(titleProgress, [0, 1], [-60, 0]);
+  const titleBlur = interpolate(titleProgress, [0, 1], [6, 0]);
+  const titleOpacity = interpolate(frame, [5, 18], [0, 1], {
     extrapolateRight: "clamp",
     extrapolateLeft: "clamp",
   });
 
-  // Description fades in
-  const descOpacity = interpolate(frame, [12, 25], [0, 1], {
+  // Description: fade up with delay
+  const descProgress = interpolate(frame, [14, 30], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: ease.outCubic,
+  });
+  const descY = interpolate(descProgress, [0, 1], [20, 0]);
+  const descOpacity = interpolate(frame, [14, 28], [0, 1], {
     extrapolateRight: "clamp",
     extrapolateLeft: "clamp",
   });
-  const descY = interpolate(
-    spring({
-      frame: Math.max(0, frame - 12),
-      fps,
-      config: { damping: 14, stiffness: 80 },
-    }),
-    [0, 1],
-    [15, 0]
-  );
+
+  // Accent line that grows
+  const lineWidth = interpolate(frame, [8, 25], [0, 120], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: ease.outCubic,
+  });
 
   return (
     <AbsoluteFill
@@ -78,20 +90,21 @@ const FeatureSlide: React.FC<{
         padding: "0 120px",
       }}
     >
-      {/* Icon */}
+      {/* Icon with glow */}
       <div
         style={{
-          transform: `scale(${iconScale})`,
-          fontSize: 80,
+          transform: `scale(${iconScale}) rotate(${iconRotation}deg)`,
+          fontSize: 72,
           width: 140,
           height: 140,
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          background: `rgba(255,255,255,0.05)`,
+          background: `rgba(${hexToRgb(accentColor)}, 0.08)`,
           borderRadius: 28,
-          border: `2px solid rgba(255,255,255,0.1)`,
+          border: `1px solid rgba(${hexToRgb(accentColor)}, 0.15)`,
           flexShrink: 0,
+          boxShadow: `0 0 ${30 * iconScale}px rgba(${hexToRgb(accentColor)}, ${0.15 * iconScale})`,
         }}
       >
         {feature.icon}
@@ -103,15 +116,28 @@ const FeatureSlide: React.FC<{
           style={{
             opacity: titleOpacity,
             transform: `translateX(${titleX}px)`,
+            filter: `blur(${titleBlur}px)`,
             fontSize: 48,
             fontWeight: 800,
             color: accentColor,
-            fontFamily: "Inter, sans-serif",
-            marginBottom: 16,
+            fontFamily,
+            marginBottom: 8,
+            letterSpacing: "-0.02em",
           }}
         >
           {feature.title}
         </div>
+        {/* Accent underline */}
+        <div
+          style={{
+            width: lineWidth,
+            height: 3,
+            backgroundColor: accentColor,
+            borderRadius: 2,
+            marginBottom: 16,
+            opacity: 0.6,
+          }}
+        />
         <div
           style={{
             opacity: descOpacity,
@@ -119,7 +145,7 @@ const FeatureSlide: React.FC<{
             fontSize: 26,
             fontWeight: 400,
             color: "#a1a1aa",
-            fontFamily: "Inter, sans-serif",
+            fontFamily,
             lineHeight: 1.5,
           }}
         >
@@ -131,15 +157,17 @@ const FeatureSlide: React.FC<{
 };
 
 const EndCard: React.FC<{
+  productName: string;
   features: Feature[];
   accentColor: string;
-}> = ({ features, accentColor }) => {
+}> = ({ productName, features, accentColor }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const cardOpacity = interpolate(frame, [0, 12], [0, 1], {
+  const titleOpacity = interpolate(frame, [0, 15], [0, 1], {
     extrapolateRight: "clamp",
     extrapolateLeft: "clamp",
+    easing: ease.outCubic,
   });
 
   return (
@@ -148,33 +176,51 @@ const EndCard: React.FC<{
         flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
-        gap: 40,
-        opacity: cardOpacity,
+        gap: 36,
       }}
     >
       <div
         style={{
+          fontSize: 56,
+          fontWeight: 800,
+          color: accentColor,
+          fontFamily,
+          opacity: titleOpacity,
+          letterSpacing: "-0.03em",
+          marginBottom: 8,
+        }}
+      >
+        {productName}
+      </div>
+
+      <div
+        style={{
           display: "flex",
           flexDirection: "row",
-          gap: 32,
+          gap: 24,
           justifyContent: "center",
           flexWrap: "wrap",
         }}
       >
         {features.map((feature, i) => {
-          const itemDelay = i * 4;
-          const itemFrame = Math.max(0, frame - itemDelay);
-          const itemScale = spring({
-            frame: itemFrame,
+          const itemDelay = 8 + i * 5;
+          const progress = spring({
+            frame: Math.max(0, frame - itemDelay),
             fps,
-            config: { damping: 12, stiffness: 120 },
+            config: springs.snappy,
+          });
+          const y = interpolate(progress, [0, 1], [30, 0]);
+          const opacity = interpolate(frame, [itemDelay, itemDelay + 10], [0, 1], {
+            extrapolateLeft: "clamp",
+            extrapolateRight: "clamp",
           });
 
           return (
             <div
               key={feature.title}
               style={{
-                transform: `scale(${itemScale})`,
+                transform: `translateY(${y}px)`,
+                opacity,
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
@@ -182,17 +228,17 @@ const EndCard: React.FC<{
                 background: "rgba(255,255,255,0.04)",
                 padding: "24px 32px",
                 borderRadius: 16,
-                border: "1px solid rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.06)",
                 minWidth: 160,
               }}
             >
-              <div style={{ fontSize: 40 }}>{feature.icon}</div>
+              <div style={{ fontSize: 36 }}>{feature.icon}</div>
               <div
                 style={{
                   fontSize: 16,
                   fontWeight: 600,
                   color: "#e4e4e7",
-                  fontFamily: "Inter, sans-serif",
+                  fontFamily,
                   textAlign: "center",
                 }}
               >
@@ -207,7 +253,7 @@ const EndCard: React.FC<{
         text="Get Started"
         backgroundColor={accentColor}
         textColor="#ffffff"
-        delay={10}
+        delay={18}
       />
     </AbsoluteFill>
   );
@@ -222,20 +268,28 @@ export const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // Intro: product name fade in
-  const introOpacity = interpolate(frame, [0, 15], [0, 1], {
-    extrapolateRight: "clamp",
-    extrapolateLeft: "clamp",
-  });
-  const introScale = spring({
-    frame,
-    fps,
-    config: { damping: 14, stiffness: 80 },
-  });
+  const featureFrames = 48;
+  const featuresStart = 35;
+  const overlapFrames = 12;
 
-  const featureFrames = 45; // frames per feature
-  const featuresStart = 30;
-  const featuresEnd = featuresStart + features.length * featureFrames;
+  // Progress indicator
+  const totalFeatureDuration = features.length * featureFrames;
+  const progressWidth = interpolate(
+    frame,
+    [featuresStart, featuresStart + totalFeatureDuration],
+    [0, 100],
+    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+  );
+
+  // Intro (0-40): split-word product name
+  const introOpacity = crossfade(frame, 0, 12, 30, 40);
+  const introScale = interpolate(
+    spring({ frame, fps, config: springs.smooth }),
+    [0, 1], [1.1, 1]
+  );
+
+  // End card starts after all features
+  const endCardStart = featuresStart + features.length * featureFrames - overlapFrames;
 
   return (
     <AbsoluteFill>
@@ -244,59 +298,107 @@ export const FeatureShowcase: React.FC<FeatureShowcaseProps> = ({
         secondaryColor={brandColors.secondary}
       />
 
-      {/* Intro: 0-30 */}
-      <Sequence from={0} durationInFrames={30}>
-        <AbsoluteFill
+      {/* Intro: 0-40 */}
+      <AbsoluteFill
+        style={{
+          justifyContent: "center",
+          alignItems: "center",
+          opacity: introOpacity,
+          transform: `scale(${introScale})`,
+          flexDirection: "column",
+          gap: 16,
+        }}
+      >
+        {logoUrl && (
+          <img
+            src={logoUrl}
+            style={{
+              width: 80,
+              height: 80,
+              borderRadius: 16,
+              objectFit: "contain",
+              marginBottom: 8,
+            }}
+          />
+        )}
+        <AnimatedText
+          text={productName}
+          fontSize={64}
+          fontWeight={900}
+          color={brandColors.accent}
+          variant="splitWords"
+          style={{ textAlign: "center", justifyContent: "center" }}
+        />
+      </AbsoluteFill>
+
+      {/* Features: crossfading slides */}
+      {features.map((feature, i) => {
+        const slideStart = featuresStart + i * featureFrames;
+        const slideEnd = slideStart + featureFrames;
+        const fadeIn = interpolate(frame, [slideStart, slideStart + overlapFrames], [0, 1], {
+          extrapolateLeft: "clamp",
+          extrapolateRight: "clamp",
+          easing: ease.outCubic,
+        });
+        const fadeOut = interpolate(frame, [slideEnd - overlapFrames, slideEnd], [1, 0], {
+          extrapolateLeft: "clamp",
+          extrapolateRight: "clamp",
+          easing: ease.inOutCubic,
+        });
+
+        if (frame < slideStart - 5 || frame > slideEnd + 5) return null;
+
+        return (
+          <AbsoluteFill key={feature.title} style={{ opacity: fadeIn * fadeOut }}>
+            <FeatureSlide
+              feature={feature}
+              accentColor={brandColors.accent}
+              index={i}
+            />
+          </AbsoluteFill>
+        );
+      })}
+
+      {/* Progress indicator */}
+      {frame >= featuresStart && frame <= featuresStart + totalFeatureDuration && (
+        <div
           style={{
-            justifyContent: "center",
-            alignItems: "center",
-            opacity: introOpacity,
-            transform: `scale(${introScale})`,
-            flexDirection: "column",
-            gap: 16,
+            position: "absolute",
+            bottom: 32,
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: 200,
+            height: 3,
+            background: "rgba(255,255,255,0.08)",
+            borderRadius: 2,
+            overflow: "hidden",
           }}
         >
-          {logoUrl && (
-            <img
-              src={logoUrl}
-              style={{
-                width: 80,
-                height: 80,
-                borderRadius: 16,
-                objectFit: "contain",
-                marginBottom: 8,
-              }}
-            />
-          )}
           <div
             style={{
-              fontSize: 64,
-              fontWeight: 900,
-              color: brandColors.accent,
-              fontFamily: "Inter, sans-serif",
-              textAlign: "center",
+              width: `${progressWidth}%`,
+              height: "100%",
+              backgroundColor: brandColors.accent,
+              borderRadius: 2,
             }}
-          >
-            {productName}
-          </div>
-        </AbsoluteFill>
-      </Sequence>
+          />
+        </div>
+      )}
 
-      {/* Features: each gets ~45 frames */}
-      {features.map((feature, i) => (
-        <Sequence
-          key={feature.title}
-          from={featuresStart + i * featureFrames}
-          durationInFrames={featureFrames}
+      {/* End card */}
+      {frame >= endCardStart && (
+        <AbsoluteFill
+          style={{
+            opacity: interpolate(frame, [endCardStart, endCardStart + 12], [0, 1], {
+              extrapolateLeft: "clamp",
+              extrapolateRight: "clamp",
+              easing: ease.outCubic,
+            }),
+          }}
         >
-          <FeatureSlide feature={feature} accentColor={brandColors.accent} />
-        </Sequence>
-      ))}
-
-      {/* End card: last 30 frames */}
-      <Sequence from={210} durationInFrames={30}>
-        <EndCard features={features} accentColor={brandColors.accent} />
-      </Sequence>
+          <EndCard productName={productName} features={features} accentColor={brandColors.accent} />
+        </AbsoluteFill>
+      )}
     </AbsoluteFill>
   );
 };

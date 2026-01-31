@@ -3,6 +3,7 @@ import { loadFont } from "@remotion/google-fonts/Inter";
 import { DynamicBackground } from "../components/DynamicBackground";
 import { AnimatedCard } from "../components/AnimatedCard";
 import { AnimatedButton } from "../components/AnimatedButton";
+import { ease, springs, crossfade, stagger, hexToRgb, blurReveal, splitTextProgress } from "../lib/animations";
 
 const { fontFamily } = loadFont();
 
@@ -61,11 +62,9 @@ export const KeynoteShowcase: React.FC<KeynoteShowcaseProps> = ({
   const borderRadius = BORDER_RADIUS_MAP[designAnalysis?.uiStyle?.borderRadius || "medium"] || 12;
   const cardStyle = (designAnalysis?.uiStyle?.cardStyle || "elevated") as "flat" | "elevated" | "bordered" | "glass";
 
-  // Semantic data from analysis
   const understanding = designAnalysis?.productUnderstanding;
   const extractedFeatures = designAnalysis?.extractedFeatures || [];
 
-  // Build feature list: prefer extracted features from screenshots, fall back to prop features
   const displayFeatures = extractedFeatures.length > 0
     ? extractedFeatures.slice(0, 6).map((f, i) => ({
         title: f.name,
@@ -80,35 +79,62 @@ export const KeynoteShowcase: React.FC<KeynoteShowcaseProps> = ({
           { title: "Feature 3", description: "", icon: "▲" },
         ];
 
-  // Use value proposition or tagline as the hook
   const hookText = understanding?.valueProposition || tagline;
   const audienceText = understanding?.targetAudience || "";
 
-  // === PHASE 1: Product name + tagline (0-90 frames = 0-3s) ===
-  const p1In = interpolate(frame, [0, 15], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  // ═══ PHASE 1: Product name (0-100) with crossfade overlap ═══
+  const p1Opacity = crossfade(frame, 0, 18, 80, 100);
+  const p1Words = productName.split(" ");
+  const p1WordProgress = splitTextProgress(frame, fps, p1Words.length, 0, 6);
+  const p1TaglineBlur = blurReveal(frame, 12, 20);
+  const p1TaglineOpacity = interpolate(frame, [12, 28], [0, 0.55], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: ease.outCubic,
+  });
   const p1Scale = interpolate(
-    spring({ frame, fps, config: { damping: 14, mass: 0.5 } }),
-    [0, 1], [1.12, 1]
-  );
-  const p1Out = interpolate(frame, [75, 90], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-
-  // === PHASE 2: Value proposition hook (90-150 = 3-5s) ===
-  const p2In = interpolate(frame, [90, 105], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const p2Scale = interpolate(
-    spring({ frame: Math.max(0, frame - 90), fps, config: { damping: 15, mass: 0.5 } }),
+    spring({ frame, fps, config: { damping: 30, mass: 0.8, stiffness: 80 } }),
     [0, 1], [1.08, 1]
   );
-  const p2Out = interpolate(frame, [135, 150], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
-  // === PHASE 3: Feature cards (150-330 = 5-11s) ===
-  const p3In = interpolate(frame, [150, 165], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const p3Out = interpolate(frame, [315, 330], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const p3HeadingIn = interpolate(frame, [150, 162], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  // ═══ PHASE 2: Value proposition (85-160) ═══
+  const p2Opacity = crossfade(frame, 85, 105, 145, 160);
+  const p2Y = interpolate(
+    interpolate(frame, [85, 115], [0, 1], {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+      easing: ease.outBack,
+    }),
+    [0, 1], [50, 0]
+  );
+  const p2Blur = blurReveal(frame, 90, 20);
 
-  // === PHASE 4: CTA (330-360 = 11-12s) ===
-  const p4In = interpolate(frame, [330, 345], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  // ═══ PHASE 3: Feature cards (150-325) ═══
+  const p3Opacity = crossfade(frame, 150, 168, 310, 325);
+  const p3HeadingWords = "What's Inside".split(" ");
+  const p3HeadingProgress = splitTextProgress(frame, fps, p3HeadingWords.length, 152, 5);
 
-  // Grid layout: 2 cols for <=4 features, 3 cols for 5-6
+  // ═══ PHASE 4: CTA end card (318-360) ═══
+  const p4Opacity = interpolate(frame, [318, 335], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: ease.outCubic,
+  });
+  const p4Scale = interpolate(
+    spring({ frame: Math.max(0, frame - 318), fps, config: springs.bouncy }),
+    [0, 1], [0.85, 1]
+  );
+  // Light burst on CTA
+  const burstSize = interpolate(frame, [320, 345], [0, 800], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: ease.outExpo,
+  });
+  const burstOpacity = interpolate(frame, [320, 340, 360], [0.15, 0.08, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
   const cols = displayFeatures.length > 4 ? 3 : 2;
   const cardWidth = cols === 3 ? 520 : 720;
   const cardHeight = cols === 3 ? 180 : 200;
@@ -117,69 +143,91 @@ export const KeynoteShowcase: React.FC<KeynoteShowcaseProps> = ({
     <AbsoluteFill style={{ backgroundColor: colors.background }}>
       <DynamicBackground primaryColor={colors.primary} secondaryColor={colors.secondary} accentColor={colors.accent} />
 
-      {/* Phase 1: Product name + tagline */}
+      {/* Phase 1: Product name — split-word reveal */}
       <AbsoluteFill style={{
         justifyContent: "center", alignItems: "center",
-        opacity: p1In * p1Out,
-        flexDirection: "column", gap: 20,
+        opacity: p1Opacity,
+        flexDirection: "column", gap: 24,
+        transform: `scale(${p1Scale})`,
       }}>
         <div style={{
-          fontSize: 88, fontWeight: 800, color: colors.text,
-          fontFamily, textRendering: "optimizeLegibility",
-          WebkitFontSmoothing: "antialiased",
-          letterSpacing: "-0.03em",
-          transform: `scale(${p1Scale})`,
-          textAlign: "center" as const,
-          padding: "0 80px",
-        }}>{productName}</div>
+          display: "flex", flexWrap: "wrap", justifyContent: "center",
+          gap: `0 ${88 * 0.3}px`, padding: "0 80px",
+        }}>
+          {p1Words.map((word, i) => {
+            const p = p1WordProgress[i];
+            const y = interpolate(p, [0, 1], [40, 0]);
+            const opacity = interpolate(p, [0, 0.3, 1], [0, 1, 1]);
+            const blur = interpolate(p, [0, 1], [8, 0]);
+            return (
+              <span key={i} style={{
+                display: "inline-block",
+                fontSize: 88, fontWeight: 800, color: colors.text,
+                fontFamily, textRendering: "optimizeLegibility",
+                WebkitFontSmoothing: "antialiased",
+                letterSpacing: "-0.03em",
+                opacity, transform: `translateY(${y}px)`,
+                filter: `blur(${blur}px)`,
+              }}>{word}</span>
+            );
+          })}
+        </div>
         <div style={{
           fontSize: 34, fontWeight: 400, color: colors.text,
-          opacity: 0.55, fontFamily, letterSpacing: "-0.01em",
-          transform: `scale(${p1Scale})`,
-          textAlign: "center" as const,
-          padding: "0 120px",
-          lineHeight: 1.3,
+          opacity: p1TaglineOpacity, fontFamily, letterSpacing: "-0.01em",
+          textAlign: "center" as const, padding: "0 120px", lineHeight: 1.3,
+          filter: `blur(${p1TaglineBlur}px)`,
         }}>{tagline}</div>
       </AbsoluteFill>
 
-      {/* Phase 2: Value proposition hook */}
+      {/* Phase 2: Value proposition hook — slide up + blur reveal */}
       <AbsoluteFill style={{
         justifyContent: "center", alignItems: "center",
-        opacity: p2In * p2Out,
-        flexDirection: "column", gap: 24,
-        padding: "0 140px",
+        opacity: p2Opacity,
+        flexDirection: "column", gap: 24, padding: "0 140px",
       }}>
         <div style={{
           fontSize: 52, fontWeight: 700, color: colors.text,
           fontFamily, textRendering: "optimizeLegibility",
           WebkitFontSmoothing: "antialiased",
-          letterSpacing: "-0.02em",
-          textAlign: "center" as const,
-          lineHeight: 1.25,
-          transform: `scale(${p2Scale})`,
+          letterSpacing: "-0.02em", textAlign: "center" as const, lineHeight: 1.25,
+          transform: `translateY(${p2Y}px)`,
+          filter: `blur(${p2Blur}px)`,
         }}>{hookText}</div>
         {audienceText && (
           <div style={{
             fontSize: 24, fontWeight: 400, color: colors.accent,
-            fontFamily, opacity: 0.8,
+            fontFamily, opacity: interpolate(frame, [100, 115], [0, 0.8], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }),
             textAlign: "center" as const,
+            transform: `translateY(${interpolate(frame, [100, 118], [20, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: ease.outCubic })})px)`,
           }}>Built for {audienceText}</div>
         )}
       </AbsoluteFill>
 
-      {/* Phase 3: Feature cards */}
+      {/* Phase 3: Feature cards — word-by-word heading + staggered cards */}
       <AbsoluteFill style={{
-        opacity: p3In * p3Out,
+        opacity: p3Opacity,
         justifyContent: "center", alignItems: "center",
-        padding: 60,
-        flexDirection: "column",
+        padding: 60, flexDirection: "column",
       }}>
         <div style={{
-          fontSize: 42, fontWeight: 700, color: colors.text,
-          fontFamily, textAlign: "center" as const, marginBottom: 40,
-          opacity: p3HeadingIn,
-          letterSpacing: "-0.02em",
-        }}>What's Inside</div>
+          display: "flex", flexWrap: "wrap", justifyContent: "center",
+          gap: `0 ${42 * 0.3}px`, marginBottom: 40,
+        }}>
+          {p3HeadingWords.map((word, i) => {
+            const p = p3HeadingProgress[i];
+            const y = interpolate(p, [0, 1], [25, 0]);
+            const opacity = interpolate(p, [0, 0.4, 1], [0, 1, 1]);
+            return (
+              <span key={i} style={{
+                display: "inline-block",
+                fontSize: 42, fontWeight: 700, color: colors.text,
+                fontFamily, letterSpacing: "-0.02em",
+                opacity, transform: `translateY(${y}px)`,
+              }}>{word}</span>
+            );
+          })}
+        </div>
         <div style={{
           display: "flex", gap: 20, flexWrap: "wrap" as const,
           justifyContent: "center", maxWidth: cols === 3 ? 1680 : 1500,
@@ -190,7 +238,8 @@ export const KeynoteShowcase: React.FC<KeynoteShowcaseProps> = ({
               title={f.title}
               description={f.description}
               icon={f.icon}
-              delay={165 + i * 8}
+              delay={stagger(i, 10, 168)}
+              variant="slideUp"
               tokens={{
                 accentColor: colors.accent,
                 textColor: colors.text,
@@ -204,26 +253,34 @@ export const KeynoteShowcase: React.FC<KeynoteShowcaseProps> = ({
         </div>
       </AbsoluteFill>
 
-      {/* Phase 4: CTA end card */}
+      {/* Phase 4: CTA end card — light burst + bounce in */}
       <AbsoluteFill style={{
-        opacity: p4In,
+        opacity: p4Opacity,
         justifyContent: "center", alignItems: "center",
         flexDirection: "column", gap: 24,
         background: `linear-gradient(135deg, ${colors.background} 0%, ${colors.secondary} 100%)`,
       }}>
+        {/* Light burst */}
+        <div style={{
+          position: "absolute",
+          width: burstSize, height: burstSize,
+          borderRadius: "50%",
+          background: `radial-gradient(circle, rgba(${hexToRgb(colors.accent)}, ${burstOpacity}) 0%, transparent 70%)`,
+        }} />
+
         <div style={{
           fontSize: 68, fontWeight: 800, color: colors.text,
           fontFamily, letterSpacing: "-0.03em",
           textRendering: "optimizeLegibility",
+          transform: `scale(${p4Scale})`,
         }}>{productName}</div>
         <div style={{
           fontSize: 26, fontWeight: 400, color: colors.text,
           opacity: 0.55, fontFamily, marginBottom: 16,
-          textAlign: "center" as const,
-          padding: "0 200px",
-          lineHeight: 1.3,
+          textAlign: "center" as const, padding: "0 200px", lineHeight: 1.3,
+          transform: `scale(${p4Scale})`,
         }}>{hookText}</div>
-        <AnimatedButton text="Get Started" accentColor={colors.accent} delay={338} />
+        <AnimatedButton text="Get Started" accentColor={colors.accent} delay={325} />
       </AbsoluteFill>
     </AbsoluteFill>
   );

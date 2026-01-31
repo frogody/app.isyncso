@@ -1,4 +1,5 @@
-import { useCurrentFrame, useVideoConfig, interpolate } from "remotion";
+import { useCurrentFrame, useVideoConfig, spring, interpolate } from "remotion";
+import { springs, hexToRgb } from "../lib/animations";
 
 interface PulsingButtonProps {
   text: string;
@@ -15,29 +16,25 @@ export const PulsingButton: React.FC<PulsingButtonProps> = ({
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-
   const delayedFrame = Math.max(0, frame - delay);
 
-  // Fade in
-  const opacity = interpolate(delayedFrame, [0, 10], [0, 1], {
+  // Spring entrance
+  const entrance = spring({ frame: delayedFrame, fps, config: springs.bouncy });
+  const entranceScale = interpolate(entrance, [0, 1], [0.6, 1]);
+  const opacity = interpolate(delayedFrame, [0, 12], [0, 1], {
     extrapolateRight: "clamp",
     extrapolateLeft: "clamp",
   });
 
-  // Looping pulse: cycle every 30 frames
-  const cycleFrame = delayedFrame % 30;
-  const pulseScale = interpolate(cycleFrame, [0, 15, 30], [1, 1.08, 1], {
-    extrapolateRight: "clamp",
-  });
+  // Smooth pulse loop (sinusoidal, not linear keyframes)
+  const pulsePhase = delayedFrame * 0.18;
+  const pulseScale = delayedFrame > 20 ? 1 + Math.sin(pulsePhase) * 0.04 : entranceScale;
 
-  // Looping glow shadow
-  const glowIntensity = interpolate(cycleFrame, [0, 15, 30], [0.3, 0.7, 0.3], {
-    extrapolateRight: "clamp",
-  });
+  // Glow that breathes
+  const glowIntensity = delayedFrame > 20 ? 0.35 + Math.sin(pulsePhase) * 0.2 : 0;
+  const glowSpread = delayedFrame > 20 ? 15 + Math.sin(pulsePhase) * 10 : 0;
 
-  const glowSpread = interpolate(cycleFrame, [0, 15, 30], [10, 25, 10], {
-    extrapolateRight: "clamp",
-  });
+  const rgb = hexToRgb(backgroundColor);
 
   return (
     <div
@@ -47,19 +44,21 @@ export const PulsingButton: React.FC<PulsingButtonProps> = ({
         display: "inline-flex",
         justifyContent: "center",
         alignItems: "center",
+        willChange: "transform, opacity",
       }}
     >
       <div
         style={{
-          backgroundColor,
+          background: `linear-gradient(135deg, ${backgroundColor}, ${backgroundColor}dd)`,
           color: textColor,
           padding: "18px 56px",
-          borderRadius: 16,
-          fontSize: 28,
+          borderRadius: 14,
+          fontSize: 26,
           fontWeight: 700,
           fontFamily: "Inter, sans-serif",
-          boxShadow: `0 0 ${glowSpread}px ${glowSpread / 2}px rgba(${hexToRgb(backgroundColor)}, ${glowIntensity})`,
-          letterSpacing: "0.02em",
+          boxShadow: `0 4px 20px rgba(${rgb}, 0.25), 0 0 ${glowSpread}px rgba(${rgb}, ${glowIntensity})`,
+          letterSpacing: "0.01em",
+          border: `1px solid rgba(255,255,255,0.1)`,
         }}
       >
         {text}
@@ -67,11 +66,3 @@ export const PulsingButton: React.FC<PulsingButtonProps> = ({
     </div>
   );
 };
-
-function hexToRgb(hex: string): string {
-  const cleaned = hex.replace("#", "");
-  const r = parseInt(cleaned.substring(0, 2), 16);
-  const g = parseInt(cleaned.substring(2, 4), 16);
-  const b = parseInt(cleaned.substring(4, 6), 16);
-  return `${r}, ${g}, ${b}`;
-}
