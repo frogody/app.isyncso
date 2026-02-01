@@ -185,7 +185,7 @@ const bottomNavItems = [
 const ENGINE_ITEMS_CONFIG = {
   finance: {
     title: "Finance",
-    url: createPageUrl("FinanceOverview"),
+    url: createPageUrl("FinanceDashboard"),
     icon: Euro,
     id: 'finance',
     permission: "finance.view",
@@ -365,7 +365,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
       color: 'amber',
       agent: 'finance',
       items: [
-        { label: 'Dashboard', path: createPageUrl('FinanceOverview'), icon: LayoutDashboard },
+        { label: 'Dashboard', path: createPageUrl('FinanceDashboard'), icon: LayoutDashboard },
         { label: 'Invoices', path: createPageUrl('FinanceInvoices'), icon: Receipt },
         { label: 'Proposals', path: createPageUrl('FinanceProposals'), icon: FileText },
         { label: 'Business Expenses', path: createPageUrl('FinanceExpenses'), icon: Euro },
