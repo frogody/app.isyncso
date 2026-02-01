@@ -10,10 +10,19 @@ import {
   GripVertical, MoreHorizontal, Trash2, Sun, Moon
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { RaiseCard as Card, RaiseCardContent as CardContent, RaiseCardHeader as CardHeader, RaiseCardTitle as CardTitle, RaiseCardDescription as CardDescription } from '@/components/raise/RaiseCard';
-import { Button } from '@/components/ui/button';
+import {
+  RaiseCard,
+  RaiseCardContent,
+  RaiseCardHeader,
+  RaiseCardTitle,
+  RaiseCardDescription,
+  RaiseButton,
+  RaiseBadge,
+  RaiseStatCard,
+  RaiseEmptyState,
+} from '@/components/raise/ui';
+import { MOTION_VARIANTS } from '@/tokens/raise';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
@@ -53,14 +62,14 @@ function InvestorCard({ investor, index, stageConfig, onEdit, onDelete }) {
               ? provided.draggableProps.style?.transition
               : 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease',
           }}
-          className={`group relative ${rt('bg-white shadow-sm', 'bg-zinc-900/60')} backdrop-blur-sm rounded-xl border ${
+          className={`group relative ${rt('bg-white shadow-sm', 'bg-zinc-900/60')} backdrop-blur-sm rounded-[20px] border ${
             snapshot.isDragging
               ? 'shadow-2xl shadow-orange-500/20 border-orange-500/50 z-50'
               : rt('border-slate-200 hover:border-slate-300', 'border-zinc-800/60 hover:border-zinc-700/60')
           }`}
         >
           {/* Top gradient bar */}
-          <div className={`absolute top-0 left-0 right-0 h-1 rounded-t-xl bg-gradient-to-r ${stageConfig.color} opacity-60`} />
+          <div className={`absolute top-0 left-0 right-0 h-1 rounded-t-[20px] bg-gradient-to-r ${stageConfig.color} opacity-60`} />
 
           <div className="p-4">
             {/* Header */}
@@ -80,9 +89,9 @@ function InvestorCard({ investor, index, stageConfig, onEdit, onDelete }) {
                 </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button className={`h-7 w-7 inline-flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity ${rt('hover:bg-slate-100', 'hover:bg-zinc-800')}`}>
                       <MoreHorizontal className={`w-4 h-4 ${rt('text-slate-500', 'text-zinc-400')}`} />
-                    </Button>
+                    </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className={rt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')}>
                     <DropdownMenuItem onClick={() => onEdit?.(investor)} className={rt('text-slate-600 focus:text-slate-900 focus:bg-slate-100', 'text-zinc-300 focus:text-white focus:bg-zinc-800')}>
@@ -147,21 +156,20 @@ function InvestorStageColumn({ stage, investors, onAddInvestor, onEdit, onDelete
     <div className="flex-shrink-0 w-72">
       <div className={`sticky top-0 z-10 pb-3 ${rt('bg-slate-50', 'bg-black')}`}>
         {/* Column Header */}
-        <div className={`${rt('bg-white border-slate-200 shadow-sm', 'bg-zinc-900/70 border-zinc-800/60')} backdrop-blur-xl rounded-xl border p-4`}>
+        <div className={`${rt('bg-white border-slate-200 shadow-sm', 'bg-zinc-900/70 border-zinc-800/60')} backdrop-blur-xl rounded-[20px] border p-4`}>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2.5">
               <div className={`w-3 h-3 rounded-full bg-gradient-to-br ${stage.color}`} />
               <h3 className={`${rt('text-slate-900', 'text-white')} font-semibold text-sm`}>{stage.label}</h3>
-              <Badge className={`${rt('bg-slate-100 text-slate-600', 'bg-zinc-800 text-zinc-300')} text-xs`}>{stageInvestors.length}</Badge>
+              <RaiseBadge variant="neutral" size="sm">{stageInvestors.length}</RaiseBadge>
             </div>
-            <Button
+            <RaiseButton
               variant="ghost"
-              size="icon"
-              className={`h-7 w-7 ${rt('text-slate-400 hover:text-slate-900 hover:bg-slate-100', 'text-zinc-500 hover:text-white hover:bg-zinc-800')}`}
+              size="sm"
+              className="h-7 w-7 !px-0"
               onClick={() => onAddInvestor?.(stage.id)}
-            >
-              <Plus className="w-4 h-4" />
-            </Button>
+              icon={<Plus className="w-4 h-4" />}
+            />
           </div>
 
           <div className="space-y-1">
@@ -179,7 +187,7 @@ function InvestorStageColumn({ stage, investors, onAddInvestor, onEdit, onDelete
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className={`space-y-3 min-h-[300px] rounded-xl p-2 transition-colors duration-200 ${
+            className={`space-y-3 min-h-[300px] rounded-[20px] p-2 transition-colors duration-200 ${
               snapshot.isDraggingOver
                 ? 'bg-orange-500/5 border-2 border-dashed border-orange-500/40'
                 : 'border-2 border-transparent'
@@ -199,7 +207,7 @@ function InvestorStageColumn({ stage, investors, onAddInvestor, onEdit, onDelete
 
             {stageInvestors.length === 0 && !snapshot.isDraggingOver && (
               <div
-                className={`flex flex-col items-center justify-center py-8 text-center border-2 border-dashed ${rt('border-slate-200 hover:border-slate-300', 'border-zinc-800 hover:border-zinc-700')} rounded-xl cursor-pointer transition-colors`}
+                className={`flex flex-col items-center justify-center py-8 text-center border-2 border-dashed ${rt('border-slate-200 hover:border-slate-300', 'border-zinc-800 hover:border-zinc-700')} rounded-[20px] cursor-pointer transition-colors`}
                 onClick={() => onAddInvestor?.(stage.id)}
               >
                 <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${stage.color} opacity-20 flex items-center justify-center mb-3`}>
@@ -265,51 +273,44 @@ export default function Raise() {
 
   const metrics = [
     {
-      title: 'Raise Target',
-      value: `€${(targetAmount / 1000000).toFixed(1)}M`,
+      label: 'Raise Target',
+      value: `\u20AC${(targetAmount / 1000000).toFixed(1)}M`,
       subtitle: activeCampaign?.name || 'No active campaign',
-      icon: Target,
-      color: 'orange'
+      icon: <Target className="w-5 h-5" />,
+      accentColor: 'orange',
     },
     {
-      title: 'Amount Raised',
-      value: `€${(raisedAmount / 1000000).toFixed(1)}M`,
+      label: 'Amount Raised',
+      value: `\u20AC${(raisedAmount / 1000000).toFixed(1)}M`,
       subtitle: `${progressPercent}% of target`,
-      icon: Euro,
-      color: 'orange'
+      icon: <Euro className="w-5 h-5" />,
+      accentColor: 'green',
     },
     {
-      title: 'Investor Pipeline',
+      label: 'Investor Pipeline',
       value: totalInvestors,
       subtitle: `${interestedInvestors} interested, ${committedInvestors} committed`,
-      icon: Users,
-      color: 'orange'
+      icon: <Users className="w-5 h-5" />,
+      accentColor: 'blue',
     },
     {
-      title: 'Pitch Decks',
+      label: 'Pitch Decks',
       value: pitchDecks.length,
       subtitle: `${dataRooms.length} data rooms`,
-      icon: FileText,
-      color: 'orange'
+      icon: <FileText className="w-5 h-5" />,
+      accentColor: 'purple',
     }
   ];
 
-  const getColorClasses = (color) => {
-    const colors = {
-      orange: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+  const getStatusBadgeVariant = (status) => {
+    const map = {
+      'interested': 'primary',
+      'in_discussions': 'primary',
+      'due_diligence': 'warning',
+      'committed': 'success',
+      'passed': 'neutral'
     };
-    return colors[color] || colors.orange;
-  };
-
-  const getStatusColor = (status) => {
-    const statusColors = {
-      'interested': 'text-orange-400 border-orange-500/30 bg-orange-500/10',
-      'in_discussions': 'text-orange-400 border-orange-500/30 bg-orange-500/10',
-      'due_diligence': 'text-orange-400 border-orange-500/30 bg-orange-500/10',
-      'committed': 'text-orange-400 border-orange-500/30 bg-orange-500/10',
-      'passed': 'text-zinc-400 border-zinc-500/30 bg-zinc-500/10'
-    };
-    return statusColors[status] || statusColors.interested;
+    return map[status] || 'neutral';
   };
 
   const handleExport = () => {
@@ -475,8 +476,7 @@ export default function Raise() {
         interestedInvestors={interestedInvestors}
         committedInvestors={committedInvestors}
         metrics={metrics}
-        getColorClasses={getColorClasses}
-        getStatusColor={getStatusColor}
+        getStatusBadgeVariant={getStatusBadgeVariant}
         handleExport={handleExport}
         handleDragEnd={handleDragEnd}
         handleDeleteInvestor={handleDeleteInvestor}
@@ -489,7 +489,7 @@ function RaiseContent({
   activeTab, setActiveTab, campaigns, investors, pitchDecks, dataRooms,
   viewMode, setViewMode, activeCampaign, targetAmount, raisedAmount,
   progressPercent, totalInvestors, interestedInvestors, committedInvestors,
-  metrics, getColorClasses, getStatusColor, handleExport, handleDragEnd,
+  metrics, getStatusBadgeVariant, handleExport, handleDragEnd,
   handleDeleteInvestor,
 }) {
   const { theme, toggleTheme, rt } = useRaiseTheme();
@@ -505,33 +505,27 @@ function RaiseContent({
           color="orange"
           actions={
             <div className="flex gap-2">
-              <Button variant="outline" size="icon" onClick={toggleTheme} className={rt('border-slate-200 text-slate-600', 'border-zinc-700 text-zinc-300')}>
-                {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-              </Button>
-              <Button variant="outline" className={`${rt('border-slate-200 text-slate-600 hover:bg-slate-100', 'border-zinc-700 text-zinc-300 hover:bg-zinc-800')}`} onClick={handleExport}>
-                <Download className="w-4 h-4 mr-2" />
+              <RaiseButton variant="ghost" size="sm" onClick={toggleTheme} icon={theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />} />
+              <RaiseButton variant="secondary" size="sm" onClick={handleExport} icon={<Download className="w-4 h-4" />}>
                 Export
-              </Button>
-              <Button className={`${rt('bg-orange-50 hover:bg-orange-100 text-orange-600 border border-orange-200', 'bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/30')}`}>
-                <Plus className="w-4 h-4 mr-2" />
+              </RaiseButton>
+              <RaiseButton size="sm" icon={<Plus className="w-4 h-4" />}>
                 New Campaign
-              </Button>
+              </RaiseButton>
             </div>
           }
         />
 
       {/* Progress Bar for Active Campaign */}
       {activeCampaign && (
-        <Card className={rt('bg-orange-50 border-orange-200', 'bg-gradient-to-r from-orange-950/50 to-orange-950/50 border-orange-500/20') + ' mb-6'}>
-          <CardContent className="p-4">
+        <RaiseCard className={rt('bg-orange-50 border-orange-200', 'bg-gradient-to-r from-orange-950/50 to-orange-950/50 border-orange-500/20') + ' mb-6'}>
+          <RaiseCardContent className="p-4">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className={`text-lg font-semibold ${rt('text-slate-900', 'text-white')}`}>{activeCampaign.name}</h3>
                 <p className={`text-sm ${rt('text-slate-500', 'text-zinc-400')}`}>{activeCampaign.round_type || 'Funding Round'}</p>
               </div>
-              <Badge className={rt('bg-orange-50 text-orange-600 border-orange-200', 'bg-orange-500/20 text-orange-400 border-orange-500/30')}>
-                Active
-              </Badge>
+              <RaiseBadge variant="primary">Active</RaiseBadge>
             </div>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
@@ -543,34 +537,22 @@ function RaiseContent({
               <Progress value={progressPercent} className={`h-3 ${rt('bg-slate-200', 'bg-zinc-800')}`} />
               <p className={`text-xs ${rt('text-slate-400', 'text-zinc-500')} text-right`}>{progressPercent}% raised</p>
             </div>
-          </CardContent>
-        </Card>
+          </RaiseCardContent>
+        </RaiseCard>
       )}
 
-      {/* Metrics Grid */}
+      {/* Metrics Grid - Using RaiseStatCard with staggered delays */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         {metrics.map((metric, index) => (
-          <motion.div
-            key={metric.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-          >
-            <Card className={rt('bg-white border-slate-200 shadow-sm', 'bg-zinc-900/50 border-zinc-800')}>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className={`p-2 rounded-lg ${rt('bg-orange-50 text-orange-600 border-orange-200', 'bg-orange-500/10 text-orange-400 border-orange-500/20')}`}>
-                    <metric.icon className="w-4 h-4" />
-                  </div>
-                </div>
-                <div>
-                  <p className={`text-lg font-bold ${rt('text-slate-900', 'text-white')}`}>{metric.value}</p>
-                  <p className={`text-xs ${rt('text-slate-400', 'text-zinc-500')}`}>{metric.title}</p>
-                  <p className={`text-[10px] ${rt('text-slate-400', 'text-zinc-600')} mt-1`}>{metric.subtitle}</p>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+          <RaiseStatCard
+            key={metric.label}
+            label={metric.label}
+            value={metric.value}
+            subtitle={metric.subtitle}
+            icon={metric.icon}
+            delay={index * 0.08}
+            accentColor={metric.accentColor}
+          />
         ))}
       </div>
 
@@ -598,20 +580,20 @@ function RaiseContent({
         <AnimatePresence mode="wait">
           <TabsContent value="overview" key="overview">
             <motion.div
-              key={activeTab === 'overview' ? 'overview' : undefined}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
+              key={activeTab === 'overview' ? 'overview-active' : undefined}
+              initial={MOTION_VARIANTS.slideUp.initial}
+              animate={MOTION_VARIANTS.slideUp.animate}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={MOTION_VARIANTS.slideUp.transition}
             >
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* Investor Pipeline */}
-              <Card className={rt('bg-white border-slate-200 shadow-sm', 'bg-zinc-900/50 border-zinc-800')}>
-                <CardHeader>
-                  <CardTitle className={rt('text-slate-900', 'text-white')}>Investor Pipeline</CardTitle>
-                  <CardDescription>Breakdown by stage</CardDescription>
-                </CardHeader>
-                <CardContent>
+              <RaiseCard>
+                <RaiseCardHeader>
+                  <RaiseCardTitle>Investor Pipeline</RaiseCardTitle>
+                  <RaiseCardDescription>Breakdown by stage</RaiseCardDescription>
+                </RaiseCardHeader>
+                <RaiseCardContent>
                   <div className="space-y-3">
                     {[
                       { stage: 'Contacted', count: investors.filter(i => i.status === 'contacted').length, color: 'zinc' },
@@ -629,25 +611,26 @@ function RaiseContent({
                       </div>
                     ))}
                   </div>
-                </CardContent>
-              </Card>
+                </RaiseCardContent>
+              </RaiseCard>
 
               {/* Recent Activity */}
-              <Card className={rt('bg-white border-slate-200 shadow-sm', 'bg-zinc-900/50 border-zinc-800')}>
-                <CardHeader>
-                  <CardTitle className={rt('text-slate-900', 'text-white')}>Recent Activity</CardTitle>
-                  <CardDescription>Latest investor interactions</CardDescription>
-                </CardHeader>
-                <CardContent>
+              <RaiseCard>
+                <RaiseCardHeader>
+                  <RaiseCardTitle>Recent Activity</RaiseCardTitle>
+                  <RaiseCardDescription>Latest investor interactions</RaiseCardDescription>
+                </RaiseCardHeader>
+                <RaiseCardContent>
                   <div className="space-y-3">
                     {investors.length === 0 ? (
-                      <div className="text-center py-6">
-                        <MessageSquare className={`w-8 h-8 ${rt('text-slate-400', 'text-zinc-600')} mx-auto mb-2`} />
-                        <p className={`${rt('text-slate-400', 'text-zinc-500')} text-sm`}>No investor activity yet</p>
-                      </div>
+                      <RaiseEmptyState
+                        icon={<MessageSquare className="w-6 h-6" />}
+                        title="No investor activity yet"
+                        message="Start adding investors to your pipeline"
+                      />
                     ) : (
                       investors.slice(0, 5).map((investor) => (
-                        <div key={investor.id} className={`flex items-start gap-2 p-2 ${rt('bg-slate-50', 'bg-zinc-800/50')} rounded-lg`}>
+                        <div key={investor.id} className={`flex items-start gap-2 p-2 ${rt('bg-slate-50', 'bg-zinc-800/50')} rounded-xl`}>
                           <div className={`p-1.5 ${rt('bg-orange-50', 'bg-orange-500/10')} rounded-lg`}>
                             <Building2 className={`w-3 h-3 ${rt('text-orange-600', 'text-orange-400')}`} />
                           </div>
@@ -655,26 +638,26 @@ function RaiseContent({
                             <p className={`text-xs font-medium ${rt('text-slate-900', 'text-white')} truncate`}>{investor.name || 'Unknown Investor'}</p>
                             <p className={`text-[10px] ${rt('text-slate-400', 'text-zinc-500')}`}>{investor.firm || 'Investment Firm'}</p>
                           </div>
-                          <Badge variant="outline" className={getStatusColor(investor.status)}>
+                          <RaiseBadge variant={getStatusBadgeVariant(investor.status)} size="sm">
                             {investor.status || 'new'}
-                          </Badge>
+                          </RaiseBadge>
                         </div>
                       ))
                     )}
                   </div>
-                </CardContent>
-              </Card>
+                </RaiseCardContent>
+              </RaiseCard>
             </div>
             </motion.div>
           </TabsContent>
 
           <TabsContent value="investors" key="investors">
             <motion.div
-              key={activeTab === 'investors' ? 'investors' : undefined}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
+              key={activeTab === 'investors' ? 'investors-active' : undefined}
+              initial={MOTION_VARIANTS.slideUp.initial}
+              animate={MOTION_VARIANTS.slideUp.animate}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={MOTION_VARIANTS.slideUp.transition}
             >
             <div className="space-y-3">
               {/* Header with View Toggle */}
@@ -684,47 +667,45 @@ function RaiseContent({
                   <p className={`${rt('text-slate-400', 'text-zinc-500')} text-xs`}>{investors.length} investors in pipeline</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className={`flex ${rt('bg-slate-100', 'bg-zinc-900')} rounded-lg border ${rt('border-slate-200', 'border-zinc-800')} p-0.5`}>
-                    <Button
+                  <div className={`flex ${rt('bg-slate-100', 'bg-zinc-900')} rounded-full border ${rt('border-slate-200', 'border-zinc-800')} p-0.5`}>
+                    <RaiseButton
                       size="sm"
                       variant={viewMode === 'kanban' ? 'secondary' : 'ghost'}
-                      className={viewMode === 'kanban' ? rt('bg-white text-slate-900 text-xs', 'bg-zinc-800 text-white text-xs') : rt('text-slate-500 text-xs', 'text-zinc-400 text-xs')}
                       onClick={() => setViewMode('kanban')}
+                      icon={<BarChart3 className="w-3 h-3" />}
                     >
-                      <BarChart3 className="w-3 h-3 mr-1" />
                       Board
-                    </Button>
-                    <Button
+                    </RaiseButton>
+                    <RaiseButton
                       size="sm"
                       variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-                      className={viewMode === 'list' ? rt('bg-white text-slate-900 text-xs', 'bg-zinc-800 text-white text-xs') : rt('text-slate-500 text-xs', 'text-zinc-400 text-xs')}
                       onClick={() => setViewMode('list')}
+                      icon={<Users className="w-3 h-3" />}
                     >
-                      <Users className="w-3 h-3 mr-1" />
                       List
-                    </Button>
+                    </RaiseButton>
                   </div>
-                  <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-xs">
-                    <Plus className="w-3 h-3 mr-1" />
+                  <RaiseButton size="sm" icon={<Plus className="w-3 h-3" />}>
                     Add
-                  </Button>
+                  </RaiseButton>
                 </div>
               </div>
 
               {investors.length === 0 ? (
-                <Card className={rt('bg-white border-slate-200 shadow-sm', 'bg-zinc-900/50 border-zinc-800')}>
-                  <CardContent className="py-8">
-                    <div className="text-center">
-                      <Users className={`w-8 h-8 ${rt('text-slate-400', 'text-zinc-600')} mx-auto mb-3`} />
-                      <h3 className={`text-sm font-medium ${rt('text-slate-900', 'text-white')} mb-1`}>No investors yet</h3>
-                      <p className={`${rt('text-slate-400', 'text-zinc-500')} text-xs mb-3`}>Start building your investor pipeline</p>
-                      <Button className="bg-orange-500 hover:bg-orange-600 text-xs">
-                        <Plus className="w-3 h-3 mr-1" />
-                        Add First Investor
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                <RaiseCard>
+                  <RaiseCardContent className="py-8">
+                    <RaiseEmptyState
+                      icon={<Users className="w-6 h-6" />}
+                      title="No investors yet"
+                      message="Start building your investor pipeline"
+                      action={{
+                        label: 'Add First Investor',
+                        onClick: () => {},
+                        icon: <Plus className="w-3 h-3" />,
+                      }}
+                    />
+                  </RaiseCardContent>
+                </RaiseCard>
               ) : viewMode === 'kanban' ? (
                 /* Kanban Board View */
                 <DragDropContext onDragEnd={handleDragEnd}>
@@ -741,11 +722,11 @@ function RaiseContent({
                 </DragDropContext>
               ) : (
                 /* List View */
-                <Card className={rt('bg-white border-slate-200 shadow-sm', 'bg-zinc-900/50 border-zinc-800')}>
-                  <CardContent className="p-3">
+                <RaiseCard>
+                  <RaiseCardContent className="p-3">
                     <div className="space-y-2">
                       {investors.map((investor) => (
-                        <div key={investor.id} className={`flex items-center justify-between p-3 ${rt('bg-slate-50 hover:bg-slate-100', 'bg-zinc-800/50 hover:bg-zinc-800')} rounded-lg transition-colors`}>
+                        <div key={investor.id} className={`flex items-center justify-between p-3 ${rt('bg-slate-50 hover:bg-slate-100', 'bg-zinc-800/50 hover:bg-zinc-800')} rounded-xl transition-colors`}>
                           <div className="flex items-center gap-2">
                             <div className={`p-1.5 ${rt('bg-orange-50', 'bg-orange-500/10')} rounded-lg`}>
                               <Building2 className={`w-4 h-4 ${rt('text-orange-600', 'text-orange-400')}`} />
@@ -761,27 +742,23 @@ function RaiseContent({
                                 ${(investor.check_size / 1000).toFixed(0)}k - ${((investor.check_size_max || investor.check_size * 2) / 1000).toFixed(0)}k
                               </span>
                             )}
-                            <Badge variant="outline" className={getStatusColor(investor.status)}>
+                            <RaiseBadge variant={getStatusBadgeVariant(investor.status)} size="sm">
                               {investor.status || 'new'}
-                            </Badge>
+                            </RaiseBadge>
                             <div className="flex gap-1">
                               {investor.email && (
-                                <Button size="icon" variant="ghost" className="h-6 w-6">
-                                  <Mail className={`w-3 h-3 ${rt('text-slate-500', 'text-zinc-400')}`} />
-                                </Button>
+                                <RaiseButton size="sm" variant="ghost" className="h-6 w-6 !px-0" icon={<Mail className="w-3 h-3" />} />
                               )}
                               {investor.linkedin && (
-                                <Button size="icon" variant="ghost" className="h-6 w-6">
-                                  <ExternalLink className={`w-3 h-3 ${rt('text-slate-500', 'text-zinc-400')}`} />
-                                </Button>
+                                <RaiseButton size="sm" variant="ghost" className="h-6 w-6 !px-0" icon={<ExternalLink className="w-3 h-3" />} />
                               )}
                             </div>
                           </div>
                         </div>
                       ))}
                     </div>
-                  </CardContent>
-                </Card>
+                  </RaiseCardContent>
+                </RaiseCard>
               )}
             </div>
             </motion.div>
@@ -789,47 +766,47 @@ function RaiseContent({
 
           <TabsContent value="materials" key="materials">
             <motion.div
-              key={activeTab === 'materials' ? 'materials' : undefined}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
+              key={activeTab === 'materials' ? 'materials-active' : undefined}
+              initial={MOTION_VARIANTS.slideUp.initial}
+              animate={MOTION_VARIANTS.slideUp.animate}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={MOTION_VARIANTS.slideUp.transition}
             >
-            <Card className={rt('bg-white border-slate-200 shadow-sm', 'bg-zinc-900/50 border-zinc-800')}>
-              <CardHeader>
+            <RaiseCard>
+              <RaiseCardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className={rt('text-slate-900', 'text-white')}>Pitch Materials</CardTitle>
-                    <CardDescription>Decks, one-pagers, and presentations</CardDescription>
+                    <RaiseCardTitle>Pitch Materials</RaiseCardTitle>
+                    <RaiseCardDescription>Decks, one-pagers, and presentations</RaiseCardDescription>
                   </div>
-                  <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-xs">
-                    <Plus className="w-3 h-3 mr-1" />
+                  <RaiseButton size="sm" icon={<Plus className="w-3 h-3" />}>
                     Upload
-                  </Button>
+                  </RaiseButton>
                 </div>
-              </CardHeader>
-              <CardContent>
+              </RaiseCardHeader>
+              <RaiseCardContent>
                 {pitchDecks.length === 0 ? (
-                  <div className="text-center py-8">
-                    <FileText className={`w-8 h-8 ${rt('text-slate-400', 'text-zinc-600')} mx-auto mb-3`} />
-                    <h3 className={`text-sm font-medium ${rt('text-slate-900', 'text-white')} mb-1`}>No pitch materials</h3>
-                    <p className={`${rt('text-slate-400', 'text-zinc-500')} text-xs mb-3`}>Upload your pitch deck and other materials</p>
-                    <Button className="bg-orange-500 hover:bg-orange-600 text-xs">
-                      <Plus className="w-3 h-3 mr-1" />
-                      Upload Pitch Deck
-                    </Button>
-                  </div>
+                  <RaiseEmptyState
+                    icon={<FileText className="w-6 h-6" />}
+                    title="No pitch materials"
+                    message="Upload your pitch deck and other materials"
+                    action={{
+                      label: 'Upload Pitch Deck',
+                      onClick: () => {},
+                      icon: <Plus className="w-3 h-3" />,
+                    }}
+                  />
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {pitchDecks.map((deck) => (
-                      <div key={deck.id} className={`p-3 ${rt('bg-slate-50 border-slate-200 hover:border-orange-300', 'bg-zinc-800/50 border-zinc-700 hover:border-orange-500/50')} rounded-lg border transition-colors cursor-pointer`}>
+                      <div key={deck.id} className={`p-3 ${rt('bg-slate-50 border-slate-200 hover:border-orange-300', 'bg-zinc-800/50 border-zinc-700 hover:border-orange-500/50')} rounded-xl border transition-colors cursor-pointer`}>
                         <div className="flex items-start justify-between mb-2">
                           <div className={`p-1.5 ${rt('bg-orange-50', 'bg-orange-500/10')} rounded-lg`}>
                             <FileText className={`w-4 h-4 ${rt('text-orange-600', 'text-orange-400')}`} />
                           </div>
-                          <Badge variant="outline" className={`${rt('text-slate-500', 'text-zinc-400')} text-xs`}>
+                          <RaiseBadge variant="neutral" size="sm">
                             {deck.version || 'v1.0'}
-                          </Badge>
+                          </RaiseBadge>
                         </div>
                         <h4 className={`text-sm font-medium ${rt('text-slate-900', 'text-white')} mb-0.5`}>{deck.name || 'Pitch Deck'}</h4>
                         <p className={`text-xs ${rt('text-slate-400', 'text-zinc-500')}`}>{deck.description || 'Investment presentation'}</p>
@@ -837,47 +814,47 @@ function RaiseContent({
                     ))}
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </RaiseCardContent>
+            </RaiseCard>
             </motion.div>
           </TabsContent>
 
           <TabsContent value="dataroom" key="dataroom">
             <motion.div
-              key={activeTab === 'dataroom' ? 'dataroom' : undefined}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
+              key={activeTab === 'dataroom' ? 'dataroom-active' : undefined}
+              initial={MOTION_VARIANTS.slideUp.initial}
+              animate={MOTION_VARIANTS.slideUp.animate}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={MOTION_VARIANTS.slideUp.transition}
             >
-            <Card className={rt('bg-white border-slate-200 shadow-sm', 'bg-zinc-900/50 border-zinc-800')}>
-              <CardHeader>
+            <RaiseCard>
+              <RaiseCardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className={rt('text-slate-900', 'text-white')}>Data Rooms</CardTitle>
-                    <CardDescription>Secure document sharing with investors</CardDescription>
+                    <RaiseCardTitle>Data Rooms</RaiseCardTitle>
+                    <RaiseCardDescription>Secure document sharing with investors</RaiseCardDescription>
                   </div>
-                  <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-xs">
-                    <Plus className="w-3 h-3 mr-1" />
+                  <RaiseButton size="sm" icon={<Plus className="w-3 h-3" />}>
                     Create
-                  </Button>
+                  </RaiseButton>
                 </div>
-              </CardHeader>
-              <CardContent>
+              </RaiseCardHeader>
+              <RaiseCardContent>
                 {dataRooms.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Briefcase className={`w-8 h-8 ${rt('text-slate-400', 'text-zinc-600')} mx-auto mb-3`} />
-                    <h3 className={`text-sm font-medium ${rt('text-slate-900', 'text-white')} mb-1`}>No data rooms</h3>
-                    <p className={`${rt('text-slate-400', 'text-zinc-500')} text-xs mb-3`}>Create a secure data room for due diligence</p>
-                    <Button className="bg-orange-500 hover:bg-orange-600 text-xs">
-                      <Plus className="w-3 h-3 mr-1" />
-                      Create Data Room
-                    </Button>
-                  </div>
+                  <RaiseEmptyState
+                    icon={<Briefcase className="w-6 h-6" />}
+                    title="No data rooms"
+                    message="Create a secure data room for due diligence"
+                    action={{
+                      label: 'Create Data Room',
+                      onClick: () => {},
+                      icon: <Plus className="w-3 h-3" />,
+                    }}
+                  />
                 ) : (
                   <div className="space-y-2">
                     {dataRooms.map((room) => (
-                      <div key={room.id} className={`flex items-center justify-between p-3 ${rt('bg-slate-50', 'bg-zinc-800/50')} rounded-lg`}>
+                      <div key={room.id} className={`flex items-center justify-between p-3 ${rt('bg-slate-50', 'bg-zinc-800/50')} rounded-xl`}>
                         <div className="flex items-center gap-2">
                           <div className={`p-1.5 ${rt('bg-orange-50', 'bg-orange-500/10')} rounded-lg`}>
                             <Briefcase className={`w-4 h-4 ${rt('text-orange-600', 'text-orange-400')}`} />
@@ -889,17 +866,16 @@ function RaiseContent({
                         </div>
                         <div className="flex items-center gap-2">
                           <span className={`text-xs ${rt('text-slate-500', 'text-zinc-400')}`}>{room.viewers || 0} viewers</span>
-                          <Button size="sm" variant="outline" className={`${rt('border-slate-200', 'border-zinc-700')} text-xs h-7 px-2`}>
-                            <ExternalLink className="w-3 h-3 mr-1" />
+                          <RaiseButton size="sm" variant="secondary" icon={<ExternalLink className="w-3 h-3" />}>
                             Open
-                          </Button>
+                          </RaiseButton>
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </RaiseCardContent>
+            </RaiseCard>
             </motion.div>
           </TabsContent>
         </AnimatePresence>
