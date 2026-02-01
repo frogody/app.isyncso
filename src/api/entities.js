@@ -106,6 +106,12 @@ export const FiscalPeriod = db.entities.FiscalPeriod;
 export const JournalEntry = db.entities.JournalEntry;
 export const JournalEntryLine = db.entities.JournalEntryLine;
 
+// === Accounts Payable (Vendors & Bills) ===
+export const Vendor = db.entities.Vendor;
+export const Bill = db.entities.Bill;
+export const BillLineItem = db.entities.BillLineItem;
+export const BillPayment = db.entities.BillPayment;
+
 // === Raise (Fundraising) ===
 export const RaiseCampaign = db.entities.RaiseCampaign;
 export const RaiseInvestor = db.entities.RaiseInvestor;
