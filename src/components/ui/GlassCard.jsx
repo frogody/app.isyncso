@@ -13,16 +13,17 @@ export function GlassCard({
   ...props
 }) {
   const glowColors = {
-    cyan: 'hover:border-cyan-500/30',
-    sage: 'hover:border-[#86EFAC]/30',
-    indigo: 'hover:border-indigo-500/30',
-    orange: 'hover:border-orange-500/30',
-    amber: 'hover:border-amber-500/30',
-    red: 'hover:border-red-500/30',
-    yellow: 'hover:border-yellow-500/30',
-    blue: 'hover:border-blue-500/30',
-    green: 'hover:border-green-500/30',
-    purple: 'hover:border-purple-500/30',
+    cyan: { border: 'hover:border-cyan-500/40', shadow: '0 0 30px rgba(6, 182, 212, 0.15)' },
+    sage: { border: 'hover:border-[#86EFAC]/40', shadow: '0 0 30px rgba(134, 239, 172, 0.15)' },
+    indigo: { border: 'hover:border-indigo-500/40', shadow: '0 0 30px rgba(99, 102, 241, 0.15)' },
+    orange: { border: 'hover:border-orange-500/40', shadow: '0 0 30px rgba(249, 115, 22, 0.15)' },
+    amber: { border: 'hover:border-amber-500/40', shadow: '0 0 30px rgba(245, 158, 11, 0.15)' },
+    red: { border: 'hover:border-red-500/40', shadow: '0 0 30px rgba(239, 68, 68, 0.15)' },
+    yellow: { border: 'hover:border-yellow-500/40', shadow: '0 0 30px rgba(234, 179, 8, 0.15)' },
+    blue: { border: 'hover:border-blue-500/40', shadow: '0 0 30px rgba(59, 130, 246, 0.15)' },
+    green: { border: 'hover:border-green-500/40', shadow: '0 0 30px rgba(34, 197, 94, 0.15)' },
+    purple: { border: 'hover:border-purple-500/40', shadow: '0 0 30px rgba(168, 85, 247, 0.15)' },
+    emerald: { border: 'hover:border-emerald-500/40', shadow: '0 0 30px rgba(16, 185, 129, 0.15)' },
   };
 
   const sizeClasses = {
@@ -32,12 +33,14 @@ export function GlassCard({
     lg: 'p-6 rounded-xl',
   };
 
+  const glowConfig = glow ? glowColors[glow] : null;
+
   const baseClasses = cn(
     'bg-zinc-900/60 backdrop-blur-xl border border-white/10',
-    'transition-all duration-300',
+    'transition-colors duration-300',
     sizeClasses[size] || sizeClasses.md,
     hover && 'cursor-pointer',
-    glow && glowColors[glow],
+    glowConfig?.border,
     className
   );
 
@@ -51,10 +54,24 @@ export function GlassCard({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay }}
-      whileHover={undefined}
+      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{
+        duration: 0.4,
+        delay,
+        ease: [0.25, 0.46, 0.45, 0.94]
+      }}
+      whileHover={hover ? {
+        y: -4,
+        scale: 1.02,
+        boxShadow: glowConfig?.shadow || '0 20px 40px rgba(0, 0, 0, 0.3)',
+        transition: {
+          type: 'spring',
+          stiffness: 400,
+          damping: 25
+        }
+      } : undefined}
+      whileTap={hover ? { scale: 0.98 } : undefined}
       className={baseClasses}
       {...props}
     >
