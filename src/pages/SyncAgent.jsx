@@ -10,7 +10,9 @@ import { Send, Sparkles, User, Bot, RotateCcw, Brain, AlertCircle, RefreshCw, Pl
 import { useSyncTheme } from '@/contexts/SyncThemeContext';
 import { SyncPageTransition } from '@/components/sync/ui';
 import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
+import { AGENTS_DATA, AGENT_COLOR_STYLES } from '@/data/agents';
 import { supabase } from '@/api/supabaseClient';
 import { useUser } from '@/components/context/UserContext';
 import { useSyncState } from '@/components/context/SyncStateContext';
@@ -1675,6 +1677,7 @@ export default function SyncAgent() {
   const [activeAgent, setActiveAgentLocal] = useState(null);
   const [currentActionEffect, setCurrentActionEffect] = useState(null);
   const [showSuccess, setShowSuccessLocal] = useState(false);
+  const [agentsOpen, setAgentsOpen] = useState(false);
 
   // Sync local state changes to global context for mini avatar synchronization
   const setMood = useCallback((newMood) => {
@@ -2050,6 +2053,49 @@ export default function SyncAgent() {
           >
             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
+          <Sheet open={agentsOpen} onOpenChange={setAgentsOpen}>
+            <SheetTrigger asChild>
+              <button className={cn('p-2 rounded-xl transition-all', syt('bg-slate-100 hover:bg-slate-200 text-slate-600', 'bg-white/[0.06] hover:bg-white/10 text-zinc-400'))}>
+                <Bot className="w-5 h-5" />
+              </button>
+            </SheetTrigger>
+            <SheetContent side="right" className={cn('w-[400px] sm:w-[440px] border-l', syt('bg-white border-slate-200', 'bg-zinc-950 border-white/10'))}>
+              <SheetHeader>
+                <SheetTitle className={syt('text-slate-900', 'text-white')}>Specialized Agents</SheetTitle>
+              </SheetHeader>
+              <div className="mt-4 space-y-3 overflow-y-auto max-h-[calc(100vh-120px)] pr-1">
+                {AGENTS_DATA.map(agent => {
+                  const colors = AGENT_COLOR_STYLES[agent.color];
+                  const Icon = agent.icon;
+                  return (
+                    <div key={agent.id} className={cn('p-4 rounded-xl border', syt('bg-slate-50 border-slate-200', 'bg-white/[0.03] border-white/10'))}>
+                      <div className="flex items-start gap-3">
+                        <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center border', colors.bg, colors.border)}>
+                          <Icon className={cn('w-5 h-5', colors.text)} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <h4 className={cn('font-semibold text-sm', syt('text-slate-900', 'text-white'))}>{agent.name}</h4>
+                            {agent.status === 'active' ? (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Active</span>
+                            ) : (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-500/20 text-zinc-400 border border-zinc-500/30">Soon</span>
+                            )}
+                          </div>
+                          <p className={cn('text-xs mt-1 line-clamp-2', syt('text-slate-500', 'text-zinc-400'))}>{agent.description}</p>
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {agent.capabilities.slice(0, 3).map((cap, i) => (
+                              <span key={i} className={cn('text-[10px] px-2 py-0.5 rounded-full', syt('bg-slate-200 text-slate-600', 'bg-white/[0.06] text-zinc-400'))}>{cap}</span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
 

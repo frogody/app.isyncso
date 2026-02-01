@@ -188,8 +188,6 @@ import RaiseCampaigns from "./RaiseCampaigns";
 
 import TeamManagement from "./TeamManagement";
 
-import Agents from "./Agents";
-
 import AgentDetail from "./AgentDetail";
 
 import Products from "./Products";
@@ -469,8 +467,6 @@ const PAGES = {
     RaiseCampaigns: RaiseCampaigns,
 
     TeamManagement: TeamManagement,
-
-    Agents: Agents,
 
     AgentDetail: AgentDetail,
 
@@ -821,8 +817,6 @@ function PagesContent() {
                 <Route path="/RaiseCampaigns" element={<RaiseCampaigns />} />
 
                 <Route path="/TeamManagement" element={<TeamManagement />} />
-
-                <Route path="/Agents" element={<Agents />} />
 
                 <Route path="/AgentDetail" element={<AgentDetail />} />
 

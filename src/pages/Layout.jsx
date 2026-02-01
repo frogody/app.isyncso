@@ -434,17 +434,11 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
 
   // SYNC routes
   if (path.startsWith('/sync') || path.startsWith('/aiassistant') || path.startsWith('/actions') ||
-      path.startsWith('/activity') || path.startsWith('/desktop') || path.startsWith('/agents') ||
-      path.startsWith('/agentdetail') || path.startsWith('/integration') || path.startsWith('/dailyjournal')) {
+      path.startsWith('/activity') || path.startsWith('/desktop') || path.startsWith('/dailyjournal')) {
     const activityItems = [
       { label: 'SYNC Agent', path: createPageUrl('SyncAgent'), icon: Brain },
-      { label: 'Agents', path: createPageUrl('Agents'), icon: Bot },
-      { label: 'Integrations', path: createPageUrl('Integrations'), icon: Plug },
-      { label: 'Overview', path: createPageUrl('DesktopActivity') + '?tab=overview', icon: BarChart3, matchPath: '/desktopactivity' },
-      { label: 'Apps', path: createPageUrl('DesktopActivity') + '?tab=apps', icon: Monitor },
+      { label: 'Activity', path: createPageUrl('DesktopActivity') + '?tab=overview', icon: BarChart3, matchPath: '/desktopactivity' },
       { label: 'Daily Journals', path: createPageUrl('DesktopActivity') + '?tab=journals', icon: BookOpen },
-      { label: 'Timeline', path: createPageUrl('DesktopActivity') + '?tab=timeline', icon: Activity },
-      { label: 'Deep Context', path: createPageUrl('DesktopActivity') + '?tab=context', icon: Brain },
     ];
     return {
       title: 'SYNC',

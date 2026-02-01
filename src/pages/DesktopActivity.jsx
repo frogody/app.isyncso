@@ -413,137 +413,136 @@ export default function DesktopActivity() {
           }
         />
 
-        {/* Download SYNC Desktop Banner */}
-        {activityLogs.length === 0 && (
-          <GlassCard hover={false} animated={true} className="p-5" glow="cyan">
-            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-              <div className="flex items-start gap-5">
-                <div className="w-14 h-14 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-800/60 flex-shrink-0">
-                  <Download className="w-7 h-7 text-cyan-400" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-white mb-2">Download SYNC Desktop</h2>
-                  <p className="text-zinc-400 mb-4 max-w-xl text-sm">
-                    Unlock powerful productivity tracking with the SYNC Desktop companion app.
-                    Get detailed insights into your work patterns and let SYNC understand your context.
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                    <div className="flex items-center gap-2 text-zinc-300">
-                      <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
-                        <Activity className="w-3 h-3 text-cyan-400" />
-                      </div>
-                      <span>Automatic activity tracking</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-zinc-300">
-                      <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
-                        <Target className="w-3 h-3 text-cyan-400" />
-                      </div>
-                      <span>Focus score calculation</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-zinc-300">
-                      <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
-                        <Brain className="w-3 h-3 text-cyan-400" />
-                      </div>
-                      <span>AI-generated daily journals</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-zinc-300">
-                      <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
-                        <MessageSquare className="w-3 h-3 text-cyan-400" />
-                      </div>
-                      <span>Context-aware SYNC chat</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-zinc-300">
-                      <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
-                        <Clock className="w-3 h-3 text-cyan-400" />
-                      </div>
-                      <span>Hourly productivity summaries</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-zinc-300">
-                      <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
-                        <Sparkles className="w-3 h-3 text-cyan-400" />
-                      </div>
-                      <span>Floating avatar widget</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-3 lg:flex-shrink-0">
-                <Button
-                  onClick={handleDownload}
-                  className="bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/25 px-6 py-3 h-auto w-full"
-                >
-                  <Download className="w-5 h-5 mr-2" />
-                  Download for macOS
-                </Button>
-                <p className="text-xs text-zinc-500 text-center">Windows coming soon</p>
-              </div>
-            </div>
-          </GlassCard>
-        )}
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
-            <div className="p-5 rounded-xl bg-zinc-900/60 border border-zinc-800/60">
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-800/60 flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-cyan-400" />
-                </div>
-                {stats.totalMinutes > 0 && (
-                  <Badge className="bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-xs">Active</Badge>
-                )}
-              </div>
-              <div className="text-2xl font-bold text-white">{formatDuration(stats.totalMinutes)}</div>
-              <div className="text-sm text-zinc-500">Total Active Time</div>
-            </div>
-          </motion.div>
-
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <div className="p-5 rounded-xl bg-zinc-900/60 border border-zinc-800/60">
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-800/60 flex items-center justify-center">
-                  <Target className="w-5 h-5 text-cyan-400" />
-                </div>
-              </div>
-              <div className="text-2xl font-bold text-white">{Math.round(stats.avgFocusScore * 100)}%</div>
-              <div className="text-sm text-zinc-500">Avg Focus Score</div>
-              <Progress value={stats.avgFocusScore * 100} className="mt-2 h-1 bg-zinc-800" />
-            </div>
-          </motion.div>
-
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-            <div className="p-5 rounded-xl bg-zinc-900/60 border border-zinc-800/60">
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-800/60 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-cyan-400" />
-                </div>
-              </div>
-              <div className="text-2xl font-bold text-white">{Math.round(stats.avgProductivity * 100)}%</div>
-              <div className="text-sm text-zinc-500">Avg Productivity</div>
-              <Progress value={stats.avgProductivity * 100} className="mt-2 h-1 bg-zinc-800" />
-            </div>
-          </motion.div>
-
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-            <div className="p-5 rounded-xl bg-zinc-900/60 border border-zinc-800/60">
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-800/60 flex items-center justify-center">
-                  <Monitor className="w-5 h-5 text-cyan-400" />
-                </div>
-              </div>
-              <div className="text-2xl font-bold text-white">{stats.topApps.length}</div>
-              <div className="text-sm text-zinc-500">Apps Tracked</div>
-            </div>
-          </motion.div>
-        </div>
-
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           {/* TabsList removed — navigation handled by Layout SYNC top tabs */}
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="mt-5 space-y-5">
+            {/* Download SYNC Desktop Banner */}
+            {activityLogs.length === 0 && (
+              <GlassCard hover={false} animated={true} className="p-5" glow="cyan">
+                <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+                  <div className="flex items-start gap-5">
+                    <div className="w-14 h-14 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-800/60 flex-shrink-0">
+                      <Download className="w-7 h-7 text-cyan-400" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-bold text-white mb-2">Download SYNC Desktop</h2>
+                      <p className="text-zinc-400 mb-4 max-w-xl text-sm">
+                        Unlock powerful productivity tracking with the SYNC Desktop companion app.
+                        Get detailed insights into your work patterns and let SYNC understand your context.
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                        <div className="flex items-center gap-2 text-zinc-300">
+                          <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
+                            <Activity className="w-3 h-3 text-cyan-400" />
+                          </div>
+                          <span>Automatic activity tracking</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-zinc-300">
+                          <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
+                            <Target className="w-3 h-3 text-cyan-400" />
+                          </div>
+                          <span>Focus score calculation</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-zinc-300">
+                          <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
+                            <Brain className="w-3 h-3 text-cyan-400" />
+                          </div>
+                          <span>AI-generated daily journals</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-zinc-300">
+                          <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
+                            <MessageSquare className="w-3 h-3 text-cyan-400" />
+                          </div>
+                          <span>Context-aware SYNC chat</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-zinc-300">
+                          <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
+                            <Clock className="w-3 h-3 text-cyan-400" />
+                          </div>
+                          <span>Hourly productivity summaries</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-zinc-300">
+                          <div className="w-5 h-5 rounded-full bg-cyan-500/10 flex items-center justify-center">
+                            <Sparkles className="w-3 h-3 text-cyan-400" />
+                          </div>
+                          <span>Floating avatar widget</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-3 lg:flex-shrink-0">
+                    <Button
+                      onClick={handleDownload}
+                      className="bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/25 px-6 py-3 h-auto w-full"
+                    >
+                      <Download className="w-5 h-5 mr-2" />
+                      Download for macOS
+                    </Button>
+                    <p className="text-xs text-zinc-500 text-center">Windows coming soon</p>
+                  </div>
+                </div>
+              </GlassCard>
+            )}
+
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
+                <div className="p-5 rounded-xl bg-zinc-900/60 border border-zinc-800/60">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-800/60 flex items-center justify-center">
+                      <Clock className="w-5 h-5 text-cyan-400" />
+                    </div>
+                    {stats.totalMinutes > 0 && (
+                      <Badge className="bg-cyan-950/40 text-cyan-300/80 border-cyan-800/30 text-xs">Active</Badge>
+                    )}
+                  </div>
+                  <div className="text-2xl font-bold text-white">{formatDuration(stats.totalMinutes)}</div>
+                  <div className="text-sm text-zinc-500">Total Active Time</div>
+                </div>
+              </motion.div>
+
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                <div className="p-5 rounded-xl bg-zinc-900/60 border border-zinc-800/60">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-800/60 flex items-center justify-center">
+                      <Target className="w-5 h-5 text-cyan-400" />
+                    </div>
+                  </div>
+                  <div className="text-2xl font-bold text-white">{Math.round(stats.avgFocusScore * 100)}%</div>
+                  <div className="text-sm text-zinc-500">Avg Focus Score</div>
+                  <Progress value={stats.avgFocusScore * 100} className="mt-2 h-1 bg-zinc-800" />
+                </div>
+              </motion.div>
+
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                <div className="p-5 rounded-xl bg-zinc-900/60 border border-zinc-800/60">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-800/60 flex items-center justify-center">
+                      <TrendingUp className="w-5 h-5 text-cyan-400" />
+                    </div>
+                  </div>
+                  <div className="text-2xl font-bold text-white">{Math.round(stats.avgProductivity * 100)}%</div>
+                  <div className="text-sm text-zinc-500">Avg Productivity</div>
+                  <Progress value={stats.avgProductivity * 100} className="mt-2 h-1 bg-zinc-800" />
+                </div>
+              </motion.div>
+
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                <div className="p-5 rounded-xl bg-zinc-900/60 border border-zinc-800/60">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-800/60 flex items-center justify-center">
+                      <Monitor className="w-5 h-5 text-cyan-400" />
+                    </div>
+                  </div>
+                  <div className="text-2xl font-bold text-white">{stats.topApps.length}</div>
+                  <div className="text-sm text-zinc-500">Apps Tracked</div>
+                </div>
+              </motion.div>
+            </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               {/* Daily Activity Chart */}
               <GlassCard hover={false} animated={false} className="p-5">
