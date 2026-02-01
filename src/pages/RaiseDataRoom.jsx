@@ -168,11 +168,10 @@ export default function RaiseDataRoom() {
             <RaiseCardContent>
               {filteredRooms.length === 0 ? (
                 <RaiseEmptyState
-                  icon={Briefcase}
+                  icon={<Briefcase className="w-6 h-6" />}
                   title="No data rooms yet"
                   message="Create a secure space for due diligence documents"
-                  actionLabel="Create Data Room"
-                  onAction={() => setIsAddDialogOpen(true)}
+                  action={{ label: 'Create Data Room', onClick: () => setIsAddDialogOpen(true) }}
                 />
               ) : (
                 <div className="space-y-3">

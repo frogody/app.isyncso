@@ -174,11 +174,10 @@ export default function RaisePitchDecks() {
           <RaiseCardContent>
             {filteredDecks.length === 0 ? (
               <RaiseEmptyState
-                icon={Presentation}
+                icon={<Presentation className="w-6 h-6" />}
                 title="No pitch decks yet"
                 message="Create your first investor presentation"
-                actionLabel="Create Pitch Deck"
-                onAction={() => setIsAddDialogOpen(true)}
+                action={{ label: 'Create Pitch Deck', onClick: () => setIsAddDialogOpen(true) }}
               />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

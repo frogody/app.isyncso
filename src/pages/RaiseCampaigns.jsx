@@ -214,11 +214,10 @@ export default function RaiseCampaigns() {
             <RaiseCardContent>
               {filteredCampaigns.length === 0 ? (
                 <RaiseEmptyState
-                  icon={Rocket}
+                  icon={<Rocket className="w-6 h-6" />}
                   title="No campaigns yet"
                   message="Start your first fundraising campaign"
-                  actionLabel="Create Campaign"
-                  onAction={() => setIsAddDialogOpen(true)}
+                  action={{ label: 'Create Campaign', onClick: () => setIsAddDialogOpen(true) }}
                 />
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

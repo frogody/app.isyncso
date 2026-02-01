@@ -217,11 +217,10 @@ export default function RaiseInvestors() {
           <RaiseCardContent>
             {filteredInvestors.length === 0 ? (
               <RaiseEmptyState
-                icon={Building2}
+                icon={<Building2 className="w-6 h-6" />}
                 title="No investors yet"
                 message="Start building your investor pipeline"
-                actionLabel="Add First Investor"
-                onAction={() => setIsAddDialogOpen(true)}
+                action={{ label: 'Add First Investor', onClick: () => setIsAddDialogOpen(true) }}
               />
             ) : (
               <motion.div
