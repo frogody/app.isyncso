@@ -7,7 +7,12 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { MotionButton } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { AnimatedBadge } from "@/components/ui/badge";
+import { AnimatedNumber } from "@/components/ui/AnimatedNumber";
+import { AnimatedProgress } from "@/components/ui/progress";
+import { EmptyState } from "@/components/ui/EmptyState";
 import {
   Select,
   SelectContent,
@@ -50,14 +55,24 @@ const stagger = {
 
 // ─── Stat Pill ────────────────────────────────────────────────────────────────
 function StatPill({ icon: Icon, value, label, sub }) {
+  const isPercentage = typeof value === 'string' && value.endsWith('%');
+  const numericValue = isPercentage ? parseFloat(value) : (typeof value === 'number' ? value : null);
+
   return (
-    <motion.div variants={fadeIn}>
+    <motion.div
+      variants={fadeIn}
+      whileHover={{ y: -2, scale: 1.02, boxShadow: '0 8px 24px rgba(239, 68, 68, 0.12)' }}
+    >
       <div className="flex items-center gap-3 bg-zinc-900/60 border border-zinc-800/60 rounded-xl px-4 py-3">
         <div className="p-2 rounded-lg bg-red-500/10 text-red-400 shrink-0">
           <Icon className="w-4 h-4" />
         </div>
         <div className="min-w-0">
-          <div className="text-xl font-bold text-white leading-none">{value}</div>
+          <div className="text-xl font-bold text-white leading-none">
+            {numericValue !== null ? (
+              <AnimatedNumber value={numericValue} suffix={isPercentage ? '%' : ''} duration={1} />
+            ) : value}
+          </div>
           <div className="text-[11px] text-zinc-500 mt-0.5 truncate">{label}{sub ? ` · ${sub}` : ''}</div>
         </div>
       </div>
@@ -84,7 +99,9 @@ function ResponseRateRing({ rate, sent, replied }) {
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-bold text-white">{rate}%</span>
+          <span className="text-2xl font-bold text-white">
+            <AnimatedNumber value={rate} suffix="%" duration={1} />
+          </span>
         </div>
       </div>
       <div className="space-y-2 text-sm">
@@ -116,23 +133,16 @@ function PipelineBars({ candidates }) {
   const max = Math.max(...stages.map(s => s.count), 1);
 
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-2">
       {stages.map((s, i) => {
-        const pct = total > 0 ? Math.round((s.count / total) * 100) : 0;
+        const pct = max > 0 ? Math.round((s.count / max) * 100) : 0;
         return (
-          <div key={s.name} className="flex items-center gap-2">
-            <div className="w-[72px] text-xs text-zinc-500 truncate">{s.name}</div>
-            <div className="flex-1 h-4 bg-zinc-800/40 rounded overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${max > 0 ? (s.count / max) * 100 : 0}%` }}
-                transition={{ duration: 0.6, delay: i * 0.05, ease: "easeOut" }}
-                className="h-full bg-red-500/70 rounded flex items-center justify-end px-1.5"
-              >
-                {s.count > 0 && <span className="text-[9px] font-medium text-white">{s.count}</span>}
-              </motion.div>
+          <div key={s.name} className="space-y-0.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-zinc-500">{s.name}</span>
+              <span className="text-[10px] text-zinc-600">{s.count > 0 ? s.count : ''}</span>
             </div>
-            <div className="w-8 text-right text-[10px] text-zinc-600">{pct}%</div>
+            <AnimatedProgress value={pct} color="rose" glow={s.count > 0} />
           </div>
         );
       })}
@@ -161,7 +171,9 @@ function IntelBar({ data }) {
       <div className="grid grid-cols-4 gap-1">
         {levels.map(l => (
           <div key={l.key} className="text-center">
-            <div className="text-sm font-semibold text-white">{l.count}</div>
+            <div className="text-sm font-semibold text-white">
+              <AnimatedNumber value={l.count} duration={0.8} />
+            </div>
             <div className="text-[10px] text-zinc-500">{l.key}</div>
           </div>
         ))}
@@ -179,22 +191,34 @@ function CampaignRow({ campaign, outreachTasks }) {
   const matches = campaign.matched_candidates?.length || 0;
 
   return (
-    <Link
-      to={`${createPageUrl("TalentCampaignDetail")}?id=${campaign.id}`}
-      className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/[0.03] transition-colors group"
+    <motion.div
+      whileHover={{ x: 4, backgroundColor: 'rgba(255,255,255,0.03)' }}
+      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+      className="rounded-lg"
     >
-      <div className="p-2 rounded-lg bg-red-500/10 group-hover:bg-red-500/15 transition-colors">
-        <Megaphone className="w-4 h-4 text-red-400" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm text-white truncate group-hover:text-red-400 transition-colors">{campaign.name}</p>
-        <p className="text-[11px] text-zinc-500">{matches} matches · {sent} sent</p>
-      </div>
-      <div className="text-right shrink-0">
-        <span className={`text-sm font-medium ${rate >= 20 ? 'text-red-400' : rate > 0 ? 'text-zinc-300' : 'text-zinc-600'}`}>{rate}%</span>
-        <p className="text-[10px] text-zinc-600">{replied} replies</p>
-      </div>
-    </Link>
+      <Link
+        to={`${createPageUrl("TalentCampaignDetail")}?id=${campaign.id}`}
+        className="flex items-center gap-3 p-3 transition-colors group"
+      >
+        <div className="p-2 rounded-lg bg-red-500/10 group-hover:bg-red-500/15 transition-colors">
+          <Megaphone className="w-4 h-4 text-red-400" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm text-white truncate group-hover:text-red-400 transition-colors">{campaign.name}</p>
+          <p className="text-[11px] text-zinc-500">{matches} matches · {sent} sent</p>
+        </div>
+        <div className="text-right shrink-0">
+          <span className={`text-sm font-medium ${rate >= 20 ? 'text-red-400' : rate > 0 ? 'text-zinc-300' : 'text-zinc-600'}`}>
+            {rate >= 20 ? (
+              <AnimatedBadge variant="destructive" pulse size="xs" className="bg-red-500/20 text-red-400 border-red-500/30">{rate}%</AnimatedBadge>
+            ) : (
+              `${rate}%`
+            )}
+          </span>
+          <p className="text-[10px] text-zinc-600">{replied} replies</p>
+        </div>
+      </Link>
+    </motion.div>
   );
 }
 
@@ -222,10 +246,15 @@ function RecCard({ icon: Icon, title, description, actionLabel, actionUrl }) {
 function NestCard({ nest }) {
   return (
     <Link to={`/marketplace/nests/${nest.id}`}>
-      <div className="bg-zinc-900/60 border border-zinc-800/60 rounded-xl p-4 hover:border-red-500/20 transition-all h-full flex flex-col">
-        <Badge className="bg-red-500/15 text-red-400 text-[10px] w-fit mb-2">
+      <motion.div
+        className="bg-zinc-900/60 border border-zinc-800/60 rounded-xl p-4 hover:border-red-500/20 transition-all h-full flex flex-col"
+        whileHover={{ y: -4, scale: 1.02, boxShadow: '0 8px 24px rgba(239, 68, 68, 0.12)' }}
+        whileTap={{ scale: 0.98 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+      >
+        <AnimatedBadge className="bg-red-500/15 text-red-400 text-[10px] w-fit mb-2">
           {nest.category || nest.nest_type || 'candidates'}
-        </Badge>
+        </AnimatedBadge>
         <h4 className="text-sm font-medium text-white mb-1 line-clamp-1">{nest.name}</h4>
         <p className="text-xs text-zinc-500 line-clamp-2 flex-1 mb-3">{nest.description}</p>
         <div className="flex items-center justify-between text-xs pt-2 border-t border-zinc-800/60">
@@ -234,7 +263,7 @@ function NestCard({ nest }) {
           </span>
           <span className="text-white font-medium">€{nest.price || 0}</span>
         </div>
-      </div>
+      </motion.div>
     </Link>
   );
 }
@@ -405,21 +434,21 @@ export default function TalentDashboard() {
           color="red"
           actions={
             <div className="flex flex-wrap items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => navigate(createPageUrl("TalentProjects"))} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700 text-xs h-8">
+              <MotionButton variant="outline" size="sm" onClick={() => navigate(createPageUrl("TalentProjects"))} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700 text-xs h-8">
                 <Briefcase className="w-3.5 h-3.5 mr-1" /> Create Role
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => navigate("/marketplace/nests")} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700 text-xs h-8">
+              </MotionButton>
+              <MotionButton variant="outline" size="sm" onClick={() => navigate("/marketplace/nests")} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700 text-xs h-8">
                 <Package className="w-3.5 h-3.5 mr-1" /> Browse Nests
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => navigate(`${createPageUrl("TalentCampaignDetail")}?new=true`)} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700 text-xs h-8">
+              </MotionButton>
+              <MotionButton variant="outline" size="sm" onClick={() => navigate(`${createPageUrl("TalentCampaignDetail")}?new=true`)} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700 text-xs h-8">
                 <Sparkles className="w-3.5 h-3.5 mr-1" /> Run Matching
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => navigate(createPageUrl("TalentCampaigns"))} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700 text-xs h-8">
+              </MotionButton>
+              <MotionButton variant="outline" size="sm" onClick={() => navigate(createPageUrl("TalentCampaigns"))} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700 text-xs h-8">
                 <Send className="w-3.5 h-3.5 mr-1" /> Launch Outreach
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => navigate(`${createPageUrl("TalentCandidates")}?addNew=true`)} className="border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 text-xs h-8">
+              </MotionButton>
+              <MotionButton variant="outline" size="sm" onClick={() => navigate(`${createPageUrl("TalentCandidates")}?addNew=true`)} className="border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 text-xs h-8">
                 <Users className="w-3.5 h-3.5 mr-1" /> Add Candidate
-              </Button>
+              </MotionButton>
               <div className="h-5 w-px bg-zinc-700 mx-1" />
               <Select value={timeRange} onValueChange={setTimeRange}>
                 <SelectTrigger className="w-[120px] bg-zinc-900/60 border-zinc-800 text-white text-xs h-8">
@@ -545,10 +574,14 @@ export default function TalentDashboard() {
                   </Link>
                 </div>
                 {campaigns.length === 0 ? (
-                  <div className="text-center py-6">
-                    <Megaphone className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
-                    <p className="text-zinc-500 text-sm">No campaigns yet</p>
-                  </div>
+                  <EmptyState
+                    icon={Megaphone}
+                    title="No campaigns yet"
+                    description="Create a campaign to start reaching out to candidates"
+                    action={() => navigate(`${createPageUrl('TalentCampaignDetail')}?new=true`)}
+                    actionLabel="New Campaign"
+                    size="sm"
+                  />
                 ) : (
                   <div className="space-y-0.5">
                     {campaigns.slice(0, 5).map(c => (
@@ -577,10 +610,14 @@ export default function TalentDashboard() {
                 {loadingRecommendations ? (
                   <div className="space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}</div>
                 ) : recommendedNests.length === 0 ? (
-                  <div className="text-center py-6">
-                    <Package className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
-                    <p className="text-zinc-500 text-sm">No nests available</p>
-                  </div>
+                  <EmptyState
+                    icon={Package}
+                    title="No nests available"
+                    description="Browse the marketplace for candidate pools"
+                    action={() => navigate('/marketplace/nests')}
+                    actionLabel="Browse Marketplace"
+                    size="sm"
+                  />
                 ) : (
                   <div className="space-y-3">
                     {recommendedNests.map(nest => <NestCard key={nest.id} nest={nest} />)}
