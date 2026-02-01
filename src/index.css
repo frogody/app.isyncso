@@ -276,6 +276,39 @@ html:not(.dark) [role="listbox"] { background: #FFFFFF !important; border: 1px s
 html:not(.dark) [role="option"]:hover,
 html:not(.dark) [role="option"][data-highlighted] { background: #F1F5F9 !important; }
 
+/* ══════════════════════════════════════════════════════
+   ADDITIONAL LIGHT MODE REFINEMENTS
+   ══════════════════════════════════════════════════════ */
+
+/* Chat/Inbox area backgrounds */
+html:not(.dark) .bg-neutral-900 { background-color: #FFFFFF !important; }
+html:not(.dark) .bg-neutral-800 { background-color: #F8FAFC !important; }
+html:not(.dark) .bg-stone-900 { background-color: #FFFFFF !important; }
+html:not(.dark) .bg-stone-800 { background-color: #F8FAFC !important; }
+
+/* Gradient fixes */
+html:not(.dark) .from-zinc-900 { --tw-gradient-from: #FFFFFF !important; }
+html:not(.dark) .from-zinc-950 { --tw-gradient-from: #F8FAFC !important; }
+html:not(.dark) .via-zinc-900 { --tw-gradient-via: #FFFFFF !important; }
+html:not(.dark) .to-zinc-900 { --tw-gradient-to: #FFFFFF !important; }
+html:not(.dark) .from-gray-900 { --tw-gradient-from: #FFFFFF !important; }
+html:not(.dark) .to-gray-900 { --tw-gradient-to: #FFFFFF !important; }
+
+/* Additional background overrides */
+html:not(.dark) [class*="bg-[#0"] { background-color: #FFFFFF !important; }
+html:not(.dark) [class*="bg-[#1"] { background-color: #F8FAFC !important; }
+
+/* Ensure proper text contrast in nested elements */
+html:not(.dark) .text-white\/80 { color: rgba(15, 23, 42, 0.80) !important; }
+html:not(.dark) .text-white\/70 { color: rgba(15, 23, 42, 0.70) !important; }
+html:not(.dark) .text-white\/60 { color: rgba(15, 23, 42, 0.60) !important; }
+html:not(.dark) .text-white\/50 { color: rgba(15, 23, 42, 0.50) !important; }
+
+/* Ring and focus states */
+html:not(.dark) .ring-white\/10 { --tw-ring-color: rgba(15, 23, 42, 0.10) !important; }
+html:not(.dark) .ring-white\/20 { --tw-ring-color: rgba(15, 23, 42, 0.15) !important; }
+html:not(.dark) .focus\:ring-white\/20:focus { --tw-ring-color: rgba(15, 23, 42, 0.15) !important; }
+
 /* iPad / Tablet Optimization (768px - 1024px) */
 @media (min-width: 768px) and (max-width: 1023px) {
   /* Increase touch targets for tablet */
