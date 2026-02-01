@@ -13,7 +13,7 @@ interface RaiseStatCardProps {
   label: string;
   value: string | number;
   subtitle?: string;
-  icon?: React.ReactNode;
+  icon?: React.ReactNode | React.ElementType;
   trend?: { value: number; label?: string };
   loading?: boolean;
   delay?: number;
@@ -152,7 +152,7 @@ export function RaiseStatCard({
                   rt(iconBgLight[accentColor], iconBgDark[accentColor]),
                 )}
               >
-                {icon}
+                {typeof icon === 'function' ? (() => { const Icon = icon as React.ElementType; return <Icon className="w-5 h-5" />; })() : icon}
               </div>
             )}
           </div>

@@ -3,7 +3,7 @@ import { useRaiseTheme } from '@/contexts/RaiseThemeContext';
 import { RaiseButton } from './RaiseButton';
 
 interface RaiseEmptyStateProps {
-  icon?: React.ReactNode;
+  icon?: React.ReactNode | React.ElementType;
   title: string;
   message?: string;
   action?: {
@@ -11,6 +11,8 @@ interface RaiseEmptyStateProps {
     onClick: () => void;
     icon?: React.ReactNode;
   };
+  actionLabel?: string;
+  onAction?: () => void;
   className?: string;
 }
 
@@ -19,6 +21,8 @@ export function RaiseEmptyState({
   title,
   message,
   action,
+  actionLabel,
+  onAction,
   className,
 }: RaiseEmptyStateProps) {
   const { rt } = useRaiseTheme();
@@ -37,7 +41,7 @@ export function RaiseEmptyState({
             rt('bg-slate-100 text-slate-400', 'bg-zinc-800/60 text-zinc-500'),
           )}
         >
-          {icon}
+          {typeof icon === 'function' ? (() => { const Icon = icon as React.ElementType; return <Icon className="w-6 h-6" />; })() : icon}
         </div>
       )}
       <h3
@@ -58,9 +62,9 @@ export function RaiseEmptyState({
           {message}
         </p>
       )}
-      {action && (
-        <RaiseButton size="sm" onClick={action.onClick} icon={action.icon}>
-          {action.label}
+      {(action || (actionLabel && onAction)) && (
+        <RaiseButton size="sm" onClick={action?.onClick || onAction} icon={action?.icon}>
+          {action?.label || actionLabel}
         </RaiseButton>
       )}
     </div>
