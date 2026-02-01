@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { db } from '@/api/supabaseClient';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Building2, Plus, Search, Filter, Mail, Phone, Globe,
   Euro, CheckCircle2, Clock, AlertCircle, MessageSquare,
   Linkedin, ArrowUpRight, MoreHorizontal, UserPlus, Users,
-  Target, TrendingUp, Calendar, ExternalLink, Edit2, Trash2
+  Target, TrendingUp, Calendar, ExternalLink, Edit2, Trash2,
+  Sun, Moon
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,8 +29,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import { RaisePageTransition } from '@/components/raise/RaisePageTransition';
+import { useRaiseTheme } from '@/contexts/RaiseThemeContext';
 
 export default function RaiseInvestors() {
+  const { theme, toggleTheme, rt } = useRaiseTheme();
   const [loading, setLoading] = useState(true);
   const [investors, setInvestors] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -114,14 +118,14 @@ export default function RaiseInvestors() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500" />
+      <div className={`min-h-screen ${rt('bg-slate-50', 'bg-black')} flex items-center justify-center`}>
+        <div className={`animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500`} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <RaisePageTransition>
       <div className="w-full px-4 lg:px-6 py-4 space-y-4">
         <PageHeader
           title="Investor Pipeline"
@@ -129,13 +133,18 @@ export default function RaiseInvestors() {
           icon={Building2}
           color="orange"
           actions={
-            <Button
-              onClick={() => setIsAddDialogOpen(true)}
-              className="bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/30"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Investor
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="icon" onClick={toggleTheme} className={rt('border-slate-200 text-slate-600', 'border-zinc-700 text-zinc-300')}>
+                {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+              </Button>
+              <Button
+                onClick={() => setIsAddDialogOpen(true)}
+                className="bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/30"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Investor
+              </Button>
+            </div>
           }
         />
 
@@ -147,15 +156,15 @@ export default function RaiseInvestors() {
             { label: 'In Due Diligence', value: stats.inDD, icon: Clock },
             { label: 'Committed', value: stats.committed, icon: CheckCircle2 }
           ].map((stat, idx) => (
-            <Card key={idx} className="bg-zinc-900/50 border-zinc-800">
+            <Card key={idx} className={rt('bg-white border-slate-200 shadow-sm', 'bg-zinc-900/50 border-zinc-800')}>
               <CardContent className="p-3">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-orange-500/10 border border-orange-500/20">
-                    <stat.icon className="w-4 h-4 text-orange-400" />
+                  <div className={`p-2 rounded-lg ${rt('bg-orange-50', 'bg-orange-500/10')} border ${rt('border-orange-200', 'border-orange-500/20')}`}>
+                    <stat.icon className={`w-4 h-4 ${rt('text-orange-600', 'text-orange-400')}`} />
                   </div>
                   <div>
-                    <p className="text-lg font-bold text-white">{stat.value}</p>
-                    <p className="text-[10px] text-zinc-500">{stat.label}</p>
+                    <p className={`text-lg font-bold ${rt('text-slate-900', 'text-white')}`}>{stat.value}</p>
+                    <p className={`text-[10px] ${rt('text-slate-400', 'text-zinc-500')}`}>{stat.label}</p>
                   </div>
                 </div>
               </CardContent>
@@ -166,16 +175,16 @@ export default function RaiseInvestors() {
         {/* Filters */}
         <div className="flex flex-wrap gap-3">
           <div className="relative flex-1 min-w-[200px] max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${rt('text-slate-400', 'text-zinc-500')}`} />
             <Input
               placeholder="Search investors..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-zinc-900/50 border-zinc-800"
+              className={`pl-10 ${rt('bg-white border-slate-200 shadow-sm', 'bg-zinc-900/50 border-zinc-800')}`}
             />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px] bg-zinc-900/50 border-zinc-800">
+            <SelectTrigger className={`w-[180px] ${rt('bg-white border-slate-200 shadow-sm', 'bg-zinc-900/50 border-zinc-800')}`}>
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
@@ -192,17 +201,17 @@ export default function RaiseInvestors() {
         </div>
 
         {/* Investors List */}
-        <Card className="bg-zinc-900/50 border-zinc-800">
+        <Card className={rt('bg-white border-slate-200 shadow-sm', 'bg-zinc-900/50 border-zinc-800')}>
           <CardHeader>
-            <CardTitle className="text-white">Investors</CardTitle>
+            <CardTitle className={rt('text-slate-900', 'text-white')}>Investors</CardTitle>
             <CardDescription>{filteredInvestors.length} investors in pipeline</CardDescription>
           </CardHeader>
           <CardContent>
             {filteredInvestors.length === 0 ? (
               <div className="text-center py-12">
-                <Building2 className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-white mb-2">No investors yet</h3>
-                <p className="text-zinc-500 mb-4">Start building your investor pipeline</p>
+                <Building2 className={`w-12 h-12 ${rt('text-slate-400', 'text-zinc-600')} mx-auto mb-4`} />
+                <h3 className={`text-lg font-medium ${rt('text-slate-900', 'text-white')} mb-2`}>No investors yet</h3>
+                <p className={`${rt('text-slate-400', 'text-zinc-500')} mb-4`}>Start building your investor pipeline</p>
                 <Button
                   onClick={() => setIsAddDialogOpen(true)}
                   className="bg-orange-500 hover:bg-orange-600"
@@ -213,66 +222,70 @@ export default function RaiseInvestors() {
               </div>
             ) : (
               <div className="space-y-2">
-                {filteredInvestors.map((investor) => (
-                  <motion.div
-                    key={investor.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-orange-500/10 rounded-lg border border-orange-500/20">
-                        <Building2 className="w-4 h-4 text-orange-400" />
+                <AnimatePresence>
+                  {filteredInvestors.map((investor, index) => (
+                    <motion.div
+                      key={investor.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ delay: index * 0.03 }}
+                      className={`flex items-center justify-between p-3 ${rt('bg-slate-50', 'bg-zinc-800/50')} rounded-lg hover:${rt('bg-slate-100', 'bg-zinc-800')} transition-colors`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 ${rt('bg-orange-50', 'bg-orange-500/10')} rounded-lg border ${rt('border-orange-200', 'border-orange-500/20')}`}>
+                          <Building2 className={`w-4 h-4 ${rt('text-orange-600', 'text-orange-400')}`} />
+                        </div>
+                        <div>
+                          <p className={`font-medium ${rt('text-slate-900', 'text-white')} text-sm`}>{investor.name || 'Unknown'}</p>
+                          <p className={`text-xs ${rt('text-slate-400', 'text-zinc-500')}`}>{investor.firm || 'Investment Firm'}</p>
+                          {investor.investment_focus && (
+                            <p className={`text-[10px] ${rt('text-slate-400', 'text-zinc-600')} mt-1`}>{investor.investment_focus}</p>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium text-white text-sm">{investor.name || 'Unknown'}</p>
-                        <p className="text-xs text-zinc-500">{investor.firm || 'Investment Firm'}</p>
-                        {investor.investment_focus && (
-                          <p className="text-[10px] text-zinc-600 mt-1">{investor.investment_focus}</p>
+                      <div className="flex items-center gap-3">
+                        {investor.typical_check_size && (
+                          <span className={`text-xs ${rt('text-orange-600', 'text-orange-400')} flex items-center gap-1`}>
+                            <Euro className="w-3 h-3" />
+                            {investor.typical_check_size}
+                          </span>
                         )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {investor.typical_check_size && (
-                        <span className="text-xs text-orange-400 flex items-center gap-1">
-                          <Euro className="w-3 h-3" />
-                          {investor.typical_check_size}
-                        </span>
-                      )}
-                      <Badge variant="outline" className={`${getStatusBadge(investor.status)} border text-xs`}>
-                        {investor.status?.replace('_', ' ')}
-                      </Badge>
-                      <div className="flex gap-1">
-                        {investor.email && (
-                          <Button size="icon" variant="ghost" className="h-8 w-8 text-zinc-400 hover:text-white" asChild>
-                            <a href={`mailto:${investor.email}`}>
-                              <Mail className="w-4 h-4" />
-                            </a>
-                          </Button>
-                        )}
-                        {investor.linkedin_url && (
-                          <Button size="icon" variant="ghost" className="h-8 w-8 text-zinc-400 hover:text-white" asChild>
-                            <a href={investor.linkedin_url} target="_blank" rel="noopener noreferrer">
-                              <Linkedin className="w-4 h-4" />
-                            </a>
-                          </Button>
-                        )}
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400">
-                              <MoreHorizontal className="w-4 h-4" />
+                        <Badge variant="outline" className={`${getStatusBadge(investor.status)} border text-xs`}>
+                          {investor.status?.replace('_', ' ')}
+                        </Badge>
+                        <div className="flex gap-1">
+                          {investor.email && (
+                            <Button size="icon" variant="ghost" className={`h-8 w-8 ${rt('text-slate-500 hover:text-slate-900', 'text-zinc-400 hover:text-white')}`} asChild>
+                              <a href={`mailto:${investor.email}`}>
+                                <Mail className="w-4 h-4" />
+                              </a>
                             </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
-                            <DropdownMenuItem className="text-zinc-300">Edit</DropdownMenuItem>
-                            <DropdownMenuItem className="text-zinc-300">Log Activity</DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-400">Delete</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                          )}
+                          {investor.linkedin_url && (
+                            <Button size="icon" variant="ghost" className={`h-8 w-8 ${rt('text-slate-500 hover:text-slate-900', 'text-zinc-400 hover:text-white')}`} asChild>
+                              <a href={investor.linkedin_url} target="_blank" rel="noopener noreferrer">
+                                <Linkedin className="w-4 h-4" />
+                              </a>
+                            </Button>
+                          )}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className={`h-8 w-8 ${rt('text-slate-500', 'text-zinc-400')}`}>
+                                <MoreHorizontal className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className={rt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')}>
+                              <DropdownMenuItem className={rt('text-slate-600', 'text-zinc-300')}>Edit</DropdownMenuItem>
+                              <DropdownMenuItem className={rt('text-slate-600', 'text-zinc-300')}>Log Activity</DropdownMenuItem>
+                              <DropdownMenuItem className="text-red-400">Delete</DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </div>
-                    </div>
-                  </motion.div>
-                ))}
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               </div>
             )}
           </CardContent>
@@ -280,75 +293,75 @@ export default function RaiseInvestors() {
 
         {/* Add Investor Dialog */}
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogContent className="bg-zinc-900 border-zinc-800 max-w-lg">
+          <DialogContent className={`${rt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')} max-w-lg`}>
             <DialogHeader>
-              <DialogTitle className="text-white">Add New Investor</DialogTitle>
+              <DialogTitle className={rt('text-slate-900', 'text-white')}>Add New Investor</DialogTitle>
             </DialogHeader>
             <div className="space-y-3 py-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-zinc-400">Contact Name</Label>
+                  <Label className={rt('text-slate-500', 'text-zinc-400')}>Contact Name</Label>
                   <Input
                     value={newInvestor.name}
                     onChange={(e) => setNewInvestor({...newInvestor, name: e.target.value})}
-                    className="bg-zinc-800 border-zinc-700"
+                    className={rt('bg-slate-100 border-slate-200', 'bg-zinc-800 border-zinc-700')}
                     placeholder="John Smith"
                   />
                 </div>
                 <div>
-                  <Label className="text-zinc-400">Firm</Label>
+                  <Label className={rt('text-slate-500', 'text-zinc-400')}>Firm</Label>
                   <Input
                     value={newInvestor.firm}
                     onChange={(e) => setNewInvestor({...newInvestor, firm: e.target.value})}
-                    className="bg-zinc-800 border-zinc-700"
+                    className={rt('bg-slate-100 border-slate-200', 'bg-zinc-800 border-zinc-700')}
                     placeholder="Acme Ventures"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-zinc-400">Email</Label>
+                  <Label className={rt('text-slate-500', 'text-zinc-400')}>Email</Label>
                   <Input
                     type="email"
                     value={newInvestor.email}
                     onChange={(e) => setNewInvestor({...newInvestor, email: e.target.value})}
-                    className="bg-zinc-800 border-zinc-700"
+                    className={rt('bg-slate-100 border-slate-200', 'bg-zinc-800 border-zinc-700')}
                     placeholder="john@acme.vc"
                   />
                 </div>
                 <div>
-                  <Label className="text-zinc-400">Phone</Label>
+                  <Label className={rt('text-slate-500', 'text-zinc-400')}>Phone</Label>
                   <Input
                     value={newInvestor.phone}
                     onChange={(e) => setNewInvestor({...newInvestor, phone: e.target.value})}
-                    className="bg-zinc-800 border-zinc-700"
+                    className={rt('bg-slate-100 border-slate-200', 'bg-zinc-800 border-zinc-700')}
                     placeholder="+1 (555) 000-0000"
                   />
                 </div>
               </div>
               <div>
-                <Label className="text-zinc-400">Investment Focus</Label>
+                <Label className={rt('text-slate-500', 'text-zinc-400')}>Investment Focus</Label>
                 <Input
                   value={newInvestor.investment_focus}
                   onChange={(e) => setNewInvestor({...newInvestor, investment_focus: e.target.value})}
-                  className="bg-zinc-800 border-zinc-700"
+                  className={rt('bg-slate-100 border-slate-200', 'bg-zinc-800 border-zinc-700')}
                   placeholder="B2B SaaS, AI/ML"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-zinc-400">Typical Check Size</Label>
+                  <Label className={rt('text-slate-500', 'text-zinc-400')}>Typical Check Size</Label>
                   <Input
                     value={newInvestor.typical_check_size}
                     onChange={(e) => setNewInvestor({...newInvestor, typical_check_size: e.target.value})}
-                    className="bg-zinc-800 border-zinc-700"
+                    className={rt('bg-slate-100 border-slate-200', 'bg-zinc-800 border-zinc-700')}
                     placeholder="€500K - €2M"
                   />
                 </div>
                 <div>
-                  <Label className="text-zinc-400">Status</Label>
+                  <Label className={rt('text-slate-500', 'text-zinc-400')}>Status</Label>
                   <Select value={newInvestor.status} onValueChange={(v) => setNewInvestor({...newInvestor, status: v})}>
-                    <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                    <SelectTrigger className={rt('bg-slate-100 border-slate-200', 'bg-zinc-800 border-zinc-700')}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -363,18 +376,18 @@ export default function RaiseInvestors() {
                 </div>
               </div>
               <div>
-                <Label className="text-zinc-400">Notes</Label>
+                <Label className={rt('text-slate-500', 'text-zinc-400')}>Notes</Label>
                 <Textarea
                   value={newInvestor.notes}
                   onChange={(e) => setNewInvestor({...newInvestor, notes: e.target.value})}
-                  className="bg-zinc-800 border-zinc-700"
+                  className={rt('bg-slate-100 border-slate-200', 'bg-zinc-800 border-zinc-700')}
                   placeholder="Add notes about this investor..."
                   rows={3}
                 />
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} className="border-zinc-700">
+              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} className={rt('border-slate-200', 'border-zinc-700')}>
                 Cancel
               </Button>
               <Button onClick={handleAddInvestor} className="bg-orange-500 hover:bg-orange-600">
@@ -384,6 +397,6 @@ export default function RaiseInvestors() {
           </DialogContent>
         </Dialog>
       </div>
-    </div>
+    </RaisePageTransition>
   );
 }

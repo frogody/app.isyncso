@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {
   Presentation, Plus, Search, Upload, Download, Eye, Edit2,
   Trash2, Clock, CheckCircle, Share2, MoreHorizontal, FileText,
-  ExternalLink, Calendar, Users, Link2
+  ExternalLink, Calendar, Users, Link2, Sun, Moon
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,8 +27,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import { RaisePageTransition } from '@/components/raise/RaisePageTransition';
+import { useRaiseTheme } from '@/contexts/RaiseThemeContext';
 
 export default function RaisePitchDecks() {
+  const { theme, toggleTheme, rt } = useRaiseTheme();
   const [loading, setLoading] = useState(true);
   const [pitchDecks, setPitchDecks] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -72,10 +75,10 @@ export default function RaisePitchDecks() {
 
   const getStatusBadge = (status) => {
     const styles = {
-      draft: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
-      review: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-      approved: 'bg-green-500/20 text-green-400 border-green-500/30',
-      shared: 'bg-orange-500/20 text-orange-400 border-orange-500/30'
+      draft: rt('bg-slate-100 text-slate-500 border-slate-300', 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'),
+      review: rt('bg-orange-50 text-orange-600 border-orange-200', 'bg-orange-500/20 text-orange-400 border-orange-500/30'),
+      approved: rt('bg-green-50 text-green-600 border-green-200', 'bg-green-500/20 text-green-400 border-green-500/30'),
+      shared: rt('bg-orange-50 text-orange-600 border-orange-200', 'bg-orange-500/20 text-orange-400 border-orange-500/30')
     };
     return styles[status] || styles.draft;
   };
@@ -86,15 +89,15 @@ export default function RaisePitchDecks() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500" />
+      <div className={`min-h-screen flex items-center justify-center ${rt('bg-slate-50', 'bg-black')}`}>
+        <div className={`animate-spin rounded-full h-12 w-12 border-b-2 ${rt('border-orange-500', 'border-orange-500')}`} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black">
-      <div className="w-full px-6 lg:px-8 py-6 space-y-6">
+    <RaisePageTransition>
+      <div className={`w-full px-6 lg:px-8 py-6 space-y-6 min-h-screen ${rt('bg-slate-50', 'bg-black')}`}>
         <PageHeader
           title="Pitch Decks"
           subtitle="Manage your investor presentations"
@@ -102,13 +105,16 @@ export default function RaisePitchDecks() {
           color="orange"
           actions={
             <div className="flex gap-3">
-              <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
+              <Button variant="outline" size="icon" onClick={toggleTheme} className={rt('border-slate-200 text-slate-600', 'border-zinc-700 text-zinc-300')}>
+                {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+              </Button>
+              <Button variant="outline" className={rt('border-slate-200 text-slate-600 hover:bg-slate-100', 'border-zinc-700 text-zinc-300 hover:bg-zinc-800')}>
                 <Upload className="w-4 h-4 mr-2" />
                 Upload
               </Button>
               <Button
                 onClick={() => setIsAddDialogOpen(true)}
-                className="bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/30"
+                className={rt('bg-orange-50 hover:bg-orange-100 text-orange-600 border border-orange-200', 'bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/30')}
               >
                 <Plus className="w-4 h-4 mr-2" />
                 New Deck
@@ -125,15 +131,15 @@ export default function RaisePitchDecks() {
             { label: 'Approved', value: pitchDecks.filter(d => d.status === 'approved').length, icon: CheckCircle },
             { label: 'Shared', value: pitchDecks.filter(d => d.status === 'shared').length, icon: Share2 }
           ].map((stat, idx) => (
-            <Card key={idx} className="bg-zinc-900/50 border-zinc-800">
+            <Card key={idx} className={rt('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800')}>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-orange-500/10 border border-orange-500/20">
-                    <stat.icon className="w-4 h-4 text-orange-400" />
+                  <div className={rt('p-2 rounded-lg bg-orange-50 border border-orange-200', 'p-2 rounded-lg bg-orange-500/10 border border-orange-500/20')}>
+                    <stat.icon className={`w-4 h-4 ${rt('text-orange-600', 'text-orange-400')}`} />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-white">{stat.value}</p>
-                    <p className="text-xs text-zinc-500">{stat.label}</p>
+                    <p className={`text-2xl font-bold ${rt('text-slate-900', 'text-white')}`}>{stat.value}</p>
+                    <p className={`text-xs ${rt('text-slate-500', 'text-zinc-500')}`}>{stat.label}</p>
                   </div>
                 </div>
               </CardContent>
@@ -143,27 +149,27 @@ export default function RaisePitchDecks() {
 
         {/* Search */}
         <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+          <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${rt('text-slate-400', 'text-zinc-500')}`} />
           <Input
             placeholder="Search decks..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-zinc-900/50 border-zinc-800"
+            className={`pl-10 ${rt('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800')}`}
           />
         </div>
 
         {/* Decks Grid */}
-        <Card className="bg-zinc-900/50 border-zinc-800">
+        <Card className={rt('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800')}>
           <CardHeader>
-            <CardTitle className="text-white">Pitch Materials</CardTitle>
+            <CardTitle className={rt('text-slate-900', 'text-white')}>Pitch Materials</CardTitle>
             <CardDescription>Decks, one-pagers, and presentations</CardDescription>
           </CardHeader>
           <CardContent>
             {filteredDecks.length === 0 ? (
               <div className="text-center py-12">
-                <Presentation className="w-12 h-12 text-zinc-600 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-white mb-2">No pitch decks yet</h3>
-                <p className="text-zinc-500 mb-4">Create your first investor presentation</p>
+                <Presentation className={`w-12 h-12 mx-auto mb-4 ${rt('text-slate-400', 'text-zinc-600')}`} />
+                <h3 className={`text-lg font-medium mb-2 ${rt('text-slate-900', 'text-white')}`}>No pitch decks yet</h3>
+                <p className={`mb-4 ${rt('text-slate-500', 'text-zinc-500')}`}>Create your first investor presentation</p>
                 <Button
                   onClick={() => setIsAddDialogOpen(true)}
                   className="bg-orange-500 hover:bg-orange-600"
@@ -180,44 +186,44 @@ export default function RaisePitchDecks() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                   >
-                    <div className="p-4 bg-zinc-800/50 rounded-xl border border-zinc-700 hover:border-orange-500/50 transition-colors">
+                    <div className={`p-4 rounded-xl border transition-colors ${rt('bg-slate-50 border-slate-200 hover:border-orange-300', 'bg-zinc-800/50 border-zinc-700 hover:border-orange-500/50')}`}>
                       <div className="flex items-start justify-between mb-3">
-                        <div className="p-2 bg-orange-500/10 rounded-lg border border-orange-500/20">
-                          <FileText className="w-5 h-5 text-orange-400" />
+                        <div className={rt('p-2 bg-orange-50 rounded-lg border border-orange-200', 'p-2 bg-orange-500/10 rounded-lg border border-orange-500/20')}>
+                          <FileText className={`w-5 h-5 ${rt('text-orange-600', 'text-orange-400')}`} />
                         </div>
                         <Badge variant="outline" className={`${getStatusBadge(deck.status)} border`}>
                           {deck.status}
                         </Badge>
                       </div>
 
-                      <h4 className="font-medium text-white mb-1">{deck.name || 'Pitch Deck'}</h4>
-                      <p className="text-sm text-zinc-500 mb-2">Version {deck.version}</p>
+                      <h4 className={`font-medium mb-1 ${rt('text-slate-900', 'text-white')}`}>{deck.name || 'Pitch Deck'}</h4>
+                      <p className={`text-sm mb-2 ${rt('text-slate-500', 'text-zinc-500')}`}>Version {deck.version}</p>
                       {deck.description && (
-                        <p className="text-sm text-zinc-400 mb-3 line-clamp-2">{deck.description}</p>
+                        <p className={`text-sm mb-3 line-clamp-2 ${rt('text-slate-600', 'text-zinc-400')}`}>{deck.description}</p>
                       )}
 
-                      <div className="flex items-center justify-between pt-3 border-t border-zinc-700">
-                        <span className="text-xs text-zinc-500 flex items-center gap-1">
+                      <div className={`flex items-center justify-between pt-3 border-t ${rt('border-slate-200', 'border-zinc-700')}`}>
+                        <span className={`text-xs flex items-center gap-1 ${rt('text-slate-500', 'text-zinc-500')}`}>
                           <Clock className="w-3 h-3" />
                           {deck.updated_at ? new Date(deck.updated_at).toLocaleDateString() : 'Just now'}
                         </span>
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-white">
+                          <Button variant="ghost" size="icon" className={`h-8 w-8 ${rt('text-slate-400 hover:text-slate-900', 'text-zinc-400 hover:text-white')}`}>
                             <Eye className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-white">
+                          <Button variant="ghost" size="icon" className={`h-8 w-8 ${rt('text-slate-400 hover:text-slate-900', 'text-zinc-400 hover:text-white')}`}>
                             <Share2 className="w-4 h-4" />
                           </Button>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400">
+                              <Button variant="ghost" size="icon" className={`h-8 w-8 ${rt('text-slate-400', 'text-zinc-400')}`}>
                                 <MoreHorizontal className="w-4 h-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
-                              <DropdownMenuItem className="text-zinc-300">Edit</DropdownMenuItem>
-                              <DropdownMenuItem className="text-zinc-300">Download</DropdownMenuItem>
-                              <DropdownMenuItem className="text-zinc-300">Duplicate</DropdownMenuItem>
+                            <DropdownMenuContent align="end" className={rt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')}>
+                              <DropdownMenuItem className={rt('text-slate-700', 'text-zinc-300')}>Edit</DropdownMenuItem>
+                              <DropdownMenuItem className={rt('text-slate-700', 'text-zinc-300')}>Download</DropdownMenuItem>
+                              <DropdownMenuItem className={rt('text-slate-700', 'text-zinc-300')}>Duplicate</DropdownMenuItem>
                               <DropdownMenuItem className="text-red-400">Delete</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -233,34 +239,34 @@ export default function RaisePitchDecks() {
 
         {/* Add Dialog */}
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogContent className="bg-zinc-900 border-zinc-800">
+          <DialogContent className={rt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')}>
             <DialogHeader>
-              <DialogTitle className="text-white">Create Pitch Deck</DialogTitle>
+              <DialogTitle className={rt('text-slate-900', 'text-white')}>Create Pitch Deck</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div>
-                <Label className="text-zinc-400">Name</Label>
+                <Label className={rt('text-slate-600', 'text-zinc-400')}>Name</Label>
                 <Input
                   value={newDeck.name}
                   onChange={(e) => setNewDeck({...newDeck, name: e.target.value})}
-                  className="bg-zinc-800 border-zinc-700"
+                  className={rt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}
                   placeholder="Series A Deck v2"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-zinc-400">Version</Label>
+                  <Label className={rt('text-slate-600', 'text-zinc-400')}>Version</Label>
                   <Input
                     value={newDeck.version}
                     onChange={(e) => setNewDeck({...newDeck, version: e.target.value})}
-                    className="bg-zinc-800 border-zinc-700"
+                    className={rt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}
                     placeholder="1.0"
                   />
                 </div>
                 <div>
-                  <Label className="text-zinc-400">Status</Label>
+                  <Label className={rt('text-slate-600', 'text-zinc-400')}>Status</Label>
                   <Select value={newDeck.status} onValueChange={(v) => setNewDeck({...newDeck, status: v})}>
-                    <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                    <SelectTrigger className={rt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -273,18 +279,18 @@ export default function RaisePitchDecks() {
                 </div>
               </div>
               <div>
-                <Label className="text-zinc-400">Description</Label>
+                <Label className={rt('text-slate-600', 'text-zinc-400')}>Description</Label>
                 <Textarea
                   value={newDeck.description}
                   onChange={(e) => setNewDeck({...newDeck, description: e.target.value})}
-                  className="bg-zinc-800 border-zinc-700"
+                  className={rt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}
                   placeholder="Describe this version..."
                   rows={3}
                 />
               </div>
             </div>
             <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} className="border-zinc-700">
+              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} className={rt('border-slate-200', 'border-zinc-700')}>
                 Cancel
               </Button>
               <Button onClick={handleAddDeck} className="bg-orange-500 hover:bg-orange-600">
@@ -294,6 +300,6 @@ export default function RaisePitchDecks() {
           </DialogContent>
         </Dialog>
       </div>
-    </div>
+    </RaisePageTransition>
   );
 }

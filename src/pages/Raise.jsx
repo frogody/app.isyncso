@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { db, supabase } from '@/api/supabaseClient';
 import { useUser } from '@/components/context/UserContext';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   TrendingUp, Euro, Users, FileText, Target, Rocket,
   Building2, Calendar, ArrowUpRight, Plus, Filter, Download,
   PieChart, BarChart3, Briefcase, HandshakeIcon, MessageSquare,
   CheckCircle2, Clock, AlertCircle, ExternalLink, Mail, Phone,
-  GripVertical, MoreHorizontal, Trash2
+  GripVertical, MoreHorizontal, Trash2, Sun, Moon
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -24,6 +24,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { RaisePageTransition } from '@/components/raise/RaisePageTransition';
+import { useRaiseTheme } from '@/contexts/RaiseThemeContext';
 
 // Investor Pipeline Stages
 const INVESTOR_STAGES = [
@@ -37,6 +39,8 @@ const INVESTOR_STAGES = [
 
 // Investor Card Component for Kanban
 function InvestorCard({ investor, index, stageConfig, onEdit, onDelete }) {
+  const { rt } = useRaiseTheme();
+
   return (
     <Draggable draggableId={investor.id} index={index}>
       {(provided, snapshot) => (
@@ -49,10 +53,10 @@ function InvestorCard({ investor, index, stageConfig, onEdit, onDelete }) {
               ? provided.draggableProps.style?.transition
               : 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease',
           }}
-          className={`group relative bg-zinc-900/60 backdrop-blur-sm rounded-xl border ${
+          className={`group relative ${rt('bg-white shadow-sm', 'bg-zinc-900/60')} backdrop-blur-sm rounded-xl border ${
             snapshot.isDragging
               ? 'shadow-2xl shadow-orange-500/20 border-orange-500/50 z-50'
-              : 'border-zinc-800/60 hover:border-zinc-700/60'
+              : rt('border-slate-200 hover:border-slate-300', 'border-zinc-800/60 hover:border-zinc-700/60')
           }`}
         >
           {/* Top gradient bar */}
@@ -62,36 +66,36 @@ function InvestorCard({ investor, index, stageConfig, onEdit, onDelete }) {
             {/* Header */}
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <h4 className="font-semibold text-white truncate">
+                <h4 className={`font-semibold ${rt('text-slate-900', 'text-white')} truncate`}>
                   {investor.name || 'Unknown Investor'}
                 </h4>
-                <p className="text-zinc-500 text-sm flex items-center gap-1.5 mt-1">
+                <p className={`${rt('text-slate-500', 'text-zinc-500')} text-sm flex items-center gap-1.5 mt-1`}>
                   <Building2 className="w-3 h-3" />
                   <span className="truncate">{investor.firm || 'Investment Firm'}</span>
                 </p>
               </div>
               <div className="flex items-center gap-1">
-                <div {...provided.dragHandleProps} className="p-1 rounded hover:bg-zinc-800 cursor-grab">
-                  <GripVertical className="w-4 h-4 text-zinc-600" />
+                <div {...provided.dragHandleProps} className={`p-1 rounded ${rt('hover:bg-slate-100', 'hover:bg-zinc-800')} cursor-grab`}>
+                  <GripVertical className={`w-4 h-4 ${rt('text-slate-400', 'text-zinc-600')}`} />
                 </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <MoreHorizontal className="w-4 h-4 text-zinc-400" />
+                      <MoreHorizontal className={`w-4 h-4 ${rt('text-slate-500', 'text-zinc-400')}`} />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
-                    <DropdownMenuItem onClick={() => onEdit?.(investor)} className="text-zinc-300 focus:text-white focus:bg-zinc-800">
+                  <DropdownMenuContent align="end" className={rt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')}>
+                    <DropdownMenuItem onClick={() => onEdit?.(investor)} className={rt('text-slate-600 focus:text-slate-900 focus:bg-slate-100', 'text-zinc-300 focus:text-white focus:bg-zinc-800')}>
                       <ExternalLink className="w-4 h-4 mr-2" /> View Details
                     </DropdownMenuItem>
                     {investor.email && (
-                      <DropdownMenuItem asChild className="text-zinc-300 focus:text-white focus:bg-zinc-800">
+                      <DropdownMenuItem asChild className={rt('text-slate-600 focus:text-slate-900 focus:bg-slate-100', 'text-zinc-300 focus:text-white focus:bg-zinc-800')}>
                         <a href={`mailto:${investor.email}`}>
                           <Mail className="w-4 h-4 mr-2" /> Send Email
                         </a>
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuSeparator className="bg-zinc-800" />
+                    <DropdownMenuSeparator className={rt('bg-slate-200', 'bg-zinc-800')} />
                     <DropdownMenuItem onClick={() => onDelete?.(investor.id)} className="text-red-400 focus:text-red-300 focus:bg-red-950/30">
                       <Trash2 className="w-4 h-4 mr-2" /> Remove
                     </DropdownMenuItem>
@@ -103,24 +107,24 @@ function InvestorCard({ investor, index, stageConfig, onEdit, onDelete }) {
             {/* Check Size */}
             {investor.check_size && (
               <div className="mt-3">
-                <span className="text-lg font-bold text-white">
+                <span className={`text-lg font-bold ${rt('text-slate-900', 'text-white')}`}>
                   ${(investor.check_size / 1000).toFixed(0)}k
                   {investor.check_size_max && ` - ${(investor.check_size_max / 1000).toFixed(0)}k`}
                 </span>
-                <span className="text-zinc-600 text-sm ml-2">check size</span>
+                <span className={`${rt('text-slate-400', 'text-zinc-600')} text-sm ml-2`}>check size</span>
               </div>
             )}
 
             {/* Contact Info */}
-            <div className="mt-3 pt-3 border-t border-zinc-800/50 flex items-center gap-3 text-xs">
+            <div className={`mt-3 pt-3 border-t ${rt('border-slate-200', 'border-zinc-800/50')} flex items-center gap-3 text-xs`}>
               {investor.email && (
-                <span className="flex items-center gap-1 text-zinc-500">
+                <span className={`flex items-center gap-1 ${rt('text-slate-500', 'text-zinc-500')}`}>
                   <Mail className="w-3 h-3" />
                   <span className="truncate max-w-[100px]">{investor.email}</span>
                 </span>
               )}
               {investor.linkedin && (
-                <a href={investor.linkedin} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-zinc-500 hover:text-orange-400">
+                <a href={investor.linkedin} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-1 ${rt('text-slate-500 hover:text-orange-600', 'text-zinc-500 hover:text-orange-400')}`}>
                   <ExternalLink className="w-3 h-3" />
                   LinkedIn
                 </a>
@@ -135,24 +139,25 @@ function InvestorCard({ investor, index, stageConfig, onEdit, onDelete }) {
 
 // Stage Column Component for Kanban
 function InvestorStageColumn({ stage, investors, onAddInvestor, onEdit, onDelete }) {
+  const { rt } = useRaiseTheme();
   const stageInvestors = investors.filter(i => i.status === stage.id);
   const totalCheckSize = stageInvestors.reduce((sum, i) => sum + (i.check_size || 0), 0);
 
   return (
     <div className="flex-shrink-0 w-72">
-      <div className="sticky top-0 z-10 pb-3 bg-black">
+      <div className={`sticky top-0 z-10 pb-3 ${rt('bg-slate-50', 'bg-black')}`}>
         {/* Column Header */}
-        <div className="bg-zinc-900/70 backdrop-blur-xl rounded-xl border border-zinc-800/60 p-4">
+        <div className={`${rt('bg-white border-slate-200 shadow-sm', 'bg-zinc-900/70 border-zinc-800/60')} backdrop-blur-xl rounded-xl border p-4`}>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2.5">
               <div className={`w-3 h-3 rounded-full bg-gradient-to-br ${stage.color}`} />
-              <h3 className="text-white font-semibold text-sm">{stage.label}</h3>
-              <Badge className="bg-zinc-800 text-zinc-300 text-xs">{stageInvestors.length}</Badge>
+              <h3 className={`${rt('text-slate-900', 'text-white')} font-semibold text-sm`}>{stage.label}</h3>
+              <Badge className={`${rt('bg-slate-100 text-slate-600', 'bg-zinc-800 text-zinc-300')} text-xs`}>{stageInvestors.length}</Badge>
             </div>
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 text-zinc-500 hover:text-white hover:bg-zinc-800"
+              className={`h-7 w-7 ${rt('text-slate-400 hover:text-slate-900 hover:bg-slate-100', 'text-zinc-500 hover:text-white hover:bg-zinc-800')}`}
               onClick={() => onAddInvestor?.(stage.id)}
             >
               <Plus className="w-4 h-4" />
@@ -161,8 +166,8 @@ function InvestorStageColumn({ stage, investors, onAddInvestor, onEdit, onDelete
 
           <div className="space-y-1">
             <div className="flex items-baseline justify-between">
-              <span className="text-lg font-bold text-orange-400/80">${(totalCheckSize / 1000).toLocaleString()}k</span>
-              <span className="text-xs text-zinc-600">potential</span>
+              <span className={`text-lg font-bold ${rt('text-orange-600', 'text-orange-400/80')}`}>${(totalCheckSize / 1000).toLocaleString()}k</span>
+              <span className={`text-xs ${rt('text-slate-400', 'text-zinc-600')}`}>potential</span>
             </div>
           </div>
         </div>
@@ -194,14 +199,14 @@ function InvestorStageColumn({ stage, investors, onAddInvestor, onEdit, onDelete
 
             {stageInvestors.length === 0 && !snapshot.isDraggingOver && (
               <div
-                className="flex flex-col items-center justify-center py-8 text-center border-2 border-dashed border-zinc-800 rounded-xl cursor-pointer hover:border-zinc-700 transition-colors"
+                className={`flex flex-col items-center justify-center py-8 text-center border-2 border-dashed ${rt('border-slate-200 hover:border-slate-300', 'border-zinc-800 hover:border-zinc-700')} rounded-xl cursor-pointer transition-colors`}
                 onClick={() => onAddInvestor?.(stage.id)}
               >
                 <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${stage.color} opacity-20 flex items-center justify-center mb-3`}>
-                  <Plus className="w-5 h-5 text-white" />
+                  <Plus className={`w-5 h-5 ${rt('text-slate-900', 'text-white')}`} />
                 </div>
-                <p className="text-zinc-600 text-sm">Drop investor here</p>
-                <p className="text-zinc-700 text-xs mt-1">or click to add</p>
+                <p className={`${rt('text-slate-400', 'text-zinc-600')} text-sm`}>Drop investor here</p>
+                <p className={`${rt('text-slate-400', 'text-zinc-700')} text-xs mt-1`}>or click to add</p>
               </div>
             )}
           </div>
@@ -452,7 +457,45 @@ export default function Raise() {
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <RaisePageTransition>
+      <RaiseContent
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        campaigns={campaigns}
+        investors={investors}
+        pitchDecks={pitchDecks}
+        dataRooms={dataRooms}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        activeCampaign={activeCampaign}
+        targetAmount={targetAmount}
+        raisedAmount={raisedAmount}
+        progressPercent={progressPercent}
+        totalInvestors={totalInvestors}
+        interestedInvestors={interestedInvestors}
+        committedInvestors={committedInvestors}
+        metrics={metrics}
+        getColorClasses={getColorClasses}
+        getStatusColor={getStatusColor}
+        handleExport={handleExport}
+        handleDragEnd={handleDragEnd}
+        handleDeleteInvestor={handleDeleteInvestor}
+      />
+    </RaisePageTransition>
+  );
+}
+
+function RaiseContent({
+  activeTab, setActiveTab, campaigns, investors, pitchDecks, dataRooms,
+  viewMode, setViewMode, activeCampaign, targetAmount, raisedAmount,
+  progressPercent, totalInvestors, interestedInvestors, committedInvestors,
+  metrics, getColorClasses, getStatusColor, handleExport, handleDragEnd,
+  handleDeleteInvestor,
+}) {
+  const { theme, toggleTheme, rt } = useRaiseTheme();
+
+  return (
+    <div className={`min-h-screen ${rt('bg-slate-50', 'bg-black')}`}>
       <div className="w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <PageHeader
@@ -462,11 +505,14 @@ export default function Raise() {
           color="orange"
           actions={
             <div className="flex gap-2">
-              <Button variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800" onClick={handleExport}>
+              <Button variant="outline" size="icon" onClick={toggleTheme} className={rt('border-slate-200 text-slate-600', 'border-zinc-700 text-zinc-300')}>
+                {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+              </Button>
+              <Button variant="outline" className={`${rt('border-slate-200 text-slate-600 hover:bg-slate-100', 'border-zinc-700 text-zinc-300 hover:bg-zinc-800')}`} onClick={handleExport}>
                 <Download className="w-4 h-4 mr-2" />
                 Export
               </Button>
-              <Button className="bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/30">
+              <Button className={`${rt('bg-orange-50 hover:bg-orange-100 text-orange-600 border border-orange-200', 'bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/30')}`}>
                 <Plus className="w-4 h-4 mr-2" />
                 New Campaign
               </Button>
@@ -476,26 +522,26 @@ export default function Raise() {
 
       {/* Progress Bar for Active Campaign */}
       {activeCampaign && (
-        <Card className="bg-gradient-to-r from-orange-950/50 to-orange-950/50 border-orange-500/20 mb-6">
+        <Card className={rt('bg-orange-50 border-orange-200', 'bg-gradient-to-r from-orange-950/50 to-orange-950/50 border-orange-500/20') + ' mb-6'}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-lg font-semibold text-white">{activeCampaign.name}</h3>
-                <p className="text-sm text-zinc-400">{activeCampaign.round_type || 'Funding Round'}</p>
+                <h3 className={`text-lg font-semibold ${rt('text-slate-900', 'text-white')}`}>{activeCampaign.name}</h3>
+                <p className={`text-sm ${rt('text-slate-500', 'text-zinc-400')}`}>{activeCampaign.round_type || 'Funding Round'}</p>
               </div>
-              <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
+              <Badge className={rt('bg-orange-50 text-orange-600 border-orange-200', 'bg-orange-500/20 text-orange-400 border-orange-500/30')}>
                 Active
               </Badge>
             </div>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-zinc-400">Progress</span>
-                <span className="text-white font-medium">
+                <span className={rt('text-slate-500', 'text-zinc-400')}>Progress</span>
+                <span className={`${rt('text-slate-900', 'text-white')} font-medium`}>
                   ${(raisedAmount / 1000000).toFixed(2)}M / ${(targetAmount / 1000000).toFixed(2)}M
                 </span>
               </div>
-              <Progress value={progressPercent} className="h-3 bg-zinc-800" />
-              <p className="text-xs text-zinc-500 text-right">{progressPercent}% raised</p>
+              <Progress value={progressPercent} className={`h-3 ${rt('bg-slate-200', 'bg-zinc-800')}`} />
+              <p className={`text-xs ${rt('text-slate-400', 'text-zinc-500')} text-right`}>{progressPercent}% raised</p>
             </div>
           </CardContent>
         </Card>
@@ -510,17 +556,17 @@ export default function Raise() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            <Card className="bg-zinc-900/50 border-zinc-800">
+            <Card className={rt('bg-white border-slate-200 shadow-sm', 'bg-zinc-900/50 border-zinc-800')}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-3">
-                  <div className={`p-2 rounded-lg ${getColorClasses(metric.color)}`}>
+                  <div className={`p-2 rounded-lg ${rt('bg-orange-50 text-orange-600 border-orange-200', 'bg-orange-500/10 text-orange-400 border-orange-500/20')}`}>
                     <metric.icon className="w-4 h-4" />
                   </div>
                 </div>
                 <div>
-                  <p className="text-lg font-bold text-white">{metric.value}</p>
-                  <p className="text-xs text-zinc-500">{metric.title}</p>
-                  <p className="text-[10px] text-zinc-600 mt-1">{metric.subtitle}</p>
+                  <p className={`text-lg font-bold ${rt('text-slate-900', 'text-white')}`}>{metric.value}</p>
+                  <p className={`text-xs ${rt('text-slate-400', 'text-zinc-500')}`}>{metric.title}</p>
+                  <p className={`text-[10px] ${rt('text-slate-400', 'text-zinc-600')} mt-1`}>{metric.subtitle}</p>
                 </div>
               </CardContent>
             </Card>
@@ -530,299 +576,333 @@ export default function Raise() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="bg-zinc-900 border border-zinc-800">
-          <TabsTrigger value="overview" className="data-[state=active]:bg-zinc-800">
+        <TabsList className={rt('bg-slate-100 border border-slate-200', 'bg-zinc-900 border border-zinc-800')}>
+          <TabsTrigger value="overview" className={`data-[state=active]:${rt('bg-white', 'bg-zinc-800')}`}>
             <BarChart3 className="w-4 h-4 mr-2" />
             Overview
           </TabsTrigger>
-          <TabsTrigger value="investors" className="data-[state=active]:bg-zinc-800">
+          <TabsTrigger value="investors" className={`data-[state=active]:${rt('bg-white', 'bg-zinc-800')}`}>
             <Users className="w-4 h-4 mr-2" />
             Investors
           </TabsTrigger>
-          <TabsTrigger value="materials" className="data-[state=active]:bg-zinc-800">
+          <TabsTrigger value="materials" className={`data-[state=active]:${rt('bg-white', 'bg-zinc-800')}`}>
             <FileText className="w-4 h-4 mr-2" />
             Materials
           </TabsTrigger>
-          <TabsTrigger value="dataroom" className="data-[state=active]:bg-zinc-800">
+          <TabsTrigger value="dataroom" className={`data-[state=active]:${rt('bg-white', 'bg-zinc-800')}`}>
             <Briefcase className="w-4 h-4 mr-2" />
             Data Room
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* Investor Pipeline */}
-            <Card className="bg-zinc-900/50 border-zinc-800">
-              <CardHeader>
-                <CardTitle className="text-white">Investor Pipeline</CardTitle>
-                <CardDescription>Breakdown by stage</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {[
-                    { stage: 'Contacted', count: investors.filter(i => i.status === 'contacted').length, color: 'zinc' },
-                    { stage: 'Interested', count: investors.filter(i => i.status === 'interested').length, color: 'orange' },
-                    { stage: 'In Discussions', count: investors.filter(i => i.status === 'in_discussions').length, color: 'orange' },
-                    { stage: 'Due Diligence', count: investors.filter(i => i.status === 'due_diligence').length, color: 'orange' },
-                    { stage: 'Committed', count: investors.filter(i => i.status === 'committed').length, color: 'orange' }
-                  ].map((stage) => (
-                    <div key={stage.stage} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-3 h-3 rounded-full bg-${stage.color}-500`} />
-                        <span className="text-zinc-300 text-sm">{stage.stage}</span>
-                      </div>
-                      <span className="text-white font-medium text-sm">{stage.count}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Recent Activity */}
-            <Card className="bg-zinc-900/50 border-zinc-800">
-              <CardHeader>
-                <CardTitle className="text-white">Recent Activity</CardTitle>
-                <CardDescription>Latest investor interactions</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {investors.length === 0 ? (
-                    <div className="text-center py-6">
-                      <MessageSquare className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
-                      <p className="text-zinc-500 text-sm">No investor activity yet</p>
-                    </div>
-                  ) : (
-                    investors.slice(0, 5).map((investor) => (
-                      <div key={investor.id} className="flex items-start gap-2 p-2 bg-zinc-800/50 rounded-lg">
-                        <div className="p-1.5 bg-orange-500/10 rounded-lg">
-                          <Building2 className="w-3 h-3 text-orange-400" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-white truncate">{investor.name || 'Unknown Investor'}</p>
-                          <p className="text-[10px] text-zinc-500">{investor.firm || 'Investment Firm'}</p>
-                        </div>
-                        <Badge variant="outline" className={getStatusColor(investor.status)}>
-                          {investor.status || 'new'}
-                        </Badge>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="investors">
-          <div className="space-y-3">
-            {/* Header with View Toggle */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-white">Investor Pipeline</h2>
-                <p className="text-zinc-500 text-xs">{investors.length} investors in pipeline</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex bg-zinc-900 rounded-lg border border-zinc-800 p-0.5">
-                  <Button
-                    size="sm"
-                    variant={viewMode === 'kanban' ? 'secondary' : 'ghost'}
-                    className={viewMode === 'kanban' ? 'bg-zinc-800 text-white text-xs' : 'text-zinc-400 text-xs'}
-                    onClick={() => setViewMode('kanban')}
-                  >
-                    <BarChart3 className="w-3 h-3 mr-1" />
-                    Board
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-                    className={viewMode === 'list' ? 'bg-zinc-800 text-white text-xs' : 'text-zinc-400 text-xs'}
-                    onClick={() => setViewMode('list')}
-                  >
-                    <Users className="w-3 h-3 mr-1" />
-                    List
-                  </Button>
-                </div>
-                <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-xs">
-                  <Plus className="w-3 h-3 mr-1" />
-                  Add
-                </Button>
-              </div>
-            </div>
-
-            {investors.length === 0 ? (
-              <Card className="bg-zinc-900/50 border-zinc-800">
-                <CardContent className="py-8">
-                  <div className="text-center">
-                    <Users className="w-8 h-8 text-zinc-600 mx-auto mb-3" />
-                    <h3 className="text-sm font-medium text-white mb-1">No investors yet</h3>
-                    <p className="text-zinc-500 text-xs mb-3">Start building your investor pipeline</p>
-                    <Button className="bg-orange-500 hover:bg-orange-600 text-xs">
-                      <Plus className="w-3 h-3 mr-1" />
-                      Add First Investor
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : viewMode === 'kanban' ? (
-              /* Kanban Board View */
-              <DragDropContext onDragEnd={handleDragEnd}>
-                <div className="flex gap-3 overflow-x-auto pb-4">
-                  {INVESTOR_STAGES.map((stage) => (
-                    <InvestorStageColumn
-                      key={stage.id}
-                      stage={stage}
-                      investors={investors}
-                      onDelete={handleDeleteInvestor}
-                    />
-                  ))}
-                </div>
-              </DragDropContext>
-            ) : (
-              /* List View */
-              <Card className="bg-zinc-900/50 border-zinc-800">
-                <CardContent className="p-3">
-                  <div className="space-y-2">
-                    {investors.map((investor) => (
-                      <div key={investor.id} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition-colors">
+        <AnimatePresence mode="wait">
+          <TabsContent value="overview" key="overview">
+            <motion.div
+              key={activeTab === 'overview' ? 'overview' : undefined}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Investor Pipeline */}
+              <Card className={rt('bg-white border-slate-200 shadow-sm', 'bg-zinc-900/50 border-zinc-800')}>
+                <CardHeader>
+                  <CardTitle className={rt('text-slate-900', 'text-white')}>Investor Pipeline</CardTitle>
+                  <CardDescription>Breakdown by stage</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {[
+                      { stage: 'Contacted', count: investors.filter(i => i.status === 'contacted').length, color: 'zinc' },
+                      { stage: 'Interested', count: investors.filter(i => i.status === 'interested').length, color: 'orange' },
+                      { stage: 'In Discussions', count: investors.filter(i => i.status === 'in_discussions').length, color: 'orange' },
+                      { stage: 'Due Diligence', count: investors.filter(i => i.status === 'due_diligence').length, color: 'orange' },
+                      { stage: 'Committed', count: investors.filter(i => i.status === 'committed').length, color: 'orange' }
+                    ].map((stage) => (
+                      <div key={stage.stage} className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div className="p-1.5 bg-orange-500/10 rounded-lg">
-                            <Building2 className="w-4 h-4 text-orange-400" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-white">{investor.name || 'Unknown'}</p>
-                            <p className="text-xs text-zinc-500">{investor.firm || 'Investment Firm'}</p>
-                          </div>
+                          <div className={`w-3 h-3 rounded-full bg-${stage.color}-500`} />
+                          <span className={`${rt('text-slate-600', 'text-zinc-300')} text-sm`}>{stage.stage}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {investor.check_size && (
-                            <span className="text-xs text-zinc-400">
-                              ${(investor.check_size / 1000).toFixed(0)}k - ${((investor.check_size_max || investor.check_size * 2) / 1000).toFixed(0)}k
-                            </span>
-                          )}
-                          <Badge variant="outline" className={getStatusColor(investor.status)}>
-                            {investor.status || 'new'}
-                          </Badge>
-                          <div className="flex gap-1">
-                            {investor.email && (
-                              <Button size="icon" variant="ghost" className="h-6 w-6">
-                                <Mail className="w-3 h-3 text-zinc-400" />
-                              </Button>
-                            )}
-                            {investor.linkedin && (
-                              <Button size="icon" variant="ghost" className="h-6 w-6">
-                                <ExternalLink className="w-3 h-3 text-zinc-400" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
+                        <span className={`${rt('text-slate-900', 'text-white')} font-medium text-sm`}>{stage.count}</span>
                       </div>
                     ))}
                   </div>
                 </CardContent>
               </Card>
-            )}
-          </div>
-        </TabsContent>
 
-        <TabsContent value="materials">
-          <Card className="bg-zinc-900/50 border-zinc-800">
-            <CardHeader>
+              {/* Recent Activity */}
+              <Card className={rt('bg-white border-slate-200 shadow-sm', 'bg-zinc-900/50 border-zinc-800')}>
+                <CardHeader>
+                  <CardTitle className={rt('text-slate-900', 'text-white')}>Recent Activity</CardTitle>
+                  <CardDescription>Latest investor interactions</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {investors.length === 0 ? (
+                      <div className="text-center py-6">
+                        <MessageSquare className={`w-8 h-8 ${rt('text-slate-400', 'text-zinc-600')} mx-auto mb-2`} />
+                        <p className={`${rt('text-slate-400', 'text-zinc-500')} text-sm`}>No investor activity yet</p>
+                      </div>
+                    ) : (
+                      investors.slice(0, 5).map((investor) => (
+                        <div key={investor.id} className={`flex items-start gap-2 p-2 ${rt('bg-slate-50', 'bg-zinc-800/50')} rounded-lg`}>
+                          <div className={`p-1.5 ${rt('bg-orange-50', 'bg-orange-500/10')} rounded-lg`}>
+                            <Building2 className={`w-3 h-3 ${rt('text-orange-600', 'text-orange-400')}`} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-xs font-medium ${rt('text-slate-900', 'text-white')} truncate`}>{investor.name || 'Unknown Investor'}</p>
+                            <p className={`text-[10px] ${rt('text-slate-400', 'text-zinc-500')}`}>{investor.firm || 'Investment Firm'}</p>
+                          </div>
+                          <Badge variant="outline" className={getStatusColor(investor.status)}>
+                            {investor.status || 'new'}
+                          </Badge>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            </motion.div>
+          </TabsContent>
+
+          <TabsContent value="investors" key="investors">
+            <motion.div
+              key={activeTab === 'investors' ? 'investors' : undefined}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+            <div className="space-y-3">
+              {/* Header with View Toggle */}
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-white">Pitch Materials</CardTitle>
-                  <CardDescription>Decks, one-pagers, and presentations</CardDescription>
+                  <h2 className={`text-lg font-semibold ${rt('text-slate-900', 'text-white')}`}>Investor Pipeline</h2>
+                  <p className={`${rt('text-slate-400', 'text-zinc-500')} text-xs`}>{investors.length} investors in pipeline</p>
                 </div>
-                <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-xs">
-                  <Plus className="w-3 h-3 mr-1" />
-                  Upload
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {pitchDecks.length === 0 ? (
-                <div className="text-center py-8">
-                  <FileText className="w-8 h-8 text-zinc-600 mx-auto mb-3" />
-                  <h3 className="text-sm font-medium text-white mb-1">No pitch materials</h3>
-                  <p className="text-zinc-500 text-xs mb-3">Upload your pitch deck and other materials</p>
-                  <Button className="bg-orange-500 hover:bg-orange-600 text-xs">
+                <div className="flex items-center gap-2">
+                  <div className={`flex ${rt('bg-slate-100', 'bg-zinc-900')} rounded-lg border ${rt('border-slate-200', 'border-zinc-800')} p-0.5`}>
+                    <Button
+                      size="sm"
+                      variant={viewMode === 'kanban' ? 'secondary' : 'ghost'}
+                      className={viewMode === 'kanban' ? rt('bg-white text-slate-900 text-xs', 'bg-zinc-800 text-white text-xs') : rt('text-slate-500 text-xs', 'text-zinc-400 text-xs')}
+                      onClick={() => setViewMode('kanban')}
+                    >
+                      <BarChart3 className="w-3 h-3 mr-1" />
+                      Board
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+                      className={viewMode === 'list' ? rt('bg-white text-slate-900 text-xs', 'bg-zinc-800 text-white text-xs') : rt('text-slate-500 text-xs', 'text-zinc-400 text-xs')}
+                      onClick={() => setViewMode('list')}
+                    >
+                      <Users className="w-3 h-3 mr-1" />
+                      List
+                    </Button>
+                  </div>
+                  <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-xs">
                     <Plus className="w-3 h-3 mr-1" />
-                    Upload Pitch Deck
+                    Add
                   </Button>
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {pitchDecks.map((deck) => (
-                    <div key={deck.id} className="p-3 bg-zinc-800/50 rounded-lg border border-zinc-700 hover:border-orange-500/50 transition-colors cursor-pointer">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="p-1.5 bg-orange-500/10 rounded-lg">
-                          <FileText className="w-4 h-4 text-orange-400" />
-                        </div>
-                        <Badge variant="outline" className="text-zinc-400 text-xs">
-                          {deck.version || 'v1.0'}
-                        </Badge>
-                      </div>
-                      <h4 className="text-sm font-medium text-white mb-0.5">{deck.name || 'Pitch Deck'}</h4>
-                      <p className="text-xs text-zinc-500">{deck.description || 'Investment presentation'}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+              </div>
 
-        <TabsContent value="dataroom">
-          <Card className="bg-zinc-900/50 border-zinc-800">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-white">Data Rooms</CardTitle>
-                  <CardDescription>Secure document sharing with investors</CardDescription>
-                </div>
-                <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-xs">
-                  <Plus className="w-3 h-3 mr-1" />
-                  Create
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {dataRooms.length === 0 ? (
-                <div className="text-center py-8">
-                  <Briefcase className="w-8 h-8 text-zinc-600 mx-auto mb-3" />
-                  <h3 className="text-sm font-medium text-white mb-1">No data rooms</h3>
-                  <p className="text-zinc-500 text-xs mb-3">Create a secure data room for due diligence</p>
-                  <Button className="bg-orange-500 hover:bg-orange-600 text-xs">
+              {investors.length === 0 ? (
+                <Card className={rt('bg-white border-slate-200 shadow-sm', 'bg-zinc-900/50 border-zinc-800')}>
+                  <CardContent className="py-8">
+                    <div className="text-center">
+                      <Users className={`w-8 h-8 ${rt('text-slate-400', 'text-zinc-600')} mx-auto mb-3`} />
+                      <h3 className={`text-sm font-medium ${rt('text-slate-900', 'text-white')} mb-1`}>No investors yet</h3>
+                      <p className={`${rt('text-slate-400', 'text-zinc-500')} text-xs mb-3`}>Start building your investor pipeline</p>
+                      <Button className="bg-orange-500 hover:bg-orange-600 text-xs">
+                        <Plus className="w-3 h-3 mr-1" />
+                        Add First Investor
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : viewMode === 'kanban' ? (
+                /* Kanban Board View */
+                <DragDropContext onDragEnd={handleDragEnd}>
+                  <div className="flex gap-3 overflow-x-auto pb-4">
+                    {INVESTOR_STAGES.map((stage) => (
+                      <InvestorStageColumn
+                        key={stage.id}
+                        stage={stage}
+                        investors={investors}
+                        onDelete={handleDeleteInvestor}
+                      />
+                    ))}
+                  </div>
+                </DragDropContext>
+              ) : (
+                /* List View */
+                <Card className={rt('bg-white border-slate-200 shadow-sm', 'bg-zinc-900/50 border-zinc-800')}>
+                  <CardContent className="p-3">
+                    <div className="space-y-2">
+                      {investors.map((investor) => (
+                        <div key={investor.id} className={`flex items-center justify-between p-3 ${rt('bg-slate-50 hover:bg-slate-100', 'bg-zinc-800/50 hover:bg-zinc-800')} rounded-lg transition-colors`}>
+                          <div className="flex items-center gap-2">
+                            <div className={`p-1.5 ${rt('bg-orange-50', 'bg-orange-500/10')} rounded-lg`}>
+                              <Building2 className={`w-4 h-4 ${rt('text-orange-600', 'text-orange-400')}`} />
+                            </div>
+                            <div>
+                              <p className={`text-sm font-medium ${rt('text-slate-900', 'text-white')}`}>{investor.name || 'Unknown'}</p>
+                              <p className={`text-xs ${rt('text-slate-400', 'text-zinc-500')}`}>{investor.firm || 'Investment Firm'}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {investor.check_size && (
+                              <span className={`text-xs ${rt('text-slate-500', 'text-zinc-400')}`}>
+                                ${(investor.check_size / 1000).toFixed(0)}k - ${((investor.check_size_max || investor.check_size * 2) / 1000).toFixed(0)}k
+                              </span>
+                            )}
+                            <Badge variant="outline" className={getStatusColor(investor.status)}>
+                              {investor.status || 'new'}
+                            </Badge>
+                            <div className="flex gap-1">
+                              {investor.email && (
+                                <Button size="icon" variant="ghost" className="h-6 w-6">
+                                  <Mail className={`w-3 h-3 ${rt('text-slate-500', 'text-zinc-400')}`} />
+                                </Button>
+                              )}
+                              {investor.linkedin && (
+                                <Button size="icon" variant="ghost" className="h-6 w-6">
+                                  <ExternalLink className={`w-3 h-3 ${rt('text-slate-500', 'text-zinc-400')}`} />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+            </motion.div>
+          </TabsContent>
+
+          <TabsContent value="materials" key="materials">
+            <motion.div
+              key={activeTab === 'materials' ? 'materials' : undefined}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+            <Card className={rt('bg-white border-slate-200 shadow-sm', 'bg-zinc-900/50 border-zinc-800')}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className={rt('text-slate-900', 'text-white')}>Pitch Materials</CardTitle>
+                    <CardDescription>Decks, one-pagers, and presentations</CardDescription>
+                  </div>
+                  <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-xs">
                     <Plus className="w-3 h-3 mr-1" />
-                    Create Data Room
+                    Upload
                   </Button>
                 </div>
-              ) : (
-                <div className="space-y-2">
-                  {dataRooms.map((room) => (
-                    <div key={room.id} className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <div className="p-1.5 bg-orange-500/10 rounded-lg">
-                          <Briefcase className="w-4 h-4 text-orange-400" />
+              </CardHeader>
+              <CardContent>
+                {pitchDecks.length === 0 ? (
+                  <div className="text-center py-8">
+                    <FileText className={`w-8 h-8 ${rt('text-slate-400', 'text-zinc-600')} mx-auto mb-3`} />
+                    <h3 className={`text-sm font-medium ${rt('text-slate-900', 'text-white')} mb-1`}>No pitch materials</h3>
+                    <p className={`${rt('text-slate-400', 'text-zinc-500')} text-xs mb-3`}>Upload your pitch deck and other materials</p>
+                    <Button className="bg-orange-500 hover:bg-orange-600 text-xs">
+                      <Plus className="w-3 h-3 mr-1" />
+                      Upload Pitch Deck
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {pitchDecks.map((deck) => (
+                      <div key={deck.id} className={`p-3 ${rt('bg-slate-50 border-slate-200 hover:border-orange-300', 'bg-zinc-800/50 border-zinc-700 hover:border-orange-500/50')} rounded-lg border transition-colors cursor-pointer`}>
+                        <div className="flex items-start justify-between mb-2">
+                          <div className={`p-1.5 ${rt('bg-orange-50', 'bg-orange-500/10')} rounded-lg`}>
+                            <FileText className={`w-4 h-4 ${rt('text-orange-600', 'text-orange-400')}`} />
+                          </div>
+                          <Badge variant="outline" className={`${rt('text-slate-500', 'text-zinc-400')} text-xs`}>
+                            {deck.version || 'v1.0'}
+                          </Badge>
                         </div>
-                        <div>
-                          <p className="text-sm font-medium text-white">{room.name || 'Data Room'}</p>
-                          <p className="text-xs text-zinc-500">{room.documents_count || 0} documents</p>
-                        </div>
+                        <h4 className={`text-sm font-medium ${rt('text-slate-900', 'text-white')} mb-0.5`}>{deck.name || 'Pitch Deck'}</h4>
+                        <p className={`text-xs ${rt('text-slate-400', 'text-zinc-500')}`}>{deck.description || 'Investment presentation'}</p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-zinc-400">{room.viewers || 0} viewers</span>
-                        <Button size="sm" variant="outline" className="border-zinc-700 text-xs h-7 px-2">
-                          <ExternalLink className="w-3 h-3 mr-1" />
-                          Open
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            </motion.div>
+          </TabsContent>
+
+          <TabsContent value="dataroom" key="dataroom">
+            <motion.div
+              key={activeTab === 'dataroom' ? 'dataroom' : undefined}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+            <Card className={rt('bg-white border-slate-200 shadow-sm', 'bg-zinc-900/50 border-zinc-800')}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className={rt('text-slate-900', 'text-white')}>Data Rooms</CardTitle>
+                    <CardDescription>Secure document sharing with investors</CardDescription>
+                  </div>
+                  <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-xs">
+                    <Plus className="w-3 h-3 mr-1" />
+                    Create
+                  </Button>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+              </CardHeader>
+              <CardContent>
+                {dataRooms.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Briefcase className={`w-8 h-8 ${rt('text-slate-400', 'text-zinc-600')} mx-auto mb-3`} />
+                    <h3 className={`text-sm font-medium ${rt('text-slate-900', 'text-white')} mb-1`}>No data rooms</h3>
+                    <p className={`${rt('text-slate-400', 'text-zinc-500')} text-xs mb-3`}>Create a secure data room for due diligence</p>
+                    <Button className="bg-orange-500 hover:bg-orange-600 text-xs">
+                      <Plus className="w-3 h-3 mr-1" />
+                      Create Data Room
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {dataRooms.map((room) => (
+                      <div key={room.id} className={`flex items-center justify-between p-3 ${rt('bg-slate-50', 'bg-zinc-800/50')} rounded-lg`}>
+                        <div className="flex items-center gap-2">
+                          <div className={`p-1.5 ${rt('bg-orange-50', 'bg-orange-500/10')} rounded-lg`}>
+                            <Briefcase className={`w-4 h-4 ${rt('text-orange-600', 'text-orange-400')}`} />
+                          </div>
+                          <div>
+                            <p className={`text-sm font-medium ${rt('text-slate-900', 'text-white')}`}>{room.name || 'Data Room'}</p>
+                            <p className={`text-xs ${rt('text-slate-400', 'text-zinc-500')}`}>{room.documents_count || 0} documents</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs ${rt('text-slate-500', 'text-zinc-400')}`}>{room.viewers || 0} viewers</span>
+                          <Button size="sm" variant="outline" className={`${rt('border-slate-200', 'border-zinc-700')} text-xs h-7 px-2`}>
+                            <ExternalLink className="w-3 h-3 mr-1" />
+                            Open
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            </motion.div>
+          </TabsContent>
+        </AnimatePresence>
       </Tabs>
       </div>
     </div>
