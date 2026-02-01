@@ -8,10 +8,19 @@ import {
   Target, TrendingUp, Calendar, ExternalLink, Edit2, Trash2,
   Sun, Moon
 } from 'lucide-react';
-import { RaiseCard as Card, RaiseCardContent as CardContent, RaiseCardHeader as CardHeader, RaiseCardTitle as CardTitle, RaiseCardDescription as CardDescription } from '@/components/raise/RaiseCard';
-import { Button } from '@/components/ui/button';
+import {
+  RaiseCard,
+  RaiseCardContent,
+  RaiseCardHeader,
+  RaiseCardTitle,
+  RaiseCardDescription,
+  RaiseButton,
+  RaiseBadge,
+  RaiseStatCard,
+  RaiseEmptyState,
+} from '@/components/raise/ui';
+import { MOTION_VARIANTS } from '@/tokens/raise';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { PageHeader } from '@/components/ui/PageHeader';
 import {
   DropdownMenu,
@@ -85,17 +94,17 @@ export default function RaiseInvestors() {
     }
   };
 
-  const getStatusBadge = (status) => {
-    const styles = {
-      prospecting: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
-      contacted: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-      interested: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-      in_discussions: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-      due_diligence: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-      committed: 'bg-green-500/20 text-green-400 border-green-500/30',
-      passed: 'bg-red-500/20 text-red-400 border-red-500/30'
+  const getStatusBadgeVariant = (status) => {
+    const variantMap = {
+      prospecting: 'neutral',
+      contacted: 'warning',
+      interested: 'warning',
+      in_discussions: 'warning',
+      due_diligence: 'warning',
+      committed: 'success',
+      passed: 'error'
     };
-    return styles[status] || styles.prospecting;
+    return variantMap[status] || 'neutral';
   };
 
   const filteredInvestors = useMemo(() => {
@@ -134,16 +143,20 @@ export default function RaiseInvestors() {
           color="orange"
           actions={
             <div className="flex gap-2">
-              <Button variant="outline" size="icon" onClick={toggleTheme} className={rt('border-slate-200 text-slate-600', 'border-zinc-700 text-zinc-300')}>
-                {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-              </Button>
-              <Button
+              <RaiseButton
+                variant="ghost"
+                size="sm"
+                onClick={toggleTheme}
+                icon={theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+              />
+              <RaiseButton
+                variant="primary"
+                size="sm"
                 onClick={() => setIsAddDialogOpen(true)}
-                className="bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/30"
+                icon={<Plus className="w-4 h-4" />}
               >
-                <Plus className="w-4 h-4 mr-2" />
                 Add Investor
-              </Button>
+              </RaiseButton>
             </div>
           }
         />
@@ -151,24 +164,19 @@ export default function RaiseInvestors() {
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { label: 'Total Investors', value: stats.total, icon: Users },
-            { label: 'Interested', value: stats.interested, icon: Target },
-            { label: 'In Due Diligence', value: stats.inDD, icon: Clock },
-            { label: 'Committed', value: stats.committed, icon: CheckCircle2 }
+            { label: 'Total Investors', value: stats.total, icon: Users, accentColor: 'orange' },
+            { label: 'Interested', value: stats.interested, icon: Target, accentColor: 'orange' },
+            { label: 'In Due Diligence', value: stats.inDD, icon: Clock, accentColor: 'blue' },
+            { label: 'Committed', value: stats.committed, icon: CheckCircle2, accentColor: 'green' }
           ].map((stat, idx) => (
-            <Card key={idx} className={rt('bg-white border-slate-200 shadow-sm', 'bg-zinc-900/50 border-zinc-800')}>
-              <CardContent className="p-3">
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${rt('bg-orange-50', 'bg-orange-500/10')} border ${rt('border-orange-200', 'border-orange-500/20')}`}>
-                    <stat.icon className={`w-4 h-4 ${rt('text-orange-600', 'text-orange-400')}`} />
-                  </div>
-                  <div>
-                    <p className={`text-lg font-bold ${rt('text-slate-900', 'text-white')}`}>{stat.value}</p>
-                    <p className={`text-[10px] ${rt('text-slate-400', 'text-zinc-500')}`}>{stat.label}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <RaiseStatCard
+              key={idx}
+              label={stat.label}
+              value={stat.value}
+              icon={<stat.icon className="w-5 h-5" />}
+              accentColor={stat.accentColor}
+              delay={idx * 0.05}
+            />
           ))}
         </div>
 
@@ -201,36 +209,33 @@ export default function RaiseInvestors() {
         </div>
 
         {/* Investors List */}
-        <Card className={rt('bg-white border-slate-200 shadow-sm', 'bg-zinc-900/50 border-zinc-800')}>
-          <CardHeader>
-            <CardTitle className={rt('text-slate-900', 'text-white')}>Investors</CardTitle>
-            <CardDescription>{filteredInvestors.length} investors in pipeline</CardDescription>
-          </CardHeader>
-          <CardContent>
+        <RaiseCard className="rounded-[20px]">
+          <RaiseCardHeader>
+            <RaiseCardTitle>Investors</RaiseCardTitle>
+            <RaiseCardDescription>{filteredInvestors.length} investors in pipeline</RaiseCardDescription>
+          </RaiseCardHeader>
+          <RaiseCardContent>
             {filteredInvestors.length === 0 ? (
-              <div className="text-center py-12">
-                <Building2 className={`w-12 h-12 ${rt('text-slate-400', 'text-zinc-600')} mx-auto mb-4`} />
-                <h3 className={`text-lg font-medium ${rt('text-slate-900', 'text-white')} mb-2`}>No investors yet</h3>
-                <p className={`${rt('text-slate-400', 'text-zinc-500')} mb-4`}>Start building your investor pipeline</p>
-                <Button
-                  onClick={() => setIsAddDialogOpen(true)}
-                  className="bg-orange-500 hover:bg-orange-600"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add First Investor
-                </Button>
-              </div>
+              <RaiseEmptyState
+                icon={Building2}
+                title="No investors yet"
+                message="Start building your investor pipeline"
+                actionLabel="Add First Investor"
+                onAction={() => setIsAddDialogOpen(true)}
+              />
             ) : (
-              <div className="space-y-2">
+              <motion.div
+                className="space-y-2"
+                variants={MOTION_VARIANTS.stagger.container}
+                initial="initial"
+                animate="animate"
+              >
                 <AnimatePresence>
                   {filteredInvestors.map((investor, index) => (
                     <motion.div
                       key={investor.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ delay: index * 0.03 }}
-                      className={`flex items-center justify-between p-3 ${rt('bg-slate-50', 'bg-zinc-800/50')} rounded-lg hover:${rt('bg-slate-100', 'bg-zinc-800')} transition-colors`}
+                      variants={MOTION_VARIANTS.stagger.item}
+                      className={`flex items-center justify-between p-3 ${rt('bg-slate-50', 'bg-zinc-800/50')} rounded-[20px] hover:${rt('bg-slate-100', 'bg-zinc-800')} transition-colors`}
                     >
                       <div className="flex items-center gap-3">
                         <div className={`p-2 ${rt('bg-orange-50', 'bg-orange-500/10')} rounded-lg border ${rt('border-orange-200', 'border-orange-500/20')}`}>
@@ -251,29 +256,37 @@ export default function RaiseInvestors() {
                             {investor.typical_check_size}
                           </span>
                         )}
-                        <Badge variant="outline" className={`${getStatusBadge(investor.status)} border text-xs`}>
+                        <RaiseBadge variant={getStatusBadgeVariant(investor.status)} size="sm">
                           {investor.status?.replace('_', ' ')}
-                        </Badge>
+                        </RaiseBadge>
                         <div className="flex gap-1">
                           {investor.email && (
-                            <Button size="icon" variant="ghost" className={`h-8 w-8 ${rt('text-slate-500 hover:text-slate-900', 'text-zinc-400 hover:text-white')}`} asChild>
+                            <RaiseButton
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 !px-0"
+                              asChild
+                            >
                               <a href={`mailto:${investor.email}`}>
                                 <Mail className="w-4 h-4" />
                               </a>
-                            </Button>
+                            </RaiseButton>
                           )}
                           {investor.linkedin_url && (
-                            <Button size="icon" variant="ghost" className={`h-8 w-8 ${rt('text-slate-500 hover:text-slate-900', 'text-zinc-400 hover:text-white')}`} asChild>
+                            <RaiseButton
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 !px-0"
+                              asChild
+                            >
                               <a href={investor.linkedin_url} target="_blank" rel="noopener noreferrer">
                                 <Linkedin className="w-4 h-4" />
                               </a>
-                            </Button>
+                            </RaiseButton>
                           )}
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className={`h-8 w-8 ${rt('text-slate-500', 'text-zinc-400')}`}>
-                                <MoreHorizontal className="w-4 h-4" />
-                              </Button>
+                              <RaiseButton variant="ghost" size="sm" className="h-8 w-8 !px-0" icon={<MoreHorizontal className="w-4 h-4" />} />
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className={rt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')}>
                               <DropdownMenuItem className={rt('text-slate-600', 'text-zinc-300')}>Edit</DropdownMenuItem>
@@ -286,10 +299,10 @@ export default function RaiseInvestors() {
                     </motion.div>
                   ))}
                 </AnimatePresence>
-              </div>
+              </motion.div>
             )}
-          </CardContent>
-        </Card>
+          </RaiseCardContent>
+        </RaiseCard>
 
         {/* Add Investor Dialog */}
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -387,12 +400,12 @@ export default function RaiseInvestors() {
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} className={rt('border-slate-200', 'border-zinc-700')}>
+              <RaiseButton variant="secondary" onClick={() => setIsAddDialogOpen(false)}>
                 Cancel
-              </Button>
-              <Button onClick={handleAddInvestor} className="bg-orange-500 hover:bg-orange-600">
+              </RaiseButton>
+              <RaiseButton variant="primary" onClick={handleAddInvestor}>
                 Add Investor
-              </Button>
+              </RaiseButton>
             </div>
           </DialogContent>
         </Dialog>

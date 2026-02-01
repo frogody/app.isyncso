@@ -7,10 +7,18 @@ import {
   AlertCircle, Play, Pause, BarChart3, Edit2,
   Sun, Moon
 } from 'lucide-react';
-import { RaiseCard as Card, RaiseCardContent as CardContent, RaiseCardHeader as CardHeader, RaiseCardTitle as CardTitle, RaiseCardDescription as CardDescription } from '@/components/raise/RaiseCard';
-import { Button } from '@/components/ui/button';
+import {
+  RaiseCard,
+  RaiseCardContent,
+  RaiseCardHeader,
+  RaiseCardTitle,
+  RaiseCardDescription,
+  RaiseButton,
+  RaiseBadge,
+  RaiseStatCard,
+  RaiseEmptyState
+} from '@/components/raise/ui';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { PageHeader } from '@/components/ui/PageHeader';
 import {
@@ -31,6 +39,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { RaisePageTransition } from '@/components/raise/RaisePageTransition';
 import { useRaiseTheme } from '@/contexts/RaiseThemeContext';
+import { MOTION_VARIANTS } from '@/tokens/raise';
 
 export default function RaiseCampaigns() {
   const { theme, toggleTheme, rt } = useRaiseTheme();
@@ -81,15 +90,15 @@ export default function RaiseCampaigns() {
     }
   };
 
-  const getStatusBadge = (status) => {
-    const styles = {
-      planning: rt('bg-slate-100 text-slate-600 border-slate-300', 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'),
-      active: rt('bg-green-100 text-green-700 border-green-300', 'bg-green-500/20 text-green-400 border-green-500/30'),
-      paused: rt('bg-orange-100 text-orange-700 border-orange-300', 'bg-orange-500/20 text-orange-400 border-orange-500/30'),
-      closed: rt('bg-orange-100 text-orange-700 border-orange-300', 'bg-orange-500/20 text-orange-400 border-orange-500/30'),
-      cancelled: rt('bg-red-100 text-red-700 border-red-300', 'bg-red-500/20 text-red-400 border-red-500/30')
+  const getStatusVariant = (status) => {
+    const variants = {
+      planning: 'neutral',
+      active: 'success',
+      paused: 'warning',
+      closed: 'warning',
+      cancelled: 'error'
     };
-    return styles[status] || styles.planning;
+    return variants[status] || 'neutral';
   };
 
   const formatCurrency = (amount) => {
@@ -136,53 +145,53 @@ export default function RaiseCampaigns() {
             color="orange"
             actions={
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
+                <RaiseButton
+                  variant="secondary"
                   size="icon"
                   onClick={toggleTheme}
-                  className={rt('border-slate-200 text-slate-600', 'border-zinc-700 text-zinc-300')}
                 >
                   {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-                </Button>
-                <Button
+                </RaiseButton>
+                <RaiseButton
                   onClick={() => setIsAddDialogOpen(true)}
-                  className={rt(
-                    'bg-orange-500/10 hover:bg-orange-500/20 text-orange-600 border border-orange-500/30',
-                    'bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/30'
-                  )}
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   New Campaign
-                </Button>
+                </RaiseButton>
               </div>
             }
           />
 
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { label: 'Total Campaigns', value: stats.total, icon: Rocket },
-              { label: 'Active', value: stats.active, icon: Play },
-              { label: 'Total Target', value: formatCurrency(stats.totalTarget), icon: Target },
-              { label: 'Total Raised', value: formatCurrency(stats.totalRaised), icon: Euro }
-            ].map((stat, idx) => (
-              <Card key={idx} className={rt('bg-white border-slate-200 shadow-sm', 'bg-zinc-900/50 border-zinc-800')}>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className={rt(
-                      'p-2 rounded-lg bg-orange-500/10 border border-orange-500/20',
-                      'p-2 rounded-lg bg-orange-500/10 border border-orange-500/20'
-                    )}>
-                      <stat.icon className={`w-4 h-4 ${rt('text-orange-600', 'text-orange-400')}`} />
-                    </div>
-                    <div>
-                      <p className={`text-2xl font-bold ${rt('text-slate-900', 'text-white')}`}>{stat.value}</p>
-                      <p className={`text-xs ${rt('text-slate-500', 'text-zinc-500')}`}>{stat.label}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            <RaiseStatCard
+              label="Total Campaigns"
+              value={stats.total}
+              icon={Rocket}
+              accentColor="orange"
+              delay={0}
+            />
+            <RaiseStatCard
+              label="Active"
+              value={stats.active}
+              icon={Play}
+              accentColor="green"
+              delay={0.05}
+            />
+            <RaiseStatCard
+              label="Total Target"
+              value={formatCurrency(stats.totalTarget)}
+              icon={Target}
+              accentColor="blue"
+              delay={0.1}
+            />
+            <RaiseStatCard
+              label="Total Raised"
+              value={formatCurrency(stats.totalRaised)}
+              icon={Euro}
+              accentColor="purple"
+              delay={0.15}
+            />
           </div>
 
           {/* Search */}
@@ -197,25 +206,20 @@ export default function RaiseCampaigns() {
           </div>
 
           {/* Campaigns */}
-          <Card className={rt('bg-white border-slate-200 shadow-sm', 'bg-zinc-900/50 border-zinc-800')}>
-            <CardHeader>
-              <CardTitle className={rt('text-slate-900', 'text-white')}>Fundraising Campaigns</CardTitle>
-              <CardDescription className={rt('text-slate-500', '')}>Track your funding rounds and progress</CardDescription>
-            </CardHeader>
-            <CardContent>
+          <RaiseCard className="rounded-[20px]">
+            <RaiseCardHeader>
+              <RaiseCardTitle>Fundraising Campaigns</RaiseCardTitle>
+              <RaiseCardDescription>Track your funding rounds and progress</RaiseCardDescription>
+            </RaiseCardHeader>
+            <RaiseCardContent>
               {filteredCampaigns.length === 0 ? (
-                <div className="text-center py-12">
-                  <Rocket className={`w-12 h-12 ${rt('text-slate-300', 'text-zinc-600')} mx-auto mb-4`} />
-                  <h3 className={`text-lg font-medium ${rt('text-slate-900', 'text-white')} mb-2`}>No campaigns yet</h3>
-                  <p className={`${rt('text-slate-500', 'text-zinc-500')} mb-4`}>Start your first fundraising campaign</p>
-                  <Button
-                    onClick={() => setIsAddDialogOpen(true)}
-                    className="bg-orange-500 hover:bg-orange-600"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create Campaign
-                  </Button>
-                </div>
+                <RaiseEmptyState
+                  icon={Rocket}
+                  title="No campaigns yet"
+                  message="Start your first fundraising campaign"
+                  actionLabel="Create Campaign"
+                  onAction={() => setIsAddDialogOpen(true)}
+                />
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <AnimatePresence mode="popLayout">
@@ -232,7 +236,7 @@ export default function RaiseCampaigns() {
                           exit={{ opacity: 0, y: -10 }}
                           transition={{ delay: idx * 0.05 }}
                         >
-                          <div className={`p-6 rounded-xl border transition-colors ${rt(
+                          <div className={`p-6 rounded-[20px] border transition-colors ${rt(
                             'bg-white border-slate-200 shadow-sm hover:border-orange-400/50',
                             'bg-zinc-800/50 border-zinc-700 hover:border-orange-500/30'
                           )}`}>
@@ -242,14 +246,14 @@ export default function RaiseCampaigns() {
                                 <p className={`text-sm capitalize ${rt('text-slate-500', 'text-zinc-400')}`}>{campaign.round_type?.replace('_', ' ')}</p>
                               </div>
                               <div className="flex items-center gap-2">
-                                <Badge variant="outline" className={`${getStatusBadge(campaign.status)} border`}>
+                                <RaiseBadge variant={getStatusVariant(campaign.status)}>
                                   {campaign.status}
-                                </Badge>
+                                </RaiseBadge>
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className={`h-8 w-8 ${rt('text-slate-400', 'text-zinc-400')}`}>
+                                    <RaiseButton variant="ghost" size="icon" className="h-8 w-8">
                                       <MoreHorizontal className="w-4 h-4" />
-                                    </Button>
+                                    </RaiseButton>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end" className={rt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')}>
                                     <DropdownMenuItem className={rt('text-slate-700', 'text-zinc-300')}>Edit</DropdownMenuItem>
@@ -313,8 +317,8 @@ export default function RaiseCampaigns() {
                   </AnimatePresence>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </RaiseCardContent>
+          </RaiseCard>
 
           {/* Add Dialog */}
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -392,12 +396,12 @@ export default function RaiseCampaigns() {
                 </div>
               </div>
               <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} className={rt('border-slate-200', 'border-zinc-700')}>
+                <RaiseButton variant="secondary" onClick={() => setIsAddDialogOpen(false)}>
                   Cancel
-                </Button>
-                <Button onClick={handleAddCampaign} className="bg-orange-500 hover:bg-orange-600">
+                </RaiseButton>
+                <RaiseButton onClick={handleAddCampaign}>
                   Create
-                </Button>
+                </RaiseButton>
               </div>
             </DialogContent>
           </Dialog>

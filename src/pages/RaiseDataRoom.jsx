@@ -6,10 +6,9 @@ import {
   File, Folder, MoreHorizontal, Users, Clock, Shield, Link2,
   ExternalLink, FileText, Settings, Briefcase, Sun, Moon
 } from 'lucide-react';
-import { RaiseCard as Card, RaiseCardContent as CardContent, RaiseCardHeader as CardHeader, RaiseCardTitle as CardTitle, RaiseCardDescription as CardDescription } from '@/components/raise/RaiseCard';
-import { Button } from '@/components/ui/button';
+import { RaiseCard, RaiseCardContent, RaiseCardHeader, RaiseCardTitle, RaiseCardDescription, RaiseButton, RaiseBadge, RaiseStatCard, RaiseEmptyState } from '@/components/raise/ui';
+import { MOTION_VARIANTS } from '@/tokens/raise';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { PageHeader } from '@/components/ui/PageHeader';
 import {
   DropdownMenu,
@@ -99,53 +98,54 @@ export default function RaiseDataRoom() {
             color="orange"
             actions={
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
+                <RaiseButton
+                  variant="secondary"
                   size="icon"
                   onClick={toggleTheme}
-                  className={rt('border-slate-200 text-slate-600', 'border-zinc-700 text-zinc-300')}
                 >
                   {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-                </Button>
-                <Button
+                </RaiseButton>
+                <RaiseButton
+                  variant="primary"
                   onClick={() => setIsAddDialogOpen(true)}
-                  className={rt(
-                    'bg-orange-50 hover:bg-orange-100 text-orange-600 border border-orange-200',
-                    'bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/30'
-                  )}
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   New Data Room
-                </Button>
+                </RaiseButton>
               </div>
             }
           />
 
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {[
-              { label: 'Total Rooms', value: dataRooms.length, icon: Folder },
-              { label: 'Active', value: dataRooms.filter(r => r.is_active).length, icon: Unlock },
-              { label: 'NDA Required', value: dataRooms.filter(r => r.requires_nda).length, icon: Shield },
-              { label: 'Total Viewers', value: dataRooms.reduce((sum, r) => sum + (r.viewer_count || 0), 0), icon: Users }
-            ].map((stat, idx) => (
-              <Card key={idx} className={rt('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800')}>
-                <CardContent className="p-3">
-                  <div className="flex items-center gap-3">
-                    <div className={rt(
-                      'p-2 rounded-lg bg-orange-50 border border-orange-200',
-                      'p-2 rounded-lg bg-orange-500/10 border border-orange-500/20'
-                    )}>
-                      <stat.icon className={rt('w-4 h-4 text-orange-500', 'w-4 h-4 text-orange-400')} />
-                    </div>
-                    <div>
-                      <p className={rt('text-lg font-bold text-slate-900', 'text-lg font-bold text-white')}>{stat.value}</p>
-                      <p className={rt('text-[10px] text-slate-500', 'text-[10px] text-zinc-500')}>{stat.label}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            <RaiseStatCard
+              label="Total Rooms"
+              value={dataRooms.length}
+              icon={Folder}
+              accentColor="orange"
+              delay={0}
+            />
+            <RaiseStatCard
+              label="Active"
+              value={dataRooms.filter(r => r.is_active).length}
+              icon={Unlock}
+              accentColor="green"
+              delay={0.05}
+            />
+            <RaiseStatCard
+              label="NDA Required"
+              value={dataRooms.filter(r => r.requires_nda).length}
+              icon={Shield}
+              accentColor="blue"
+              delay={0.1}
+            />
+            <RaiseStatCard
+              label="Total Viewers"
+              value={dataRooms.reduce((sum, r) => sum + (r.viewer_count || 0), 0)}
+              icon={Users}
+              accentColor="purple"
+              delay={0.15}
+            />
           </div>
 
           {/* Search */}
@@ -160,25 +160,20 @@ export default function RaiseDataRoom() {
           </div>
 
           {/* Data Rooms */}
-          <Card className={rt('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800')}>
-            <CardHeader>
-              <CardTitle className={rt('text-slate-900', 'text-white')}>Data Rooms</CardTitle>
-              <CardDescription className={rt('text-slate-500', '')}>Secure document sharing with investors</CardDescription>
-            </CardHeader>
-            <CardContent>
+          <RaiseCard className="rounded-[20px]">
+            <RaiseCardHeader>
+              <RaiseCardTitle>Data Rooms</RaiseCardTitle>
+              <RaiseCardDescription>Secure document sharing with investors</RaiseCardDescription>
+            </RaiseCardHeader>
+            <RaiseCardContent>
               {filteredRooms.length === 0 ? (
-                <div className="text-center py-12">
-                  <Briefcase className={rt('w-12 h-12 text-slate-300 mx-auto mb-4', 'w-12 h-12 text-zinc-600 mx-auto mb-4')} />
-                  <h3 className={rt('text-lg font-medium text-slate-900 mb-2', 'text-lg font-medium text-white mb-2')}>No data rooms yet</h3>
-                  <p className={rt('text-slate-500 mb-4', 'text-zinc-500 mb-4')}>Create a secure space for due diligence documents</p>
-                  <Button
-                    onClick={() => setIsAddDialogOpen(true)}
-                    className="bg-orange-500 hover:bg-orange-600"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create Data Room
-                  </Button>
-                </div>
+                <RaiseEmptyState
+                  icon={Briefcase}
+                  title="No data rooms yet"
+                  message="Create a secure space for due diligence documents"
+                  actionLabel="Create Data Room"
+                  onAction={() => setIsAddDialogOpen(true)}
+                />
               ) : (
                 <div className="space-y-3">
                   {filteredRooms.map((room) => (
@@ -202,12 +197,9 @@ export default function RaiseDataRoom() {
                           <div className="flex items-center gap-2">
                             <p className={rt('font-medium text-slate-900', 'font-medium text-white')}>{room.name || 'Data Room'}</p>
                             {room.requires_nda && (
-                              <Badge variant="outline" className={rt(
-                                'bg-orange-50 text-orange-600 border-orange-200 text-xs',
-                                'bg-orange-500/10 text-orange-400 border-orange-500/30 text-xs'
-                              )}>
+                              <RaiseBadge variant="warning">
                                 NDA Required
-                              </Badge>
+                              </RaiseBadge>
                             )}
                           </div>
                           <p className={rt('text-sm text-slate-500', 'text-sm text-zinc-500')}>{room.description || 'Due diligence documents'}</p>
@@ -224,24 +216,21 @@ export default function RaiseDataRoom() {
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
-                        <Badge variant="outline" className={room.is_active
-                          ? rt('bg-green-50 text-green-600 border-green-200', 'bg-green-500/10 text-green-400 border-green-500/30')
-                          : rt('bg-slate-100 text-slate-500 border-slate-200', 'bg-zinc-500/10 text-zinc-400 border-zinc-500/30')
-                        }>
+                        <RaiseBadge variant={room.is_active ? 'success' : 'neutral'}>
                           {room.is_active ? 'Active' : 'Inactive'}
-                        </Badge>
+                        </RaiseBadge>
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" className={rt('h-8 w-8 text-slate-400 hover:text-slate-700', 'h-8 w-8 text-zinc-400 hover:text-white')}>
+                          <RaiseButton variant="ghost" size="icon">
                             <Link2 className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className={rt('h-8 w-8 text-slate-400 hover:text-slate-700', 'h-8 w-8 text-zinc-400 hover:text-white')}>
+                          </RaiseButton>
+                          <RaiseButton variant="ghost" size="icon">
                             <Upload className="w-4 h-4" />
-                          </Button>
+                          </RaiseButton>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className={rt('h-8 w-8 text-slate-400', 'h-8 w-8 text-zinc-400')}>
+                              <RaiseButton variant="ghost" size="icon">
                                 <MoreHorizontal className="w-4 h-4" />
-                              </Button>
+                              </RaiseButton>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className={rt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')}>
                               <DropdownMenuItem className={rt('text-slate-700', 'text-zinc-300')}>Open</DropdownMenuItem>
@@ -256,8 +245,8 @@ export default function RaiseDataRoom() {
                   ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </RaiseCardContent>
+          </RaiseCard>
 
           {/* Add Dialog */}
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -313,12 +302,12 @@ export default function RaiseDataRoom() {
                 </div>
               </div>
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} className={rt('border-slate-200', 'border-zinc-700')}>
+                <RaiseButton variant="secondary" onClick={() => setIsAddDialogOpen(false)}>
                   Cancel
-                </Button>
-                <Button onClick={handleAddRoom} className="bg-orange-500 hover:bg-orange-600">
+                </RaiseButton>
+                <RaiseButton variant="primary" onClick={handleAddRoom}>
                   Create
-                </Button>
+                </RaiseButton>
               </div>
             </DialogContent>
           </Dialog>

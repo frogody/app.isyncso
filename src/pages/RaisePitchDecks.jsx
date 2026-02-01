@@ -6,10 +6,9 @@ import {
   Trash2, Clock, CheckCircle, Share2, MoreHorizontal, FileText,
   ExternalLink, Calendar, Users, Link2, Sun, Moon
 } from 'lucide-react';
-import { RaiseCard as Card, RaiseCardContent as CardContent, RaiseCardHeader as CardHeader, RaiseCardTitle as CardTitle, RaiseCardDescription as CardDescription } from '@/components/raise/RaiseCard';
-import { Button } from '@/components/ui/button';
+import { RaiseCard, RaiseCardContent, RaiseCardHeader, RaiseCardTitle, RaiseCardDescription, RaiseButton, RaiseBadge, RaiseStatCard, RaiseEmptyState } from '@/components/raise/ui';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { MOTION_VARIANTS } from '@/tokens/raise';
 import { PageHeader } from '@/components/ui/PageHeader';
 import {
   DropdownMenu,
@@ -73,14 +72,14 @@ export default function RaisePitchDecks() {
     }
   };
 
-  const getStatusBadge = (status) => {
-    const styles = {
-      draft: rt('bg-slate-100 text-slate-500 border-slate-300', 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'),
-      review: rt('bg-orange-50 text-orange-600 border-orange-200', 'bg-orange-500/20 text-orange-400 border-orange-500/30'),
-      approved: rt('bg-green-50 text-green-600 border-green-200', 'bg-green-500/20 text-green-400 border-green-500/30'),
-      shared: rt('bg-orange-50 text-orange-600 border-orange-200', 'bg-orange-500/20 text-orange-400 border-orange-500/30')
+  const getStatusVariant = (status) => {
+    const variants = {
+      draft: 'neutral',
+      review: 'warning',
+      approved: 'success',
+      shared: 'primary'
     };
-    return styles[status] || styles.draft;
+    return variants[status] || 'neutral';
   };
 
   const filteredDecks = pitchDecks.filter(deck =>
@@ -105,46 +104,54 @@ export default function RaisePitchDecks() {
           color="orange"
           actions={
             <div className="flex gap-3">
-              <Button variant="outline" size="icon" onClick={toggleTheme} className={rt('border-slate-200 text-slate-600', 'border-zinc-700 text-zinc-300')}>
+              <RaiseButton variant="secondary" size="icon" onClick={toggleTheme}>
                 {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-              </Button>
-              <Button variant="outline" className={rt('border-slate-200 text-slate-600 hover:bg-slate-100', 'border-zinc-700 text-zinc-300 hover:bg-zinc-800')}>
+              </RaiseButton>
+              <RaiseButton variant="secondary">
                 <Upload className="w-4 h-4 mr-2" />
                 Upload
-              </Button>
-              <Button
+              </RaiseButton>
+              <RaiseButton
                 onClick={() => setIsAddDialogOpen(true)}
-                className={rt('bg-orange-50 hover:bg-orange-100 text-orange-600 border border-orange-200', 'bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/30')}
+                variant="primary"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 New Deck
-              </Button>
+              </RaiseButton>
             </div>
           }
         />
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { label: 'Total Decks', value: pitchDecks.length, icon: FileText },
-            { label: 'Drafts', value: pitchDecks.filter(d => d.status === 'draft').length, icon: Edit2 },
-            { label: 'Approved', value: pitchDecks.filter(d => d.status === 'approved').length, icon: CheckCircle },
-            { label: 'Shared', value: pitchDecks.filter(d => d.status === 'shared').length, icon: Share2 }
-          ].map((stat, idx) => (
-            <Card key={idx} className={rt('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800')}>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className={rt('p-2 rounded-lg bg-orange-50 border border-orange-200', 'p-2 rounded-lg bg-orange-500/10 border border-orange-500/20')}>
-                    <stat.icon className={`w-4 h-4 ${rt('text-orange-600', 'text-orange-400')}`} />
-                  </div>
-                  <div>
-                    <p className={`text-2xl font-bold ${rt('text-slate-900', 'text-white')}`}>{stat.value}</p>
-                    <p className={`text-xs ${rt('text-slate-500', 'text-zinc-500')}`}>{stat.label}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          <RaiseStatCard
+            label="Total Decks"
+            value={pitchDecks.length}
+            icon={FileText}
+            accentColor="orange"
+            delay={0}
+          />
+          <RaiseStatCard
+            label="Drafts"
+            value={pitchDecks.filter(d => d.status === 'draft').length}
+            icon={Edit2}
+            accentColor="blue"
+            delay={0.05}
+          />
+          <RaiseStatCard
+            label="Approved"
+            value={pitchDecks.filter(d => d.status === 'approved').length}
+            icon={CheckCircle}
+            accentColor="green"
+            delay={0.1}
+          />
+          <RaiseStatCard
+            label="Shared"
+            value={pitchDecks.filter(d => d.status === 'shared').length}
+            icon={Share2}
+            accentColor="purple"
+            delay={0.15}
+          />
         </div>
 
         {/* Search */}
@@ -159,25 +166,20 @@ export default function RaisePitchDecks() {
         </div>
 
         {/* Decks Grid */}
-        <Card className={rt('bg-white border-slate-200', 'bg-zinc-900/50 border-zinc-800')}>
-          <CardHeader>
-            <CardTitle className={rt('text-slate-900', 'text-white')}>Pitch Materials</CardTitle>
-            <CardDescription>Decks, one-pagers, and presentations</CardDescription>
-          </CardHeader>
-          <CardContent>
+        <RaiseCard className="rounded-[20px]">
+          <RaiseCardHeader>
+            <RaiseCardTitle className={rt('text-slate-900', 'text-white')}>Pitch Materials</RaiseCardTitle>
+            <RaiseCardDescription>Decks, one-pagers, and presentations</RaiseCardDescription>
+          </RaiseCardHeader>
+          <RaiseCardContent>
             {filteredDecks.length === 0 ? (
-              <div className="text-center py-12">
-                <Presentation className={`w-12 h-12 mx-auto mb-4 ${rt('text-slate-400', 'text-zinc-600')}`} />
-                <h3 className={`text-lg font-medium mb-2 ${rt('text-slate-900', 'text-white')}`}>No pitch decks yet</h3>
-                <p className={`mb-4 ${rt('text-slate-500', 'text-zinc-500')}`}>Create your first investor presentation</p>
-                <Button
-                  onClick={() => setIsAddDialogOpen(true)}
-                  className="bg-orange-500 hover:bg-orange-600"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Pitch Deck
-                </Button>
-              </div>
+              <RaiseEmptyState
+                icon={Presentation}
+                title="No pitch decks yet"
+                message="Create your first investor presentation"
+                actionLabel="Create Pitch Deck"
+                onAction={() => setIsAddDialogOpen(true)}
+              />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredDecks.map((deck) => (
@@ -186,14 +188,14 @@ export default function RaisePitchDecks() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                   >
-                    <div className={`p-4 rounded-xl border transition-colors ${rt('bg-slate-50 border-slate-200 hover:border-orange-300', 'bg-zinc-800/50 border-zinc-700 hover:border-orange-500/50')}`}>
+                    <div className={`p-4 rounded-[20px] border transition-colors ${rt('bg-slate-50 border-slate-200 hover:border-orange-300', 'bg-zinc-800/50 border-zinc-700 hover:border-orange-500/50')}`}>
                       <div className="flex items-start justify-between mb-3">
                         <div className={rt('p-2 bg-orange-50 rounded-lg border border-orange-200', 'p-2 bg-orange-500/10 rounded-lg border border-orange-500/20')}>
                           <FileText className={`w-5 h-5 ${rt('text-orange-600', 'text-orange-400')}`} />
                         </div>
-                        <Badge variant="outline" className={`${getStatusBadge(deck.status)} border`}>
+                        <RaiseBadge variant={getStatusVariant(deck.status)}>
                           {deck.status}
-                        </Badge>
+                        </RaiseBadge>
                       </div>
 
                       <h4 className={`font-medium mb-1 ${rt('text-slate-900', 'text-white')}`}>{deck.name || 'Pitch Deck'}</h4>
@@ -208,17 +210,17 @@ export default function RaisePitchDecks() {
                           {deck.updated_at ? new Date(deck.updated_at).toLocaleDateString() : 'Just now'}
                         </span>
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" className={`h-8 w-8 ${rt('text-slate-400 hover:text-slate-900', 'text-zinc-400 hover:text-white')}`}>
+                          <RaiseButton variant="ghost" size="icon" className="h-8 w-8">
                             <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className={`h-8 w-8 ${rt('text-slate-400 hover:text-slate-900', 'text-zinc-400 hover:text-white')}`}>
+                          </RaiseButton>
+                          <RaiseButton variant="ghost" size="icon" className="h-8 w-8">
                             <Share2 className="w-4 h-4" />
-                          </Button>
+                          </RaiseButton>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className={`h-8 w-8 ${rt('text-slate-400', 'text-zinc-400')}`}>
+                              <RaiseButton variant="ghost" size="icon" className="h-8 w-8">
                                 <MoreHorizontal className="w-4 h-4" />
-                              </Button>
+                              </RaiseButton>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className={rt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')}>
                               <DropdownMenuItem className={rt('text-slate-700', 'text-zinc-300')}>Edit</DropdownMenuItem>
@@ -234,8 +236,8 @@ export default function RaisePitchDecks() {
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </RaiseCardContent>
+        </RaiseCard>
 
         {/* Add Dialog */}
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -290,12 +292,12 @@ export default function RaisePitchDecks() {
               </div>
             </div>
             <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} className={rt('border-slate-200', 'border-zinc-700')}>
+              <RaiseButton variant="secondary" onClick={() => setIsAddDialogOpen(false)}>
                 Cancel
-              </Button>
-              <Button onClick={handleAddDeck} className="bg-orange-500 hover:bg-orange-600">
+              </RaiseButton>
+              <RaiseButton onClick={handleAddDeck} variant="primary">
                 Create
-              </Button>
+              </RaiseButton>
             </div>
           </DialogContent>
         </Dialog>
