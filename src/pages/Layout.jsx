@@ -53,6 +53,7 @@ import {
   Euro,
   TrendingUp,
   Receipt,
+  ScrollText,
   CreditCard,
   PieChart,
   Bot,
@@ -372,6 +373,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
         { label: 'Journal Entries', path: createPageUrl('FinanceJournalEntries'), icon: FileSpreadsheet },
         { label: 'General Ledger', path: createPageUrl('FinanceGeneralLedger'), icon: BookText },
         { label: 'Vendors', path: createPageUrl('FinanceVendors'), icon: Users },
+        { label: 'Bills', path: createPageUrl('FinanceBills'), icon: ScrollText },
       ]
     };
   }
