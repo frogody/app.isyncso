@@ -7,27 +7,30 @@ import {
   ListPlus, BarChart3, Filter, FileText, Send
 } from 'lucide-react';
 import { Progress } from "@/components/ui/progress";
-
-const Chip = ({ selected, onClick, children }) => (
-  <button onClick={onClick} className={`px-2.5 py-1 rounded text-xs transition-all ${selected ? 'bg-indigo-500 text-white' : 'bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10'}`}>
-    {children}
-  </button>
-);
-
-const OptionCard = ({ selected, onClick, children }) => (
-  <button onClick={onClick} className={`p-3 rounded-lg border-2 text-left w-full transition-all ${selected ? 'border-indigo-500 bg-indigo-500/10' : 'border-white/10 hover:border-white/20 bg-white/5'}`}>
-    {children}
-  </button>
-);
-
-const FormInput = ({ label, ...props }) => (
-  <div>
-    {label && <label className="block text-sm font-medium text-gray-300 mb-1.5">{label}</label>}
-    <input {...props} className="w-full px-3 py-2.5 bg-black/50 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:border-orange-500 focus:outline-none" />
-  </div>
-);
+import { useGrowthTheme } from '@/contexts/GrowthThemeContext';
 
 const ClayCampaignBuilder = () => {
+  const { gt } = useGrowthTheme();
+
+  const Chip = ({ selected, onClick, children }) => (
+    <button onClick={onClick} className={`px-2.5 py-1 rounded text-xs transition-all ${selected ? 'bg-indigo-500 text-white' : `${gt('bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200', 'bg-white/5 text-gray-300 hover:bg-white/10 border border-white/10')}`}`}>
+      {children}
+    </button>
+  );
+
+  const OptionCard = ({ selected, onClick, children }) => (
+    <button onClick={onClick} className={`p-3 rounded-lg border-2 text-left w-full transition-all ${selected ? 'border-indigo-500 bg-indigo-500/10' : `${gt('border-slate-200 hover:border-slate-300 bg-slate-50', 'border-white/10 hover:border-white/20 bg-white/5')}`}`}>
+      {children}
+    </button>
+  );
+
+  const FormInput = ({ label, ...props }) => (
+    <div>
+      {label && <label className={`block text-sm font-medium ${gt('text-slate-600', 'text-gray-300')} mb-1.5`}>{label}</label>}
+      <input {...props} className={`w-full px-3 py-2.5 ${gt('bg-white border border-slate-200', 'bg-black/50 border border-white/10')} rounded-lg ${gt('text-slate-900 placeholder-slate-400', 'text-white placeholder-gray-500')} focus:border-orange-500 focus:outline-none`} />
+    </div>
+  );
+
   const AI_MODELS = {
     'gpt-4.1-nano': { name: 'GPT 4.1 Nano', credits: 0.5, bestFor: 'Classification' },
     'gpt-5-nano': { name: 'GPT 5 Nano', credits: 0.5, bestFor: 'Lightweight reasoning' },
@@ -551,19 +554,19 @@ ${credits.breakdown.map(b => `| ${b.item} | ${b.cost} | ${Math.round(b.cost * co
   const credits = calcCredits();
 
   return (
-    <div className="text-white">
+    <div className={gt('text-slate-900', 'text-white')}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div>
-            <div className="font-semibold text-white">Clay Campaign Builder</div>
-            <div className="text-xs text-gray-400">Personalized outreach automation</div>
+            <div className={`font-semibold ${gt('text-slate-900', 'text-white')}`}>Clay Campaign Builder</div>
+            <div className={`text-xs ${gt('text-slate-500', 'text-gray-400')}`}>Personalized outreach automation</div>
           </div>
         </div>
         <div className="text-right">
-          <div className="text-xs text-gray-400">Est. Credits</div>
+          <div className={`text-xs ${gt('text-slate-500', 'text-gray-400')}`}>Est. Credits</div>
           <div className="font-bold text-indigo-400">{credits.total.toLocaleString()}</div>
         </div>
       </div>
@@ -573,37 +576,37 @@ ${credits.breakdown.map(b => `| ${b.item} | ${b.cost} | ${Math.round(b.cost * co
           <React.Fragment key={i}>
             <button
               onClick={() => setStep(i)}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm whitespace-nowrap ${i === step ? 'bg-indigo-500 text-white' : i < step ? 'bg-indigo-500/20 text-indigo-400' : 'bg-white/5 text-gray-500 border border-white/10'}`}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm whitespace-nowrap ${i === step ? 'bg-indigo-500 text-white' : i < step ? 'bg-indigo-500/20 text-indigo-400' : `${gt('bg-slate-100 text-slate-400 border border-slate-200', 'bg-white/5 text-gray-500 border border-white/10')}`}`}
             >
               <s.icon className="w-4 h-4" />
               <span className="hidden sm:inline">{s.title}</span>
             </button>
-            {i < steps.length - 1 && <div className={`w-3 h-0.5 flex-shrink-0 ${i < step ? 'bg-indigo-500/50' : 'bg-white/10'}`} />}
+            {i < steps.length - 1 && <div className={`w-3 h-0.5 flex-shrink-0 ${i < step ? 'bg-indigo-500/50' : gt('bg-slate-200', 'bg-white/10')}`} />}
           </React.Fragment>
         ))}
       </div>
 
-      <div className="bg-white/5 border border-white/10 rounded-xl p-6 mb-4">
+      <div className={`${gt('bg-white border border-slate-200 shadow-sm', 'bg-white/5 border border-white/10')} rounded-xl p-6 mb-4`}>
         
         {step === 0 && (
           <div className="space-y-4">
             <h2 className="text-xl font-bold">About Your Company</h2>
-            <p className="text-gray-400 text-sm">Context for AI personalization</p>
+            <p className={`${gt('text-slate-500', 'text-gray-400')} text-sm`}>Context for AI personalization</p>
             <div className="grid grid-cols-2 gap-4">
               <FormInput label="Company Name *" value={config.companyName} onChange={e => update('companyName', e.target.value)} placeholder="Acme Inc" />
               <FormInput label="Website" value={config.companyWebsite} onChange={e => update('companyWebsite', e.target.value)} placeholder="https://acme.com" />
             </div>
             <FormInput label="What do you do? *" value={config.whatYouDo} onChange={e => update('whatYouDo', e.target.value)} placeholder="We help B2B companies automate sales outreach" />
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1.5">Industry</label>
-              <select value={config.industry} onChange={e => update('industry', e.target.value)} className="w-full px-3 py-2.5 bg-black/50 border border-white/10 rounded-lg text-white">
+              <label className={`block text-sm font-medium ${gt('text-slate-600', 'text-gray-300')} mb-1.5`}>Industry</label>
+              <select value={config.industry} onChange={e => update('industry', e.target.value)} className={`w-full px-3 py-2.5 ${gt('bg-white border border-slate-200 text-slate-900', 'bg-black/50 border border-white/10 text-white')}`  + ' rounded-lg'}>
                 <option value="">Select...</option>
                 {INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1.5">Value Proposition</label>
-              <textarea value={config.valueProposition} onChange={e => update('valueProposition', e.target.value)} placeholder="We reduce prospecting time by 80%..." rows={2} className="w-full px-3 py-2.5 bg-black/50 border border-white/10 rounded-lg text-white placeholder-gray-500 resize-none" />
+              <label className={`block text-sm font-medium ${gt('text-slate-600', 'text-gray-300')} mb-1.5`}>Value Proposition</label>
+              <textarea value={config.valueProposition} onChange={e => update('valueProposition', e.target.value)} placeholder="We reduce prospecting time by 80%..." rows={2} className={`w-full px-3 py-2.5 ${gt('bg-white border border-slate-200 text-slate-900 placeholder-slate-400', 'bg-black/50 border border-white/10 text-white placeholder-gray-500')} rounded-lg resize-none`} />
             </div>
           </div>
         )}
@@ -637,28 +640,28 @@ ${credits.breakdown.map(b => `| ${b.item} | ${b.cost} | ${Math.round(b.cost * co
           <div className="space-y-4">
             <h2 className="text-xl font-bold">Target Audience (ICP)</h2>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Industries</label>
+              <label className={`block text-sm font-medium ${gt('text-slate-600', 'text-gray-300')} mb-2`}>Industries</label>
               <div className="flex flex-wrap gap-1.5">{INDUSTRIES.map(i => <Chip key={i} selected={config.targetIndustries.includes(i)} onClick={() => toggle('targetIndustries', i)}>{i}</Chip>)}</div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Company Size</label>
+              <label className={`block text-sm font-medium ${gt('text-slate-600', 'text-gray-300')} mb-2`}>Company Size</label>
               <div className="flex flex-wrap gap-1.5">{COMPANY_SIZES.map(s => <Chip key={s} selected={config.targetCompanySizes.includes(s)} onClick={() => toggle('targetCompanySizes', s)}>{s}</Chip>)}</div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Seniority</label>
+              <label className={`block text-sm font-medium ${gt('text-slate-600', 'text-gray-300')} mb-2`}>Seniority</label>
               <div className="flex flex-wrap gap-1.5">{SENIORITY_LEVELS.map(l => <Chip key={l.id} selected={config.targetSeniority.includes(l.id)} onClick={() => toggle('targetSeniority', l.id)}>{l.label}</Chip>)}</div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Functions</label>
+              <label className={`block text-sm font-medium ${gt('text-slate-600', 'text-gray-300')} mb-2`}>Functions</label>
               <div className="flex flex-wrap gap-1.5">{JOB_FUNCTIONS.map(f => <Chip key={f} selected={config.targetFunctions.includes(f)} onClick={() => toggle('targetFunctions', f)}>{f}</Chip>)}</div>
             </div>
             <FormInput label="Specific Titles" value={config.targetTitles} onChange={e => update('targetTitles', e.target.value)} placeholder="CEO, CTO, VP Sales..." />
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Regions</label>
+              <label className={`block text-sm font-medium ${gt('text-slate-600', 'text-gray-300')} mb-2`}>Regions</label>
               <div className="flex flex-wrap gap-1.5">{REGIONS.map(r => <Chip key={r.id} selected={config.targetRegions.includes(r.id)} onClick={() => toggle('targetRegions', r.id)}>{r.label}</Chip>)}</div>
             </div>
             
-            <div className="mt-4 pt-4 border-t border-white/10">
+            <div className={`mt-4 pt-4 border-t ${gt('border-slate-200', 'border-white/10')}`}>
               <button
                 onClick={() => getAiSuggestion('improveICP')}
                 disabled={aiLoading}
@@ -670,7 +673,7 @@ ${credits.breakdown.map(b => `| ${b.item} | ${b.cost} | ${Math.round(b.cost * co
               {aiSuggestion?.type === 'improveICP' && (
                 <div className="mt-3 p-4 bg-indigo-500/10 border border-indigo-500/30 rounded-lg">
                   <div className="text-xs text-indigo-400 mb-2">AI Suggestion</div>
-                  <div className="text-sm text-gray-300 whitespace-pre-wrap">{aiSuggestion.suggestion}</div>
+                  <div className={`text-sm ${gt('text-slate-600', 'text-gray-300')} whitespace-pre-wrap`}>{aiSuggestion.suggestion}</div>
                 </div>
               )}
             </div>
@@ -681,7 +684,7 @@ ${credits.breakdown.map(b => `| ${b.item} | ${b.cost} | ${Math.round(b.cost * co
           <div className="space-y-4">
             <h2 className="text-xl font-bold">Data & Enrichment</h2>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Source</label>
+              <label className={`block text-sm font-medium ${gt('text-slate-600', 'text-gray-300')} mb-2`}>Source</label>
               <div className="grid grid-cols-3 gap-2">
                 {[{ id: 'find-people', name: 'Find People' }, { id: 'csv', name: 'Import CSV' }, { id: 'crm', name: 'Import CRM' }].map(s => (
                   <OptionCard key={s.id} selected={config.dataSource === s.id} onClick={() => update('dataSource', s.id)}>
@@ -692,7 +695,7 @@ ${credits.breakdown.map(b => `| ${b.item} | ${b.cost} | ${Math.round(b.cost * co
             </div>
             <FormInput label="List Size" type="number" value={config.listSize} onChange={e => update('listSize', parseInt(e.target.value) || 100)} />
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Data to Collect</label>
+              <label className={`block text-sm font-medium ${gt('text-slate-600', 'text-gray-300')} mb-2`}>Data to Collect</label>
               <div className="space-y-1.5">
                 {[
                   { k: 'needEmail', n: 'Email', c: '~2.5/row' },
@@ -700,18 +703,18 @@ ${credits.breakdown.map(b => `| ${b.item} | ${b.cost} | ${Math.round(b.cost * co
                   { k: 'needPhone', n: 'Phone', c: '13/row' },
                   { k: 'needCompanyData', n: 'Company Data', c: '13/row' },
                 ].map(d => (
-                  <label key={d.k} className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer ${config[d.k] ? 'border-indigo-500/50 bg-indigo-500/10' : 'border-white/10 bg-white/5'}`}>
+                  <label key={d.k} className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer ${config[d.k] ? 'border-indigo-500/50 bg-indigo-500/10' : `${gt('border-slate-200 bg-slate-50', 'border-white/10 bg-white/5')}`}`}>
                     <div className="flex items-center gap-2">
                       <input type="checkbox" checked={config[d.k]} onChange={e => update(d.k, e.target.checked)} className="w-4 h-4 rounded" />
                       <span className="text-sm">{d.n}</span>
                     </div>
-                    <span className="text-xs text-gray-500">{d.c}</span>
+                    <span className={`text-xs ${gt('text-slate-400', 'text-gray-500')}`}>{d.c}</span>
                   </label>
                 ))}
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Budget</label>
+              <label className={`block text-sm font-medium ${gt('text-slate-600', 'text-gray-300')} mb-2`}>Budget</label>
               <div className="grid grid-cols-3 gap-2">
                 {['minimal', 'balanced', 'premium'].map(b => (
                   <OptionCard key={b} selected={config.budgetLevel === b} onClick={() => update('budgetLevel', b)}>
@@ -720,12 +723,12 @@ ${credits.breakdown.map(b => `| ${b.item} | ${b.cost} | ${Math.round(b.cost * co
                 ))}
               </div>
             </div>
-            <label className="flex items-center gap-3 p-3 rounded-lg border border-white/10 bg-white/5 cursor-pointer">
+            <label className={`flex items-center gap-3 p-3 rounded-lg border ${gt('border-slate-200 bg-slate-50', 'border-white/10 bg-white/5')} cursor-pointer`}>
               <input type="checkbox" checked={config.gdprMode} onChange={e => update('gdprMode', e.target.checked)} className="w-4 h-4" />
               <span className="text-sm">GDPR Mode (EU)</span>
             </label>
             
-            <div className="mt-4 pt-4 border-t border-white/10">
+            <div className={`mt-4 pt-4 border-t ${gt('border-slate-200', 'border-white/10')}`}>
               <button
                 onClick={() => getAiSuggestion('optimizeCredits')}
                 disabled={aiLoading}
@@ -737,7 +740,7 @@ ${credits.breakdown.map(b => `| ${b.item} | ${b.cost} | ${Math.round(b.cost * co
               {aiSuggestion?.type === 'optimizeCredits' && (
                 <div className="mt-3 p-4 bg-indigo-500/10 border border-indigo-500/30 rounded-lg">
                   <div className="text-xs text-indigo-400 mb-2">AI Suggestion</div>
-                  <div className="text-sm text-gray-300 whitespace-pre-wrap">{aiSuggestion.suggestion}</div>
+                  <div className={`text-sm ${gt('text-slate-600', 'text-gray-300')} whitespace-pre-wrap`}>{aiSuggestion.suggestion}</div>
                 </div>
               )}
             </div>
@@ -747,17 +750,17 @@ ${credits.breakdown.map(b => `| ${b.item} | ${b.cost} | ${Math.round(b.cost * co
         {step === 4 && (
           <div className="space-y-4">
             <h2 className="text-xl font-bold">AI Personalization</h2>
-            <label className="flex items-center gap-3 p-3 rounded-lg border border-white/10 bg-white/5 cursor-pointer">
+            <label className={`flex items-center gap-3 p-3 rounded-lg border ${gt('border-slate-200 bg-slate-50', 'border-white/10 bg-white/5')} cursor-pointer`}>
               <input type="checkbox" checked={config.useAI} onChange={e => update('useAI', e.target.checked)} className="w-5 h-5" />
               <div>
                 <div className="font-medium">Enable AI</div>
-                <div className="text-sm text-gray-400">Generate custom content</div>
+                <div className={`text-sm ${gt('text-slate-500', 'text-gray-400')}`}>Generate custom content</div>
               </div>
             </label>
             {config.useAI && (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Depth</label>
+                  <label className={`block text-sm font-medium ${gt('text-slate-600', 'text-gray-300')} mb-2`}>Depth</label>
                   {[
                     { id: 'basic', n: 'Basic', d: 'Opening line', c: '~1 cr' },
                     { id: 'standard', n: 'Standard', d: 'Research + line', c: '~4 cr' },
@@ -767,7 +770,7 @@ ${credits.breakdown.map(b => `| ${b.item} | ${b.cost} | ${Math.round(b.cost * co
                       <div className="flex justify-between">
                         <div>
                           <div className="font-medium text-sm">{l.n}</div>
-                          <div className="text-xs text-gray-400">{l.d}</div>
+                          <div className={`text-xs ${gt('text-slate-500', 'text-gray-400')}`}>{l.d}</div>
                         </div>
                         <span className="text-xs text-indigo-400">{l.c}</span>
                       </div>
@@ -775,7 +778,7 @@ ${credits.breakdown.map(b => `| ${b.item} | ${b.cost} | ${Math.round(b.cost * co
                   ))}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Tone</label>
+                  <label className={`block text-sm font-medium ${gt('text-slate-600', 'text-gray-300')} mb-2`}>Tone</label>
                   <div className="grid grid-cols-3 gap-2">
                     {['professional', 'casual', 'formal'].map(t => (
                       <OptionCard key={t} selected={config.toneOfVoice === t} onClick={() => update('toneOfVoice', t)}>
@@ -786,7 +789,7 @@ ${credits.breakdown.map(b => `| ${b.item} | ${b.cost} | ${Math.round(b.cost * co
                 </div>
                 <FormInput label="Desired Action" value={config.messageGoal} onChange={e => update('messageGoal', e.target.value)} placeholder="Book demo, reply..." />
                 
-                <div className="mt-4 pt-4 border-t border-white/10">
+                <div className={`mt-4 pt-4 border-t ${gt('border-slate-200', 'border-white/10')}`}>
                   <button
                     onClick={() => getAiSuggestion('improvePrompt')}
                     disabled={aiLoading}
@@ -807,7 +810,7 @@ ${credits.breakdown.map(b => `| ${b.item} | ${b.cost} | ${Math.round(b.cost * co
                           {suggestionCopied ? 'Copied!' : 'Copy'}
                         </button>
                       </div>
-                      <pre className="text-sm text-gray-300 whitespace-pre-wrap font-mono bg-black/50 p-3 rounded">{aiSuggestion.suggestion}</pre>
+                      <pre className={`text-sm ${gt('text-slate-600 bg-slate-100', 'text-gray-300 bg-black/50')} whitespace-pre-wrap font-mono p-3 rounded`}>{aiSuggestion.suggestion}</pre>
                     </div>
                   )}
                 </div>
@@ -824,17 +827,17 @@ ${credits.breakdown.map(b => `| ${b.item} | ${b.cost} | ${Math.round(b.cost * co
                 <input type="checkbox" checked={config.sandboxMode} onChange={e => update('sandboxMode', e.target.checked)} className="w-5 h-5 mt-0.5" />
                 <div>
                   <div className="font-semibold text-indigo-400 flex items-center gap-2"><Shield className="w-4 h-4" /> Sandbox Mode <span className="text-xs bg-indigo-500/20 px-1.5 py-0.5 rounded">RECOMMENDED</span></div>
-                  <div className="text-sm text-gray-300 mt-1">Build without spending credits</div>
+                  <div className={`text-sm ${gt('text-slate-600', 'text-gray-300')} mt-1`}>Build without spending credits</div>
                 </div>
               </label>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Export To</label>
+              <label className={`block text-sm font-medium ${gt('text-slate-600', 'text-gray-300')} mb-2`}>Export To</label>
               <div className="grid grid-cols-3 gap-2">
                 {EXPORT_DESTINATIONS.map(d => (
                   <OptionCard key={d.id} selected={config.exportDestination === d.id} onClick={() => update('exportDestination', d.id)}>
                     <div className="font-medium text-sm">{d.name}</div>
-                    <div className="text-xs text-gray-400">{d.desc}</div>
+                    <div className={`text-xs ${gt('text-slate-500', 'text-gray-400')}`}>{d.desc}</div>
                   </OptionCard>
                 ))}
               </div>
@@ -848,20 +851,20 @@ ${credits.breakdown.map(b => `| ${b.item} | ${b.cost} | ${Math.round(b.cost * co
             
             {/* Summary Cards */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 bg-white/5 border border-white/10 rounded-lg">
-                <div className="text-xs text-gray-400">Company</div>
+              <div className={`p-3 ${gt('bg-slate-50 border border-slate-200', 'bg-white/5 border border-white/10')} rounded-lg`}>
+                <div className={`text-xs ${gt('text-slate-500', 'text-gray-400')}`}>Company</div>
                 <div className="font-medium">{config.companyName || 'Not set'}</div>
               </div>
-              <div className="p-3 bg-white/5 border border-white/10 rounded-lg">
-                <div className="text-xs text-gray-400">Goal</div>
+              <div className={`p-3 ${gt('bg-slate-50 border border-slate-200', 'bg-white/5 border border-white/10')} rounded-lg`}>
+                <div className={`text-xs ${gt('text-slate-500', 'text-gray-400')}`}>Goal</div>
                 <div className="font-medium capitalize">{config.campaignGoal || 'Not set'}</div>
               </div>
-              <div className="p-3 bg-white/5 border border-white/10 rounded-lg">
-                <div className="text-xs text-gray-400">List Size</div>
+              <div className={`p-3 ${gt('bg-slate-50 border border-slate-200', 'bg-white/5 border border-white/10')} rounded-lg`}>
+                <div className={`text-xs ${gt('text-slate-500', 'text-gray-400')}`}>List Size</div>
                 <div className="font-medium">{config.listSize.toLocaleString()}</div>
               </div>
-              <div className="p-3 bg-white/5 border border-white/10 rounded-lg">
-                <div className="text-xs text-gray-400">Sandbox</div>
+              <div className={`p-3 ${gt('bg-slate-50 border border-slate-200', 'bg-white/5 border border-white/10')} rounded-lg`}>
+                <div className={`text-xs ${gt('text-slate-500', 'text-gray-400')}`}>Sandbox</div>
                 <div className="font-medium flex items-center gap-1">{config.sandboxMode ? <><Shield className="w-4 h-4 text-indigo-400" /> On</> : 'Off'}</div>
               </div>
             </div>
@@ -881,11 +884,11 @@ ${credits.breakdown.map(b => `| ${b.item} | ${b.cost} | ${Math.round(b.cost * co
             </div>
 
             {/* Phase-Based Execution Section */}
-            <div className="p-4 bg-white/5 border border-white/10 rounded-xl">
+            <div className={`p-4 ${gt('bg-slate-50 border border-slate-200', 'bg-white/5 border border-white/10')} rounded-xl`}>
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="font-semibold text-white">Phase-Based Execution</h3>
-                  <p className="text-xs text-gray-400">~10-15 min total (vs 50 min single prompt)</p>
+                  <h3 className={`font-semibold ${gt('text-slate-900', 'text-white')}`}>Phase-Based Execution</h3>
+                  <p className={`text-xs ${gt('text-slate-500', 'text-gray-400')}`}>~10-15 min total (vs 50 min single prompt)</p>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
                   <span className="px-2 py-1 bg-indigo-500/20 text-indigo-400 rounded flex items-center gap-1"><Zap className="w-3 h-3" /> 3x Faster</span>
@@ -916,14 +919,14 @@ ${credits.breakdown.map(b => `| ${b.item} | ${b.cost} | ${Math.round(b.cost * co
                       className={`flex items-center justify-between p-3 rounded-lg border transition-all ${
                         result?.status === 'complete' ? 'border-green-500/50 bg-green-500/10' :
                         result?.status === 'running' ? 'border-indigo-500/50 bg-indigo-500/10 animate-pulse' :
-                        'border-white/10 bg-white/5'
+                        `${gt('border-slate-200 bg-slate-50', 'border-white/10 bg-white/5')}`
                       }`}
                     >
                       <div className="flex items-center gap-3">
                         {phase?.icon && <phase.icon className="w-5 h-5 text-indigo-400" />}
                         <div>
                           <div className="font-medium text-sm">{phase?.name}</div>
-                          <div className="text-xs text-gray-500">{phase?.estimatedTime}</div>
+                          <div className={`text-xs ${gt('text-slate-400', 'text-gray-500')}`}>{phase?.estimatedTime}</div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -932,7 +935,7 @@ ${credits.breakdown.map(b => `| ${b.item} | ${b.cost} | ${Math.round(b.cost * co
                         {result?.prompt && (
                           <button 
                             onClick={() => copyPhasePrompt(result.prompt)}
-                            className="p-1.5 hover:bg-white/10 rounded text-gray-400 hover:text-white"
+                            className={`p-1.5 ${gt('hover:bg-slate-100', 'hover:bg-white/10')} rounded ${gt('text-slate-500 hover:text-slate-900', 'text-gray-400 hover:text-white')}`}
                             title="Copy phase prompt"
                           >
                             <Copy className="w-3.5 h-3.5" />
@@ -965,7 +968,7 @@ ${credits.breakdown.map(b => `| ${b.item} | ${b.cost} | ${Math.round(b.cost * co
                     </button>
                     <button 
                       onClick={() => { setIsExecuting(false); setPhaseResults([]); setCurrentPhase(0); }}
-                      className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-lg border border-white/10"
+                      className={`px-4 py-2.5 ${gt('bg-slate-100 hover:bg-slate-200 text-slate-900 border border-slate-200', 'bg-white/10 hover:bg-white/20 text-white border border-white/10')} rounded-lg`}
                     >
                       <RotateCcw className="w-4 h-4" />
                     </button>
@@ -983,9 +986,9 @@ ${credits.breakdown.map(b => `| ${b.item} | ${b.cost} | ${Math.round(b.cost * co
             {/* Individual Phase Prompts (Expandable) */}
             {phaseResults.length > 0 && (
               <div className="space-y-2">
-                <h4 className="text-sm font-medium text-gray-300">Generated Prompts (copy & paste into Claude)</h4>
+                <h4 className={`text-sm font-medium ${gt('text-slate-600', 'text-gray-300')}`}>Generated Prompts (copy & paste into Claude)</h4>
                 {phaseResults.map((result, idx) => (
-                  <details key={idx} className="bg-white/5 rounded-lg border border-white/10">
+                  <details key={idx} className={`${gt('bg-slate-50 border border-slate-200', 'bg-white/5 border border-white/10')} rounded-lg`}>
                     <summary className="p-3 cursor-pointer flex items-center justify-between">
                       <span className="font-medium text-sm">Phase {result.phase}: {result.name}</span>
                       <button 
@@ -995,7 +998,7 @@ ${credits.breakdown.map(b => `| ${b.item} | ${b.cost} | ${Math.round(b.cost * co
                         Copy
                       </button>
                     </summary>
-                    <pre className="p-3 text-xs text-gray-400 whitespace-pre-wrap font-mono border-t border-white/10 max-h-48 overflow-auto">
+                    <pre className={`p-3 text-xs ${gt('text-slate-500 border-t border-slate-200', 'text-gray-400 border-t border-white/10')} whitespace-pre-wrap font-mono max-h-48 overflow-auto`}>
                       {result.prompt}
                     </pre>
                   </details>
@@ -1004,12 +1007,12 @@ ${credits.breakdown.map(b => `| ${b.item} | ${b.cost} | ${Math.round(b.cost * co
             )}
 
             {/* Legacy: Full Prompt Option */}
-            <details className="bg-white/5 rounded-lg border border-white/10">
-              <summary className="p-3 cursor-pointer text-sm text-gray-400">
+            <details className={`${gt('bg-slate-50 border border-slate-200', 'bg-white/5 border border-white/10')} rounded-lg`}>
+              <summary className={`p-3 cursor-pointer text-sm ${gt('text-slate-500', 'text-gray-400')}`}>
                 Generate legacy single prompt (slower execution)
               </summary>
-              <div className="p-3 border-t border-white/10">
-                <button onClick={generate} className="w-full py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-sm border border-white/10">
+              <div className={`p-3 border-t ${gt('border-slate-200', 'border-white/10')}`}>
+                <button onClick={generate} className={`w-full py-2 ${gt('bg-slate-100 hover:bg-slate-200 text-slate-900 border border-slate-200', 'bg-white/10 hover:bg-white/20 text-white border border-white/10')} rounded-lg text-sm`}>
                   Generate Full Prompt
                 </button>
                 {prompt && (
@@ -1020,7 +1023,7 @@ ${credits.breakdown.map(b => `| ${b.item} | ${b.cost} | ${Math.round(b.cost * co
                         {copied ? <><Check className="w-3 h-3" /> Copied</> : 'Copy'}
                       </button>
                     </div>
-                    <pre className="text-xs text-gray-400 overflow-auto max-h-60 whitespace-pre-wrap font-mono bg-black/50 p-3 rounded">{prompt}</pre>
+                    <pre className={`text-xs ${gt('text-slate-500 bg-slate-100', 'text-gray-400 bg-black/50')} overflow-auto max-h-60 whitespace-pre-wrap font-mono p-3 rounded`}>{prompt}</pre>
                   </div>
                 )}
               </div>
@@ -1030,7 +1033,7 @@ ${credits.breakdown.map(b => `| ${b.item} | ${b.cost} | ${Math.round(b.cost * co
       </div>
 
       <div className="flex justify-between">
-        <button onClick={() => setStep(Math.max(0, step - 1))} disabled={step === 0} className={`px-5 py-2.5 rounded-lg font-medium ${step === 0 ? 'text-gray-600' : 'text-gray-300 hover:bg-white/10'}`}>
+        <button onClick={() => setStep(Math.max(0, step - 1))} disabled={step === 0} className={`px-5 py-2.5 rounded-lg font-medium ${step === 0 ? gt('text-slate-300', 'text-gray-600') : `${gt('text-slate-600 hover:bg-slate-100', 'text-gray-300 hover:bg-white/10')}`}`}>
           ← Back
         </button>
         {step < steps.length - 1 && (

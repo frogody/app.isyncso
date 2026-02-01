@@ -18,6 +18,9 @@ import { cn } from "@/lib/utils";
 import { useLocalStorage } from "@/components/hooks/useLocalStorage";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { useGrowthTheme } from '@/contexts/GrowthThemeContext';
+import { GrowthPageTransition } from '@/components/growth/ui';
+import { Sun, Moon } from 'lucide-react';
 
 // Integration icons mapping
 const INTEGRATION_ICONS = {
@@ -40,6 +43,7 @@ const INTEGRATION_COLORS = {
 
 // RAG Insight component
 function RAGInsight({ insight }) {
+  const { gt } = useGrowthTheme();
   const IconComponent = INTEGRATION_ICONS[insight.sourceType] || Database;
   const colorClass = INTEGRATION_COLORS[insight.sourceType] || "text-indigo-400 bg-indigo-500/10 border-indigo-500/20";
 
@@ -48,8 +52,8 @@ function RAGInsight({ insight }) {
       initial={{ opacity: 0, y: 5 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "p-3 rounded-xl border bg-zinc-800/50 hover:bg-zinc-800/70 transition-colors cursor-pointer",
-        "border-zinc-700/50"
+        `p-3 rounded-xl border ${gt('bg-slate-100 hover:bg-slate-200', 'bg-zinc-800/50 hover:bg-zinc-800/70')} transition-colors cursor-pointer`,
+        gt('border-slate-200', 'border-zinc-700/50')
       )}
     >
       <div className="flex items-start gap-3">
@@ -57,12 +61,12 @@ function RAGInsight({ insight }) {
           <IconComponent className="w-4 h-4" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-zinc-200 line-clamp-2">{insight.content}</p>
+          <p className={`text-sm ${gt('text-slate-700', 'text-zinc-200')} line-clamp-2`}>{insight.content}</p>
           <div className="flex items-center gap-2 mt-2">
-            <Badge variant="outline" className="text-[10px] border-zinc-600 text-zinc-400">
+            <Badge variant="outline" className={`text-[10px] ${gt('border-slate-300 text-slate-500', 'border-zinc-600 text-zinc-400')}`}>
               {insight.sourceType}
             </Badge>
-            <span className="text-[10px] text-zinc-500">
+            <span className={`text-[10px] ${gt('text-slate-400', 'text-zinc-500')}`}>
               {Math.round(insight.similarity * 100)}% match
             </span>
           </div>
@@ -74,19 +78,20 @@ function RAGInsight({ insight }) {
 
 // Integration Status Card
 function IntegrationStatus({ integration, connected, lastSync, onConnect, onSync }) {
+  const { gt } = useGrowthTheme();
   const IconComponent = INTEGRATION_ICONS[integration] || Database;
   const colorClass = INTEGRATION_COLORS[integration] || "text-indigo-400 bg-indigo-500/10 border-indigo-500/20";
 
   return (
-    <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-800/30 border border-zinc-700/50">
+    <div className={`flex items-center justify-between p-3 rounded-xl ${gt('bg-slate-50 border border-slate-200', 'bg-zinc-800/30 border border-zinc-700/50')}`}>
       <div className="flex items-center gap-3">
         <div className={cn("p-2 rounded-lg border", colorClass)}>
           <IconComponent className="w-4 h-4" />
         </div>
         <div>
-          <p className="text-sm font-medium text-white capitalize">{integration}</p>
+          <p className={`text-sm font-medium ${gt('text-slate-900', 'text-white')} capitalize`}>{integration}</p>
           {connected && lastSync && (
-            <p className="text-[10px] text-zinc-500">
+            <p className={`text-[10px] ${gt('text-slate-400', 'text-zinc-500')}`}>
               Synced {new Date(lastSync).toLocaleString()}
             </p>
           )}
@@ -100,7 +105,7 @@ function IntegrationStatus({ integration, connected, lastSync, onConnect, onSync
               size="sm"
               variant="ghost"
               onClick={() => onSync(integration)}
-              className="h-7 px-2 text-zinc-400 hover:text-white"
+              className={`h-7 px-2 ${gt('text-slate-500 hover:text-slate-900', 'text-zinc-400 hover:text-white')}`}
             >
               <RefreshCw className="w-3 h-3 mr-1" />
               Sync
@@ -123,6 +128,7 @@ function IntegrationStatus({ integration, connected, lastSync, onConnect, onSync
 
 // Chat Message component
 function ChatMessage({ message, isLast }) {
+  const { gt } = useGrowthTheme();
   const isUser = message.role === "user";
 
   return (
@@ -143,7 +149,7 @@ function ChatMessage({ message, isLast }) {
             "rounded-2xl px-4 py-3 text-sm",
             isUser
               ? "bg-indigo-600 text-white"
-              : "bg-zinc-800/80 text-zinc-200 border border-white/5"
+              : gt('bg-slate-100 text-slate-700 border border-slate-200', 'bg-zinc-800/80 text-zinc-200 border border-white/5')
           )}
         >
           {isUser ? (
@@ -158,20 +164,20 @@ function ChatMessage({ message, isLast }) {
         </div>
         {message.ragContext && message.ragContext.length > 0 && (
           <div className="mt-2 px-2">
-            <p className="text-[10px] text-zinc-500 mb-1.5 flex items-center gap-1">
+            <p className={`text-[10px] ${gt('text-slate-400', 'text-zinc-500')} mb-1.5 flex items-center gap-1`}>
               <Brain className="w-3 h-3" />
               RAG Context ({message.ragContext.length} sources)
             </p>
             <div className="space-y-1">
               {message.ragContext.slice(0, 3).map((ctx, i) => (
-                <div key={i} className="text-[10px] text-zinc-400 bg-zinc-800/50 px-2 py-1 rounded-lg">
+                <div key={i} className={`text-[10px] ${gt('text-slate-500 bg-slate-100', 'text-zinc-400 bg-zinc-800/50')} px-2 py-1 rounded-lg`}>
                   {ctx.sourceType}: {ctx.content?.substring(0, 100)}...
                 </div>
               ))}
             </div>
           </div>
         )}
-        <span className="text-[10px] text-zinc-600 px-2">
+        <span className={`text-[10px] ${gt('text-slate-400', 'text-zinc-600')} px-2`}>
           {new Date(message.timestamp).toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
@@ -180,8 +186,8 @@ function ChatMessage({ message, isLast }) {
       </div>
 
       {isUser && (
-        <div className="w-8 h-8 rounded-lg bg-zinc-700 flex items-center justify-center shrink-0">
-          <User className="w-4 h-4 text-zinc-300" />
+        <div className={`w-8 h-8 rounded-lg ${gt('bg-slate-200', 'bg-zinc-700')} flex items-center justify-center shrink-0`}>
+          <User className={`w-4 h-4 ${gt('text-slate-600', 'text-zinc-300')}`} />
         </div>
       )}
     </motion.div>
@@ -190,6 +196,7 @@ function ChatMessage({ message, isLast }) {
 
 // Typing indicator
 function TypingIndicator() {
+  const { gt } = useGrowthTheme();
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -199,7 +206,7 @@ function TypingIndicator() {
       <div className="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
         <TrendingUp className="w-4 h-4 text-indigo-400" />
       </div>
-      <div className="bg-zinc-800/80 rounded-2xl px-4 py-3 border border-white/5">
+      <div className={`${gt('bg-slate-100 border border-slate-200', 'bg-zinc-800/80 border border-white/5')} rounded-2xl px-4 py-3`}>
         <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-full bg-indigo-500 animate-bounce" style={{ animationDelay: "0ms" }} />
           <div className="w-2 h-2 rounded-full bg-indigo-500 animate-bounce" style={{ animationDelay: "150ms" }} />
@@ -212,6 +219,7 @@ function TypingIndicator() {
 
 export default function GrowthAssistant() {
   const { user, isLoading: userLoading } = useUser();
+  const { theme, toggleTheme, gt } = useGrowthTheme();
   const composio = useComposio();
 
   // Chat state
@@ -474,12 +482,12 @@ export default function GrowthAssistant() {
 
   if (userLoading) {
     return (
-      <div className="min-h-screen bg-black p-4">
+      <div className={`min-h-screen ${gt('bg-slate-50', 'bg-black')} p-4`}>
         <div className="max-w-7xl mx-auto space-y-4">
-          <Skeleton className="h-16 w-full bg-zinc-800 rounded-xl" />
+          <Skeleton className={`h-16 w-full ${gt('bg-slate-200', 'bg-zinc-800')} rounded-xl`} />
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-            <Skeleton className="lg:col-span-3 h-[500px] bg-zinc-800 rounded-xl" />
-            <Skeleton className="h-[500px] bg-zinc-800 rounded-xl" />
+            <Skeleton className={`lg:col-span-3 h-[500px] ${gt('bg-slate-200', 'bg-zinc-800')} rounded-xl`} />
+            <Skeleton className={`h-[500px] ${gt('bg-slate-200', 'bg-zinc-800')} rounded-xl`} />
           </div>
         </div>
       </div>
@@ -487,7 +495,8 @@ export default function GrowthAssistant() {
   }
 
   return (
-    <div className="min-h-screen bg-black relative">
+    <GrowthPageTransition>
+    <div className={`min-h-screen ${gt('bg-slate-50', 'bg-black')} relative`}>
       {/* Animated background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-20 left-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl animate-pulse" />
@@ -502,8 +511,11 @@ export default function GrowthAssistant() {
           color="indigo"
           actions={
             <div className="flex gap-2">
+              <Button variant="ghost" size="icon" onClick={toggleTheme} className={gt('text-slate-500 hover:bg-slate-100', 'text-zinc-400 hover:bg-zinc-800')}>
+                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </Button>
               <Link to={createPageUrl("Integrations")}>
-                <Button variant="outline" className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
+                <Button variant="outline" className={`${gt('border-slate-200 bg-white text-slate-600 hover:bg-slate-100', 'border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700')}`}>
                   <Link2 className="w-4 h-4 mr-2" />
                   Integrations
                 </Button>
@@ -515,16 +527,16 @@ export default function GrowthAssistant() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
           {/* Main Chat Area */}
           <div className="lg:col-span-3">
-            <div className="h-[calc(100vh-180px)] min-h-[450px] flex flex-col rounded-xl bg-zinc-900/50 border border-zinc-800/60 overflow-hidden">
+            <div className={`h-[calc(100vh-180px)] min-h-[450px] flex flex-col rounded-xl ${gt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border border-zinc-800/60')} overflow-hidden`}>
               {/* Chat Header */}
-              <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-800/60">
+              <div className={`flex items-center justify-between px-3 py-2 border-b ${gt('border-slate-200', 'border-zinc-800/60')}`}>
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
                     <Brain className="w-4 h-4 text-indigo-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-white text-xs">Growth AI</h3>
-                    <p className="text-[10px] text-zinc-500 flex items-center gap-1">
+                    <h3 className={`font-semibold ${gt('text-slate-900', 'text-white')} text-xs`}>Growth AI</h3>
+                    <p className={`text-[10px] ${gt('text-slate-400', 'text-zinc-500')} flex items-center gap-1`}>
                       <Sparkles className="w-3 h-3" />
                       RAG-powered with integration context
                     </p>
@@ -534,7 +546,7 @@ export default function GrowthAssistant() {
                   size="sm"
                   variant="ghost"
                   onClick={handleNewChat}
-                  className="text-zinc-400 hover:text-white gap-1.5"
+                  className={`${gt('text-slate-500 hover:text-slate-900', 'text-zinc-400 hover:text-white')} gap-1.5`}
                 >
                   <Plus className="w-4 h-4" />
                   New Chat
@@ -548,8 +560,8 @@ export default function GrowthAssistant() {
                     <div className="w-12 h-12 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center mb-3">
                       <TrendingUp className="w-6 h-6 text-indigo-400" />
                     </div>
-                    <h4 className="text-base font-medium text-white mb-2">Growth Research Assistant</h4>
-                    <p className="text-xs text-zinc-500 mb-4 max-w-md">
+                    <h4 className={`text-base font-medium ${gt('text-slate-900', 'text-white')} mb-2`}>Growth Research Assistant</h4>
+                    <p className={`text-xs ${gt('text-slate-400', 'text-zinc-500')} mb-4 max-w-md`}>
                       I can help research companies, find prospects, and analyze your pipeline using data from all your connected integrations.
                     </p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-w-lg">
@@ -557,7 +569,7 @@ export default function GrowthAssistant() {
                         <button
                           key={i}
                           onClick={() => handleSend(action.prompt)}
-                          className="flex items-center gap-2 px-2 py-1.5 rounded-xl bg-zinc-800/50 border border-zinc-700/50 text-zinc-300 text-[10px] hover:bg-zinc-800 hover:border-indigo-500/30 transition-all"
+                          className={`flex items-center gap-2 px-2 py-1.5 rounded-xl ${gt('bg-slate-100 border border-slate-200 text-slate-600 hover:bg-slate-200', 'bg-zinc-800/50 border border-zinc-700/50 text-zinc-300 hover:bg-zinc-800')} text-[10px] hover:border-indigo-500/30 transition-all`}
                         >
                           <action.icon className="w-3 h-3 text-indigo-400/70" />
                           {action.label}
@@ -593,7 +605,7 @@ export default function GrowthAssistant() {
               </div>
 
               {/* Input Area */}
-              <div className="p-3 border-t border-zinc-800/60">
+              <div className={`p-3 border-t ${gt('border-slate-200', 'border-zinc-800/60')}`}>
                 <div className="flex items-end gap-2">
                   <input
                     ref={inputRef}
@@ -604,7 +616,7 @@ export default function GrowthAssistant() {
                     placeholder="Ask about companies, prospects, or search your integrations..."
                     disabled={isLoading}
                     className={cn(
-                      "flex-1 px-4 py-3 rounded-xl bg-zinc-800/50 border border-zinc-700/50 text-white placeholder-zinc-500",
+                      `flex-1 px-4 py-3 rounded-xl ${gt('bg-slate-100 border border-slate-200 text-slate-900 placeholder-slate-400', 'bg-zinc-800/50 border border-zinc-700/50 text-white placeholder-zinc-500')}`,
                       "focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20 transition-all",
                       isLoading && "opacity-50 cursor-not-allowed"
                     )}
@@ -616,7 +628,7 @@ export default function GrowthAssistant() {
                       "h-12 w-12 rounded-xl transition-all",
                       input.trim()
                         ? "bg-indigo-600 hover:bg-indigo-500 text-white"
-                        : "bg-zinc-800 text-zinc-500"
+                        : gt('bg-slate-200 text-slate-400', 'bg-zinc-800 text-zinc-500')
                     )}
                   >
                     {isLoading ? (
@@ -633,9 +645,9 @@ export default function GrowthAssistant() {
           {/* Sidebar - Integrations & Insights */}
           <div className="space-y-3">
             {/* Integration Status */}
-            <div className="rounded-xl bg-zinc-900/50 border border-zinc-800/60 p-3">
+            <div className={`rounded-xl ${gt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border border-zinc-800/60')} p-3`}>
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-xs font-semibold text-white flex items-center gap-2">
+                <h3 className={`text-xs font-semibold ${gt('text-slate-900', 'text-white')} flex items-center gap-2`}>
                   <Database className="w-3 h-3 text-indigo-400" />
                   Data Sources
                 </h3>
@@ -666,9 +678,9 @@ export default function GrowthAssistant() {
             </div>
 
             {/* RAG Insights Panel */}
-            <div className="rounded-xl bg-zinc-900/50 border border-zinc-800/60 p-3">
+            <div className={`rounded-xl ${gt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border border-zinc-800/60')} p-3`}>
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-xs font-semibold text-white flex items-center gap-2">
+                <h3 className={`text-xs font-semibold ${gt('text-slate-900', 'text-white')} flex items-center gap-2`}>
                   <Sparkles className="w-3 h-3 text-indigo-400" />
                   RAG Insights
                 </h3>
@@ -683,8 +695,8 @@ export default function GrowthAssistant() {
                 </div>
               ) : (
                 <div className="text-center py-6">
-                  <Brain className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
-                  <p className="text-xs text-zinc-500">
+                  <Brain className={`w-8 h-8 ${gt('text-slate-300', 'text-zinc-600')} mx-auto mb-2`} />
+                  <p className={`text-xs ${gt('text-slate-400', 'text-zinc-500')}`}>
                     {messages.length > 0
                       ? "No relevant context found"
                       : "Ask a question to see relevant context"}
@@ -694,28 +706,28 @@ export default function GrowthAssistant() {
             </div>
 
             {/* Quick Stats */}
-            <div className="rounded-xl bg-zinc-900/50 border border-zinc-800/60 p-3">
-              <h3 className="text-xs font-semibold text-white flex items-center gap-2 mb-2">
+            <div className={`rounded-xl ${gt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border border-zinc-800/60')} p-3`}>
+              <h3 className={`text-xs font-semibold ${gt('text-slate-900', 'text-white')} flex items-center gap-2 mb-2`}>
                 <Zap className="w-3 h-3 text-indigo-400" />
                 Quick Actions
               </h3>
               <div className="space-y-1">
                 <Link to={createPageUrl("GrowthResearch")}>
-                  <Button variant="ghost" className="w-full justify-start text-zinc-300 hover:text-white hover:bg-zinc-800 h-8 text-xs">
+                  <Button variant="ghost" className={`w-full justify-start ${gt('text-slate-600 hover:text-slate-900 hover:bg-slate-100', 'text-zinc-300 hover:text-white hover:bg-zinc-800')} h-8 text-xs`}>
                     <Search className="w-3 h-3 mr-2" />
                     Deep Research
                     <ChevronRight className="w-3 h-3 ml-auto" />
                   </Button>
                 </Link>
                 <Link to={createPageUrl("GrowthPipeline")}>
-                  <Button variant="ghost" className="w-full justify-start text-zinc-300 hover:text-white hover:bg-zinc-800 h-8 text-xs">
+                  <Button variant="ghost" className={`w-full justify-start ${gt('text-slate-600 hover:text-slate-900 hover:bg-slate-100', 'text-zinc-300 hover:text-white hover:bg-zinc-800')} h-8 text-xs`}>
                     <Target className="w-3 h-3 mr-2" />
                     View Pipeline
                     <ChevronRight className="w-3 h-3 ml-auto" />
                   </Button>
                 </Link>
                 <Link to={createPageUrl("GrowthProspects")}>
-                  <Button variant="ghost" className="w-full justify-start text-zinc-300 hover:text-white hover:bg-zinc-800 h-8 text-xs">
+                  <Button variant="ghost" className={`w-full justify-start ${gt('text-slate-600 hover:text-slate-900 hover:bg-slate-100', 'text-zinc-300 hover:text-white hover:bg-zinc-800')} h-8 text-xs`}>
                     <Users className="w-3 h-3 mr-2" />
                     Prospect Lists
                     <ChevronRight className="w-3 h-3 ml-auto" />
@@ -727,5 +739,6 @@ export default function GrowthAssistant() {
         </div>
       </div>
     </div>
+    </GrowthPageTransition>
   );
 }

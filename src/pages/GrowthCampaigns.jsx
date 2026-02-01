@@ -19,6 +19,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Progress } from "@/components/ui/progress";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { useGrowthTheme } from '@/contexts/GrowthThemeContext';
+import { GrowthPageTransition } from '@/components/growth/ui';
+import { Sun, Moon } from 'lucide-react';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
@@ -49,6 +52,7 @@ const emptyForm = {
 };
 
 function CampaignCard({ campaign, onEdit, onDelete, onStatusChange, onViewDetails }) {
+  const { gt } = useGrowthTheme();
   const typeConfig = CAMPAIGN_TYPES.find(t => t.id === campaign.campaign_type) || CAMPAIGN_TYPES[1];
   const statusConfig = STATUS_CONFIG[campaign.status] || STATUS_CONFIG.draft;
   const Icon = typeConfig.icon;
@@ -66,7 +70,7 @@ function CampaignCard({ campaign, onEdit, onDelete, onStatusChange, onViewDetail
       exit={{ opacity: 0, scale: 0.95 }}
       className="group"
       >
-      <div className="bg-zinc-900/60 backdrop-blur-sm rounded-xl border border-zinc-800/60 hover:border-zinc-700/60 transition-all overflow-hidden">
+      <div className={`${gt("bg-white border border-slate-200 shadow-sm hover:border-slate-300", "bg-zinc-900/60 backdrop-blur-sm border border-zinc-800/60 hover:border-zinc-700/60")} rounded-xl transition-all overflow-hidden`}>
         <div className={`h-0.5 bg-gradient-to-r ${typeConfig.color}`} />
 
         <div className="p-3">
@@ -78,8 +82,8 @@ function CampaignCard({ campaign, onEdit, onDelete, onStatusChange, onViewDetail
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <h3 className="text-sm font-semibold text-white">{campaign.name}</h3>
-                  <p className="text-zinc-500 text-xs">{typeConfig.label} • {campaign.sequence_steps?.length || 0} steps</p>
+                  <h3 className={`text-sm font-semibold ${gt("text-slate-900", "text-white")}`}>{campaign.name}</h3>
+                  <p className={`${gt("text-slate-400", "text-zinc-500")} text-xs`}>{typeConfig.label} • {campaign.sequence_steps?.length || 0} steps</p>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -91,18 +95,18 @@ function CampaignCard({ campaign, onEdit, onDelete, onStatusChange, onViewDetail
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100">
-                        <MoreHorizontal className="w-4 h-4 text-zinc-400" />
+                        <MoreHorizontal className={`w-4 h-4 ${gt("text-slate-500", "text-zinc-400")}`} />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
-                      <DropdownMenuItem onClick={() => onViewDetails(campaign)} className="text-zinc-300">
+                    <DropdownMenuContent align="end" className={`${gt("bg-white border-slate-200", "bg-zinc-900 border-zinc-800")}`}>
+                      <DropdownMenuItem onClick={() => onViewDetails(campaign)} className={`${gt("text-slate-600", "text-zinc-300")}`}>
                         <Eye className="w-4 h-4 mr-2" /> View Details
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onEdit(campaign)} className="text-zinc-300">
+                      <DropdownMenuItem onClick={() => onEdit(campaign)} className={`${gt("text-slate-600", "text-zinc-300")}`}>
                         <Edit className="w-4 h-4 mr-2" /> Edit
                       </DropdownMenuItem>
                       {campaign.status === 'active' ? (
-                        <DropdownMenuItem onClick={() => onStatusChange(campaign.id, 'paused')} className="text-zinc-400">
+                        <DropdownMenuItem onClick={() => onStatusChange(campaign.id, 'paused')} className={`${gt("text-slate-500", "text-zinc-400")}`}>
                           <Pause className="w-4 h-4 mr-2" /> Pause
                         </DropdownMenuItem>
                       ) : campaign.status !== 'completed' && (
@@ -110,7 +114,7 @@ function CampaignCard({ campaign, onEdit, onDelete, onStatusChange, onViewDetail
                           <Play className="w-4 h-4 mr-2" /> Start
                         </DropdownMenuItem>
                       )}
-                      <DropdownMenuSeparator className="bg-zinc-800" />
+                      <DropdownMenuSeparator className={`${gt("bg-slate-200", "bg-zinc-800")}`} />
                       <DropdownMenuItem onClick={() => onDelete(campaign.id)} className="text-red-400">
                         <Trash2 className="w-4 h-4 mr-2" /> Delete
                       </DropdownMenuItem>
@@ -122,28 +126,28 @@ function CampaignCard({ campaign, onEdit, onDelete, onStatusChange, onViewDetail
               {/* Stats */}
               <div className="flex items-center gap-3 mt-2">
                 <div className="flex items-center gap-1.5">
-                  <Users className="w-3 h-3 text-zinc-500" />
-                  <span className="text-white text-xs font-medium">{campaign.contacted || 0}</span>
-                  <span className="text-zinc-500 text-[10px]">/ {campaign.total_contacts || 0}</span>
+                  <Users className={`w-3 h-3 ${gt("text-slate-400", "text-zinc-500")}`} />
+                  <span className={`${gt("text-slate-900", "text-white")} text-xs font-medium`}>{campaign.contacted || 0}</span>
+                  <span className={`${gt("text-slate-400", "text-zinc-500")} text-[10px]`}>/ {campaign.total_contacts || 0}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <MessageSquare className="w-3 h-3 text-zinc-500" />
-                  <span className="text-white text-xs font-medium">{responseRate}%</span>
-                  <span className="text-zinc-500 text-[10px]">response</span>
+                  <MessageSquare className={`w-3 h-3 ${gt("text-slate-400", "text-zinc-500")}`} />
+                  <span className={`${gt("text-slate-900", "text-white")} text-xs font-medium`}>{responseRate}%</span>
+                  <span className={`${gt("text-slate-400", "text-zinc-500")} text-[10px]`}>response</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <Calendar className="w-3 h-3 text-zinc-500" />
-                  <span className="text-white text-xs font-medium">{campaign.meetings_booked || 0}</span>
-                  <span className="text-zinc-500 text-[10px]">meetings</span>
+                  <Calendar className={`w-3 h-3 ${gt("text-slate-400", "text-zinc-500")}`} />
+                  <span className={`${gt("text-slate-900", "text-white")} text-xs font-medium`}>{campaign.meetings_booked || 0}</span>
+                  <span className={`${gt("text-slate-400", "text-zinc-500")} text-[10px]`}>meetings</span>
                 </div>
               </div>
 
               <div className="mt-2">
-                <div className="flex items-center justify-between text-[10px] text-zinc-500 mb-1">
+                <div className={`flex items-center justify-between text-[10px] ${gt("text-slate-400", "text-zinc-500")} mb-1`}>
                   <span>Progress</span>
                   <span>{progress}%</span>
                 </div>
-                <Progress value={progress} className="h-1 bg-zinc-800" />
+                <Progress value={progress} className={`h-1 ${gt("bg-slate-200", "bg-zinc-800")}`} />
               </div>
             </div>
           </div>
@@ -154,6 +158,7 @@ function CampaignCard({ campaign, onEdit, onDelete, onStatusChange, onViewDetail
 }
 
 export default function GrowthCampaigns() {
+  const { theme, toggleTheme, gt } = useGrowthTheme();
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -361,14 +366,14 @@ export default function GrowthCampaigns() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-4">
+      <div className={`min-h-screen ${gt("bg-slate-50", "bg-black")} p-4`}>
         <div className="space-y-4">
-          <Skeleton className="h-20 w-full bg-zinc-800 rounded-xl" />
+          <Skeleton className={`h-20 w-full ${gt("bg-slate-200", "bg-zinc-800")} rounded-xl`} />
           <div className="grid grid-cols-4 gap-3">
-            {[1,2,3,4].map(i => <Skeleton key={i} className="h-16 bg-zinc-800 rounded-xl" />)}
+            {[1,2,3,4].map(i => <Skeleton key={i} className={`h-16 ${gt("bg-slate-200", "bg-zinc-800")} rounded-xl`} />)}
           </div>
           <div className="space-y-3">
-            {[1,2,3].map(i => <Skeleton key={i} className="h-24 bg-zinc-800 rounded-xl" />)}
+            {[1,2,3].map(i => <Skeleton key={i} className={`h-24 ${gt("bg-slate-200", "bg-zinc-800")} rounded-xl`} />)}
           </div>
         </div>
       </div>
@@ -376,14 +381,15 @@ export default function GrowthCampaigns() {
   }
 
   return (
-    <div className="min-h-screen bg-black relative">
+    <GrowthPageTransition>
+    <div className={`min-h-screen ${gt("bg-slate-50", "bg-black")} relative`}>
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-20 left-1/4 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-3xl" />
         <div className="absolute bottom-20 right-1/4 w-[400px] h-[400px] bg-indigo-500/5 rounded-full blur-3xl" />
       </div>
 
       <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
-        <div ref={headerRef} style={{ opacity: 0 }}>
+        <div ref={headerRef} style={{ opacity: 0 }} className="flex items-center justify-between">
           <PageHeader
             icon={Send}
             title="Campaigns"
@@ -395,26 +401,29 @@ export default function GrowthCampaigns() {
               </Button>
             }
           />
+          <Button variant="ghost" size="icon" onClick={toggleTheme} className={`${gt('text-slate-600 hover:bg-slate-100', 'text-zinc-400 hover:bg-zinc-800')} rounded-full`}>
+            {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          </Button>
         </div>
 
         {/* Stats */}
         <div ref={statsGridRef} className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="stat-card p-3 rounded-lg bg-zinc-900/50 border border-zinc-800/60">
+          <div className={`stat-card p-3 rounded-lg ${gt("bg-white border border-slate-200 shadow-sm", "bg-zinc-900/50 border border-zinc-800/60")}`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-xs">Active</p>
-                <p className="stat-number text-lg font-bold text-white mt-0.5" data-value={stats.active}>0</p>
+                <p className={`${gt("text-slate-400", "text-zinc-500")} text-xs`}>Active</p>
+                <p className={`stat-number text-lg font-bold ${gt("text-slate-900", "text-white")} mt-0.5`} data-value={stats.active}>0</p>
               </div>
               <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
                 <Play className="w-4 h-4 text-indigo-400/70" />
               </div>
             </div>
           </div>
-          <div className="stat-card p-3 rounded-lg bg-zinc-900/50 border border-zinc-800/60">
+          <div className={`stat-card p-3 rounded-lg ${gt("bg-white border border-slate-200 shadow-sm", "bg-zinc-900/50 border border-zinc-800/60")}`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-xs">Contacted</p>
-                <p className="stat-number text-lg font-bold text-white mt-0.5" data-value={stats.totalContacted}>0</p>
+                <p className={`${gt("text-slate-400", "text-zinc-500")} text-xs`}>Contacted</p>
+                <p className={`stat-number text-lg font-bold ${gt("text-slate-900", "text-white")} mt-0.5`} data-value={stats.totalContacted}>0</p>
                 <p className="text-[10px] text-indigo-400/80">{stats.avgResponseRate}% response</p>
               </div>
               <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
@@ -422,22 +431,22 @@ export default function GrowthCampaigns() {
               </div>
             </div>
           </div>
-          <div className="stat-card p-3 rounded-lg bg-zinc-900/50 border border-zinc-800/60">
+          <div className={`stat-card p-3 rounded-lg ${gt("bg-white border border-slate-200 shadow-sm", "bg-zinc-900/50 border border-zinc-800/60")}`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-xs">Meetings</p>
-                <p className="stat-number text-lg font-bold text-white mt-0.5" data-value={stats.totalMeetings}>0</p>
+                <p className={`${gt("text-slate-400", "text-zinc-500")} text-xs`}>Meetings</p>
+                <p className={`stat-number text-lg font-bold ${gt("text-slate-900", "text-white")} mt-0.5`} data-value={stats.totalMeetings}>0</p>
               </div>
               <div className="w-8 h-8 rounded-lg bg-indigo-500/15 flex items-center justify-center">
                 <Calendar className="w-4 h-4 text-indigo-400/60" />
               </div>
             </div>
           </div>
-          <div className="stat-card p-3 rounded-lg bg-zinc-900/50 border border-zinc-800/60">
+          <div className={`stat-card p-3 rounded-lg ${gt("bg-white border border-slate-200 shadow-sm", "bg-zinc-900/50 border border-zinc-800/60")}`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-xs">Revenue</p>
-                <p className="stat-number text-lg font-bold text-white mt-0.5" data-value={stats.totalRevenue} data-prefix="€">€0</p>
+                <p className={`${gt("text-slate-400", "text-zinc-500")} text-xs`}>Revenue</p>
+                <p className={`stat-number text-lg font-bold ${gt("text-slate-900", "text-white")} mt-0.5`} data-value={stats.totalRevenue} data-prefix="€">€0</p>
               </div>
               <div className="w-8 h-8 rounded-lg bg-indigo-500/15 flex items-center justify-center">
                 <TrendingUp className="w-4 h-4 text-indigo-400/60" />
@@ -448,17 +457,17 @@ export default function GrowthCampaigns() {
 
         {/* Filters */}
         <Tabs value={activeFilter} onValueChange={setActiveFilter}>
-          <TabsList className="bg-zinc-900/60 border border-zinc-800/60 p-1 rounded-xl">
-            <TabsTrigger value="all" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-indigo-300/90 rounded-lg px-4 text-zinc-500">
+          <TabsList className={`${gt("bg-white border border-slate-200 shadow-sm", "bg-zinc-900/60 border border-zinc-800/60")} p-1 rounded-xl`}>
+            <TabsTrigger value="all" className={`data-[state=active]:bg-zinc-800/80 data-[state=active]:text-indigo-300/90 rounded-lg px-4 ${gt("text-slate-400", "text-zinc-500")}`}>
               All ({campaigns.length})
             </TabsTrigger>
-            <TabsTrigger value="active" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-indigo-300/90 rounded-lg px-4 text-zinc-500">
+            <TabsTrigger value="active" className={`data-[state=active]:bg-zinc-800/80 data-[state=active]:text-indigo-300/90 rounded-lg px-4 ${gt("text-slate-400", "text-zinc-500")}`}>
               Active ({campaigns.filter(c => c.status === 'active').length})
             </TabsTrigger>
-            <TabsTrigger value="paused" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-indigo-300/90 rounded-lg px-4 text-zinc-500">
+            <TabsTrigger value="paused" className={`data-[state=active]:bg-zinc-800/80 data-[state=active]:text-indigo-300/90 rounded-lg px-4 ${gt("text-slate-400", "text-zinc-500")}`}>
               Paused ({campaigns.filter(c => c.status === 'paused').length})
             </TabsTrigger>
-            <TabsTrigger value="draft" className="data-[state=active]:bg-zinc-800/80 data-[state=active]:text-indigo-300/90 rounded-lg px-4 text-zinc-500">
+            <TabsTrigger value="draft" className={`data-[state=active]:bg-zinc-800/80 data-[state=active]:text-indigo-300/90 rounded-lg px-4 ${gt("text-slate-400", "text-zinc-500")}`}>
               Draft ({campaigns.filter(c => c.status === 'draft').length})
             </TabsTrigger>
           </TabsList>
@@ -466,14 +475,14 @@ export default function GrowthCampaigns() {
 
         {/* Campaigns List */}
         {filteredCampaigns.length === 0 ? (
-          <div className="p-12 text-center rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className={`p-12 text-center rounded-xl ${gt("bg-white border border-slate-200 shadow-sm", "bg-zinc-900/50 border border-zinc-800/60")}`}>
             <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-indigo-500/20 to-indigo-400/20 flex items-center justify-center mx-auto mb-4">
               <Send className="w-8 h-8 text-indigo-400" />
             </div>
-            <h3 className="text-lg font-bold text-white mb-2">
+            <h3 className={`text-lg font-bold ${gt("text-slate-900", "text-white")} mb-2`}>
               {activeFilter === 'all' ? 'Create Your First Campaign' : `No ${activeFilter} Campaigns`}
             </h3>
-            <p className="text-zinc-400 mb-6 max-w-md mx-auto text-sm">
+            <p className={`${gt("text-slate-500", "text-zinc-400")} mb-6 max-w-md mx-auto text-sm`}>
               Build multi-step outreach sequences to engage prospects at scale.
             </p>
             <Button onClick={openNewModal} className="bg-indigo-600/80 hover:bg-indigo-600 text-white font-medium px-6">
@@ -501,9 +510,9 @@ export default function GrowthCampaigns() {
 
       {/* Create/Edit Modal */}
       <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent className="bg-zinc-900 border-zinc-800 max-w-2xl p-0 max-h-[90vh] overflow-hidden">
-          <div className="px-6 py-4 border-b border-zinc-800 bg-gradient-to-r from-indigo-500/10 to-indigo-400/10">
-            <DialogTitle className="text-lg font-semibold text-white flex items-center gap-3">
+        <DialogContent className={`${gt("bg-white border-slate-200", "bg-zinc-900 border-zinc-800")} max-w-2xl p-0 max-h-[90vh] overflow-hidden`}>
+          <div className={`px-6 py-4 border-b ${gt("border-slate-200", "border-zinc-800")} bg-gradient-to-r from-indigo-500/10 to-indigo-400/10`}>
+            <DialogTitle className={`text-lg font-semibold ${gt("text-slate-900", "text-white")} flex items-center gap-3`}>
               <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center">
                 <Send className="w-5 h-5 text-indigo-400" />
               </div>
@@ -512,31 +521,31 @@ export default function GrowthCampaigns() {
           </div>
 
           <Tabs value={modalTab} onValueChange={setModalTab} className="flex-1 overflow-hidden flex flex-col">
-            <TabsList className="bg-zinc-800/50 mx-6 mt-4 p-1 rounded-lg">
-              <TabsTrigger value="details" className="data-[state=active]:bg-zinc-700 rounded">Details</TabsTrigger>
-              <TabsTrigger value="sequence" className="data-[state=active]:bg-zinc-700 rounded">Sequence</TabsTrigger>
-              <TabsTrigger value="settings" className="data-[state=active]:bg-zinc-700 rounded">Settings</TabsTrigger>
+            <TabsList className={`${gt("bg-slate-100", "bg-zinc-800/50")} mx-6 mt-4 p-1 rounded-lg`}>
+              <TabsTrigger value="details" className={`data-[state=active]:${gt("bg-white", "bg-zinc-700")} rounded`}>Details</TabsTrigger>
+              <TabsTrigger value="sequence" className={`data-[state=active]:${gt("bg-white", "bg-zinc-700")} rounded`}>Sequence</TabsTrigger>
+              <TabsTrigger value="settings" className={`data-[state=active]:${gt("bg-white", "bg-zinc-700")} rounded`}>Settings</TabsTrigger>
             </TabsList>
 
             <div className="flex-1 overflow-y-auto px-6 py-4">
               <TabsContent value="details" className="mt-0 space-y-4">
                 <div>
-                  <label className="text-zinc-400 text-sm mb-1.5 block">Campaign Name *</label>
+                  <label className={`${gt("text-slate-500", "text-zinc-400")} text-sm mb-1.5 block`}>Campaign Name *</label>
                   <Input 
                     value={formData.name} 
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
-                    className="bg-zinc-800/50 border-zinc-700 text-white" 
+                    className={`${gt("bg-slate-100 border-slate-200 text-slate-900", "bg-zinc-800/50 border-zinc-700 text-white")}`} 
                     placeholder="Q1 LinkedIn Outreach" 
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-zinc-400 text-sm mb-1.5 block">Type</label>
+                    <label className={`${gt("text-slate-500", "text-zinc-400")} text-sm mb-1.5 block`}>Type</label>
                     <Select value={formData.campaign_type} onValueChange={(v) => setFormData({ ...formData, campaign_type: v })}>
-                      <SelectTrigger className="bg-zinc-800/50 border-zinc-700 text-white">
+                      <SelectTrigger className={`${gt("bg-slate-100 border-slate-200 text-slate-900", "bg-zinc-800/50 border-zinc-700 text-white")}`}>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-zinc-900 border-zinc-700">
+                      <SelectContent className={`${gt("bg-white border-slate-200", "bg-zinc-900 border-zinc-700")}`}>
                         {CAMPAIGN_TYPES.map(type => (
                           <SelectItem key={type.id} value={type.id}>
                             <span className="flex items-center gap-2">
@@ -548,43 +557,43 @@ export default function GrowthCampaigns() {
                     </Select>
                   </div>
                   <div>
-                    <label className="text-zinc-400 text-sm mb-1.5 block">Total Contacts</label>
+                    <label className={`${gt("text-slate-500", "text-zinc-400")} text-sm mb-1.5 block`}>Total Contacts</label>
                     <Input 
                       type="number" 
                       value={formData.total_contacts} 
                       onChange={(e) => setFormData({ ...formData, total_contacts: e.target.value })} 
-                      className="bg-zinc-800/50 border-zinc-700 text-white" 
+                      className={`${gt("bg-slate-100 border-slate-200 text-slate-900", "bg-zinc-800/50 border-zinc-700 text-white")}`} 
                       placeholder="500"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="text-zinc-400 text-sm mb-1.5 block">Target Audience</label>
+                  <label className={`${gt("text-slate-500", "text-zinc-400")} text-sm mb-1.5 block`}>Target Audience</label>
                   <Textarea 
                     value={formData.target_audience} 
                     onChange={(e) => setFormData({ ...formData, target_audience: e.target.value })} 
-                    className="bg-zinc-800/50 border-zinc-700 text-white resize-none" 
+                    className={`${gt("bg-slate-100 border-slate-200 text-slate-900", "bg-zinc-800/50 border-zinc-700 text-white")} resize-none`} 
                     rows={2} 
                     placeholder="Compliance managers at fintech companies"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-zinc-400 text-sm mb-1.5 block">Start Date</label>
+                    <label className={`${gt("text-slate-500", "text-zinc-400")} text-sm mb-1.5 block`}>Start Date</label>
                     <Input 
                       type="date" 
                       value={formData.start_date} 
                       onChange={(e) => setFormData({ ...formData, start_date: e.target.value })} 
-                      className="bg-zinc-800/50 border-zinc-700 text-white" 
+                      className={`${gt("bg-slate-100 border-slate-200 text-slate-900", "bg-zinc-800/50 border-zinc-700 text-white")}`} 
                     />
                   </div>
                   <div>
-                    <label className="text-zinc-400 text-sm mb-1.5 block">End Date</label>
+                    <label className={`${gt("text-slate-500", "text-zinc-400")} text-sm mb-1.5 block`}>End Date</label>
                     <Input 
                       type="date" 
                       value={formData.end_date} 
                       onChange={(e) => setFormData({ ...formData, end_date: e.target.value })} 
-                      className="bg-zinc-800/50 border-zinc-700 text-white" 
+                      className={`${gt("bg-slate-100 border-slate-200 text-slate-900", "bg-zinc-800/50 border-zinc-700 text-white")}`} 
                     />
                   </div>
                 </div>
@@ -599,23 +608,23 @@ export default function GrowthCampaigns() {
 
               <TabsContent value="settings" className="mt-0 space-y-4">
                 <div>
-                  <label className="text-zinc-400 text-sm mb-1.5 block">Daily Contact Limit</label>
+                  <label className={`${gt("text-slate-500", "text-zinc-400")} text-sm mb-1.5 block`}>Daily Contact Limit</label>
                   <Input 
                     type="number" 
                     value={formData.daily_limit} 
                     onChange={(e) => setFormData({ ...formData, daily_limit: e.target.value })} 
-                    className="bg-zinc-800/50 border-zinc-700 text-white w-32" 
+                    className={`${gt("bg-slate-100 border-slate-200 text-slate-900", "bg-zinc-800/50 border-zinc-700 text-white")} w-32`} 
                     min={1}
                     max={200}
                   />
-                  <p className="text-xs text-zinc-600 mt-1">Max contacts to reach per day</p>
+                  <p className={`text-xs ${gt("text-slate-400", "text-zinc-600")} mt-1`}>Max contacts to reach per day</p>
                 </div>
               </TabsContent>
             </div>
           </Tabs>
 
-          <div className="px-6 py-4 border-t border-zinc-800 bg-zinc-900/80 flex items-center justify-end gap-3">
-            <Button variant="outline" onClick={() => setShowModal(false)} className="border-zinc-700 text-zinc-400">
+          <div className={`px-6 py-4 border-t ${gt("border-slate-200 bg-slate-50", "border-zinc-800 bg-zinc-900/80")} flex items-center justify-end gap-3`}>
+            <Button variant="outline" onClick={() => setShowModal(false)} className={`${gt("border-slate-200 text-slate-500", "border-zinc-700 text-zinc-400")}`}>
               Cancel
             </Button>
             <Button onClick={handleSave} disabled={!formData.name} className="bg-indigo-500 hover:bg-indigo-400 text-white">
@@ -641,13 +650,13 @@ export default function GrowthCampaigns() {
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25 }}
               onClick={(e) => e.stopPropagation()}
-              className="absolute right-0 top-0 h-full w-full max-w-lg bg-zinc-950 border-l border-zinc-800 overflow-y-auto"
+              className={`absolute right-0 top-0 h-full w-full max-w-lg ${gt("bg-white border-l border-slate-200", "bg-zinc-950 border-l border-zinc-800")} overflow-y-auto`}
             >
-              <div className="p-4 border-b border-zinc-800 sticky top-0 bg-zinc-950 z-10">
+              <div className={`p-4 border-b ${gt("border-slate-200 bg-white", "border-zinc-800 bg-zinc-950")} sticky top-0 z-10`}>
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-white">{detailCampaign.name}</h2>
+                  <h2 className={`text-lg font-semibold ${gt("text-slate-900", "text-white")}`}>{detailCampaign.name}</h2>
                   <Button variant="ghost" size="icon" onClick={() => setDetailCampaign(null)}>
-                    <ArrowRight className="w-5 h-5 text-zinc-400" />
+                    <ArrowRight className={`w-5 h-5 ${gt("text-slate-500", "text-zinc-400")}`} />
                   </Button>
                 </div>
               </div>
@@ -663,16 +672,16 @@ export default function GrowthCampaigns() {
 
                 {detailCampaign.sequence_steps?.length > 0 && (
                   <div className="space-y-2">
-                    <h3 className="text-white font-medium text-sm">Sequence Steps</h3>
+                    <h3 className={`${gt("text-slate-900", "text-white")} font-medium text-sm`}>Sequence Steps</h3>
                     {detailCampaign.sequence_steps.map((step, i) => (
-                      <div key={i} className="flex items-center gap-2 p-2 bg-zinc-900/50 rounded-lg border border-zinc-800">
+                      <div key={i} className={`flex items-center gap-2 p-2 ${gt("bg-slate-100 border border-slate-200", "bg-zinc-900/50 border border-zinc-800")} rounded-lg`}>
                         <div className="w-6 h-6 rounded-full bg-indigo-500/20 flex items-center justify-center text-xs text-indigo-400 font-medium">
                           {i + 1}
                         </div>
                         <div className="flex-1">
-                          <p className="text-white text-xs capitalize">{step.type?.replace('_', ' ')}</p>
+                          <p className={`${gt("text-slate-900", "text-white")} text-xs capitalize`}>{step.type?.replace('_', ' ')}</p>
                           {step.delay_days > 0 && (
-                            <p className="text-[10px] text-zinc-500">+{step.delay_days} day{step.delay_days > 1 ? 's' : ''}</p>
+                            <p className={`text-[10px] ${gt("text-slate-400", "text-zinc-500")}`}>+{step.delay_days} day{step.delay_days > 1 ? 's' : ''}</p>
                           )}
                         </div>
                       </div>
@@ -694,5 +703,6 @@ export default function GrowthCampaigns() {
         )}
       </AnimatePresence>
     </div>
+    </GrowthPageTransition>
   );
 }

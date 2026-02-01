@@ -15,9 +15,13 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@/components/context/UserContext";
 import { toast } from "sonner";
+import { useGrowthTheme } from '@/contexts/GrowthThemeContext';
+import { GrowthPageTransition } from '@/components/growth/ui';
+import { Sun, Moon } from 'lucide-react';
 
 export default function GrowthTemplates() {
   const { user } = useUser();
+  const { theme, toggleTheme, gt } = useGrowthTheme();
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -135,11 +139,11 @@ export default function GrowthTemplates() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-4">
+      <div className={`min-h-screen ${gt('bg-slate-50', 'bg-black')} p-4`}>
         <div className="max-w-6xl mx-auto space-y-4">
-          <Skeleton className="h-16 w-full bg-zinc-800 rounded-xl" />
+          <Skeleton className={`h-16 w-full ${gt('bg-slate-200', 'bg-zinc-800')} rounded-xl`} />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {[1,2,3,4,5,6].map(i => <Skeleton key={i} className="h-40 bg-zinc-800 rounded-xl" />)}
+            {[1,2,3,4,5,6].map(i => <Skeleton key={i} className={`h-40 ${gt('bg-slate-200', 'bg-zinc-800')} rounded-xl`} />)}
           </div>
         </div>
       </div>
@@ -147,7 +151,8 @@ export default function GrowthTemplates() {
   }
 
   return (
-    <div className="min-h-screen bg-black relative">
+    <GrowthPageTransition>
+    <div className={`min-h-screen ${gt('bg-slate-50', 'bg-black')} relative`}>
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-20 right-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl animate-pulse" />
       </div>
@@ -160,22 +165,27 @@ export default function GrowthTemplates() {
           color="indigo"
           badge={`${templates.length} templates`}
           actions={
-            <Button onClick={handleCreate} className="bg-indigo-500 hover:bg-indigo-400 text-white">
-              <Plus className="w-4 h-4 mr-2" />
-              New Template
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="ghost" size="icon" onClick={toggleTheme} className={gt('text-slate-500 hover:bg-slate-100', 'text-zinc-400 hover:bg-zinc-800')}>
+                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </Button>
+              <Button onClick={handleCreate} className="bg-indigo-500 hover:bg-indigo-400 text-white">
+                <Plus className="w-4 h-4 mr-2" />
+                New Template
+              </Button>
+            </div>
           }
         />
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+          <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${gt('text-slate-500', 'text-zinc-400')}`} />
           <Input
             type="search"
             placeholder="Search templates..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-zinc-900 border-zinc-700 text-white"
+            className={`pl-10 ${gt('bg-white border-slate-200 text-slate-900', 'bg-zinc-900 border-zinc-700 text-white')}`}
           />
         </div>
 
@@ -197,31 +207,31 @@ export default function GrowthTemplates() {
                         <FileText className="w-4 h-4 text-indigo-400" />
                       </div>
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(template)} className="text-zinc-400 hover:text-white h-8 w-8">
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(template)} className={`${gt('text-slate-500 hover:text-slate-900', 'text-zinc-400 hover:text-white')} h-8 w-8`}>
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(template.id)} className="text-zinc-400 hover:text-red-400 h-8 w-8">
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(template.id)} className={`${gt('text-slate-500', 'text-zinc-400')} hover:text-red-400 h-8 w-8`}>
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
                     </div>
 
-                    <h3 className="font-semibold text-white text-sm mb-2">{template.name}</h3>
-                    <p className="text-xs text-zinc-400 line-clamp-2 mb-3">{template.description}</p>
+                    <h3 className={`font-semibold ${gt('text-slate-900', 'text-white')} text-sm mb-2`}>{template.name}</h3>
+                    <p className={`text-xs ${gt('text-slate-500', 'text-zinc-400')} line-clamp-2 mb-3`}>{template.description}</p>
 
                     <div className="flex flex-wrap gap-2 mb-3">
                       {template.industry && (
-                        <Badge className="bg-zinc-800 text-zinc-300 border-zinc-700">
+                        <Badge className={`${gt('bg-slate-200 text-slate-600 border-slate-200', 'bg-zinc-800 text-zinc-300 border-zinc-700')}`}>
                           <Briefcase className="w-3 h-3 mr-1" />{template.industry}
                         </Badge>
                       )}
                       {template.company_size && (
-                        <Badge className="bg-zinc-800 text-zinc-300 border-zinc-700">
+                        <Badge className={`${gt('bg-slate-200 text-slate-600 border-slate-200', 'bg-zinc-800 text-zinc-300 border-zinc-700')}`}>
                           <Users className="w-3 h-3 mr-1" />{template.company_size}
                         </Badge>
                       )}
                       {template.location && (
-                        <Badge className="bg-zinc-800 text-zinc-300 border-zinc-700">
+                        <Badge className={`${gt('bg-slate-200 text-slate-600 border-slate-200', 'bg-zinc-800 text-zinc-300 border-zinc-700')}`}>
                           <MapPin className="w-3 h-3 mr-1" />{template.location}
                         </Badge>
                       )}
@@ -242,10 +252,10 @@ export default function GrowthTemplates() {
         ) : (
           <GlassCard className="p-8 text-center">
             <FileText className="w-12 h-12 text-indigo-400 mx-auto mb-4 opacity-50" />
-            <h3 className="text-lg font-bold text-white mb-2">
+            <h3 className={`text-lg font-bold ${gt('text-slate-900', 'text-white')} mb-2`}>
               {searchTerm ? "No Templates Found" : "No Templates Yet"}
             </h3>
-            <p className="text-zinc-400 mb-6">
+            <p className={`${gt('text-slate-500', 'text-zinc-400')} mb-6`}>
               {searchTerm ? "Try a different search" : "Create reusable ICP templates for faster research"}
             </p>
             {!searchTerm && (
@@ -272,103 +282,103 @@ export default function GrowthTemplates() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-zinc-900 border border-zinc-700 rounded-xl p-4 max-w-lg w-full max-h-[90vh] overflow-y-auto"
+              className={`${gt('bg-white border border-slate-200 shadow-lg', 'bg-zinc-900 border border-zinc-700')} rounded-xl p-4 max-w-lg w-full max-h-[90vh] overflow-y-auto`}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-white">
+                <h2 className={`text-lg font-bold ${gt('text-slate-900', 'text-white')}`}>
                   {editingTemplate ? 'Edit Template' : 'New Template'}
                 </h2>
-                <Button variant="ghost" size="icon" onClick={() => setShowEditor(false)} className="text-zinc-400">
+                <Button variant="ghost" size="icon" onClick={() => setShowEditor(false)} className={gt('text-slate-500', 'text-zinc-400')}>
                   <X className="w-5 h-5" />
                 </Button>
               </div>
 
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs text-zinc-400 mb-2 block">Template Name</label>
+                  <label className={`text-xs ${gt('text-slate-500', 'text-zinc-400')} mb-2 block`}>Template Name</label>
                   <Input
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                     placeholder="e.g., Enterprise SaaS Buyers"
-                    className="bg-zinc-800 border-zinc-700 text-white"
+                    className={`${gt('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')}`}
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs text-zinc-400 mb-2 block">Description</label>
+                  <label className={`text-xs ${gt('text-slate-500', 'text-zinc-400')} mb-2 block`}>Description</label>
                   <Textarea
                     value={form.description}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
                     placeholder="Describe this ICP..."
-                    className="bg-zinc-800 border-zinc-700 text-white"
+                    className={`${gt('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')}`}
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs text-zinc-400 mb-2 block">Industry</label>
+                    <label className={`text-xs ${gt('text-slate-500', 'text-zinc-400')} mb-2 block`}>Industry</label>
                     <Input
                       value={form.industry}
                       onChange={(e) => setForm({ ...form, industry: e.target.value })}
                       placeholder="e.g., Technology"
-                      className="bg-zinc-800 border-zinc-700 text-white"
+                      className={`${gt('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')}`}
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-zinc-400 mb-2 block">Company Size</label>
+                    <label className={`text-xs ${gt('text-slate-500', 'text-zinc-400')} mb-2 block`}>Company Size</label>
                     <Input
                       value={form.company_size}
                       onChange={(e) => setForm({ ...form, company_size: e.target.value })}
                       placeholder="e.g., 50-200"
-                      className="bg-zinc-800 border-zinc-700 text-white"
+                      className={`${gt('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')}`}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-xs text-zinc-400 mb-2 block">Location</label>
+                  <label className={`text-xs ${gt('text-slate-500', 'text-zinc-400')} mb-2 block`}>Location</label>
                   <Input
                     value={form.location}
                     onChange={(e) => setForm({ ...form, location: e.target.value })}
                     placeholder="e.g., United States, Europe"
-                    className="bg-zinc-800 border-zinc-700 text-white"
+                    className={`${gt('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')}`}
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs text-zinc-400 mb-2 block">Job Titles (comma-separated)</label>
+                  <label className={`text-xs ${gt('text-slate-500', 'text-zinc-400')} mb-2 block`}>Job Titles (comma-separated)</label>
                   <Input
                     value={form.job_titles}
                     onChange={(e) => setForm({ ...form, job_titles: e.target.value })}
                     placeholder="e.g., VP Sales, CTO, Head of Marketing"
-                    className="bg-zinc-800 border-zinc-700 text-white"
+                    className={`${gt('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')}`}
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs text-zinc-400 mb-2 block">Tech Stack (comma-separated)</label>
+                  <label className={`text-xs ${gt('text-slate-500', 'text-zinc-400')} mb-2 block`}>Tech Stack (comma-separated)</label>
                   <Input
                     value={form.tech_stack}
                     onChange={(e) => setForm({ ...form, tech_stack: e.target.value })}
                     placeholder="e.g., Salesforce, HubSpot, AWS"
-                    className="bg-zinc-800 border-zinc-700 text-white"
+                    className={`${gt('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')}`}
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs text-zinc-400 mb-2 block">Keywords (comma-separated)</label>
+                  <label className={`text-xs ${gt('text-slate-500', 'text-zinc-400')} mb-2 block`}>Keywords (comma-separated)</label>
                   <Input
                     value={form.keywords}
                     onChange={(e) => setForm({ ...form, keywords: e.target.value })}
                     placeholder="e.g., B2B, SaaS, Enterprise"
-                    className="bg-zinc-800 border-zinc-700 text-white"
+                    className={`${gt('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')}`}
                   />
                 </div>
               </div>
 
               <div className="flex justify-end gap-3 mt-4">
-                <Button variant="outline" onClick={() => setShowEditor(false)} className="border-zinc-700 text-zinc-300">
+                <Button variant="outline" onClick={() => setShowEditor(false)} className={`${gt('border-slate-200 text-slate-600', 'border-zinc-700 text-zinc-300')}`}>
                   Cancel
                 </Button>
                 <Button onClick={handleSave} disabled={!form.name || saving} className="bg-indigo-500 hover:bg-indigo-400 text-white">
@@ -380,5 +390,6 @@ export default function GrowthTemplates() {
         )}
       </AnimatePresence>
     </div>
+    </GrowthPageTransition>
   );
 }

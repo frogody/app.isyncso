@@ -6,8 +6,10 @@ import { createPageUrl } from "@/utils";
 import {
   Bell, Filter, ExternalLink, Plus, Check, AlertTriangle, Zap, TrendingUp,
   Building2, Users, Euro, Briefcase, Cpu, ChevronRight, Sparkles,
-  Clock, Eye, EyeOff, ArrowRight, X
+  Clock, Eye, EyeOff, ArrowRight, X, Sun, Moon
 } from "lucide-react";
+import { useGrowthTheme } from '@/contexts/GrowthThemeContext';
+import { GrowthPageTransition } from '@/components/growth/ui';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -88,7 +90,7 @@ const PRIORITY_CONFIG = {
   low: { label: 'Low', color: 'bg-zinc-800/60 text-zinc-400 border-zinc-700/50', dotColor: 'bg-zinc-600' }
 };
 
-function SignalCard({ signal, onAction, onDismiss, index }) {
+function SignalCard({ signal, onAction, onDismiss, index, gt }) {
   const config = SIGNAL_CONFIG[signal.signal_type] || { 
     icon: Bell, emoji: '📌', label: signal.signal_type,
     color: 'from-zinc-500 to-zinc-600', bgColor: 'bg-zinc-500/20',
@@ -123,10 +125,10 @@ function SignalCard({ signal, onAction, onDismiss, index }) {
       transition={{ delay: index * 0.03 }}
       className={`group relative ${signal.is_actioned ? 'opacity-60' : ''}`}
     >
-      <div className={`bg-zinc-900/60 backdrop-blur-sm rounded-xl border transition-all duration-200 ${
-        !signal.is_read 
-          ? 'border-indigo-500/30 shadow-md shadow-indigo-500/5' 
-          : 'border-zinc-800/60 hover:border-zinc-700/60'
+      <div className={`${gt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/60')} backdrop-blur-sm rounded-xl border transition-all duration-200 ${
+        !signal.is_read
+          ? 'border-indigo-500/30 shadow-md shadow-indigo-500/5'
+          : `${gt('border-slate-200 hover:border-slate-300', 'border-zinc-800/60 hover:border-zinc-700/60')}`
       }`}>
         {/* Unread indicator */}
         {!signal.is_read && (
@@ -139,7 +141,7 @@ function SignalCard({ signal, onAction, onDismiss, index }) {
             <div className={`w-14 h-14 rounded-xl ${config.bgColor} flex items-center justify-center flex-shrink-0 relative`}>
               <Icon className={`w-7 h-7 ${config.textColor}`} />
               {/* Priority dot */}
-              <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ${priorityConfig.dotColor} ring-2 ring-zinc-900`} />
+              <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ${priorityConfig.dotColor} ring-2 ${gt('ring-white', 'ring-zinc-900')}`} />
             </div>
 
             {/* Content */}
@@ -160,23 +162,23 @@ function SignalCard({ signal, onAction, onDismiss, index }) {
                     )}
                   </div>
                   
-                  <h3 className="font-semibold text-white text-lg flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-zinc-500" />
+                  <h3 className={`font-semibold ${gt('text-slate-900', 'text-white')} text-lg flex items-center gap-2`}>
+                    <Building2 className={`w-4 h-4 ${gt('text-slate-400', 'text-zinc-500')}`} />
                     {signal.company_name}
                   </h3>
-                  
-                  <p className="text-zinc-300 mt-2">{signal.headline}</p>
-                  
+
+                  <p className={`${gt('text-slate-600', 'text-zinc-300')} mt-2`}>{signal.headline}</p>
+
                   {signal.description && (
-                    <p className="text-zinc-500 text-sm mt-2 line-clamp-2">{signal.description}</p>
+                    <p className={`${gt('text-slate-400', 'text-zinc-500')} text-sm mt-2 line-clamp-2`}>{signal.description}</p>
                   )}
                 </div>
 
                 {/* Score */}
                 {signal.relevance_score && (
                   <div className="flex-shrink-0 text-center">
-                    <div className={`w-14 h-14 rounded-xl ${signal.relevance_score >= 80 ? 'bg-indigo-500/25' : signal.relevance_score >= 50 ? 'bg-indigo-500/15' : 'bg-zinc-800'} flex items-center justify-center`}>
-                      <span className={`text-xl font-bold ${signal.relevance_score >= 80 ? 'text-indigo-300' : signal.relevance_score >= 50 ? 'text-indigo-400/80' : 'text-zinc-400'}`}>
+                    <div className={`w-14 h-14 rounded-xl ${signal.relevance_score >= 80 ? 'bg-indigo-500/25' : signal.relevance_score >= 50 ? 'bg-indigo-500/15' : gt('bg-slate-200', 'bg-zinc-800')} flex items-center justify-center`}>
+                      <span className={`text-xl font-bold ${signal.relevance_score >= 80 ? 'text-indigo-300' : signal.relevance_score >= 50 ? 'text-indigo-400/80' : gt('text-slate-500', 'text-zinc-400')}`}>
                         {signal.relevance_score}
                       </span>
                     </div>
@@ -186,7 +188,7 @@ function SignalCard({ signal, onAction, onDismiss, index }) {
               </div>
 
               {/* Meta info */}
-              <div className="flex items-center gap-4 mt-4 text-xs text-zinc-500">
+              <div className={`flex items-center gap-4 mt-4 text-xs ${gt('text-slate-400', 'text-zinc-500')}`}>
                 {signal.company_domain && (
                   <span className="flex items-center gap-1">
                     <ExternalLink className="w-3 h-3" />
@@ -201,37 +203,37 @@ function SignalCard({ signal, onAction, onDismiss, index }) {
 
               {/* Actions */}
               {!signal.is_actioned ? (
-                <div className="flex items-center gap-3 mt-4 pt-4 border-t border-zinc-800/50">
-                  <Button 
-                    size="sm" 
-                    onClick={() => onAction(signal)} 
+                <div className={`flex items-center gap-3 mt-4 pt-4 border-t ${gt('border-slate-200', 'border-zinc-800/50')}`}>
+                  <Button
+                    size="sm"
+                    onClick={() => onAction(signal)}
                     className="bg-indigo-600/80 hover:bg-indigo-600 text-white font-medium"
                   >
                     <Plus className="w-4 h-4 mr-1.5" />
                     Create Opportunity
                   </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={() => onDismiss(signal)} 
-                    className="border-zinc-700 text-zinc-400 hover:text-zinc-300 hover:bg-zinc-800"
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onDismiss(signal)}
+                    className={`${gt('border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-100', 'border-zinc-700 text-zinc-400 hover:text-zinc-300 hover:bg-zinc-800')}`}
                   >
                     <EyeOff className="w-4 h-4 mr-1.5" />
                     Dismiss
                   </Button>
                   {signal.source_url && (
-                    <a 
-                      href={signal.source_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="ml-auto text-zinc-500 hover:text-indigo-400 transition-colors"
+                    <a
+                      href={signal.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`ml-auto ${gt('text-slate-400', 'text-zinc-500')} hover:text-indigo-400 transition-colors`}
                     >
                       <ExternalLink className="w-4 h-4" />
                     </a>
                   )}
                 </div>
               ) : (
-                <div className="flex items-center gap-2 mt-4 pt-4 border-t border-zinc-800/50">
+                <div className={`flex items-center gap-2 mt-4 pt-4 border-t ${gt('border-slate-200', 'border-zinc-800/50')}`}>
                   <Check className="w-4 h-4 text-indigo-400/70" />
                   <span className="text-indigo-400/70 text-sm">Opportunity created</span>
                   <Link
@@ -252,6 +254,7 @@ function SignalCard({ signal, onAction, onDismiss, index }) {
 }
 
 export default function GrowthSignals() {
+  const { theme, toggleTheme, gt } = useGrowthTheme();
   const [signals, setSignals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState('all');
@@ -352,14 +355,14 @@ export default function GrowthSignals() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-4">
+      <div className={`min-h-screen ${gt('bg-slate-50', 'bg-black')} p-4`}>
         <div className="space-y-4">
-          <Skeleton className="h-20 w-full bg-zinc-800 rounded-xl" />
+          <Skeleton className={`h-20 w-full ${gt('bg-slate-200', 'bg-zinc-800')} rounded-xl`} />
           <div className="grid grid-cols-4 gap-3">
-            {[1,2,3,4].map(i => <Skeleton key={i} className="h-16 bg-zinc-800 rounded-xl" />)}
+            {[1,2,3,4].map(i => <Skeleton key={i} className={`h-16 ${gt('bg-slate-200', 'bg-zinc-800')} rounded-xl`} />)}
           </div>
           <div className="space-y-3">
-            {[1,2,3].map(i => <Skeleton key={i} className="h-32 bg-zinc-800 rounded-xl" />)}
+            {[1,2,3].map(i => <Skeleton key={i} className={`h-32 ${gt('bg-slate-200', 'bg-zinc-800')} rounded-xl`} />)}
           </div>
         </div>
       </div>
@@ -367,7 +370,8 @@ export default function GrowthSignals() {
   }
 
   return (
-    <div className="min-h-screen bg-black relative">
+    <GrowthPageTransition>
+    <div className={`min-h-screen ${gt('bg-slate-50', 'bg-black')} relative`}>
       {/* Animated Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-20 left-1/4 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-3xl" />
@@ -376,25 +380,30 @@ export default function GrowthSignals() {
 
       <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
-        <PageHeader
-          icon={Bell}
-          title="Growth Signals"
-          subtitle={`${stats.unread} new signals · ${stats.highPriority} high priority`}
-          color="indigo"
-          badge={stats.unread > 0 ? (
-            <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/30 border animate-pulse">
-              {stats.unread} New
-            </Badge>
-          ) : null}
-        />
+        <div className="flex items-center justify-between">
+          <PageHeader
+            icon={Bell}
+            title="Growth Signals"
+            subtitle={`${stats.unread} new signals · ${stats.highPriority} high priority`}
+            color="indigo"
+            badge={stats.unread > 0 ? (
+              <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/30 border animate-pulse">
+                {stats.unread} New
+              </Badge>
+            ) : null}
+          />
+          <Button variant="outline" size="icon" onClick={toggleTheme} className={`${gt('border-slate-200 hover:bg-slate-100', 'border-zinc-700 hover:bg-zinc-800')}`}>
+            {theme === 'dark' ? <Sun className="w-4 h-4 text-yellow-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
+          </Button>
+        </div>
 
         {/* Stats Row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className={`p-3 rounded-xl ${gt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border border-zinc-800/60')}`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-xs">Total Signals</p>
-                <p className="text-lg font-bold text-white mt-0.5">{stats.total}</p>
+                <p className={`${gt('text-slate-400', 'text-zinc-500')} text-xs`}>Total Signals</p>
+                <p className={`text-lg font-bold ${gt('text-slate-900', 'text-white')} mt-0.5`}>{stats.total}</p>
               </div>
               <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
                 <Bell className="w-4 h-4 text-indigo-400/70" />
@@ -402,11 +411,11 @@ export default function GrowthSignals() {
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className={`p-3 rounded-xl ${gt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border border-zinc-800/60')}`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-xs">High Priority</p>
-                <p className="text-lg font-bold text-white mt-0.5">{stats.highPriority}</p>
+                <p className={`${gt('text-slate-400', 'text-zinc-500')} text-xs`}>High Priority</p>
+                <p className={`text-lg font-bold ${gt('text-slate-900', 'text-white')} mt-0.5`}>{stats.highPriority}</p>
                 <p className="text-[10px] text-indigo-400/70">Requires attention</p>
               </div>
               <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
@@ -415,11 +424,11 @@ export default function GrowthSignals() {
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className={`p-3 rounded-xl ${gt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border border-zinc-800/60')}`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-xs">Actioned</p>
-                <p className="text-lg font-bold text-white mt-0.5">{stats.actioned}</p>
+                <p className={`${gt('text-slate-400', 'text-zinc-500')} text-xs`}>Actioned</p>
+                <p className={`text-lg font-bold ${gt('text-slate-900', 'text-white')} mt-0.5`}>{stats.actioned}</p>
                 <p className="text-[10px] text-indigo-400/70">Opportunities created</p>
               </div>
               <div className="w-8 h-8 rounded-lg bg-indigo-500/15 flex items-center justify-center">
@@ -428,11 +437,11 @@ export default function GrowthSignals() {
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className={`p-3 rounded-xl ${gt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border border-zinc-800/60')}`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-zinc-500 text-xs">Avg Match Score</p>
-                <p className="text-lg font-bold text-white mt-0.5">{stats.avgScore}%</p>
+                <p className={`${gt('text-slate-400', 'text-zinc-500')} text-xs`}>Avg Match Score</p>
+                <p className={`text-lg font-bold ${gt('text-slate-900', 'text-white')} mt-0.5`}>{stats.avgScore}%</p>
               </div>
               <div className="w-8 h-8 rounded-lg bg-indigo-500/15 flex items-center justify-center">
                 <Sparkles className="w-4 h-4 text-indigo-400/60" />
@@ -444,7 +453,7 @@ export default function GrowthSignals() {
         {/* Filters */}
         <div className="flex flex-col lg:flex-row items-start lg:items-center gap-3">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="bg-zinc-900/60 border border-zinc-800/60 p-1 rounded-xl">
+            <TabsList className={`${gt('bg-white border border-slate-200', 'bg-zinc-900/60 border border-zinc-800/60')} p-1 rounded-xl`}>
               <TabsTrigger 
                 value="all" 
                 className="data-[state=active]:bg-indigo-500/20 data-[state=active]:text-indigo-400 rounded-lg px-4"
@@ -468,11 +477,11 @@ export default function GrowthSignals() {
 
           <div className="flex items-center gap-2 flex-wrap">
             <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-40 bg-zinc-900/80 border-zinc-700 text-white">
-                <Filter className="w-4 h-4 mr-2 text-zinc-400" />
+              <SelectTrigger className={`w-40 ${gt('bg-white border-slate-200 text-slate-900', 'bg-zinc-900/80 border-zinc-700 text-white')}`}>
+                <Filter className={`w-4 h-4 mr-2 ${gt('text-slate-500', 'text-zinc-400')}`} />
                 <SelectValue placeholder="Signal Type" />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-700">
+              <SelectContent className={`${gt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-700')}`}>
                 <SelectItem value="all">All Types</SelectItem>
                 {Object.entries(SIGNAL_CONFIG).map(([key, cfg]) => (
                   <SelectItem key={key} value={key}>
@@ -485,11 +494,11 @@ export default function GrowthSignals() {
             </Select>
 
             <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-              <SelectTrigger className="w-40 bg-zinc-900/80 border-zinc-700 text-white">
-                <Zap className="w-4 h-4 mr-2 text-zinc-400" />
+              <SelectTrigger className={`w-40 ${gt('bg-white border-slate-200 text-slate-900', 'bg-zinc-900/80 border-zinc-700 text-white')}`}>
+                <Zap className={`w-4 h-4 mr-2 ${gt('text-slate-500', 'text-zinc-400')}`} />
                 <SelectValue placeholder="Priority" />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-700">
+              <SelectContent className={`${gt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-700')}`}>
                 <SelectItem value="all">All Priority</SelectItem>
                 <SelectItem value="high">🔴 High</SelectItem>
                 <SelectItem value="medium">🟠 Medium</SelectItem>
@@ -502,9 +511,9 @@ export default function GrowthSignals() {
                 placeholder="Search signals..." 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-64 bg-zinc-900/80 border-zinc-700 text-white pl-10"
+                className={`w-64 ${gt('bg-white border-slate-200 text-slate-900', 'bg-zinc-900/80 border-zinc-700 text-white')} pl-10`}
               />
-              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+              <Building2 className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${gt('text-slate-400', 'text-zinc-500')}`} />
               {searchTerm && (
                 <Button 
                   variant="ghost" 
@@ -512,7 +521,7 @@ export default function GrowthSignals() {
                   className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
                   onClick={() => setSearchTerm('')}
                 >
-                  <X className="w-4 h-4 text-zinc-500" />
+                  <X className={`w-4 h-4 ${gt('text-slate-400', 'text-zinc-500')}`} />
                 </Button>
               )}
             </div>
@@ -521,17 +530,17 @@ export default function GrowthSignals() {
 
         {/* Signals List */}
         {filteredSignals.length === 0 ? (
-          <div className="p-16 text-center rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className={`p-16 text-center rounded-2xl ${gt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border border-zinc-800/60')}`}>
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-indigo-400/20 flex items-center justify-center mx-auto mb-6">
               <Bell className="w-10 h-10 text-indigo-400" />
             </div>
-            <h3 className="text-2xl font-bold text-white mb-3">
+            <h3 className={`text-2xl font-bold ${gt('text-slate-900', 'text-white')} mb-3`}>
               {activeTab === 'all' && typeFilter === 'all' && priorityFilter === 'all' && !searchTerm
                 ? 'No Signals Yet'
                 : 'No Matching Signals'
               }
             </h3>
-            <p className="text-zinc-400 max-w-md mx-auto">
+            <p className={`${gt('text-slate-500', 'text-zinc-400')} max-w-md mx-auto`}>
               {activeTab === 'all' && typeFilter === 'all' && priorityFilter === 'all' && !searchTerm
                 ? 'Signals will appear here as we detect growth opportunities and buying triggers from your target accounts.'
                 : 'Try adjusting your filters to see more signals.'
@@ -548,6 +557,7 @@ export default function GrowthSignals() {
                   onAction={handleCreateOpportunity}
                   onDismiss={handleDismiss}
                   index={i}
+                  gt={gt}
                 />
               ))}
             </AnimatePresence>
@@ -555,5 +565,6 @@ export default function GrowthSignals() {
         )}
       </div>
     </div>
+    </GrowthPageTransition>
   );
 }

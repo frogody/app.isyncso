@@ -20,6 +20,9 @@ import {
 } from "lucide-react";
 import { GlassCard, StatCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { useGrowthTheme } from '@/contexts/GrowthThemeContext';
+import { GrowthPageTransition } from '@/components/growth/ui';
+import { Sun, Moon } from 'lucide-react';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@/components/context/UserContext";
 import {
@@ -59,6 +62,7 @@ const COMPANY_SIZES = [
 ];
 
 export default function GrowthProspects() {
+  const { theme, toggleTheme, gt } = useGrowthTheme();
   const { user } = useUser();
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("lists");
@@ -456,11 +460,11 @@ export default function GrowthProspects() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-6">
+      <div className={`min-h-screen ${gt('bg-slate-50', 'bg-black')} p-6`}>
         <div className="max-w-7xl mx-auto space-y-6">
-          <Skeleton className="h-24 w-full bg-zinc-800 rounded-2xl" />
+          <Skeleton className={`h-24 w-full ${gt('bg-slate-200', 'bg-zinc-800')} rounded-2xl`} />
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[1,2,3,4].map(i => <Skeleton key={i} className="h-32 bg-zinc-800 rounded-2xl" />)}
+            {[1,2,3,4].map(i => <Skeleton key={i} className={`h-32 ${gt('bg-slate-200', 'bg-zinc-800')} rounded-2xl`} />)}
           </div>
         </div>
       </div>
@@ -468,13 +472,14 @@ export default function GrowthProspects() {
   }
 
   return (
-    <div className="min-h-screen bg-black relative">
+    <GrowthPageTransition>
+    <div className={`min-h-screen ${gt('bg-slate-50', 'bg-black')} relative`}>
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-20 left-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl animate-pulse" />
       </div>
 
       <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
-        <div ref={headerRef} style={{ opacity: 0 }}>
+        <div ref={headerRef} style={{ opacity: 0 }} className="flex items-center justify-between">
           <PageHeader
             icon={Users}
             title="Prospects"
@@ -482,6 +487,9 @@ export default function GrowthProspects() {
             color="indigo"
             badge={`${totalProspects} total`}
           />
+          <Button variant="ghost" size="icon" onClick={toggleTheme} className={`${gt('text-slate-600 hover:bg-slate-100', 'text-zinc-400 hover:bg-zinc-800')} rounded-full`}>
+            {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          </Button>
         </div>
 
         {/* Stats */}
@@ -494,7 +502,7 @@ export default function GrowthProspects() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="bg-zinc-900 border border-zinc-800 p-1 rounded-xl">
+          <TabsList className={`${gt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900 border border-zinc-800')} p-1 rounded-xl`}>
             <TabsTrigger 
               value="lists" 
               className="data-[state=active]:bg-indigo-500/20 data-[state=active]:text-indigo-400 rounded-lg px-6"
@@ -522,9 +530,9 @@ export default function GrowthProspects() {
           <TabsContent value="lists" className="mt-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Lists Panel */}
-              <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+              <div className={`p-6 rounded-2xl ${gt("bg-white border border-slate-200 shadow-sm", "bg-zinc-900/50 border border-zinc-800/60")}`}>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-white">My Lists</h3>
+                  <h3 className={`text-lg font-semibold ${gt("text-slate-900", "text-white")}`}>My Lists</h3>
                   <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/30">
                     {lists.length}
                   </Badge>
@@ -542,21 +550,21 @@ export default function GrowthProspects() {
                         className={`p-3 rounded-xl cursor-pointer transition-all ${
                           selectedList?.id === list.id
                             ? 'bg-indigo-500/20 border border-indigo-500/30'
-                            : 'bg-zinc-800/50 hover:bg-zinc-800 border border-transparent'
+                            : gt('bg-slate-100 hover:bg-slate-200 border border-transparent', 'bg-zinc-800/50 hover:bg-zinc-800 border border-transparent')
                         }`}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-white truncate">{list.name}</p>
-                            <p className="text-xs text-zinc-400">{list.prospect_count || 0} prospects</p>
+                            <p className={`text-xs ${gt("text-slate-500", "text-zinc-400")}`}>{list.prospect_count || 0} prospects</p>
                           </div>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400" onClick={e => e.stopPropagation()}>
+                              <Button variant="ghost" size="icon" className={`h-8 w-8 ${gt("text-slate-500", "text-zinc-400")}`} onClick={e => e.stopPropagation()}>
                                 <MoreVertical className="w-4 h-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent className="bg-zinc-900 border-zinc-700">
+                            <DropdownMenuContent className={`${gt("bg-white border-slate-200", "bg-zinc-900 border-zinc-700")}`}>
                               <DropdownMenuItem onClick={() => handleDeleteList(list.id)} className="text-red-400">
                                 <Trash2 className="w-4 h-4 mr-2" />
                                 Delete
@@ -569,8 +577,8 @@ export default function GrowthProspects() {
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <Users className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
-                    <p className="text-zinc-500 mb-4">No lists yet</p>
+                    <Users className={`w-12 h-12 ${gt("text-slate-300", "text-zinc-600")} mx-auto mb-3`} />
+                    <p className={`${gt("text-slate-400", "text-zinc-500")} mb-4`}>No lists yet</p>
                     <Button onClick={() => setActiveTab('research')} className="bg-indigo-600/80 hover:bg-indigo-600 text-white font-medium">
                       Start Research
                     </Button>
@@ -580,13 +588,13 @@ export default function GrowthProspects() {
 
               {/* Prospects Table */}
               <div className="lg:col-span-2">
-                <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+                <div className={`p-4 rounded-xl ${gt("bg-white border border-slate-200 shadow-sm", "bg-zinc-900/50 border border-zinc-800/60")}`}>
                   {selectedList ? (
                     <>
                       <div className="flex items-center justify-between mb-3">
                         <div>
-                          <h3 className="text-base font-semibold text-white">{selectedList.name}</h3>
-                          <p className="text-xs text-zinc-400">{prospects.length} prospects</p>
+                          <h3 className={`text-base font-semibold ${gt("text-slate-900", "text-white")}`}>{selectedList.name}</h3>
+                          <p className={`text-xs ${gt("text-slate-500", "text-zinc-400")}`}>{prospects.length} prospects</p>
                         </div>
                         <div className="flex gap-2">
                           {selectedProspects.size > 0 && (
@@ -606,22 +614,22 @@ export default function GrowthProspects() {
 
                       <div className="flex gap-2 mb-3">
                         <div className="relative flex-1">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
+                          <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 ${gt("text-slate-500", "text-zinc-400")}`} />
                           <Input
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             placeholder="Search prospects..."
-                            className="pl-9 h-8 text-sm bg-zinc-800 border-zinc-700 text-white"
+                            className={`pl-9 h-8 text-sm ${gt("bg-slate-100 border-slate-200 text-slate-900", "bg-zinc-800 border-zinc-700 text-white")}`}
                           />
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 mb-2 text-xs text-zinc-400">
+                      <div className={`flex items-center gap-2 mb-2 text-xs ${gt("text-slate-500", "text-zinc-400")}`}>
                         <Checkbox checked={selectedProspects.size === prospects.length && prospects.length > 0} onCheckedChange={selectAllProspects} className="w-3.5 h-3.5" />
                         <span>Select All ({selectedProspects.size} selected)</span>
                       </div>
 
-                      <div className="divide-y divide-zinc-800/60 max-h-[500px] overflow-y-auto">
+                      <div className={`divide-y ${gt("divide-slate-200", "divide-zinc-800/60")} max-h-[500px] overflow-y-auto`}>
                         {filteredProspects.map((prospect, i) => (
                           <div
                             key={prospect.id || i}
@@ -636,14 +644,14 @@ export default function GrowthProspects() {
                               <Checkbox checked={selectedProspects.has(prospect.id)} className="w-3.5 h-3.5" />
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
-                                  <p className="text-sm font-medium text-white">{prospect.name}</p>
+                                  <p className={`text-sm font-medium ${gt("text-slate-900", "text-white")}`}>{prospect.name}</p>
                                   {prospect.score && (
                                     <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/30 text-[10px] px-1.5 py-px">
                                       {prospect.score}%
                                     </Badge>
                                   )}
                                 </div>
-                                <div className="flex flex-wrap gap-2 text-[10px] text-zinc-500">
+                                <div className={`flex flex-wrap gap-2 text-[10px] ${gt("text-slate-400", "text-zinc-500")}`}>
                                   {prospect.company && <span>{prospect.company}</span>}
                                   {prospect.title && <span>• {prospect.title}</span>}
                                   {prospect.location && <span>• {prospect.location}</span>}
@@ -656,9 +664,9 @@ export default function GrowthProspects() {
                     </>
                   ) : (
                     <div className="text-center py-16">
-                      <Users className="w-16 h-16 text-zinc-600 mx-auto mb-4" />
-                      <h3 className="text-xl font-semibold text-white mb-2">Select a List</h3>
-                      <p className="text-zinc-500">Choose a list from the sidebar to view prospects</p>
+                      <Users className={`w-16 h-16 ${gt("text-slate-300", "text-zinc-600")} mx-auto mb-4`} />
+                      <h3 className={`text-xl font-semibold ${gt("text-slate-900", "text-white")} mb-2`}>Select a List</h3>
+                      <p className={`${gt("text-slate-400", "text-zinc-500")}`}>Choose a list from the sidebar to view prospects</p>
                     </div>
                   )}
                 </div>
@@ -670,13 +678,13 @@ export default function GrowthProspects() {
           <TabsContent value="templates" className="mt-6">
             <div className="flex items-center justify-between mb-6">
               <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${gt("text-slate-500", "text-zinc-400")}`} />
                 <Input
                   type="search"
                   placeholder="Search templates..."
                   value={templateSearchTerm}
                   onChange={(e) => setTemplateSearchTerm(e.target.value)}
-                  className="pl-10 bg-zinc-900 border-zinc-700 text-white"
+                  className={`pl-10 ${gt("bg-slate-100 border-slate-200 text-slate-900", "bg-zinc-900 border-zinc-700 text-white")}`}
                 />
               </div>
               <Button onClick={handleCreateTemplate} className="bg-indigo-600/80 hover:bg-indigo-600 text-white font-medium">
@@ -687,7 +695,7 @@ export default function GrowthProspects() {
 
             {templatesLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[1,2,3,4,5,6].map(i => <Skeleton key={i} className="h-48 bg-zinc-800 rounded-2xl" />)}
+                {[1,2,3,4,5,6].map(i => <Skeleton key={i} className={`h-48 ${gt("bg-slate-200", "bg-zinc-800")} rounded-2xl`} />)}
               </div>
             ) : filteredTemplates.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -700,37 +708,37 @@ export default function GrowthProspects() {
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ delay: i * 0.05 }}
                     >
-                      <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+                      <div className={`p-6 rounded-2xl ${gt("bg-white border border-slate-200 shadow-sm", "bg-zinc-900/50 border border-zinc-800/60")}`}>
                         <div className="flex items-start justify-between mb-3">
                           <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center">
                             <FileText className="w-5 h-5 text-indigo-400" />
                           </div>
                           <div className="flex gap-1">
-                            <Button variant="ghost" size="icon" onClick={() => handleEditTemplate(template)} className="text-zinc-400 hover:text-white h-8 w-8">
+                            <Button variant="ghost" size="icon" onClick={() => handleEditTemplate(template)} className={`${gt("text-slate-500 hover:text-slate-900", "text-zinc-400 hover:text-white")} h-8 w-8`}>
                               <Edit className="w-4 h-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => handleDeleteTemplate(template.id)} className="text-zinc-400 hover:text-red-400 h-8 w-8">
+                            <Button variant="ghost" size="icon" onClick={() => handleDeleteTemplate(template.id)} className={`${gt("text-slate-500 hover:text-red-400", "text-zinc-400 hover:text-red-400")} h-8 w-8`}>
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
                         </div>
 
                         <h3 className="font-semibold text-white mb-2">{template.name}</h3>
-                        <p className="text-sm text-zinc-400 line-clamp-2 mb-3">{template.description}</p>
+                        <p className={`text-sm ${gt("text-slate-500", "text-zinc-400")} line-clamp-2 mb-3`}>{template.description}</p>
 
                         <div className="flex flex-wrap gap-2 mb-4">
                           {template.industry && (
-                            <Badge className="bg-zinc-800 text-zinc-300 border-zinc-700">
+                            <Badge className={`${gt("bg-slate-200 text-slate-600 border-slate-200", "bg-zinc-800 text-zinc-300 border-zinc-700")}`}>
                               <Briefcase className="w-3 h-3 mr-1" />{template.industry}
                             </Badge>
                           )}
                           {template.company_size && (
-                            <Badge className="bg-zinc-800 text-zinc-300 border-zinc-700">
+                            <Badge className={`${gt("bg-slate-200 text-slate-600 border-slate-200", "bg-zinc-800 text-zinc-300 border-zinc-700")}`}>
                               <Users className="w-3 h-3 mr-1" />{template.company_size}
                             </Badge>
                           )}
                           {template.location && (
-                            <Badge className="bg-zinc-800 text-zinc-300 border-zinc-700">
+                            <Badge className={`${gt("bg-slate-200 text-slate-600 border-slate-200", "bg-zinc-800 text-zinc-300 border-zinc-700")}`}>
                               <MapPin className="w-3 h-3 mr-1" />{template.location}
                             </Badge>
                           )}
@@ -749,12 +757,12 @@ export default function GrowthProspects() {
                 </AnimatePresence>
               </div>
             ) : (
-              <div className="p-12 text-center rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+              <div className={`p-12 text-center rounded-2xl ${gt("bg-white border border-slate-200 shadow-sm", "bg-zinc-900/50 border border-zinc-800/60")}`}>
                 <FileText className="w-16 h-16 text-indigo-400 mx-auto mb-4 opacity-50" />
                 <h3 className="text-xl font-bold text-white mb-2">
                   {templateSearchTerm ? "No Templates Found" : "No Templates Yet"}
                 </h3>
-                <p className="text-zinc-400 mb-6">
+                <p className={`${gt("text-slate-500", "text-zinc-400")} mb-6`}>
                   {templateSearchTerm ? "Try a different search" : "Create reusable ICP templates for faster research"}
                 </p>
                 {!templateSearchTerm && (
@@ -785,7 +793,7 @@ export default function GrowthProspects() {
                       className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${
                         isActive ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' :
                         isComplete ? 'bg-indigo-500/10 text-indigo-300' :
-                        'bg-zinc-800/50 text-zinc-500'
+                        gt('bg-slate-100 text-slate-400', 'bg-zinc-800/50 text-zinc-500')
                       }`}
                     >
                       {isComplete ? (
@@ -796,7 +804,7 @@ export default function GrowthProspects() {
                       <span className="text-sm font-medium hidden sm:inline">{step.label}</span>
                     </motion.div>
                     {i < STEPS.length - 1 && (
-                      <div className={`w-8 h-0.5 ${i < researchStep ? 'bg-indigo-500' : 'bg-zinc-700'}`} />
+                      <div className={`w-8 h-0.5 ${i < researchStep ? 'bg-indigo-500' : gt('bg-slate-300', 'bg-zinc-700')}`} />
                     )}
                   </React.Fragment>
                 );
@@ -813,7 +821,7 @@ export default function GrowthProspects() {
                   exit={{ opacity: 0, x: -20 }}
                   className="space-y-6"
                 >
-                  <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+                  <div className={`p-6 rounded-2xl ${gt("bg-white border border-slate-200 shadow-sm", "bg-zinc-900/50 border border-zinc-800/60")}`}>
                     <h3 className="text-lg font-semibold text-white mb-4">What are you looking for?</h3>
                     <div className="flex gap-4">
                       <button
@@ -821,7 +829,7 @@ export default function GrowthProspects() {
                         className={`flex-1 p-4 rounded-xl border-2 transition-all ${
                           searchType === 'companies'
                             ? 'bg-indigo-500/20 border-indigo-500 text-white'
-                            : 'bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:border-zinc-600'
+                            : gt('bg-slate-100 border-slate-200 text-slate-500 hover:border-slate-300', 'bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:border-zinc-600')
                         }`}
                       >
                         <Building2 className="w-8 h-8 mx-auto mb-2" />
@@ -833,7 +841,7 @@ export default function GrowthProspects() {
                         className={`flex-1 p-4 rounded-xl border-2 transition-all ${
                           searchType === 'people'
                             ? 'bg-indigo-500/20 border-indigo-500 text-white'
-                            : 'bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:border-zinc-600'
+                            : gt('bg-slate-100 border-slate-200 text-slate-500 hover:border-slate-300', 'bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:border-zinc-600')
                         }`}
                       >
                         <Users className="w-8 h-8 mx-auto mb-2" />
@@ -843,17 +851,17 @@ export default function GrowthProspects() {
                     </div>
                   </div>
 
-                  <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+                  <div className={`p-6 rounded-2xl ${gt("bg-white border border-slate-200 shadow-sm", "bg-zinc-900/50 border border-zinc-800/60")}`}>
                     <div className="space-y-4">
                       <div>
-                        <label className="text-sm text-zinc-400 mb-2 block">Describe your ideal {searchType === 'companies' ? 'company' : 'prospect'}</label>
+                        <label className={`text-sm ${gt("text-slate-500", "text-zinc-400")} mb-2 block`}>Describe your ideal {searchType === 'companies' ? 'company' : 'prospect'}</label>
                         <Textarea
                           value={filters.query}
                           onChange={(e) => handleFilterChange('query', e.target.value)}
                           placeholder={searchType === 'companies' 
                             ? "e.g., B2B SaaS companies in fintech with 50-200 employees..."
                             : "e.g., VP of Sales at enterprise software companies..."}
-                          className="bg-zinc-800 border-zinc-700 text-white min-h-[100px]"
+                          className={`${gt("bg-slate-100 border-slate-200 text-slate-900", "bg-zinc-800 border-zinc-700 text-white")} min-h-[100px]`}
                         />
                       </div>
 
@@ -876,14 +884,14 @@ export default function GrowthProspects() {
                             className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-hidden"
                           >
                             <div>
-                              <label className="text-sm text-zinc-400 mb-2 block flex items-center gap-2">
+                              <label className={`text-sm ${gt("text-slate-500", "text-zinc-400")} mb-2 block flex items-center gap-2`}>
                                 <Briefcase className="w-4 h-4" /> Industry
                               </label>
                               <Select value={filters.industry} onValueChange={(v) => handleFilterChange('industry', v)}>
-                                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                                <SelectTrigger className={`${gt("bg-slate-100 border-slate-200 text-slate-900", "bg-zinc-800 border-zinc-700 text-white")}`}>
                                   <SelectValue placeholder="Select industry" />
                                 </SelectTrigger>
-                                <SelectContent className="bg-zinc-900 border-zinc-700">
+                                <SelectContent className={`${gt("bg-white border-slate-200", "bg-zinc-900 border-zinc-700")}`}>
                                   {INDUSTRIES.map(ind => (
                                     <SelectItem key={ind} value={ind}>{ind}</SelectItem>
                                   ))}
@@ -892,14 +900,14 @@ export default function GrowthProspects() {
                             </div>
 
                             <div>
-                              <label className="text-sm text-zinc-400 mb-2 block flex items-center gap-2">
+                              <label className={`text-sm ${gt("text-slate-500", "text-zinc-400")} mb-2 block flex items-center gap-2`}>
                                 <Users className="w-4 h-4" /> Company Size
                               </label>
                               <Select value={filters.companySize} onValueChange={(v) => handleFilterChange('companySize', v)}>
-                                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                                <SelectTrigger className={`${gt("bg-slate-100 border-slate-200 text-slate-900", "bg-zinc-800 border-zinc-700 text-white")}`}>
                                   <SelectValue placeholder="Select size" />
                                 </SelectTrigger>
-                                <SelectContent className="bg-zinc-900 border-zinc-700">
+                                <SelectContent className={`${gt("bg-white border-slate-200", "bg-zinc-900 border-zinc-700")}`}>
                                   {COMPANY_SIZES.map(size => (
                                     <SelectItem key={size.value} value={size.value}>{size.label}</SelectItem>
                                   ))}
@@ -908,52 +916,52 @@ export default function GrowthProspects() {
                             </div>
 
                             <div>
-                              <label className="text-sm text-zinc-400 mb-2 block flex items-center gap-2">
+                              <label className={`text-sm ${gt("text-slate-500", "text-zinc-400")} mb-2 block flex items-center gap-2`}>
                                 <MapPin className="w-4 h-4" /> Location
                               </label>
                               <Input
                                 value={filters.location}
                                 onChange={(e) => handleFilterChange('location', e.target.value)}
                                 placeholder="e.g., United States, Europe"
-                                className="bg-zinc-800 border-zinc-700 text-white"
+                                className={`${gt("bg-slate-100 border-slate-200 text-slate-900", "bg-zinc-800 border-zinc-700 text-white")}`}
                               />
                             </div>
 
                             {searchType === 'people' && (
                               <div>
-                                <label className="text-sm text-zinc-400 mb-2 block flex items-center gap-2">
+                                <label className={`text-sm ${gt("text-slate-500", "text-zinc-400")} mb-2 block flex items-center gap-2`}>
                                   <Briefcase className="w-4 h-4" /> Job Title
                                 </label>
                                 <Input
                                   value={filters.jobTitle}
                                   onChange={(e) => handleFilterChange('jobTitle', e.target.value)}
                                   placeholder="e.g., VP Sales, CTO"
-                                  className="bg-zinc-800 border-zinc-700 text-white"
+                                  className={`${gt("bg-slate-100 border-slate-200 text-slate-900", "bg-zinc-800 border-zinc-700 text-white")}`}
                                 />
                               </div>
                             )}
 
                             <div>
-                              <label className="text-sm text-zinc-400 mb-2 block flex items-center gap-2">
+                              <label className={`text-sm ${gt("text-slate-500", "text-zinc-400")} mb-2 block flex items-center gap-2`}>
                                 <Globe className="w-4 h-4" /> Tech Stack
                               </label>
                               <Input
                                 value={filters.techStack}
                                 onChange={(e) => handleFilterChange('techStack', e.target.value)}
                                 placeholder="e.g., Salesforce, AWS"
-                                className="bg-zinc-800 border-zinc-700 text-white"
+                                className={`${gt("bg-slate-100 border-slate-200 text-slate-900", "bg-zinc-800 border-zinc-700 text-white")}`}
                               />
                             </div>
 
                             <div>
-                              <label className="text-sm text-zinc-400 mb-2 block flex items-center gap-2">
+                              <label className={`text-sm ${gt("text-slate-500", "text-zinc-400")} mb-2 block flex items-center gap-2`}>
                                 <Euro className="w-4 h-4" /> Revenue
                               </label>
                               <Input
                                 value={filters.revenue}
                                 onChange={(e) => handleFilterChange('revenue', e.target.value)}
                                 placeholder="e.g., €1M-€10M"
-                                className="bg-zinc-800 border-zinc-700 text-white"
+                                className={`${gt("bg-slate-100 border-slate-200 text-slate-900", "bg-zinc-800 border-zinc-700 text-white")}`}
                               />
                             </div>
                           </motion.div>
@@ -986,8 +994,8 @@ export default function GrowthProspects() {
                   className="flex flex-col items-center justify-center py-20"
                 >
                   <Loader2 className="w-12 h-12 text-indigo-400/70 animate-spin mb-4" />
-                  <h3 className="text-xl font-semibold text-white mb-2">Searching for prospects...</h3>
-                  <p className="text-zinc-500">Analyzing your criteria and finding matches</p>
+                  <h3 className={`text-xl font-semibold ${gt("text-slate-900", "text-white")} mb-2`}>Searching for prospects...</h3>
+                  <p className={`${gt("text-slate-400", "text-zinc-500")}`}>Analyzing your criteria and finding matches</p>
                 </motion.div>
               )}
 
@@ -1000,9 +1008,9 @@ export default function GrowthProspects() {
                   exit={{ opacity: 0, x: -20 }}
                   className="space-y-6"
                 >
-                  <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+                  <div className={`p-6 rounded-2xl ${gt("bg-white border border-slate-200 shadow-sm", "bg-zinc-900/50 border border-zinc-800/60")}`}>
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-white">
+                      <h3 className={`text-lg font-semibold ${gt("text-slate-900", "text-white")}`}>
                         Found {researchResults.length} {searchType === 'people' ? 'prospects' : 'companies'}
                       </h3>
                       <div className="flex items-center gap-2">
@@ -1010,7 +1018,7 @@ export default function GrowthProspects() {
                           checked={selectedResults.size === researchResults.length && researchResults.length > 0}
                           onCheckedChange={selectAllResults}
                         />
-                        <span className="text-sm text-zinc-400">Select All ({selectedResults.size})</span>
+                        <span className={`text-sm ${gt("text-slate-500", "text-zinc-400")}`}>Select All ({selectedResults.size})</span>
                       </div>
                     </div>
 
@@ -1024,7 +1032,7 @@ export default function GrowthProspects() {
                           className={`p-4 rounded-xl border transition-all cursor-pointer ${
                             selectedResults.has(result.id)
                               ? 'bg-indigo-500/10 border-indigo-500/30'
-                              : 'bg-zinc-800/50 border-zinc-700/50 hover:border-zinc-600'
+                              : gt('bg-slate-100 border-slate-200 hover:border-slate-300', 'bg-zinc-800/50 border-zinc-700/50 hover:border-zinc-600')
                           }`}
                           onClick={() => toggleResultSelect(result.id)}
                         >
@@ -1032,14 +1040,14 @@ export default function GrowthProspects() {
                             <Checkbox checked={selectedResults.has(result.id)} />
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
-                                <h4 className="font-medium text-white">{result.name}</h4>
+                                <h4 className={`font-medium ${gt("text-slate-900", "text-white")}`}>{result.name}</h4>
                                 {result.score && (
                                   <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/30">
                                     {result.score}% match
                                   </Badge>
                                 )}
                               </div>
-                              <div className="flex flex-wrap items-center gap-3 mt-1 text-sm text-zinc-400">
+                              <div className={`flex flex-wrap items-center gap-3 mt-1 text-sm ${gt("text-slate-500", "text-zinc-400")}`}>
                                 {result.company && <span>{result.company}</span>}
                                 {result.title && <span>• {result.title}</span>}
                                 {result.industry && <span>• {result.industry}</span>}
@@ -1056,7 +1064,7 @@ export default function GrowthProspects() {
                       <Button
                       variant="outline"
                       onClick={() => setResearchStep(0)}
-                      className="border-zinc-700/60 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
+                      className={`${gt("border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-100", "border-zinc-700/60 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50")}`}
                       >
                       <ArrowLeft className="w-4 h-4 mr-2" />
                       Back
@@ -1081,12 +1089,12 @@ export default function GrowthProspects() {
                   animate={{ opacity: 1, scale: 1 }}
                   className="text-center py-12"
                 >
-                  <div className="p-12 max-w-md mx-auto rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
+                  <div className={`p-12 max-w-md mx-auto rounded-2xl ${gt("bg-white border border-slate-200 shadow-sm", "bg-zinc-900/50 border border-zinc-800/60")}`}>
                     <div className="w-16 h-16 mx-auto rounded-full bg-indigo-500/20 flex items-center justify-center mb-4">
                       <Check className="w-8 h-8 text-indigo-400" />
                     </div>
                     <h3 className="text-2xl font-bold text-white mb-2">List Saved!</h3>
-                    <p className="text-zinc-400 mb-6">
+                    <p className={`${gt("text-slate-500", "text-zinc-400")} mb-6`}>
                       {selectedResults.size} prospects have been added to your list.
                     </p>
                     <div className="flex flex-col gap-2">
@@ -1099,7 +1107,7 @@ export default function GrowthProspects() {
                       <Button
                         variant="outline"
                         onClick={resetResearch}
-                        className="border-zinc-700/60 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
+                        className={`${gt("border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-100", "border-zinc-700/60 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50")}`}
                       >
                         Start New Research
                       </Button>
@@ -1126,103 +1134,103 @@ export default function GrowthProspects() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto"
+              className={`${gt("bg-white border border-slate-200", "bg-zinc-900 border border-zinc-700")} rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto`}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-white">
+                <h2 className={`text-xl font-bold ${gt("text-slate-900", "text-white")}`}>
                   {editingTemplate ? 'Edit Template' : 'New Template'}
                 </h2>
-                <Button variant="ghost" size="icon" onClick={() => setShowTemplateEditor(false)} className="text-zinc-400">
+                <Button variant="ghost" size="icon" onClick={() => setShowTemplateEditor(false)} className={`${gt("text-slate-500", "text-zinc-400")}`}>
                   <X className="w-5 h-5" />
                 </Button>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm text-zinc-400 mb-2 block">Template Name</label>
+                  <label className={`text-sm ${gt("text-slate-500", "text-zinc-400")} mb-2 block`}>Template Name</label>
                   <Input
                     value={templateForm.name}
                     onChange={(e) => setTemplateForm({ ...templateForm, name: e.target.value })}
                     placeholder="e.g., Enterprise SaaS Buyers"
-                    className="bg-zinc-800 border-zinc-700 text-white"
+                    className={`${gt("bg-slate-100 border-slate-200 text-slate-900", "bg-zinc-800 border-zinc-700 text-white")}`}
                   />
                 </div>
 
                 <div>
-                  <label className="text-sm text-zinc-400 mb-2 block">Description</label>
+                  <label className={`text-sm ${gt("text-slate-500", "text-zinc-400")} mb-2 block`}>Description</label>
                   <Textarea
                     value={templateForm.description}
                     onChange={(e) => setTemplateForm({ ...templateForm, description: e.target.value })}
                     placeholder="Describe this ICP..."
-                    className="bg-zinc-800 border-zinc-700 text-white"
+                    className={`${gt("bg-slate-100 border-slate-200 text-slate-900", "bg-zinc-800 border-zinc-700 text-white")}`}
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm text-zinc-400 mb-2 block">Industry</label>
+                    <label className={`text-sm ${gt("text-slate-500", "text-zinc-400")} mb-2 block`}>Industry</label>
                     <Input
                       value={templateForm.industry}
                       onChange={(e) => setTemplateForm({ ...templateForm, industry: e.target.value })}
                       placeholder="e.g., Technology"
-                      className="bg-zinc-800 border-zinc-700 text-white"
+                      className={`${gt("bg-slate-100 border-slate-200 text-slate-900", "bg-zinc-800 border-zinc-700 text-white")}`}
                     />
                   </div>
                   <div>
-                    <label className="text-sm text-zinc-400 mb-2 block">Company Size</label>
+                    <label className={`text-sm ${gt("text-slate-500", "text-zinc-400")} mb-2 block`}>Company Size</label>
                     <Input
                       value={templateForm.company_size}
                       onChange={(e) => setTemplateForm({ ...templateForm, company_size: e.target.value })}
                       placeholder="e.g., 50-200"
-                      className="bg-zinc-800 border-zinc-700 text-white"
+                      className={`${gt("bg-slate-100 border-slate-200 text-slate-900", "bg-zinc-800 border-zinc-700 text-white")}`}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-sm text-zinc-400 mb-2 block">Location</label>
+                  <label className={`text-sm ${gt("text-slate-500", "text-zinc-400")} mb-2 block`}>Location</label>
                   <Input
                     value={templateForm.location}
                     onChange={(e) => setTemplateForm({ ...templateForm, location: e.target.value })}
                     placeholder="e.g., United States, Europe"
-                    className="bg-zinc-800 border-zinc-700 text-white"
+                    className={`${gt("bg-slate-100 border-slate-200 text-slate-900", "bg-zinc-800 border-zinc-700 text-white")}`}
                   />
                 </div>
 
                 <div>
-                  <label className="text-sm text-zinc-400 mb-2 block">Job Titles (comma-separated)</label>
+                  <label className={`text-sm ${gt("text-slate-500", "text-zinc-400")} mb-2 block`}>Job Titles (comma-separated)</label>
                   <Input
                     value={templateForm.job_titles}
                     onChange={(e) => setTemplateForm({ ...templateForm, job_titles: e.target.value })}
                     placeholder="e.g., VP Sales, CTO, Head of Marketing"
-                    className="bg-zinc-800 border-zinc-700 text-white"
+                    className={`${gt("bg-slate-100 border-slate-200 text-slate-900", "bg-zinc-800 border-zinc-700 text-white")}`}
                   />
                 </div>
 
                 <div>
-                  <label className="text-sm text-zinc-400 mb-2 block">Tech Stack (comma-separated)</label>
+                  <label className={`text-sm ${gt("text-slate-500", "text-zinc-400")} mb-2 block`}>Tech Stack (comma-separated)</label>
                   <Input
                     value={templateForm.tech_stack}
                     onChange={(e) => setTemplateForm({ ...templateForm, tech_stack: e.target.value })}
                     placeholder="e.g., Salesforce, HubSpot, AWS"
-                    className="bg-zinc-800 border-zinc-700 text-white"
+                    className={`${gt("bg-slate-100 border-slate-200 text-slate-900", "bg-zinc-800 border-zinc-700 text-white")}`}
                   />
                 </div>
 
                 <div>
-                  <label className="text-sm text-zinc-400 mb-2 block">Keywords (comma-separated)</label>
+                  <label className={`text-sm ${gt("text-slate-500", "text-zinc-400")} mb-2 block`}>Keywords (comma-separated)</label>
                   <Input
                     value={templateForm.keywords}
                     onChange={(e) => setTemplateForm({ ...templateForm, keywords: e.target.value })}
                     placeholder="e.g., B2B, SaaS, Enterprise"
-                    className="bg-zinc-800 border-zinc-700 text-white"
+                    className={`${gt("bg-slate-100 border-slate-200 text-slate-900", "bg-zinc-800 border-zinc-700 text-white")}`}
                   />
                 </div>
               </div>
 
               <div className="flex justify-end gap-3 mt-6">
-                <Button variant="outline" onClick={() => setShowTemplateEditor(false)} className="border-zinc-700 text-zinc-300">
+                <Button variant="outline" onClick={() => setShowTemplateEditor(false)} className={`${gt("border-slate-200 text-slate-600", "border-zinc-700 text-zinc-300")}`}>
                   Cancel
                 </Button>
                 <Button onClick={handleSaveTemplate} disabled={!templateForm.name || savingTemplate} className="bg-indigo-500 hover:bg-indigo-400 text-white">
@@ -1234,5 +1242,6 @@ export default function GrowthProspects() {
         )}
       </AnimatePresence>
     </div>
+    </GrowthPageTransition>
   );
 }

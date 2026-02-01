@@ -11,8 +11,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Search, Users, Building2, ArrowRight, ArrowLeft, Check,
   Filter, Download, Save, Sparkles, Globe, MapPin, Briefcase,
-  Euro, Loader2, ChevronDown
+  Euro, Loader2, ChevronDown, Sun, Moon
 } from "lucide-react";
+import { useGrowthTheme } from '@/contexts/GrowthThemeContext';
+import { GrowthPageTransition } from '@/components/growth/ui';
 import { GlassCard } from "@/components/ui/GlassCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useUser } from "@/components/context/UserContext";
@@ -47,6 +49,7 @@ const COMPANY_SIZES = [
 ];
 
 export default function GrowthResearch() {
+  const { theme, toggleTheme, gt } = useGrowthTheme();
   const { user } = useUser();
   const [searchParams] = useSearchParams();
   const [currentStep, setCurrentStep] = useState(0);
@@ -168,18 +171,24 @@ export default function GrowthResearch() {
   };
 
   return (
-    <div className="min-h-screen bg-black relative">
+    <GrowthPageTransition>
+    <div className={`min-h-screen ${gt('bg-slate-50', 'bg-black')} relative`}>
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-20 left-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl animate-pulse" />
       </div>
 
       <div className="relative z-10 w-full px-4 lg:px-6 py-4 space-y-4">
-        <PageHeader
-          icon={Search}
-          title="Prospect Research"
-          subtitle="Find and qualify your ideal prospects"
-          color="indigo"
-        />
+        <div className="flex items-center justify-between">
+          <PageHeader
+            icon={Search}
+            title="Prospect Research"
+            subtitle="Find and qualify your ideal prospects"
+            color="indigo"
+          />
+          <Button variant="outline" size="icon" onClick={toggleTheme} className={`${gt('border-slate-200 hover:bg-slate-100', 'border-zinc-700 hover:bg-zinc-800')}`}>
+            {theme === 'dark' ? <Sun className="w-4 h-4 text-yellow-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
+          </Button>
+        </div>
 
         {/* Progress Steps */}
         <div className="flex items-center justify-center gap-2">
@@ -197,7 +206,7 @@ export default function GrowthResearch() {
                   className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${
                     isActive ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' :
                     isComplete ? 'bg-indigo-500/10 text-indigo-300' :
-                    'bg-zinc-800/50 text-zinc-500'
+                    `${gt('bg-slate-100 text-slate-400', 'bg-zinc-800/50 text-zinc-500')}`
                   }`}
                 >
                   {isComplete ? (
@@ -208,7 +217,7 @@ export default function GrowthResearch() {
                   <span className="text-sm font-medium hidden sm:inline">{step.label}</span>
                 </motion.div>
                 {i < STEPS.length - 1 && (
-                  <div className={`w-8 h-0.5 ${i < currentStep ? 'bg-indigo-500' : 'bg-zinc-700'}`} />
+                  <div className={`w-8 h-0.5 ${i < currentStep ? 'bg-indigo-500' : gt('bg-slate-300', 'bg-zinc-700')}`} />
                 )}
               </React.Fragment>
             );
@@ -228,14 +237,14 @@ export default function GrowthResearch() {
             >
               {/* Search Type Toggle */}
               <GlassCard glow="indigo" className="p-4">
-                <h3 className="text-base font-semibold text-white mb-3">What are you looking for?</h3>
+                <h3 className={`text-base font-semibold ${gt('text-slate-900', 'text-white')} mb-3`}>What are you looking for?</h3>
                 <div className="flex gap-3">
                   <button
                     onClick={() => setSearchType('companies')}
                     className={`flex-1 p-3 rounded-xl border-2 transition-all ${
                       searchType === 'companies'
-                        ? 'bg-indigo-500/20 border-indigo-500 text-white'
-                        : 'bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:border-zinc-600'
+                        ? `bg-indigo-500/20 border-indigo-500 ${gt('text-slate-900', 'text-white')}`
+                        : `${gt('bg-slate-100 border-slate-200 text-slate-500 hover:border-slate-300', 'bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:border-zinc-600')}`
                     }`}
                   >
                     <Building2 className="w-6 h-6 mx-auto mb-2" />
@@ -246,8 +255,8 @@ export default function GrowthResearch() {
                     onClick={() => setSearchType('people')}
                     className={`flex-1 p-3 rounded-xl border-2 transition-all ${
                       searchType === 'people'
-                        ? 'bg-indigo-500/20 border-indigo-500 text-white'
-                        : 'bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:border-zinc-600'
+                        ? `bg-indigo-500/20 border-indigo-500 ${gt('text-slate-900', 'text-white')}`
+                        : `${gt('bg-slate-100 border-slate-200 text-slate-500 hover:border-slate-300', 'bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:border-zinc-600')}`
                     }`}
                   >
                     <Users className="w-6 h-6 mx-auto mb-2" />
@@ -261,14 +270,14 @@ export default function GrowthResearch() {
               <GlassCard glow="indigo" className="p-4">
                 <div className="space-y-3">
                   <div>
-                    <label className="text-xs text-zinc-400 mb-2 block">Describe your ideal {searchType === 'companies' ? 'company' : 'prospect'}</label>
+                    <label className={`text-xs ${gt('text-slate-500', 'text-zinc-400')} mb-2 block`}>Describe your ideal {searchType === 'companies' ? 'company' : 'prospect'}</label>
                     <Textarea
                       value={filters.query}
                       onChange={(e) => handleFilterChange('query', e.target.value)}
                       placeholder={searchType === 'companies' 
                         ? "e.g., B2B SaaS companies in fintech with 50-200 employees..."
                         : "e.g., VP of Sales at enterprise software companies..."}
-                      className="bg-zinc-800 border-zinc-700 text-white min-h-[100px]"
+                      className={`${gt('bg-white border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')} min-h-[100px]`}
                     />
                   </div>
 
@@ -291,14 +300,14 @@ export default function GrowthResearch() {
                         className="grid grid-cols-1 md:grid-cols-2 gap-3 overflow-hidden"
                       >
                         <div>
-                          <label className="text-xs text-zinc-400 mb-2 block flex items-center gap-2">
+                          <label className={`text-xs ${gt('text-slate-500', 'text-zinc-400')} mb-2 block flex items-center gap-2`}>
                             <Briefcase className="w-4 h-4" /> Industry
                           </label>
                           <Select value={filters.industry} onValueChange={(v) => handleFilterChange('industry', v)}>
-                            <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                            <SelectTrigger className={`${gt('bg-white border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')}`}>
                               <SelectValue placeholder="Select industry" />
                             </SelectTrigger>
-                            <SelectContent className="bg-zinc-900 border-zinc-700">
+                            <SelectContent className={`${gt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-700')}`}>
                               {INDUSTRIES.map(ind => (
                                 <SelectItem key={ind} value={ind}>{ind}</SelectItem>
                               ))}
@@ -307,14 +316,14 @@ export default function GrowthResearch() {
                         </div>
 
                         <div>
-                          <label className="text-xs text-zinc-400 mb-2 block flex items-center gap-2">
+                          <label className={`text-xs ${gt('text-slate-500', 'text-zinc-400')} mb-2 block flex items-center gap-2`}>
                             <Users className="w-4 h-4" /> Company Size
                           </label>
                           <Select value={filters.companySize} onValueChange={(v) => handleFilterChange('companySize', v)}>
-                            <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                            <SelectTrigger className={`${gt('bg-white border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')}`}>
                               <SelectValue placeholder="Select size" />
                             </SelectTrigger>
-                            <SelectContent className="bg-zinc-900 border-zinc-700">
+                            <SelectContent className={`${gt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-700')}`}>
                               {COMPANY_SIZES.map(size => (
                                 <SelectItem key={size.value} value={size.value}>{size.label}</SelectItem>
                               ))}
@@ -323,52 +332,52 @@ export default function GrowthResearch() {
                         </div>
 
                         <div>
-                          <label className="text-xs text-zinc-400 mb-2 block flex items-center gap-2">
+                          <label className={`text-xs ${gt('text-slate-500', 'text-zinc-400')} mb-2 block flex items-center gap-2`}>
                             <MapPin className="w-4 h-4" /> Location
                           </label>
                           <Input
                             value={filters.location}
                             onChange={(e) => handleFilterChange('location', e.target.value)}
                             placeholder="e.g., United States, Europe"
-                            className="bg-zinc-800 border-zinc-700 text-white"
+                            className={`${gt('bg-white border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')}`}
                           />
                         </div>
 
                         {searchType === 'people' && (
                           <div>
-                            <label className="text-xs text-zinc-400 mb-2 block flex items-center gap-2">
+                            <label className={`text-xs ${gt('text-slate-500', 'text-zinc-400')} mb-2 block flex items-center gap-2`}>
                               <Briefcase className="w-4 h-4" /> Job Title
                             </label>
                             <Input
                               value={filters.jobTitle}
                               onChange={(e) => handleFilterChange('jobTitle', e.target.value)}
                               placeholder="e.g., VP Sales, CTO, Head of Marketing"
-                              className="bg-zinc-800 border-zinc-700 text-white"
+                              className={`${gt('bg-white border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')}`}
                             />
                           </div>
                         )}
 
                         <div>
-                          <label className="text-xs text-zinc-400 mb-2 block flex items-center gap-2">
+                          <label className={`text-xs ${gt('text-slate-500', 'text-zinc-400')} mb-2 block flex items-center gap-2`}>
                             <Globe className="w-4 h-4" /> Tech Stack
                           </label>
                           <Input
                             value={filters.techStack}
                             onChange={(e) => handleFilterChange('techStack', e.target.value)}
                             placeholder="e.g., Salesforce, HubSpot, AWS"
-                            className="bg-zinc-800 border-zinc-700 text-white"
+                            className={`${gt('bg-white border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')}`}
                           />
                         </div>
 
                         <div>
-                          <label className="text-xs text-zinc-400 mb-2 block flex items-center gap-2">
+                          <label className={`text-xs ${gt('text-slate-500', 'text-zinc-400')} mb-2 block flex items-center gap-2`}>
                             <Euro className="w-4 h-4" /> Revenue
                           </label>
                           <Input
                             value={filters.revenue}
                             onChange={(e) => handleFilterChange('revenue', e.target.value)}
                             placeholder="e.g., €1M-€10M"
-                            className="bg-zinc-800 border-zinc-700 text-white"
+                            className={`${gt('bg-white border-slate-200 text-slate-900', 'bg-zinc-800 border-zinc-700 text-white')}`}
                           />
                         </div>
                       </motion.div>
@@ -404,11 +413,11 @@ export default function GrowthResearch() {
                 <Loader2 className="w-16 h-16 text-indigo-400 animate-spin mb-4" />
                 <div className="absolute inset-0 bg-indigo-500/20 blur-xl rounded-full" />
               </div>
-              <h3 className="text-lg font-semibold text-white mb-2">Searching Explorium Database...</h3>
-              <p className="text-zinc-400 text-center max-w-md">
+              <h3 className={`text-lg font-semibold ${gt('text-slate-900', 'text-white')} mb-2`}>Searching Explorium Database...</h3>
+              <p className={`${gt('text-slate-500', 'text-zinc-400')} text-center max-w-md`}>
                 Querying real business and contact data. This may take a few seconds.
               </p>
-              <div className="mt-6 flex items-center gap-2 text-sm text-zinc-500">
+              <div className={`mt-6 flex items-center gap-2 text-sm ${gt('text-slate-400', 'text-zinc-500')}`}>
                 <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
                 Connected to Explorium API
               </div>
@@ -427,10 +436,10 @@ export default function GrowthResearch() {
               <GlassCard glow="indigo" className="p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <h3 className="text-base font-semibold text-white">
+                    <h3 className={`text-base font-semibold ${gt('text-slate-900', 'text-white')}`}>
                       Found {results.length} {searchType === 'people' ? 'prospects' : 'companies'}
                     </h3>
-                    <p className="text-[10px] text-zinc-500 flex items-center gap-1 mt-1">
+                    <p className={`text-[10px] ${gt('text-slate-400', 'text-zinc-500')} flex items-center gap-1 mt-1`}>
                       <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
                       Live data from Explorium
                     </p>
@@ -440,7 +449,7 @@ export default function GrowthResearch() {
                       checked={selectedResults.size === results.length && results.length > 0}
                       onCheckedChange={selectAll}
                     />
-                    <span className="text-xs text-zinc-400">Select All ({selectedResults.size})</span>
+                    <span className={`text-xs ${gt('text-slate-500', 'text-zinc-400')}`}>Select All ({selectedResults.size})</span>
                   </div>
                 </div>
 
@@ -454,7 +463,7 @@ export default function GrowthResearch() {
                       className={`p-3 rounded-xl border transition-all cursor-pointer ${
                         selectedResults.has(result.id)
                           ? 'bg-indigo-500/10 border-indigo-500/30'
-                          : 'bg-zinc-800/50 border-zinc-700/50 hover:border-zinc-600'
+                          : `${gt('bg-slate-100 border-slate-200 hover:border-slate-300', 'bg-zinc-800/50 border-zinc-700/50 hover:border-zinc-600')}`
                       }`}
                       onClick={() => toggleSelect(result.id)}
                     >
@@ -462,14 +471,14 @@ export default function GrowthResearch() {
                         <Checkbox checked={selectedResults.has(result.id)} />
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <h4 className="font-medium text-white text-sm">{result.name}</h4>
+                            <h4 className={`font-medium ${gt('text-slate-900', 'text-white')} text-sm`}>{result.name}</h4>
                             {result.score && (
                               <Badge className="bg-indigo-500/20 text-indigo-400 border-indigo-500/30">
                                 {result.score}% match
                               </Badge>
                             )}
                           </div>
-                          <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-zinc-400">
+                          <div className={`flex flex-wrap items-center gap-3 mt-1 text-xs ${gt('text-slate-500', 'text-zinc-400')}`}>
                             {result.company && result.company !== 'N/A' && <span>{result.company}</span>}
                             {result.title && result.title !== 'N/A' && <span>• {result.title}</span>}
                             {result.industry && result.industry !== 'N/A' && <span>• {result.industry}</span>}
@@ -501,7 +510,7 @@ export default function GrowthResearch() {
                                 </a>
                               )}
                               {result.email && (
-                                <span className="text-[10px] text-zinc-500">{result.email}</span>
+                                <span className={`text-[10px] ${gt('text-slate-400', 'text-zinc-500')}`}>{result.email}</span>
                               )}
                             </div>
                           )}
@@ -516,7 +525,7 @@ export default function GrowthResearch() {
                 <Button
                   variant="outline"
                   onClick={() => setCurrentStep(0)}
-                  className="border-zinc-700 text-zinc-300"
+                  className={`${gt('border-slate-200 text-slate-600', 'border-zinc-700 text-zinc-300')}`}
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back
@@ -545,8 +554,8 @@ export default function GrowthResearch() {
                 <div className="w-12 h-12 mx-auto rounded-full bg-indigo-500/20 flex items-center justify-center mb-4">
                   <Check className="w-6 h-6 text-indigo-400" />
                 </div>
-                <h3 className="text-lg font-bold text-white mb-2">List Saved!</h3>
-                <p className="text-zinc-400 mb-6">
+                <h3 className={`text-lg font-bold ${gt('text-slate-900', 'text-white')} mb-2`}>List Saved!</h3>
+                <p className={`${gt('text-slate-500', 'text-zinc-400')} mb-6`}>
                   {selectedResults.size} prospects have been added to your list.
                 </p>
                 <div className="flex flex-col gap-2">
@@ -564,7 +573,7 @@ export default function GrowthResearch() {
                       setSelectedResults(new Set());
                       setFilters({ query: '', industry: '', companySize: '', location: '', jobTitle: '', keywords: '', revenue: '', techStack: '' });
                     }}
-                    className="border-zinc-700 text-zinc-300"
+                    className={`${gt('border-slate-200 text-slate-600', 'border-zinc-700 text-zinc-300')}`}
                   >
                     Start New Research
                   </Button>
@@ -575,5 +584,6 @@ export default function GrowthResearch() {
         </AnimatePresence>
       </div>
     </div>
+    </GrowthPageTransition>
   );
 }

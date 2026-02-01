@@ -5,8 +5,11 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
   TrendingUp, TrendingDown, Euro, Target, Calendar, ArrowRight,
-  Bell, Send, BarChart3, Plus, Users, Clock, Zap, Search, UserPlus, Layers
+  Bell, Send, BarChart3, Plus, Users, Clock, Zap, Search, UserPlus, Layers,
+  Sun, Moon
 } from "lucide-react";
+import { useGrowthTheme } from '@/contexts/GrowthThemeContext';
+import { GrowthPageTransition } from '@/components/growth/ui';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -21,6 +24,7 @@ import ClayCampaignBuilder from "@/components/growth/ClayCampaignBuilder";
 import { toast } from "sonner";
 
 export default function Growth() {
+  const { theme, toggleTheme, gt } = useGrowthTheme();
   const { user } = useUser();
   const [opportunities, setOpportunities] = useState([]);
   const [campaigns, setCampaigns] = useState([]);
@@ -181,20 +185,21 @@ export default function Growth() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black p-4">
+      <div className={`min-h-screen ${gt('bg-slate-50', 'bg-black')} p-4`}>
         <div className="max-w-7xl mx-auto space-y-4">
-          <Skeleton className="h-16 w-full bg-zinc-800 rounded-xl" />
+          <Skeleton className={`h-16 w-full ${gt('bg-slate-200', 'bg-zinc-800')} rounded-xl`} />
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {[1,2,3,4].map(i => <Skeleton key={i} className="h-20 bg-zinc-800 rounded-xl" />)}
+            {[1,2,3,4].map(i => <Skeleton key={i} className={`h-20 ${gt('bg-slate-200', 'bg-zinc-800')} rounded-xl`} />)}
           </div>
-          <Skeleton className="h-64 bg-zinc-800 rounded-xl" />
+          <Skeleton className={`h-64 ${gt('bg-slate-200', 'bg-zinc-800')} rounded-xl`} />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black relative">
+    <GrowthPageTransition>
+    <div className={`min-h-screen ${gt('bg-slate-50', 'bg-black')} relative`}>
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-20 right-1/4 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-indigo-400/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
@@ -208,8 +213,11 @@ export default function Growth() {
           color="indigo"
           actions={
             <div className="flex gap-2">
+              <button onClick={toggleTheme} className={`p-2 rounded-lg border transition-colors ${gt('border-slate-200 hover:bg-slate-100 text-slate-600', 'border-zinc-700 hover:bg-zinc-800 text-zinc-400')}`}>
+                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </button>
               <Link to={createPageUrl('GrowthResearch')}>
-                <Button variant="outline" className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700 hover:text-white">
+                <Button variant="outline" className={`${gt('border-slate-200 bg-white text-slate-600 hover:bg-slate-100', 'border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700')} hover:text-white`}>
                   <Search className="w-4 h-4 mr-2" />
                   Research
                 </Button>
@@ -225,15 +233,15 @@ export default function Growth() {
         />
 
         {/* Quick Prospect Search */}
-        <div className="p-3 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+        <div className={`p-3 rounded-xl ${gt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border border-zinc-800/60')}`}>
           <form onSubmit={handleQuickSearch} className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" />
+              <Search className={`absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 ${gt('text-slate-400', 'text-zinc-500')}`} />
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Quick search: e.g., 'VP Sales at SaaS companies in Europe'"
-                className="pl-8 h-8 text-xs bg-zinc-800/50 border-zinc-700/60 text-white focus:border-indigo-500/40"
+                className={`pl-8 h-8 text-xs ${gt('bg-slate-100 border-slate-200 text-slate-900', 'bg-zinc-800/50 border-zinc-700/60 text-white')} focus:border-indigo-500/40`}
               />
             </div>
             <Button type="submit" size="sm" className="bg-indigo-600/80 hover:bg-indigo-600 text-white font-medium h-8 text-xs">
@@ -265,10 +273,10 @@ export default function Growth() {
               transition={{ delay: 0.4 + i * 0.05 }}
             >
               <Link to={createPageUrl(action.path)}>
-                <div className="p-3 text-center cursor-pointer rounded-xl bg-zinc-900/50 border border-zinc-800/60 hover:border-indigo-500/30 transition-all">
+                <div className={`p-3 text-center cursor-pointer rounded-xl ${gt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border border-zinc-800/60')} hover:border-indigo-500/30 transition-all`}>
                   <action.icon className="w-5 h-5 text-indigo-400/70 mx-auto mb-1.5" />
-                  <h3 className="font-semibold text-white text-sm">{action.label}</h3>
-                  <p className="text-[10px] text-zinc-500">{action.desc}</p>
+                  <h3 className={`font-semibold ${gt('text-slate-900', 'text-white')} text-sm`}>{action.label}</h3>
+                  <p className={`text-[10px] ${gt('text-slate-400', 'text-zinc-500')}`}>{action.desc}</p>
                 </div>
               </Link>
             </motion.div>
@@ -279,8 +287,8 @@ export default function Growth() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Revenue Chart */}
           <div className="lg:col-span-2">
-            <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
-              <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+            <div className={`p-4 rounded-xl ${gt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border border-zinc-800/60')}`}>
+              <h3 className={`text-sm font-semibold ${gt('text-slate-900', 'text-white')} mb-3 flex items-center gap-2`}>
                 <TrendingUp className="w-4 h-4 text-indigo-400/70" />
                 Pipeline Over Time
               </h3>
@@ -303,8 +311,8 @@ export default function Growth() {
           </div>
 
           {/* Conversion Funnel */}
-          <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
-            <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+          <div className={`p-4 rounded-xl ${gt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border border-zinc-800/60')}`}>
+            <h3 className={`text-sm font-semibold ${gt('text-slate-900', 'text-white')} mb-3 flex items-center gap-2`}>
               <Zap className="w-4 h-4 text-indigo-400/70" />
               Conversion Funnel
             </h3>
@@ -333,8 +341,8 @@ export default function Growth() {
                   transition={{ delay: 0.5 + i * 0.05 }}
                   className="flex items-center gap-2"
                 >
-                  <span className="text-xs text-zinc-400 w-16">{stage.label}</span>
-                  <div className="flex-1 h-5 bg-zinc-800 rounded-md overflow-hidden">
+                  <span className={`text-xs ${gt('text-slate-500', 'text-zinc-400')} w-16`}>{stage.label}</span>
+                  <div className={`flex-1 h-5 ${gt('bg-slate-200', 'bg-zinc-800')} rounded-md overflow-hidden`}>
                     <div className={`h-full ${stage.color} rounded-md flex items-center justify-end pr-2`} style={{ width: `${stage.width}%` }}>
                       <span className="text-[10px] font-bold text-white">{stage.value}</span>
                     </div>
@@ -346,14 +354,14 @@ export default function Growth() {
         </div>
 
         {/* Clay Campaign Builder - Headliner Feature */}
-        <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+        <div className={`p-4 rounded-xl ${gt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border border-zinc-800/60')}`}>
           <ClayCampaignBuilder />
         </div>
 
         {/* Analytics Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
-            <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+          <div className={`p-4 rounded-xl ${gt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border border-zinc-800/60')}`}>
+            <h3 className={`text-sm font-semibold ${gt('text-slate-900', 'text-white')} mb-3 flex items-center gap-2`}>
               <BarChart3 className="w-4 h-4 text-indigo-400/70" />
               Deals by Stage
             </h3>
@@ -372,31 +380,31 @@ export default function Growth() {
             </div>
           </div>
 
-          <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
-            <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+          <div className={`p-4 rounded-xl ${gt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border border-zinc-800/60')}`}>
+            <h3 className={`text-sm font-semibold ${gt('text-slate-900', 'text-white')} mb-3 flex items-center gap-2`}>
               <Calendar className="w-4 h-4 text-indigo-400/70" />
               Win/Loss Analysis
             </h3>
             <div className="grid grid-cols-3 gap-3 text-center py-4">
               <div>
                 <p className="text-2xl font-bold text-indigo-400/70">{wonDeals.length}</p>
-                <p className="text-zinc-500 text-xs mt-0.5">Won</p>
+                <p className={`${gt('text-slate-400', 'text-zinc-500')} text-xs mt-0.5`}>Won</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-zinc-600">{lostDeals.length}</p>
-                <p className="text-zinc-500 text-xs mt-0.5">Lost</p>
+                <p className={`text-2xl font-bold ${gt('text-slate-400', 'text-zinc-600')}`}>{lostDeals.length}</p>
+                <p className={`${gt('text-slate-400', 'text-zinc-500')} text-xs mt-0.5`}>Lost</p>
               </div>
               <div>
                 <p className="text-2xl font-bold text-indigo-400/80">{winRate}%</p>
-                <p className="text-zinc-500 text-xs mt-0.5">Win Rate</p>
+                <p className={`${gt('text-slate-400', 'text-zinc-500')} text-xs mt-0.5`}>Win Rate</p>
               </div>
             </div>
             <div className="mt-3">
               <div className="flex h-3 rounded-full overflow-hidden">
                 <div className="bg-indigo-500/60" style={{ width: `${winRate}%` }} />
-                <div className="bg-zinc-800" style={{ width: `${100 - winRate}%` }} />
+                <div className={gt('bg-slate-200', 'bg-zinc-800')} style={{ width: `${100 - winRate}%` }} />
               </div>
-              <div className="flex justify-between mt-1.5 text-[10px] text-zinc-500">
+              <div className={`flex justify-between mt-1.5 text-[10px] ${gt('text-slate-400', 'text-zinc-500')}`}>
                 <span>Won: €{wonValue.toLocaleString()}</span>
                 <span>Lost: €{lostDeals.reduce((s, o) => s + (o.deal_value || 0), 0).toLocaleString()}</span>
               </div>
@@ -406,8 +414,8 @@ export default function Growth() {
 
         {/* Source Breakdown */}
         {pieData.length > 0 && (
-          <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
-            <h3 className="text-sm font-semibold text-white mb-3">Deals by Source</h3>
+          <div className={`p-4 rounded-xl ${gt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border border-zinc-800/60')}`}>
+            <h3 className={`text-sm font-semibold ${gt('text-slate-900', 'text-white')} mb-3`}>Deals by Source</h3>
             <div className="flex flex-col md:flex-row items-center gap-6">
               <div className="h-40 w-40">
                 <ResponsiveContainer width="100%" height="100%">
@@ -423,8 +431,8 @@ export default function Growth() {
                 {pieData.map((item, i) => (
                   <div key={i} className="flex items-center gap-2">
                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.fill }} />
-                    <span className="text-zinc-300 text-xs">{item.name}</span>
-                    <span className="text-zinc-500 text-xs ml-auto">{item.value}</span>
+                    <span className={`${gt('text-slate-600', 'text-zinc-300')} text-xs`}>{item.name}</span>
+                    <span className={`${gt('text-slate-400', 'text-zinc-500')} text-xs ml-auto`}>{item.value}</span>
                   </div>
                 ))}
               </div>
@@ -435,9 +443,9 @@ export default function Growth() {
         {/* Bottom Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Top Deals */}
-          <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className={`p-4 rounded-xl ${gt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border border-zinc-800/60')}`}>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+              <h3 className={`text-sm font-semibold ${gt('text-slate-900', 'text-white')} flex items-center gap-2`}>
                 <Euro className="w-4 h-4 text-indigo-400/70" />
                 Top Deals
               </h3>
@@ -454,11 +462,11 @@ export default function Growth() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: i * 0.05 }}
-                    className="flex items-center justify-between p-2 rounded-lg bg-zinc-800/30 hover:bg-zinc-800/50 transition-colors border border-zinc-700/30"
+                    className={`flex items-center justify-between p-2 rounded-lg ${gt('bg-slate-100 hover:bg-slate-200', 'bg-zinc-800/30 hover:bg-zinc-800/50')} transition-colors border ${gt('border-slate-200', 'border-zinc-700/30')}`}
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-white text-xs truncate">{opp.company_name}</p>
-                      <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-zinc-500">
+                      <p className={`font-medium ${gt('text-slate-900', 'text-white')} text-xs truncate`}>{opp.company_name}</p>
+                      <div className={`flex items-center gap-1.5 mt-0.5 text-[10px] ${gt('text-slate-400', 'text-zinc-500')}`}>
                         {opp.contact_name && <span className="flex items-center gap-1"><Users className="w-2.5 h-2.5" />{opp.contact_name}</span>}
                       </div>
                     </div>
@@ -472,7 +480,7 @@ export default function Growth() {
             ) : (
               <div className="text-center py-6">
                 <Target className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
-                <p className="text-zinc-400 text-xs">No deals yet</p>
+                <p className={`${gt('text-slate-500', 'text-zinc-400')} text-xs`}>No deals yet</p>
                 <Link to={createPageUrl('GrowthPipeline')}>
                   <Button variant="outline" size="sm" className="mt-2 h-7 text-xs border-indigo-500/30 text-indigo-400/80 hover:text-indigo-300">
                     Add Opportunity
@@ -483,9 +491,9 @@ export default function Growth() {
           </div>
 
           {/* Recent Prospect Lists */}
-          <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className={`p-4 rounded-xl ${gt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border border-zinc-800/60')}`}>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+              <h3 className={`text-sm font-semibold ${gt('text-slate-900', 'text-white')} flex items-center gap-2`}>
                 <Users className="w-4 h-4 text-indigo-400/70" />
                 Prospect Lists
               </h3>
@@ -502,12 +510,12 @@ export default function Growth() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: i * 0.05 }}
-                    className="flex items-center justify-between p-2 rounded-lg bg-zinc-800/30 hover:bg-zinc-800/50 transition-colors cursor-pointer border border-zinc-700/30"
+                    className={`flex items-center justify-between p-2 rounded-lg ${gt('bg-slate-100 hover:bg-slate-200', 'bg-zinc-800/30 hover:bg-zinc-800/50')} transition-colors cursor-pointer border ${gt('border-slate-200', 'border-zinc-700/30')}`}
                     onClick={() => window.location.href = createPageUrl(`GrowthProspects?list=${list.id}`)}
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-white text-xs truncate">{list.name}</p>
-                      <p className="text-[10px] text-zinc-500">{list.prospect_count || 0} prospects</p>
+                      <p className={`font-medium ${gt('text-slate-900', 'text-white')} text-xs truncate`}>{list.name}</p>
+                      <p className={`text-[10px] ${gt('text-slate-400', 'text-zinc-500')}`}>{list.prospect_count || 0} prospects</p>
                     </div>
                     <Badge size="xs" className="bg-indigo-500/20 text-indigo-400/80 border-indigo-500/30">
                       {list.status || 'active'}
@@ -518,7 +526,7 @@ export default function Growth() {
             ) : (
               <div className="text-center py-6">
                 <Users className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
-                <p className="text-zinc-500 text-xs mb-3">No prospect lists yet</p>
+                <p className={`${gt('text-slate-400', 'text-zinc-500')} text-xs mb-3`}>No prospect lists yet</p>
                 <Link to={createPageUrl('GrowthResearch')}>
                   <Button size="sm" className="bg-indigo-600/80 hover:bg-indigo-600 text-white font-medium h-7 text-xs">
                     <Search className="w-3 h-3 mr-1.5" />
@@ -530,9 +538,9 @@ export default function Growth() {
           </div>
 
           {/* Signals */}
-          <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/60">
+          <div className={`p-4 rounded-xl ${gt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border border-zinc-800/60')}`}>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+              <h3 className={`text-sm font-semibold ${gt('text-slate-900', 'text-white')} flex items-center gap-2`}>
                 <Bell className="w-4 h-4 text-indigo-400/70" />
                 Signals
               </h3>
@@ -549,12 +557,12 @@ export default function Growth() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: i * 0.05 }}
-                    className="flex items-center justify-between p-2 rounded-lg bg-zinc-800/30 hover:bg-zinc-800/50 transition-colors cursor-pointer border border-zinc-700/30"
+                    className={`flex items-center justify-between p-2 rounded-lg ${gt('bg-slate-100 hover:bg-slate-200', 'bg-zinc-800/30 hover:bg-zinc-800/50')} transition-colors cursor-pointer border ${gt('border-slate-200', 'border-zinc-700/30')}`}
                     onClick={() => window.location.href = createPageUrl('GrowthSignals')}
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-white text-xs truncate">{signal.company_name}</p>
-                      <p className="text-[10px] text-zinc-500 truncate">{signal.headline}</p>
+                      <p className={`font-medium ${gt('text-slate-900', 'text-white')} text-xs truncate`}>{signal.company_name}</p>
+                      <p className={`text-[10px] ${gt('text-slate-400', 'text-zinc-500')} truncate`}>{signal.headline}</p>
                     </div>
                     <Badge size="xs" className={signal.relevance_score >= 80 ? 'bg-red-500/20 text-red-400/80 border-red-500/30' : 'bg-indigo-500/20 text-indigo-400/80 border-indigo-500/30'}>
                       {signal.signal_type}
@@ -565,13 +573,14 @@ export default function Growth() {
             ) : (
               <div className="text-center py-6">
                 <Bell className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
-                <p className="text-zinc-500 text-xs mb-2">No signals yet</p>
-                <p className="text-[10px] text-zinc-600">Signals appear as we detect opportunities</p>
+                <p className={`${gt('text-slate-400', 'text-zinc-500')} text-xs mb-2`}>No signals yet</p>
+                <p className={`text-[10px] ${gt('text-slate-400', 'text-zinc-600')}`}>Signals appear as we detect opportunities</p>
               </div>
             )}
           </div>
         </div>
       </div>
     </div>
+    </GrowthPageTransition>
   );
 }

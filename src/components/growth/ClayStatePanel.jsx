@@ -14,6 +14,7 @@ import {
 import { supabase } from '@/components/sync/supabaseSync';
 import { toast } from 'sonner';
 import { formatTimeAgo } from '@/utils/dateUtils';
+import { useGrowthTheme } from '@/contexts/GrowthThemeContext';
 
 const WORKFLOW_STAGES = {
   'not-in-table': { label: 'Not in Table', color: 'zinc', icon: Layers },
@@ -179,8 +180,9 @@ What outreach approach do you recommend?`
 // Using centralized formatTimeAgo from @/utils/dateUtils
 
 export default function ClayStatePanel({ sessionId: propSessionId, onSendPrompt }) {
+  const { gt } = useGrowthTheme();
   // Use prop, localStorage, or fallback for testing
-  const sessionId = propSessionId 
+  const sessionId = propSessionId
     || localStorage.getItem('sync_session_id');
   
   const [clayState, setClayState] = useState(null);
@@ -315,8 +317,8 @@ export default function ClayStatePanel({ sessionId: propSessionId, onSendPrompt 
 
   if (loading) {
     return (
-      <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4">
-        <div className="flex items-center gap-2 text-zinc-400">
+      <div className={`${gt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/80 border border-zinc-800')} rounded-xl p-4`}>
+        <div className={`flex items-center gap-2 ${gt('text-slate-500', 'text-zinc-400')}`}>
           <Loader2 className="w-4 h-4 animate-spin" />
           <span className="text-sm">Loading Clay state...</span>
         </div>
@@ -326,16 +328,16 @@ export default function ClayStatePanel({ sessionId: propSessionId, onSendPrompt 
 
   if (!clayState) {
     return (
-      <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4">
-        <div className="text-center text-zinc-500 text-sm">
-          <AlertCircle className="w-8 h-8 mx-auto mb-2 text-zinc-600" />
+      <div className={`${gt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/80 border border-zinc-800')} rounded-xl p-4`}>
+        <div className={`text-center ${gt('text-slate-400', 'text-zinc-500')} text-sm`}>
+          <AlertCircle className={`w-8 h-8 mx-auto mb-2 ${gt('text-slate-400', 'text-zinc-600')}`} />
           <p>No Clay activity detected</p>
           <p className="text-xs mt-1">Open Clay in your browser to see live state</p>
           {sessionId && (
-            <p className="text-xs mt-2 text-zinc-600 truncate">Session: {sessionId.slice(0, 12)}...</p>
+            <p className={`text-xs mt-2 ${gt('text-slate-400', 'text-zinc-600')} truncate`}>Session: {sessionId.slice(0, 12)}...</p>
           )}
-          <button 
-            className="mt-3 px-3 py-1.5 text-xs text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 rounded-lg flex items-center gap-1.5 mx-auto transition-colors"
+          <button
+            className={`mt-3 px-3 py-1.5 text-xs ${gt('text-slate-500 hover:text-slate-900 bg-slate-200 hover:bg-slate-100', 'text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700')} rounded-lg flex items-center gap-1.5 mx-auto transition-colors`}
             onClick={handleRefresh}
           >
             <RefreshCw className="w-3 h-3" /> Refresh
@@ -399,7 +401,7 @@ export default function ClayStatePanel({ sessionId: propSessionId, onSendPrompt 
   const insights = getInsights();
 
   return (
-    <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4 space-y-4">
+    <div className={`${gt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/80 border border-zinc-800')} rounded-xl p-4 space-y-4`}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -407,36 +409,36 @@ export default function ClayStatePanel({ sessionId: propSessionId, onSendPrompt 
             <StageIcon className={`w-4 h-4 text-indigo-400 ${clayState.workflowStage === 'enriching' ? 'animate-spin' : ''}`} />
           </div>
           <div>
-            <h3 className="text-sm font-medium text-white">Clay Status</h3>
+            <h3 className={`text-sm font-medium ${gt('text-slate-900', 'text-white')}`}>Clay Status</h3>
             <span className={`text-xs px-2 py-0.5 rounded border ${stageColorClasses[stage.color]}`}>
               {stage.label}
             </span>
           </div>
         </div>
-        <button onClick={fetchClayState} className="p-2 text-zinc-400 hover:text-white rounded transition-colors">
+        <button onClick={fetchClayState} className={`p-2 ${gt('text-slate-500 hover:text-slate-900', 'text-zinc-400 hover:text-white')} rounded transition-colors`}>
           <RefreshCw className="w-3 h-3" />
         </button>
       </div>
 
       {/* Table Info - show whenever we have state */}
-      <div className="bg-zinc-800/50 rounded-lg p-3 space-y-2">
+      <div className={`${gt('bg-slate-100', 'bg-zinc-800/50')} rounded-lg p-3 space-y-2`}>
         {clayState.tableName && (
           <div className="flex items-center justify-between text-sm">
-            <span className="text-zinc-400">Table</span>
-            <span className="text-white font-medium truncate max-w-[150px]">{clayState.tableName}</span>
+            <span className={gt('text-slate-500', 'text-zinc-400')}>Table</span>
+            <span className={`${gt('text-slate-900', 'text-white')} font-medium truncate max-w-[150px]`}>{clayState.tableName}</span>
           </div>
         )}
         <div className="flex items-center justify-between text-sm">
-          <span className="text-zinc-400">Rows</span>
-          <span className="text-white font-medium">{clayState.rowCount?.toLocaleString() || 0}</span>
+          <span className={gt('text-slate-500', 'text-zinc-400')}>Rows</span>
+          <span className={`${gt('text-slate-900', 'text-white')} font-medium`}>{clayState.rowCount?.toLocaleString() || 0}</span>
         </div>
         <div className="flex items-center justify-between text-sm">
-          <span className="text-zinc-400">Columns</span>
-          <span className="text-white font-medium">{clayState.columnCount || clayState.columns?.length || 0}</span>
+          <span className={gt('text-slate-500', 'text-zinc-400')}>Columns</span>
+          <span className={`${gt('text-slate-900', 'text-white')} font-medium`}>{clayState.columnCount || clayState.columns?.length || 0}</span>
         </div>
         {clayState.enrichments?.length > 0 && (
           <div className="flex items-center justify-between text-sm">
-            <span className="text-zinc-400">Enrichments</span>
+            <span className={gt('text-slate-500', 'text-zinc-400')}>Enrichments</span>
             <div className="flex items-center gap-1">
               {clayState.enrichments.filter(e => e.status === 'running').length > 0 && (
                 <span className="bg-purple-500/20 text-purple-400 text-xs px-1.5 py-0.5 rounded">
@@ -456,7 +458,7 @@ export default function ClayStatePanel({ sessionId: propSessionId, onSendPrompt 
       {/* Intelligent Insights */}
       {insights.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs text-zinc-500 font-medium">Insights</p>
+          <p className={`text-xs ${gt('text-slate-400', 'text-zinc-500')} font-medium`}>Insights</p>
           {insights.map((insight, i) => (
             <div 
               key={i}
@@ -472,8 +474,8 @@ export default function ClayStatePanel({ sessionId: propSessionId, onSendPrompt 
                   insight.type === 'success' ? 'text-green-400' : 'text-blue-400'
                 }`} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white">{insight.title}</p>
-                  <p className="text-xs text-zinc-400 mt-0.5">{insight.description}</p>
+                  <p className={`text-sm font-medium ${gt('text-slate-900', 'text-white')}`}>{insight.title}</p>
+                  <p className={`text-xs ${gt('text-slate-500', 'text-zinc-400')} mt-0.5`}>{insight.description}</p>
                   {insight.actionId && (
                     <button
                       className="mt-2 text-xs text-indigo-400 hover:text-indigo-300"
@@ -492,12 +494,12 @@ export default function ClayStatePanel({ sessionId: propSessionId, onSendPrompt 
       {/* Suggested Actions */}
       {suggestedActions.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs text-zinc-500 font-medium">Quick Actions</p>
+          <p className={`text-xs ${gt('text-slate-400', 'text-zinc-500')} font-medium`}>Quick Actions</p>
           <div className="flex flex-wrap gap-2">
             {suggestedActions.map((action, i) => (
               <button
                 key={i}
-                className="text-xs px-3 py-1.5 border border-zinc-700 rounded-lg text-zinc-300 hover:bg-indigo-500/10 hover:border-indigo-500/50 hover:text-indigo-400 transition-colors"
+                className={`text-xs px-3 py-1.5 border ${gt('border-slate-200', 'border-zinc-700')} rounded-lg ${gt('text-slate-600', 'text-zinc-300')} hover:bg-indigo-500/10 hover:border-indigo-500/50 hover:text-indigo-400 transition-colors`}
                 onClick={() => handleSuggestedAction(action)}
               >
                 {action.label}
@@ -511,17 +513,17 @@ export default function ClayStatePanel({ sessionId: propSessionId, onSendPrompt 
       {promptSent && (
         <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
           <p className="text-green-400 text-sm font-medium flex items-center gap-1"><Check className="w-4 h-4" /> Prompt ready!</p>
-          <p className="text-zinc-400 text-xs mt-1">
-            Switch to Clay and press <kbd className="px-1 py-0.5 bg-zinc-700 rounded">Cmd+V</kbd> in Claude sidebar
+          <p className={`${gt('text-slate-500', 'text-zinc-400')} text-xs mt-1`}>
+            Switch to Clay and press <kbd className={`px-1 py-0.5 ${gt('bg-slate-200', 'bg-zinc-700')} rounded`}>Cmd+V</kbd> in Claude sidebar
           </p>
         </div>
       )}
 
       {/* Footer with timestamp and refresh */}
-      <div className="flex items-center justify-between text-[10px] text-zinc-600">
+      <div className={`flex items-center justify-between text-[10px] ${gt('text-slate-400', 'text-zinc-600')}`}>
         <span>Updated {timeAgo}</span>
         <button 
-          className="p-1.5 text-zinc-500 hover:text-white rounded transition-colors"
+          className={`p-1.5 ${gt('text-slate-400 hover:text-slate-900', 'text-zinc-500 hover:text-white')} rounded transition-colors`}
           onClick={handleRefresh}
         >
           <RefreshCw className="w-3 h-3" />
