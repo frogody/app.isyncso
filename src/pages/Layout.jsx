@@ -55,6 +55,7 @@ import {
   Receipt,
   ScrollText,
   Wallet,
+  Scale,
   CreditCard,
   PieChart,
   Bot,
@@ -376,6 +377,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
         { label: 'Bills', path: createPageUrl('FinanceBills'), icon: ScrollText },
         { label: 'Bill Payments', path: createPageUrl('FinanceBillPayments'), icon: Wallet },
         { label: 'Profit & Loss', path: createPageUrl('FinanceReportPL'), icon: TrendingUp },
+        { label: 'Balance Sheet', path: createPageUrl('FinanceReportBS'), icon: Scale },
       ]
     };
   }
