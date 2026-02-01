@@ -1,0 +1,1 @@
+export { SettingsPageTransition } from './SettingsPageTransition';

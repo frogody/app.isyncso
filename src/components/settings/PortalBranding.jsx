@@ -16,11 +16,13 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/api/supabaseClient';
 import { useUser } from '@/components/context/UserContext';
+import { useSettingsTheme } from '@/contexts/SettingsThemeContext';
 import { toast } from 'sonner';
 import PortalClientManager from './PortalClientManager';
 
 export default function PortalBranding() {
   const { user } = useUser();
+  const { st } = useSettingsTheme();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState({
@@ -166,8 +168,8 @@ export default function PortalBranding() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-white">Client Portal Branding</h2>
-          <p className="text-sm text-zinc-400 mt-1">
+          <h2 className={`text-xl font-semibold ${st('text-slate-900', 'text-white')}`}>Client Portal Branding</h2>
+          <p className={`text-sm ${st('text-slate-500', 'text-zinc-400')} mt-1`}>
             Customize how your client portal looks to external clients
           </p>
         </div>
@@ -175,7 +177,7 @@ export default function PortalBranding() {
           {portalUrl && (
             <button
               onClick={handleCopyLink}
-              className="flex items-center gap-2 px-4 py-2 text-sm text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+              className={`flex items-center gap-2 px-4 py-2 text-sm ${st('text-slate-500', 'text-zinc-400')} ${st('hover:text-slate-900', 'hover:text-white')} hover:bg-white/5 rounded-lg transition-colors`}
             >
               {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
               {copied ? 'Copied!' : 'Copy Portal Link'}
@@ -186,7 +188,7 @@ export default function PortalBranding() {
             onClick={(e) => { if (!portalUrl) { e.preventDefault(); toast.error('Organization slug not set'); } }}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 px-4 py-2 text-sm text-zinc-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+            className={`flex items-center gap-2 px-4 py-2 text-sm ${st('text-slate-500', 'text-zinc-400')} ${st('hover:text-slate-900', 'hover:text-white')} hover:bg-white/5 rounded-lg transition-colors`}
           >
             <Eye className="w-4 h-4" />
             Preview Portal
@@ -208,8 +210,8 @@ export default function PortalBranding() {
       </div>
 
       {/* Logo & Basic Info */}
-      <section className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
-        <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+      <section className={`${st('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border border-zinc-800')} rounded-2xl p-6`}>
+        <h3 className={`text-lg font-semibold ${st('text-slate-900', 'text-white')} mb-6 flex items-center gap-2`}>
           <Image className="w-5 h-5 text-cyan-400" />
           Logo & Identity
         </h3>
@@ -217,7 +219,7 @@ export default function PortalBranding() {
         <div className="grid md:grid-cols-2 gap-6">
           {/* Logo Upload */}
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-2">
+            <label className={`block text-sm font-medium ${st('text-slate-600', 'text-zinc-300')} mb-2`}>
               Portal Logo
             </label>
             <div className="flex items-center gap-4">
@@ -226,7 +228,7 @@ export default function PortalBranding() {
                   <img
                     src={settings.logo_url}
                     alt="Logo"
-                    className="h-16 w-auto rounded-lg bg-zinc-800"
+                    className={`h-16 w-auto rounded-lg ${st('bg-slate-200', 'bg-zinc-800')}`}
                   />
                   <button
                     onClick={() => setSettings((prev) => ({ ...prev, logo_url: '' }))}
@@ -236,7 +238,7 @@ export default function PortalBranding() {
                   </button>
                 </div>
               ) : (
-                <div className="h-16 w-32 rounded-lg bg-zinc-800 flex items-center justify-center">
+                <div className={`h-16 w-32 rounded-lg ${st('bg-slate-200', 'bg-zinc-800')} flex items-center justify-center`}>
                   <Image className="w-6 h-6 text-zinc-600" />
                 </div>
               )}
@@ -247,7 +249,7 @@ export default function PortalBranding() {
                   onChange={handleLogoUpload}
                   className="hidden"
                 />
-                <span className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg transition-colors">
+                <span className={`flex items-center gap-2 px-4 py-2 ${st('bg-slate-200', 'bg-zinc-800')} ${st('hover:bg-slate-100', 'hover:bg-zinc-700')} ${st('text-slate-600', 'text-zinc-300')} rounded-lg transition-colors`}>
                   {uploadingLogo ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
@@ -261,7 +263,7 @@ export default function PortalBranding() {
 
           {/* Portal Name */}
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-2">
+            <label className={`block text-sm font-medium ${st('text-slate-600', 'text-zinc-300')} mb-2`}>
               Portal Name
             </label>
             <input
@@ -269,13 +271,13 @@ export default function PortalBranding() {
               value={settings.portal_name}
               onChange={(e) => setSettings((prev) => ({ ...prev, portal_name: e.target.value }))}
               placeholder="Client Portal"
-              className="w-full px-4 py-2.5 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+              className={`w-full px-4 py-2.5 ${st('bg-slate-100', 'bg-zinc-800/50')} border ${st('border-slate-200', 'border-zinc-700')} rounded-lg ${st('text-slate-900', 'text-white')} ${st('placeholder:text-slate-400', 'placeholder:text-zinc-500')} focus:outline-none focus:ring-2 focus:ring-cyan-500/50`}
             />
           </div>
 
           {/* Welcome Message */}
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-zinc-300 mb-2">
+            <label className={`block text-sm font-medium ${st('text-slate-600', 'text-zinc-300')} mb-2`}>
               Welcome Message
             </label>
             <textarea
@@ -283,13 +285,13 @@ export default function PortalBranding() {
               onChange={(e) => setSettings((prev) => ({ ...prev, welcome_message: e.target.value }))}
               placeholder="Welcome to your project portal"
               rows={2}
-              className="w-full px-4 py-2.5 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 resize-none"
+              className={`w-full px-4 py-2.5 ${st('bg-slate-100', 'bg-zinc-800/50')} border ${st('border-slate-200', 'border-zinc-700')} rounded-lg ${st('text-slate-900', 'text-white')} ${st('placeholder:text-slate-400', 'placeholder:text-zinc-500')} focus:outline-none focus:ring-2 focus:ring-cyan-500/50 resize-none`}
             />
           </div>
 
           {/* Footer Text */}
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-zinc-300 mb-2">
+            <label className={`block text-sm font-medium ${st('text-slate-600', 'text-zinc-300')} mb-2`}>
               Footer Text
             </label>
             <input
@@ -297,15 +299,15 @@ export default function PortalBranding() {
               value={settings.footer_text}
               onChange={(e) => setSettings((prev) => ({ ...prev, footer_text: e.target.value }))}
               placeholder="Powered by YourCompany"
-              className="w-full px-4 py-2.5 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+              className={`w-full px-4 py-2.5 ${st('bg-slate-100', 'bg-zinc-800/50')} border ${st('border-slate-200', 'border-zinc-700')} rounded-lg ${st('text-slate-900', 'text-white')} ${st('placeholder:text-slate-400', 'placeholder:text-zinc-500')} focus:outline-none focus:ring-2 focus:ring-cyan-500/50`}
             />
           </div>
         </div>
       </section>
 
       {/* Colors */}
-      <section className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
-        <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+      <section className={`${st('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border border-zinc-800')} rounded-2xl p-6`}>
+        <h3 className={`text-lg font-semibold ${st('text-slate-900', 'text-white')} mb-6 flex items-center gap-2`}>
           <Palette className="w-5 h-5 text-cyan-400" />
           Colors
         </h3>
@@ -313,7 +315,7 @@ export default function PortalBranding() {
         <div className="grid md:grid-cols-3 gap-6">
           {/* Primary Color */}
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-2">
+            <label className={`block text-sm font-medium ${st('text-slate-600', 'text-zinc-300')} mb-2`}>
               Primary Color
             </label>
             <div className="flex items-center gap-3">
@@ -327,14 +329,14 @@ export default function PortalBranding() {
                 type="text"
                 value={settings.primary_color}
                 onChange={(e) => setSettings((prev) => ({ ...prev, primary_color: e.target.value }))}
-                className="flex-1 px-4 py-2.5 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white uppercase font-mono text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                className={`flex-1 px-4 py-2.5 ${st('bg-slate-100', 'bg-zinc-800/50')} border ${st('border-slate-200', 'border-zinc-700')} rounded-lg ${st('text-slate-900', 'text-white')} uppercase font-mono text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50`}
               />
             </div>
           </div>
 
           {/* Accent Color */}
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-2">
+            <label className={`block text-sm font-medium ${st('text-slate-600', 'text-zinc-300')} mb-2`}>
               Accent Color
             </label>
             <div className="flex items-center gap-3">
@@ -348,14 +350,14 @@ export default function PortalBranding() {
                 type="text"
                 value={settings.accent_color}
                 onChange={(e) => setSettings((prev) => ({ ...prev, accent_color: e.target.value }))}
-                className="flex-1 px-4 py-2.5 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white uppercase font-mono text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                className={`flex-1 px-4 py-2.5 ${st('bg-slate-100', 'bg-zinc-800/50')} border ${st('border-slate-200', 'border-zinc-700')} rounded-lg ${st('text-slate-900', 'text-white')} uppercase font-mono text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50`}
               />
             </div>
           </div>
 
           {/* Background Color */}
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-2">
+            <label className={`block text-sm font-medium ${st('text-slate-600', 'text-zinc-300')} mb-2`}>
               Background Color
             </label>
             <div className="flex items-center gap-3">
@@ -369,7 +371,7 @@ export default function PortalBranding() {
                 type="text"
                 value={settings.background_color}
                 onChange={(e) => setSettings((prev) => ({ ...prev, background_color: e.target.value }))}
-                className="flex-1 px-4 py-2.5 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white uppercase font-mono text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                className={`flex-1 px-4 py-2.5 ${st('bg-slate-100', 'bg-zinc-800/50')} border ${st('border-slate-200', 'border-zinc-700')} rounded-lg ${st('text-slate-900', 'text-white')} uppercase font-mono text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/50`}
               />
             </div>
           </div>
@@ -377,7 +379,7 @@ export default function PortalBranding() {
 
         {/* Preview */}
         <div className="mt-6 p-4 rounded-xl" style={{ backgroundColor: settings.background_color }}>
-          <p className="text-sm text-zinc-400 mb-3">Preview:</p>
+          <p className={`text-sm ${st('text-slate-500', 'text-zinc-400')} mb-3`}>Preview:</p>
           <div className="flex items-center gap-4">
             <button
               className="px-4 py-2 rounded-lg font-medium text-white"
@@ -396,8 +398,8 @@ export default function PortalBranding() {
       </section>
 
       {/* Features */}
-      <section className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
-        <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+      <section className={`${st('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border border-zinc-800')} rounded-2xl p-6`}>
+        <h3 className={`text-lg font-semibold ${st('text-slate-900', 'text-white')} mb-6 flex items-center gap-2`}>
           <Globe className="w-5 h-5 text-cyan-400" />
           Portal Features
         </h3>
@@ -437,7 +439,7 @@ export default function PortalBranding() {
       </section>
 
       {/* Portal Clients */}
-      <section className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
+      <section className={`${st('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border border-zinc-800')} rounded-2xl p-6`}>
         <PortalClientManager />
       </section>
     </div>
@@ -445,16 +447,17 @@ export default function PortalBranding() {
 }
 
 function ToggleSetting({ label, description, checked, onChange }) {
+  const { st } = useSettingsTheme();
   return (
-    <div className="flex items-center justify-between p-4 bg-zinc-800/30 rounded-xl">
+    <div className={`flex items-center justify-between p-4 ${st('bg-slate-100', 'bg-zinc-800/30')} rounded-xl`}>
       <div>
-        <p className="font-medium text-white">{label}</p>
-        <p className="text-sm text-zinc-500">{description}</p>
+        <p className={`font-medium ${st('text-slate-900', 'text-white')}`}>{label}</p>
+        <p className={`text-sm ${st('text-slate-400', 'text-zinc-500')}`}>{description}</p>
       </div>
       <button
         onClick={() => onChange(!checked)}
         className={`relative w-12 h-6 rounded-full transition-colors ${
-          checked ? 'bg-cyan-500' : 'bg-zinc-700'
+          checked ? 'bg-cyan-500' : st('bg-slate-300', 'bg-zinc-700')
         }`}
       >
         <span

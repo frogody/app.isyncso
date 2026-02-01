@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSettingsTheme } from '@/contexts/SettingsThemeContext';
 import {
   Users,
   UserPlus,
@@ -31,6 +32,7 @@ const STATUS_COLORS = {
 
 export default function PortalClientManager() {
   const { user } = useUser();
+  const { st } = useSettingsTheme();
   const [clients, setClients] = useState([]);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -213,11 +215,11 @@ export default function PortalClientManager() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+          <h3 className={`text-lg font-semibold ${st('text-slate-900', 'text-white')} flex items-center gap-2`}>
             <Users className="w-5 h-5 text-cyan-400" />
             Portal Clients
           </h3>
-          <p className="text-sm text-zinc-400 mt-1">
+          <p className={`text-sm ${st('text-slate-500', 'text-zinc-400')} mt-1`}>
             Manage client organizations and their team members who can access the portal
           </p>
         </div>
@@ -232,13 +234,13 @@ export default function PortalClientManager() {
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+        <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${st('text-slate-400', 'text-zinc-500')}`} />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search clients or companies..."
-          className="w-full pl-10 pr-4 py-2.5 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+          className={`w-full pl-10 pr-4 py-2.5 ${st('bg-slate-100', 'bg-zinc-800/50')} border ${st('border-slate-200', 'border-zinc-700')} rounded-lg ${st('text-slate-900', 'text-white')} placeholder:${st('text-slate-400', 'text-zinc-500')} focus:outline-none focus:ring-2 focus:ring-cyan-500/50`}
         />
       </div>
 
@@ -247,44 +249,44 @@ export default function PortalClientManager() {
         {Object.entries(filteredGroups).map(([company, members]) => (
           <div
             key={company}
-            className="bg-zinc-800/30 border border-zinc-700/50 rounded-xl overflow-hidden"
+            className={`${st('bg-white border border-slate-200 shadow-sm', 'bg-zinc-800/30 border border-zinc-700/50')} rounded-xl overflow-hidden`}
           >
             {/* Company Header */}
             <button
               onClick={() => openSheet(company === '_ungrouped' ? null : company)}
-              className="w-full p-4 flex items-center gap-4 hover:bg-zinc-800/50 transition-colors text-left"
+              className={`w-full p-4 flex items-center gap-4 ${st('hover:bg-slate-100', 'hover:bg-zinc-800/50')} transition-colors text-left`}
             >
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 border border-cyan-500/20 flex items-center justify-center">
                 <Building2 className="w-5 h-5 text-cyan-400" />
               </div>
               <div className="flex-1 min-w-0">
-                <h4 className="font-medium text-white">
+                <h4 className={`font-medium ${st('text-slate-900', 'text-white')}`}>
                   {company === '_ungrouped' ? 'Individual Clients' : company}
                 </h4>
-                <p className="text-sm text-zinc-500">
+                <p className={`text-sm ${st('text-slate-400', 'text-zinc-500')}`}>
                   {members.length} {members.length === 1 ? 'member' : 'members'}
                 </p>
               </div>
-              <div className="flex items-center gap-2 text-sm text-zinc-400">
+              <div className={`flex items-center gap-2 text-sm ${st('text-slate-500', 'text-zinc-400')}`}>
                 <FolderKanban className="w-4 h-4" />
                 {new Set(members.flatMap((m) => m.client_project_access?.map((a) => a.project_id) || [])).size} projects
               </div>
-              <ChevronRight className="w-4 h-4 text-zinc-500" />
+              <ChevronRight className={`w-4 h-4 ${st('text-slate-400', 'text-zinc-500')}`} />
             </button>
 
             {/* Members */}
-            <div className="border-t border-zinc-700/30">
+            <div className={`border-t ${st('border-slate-200', 'border-zinc-700/30')}`}>
               {members.map((client) => (
                 <div
                   key={client.id}
-                  className="flex items-center gap-3 px-4 py-3 border-b border-zinc-700/20 last:border-b-0 hover:bg-zinc-800/20 transition-colors"
+                  className={`flex items-center gap-3 px-4 py-3 border-b ${st('border-slate-200', 'border-zinc-700/20')} last:border-b-0 ${st('hover:bg-slate-100', 'hover:bg-zinc-800/20')} transition-colors`}
                 >
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-emerald-500 flex items-center justify-center text-white text-sm font-medium">
                     {client.full_name?.[0]?.toUpperCase() || client.email[0].toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-white truncate">
+                      <span className={`text-sm font-medium ${st('text-slate-900', 'text-white')} truncate`}>
                         {client.full_name || client.email.split('@')[0]}
                       </span>
                       <span
@@ -295,7 +297,7 @@ export default function PortalClientManager() {
                         {client.status || 'pending'}
                       </span>
                     </div>
-                    <p className="text-xs text-zinc-500 truncate">{client.email}</p>
+                    <p className={`text-xs ${st('text-slate-400', 'text-zinc-500')} truncate`}>{client.email}</p>
                   </div>
                   <div className="flex items-center gap-1">
                     {client.status !== 'active' && (
@@ -328,7 +330,7 @@ export default function PortalClientManager() {
         ))}
 
         {Object.keys(filteredGroups).length === 0 && (
-          <div className="text-center py-12 text-zinc-500">
+          <div className={`text-center py-12 ${st('text-slate-400', 'text-zinc-500')}`}>
             <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
             <p>No clients yet</p>
             <p className="text-sm mt-1">Add your first client organization to get started</p>
@@ -367,6 +369,7 @@ function ClientSheet({
   onDeleteClient,
   onToggleAccess,
 }) {
+  const { st } = useSettingsTheme();
   const isNew = !companyName;
   const [company, setCompany] = useState('');
   const [emailInput, setEmailInput] = useState('');
@@ -515,7 +518,7 @@ function ClientSheet({
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent className="w-full sm:max-w-2xl bg-zinc-900 border-zinc-800/60 overflow-y-auto p-0">
+      <SheetContent className={`w-full sm:max-w-2xl ${st('bg-white', 'bg-zinc-900')} ${st('border-slate-200', 'border-zinc-800/60')} overflow-y-auto p-0`}>
         <SheetDescription className="sr-only">Manage client portal access</SheetDescription>
 
         {/* Header */}
@@ -527,10 +530,10 @@ function ClientSheet({
                 <Building2 className="w-6 h-6 text-cyan-400" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-white">
+                <h2 className={`text-xl font-semibold ${st('text-slate-900', 'text-white')}`}>
                   {isNew ? 'Add Client Organization' : companyName}
                 </h2>
-                <p className="text-sm text-zinc-400">
+                <p className={`text-sm ${st('text-slate-500', 'text-zinc-400')}`}>
                   {isNew
                     ? 'Add a client company and invite team members'
                     : `${clients.length} team member(s) with portal access`}
@@ -544,17 +547,17 @@ function ClientSheet({
           {/* Company Name (for new) */}
           {isNew && (
             <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-1.5">
+              <label className={`block text-sm font-medium ${st('text-slate-600', 'text-zinc-300')} mb-1.5`}>
                 Company / Organization Name
               </label>
               <div className="relative">
-                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                <Building2 className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${st('text-slate-400', 'text-zinc-500')}`} />
                 <input
                   type="text"
                   value={company}
                   onChange={(e) => setCompany(e.target.value)}
                   placeholder="Acme Inc."
-                  className="w-full pl-10 pr-4 py-2.5 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                  className={`w-full pl-10 pr-4 py-2.5 ${st('bg-slate-100', 'bg-zinc-800/50')} border ${st('border-slate-200', 'border-zinc-700')} rounded-lg ${st('text-slate-900', 'text-white')} placeholder:${st('text-slate-400', 'text-zinc-500')} focus:outline-none focus:ring-2 focus:ring-cyan-500/50`}
                 />
               </div>
             </div>
@@ -563,8 +566,8 @@ function ClientSheet({
           {/* Existing Members (for existing company) */}
           {!isNew && clients.length > 0 && (
             <div>
-              <h3 className="text-sm font-medium text-zinc-300 mb-3 flex items-center gap-2">
-                <Users className="w-4 h-4 text-zinc-400" />
+              <h3 className={`text-sm font-medium ${st('text-slate-600', 'text-zinc-300')} mb-3 flex items-center gap-2`}>
+                <Users className={`w-4 h-4 ${st('text-slate-500', 'text-zinc-400')}`} />
                 Team Members
               </h3>
               <div className="space-y-2">
@@ -574,7 +577,7 @@ function ClientSheet({
                   return (
                     <div
                       key={client.id}
-                      className="bg-zinc-800/40 border border-zinc-700/40 rounded-xl overflow-hidden"
+                      className={`${st('bg-white border border-slate-200 shadow-sm', 'bg-zinc-800/40 border border-zinc-700/40')} rounded-xl overflow-hidden`}
                     >
                       <div className="flex items-center gap-3 p-3">
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-emerald-500 flex items-center justify-center text-white text-sm font-medium">
@@ -582,7 +585,7 @@ function ClientSheet({
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-white truncate">
+                            <span className={`text-sm font-medium ${st('text-slate-900', 'text-white')} truncate`}>
                               {client.full_name || client.email.split('@')[0]}
                             </span>
                             <span
@@ -593,12 +596,12 @@ function ClientSheet({
                               {client.status}
                             </span>
                           </div>
-                          <p className="text-xs text-zinc-500">{client.email}</p>
+                          <p className={`text-xs ${st('text-slate-400', 'text-zinc-500')}`}>{client.email}</p>
                         </div>
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => setExpandedMember(hasExpanded ? null : client.id)}
-                            className="p-1.5 text-zinc-400 hover:bg-zinc-700 rounded-lg transition-colors"
+                            className={`p-1.5 ${st('text-slate-500', 'text-zinc-400')} ${st('hover:bg-slate-100', 'hover:bg-zinc-700')} rounded-lg transition-colors`}
                             title="Manage project access"
                           >
                             <FolderKanban className="w-3.5 h-3.5" />
@@ -625,8 +628,8 @@ function ClientSheet({
 
                       {/* Project Access */}
                       {hasExpanded && (
-                        <div className="px-3 pb-3 pt-1 border-t border-zinc-700/30">
-                          <p className="text-xs text-zinc-500 mb-2">Project Access</p>
+                        <div className={`px-3 pb-3 pt-1 border-t ${st('border-slate-200', 'border-zinc-700/30')}`}>
+                          <p className={`text-xs ${st('text-slate-400', 'text-zinc-500')} mb-2`}>Project Access</p>
                           <div className="grid grid-cols-2 gap-1.5">
                             {projects.map((project) => {
                               const has = assigned.includes(project.id);
@@ -637,7 +640,7 @@ function ClientSheet({
                                   className={`flex items-center gap-2 p-2 rounded-lg border text-left text-xs transition-colors ${
                                     has
                                       ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400'
-                                      : 'bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:border-zinc-600'
+                                      : `${st('bg-slate-100 border-slate-200 text-slate-500 hover:border-slate-300', 'bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:border-zinc-600')}`
                                   }`}
                                 >
                                   {has ? (
@@ -661,8 +664,8 @@ function ClientSheet({
 
           {/* Add New Emails */}
           <div>
-            <h3 className="text-sm font-medium text-zinc-300 mb-3 flex items-center gap-2">
-              <Mail className="w-4 h-4 text-zinc-400" />
+            <h3 className={`text-sm font-medium ${st('text-slate-600', 'text-zinc-300')} mb-3 flex items-center gap-2`}>
+              <Mail className={`w-4 h-4 ${st('text-slate-500', 'text-zinc-400')}`} />
               {isNew ? 'Add Team Members' : 'Add New Member'}
             </h3>
 
@@ -670,14 +673,14 @@ function ClientSheet({
               <div className="flex gap-2">
                 <div className="flex-1 space-y-2">
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                    <Mail className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${st('text-slate-400', 'text-zinc-500')}`} />
                     <input
                       type="email"
                       value={emailInput}
                       onChange={(e) => setEmailInput(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addEmail())}
                       placeholder="employee@company.com"
-                      className="w-full pl-10 pr-4 py-2.5 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                      className={`w-full pl-10 pr-4 py-2.5 ${st('bg-slate-100', 'bg-zinc-800/50')} border ${st('border-slate-200', 'border-zinc-700')} rounded-lg ${st('text-slate-900', 'text-white')} placeholder:${st('text-slate-400', 'text-zinc-500')} focus:outline-none focus:ring-2 focus:ring-cyan-500/50`}
                     />
                   </div>
                   <input
@@ -686,12 +689,12 @@ function ClientSheet({
                     onChange={(e) => setNameInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addEmail())}
                     placeholder="Full name (optional)"
-                    className="w-full px-4 py-2 bg-zinc-800/50 border border-zinc-700 rounded-lg text-white text-sm placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                    className={`w-full px-4 py-2 ${st('bg-slate-100', 'bg-zinc-800/50')} border ${st('border-slate-200', 'border-zinc-700')} rounded-lg ${st('text-slate-900', 'text-white')} text-sm placeholder:${st('text-slate-400', 'text-zinc-500')} focus:outline-none focus:ring-2 focus:ring-cyan-500/50`}
                   />
                 </div>
                 <button
                   onClick={addEmail}
-                  className="self-start px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 rounded-lg transition-colors"
+                  className={`self-start px-4 py-2.5 ${st('bg-slate-200', 'bg-zinc-800')} ${st('hover:bg-slate-100', 'hover:bg-zinc-700')} ${st('text-slate-600', 'text-zinc-300')} border ${st('border-slate-200', 'border-zinc-700')} rounded-lg transition-colors`}
                 >
                   <Plus className="w-4 h-4" />
                 </button>
@@ -710,16 +713,16 @@ function ClientSheet({
                       </div>
                       <div className="flex-1 min-w-0">
                         {entry.full_name && (
-                          <p className="text-sm text-white truncate">{entry.full_name}</p>
+                          <p className={`text-sm ${st('text-slate-900', 'text-white')} truncate`}>{entry.full_name}</p>
                         )}
-                        <p className="text-xs text-zinc-400 truncate">{entry.email}</p>
+                        <p className={`text-xs ${st('text-slate-500', 'text-zinc-400')} truncate`}>{entry.email}</p>
                       </div>
                       <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
                         pending
                       </span>
                       <button
                         onClick={() => removeEmail(entry.email)}
-                        className="p-1 text-zinc-500 hover:text-red-400 transition-colors"
+                        className={`p-1 ${st('text-slate-400', 'text-zinc-500')} hover:text-red-400 transition-colors`}
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
