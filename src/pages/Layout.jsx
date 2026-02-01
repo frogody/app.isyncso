@@ -82,6 +82,7 @@ import {
   FolderPlus,
   Mail,
   Plus,
+  BookText,
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -369,6 +370,7 @@ function getSecondaryNavConfig(pathname, stats = {}, productsSettings = {}) {
         { label: 'Subscriptions', path: createPageUrl('FinanceSubscriptions'), icon: CreditCard },
         { label: 'Chart of Accounts', path: createPageUrl('FinanceAccounts'), icon: BookOpen },
         { label: 'Journal Entries', path: createPageUrl('FinanceJournalEntries'), icon: FileSpreadsheet },
+        { label: 'General Ledger', path: createPageUrl('FinanceGeneralLedger'), icon: BookText },
       ]
     };
   }
