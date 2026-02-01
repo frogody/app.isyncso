@@ -209,6 +209,43 @@ html:not(.dark) .text-zinc-200 { color: #334155 !important; }
 html:not(.dark) .text-zinc-300 { color: #475569 !important; }
 html:not(.dark) .text-zinc-400 { color: #64748B !important; }
 
+/* Extended gray/zinc/slate text colors */
+html:not(.dark) .text-gray-500 { color: #475569 !important; }
+html:not(.dark) .text-gray-600 { color: #334155 !important; }
+html:not(.dark) .text-zinc-500 { color: #475569 !important; }
+html:not(.dark) .text-zinc-600 { color: #334155 !important; }
+html:not(.dark) .text-slate-300 { color: #475569 !important; }
+html:not(.dark) .text-slate-400 { color: #64748B !important; }
+html:not(.dark) .text-slate-500 { color: #475569 !important; }
+html:not(.dark) .text-slate-600 { color: #334155 !important; }
+html:not(.dark) .text-neutral-300 { color: #475569 !important; }
+html:not(.dark) .text-neutral-400 { color: #64748B !important; }
+html:not(.dark) .text-neutral-500 { color: #475569 !important; }
+
+/* Lower opacity text-white variants */
+html:not(.dark) .text-white\/40 { color: rgba(15, 23, 42, 0.55) !important; }
+html:not(.dark) .text-white\/30 { color: rgba(15, 23, 42, 0.50) !important; }
+html:not(.dark) .text-white\/20 { color: rgba(15, 23, 42, 0.45) !important; }
+html:not(.dark) .text-white\/10 { color: rgba(15, 23, 42, 0.40) !important; }
+
+/* Placeholder text */
+html:not(.dark) .placeholder\:text-gray-400::placeholder { color: #94A3B8 !important; }
+html:not(.dark) .placeholder\:text-gray-500::placeholder { color: #94A3B8 !important; }
+html:not(.dark) .placeholder\:text-zinc-400::placeholder { color: #94A3B8 !important; }
+html:not(.dark) .placeholder\:text-zinc-500::placeholder { color: #94A3B8 !important; }
+html:not(.dark) .placeholder\:text-white\/40::placeholder { color: #94A3B8 !important; }
+html:not(.dark) .placeholder\:text-white\/50::placeholder { color: #94A3B8 !important; }
+html:not(.dark) .placeholder\:text-white\/60::placeholder { color: #94A3B8 !important; }
+
+/* Muted foreground */
+html:not(.dark) .text-muted-foreground { color: #64748B !important; }
+
+/* SVG/Icon colors */
+html:not(.dark) .stroke-white { stroke: #0F172A !important; }
+html:not(.dark) .stroke-white\/60 { stroke: rgba(15, 23, 42, 0.60) !important; }
+html:not(.dark) .fill-white { fill: #0F172A !important; }
+html:not(.dark) .fill-white\/60 { fill: rgba(15, 23, 42, 0.60) !important; }
+
 /* Border colors */
 html:not(.dark) .border-white\/5 { border-color: rgba(15, 23, 42, 0.06) !important; }
 html:not(.dark) .border-white\/10 { border-color: rgba(15, 23, 42, 0.10) !important; }
