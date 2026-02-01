@@ -17,7 +17,8 @@ import {
   File, FileCode, FileSpreadsheet, FileVideo, FileAudio, FileArchive,
   Download, Globe, Lock, Unlock, LinkIcon, QrCode, Bell, History, Hash,
   AtSign, Quote, Bold, Italic, ListOrdered, ListChecks, Code, CheckSquare,
-  Heading1, Heading2, AlignLeft, Table, User, Building2
+  Heading1, Heading2, AlignLeft, Table, User, Building2,
+  Sun, Moon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,17 +43,20 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import NotionEditor, { generateId as generateBlockId } from "@/components/shared/NotionEditor";
+import { useProjectsTheme } from '@/contexts/ProjectsThemeContext';
+import { ProjectsPageTransition } from '@/components/projects/ui';
+import { cn } from '@/lib/utils';
 
 const PROJECT_STATUSES = [
-  { id: "planning", label: "Planning", color: "bg-zinc-600", textColor: "text-zinc-400", bgColor: "bg-zinc-500/10", borderColor: "border-zinc-500/30", icon: Target },
+  { id: "planning", label: "Planning", color: `bg-zinc-600`, textColor: `text-zinc-400`, bgColor: "bg-zinc-500/10", borderColor: "border-zinc-500/30", icon: Target },
   { id: "active", label: "Active", color: "bg-cyan-500", textColor: "text-cyan-400/80", bgColor: "bg-cyan-500/10", borderColor: "border-cyan-500/30", icon: Play },
   { id: "on_hold", label: "On Hold", color: "bg-cyan-600/60", textColor: "text-cyan-400/60", bgColor: "bg-cyan-500/5", borderColor: "border-cyan-500/20", icon: Pause },
   { id: "completed", label: "Completed", color: "bg-cyan-400", textColor: "text-cyan-300", bgColor: "bg-cyan-500/20", borderColor: "border-cyan-500/40", icon: CheckCircle2 },
-  { id: "archived", label: "Archived", color: "bg-zinc-700", textColor: "text-zinc-500", bgColor: "bg-zinc-500/10", borderColor: "border-zinc-600/30", icon: Archive },
+  { id: "archived", label: "Archived", color: `bg-zinc-700`, textColor: `text-zinc-500`, bgColor: "bg-zinc-500/10", borderColor: "border-zinc-600/30", icon: Archive },
 ];
 
 const PRIORITY_LEVELS = [
-  { id: "low", label: "Low", color: "text-zinc-400", bgColor: "bg-zinc-500/10", borderColor: "border-zinc-500/30" },
+  { id: "low", label: "Low", color: `text-zinc-400`, bgColor: "bg-zinc-500/10", borderColor: "border-zinc-500/30" },
   { id: "medium", label: "Medium", color: "text-cyan-400/70", bgColor: "bg-cyan-500/10", borderColor: "border-cyan-500/25" },
   { id: "high", label: "High", color: "text-cyan-400/90", bgColor: "bg-cyan-500/15", borderColor: "border-cyan-500/35" },
   { id: "critical", label: "Critical", color: "text-cyan-300", bgColor: "bg-cyan-500/20", borderColor: "border-cyan-500/45" },
@@ -139,7 +143,7 @@ const FILE_TYPE_ICONS = {
   audio: { icon: FileAudio, color: "text-orange-400", bg: "bg-orange-500/10" },
   archive: { icon: FileArchive, color: "text-yellow-400", bg: "bg-yellow-500/10" },
   document: { icon: FileText, color: "text-blue-400", bg: "bg-blue-500/10" },
-  default: { icon: File, color: "text-zinc-400", bg: "bg-zinc-500/10" },
+  default: { icon: File, color: `text-zinc-400`, bg: "bg-zinc-500/10" },
 };
 
 const getFileTypeInfo = (filename) => {
@@ -179,6 +183,7 @@ const generateFolderShareLink = (folderId) => {
 
 // Progress Ring Component
 function ProgressRing({ progress, size = 40, strokeWidth = 3 }) {
+  const { pt } = useProjectsTheme();
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (progress / 100) * circumference;
@@ -187,7 +192,7 @@ function ProgressRing({ progress, size = 40, strokeWidth = 3 }) {
     if (p >= 80) return "text-cyan-400";
     if (p >= 50) return "text-cyan-400/80";
     if (p >= 25) return "text-cyan-400/60";
-    return "text-zinc-500";
+    return pt('text-slate-400','text-zinc-500');
   };
 
   return (
@@ -224,6 +229,7 @@ function ProgressRing({ progress, size = 40, strokeWidth = 3 }) {
 
 // File Drop Zone Component - Premium Design
 function FileDropZone({ onFilesAdded, files = [], onRemoveFile, onTogglePublic }) {
+  const { pt } = useProjectsTheme();
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -285,7 +291,7 @@ function FileDropZone({ onFilesAdded, files = [], onRemoveFile, onTogglePublic }
         className={`relative overflow-hidden rounded-xl border-2 border-dashed p-8 text-center cursor-pointer transition-all duration-300 ${
           isDragging
             ? "border-cyan-500 bg-gradient-to-br from-cyan-500/10 to-cyan-500/5"
-            : "border-zinc-700/60 hover:border-zinc-600 bg-zinc-800/20 hover:bg-zinc-800/40"
+            : `${pt('border-slate-200','border-zinc-700/60')} ${pt('hover:border-slate-300','hover:border-zinc-600')} ${pt('bg-slate-50','bg-zinc-800/20')} ${pt('hover:bg-slate-50','hover:bg-zinc-800/40')}`
         }`}
       >
         <input
@@ -305,15 +311,15 @@ function FileDropZone({ onFilesAdded, files = [], onRemoveFile, onTogglePublic }
           <div className={`w-16 h-16 mx-auto mb-4 rounded-xl flex items-center justify-center transition-all duration-300 ${
             isDragging
               ? "bg-gradient-to-br from-cyan-500/30 to-cyan-600/20 shadow-lg shadow-cyan-500/20 scale-110"
-              : "bg-zinc-800/80 border border-zinc-700/50"
+              : `${pt('bg-slate-200','bg-zinc-800/80')} border ${pt('border-slate-200','border-zinc-700/50')}`
           }`}>
-            <Upload className={`w-7 h-7 transition-colors ${isDragging ? "text-cyan-400" : "text-zinc-500"}`} />
+            <Upload className={`w-7 h-7 transition-colors ${isDragging ? "text-cyan-400" : `${pt('text-slate-400','text-zinc-500')}`}`} />
           </div>
-          <p className={`text-sm font-medium mb-1 transition-colors ${isDragging ? "text-cyan-400" : "text-zinc-300"}`}>
+          <p className={`text-sm font-medium mb-1 transition-colors ${isDragging ? "text-cyan-400" : `${pt('text-slate-600','text-zinc-300')}`}`}>
             {isDragging ? "Release to upload" : "Drag and drop files"}
           </p>
-          <p className="text-xs text-zinc-500">or click to browse from your computer</p>
-          <p className="text-xs text-zinc-600 mt-2">Supports all file types</p>
+          <p className={`text-xs ${pt('text-slate-400','text-zinc-500')}`}>or click to browse from your computer</p>
+          <p className={`text-xs ${pt('text-slate-300','text-zinc-600')} mt-2`}>Supports all file types</p>
         </div>
       </div>
 
@@ -322,13 +328,13 @@ function FileDropZone({ onFilesAdded, files = [], onRemoveFile, onTogglePublic }
         <div className="space-y-3">
           <div className="flex items-center justify-between px-1">
             <div className="flex items-center gap-2">
-              <Paperclip className="w-4 h-4 text-zinc-500" />
-              <h4 className="text-sm font-medium text-zinc-300">Attachments</h4>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400">{files.length}</span>
+              <Paperclip className={`w-4 h-4 ${pt('text-slate-400','text-zinc-500')}`} />
+              <h4 className={`text-sm font-medium ${pt('text-slate-600','text-zinc-300')}`}>Attachments</h4>
+              <span className={`text-xs px-2 py-0.5 rounded-full ${pt('bg-slate-200','bg-zinc-800')} ${pt('text-slate-500','text-zinc-400')}`}>{files.length}</span>
             </div>
           </div>
 
-          <div className="rounded-xl bg-zinc-800/30 border border-zinc-700/40 overflow-hidden divide-y divide-zinc-700/30">
+          <div className={`rounded-xl ${pt('bg-slate-50','bg-zinc-800/30')} border ${pt('border-slate-200','border-zinc-700/40')} overflow-hidden divide-y ${pt('divide-slate-200','divide-zinc-700/30')}`}>
             {files.map((file, index) => {
               const fileInfo = getFileTypeInfo(file.name);
               const FileIcon = fileInfo.icon;
@@ -339,16 +345,16 @@ function FileDropZone({ onFilesAdded, files = [], onRemoveFile, onTogglePublic }
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="flex items-center gap-4 p-4 hover:bg-zinc-800/40 transition-colors group"
+                  className={`flex items-center gap-4 p-4 ${pt('hover:bg-slate-50','hover:bg-zinc-800/40')} transition-colors group`}
                 >
-                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${fileInfo.bg} border border-zinc-700/30`}>
+                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${fileInfo.bg} border ${pt('border-slate-200','border-zinc-700/30')}`}>
                     <FileIcon className={`w-5 h-5 ${fileInfo.color}`} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-zinc-200 truncate">{file.name}</p>
-                    <p className="text-xs text-zinc-500 flex items-center gap-2">
+                    <p className={`text-sm font-medium ${pt('text-slate-700','text-zinc-200')} truncate`}>{file.name}</p>
+                    <p className={`text-xs ${pt('text-slate-400','text-zinc-500')} flex items-center gap-2`}>
                       <span>{formatFileSize(file.size)}</span>
-                      <span className="w-1 h-1 rounded-full bg-zinc-600" />
+                      <span className={`w-1 h-1 rounded-full ${pt('bg-slate-300','bg-zinc-600')}`} />
                       <span>{new Date(file.uploaded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                     </p>
                   </div>
@@ -359,7 +365,7 @@ function FileDropZone({ onFilesAdded, files = [], onRemoveFile, onTogglePublic }
                       className={`h-7 px-2 text-xs transition-all ${
                         file.is_public
                           ? "bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 border border-cyan-500/40"
-                          : "bg-zinc-800 hover:bg-zinc-700 text-zinc-400 border border-zinc-700"
+                          : `${pt('bg-slate-200','bg-zinc-800')} ${pt('hover:bg-slate-200','hover:bg-zinc-700')} ${pt('text-slate-500','text-zinc-400')} border ${pt('border-slate-300','border-zinc-700')}`
                       }`}
                       onClick={(e) => { e.stopPropagation(); onTogglePublic?.(file.id); }}
                       title={file.is_public ? "Visible to clients" : "Internal only"}
@@ -373,14 +379,14 @@ function FileDropZone({ onFilesAdded, files = [], onRemoveFile, onTogglePublic }
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
                         size="icon"
-                        className="h-8 w-8 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white border border-zinc-700"
+                        className={`h-8 w-8 ${pt('bg-slate-200','bg-zinc-800')} ${pt('hover:bg-slate-200','hover:bg-zinc-700')} ${pt('text-slate-500','text-zinc-400')} ${pt('hover:text-slate-900','hover:text-white')} border ${pt('border-slate-300','border-zinc-700')}`}
                         onClick={(e) => { e.stopPropagation(); window.open(file.url, '_blank'); }}
                       >
                         <Download className="w-4 h-4" />
                       </Button>
                       <Button
                         size="icon"
-                        className="h-8 w-8 bg-zinc-800 hover:bg-red-500/20 text-zinc-400 hover:text-red-400 border border-zinc-700 hover:border-red-500/30"
+                        className={`h-8 w-8 ${pt('bg-slate-200','bg-zinc-800')} hover:bg-red-500/20 ${pt('text-slate-500','text-zinc-400')} hover:text-red-400 border ${pt('border-slate-300','border-zinc-700')} hover:border-red-500/30`}
                         onClick={(e) => { e.stopPropagation(); onRemoveFile(file.id); toast.success("File removed"); }}
                       >
                         <Trash2 className="w-4 h-4" />
@@ -397,7 +403,7 @@ function FileDropZone({ onFilesAdded, files = [], onRemoveFile, onTogglePublic }
       {/* Empty State */}
       {files.length === 0 && (
         <div className="text-center py-4">
-          <p className="text-xs text-zinc-600">No files attached yet</p>
+          <p className={`text-xs ${pt('text-slate-300','text-zinc-600')}`}>No files attached yet</p>
         </div>
       )}
     </div>
@@ -406,10 +412,11 @@ function FileDropZone({ onFilesAdded, files = [], onRemoveFile, onTogglePublic }
 
 // Client Update Component
 function ClientUpdateItem({ update, isOwner, onDelete }) {
+  const { pt } = useProjectsTheme();
   return (
-    <div className="relative pl-6 pb-6 border-l-2 border-zinc-800 last:border-l-transparent last:pb-0">
+    <div className={`relative pl-6 pb-6 border-l-2 ${pt('border-slate-200','border-zinc-800')} last:border-l-transparent last:pb-0`}>
       <div className="absolute -left-2 top-0 w-4 h-4 rounded-full bg-cyan-500/20 border-2 border-cyan-500/50" />
-      <div className="bg-zinc-800/50 rounded-xl p-4">
+      <div className={`${pt('bg-slate-100','bg-zinc-800/50')} rounded-xl p-4`}>
         <div className="flex items-start justify-between mb-2">
           <div className="flex items-center gap-2">
             <Avatar className="w-6 h-6">
@@ -417,8 +424,8 @@ function ClientUpdateItem({ update, isOwner, onDelete }) {
                 {update.author?.charAt(0) || 'U'}
               </AvatarFallback>
             </Avatar>
-            <span className="text-sm font-medium text-white">{update.author || 'Team'}</span>
-            <span className="text-xs text-zinc-500">
+            <span className={`text-sm font-medium ${pt('text-slate-900','text-white')}`}>{update.author || 'Team'}</span>
+            <span className={`text-xs ${pt('text-slate-400','text-zinc-500')}`}>
               {new Date(update.created_at).toLocaleDateString('en-US', {
                 month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
               })}
@@ -428,14 +435,14 @@ function ClientUpdateItem({ update, isOwner, onDelete }) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 text-zinc-500 hover:text-red-400"
+              className={`h-6 w-6 ${pt('text-slate-400','text-zinc-500')} hover:text-red-400`}
               onClick={() => onDelete(update.id)}
             >
               <X className="w-3 h-3" />
             </Button>
           )}
         </div>
-        <div className="text-sm text-zinc-300 whitespace-pre-wrap">{update.content}</div>
+        <div className={`text-sm ${pt('text-slate-600','text-zinc-300')} whitespace-pre-wrap`}>{update.content}</div>
         {update.attachments?.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-2">
             {update.attachments.map((att, i) => {
@@ -447,7 +454,7 @@ function ClientUpdateItem({ update, isOwner, onDelete }) {
                   href={att.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-2 py-1 bg-zinc-900 rounded text-xs text-zinc-400 hover:text-white transition-colors"
+                  className={`flex items-center gap-2 px-2 py-1 ${pt('bg-white','bg-zinc-900')} rounded text-xs ${pt('text-slate-500','text-zinc-400')} ${pt('hover:text-slate-900','hover:text-white')} transition-colors`}
                 >
                   <FileIcon className={`w-3 h-3 ${fileInfo.color}`} />
                   {att.name}
@@ -463,6 +470,7 @@ function ClientUpdateItem({ update, isOwner, onDelete }) {
 
 // Premium Toggle Switch Component
 function PremiumToggle({ enabled, onChange, size = "default" }) {
+  const { pt } = useProjectsTheme();
   const sizes = {
     small: { track: "w-8 h-4", thumb: "w-3 h-3", translate: "translate-x-4" },
     default: { track: "w-11 h-6", thumb: "w-5 h-5", translate: "translate-x-5" },
@@ -475,7 +483,7 @@ function PremiumToggle({ enabled, onChange, size = "default" }) {
       className={`relative ${s.track} rounded-full transition-all duration-300 ease-out ${
         enabled
           ? 'bg-gradient-to-r from-cyan-500 to-cyan-400 shadow-lg shadow-cyan-500/30'
-          : 'bg-zinc-700/80 hover:bg-zinc-600/80'
+          : `${pt('bg-slate-200','bg-zinc-700/80')} ${pt('hover:bg-slate-200','hover:bg-zinc-600/80')}`
       }`}
     >
       <div className={`absolute top-0.5 left-0.5 ${s.thumb} rounded-full bg-white shadow-md transition-all duration-300 ease-out ${
@@ -487,6 +495,7 @@ function PremiumToggle({ enabled, onChange, size = "default" }) {
 
 // Share Settings Panel - Premium Design
 function ShareSettingsPanel({ project, onUpdateSettings, onGenerateLink }) {
+  const { pt } = useProjectsTheme();
   const [settings, setSettings] = useState(project?.share_settings || {});
   const [copied, setCopied] = useState(false);
 
@@ -519,7 +528,7 @@ function ShareSettingsPanel({ project, onUpdateSettings, onGenerateLink }) {
   return (
     <div className="space-y-5">
       {/* Share Link Section - Premium Card */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-zinc-800/80 to-zinc-900/80 border border-zinc-700/50 backdrop-blur-sm">
+      <div className={`relative overflow-hidden rounded-xl bg-gradient-to-br from-zinc-800/80 to-zinc-900/80 border ${pt('border-slate-200','border-zinc-700/50')} backdrop-blur-sm`}>
         <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent" />
         <div className="relative p-4">
           <div className="flex items-center justify-between mb-4">
@@ -528,8 +537,8 @@ function ShareSettingsPanel({ project, onUpdateSettings, onGenerateLink }) {
                 <Globe className="w-4 h-4 text-cyan-400" />
               </div>
               <div>
-                <span className="text-sm font-semibold text-white">Public Sharing</span>
-                <p className="text-xs text-zinc-500">Share this project with clients</p>
+                <span className={`text-sm font-semibold ${pt('text-slate-900','text-white')}`}>Public Sharing</span>
+                <p className={`text-xs ${pt('text-slate-400','text-zinc-500')}`}>Share this project with clients</p>
               </div>
             </div>
             <PremiumToggle enabled={settings.is_public} onChange={() => handleToggle('is_public')} />
@@ -544,18 +553,18 @@ function ShareSettingsPanel({ project, onUpdateSettings, onGenerateLink }) {
                 className="space-y-3 overflow-hidden"
               >
                 {settings.share_link ? (
-                  <div className="flex items-center gap-2 p-1 bg-zinc-900/80 rounded-xl border border-zinc-700/50">
+                  <div className={`flex items-center gap-2 p-1 ${pt('bg-white/80 shadow-sm','bg-zinc-900/80')} rounded-xl border ${pt('border-slate-200','border-zinc-700/50')}`}>
                     <Input
                       value={settings.share_link}
                       readOnly
-                      className="bg-transparent border-0 text-xs text-zinc-400 focus:ring-0"
+                      className={`bg-transparent border-0 text-xs ${pt('text-slate-500','text-zinc-400')} focus:ring-0`}
                     />
                     <Button
                       size="sm"
                       className={`shrink-0 transition-all duration-300 ${
                         copied
                           ? 'bg-green-500/20 text-green-400 border-green-500/30'
-                          : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border-zinc-700'
+                          : `${pt('bg-slate-200','bg-zinc-800')} ${pt('hover:bg-slate-200','hover:bg-zinc-700')} ${pt('text-slate-600','text-zinc-300')} ${pt('border-slate-300','border-zinc-700')}`
                       } border`}
                       onClick={copyLink}
                     >
@@ -575,7 +584,7 @@ function ShareSettingsPanel({ project, onUpdateSettings, onGenerateLink }) {
                 ) : (
                   <Button
                     onClick={handleGenerateLink}
-                    className="w-full bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/20 border-0 h-11"
+                    className={`w-full bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/20 border-0 h-11`}
                   >
                     <LinkIcon className="w-4 h-4 mr-2" />
                     Generate Share Link
@@ -590,11 +599,11 @@ function ShareSettingsPanel({ project, onUpdateSettings, onGenerateLink }) {
       {/* Visibility Options - Premium List */}
       <div className="space-y-2">
         <div className="flex items-center gap-2 px-1 mb-3">
-          <Eye className="w-3.5 h-3.5 text-zinc-500" />
-          <h4 className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Client Visibility</h4>
+          <Eye className={`w-3.5 h-3.5 ${pt('text-slate-400','text-zinc-500')}`} />
+          <h4 className={`text-xs font-medium ${pt('text-slate-400','text-zinc-500')} uppercase tracking-wider`}>Client Visibility</h4>
         </div>
 
-        <div className="rounded-xl bg-zinc-800/40 border border-zinc-700/40 overflow-hidden divide-y divide-zinc-700/30">
+        <div className={`rounded-xl ${pt('bg-slate-100','bg-zinc-800/40')} border ${pt('border-slate-200','border-zinc-700/40')} overflow-hidden divide-y ${pt('divide-slate-200','divide-zinc-700/30')}`}>
           {[
             { key: 'show_tasks', label: 'Tasks & Progress', desc: 'Show task completion status', icon: CheckSquare },
             { key: 'show_milestones', label: 'Milestones', desc: 'Display project milestones', icon: Milestone },
@@ -604,17 +613,17 @@ function ShareSettingsPanel({ project, onUpdateSettings, onGenerateLink }) {
           ].map(({ key, label, desc, icon: Icon }) => (
             <div
               key={key}
-              className="flex items-center justify-between p-4 hover:bg-zinc-800/30 transition-colors"
+              className={`flex items-center justify-between p-4 ${pt('hover:bg-slate-50','hover:bg-zinc-800/30')} transition-colors`}
             >
               <div className="flex items-center gap-3">
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                  settings[key] ? 'bg-cyan-500/15 text-cyan-400' : 'bg-zinc-700/50 text-zinc-500'
+                  settings[key] ? 'bg-cyan-500/15 text-cyan-400' : `${pt('bg-slate-100','bg-zinc-700/50')} ${pt('text-slate-400','text-zinc-500')}`
                 } transition-colors`}>
                   <Icon className="w-4 h-4" />
                 </div>
                 <div>
-                  <span className="text-sm font-medium text-zinc-200">{label}</span>
-                  <p className="text-xs text-zinc-500">{desc}</p>
+                  <span className={`text-sm font-medium ${pt('text-slate-700','text-zinc-200')}`}>{label}</span>
+                  <p className={`text-xs ${pt('text-slate-400','text-zinc-500')}`}>{desc}</p>
                 </div>
               </div>
               <PremiumToggle
@@ -628,17 +637,17 @@ function ShareSettingsPanel({ project, onUpdateSettings, onGenerateLink }) {
       </div>
 
       {/* Password Protection - Premium Card */}
-      <div className="rounded-xl bg-zinc-800/40 border border-zinc-700/40 overflow-hidden">
+      <div className={`rounded-xl ${pt('bg-slate-100','bg-zinc-800/40')} border ${pt('border-slate-200','border-zinc-700/40')} overflow-hidden`}>
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-3">
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-              settings.password_protected ? 'bg-amber-500/15 text-amber-400' : 'bg-zinc-700/50 text-zinc-500'
+              settings.password_protected ? 'bg-amber-500/15 text-amber-400' : `${pt('bg-slate-100','bg-zinc-700/50')} ${pt('text-slate-400','text-zinc-500')}`
             } transition-colors`}>
               <Lock className="w-4 h-4" />
             </div>
             <div>
-              <span className="text-sm font-medium text-zinc-200">Password Protection</span>
-              <p className="text-xs text-zinc-500">Require password to access</p>
+              <span className={`text-sm font-medium ${pt('text-slate-700','text-zinc-200')}`}>Password Protection</span>
+              <p className={`text-xs ${pt('text-slate-400','text-zinc-500')}`}>Require password to access</p>
             </div>
           </div>
           <PremiumToggle
@@ -665,7 +674,7 @@ function ShareSettingsPanel({ project, onUpdateSettings, onGenerateLink }) {
                   setSettings(newSettings);
                   onUpdateSettings(newSettings);
                 }}
-                className="bg-zinc-900/60 border-zinc-700/50 text-sm placeholder:text-zinc-600 focus:border-amber-500/50 focus:ring-amber-500/20"
+                className={`${pt('bg-white shadow-sm','bg-zinc-900/60')} ${pt('border-slate-200','border-zinc-700/50')} text-sm ${pt('placeholder:text-slate-400','placeholder:text-zinc-600')} focus:border-amber-500/50 focus:ring-amber-500/20`}
               />
             </motion.div>
           )}
@@ -677,6 +686,7 @@ function ShareSettingsPanel({ project, onUpdateSettings, onGenerateLink }) {
 
 // Notion-like Page Block Component
 function PageBlock({ block, onUpdate, onDelete, isEditing }) {
+  const { pt } = useProjectsTheme();
   const [content, setContent] = useState(block.content || '');
   const [isLocalEditing, setIsLocalEditing] = useState(false);
 
@@ -695,7 +705,7 @@ function PageBlock({ block, onUpdate, onDelete, isEditing }) {
   const blockConfig = blockTypes[block.type] || blockTypes.text;
 
   if (block.type === 'divider') {
-    return <div className="border-t border-zinc-800 my-4" />;
+    return <div className={`border-t ${pt('border-slate-200','border-zinc-800')} my-4`} />;
   }
 
   const handleSave = () => {
@@ -705,14 +715,14 @@ function PageBlock({ block, onUpdate, onDelete, isEditing }) {
 
   const getBlockStyles = () => {
     switch (block.type) {
-      case 'heading1': return 'text-lg font-bold text-white';
-      case 'heading2': return 'text-xl font-semibold text-white';
-      case 'quote': return 'text-zinc-400 italic border-l-2 border-cyan-500 pl-4';
-      case 'code': return 'font-mono text-sm bg-zinc-800 p-3 rounded-lg text-cyan-300';
-      case 'bullet': return 'text-zinc-300 pl-4 before:content-["•"] before:mr-2 before:text-cyan-500';
-      case 'numbered': return 'text-zinc-300';
-      case 'checklist': return 'text-zinc-300';
-      default: return 'text-zinc-300';
+      case 'heading1': return `text-lg font-bold ${pt('text-slate-900','text-white')}`;
+      case 'heading2': return `text-xl font-semibold ${pt('text-slate-900','text-white')}`;
+      case 'quote': return `${pt('text-slate-500','text-zinc-400')} italic border-l-2 border-cyan-500 pl-4`;
+      case 'code': return `font-mono text-sm ${pt('bg-slate-200','bg-zinc-800')} p-3 rounded-lg text-cyan-300`;
+      case 'bullet': return `${pt('text-slate-600','text-zinc-300')} pl-4 before:content-["•"] before:mr-2 before:text-cyan-500`;
+      case 'numbered': return `${pt('text-slate-600','text-zinc-300')}`;
+      case 'checklist': return `${pt('text-slate-600','text-zinc-300')}`;
+      default: return `${pt('text-slate-600','text-zinc-300')}`;
     }
   };
 
@@ -722,7 +732,7 @@ function PageBlock({ block, onUpdate, onDelete, isEditing }) {
         <div className="absolute -left-8 top-1 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
           <button
             onClick={() => onDelete(block.id)}
-            className="p-1 text-zinc-600 hover:text-red-400 transition-colors"
+            className={`p-1 ${pt('text-slate-300','text-zinc-600')} hover:text-red-400 transition-colors`}
           >
             <Trash2 className="w-3 h-3" />
           </button>
@@ -735,7 +745,7 @@ function PageBlock({ block, onUpdate, onDelete, isEditing }) {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder={blockConfig.placeholder}
-            className="flex-1 bg-zinc-800/50 border-zinc-700 min-h-[60px]"
+            className={`flex-1 ${pt('bg-slate-100','bg-zinc-800/50')} ${pt('border-slate-300','border-zinc-700')} min-h-[60px]`}
             autoFocus
           />
           <Button size="sm" onClick={handleSave} className="bg-cyan-600 hover:bg-cyan-500">
@@ -745,15 +755,15 @@ function PageBlock({ block, onUpdate, onDelete, isEditing }) {
       ) : (
         <div
           onClick={() => isEditing && setIsLocalEditing(true)}
-          className={`${getBlockStyles()} ${isEditing ? 'cursor-text hover:bg-zinc-800/30 rounded px-2 py-1 -mx-2' : ''}`}
+          className={`${getBlockStyles()} ${isEditing ? `cursor-text ${pt('hover:bg-slate-50','hover:bg-zinc-800/30')} rounded px-2 py-1 -mx-2` : ''}`}
         >
           {block.type === 'checklist' ? (
             <div className="flex items-center gap-2">
               <input type="checkbox" checked={block.checked} readOnly className="rounded" />
-              <span className={block.checked ? 'line-through text-zinc-500' : ''}>{content || blockConfig.placeholder}</span>
+              <span className={block.checked ? `line-through ${pt('text-slate-400','text-zinc-500')}` : ''}>{content || blockConfig.placeholder}</span>
             </div>
           ) : (
-            content || (isEditing && <span className="text-zinc-600">{blockConfig.placeholder}</span>)
+            content || (isEditing && <span className={`${pt('text-slate-300','text-zinc-600')}`}>{blockConfig.placeholder}</span>)
           )}
         </div>
       )}
@@ -763,6 +773,7 @@ function PageBlock({ block, onUpdate, onDelete, isEditing }) {
 
 // Client Portal / Shareable Project View - Premium Design
 function ShareableProjectView({ project, tasks, isOwner, onAddUpdate, onDeleteUpdate }) {
+  const { pt } = useProjectsTheme();
   const [newUpdate, setNewUpdate] = useState('');
   const statusConfig = PROJECT_STATUSES.find(s => s.id === project?.status) || PROJECT_STATUSES[0];
 
@@ -806,15 +817,15 @@ function ShareableProjectView({ project, tasks, isOwner, onAddUpdate, onDeleteUp
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-2 text-zinc-500 text-sm mb-8"
+            className={`flex items-center gap-2 ${pt('text-slate-400','text-zinc-500')} text-sm mb-8`}
           >
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-800/50 backdrop-blur-sm border border-zinc-700/50">
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${pt('bg-slate-100','bg-zinc-800/50')} backdrop-blur-sm border ${pt('border-slate-200','border-zinc-700/50')}`}>
               <Folder className="w-3.5 h-3.5 text-cyan-400" />
-              <span className="text-zinc-400">Project Portal</span>
+              <span className={`${pt('text-slate-500','text-zinc-400')}`}>Project Portal</span>
               {project.client_name && (
                 <>
-                  <ChevronRight className="w-3 h-3 text-zinc-600" />
-                  <span className="text-zinc-300">{project.client_name}</span>
+                  <ChevronRight className={`w-3 h-3 ${pt('text-slate-300','text-zinc-600')}`} />
+                  <span className={`${pt('text-slate-600','text-zinc-300')}`}>{project.client_name}</span>
                 </>
               )}
             </div>
@@ -826,12 +837,12 @@ function ShareableProjectView({ project, tasks, isOwner, onAddUpdate, onDeleteUp
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
+            <h1 className={`text-4xl md:text-5xl font-bold ${pt('text-slate-900','text-white')} mb-4 tracking-tight`}>
               {project.name}
             </h1>
 
             {project.description && (
-              <p className="text-lg text-zinc-400 mb-8 max-w-2xl leading-relaxed">
+              <p className={`text-lg ${pt('text-slate-500','text-zinc-400')} mb-8 max-w-2xl leading-relaxed`}>
                 {project.description}
               </p>
             )}
@@ -843,9 +854,9 @@ function ShareableProjectView({ project, tasks, isOwner, onAddUpdate, onDeleteUp
                 <span className={`text-sm font-medium ${statusConfig.textColor}`}>{statusConfig.label}</span>
               </div>
               {project.due_date && (
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-800/60 border border-zinc-700/50 backdrop-blur-sm">
-                  <Calendar className="w-4 h-4 text-zinc-400" />
-                  <span className="text-sm text-zinc-300">
+                <div className={`flex items-center gap-2 px-4 py-2 rounded-full ${pt('bg-slate-100','bg-zinc-800/60')} border ${pt('border-slate-200','border-zinc-700/50')} backdrop-blur-sm`}>
+                  <Calendar className={`w-4 h-4 ${pt('text-slate-500','text-zinc-400')}`} />
+                  <span className={`text-sm ${pt('text-slate-600','text-zinc-300')}`}>
                     {daysRemaining !== null && daysRemaining > 0
                       ? `${daysRemaining} days remaining`
                       : daysRemaining === 0
@@ -867,40 +878,40 @@ function ShareableProjectView({ project, tasks, isOwner, onAddUpdate, onDeleteUp
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-zinc-800/60 to-zinc-900/60 border border-zinc-700/40 backdrop-blur-xl mb-8"
+          className={`relative overflow-hidden rounded-3xl bg-gradient-to-br from-zinc-800/60 to-zinc-900/60 border ${pt('border-slate-200','border-zinc-700/40')} backdrop-blur-xl mb-8`}
         >
           <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-purple-500/5" />
           <div className="relative p-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
               <div>
-                <h2 className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-1">Overall Progress</h2>
+                <h2 className={`text-xs font-medium ${pt('text-slate-500','text-zinc-400')} uppercase tracking-wider mb-1`}>Overall Progress</h2>
                 <div className="flex items-baseline gap-2">
                   <span className="text-5xl font-bold bg-gradient-to-r from-cyan-400 to-cyan-300 bg-clip-text text-transparent">
                     {progress}%
                   </span>
-                  <span className="text-zinc-500">complete</span>
+                  <span className={`${pt('text-slate-400','text-zinc-500')}`}>complete</span>
                 </div>
               </div>
 
               {/* Stats Grid */}
               <div className="flex gap-4">
-                <div className="text-center px-6 py-3 rounded-xl bg-zinc-800/50 border border-zinc-700/30">
-                  <div className="text-lg font-bold text-white">{completedTasks}</div>
-                  <div className="text-[10px] text-zinc-500 mt-1">Completed</div>
+                <div className={`text-center px-6 py-3 rounded-xl ${pt('bg-slate-100','bg-zinc-800/50')} border ${pt('border-slate-200','border-zinc-700/30')}`}>
+                  <div className={`text-lg font-bold ${pt('text-slate-900','text-white')}`}>{completedTasks}</div>
+                  <div className={`text-[10px] ${pt('text-slate-400','text-zinc-500')} mt-1`}>Completed</div>
                 </div>
-                <div className="text-center px-6 py-3 rounded-xl bg-zinc-800/50 border border-zinc-700/30">
+                <div className={`text-center px-6 py-3 rounded-xl ${pt('bg-slate-100','bg-zinc-800/50')} border ${pt('border-slate-200','border-zinc-700/30')}`}>
                   <div className="text-lg font-bold text-cyan-400">{inProgressTasks}</div>
-                  <div className="text-[10px] text-zinc-500 mt-1">In Progress</div>
+                  <div className={`text-[10px] ${pt('text-slate-400','text-zinc-500')} mt-1`}>In Progress</div>
                 </div>
-                <div className="text-center px-6 py-3 rounded-xl bg-zinc-800/50 border border-zinc-700/30">
-                  <div className="text-lg font-bold text-zinc-400">{tasks.length - completedTasks - inProgressTasks}</div>
-                  <div className="text-[10px] text-zinc-500 mt-1">Remaining</div>
+                <div className={`text-center px-6 py-3 rounded-xl ${pt('bg-slate-100','bg-zinc-800/50')} border ${pt('border-slate-200','border-zinc-700/30')}`}>
+                  <div className={`text-lg font-bold ${pt('text-slate-500','text-zinc-400')}`}>{tasks.length - completedTasks - inProgressTasks}</div>
+                  <div className={`text-[10px] ${pt('text-slate-400','text-zinc-500')} mt-1`}>Remaining</div>
                 </div>
               </div>
             </div>
 
             {/* Premium Progress Bar */}
-            <div className="relative h-3 bg-zinc-800 rounded-full overflow-hidden">
+            <div className={`relative h-3 ${pt('bg-slate-200','bg-zinc-800')} rounded-full overflow-hidden`}>
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${progress}%` }}
@@ -920,17 +931,17 @@ function ShareableProjectView({ project, tasks, isOwner, onAddUpdate, onDeleteUp
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="lg:col-span-2 rounded-xl bg-zinc-800/40 border border-zinc-700/40 overflow-hidden"
+              className={`lg:col-span-2 rounded-xl ${pt('bg-slate-100','bg-zinc-800/40')} border ${pt('border-slate-200','border-zinc-700/40')} overflow-hidden`}
             >
-              <div className="p-5 border-b border-zinc-700/40">
+              <div className={`p-5 border-b ${pt('border-slate-200','border-zinc-700/40')}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 flex items-center justify-center border border-cyan-500/20">
                       <CheckSquare className="w-4 h-4 text-cyan-400" />
                     </div>
                     <div>
-                      <h2 className="text-base font-semibold text-white">Tasks</h2>
-                      <p className="text-xs text-zinc-500">{completedTasks} of {tasks.length} completed</p>
+                      <h2 className={`text-base font-semibold ${pt('text-slate-900','text-white')}`}>Tasks</h2>
+                      <p className={`text-xs ${pt('text-slate-400','text-zinc-500')}`}>{completedTasks} of {tasks.length} completed</p>
                     </div>
                   </div>
                 </div>
@@ -943,14 +954,14 @@ function ShareableProjectView({ project, tasks, isOwner, onAddUpdate, onDeleteUp
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.1 * i }}
-                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-800/50 transition-colors group"
+                    className={`flex items-center gap-3 p-3 rounded-xl ${pt('hover:bg-slate-100','hover:bg-zinc-800/50')} transition-colors group`}
                   >
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
                       task.status === 'completed' || task.status === 'success'
                         ? 'bg-cyan-500/20 text-cyan-400'
                         : task.status === 'in_progress'
                           ? 'bg-amber-500/20 text-amber-400'
-                          : 'bg-zinc-700/50 text-zinc-500'
+                          : `${pt('bg-slate-100','bg-zinc-700/50')} ${pt('text-slate-400','text-zinc-500')}`
                     }`}>
                       {task.status === 'completed' || task.status === 'success' ? (
                         <CheckCircle2 className="w-4 h-4" />
@@ -962,8 +973,8 @@ function ShareableProjectView({ project, tasks, isOwner, onAddUpdate, onDeleteUp
                     </div>
                     <span className={`text-sm flex-1 ${
                       task.status === 'completed' || task.status === 'success'
-                        ? 'text-zinc-500 line-through'
-                        : 'text-zinc-300'
+                        ? `${pt('text-slate-400','text-zinc-500')} line-through`
+                        : `${pt('text-slate-600','text-zinc-300')}`
                     }`}>
                       {task.title}
                     </span>
@@ -974,7 +985,7 @@ function ShareableProjectView({ project, tasks, isOwner, onAddUpdate, onDeleteUp
                     )}
                   </motion.div>
                 )) : (
-                  <div className="text-center py-8 text-zinc-500">
+                  <div className={`text-center py-8 ${pt('text-slate-400','text-zinc-500')}`}>
                     <CheckSquare className="w-10 h-10 mx-auto mb-2 opacity-30" />
                     <p className="text-sm">No tasks yet</p>
                   </div>
@@ -991,12 +1002,12 @@ function ShareableProjectView({ project, tasks, isOwner, onAddUpdate, onDeleteUp
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="rounded-xl bg-zinc-800/40 border border-zinc-700/40 overflow-hidden"
+                className={`rounded-xl ${pt('bg-slate-100','bg-zinc-800/40')} border ${pt('border-slate-200','border-zinc-700/40')} overflow-hidden`}
               >
-                <div className="p-4 border-b border-zinc-700/40">
+                <div className={`p-4 border-b ${pt('border-slate-200','border-zinc-700/40')}`}>
                   <div className="flex items-center gap-2">
                     <Milestone className="w-4 h-4 text-cyan-400" />
-                    <h3 className="text-sm font-semibold text-white">Milestones</h3>
+                    <h3 className={`text-sm font-semibold ${pt('text-slate-900','text-white')}`}>Milestones</h3>
                   </div>
                 </div>
                 <div className="p-4 space-y-3">
@@ -1005,16 +1016,16 @@ function ShareableProjectView({ project, tasks, isOwner, onAddUpdate, onDeleteUp
                       <div className={`w-3 h-3 rounded-full shrink-0 ${
                         milestone.completed
                           ? 'bg-cyan-400 shadow-lg shadow-cyan-400/30'
-                          : 'bg-zinc-600 border-2 border-zinc-500'
+                          : `${pt('bg-slate-300','bg-zinc-600')} border-2 ${pt('border-slate-300','border-zinc-500')}`
                       }`} />
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm truncate ${milestone.completed ? 'text-zinc-500' : 'text-zinc-300'}`}>
+                        <p className={`text-sm truncate ${milestone.completed ? `${pt('text-slate-400','text-zinc-500')}` : `${pt('text-slate-600','text-zinc-300')}`}`}>
                           {milestone.name}
                         </p>
                       </div>
                     </div>
                   )) : (
-                    <p className="text-sm text-zinc-500 text-center py-4">No milestones</p>
+                    <p className={`text-sm ${pt('text-slate-400','text-zinc-500')} text-center py-4`}>No milestones</p>
                   )}
                 </div>
               </motion.div>
@@ -1026,26 +1037,26 @@ function ShareableProjectView({ project, tasks, isOwner, onAddUpdate, onDeleteUp
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
-                className="rounded-xl bg-zinc-800/40 border border-zinc-700/40 p-4"
+                className={`rounded-xl ${pt('bg-slate-100','bg-zinc-800/40')} border ${pt('border-slate-200','border-zinc-700/40')} p-4`}
               >
                 <div className="flex items-center gap-2 mb-4">
                   <CalendarRange className="w-4 h-4 text-cyan-400" />
-                  <h3 className="text-sm font-semibold text-white">Timeline</h3>
+                  <h3 className={`text-sm font-semibold ${pt('text-slate-900','text-white')}`}>Timeline</h3>
                 </div>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-zinc-500">Start</span>
-                    <span className="text-zinc-300">{new Date(project.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                    <span className={`${pt('text-slate-400','text-zinc-500')}`}>Start</span>
+                    <span className={`${pt('text-slate-600','text-zinc-300')}`}>{new Date(project.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                   </div>
-                  <div className="relative h-2 bg-zinc-700 rounded-full overflow-hidden">
+                  <div className={`relative h-2 ${pt('bg-slate-200','bg-zinc-700')} rounded-full overflow-hidden`}>
                     <div
                       className="absolute inset-y-0 left-0 bg-gradient-to-r from-cyan-500 to-cyan-400 rounded-full"
                       style={{ width: `${progress}%` }}
                     />
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-zinc-500">Due</span>
-                    <span className="text-zinc-300">{new Date(project.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                    <span className={`${pt('text-slate-400','text-zinc-500')}`}>Due</span>
+                    <span className={`${pt('text-slate-600','text-zinc-300')}`}>{new Date(project.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                   </div>
                 </div>
               </motion.div>
@@ -1061,15 +1072,15 @@ function ShareableProjectView({ project, tasks, isOwner, onAddUpdate, onDeleteUp
               >
                 <div className="flex items-center gap-2 mb-3">
                   <Wallet className="w-4 h-4 text-emerald-400" />
-                  <h3 className="text-sm font-semibold text-white">Budget</h3>
+                  <h3 className={`text-sm font-semibold ${pt('text-slate-900','text-white')}`}>Budget</h3>
                 </div>
                 <div className="text-lg font-bold text-emerald-400 mb-1">
                   ${(parseFloat(project.spent) || 0).toLocaleString()}
                 </div>
-                <p className="text-xs text-zinc-500">
+                <p className={`text-xs ${pt('text-slate-400','text-zinc-500')}`}>
                   of ${parseFloat(project.budget).toLocaleString()} budget
                 </p>
-                <div className="mt-3 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                <div className={`mt-3 h-1.5 ${pt('bg-slate-200','bg-zinc-800')} rounded-full overflow-hidden`}>
                   <div
                     className="h-full bg-emerald-400 rounded-full"
                     style={{ width: `${Math.min(100, Math.round((parseFloat(project.spent || 0) / parseFloat(project.budget)) * 100))}%` }}
@@ -1086,16 +1097,16 @@ function ShareableProjectView({ project, tasks, isOwner, onAddUpdate, onDeleteUp
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.65 }}
-            className="rounded-xl bg-zinc-800/40 border border-zinc-700/40 overflow-hidden mb-8"
+            className={`rounded-xl ${pt('bg-slate-100','bg-zinc-800/40')} border ${pt('border-slate-200','border-zinc-700/40')} overflow-hidden mb-8`}
           >
-            <div className="p-5 border-b border-zinc-700/40">
+            <div className={`p-5 border-b ${pt('border-slate-200','border-zinc-700/40')}`}>
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 flex items-center justify-center border border-cyan-500/20">
                   <FileText className="w-4 h-4 text-cyan-400" />
                 </div>
                 <div>
-                  <h2 className="text-base font-semibold text-white">Documentation</h2>
-                  <p className="text-xs text-zinc-500">Project details and notes</p>
+                  <h2 className={`text-base font-semibold ${pt('text-slate-900','text-white')}`}>Documentation</h2>
+                  <p className={`text-xs ${pt('text-slate-400','text-zinc-500')}`}>Project details and notes</p>
                 </div>
               </div>
             </div>
@@ -1114,39 +1125,39 @@ function ShareableProjectView({ project, tasks, isOwner, onAddUpdate, onDeleteUp
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
-          className="rounded-xl bg-zinc-800/40 border border-zinc-700/40 overflow-hidden mb-8"
+          className={`rounded-xl ${pt('bg-slate-100','bg-zinc-800/40')} border ${pt('border-slate-200','border-zinc-700/40')} overflow-hidden mb-8`}
         >
-          <div className="p-5 border-b border-zinc-700/40">
+          <div className={`p-5 border-b ${pt('border-slate-200','border-zinc-700/40')}`}>
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/20 to-purple-600/10 flex items-center justify-center border border-purple-500/20">
                 <Bell className="w-5 h-5 text-purple-400" />
               </div>
               <div>
-                <h2 className="text-base font-semibold text-white">Updates</h2>
-                <p className="text-xs text-zinc-500">Latest project activity</p>
+                <h2 className={`text-base font-semibold ${pt('text-slate-900','text-white')}`}>Updates</h2>
+                <p className={`text-xs ${pt('text-slate-400','text-zinc-500')}`}>Latest project activity</p>
               </div>
             </div>
           </div>
 
           {/* Add Update (for owner) */}
           {isOwner && (
-            <div className="p-5 border-b border-zinc-700/40 bg-zinc-900/30">
+            <div className={`p-5 border-b ${pt('border-slate-200','border-zinc-700/40')} bg-zinc-900/30`}>
               <Textarea
                 value={newUpdate}
                 onChange={(e) => setNewUpdate(e.target.value)}
                 placeholder="Share a progress update..."
-                className="bg-zinc-800/50 border-zinc-700/50 resize-none focus:ring-cyan-500/20 focus:border-cyan-500/50 min-h-[100px] text-zinc-300 placeholder:text-zinc-600"
+                className={`${pt('bg-slate-100','bg-zinc-800/50')} ${pt('border-slate-200','border-zinc-700/50')} resize-none focus:ring-cyan-500/20 focus:border-cyan-500/50 min-h-[100px] ${pt('text-slate-600','text-zinc-300')} ${pt('placeholder:text-slate-400','placeholder:text-zinc-600')}`}
                 rows={3}
               />
               <div className="flex items-center justify-between mt-3">
-                <Button className="bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-300 border border-zinc-700">
+                <Button className={`${pt('bg-slate-200','bg-zinc-800')} ${pt('hover:bg-slate-200','hover:bg-zinc-700')} ${pt('text-slate-500','text-zinc-400')} ${pt('hover:text-slate-600','hover:text-zinc-300')} border ${pt('border-slate-300','border-zinc-700')}`}>
                   <Paperclip className="w-4 h-4 mr-1" />
                   Attach
                 </Button>
                 <Button
                   onClick={handlePostUpdate}
                   disabled={!newUpdate.trim()}
-                  className="bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/20 border-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={`bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/20 border-0 disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   <Send className="w-4 h-4 mr-2" />
                   Post Update
@@ -1165,18 +1176,18 @@ function ShareableProjectView({ project, tasks, isOwner, onAddUpdate, onDeleteUp
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 * i }}
-                    className="relative pl-8 pb-6 border-l-2 border-zinc-700/50 last:border-l-transparent last:pb-0"
+                    className={`relative pl-8 pb-6 border-l-2 ${pt('border-slate-200','border-zinc-700/50')} last:border-l-transparent last:pb-0`}
                   >
                     <div className="absolute -left-2 top-0 w-4 h-4 rounded-full bg-gradient-to-br from-cyan-400 to-cyan-500 shadow-lg shadow-cyan-500/30" />
-                    <div className="bg-zinc-800/30 rounded-xl p-4 hover:bg-zinc-800/50 transition-colors">
+                    <div className={`${pt('bg-slate-50','bg-zinc-800/30')} rounded-xl p-4 ${pt('hover:bg-slate-100','hover:bg-zinc-800/50')} transition-colors`}>
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center text-[10px] font-bold text-white">
+                          <div className={`w-6 h-6 rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center text-[10px] font-bold text-white`}>
                             {update.author?.charAt(0) || 'T'}
                           </div>
-                          <span className="text-sm font-medium text-zinc-300">{update.author || 'Team'}</span>
-                          <span className="text-xs text-zinc-600">•</span>
-                          <span className="text-xs text-zinc-500">
+                          <span className={`text-sm font-medium ${pt('text-slate-600','text-zinc-300')}`}>{update.author || 'Team'}</span>
+                          <span className={`text-xs ${pt('text-slate-300','text-zinc-600')}`}>•</span>
+                          <span className={`text-xs ${pt('text-slate-400','text-zinc-500')}`}>
                             {new Date(update.created_at).toLocaleDateString('en-US', {
                               month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
                             })}
@@ -1186,25 +1197,25 @@ function ShareableProjectView({ project, tasks, isOwner, onAddUpdate, onDeleteUp
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-6 w-6 text-zinc-600 hover:text-red-400 hover:bg-red-500/10"
+                            className={`h-6 w-6 ${pt('text-slate-300','text-zinc-600')} hover:text-red-400 hover:bg-red-500/10`}
                             onClick={() => onDeleteUpdate(update.id)}
                           >
                             <X className="w-3 h-3" />
                           </Button>
                         )}
                       </div>
-                      <p className="text-sm text-zinc-400 whitespace-pre-wrap leading-relaxed">{update.content}</p>
+                      <p className={`text-sm ${pt('text-slate-500','text-zinc-400')} whitespace-pre-wrap leading-relaxed`}>{update.content}</p>
                     </div>
                   </motion.div>
                 ))}
               </div>
             ) : (
               <div className="text-center py-12">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-zinc-800/50 flex items-center justify-center">
-                  <History className="w-8 h-8 text-zinc-600" />
+                <div className={`w-16 h-16 mx-auto mb-4 rounded-xl ${pt('bg-slate-100','bg-zinc-800/50')} flex items-center justify-center`}>
+                  <History className={`w-8 h-8 ${pt('text-slate-300','text-zinc-600')}`} />
                 </div>
-                <p className="text-zinc-400 font-medium">No updates yet</p>
-                <p className="text-sm text-zinc-600 mt-1">Check back soon for project updates</p>
+                <p className={`${pt('text-slate-500','text-zinc-400')} font-medium`}>No updates yet</p>
+                <p className={`text-sm ${pt('text-slate-300','text-zinc-600')} mt-1`}>Check back soon for project updates</p>
               </div>
             )}
           </div>
@@ -1212,16 +1223,16 @@ function ShareableProjectView({ project, tasks, isOwner, onAddUpdate, onDeleteUp
       </div>
 
       {/* Premium Footer */}
-      <div className="border-t border-zinc-800/50 bg-zinc-900/30 backdrop-blur-sm">
+      <div className={`border-t ${pt('border-slate-200','border-zinc-800/50')} bg-zinc-900/30 backdrop-blur-sm`}>
         <div className="max-w-5xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2 text-zinc-500">
+            <div className={`flex items-center gap-2 ${pt('text-slate-400','text-zinc-500')}`}>
               <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 flex items-center justify-center">
                 <Folder className="w-3 h-3 text-cyan-400" />
               </div>
               <span>Project Portal</span>
             </div>
-            <span className="text-zinc-600">Last updated {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+            <span className={`${pt('text-slate-300','text-zinc-600')}`}>Last updated {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
           </div>
         </div>
       </div>
@@ -1235,6 +1246,7 @@ function ShareableProjectView({ project, tasks, isOwner, onAddUpdate, onDeleteUp
 
 // Folder Card Component
 function FolderCard({ folder, projects, onClick }) {
+  const { pt } = useProjectsTheme();
   const colorConfig = FOLDER_COLORS.find(c => c.id === folder.cover_color) || FOLDER_COLORS[0];
   const folderProjects = projects.filter(p => folder.project_ids?.includes(p.id));
   const completedProjects = folderProjects.filter(p => p.status === 'completed').length;
@@ -1249,7 +1261,7 @@ function FolderCard({ folder, projects, onClick }) {
       animate={{ opacity: 1, y: 0 }}
 
       onClick={onClick}
-      className="relative overflow-hidden bg-zinc-900/50 border border-zinc-800/60 rounded-xl cursor-pointer hover:border-zinc-700 transition-all group"
+      className={`relative overflow-hidden ${pt('bg-white shadow-sm','bg-zinc-900/50')} border ${pt('border-slate-200','border-zinc-800/60')} rounded-xl cursor-pointer ${pt('hover:border-slate-300','hover:border-zinc-700')} transition-all group`}
     >
       {/* Color Header */}
       <div className={`h-2 bg-gradient-to-r ${colorConfig.gradient}`} />
@@ -1262,11 +1274,11 @@ function FolderCard({ folder, projects, onClick }) {
               <FolderOpen className={`w-4 h-4 ${colorConfig.text}`} />
             </div>
             <div>
-              <h3 className="font-semibold text-white group-hover:text-cyan-400 transition-colors line-clamp-1">
+              <h3 className={`font-semibold ${pt('text-slate-900','text-white')} group-hover:text-cyan-400 transition-colors line-clamp-1`}>
                 {folder.name}
               </h3>
               {folder.client_company && (
-                <p className="text-xs text-zinc-500">{folder.client_company}</p>
+                <p className={`text-xs ${pt('text-slate-400','text-zinc-500')}`}>{folder.client_company}</p>
               )}
             </div>
           </div>
@@ -1280,27 +1292,27 @@ function FolderCard({ folder, projects, onClick }) {
 
         {/* Description */}
         {folder.description && (
-          <p className="text-xs text-zinc-400 line-clamp-2 mb-3">{folder.description}</p>
+          <p className={`text-xs ${pt('text-slate-500','text-zinc-400')} line-clamp-2 mb-3`}>{folder.description}</p>
         )}
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3 mb-4">
-          <div className="text-center p-2 rounded-lg bg-zinc-800/50">
-            <div className="text-lg font-bold text-white">{totalProjects}</div>
-            <div className="text-[10px] text-zinc-500">Projects</div>
+          <div className={`text-center p-2 rounded-lg ${pt('bg-slate-100','bg-zinc-800/50')}`}>
+            <div className={`text-lg font-bold ${pt('text-slate-900','text-white')}`}>{totalProjects}</div>
+            <div className={`text-[10px] ${pt('text-slate-400','text-zinc-500')}`}>Projects</div>
           </div>
-          <div className="text-center p-2 rounded-lg bg-zinc-800/50">
+          <div className={`text-center p-2 rounded-lg ${pt('bg-slate-100','bg-zinc-800/50')}`}>
             <div className="text-lg font-bold text-cyan-400">{completedProjects}</div>
-            <div className="text-[10px] text-zinc-500">Completed</div>
+            <div className={`text-[10px] ${pt('text-slate-400','text-zinc-500')}`}>Completed</div>
           </div>
-          <div className="text-center p-2 rounded-lg bg-zinc-800/50">
-            <div className="text-lg font-bold text-white">{overallProgress}%</div>
-            <div className="text-[10px] text-zinc-500">Progress</div>
+          <div className={`text-center p-2 rounded-lg ${pt('bg-slate-100','bg-zinc-800/50')}`}>
+            <div className={`text-lg font-bold ${pt('text-slate-900','text-white')}`}>{overallProgress}%</div>
+            <div className={`text-[10px] ${pt('text-slate-400','text-zinc-500')}`}>Progress</div>
           </div>
         </div>
 
         {/* Progress Bar */}
-        <div className="relative h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+        <div className={`relative h-1.5 ${pt('bg-slate-200','bg-zinc-800')} rounded-full overflow-hidden`}>
           <div
             className={`absolute inset-y-0 left-0 bg-gradient-to-r ${colorConfig.gradient} rounded-full`}
             style={{ width: `${overallProgress}%` }}
@@ -1308,7 +1320,7 @@ function FolderCard({ folder, projects, onClick }) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between mt-4 pt-3 border-t border-zinc-800/60">
+        <div className={`flex items-center justify-between mt-4 pt-3 border-t ${pt('border-slate-200','border-zinc-800/60')}`}>
           {folder.client_name && (
             <div className="flex items-center gap-2">
               <Avatar className="w-6 h-6">
@@ -1316,20 +1328,20 @@ function FolderCard({ folder, projects, onClick }) {
                   {folder.client_name.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <span className="text-xs text-zinc-400">{folder.client_name}</span>
+              <span className={`text-xs ${pt('text-slate-500','text-zinc-400')}`}>{folder.client_name}</span>
             </div>
           )}
           <div className="flex -space-x-1">
             {folderProjects.slice(0, 3).map((p, i) => {
               const status = PROJECT_STATUSES.find(s => s.id === p.status) || PROJECT_STATUSES[0];
               return (
-                <div key={i} className={`w-5 h-5 rounded-full ${status.bgColor} border border-zinc-900 flex items-center justify-center`}>
+                <div key={i} className={`w-5 h-5 rounded-full ${status.bgColor} border ${pt('border-slate-200','border-zinc-900')} flex items-center justify-center`}>
                   <div className={`w-2 h-2 rounded-full ${status.color}`} />
                 </div>
               );
             })}
             {folderProjects.length > 3 && (
-              <div className="w-5 h-5 rounded-full bg-zinc-800 border border-zinc-900 flex items-center justify-center text-[8px] text-zinc-400">
+              <div className={`w-5 h-5 rounded-full ${pt('bg-slate-200','bg-zinc-800')} border ${pt('border-slate-200','border-zinc-900')} flex items-center justify-center text-[8px] ${pt('text-slate-500','text-zinc-400')}`}>
                 +{folderProjects.length - 3}
               </div>
             )}
@@ -1355,6 +1367,7 @@ function FolderDetailSheet({
   onAddProjects,
   onViewProject
 }) {
+  const { pt } = useProjectsTheme();
   const [showSharePreview, setShowSharePreview] = useState(false);
   const [showAddProjects, setShowAddProjects] = useState(false);
   const [selectedProjectIds, setSelectedProjectIds] = useState([]);
@@ -1415,7 +1428,7 @@ function FolderDetailSheet({
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="w-full sm:max-w-2xl bg-zinc-900 border-zinc-800/60 overflow-y-auto p-0">
+      <SheetContent className={`w-full sm:max-w-2xl ${pt('bg-white','bg-zinc-900')} ${pt('border-slate-200','border-zinc-800/60')} overflow-y-auto p-0`}>
         <SheetDescription className="sr-only">Folder details and management</SheetDescription>
         {/* Header */}
         <div className={`relative overflow-hidden`}>
@@ -1430,8 +1443,8 @@ function FolderDetailSheet({
                   <FolderOpen className={`w-7 h-7 ${colorConfig.text}`} />
                 </div>
                 <div>
-                  <SheetTitle className="text-white text-xl">{folder.name}</SheetTitle>
-                  {folder.client_company && <p className="text-zinc-400 text-sm">{folder.client_company}</p>}
+                  <SheetTitle className={`${pt('text-slate-900','text-white')} text-xl`}>{folder.name}</SheetTitle>
+                  {folder.client_company && <p className={`${pt('text-slate-500','text-zinc-400')} text-sm`}>{folder.client_company}</p>}
                 </div>
               </div>
               {folder.share_settings?.is_public && (
@@ -1444,19 +1457,19 @@ function FolderDetailSheet({
 
             {/* Stats Row */}
             <div className="grid grid-cols-4 gap-3">
-              <div className="bg-zinc-900/50 rounded-xl p-3 text-center border border-zinc-800/50">
-                <div className="text-lg font-bold text-white">{folderProjects.length}</div>
-                <div className="text-[10px] text-zinc-500">Projects</div>
+              <div className={`${pt('bg-white shadow-sm','bg-zinc-900/50')} rounded-xl p-3 text-center border ${pt('border-slate-200','border-zinc-800/50')}`}>
+                <div className={`text-lg font-bold ${pt('text-slate-900','text-white')}`}>{folderProjects.length}</div>
+                <div className={`text-[10px] ${pt('text-slate-400','text-zinc-500')}`}>Projects</div>
               </div>
-              <div className="bg-zinc-900/50 rounded-xl p-3 text-center border border-zinc-800/50">
+              <div className={`${pt('bg-white shadow-sm','bg-zinc-900/50')} rounded-xl p-3 text-center border ${pt('border-slate-200','border-zinc-800/50')}`}>
                 <div className="text-lg font-bold text-cyan-400">{completedProjects}</div>
-                <div className="text-[10px] text-zinc-500">Completed</div>
+                <div className={`text-[10px] ${pt('text-slate-400','text-zinc-500')}`}>Completed</div>
               </div>
-              <div className="bg-zinc-900/50 rounded-xl p-3 text-center border border-zinc-800/50">
-                <div className="text-lg font-bold text-white">{overallProgress}%</div>
-                <div className="text-[10px] text-zinc-500">Progress</div>
+              <div className={`${pt('bg-white shadow-sm','bg-zinc-900/50')} rounded-xl p-3 text-center border ${pt('border-slate-200','border-zinc-800/50')}`}>
+                <div className={`text-lg font-bold ${pt('text-slate-900','text-white')}`}>{overallProgress}%</div>
+                <div className={`text-[10px] ${pt('text-slate-400','text-zinc-500')}`}>Progress</div>
               </div>
-              <div className="bg-zinc-900/50 rounded-xl p-3 text-center border border-zinc-800/50">
+              <div className={`${pt('bg-white shadow-sm','bg-zinc-900/50')} rounded-xl p-3 text-center border ${pt('border-slate-200','border-zinc-800/50')}`}>
                 <ProgressRing progress={overallProgress} size={40} strokeWidth={3} />
               </div>
             </div>
@@ -1469,17 +1482,17 @@ function FolderDetailSheet({
           <div className="flex items-center gap-2 mb-6 flex-wrap">
             <Button
               size="sm"
-              className="bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/20 border-0"
+              className={`bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/20 border-0`}
               onClick={() => setShowAddProjects(true)}
             >
               <Plus className="w-4 h-4 mr-1" /> Add Projects
             </Button>
-            <Button size="sm" className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700" onClick={() => onEdit(folder)}>
+            <Button size="sm" className={`${pt('bg-slate-200','bg-zinc-800')} ${pt('hover:bg-slate-200','hover:bg-zinc-700')} ${pt('text-slate-600','text-zinc-300')} border ${pt('border-slate-300','border-zinc-700')}`} onClick={() => onEdit(folder)}>
               <Edit2 className="w-4 h-4 mr-1" /> Edit
             </Button>
             <Button
               size="sm"
-              className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700"
+              className={`${pt('bg-slate-200','bg-zinc-800')} ${pt('hover:bg-slate-200','hover:bg-zinc-700')} ${pt('text-slate-600','text-zinc-300')} border ${pt('border-slate-300','border-zinc-700')}`}
               onClick={handlePreviewPortal}
             >
               <Eye className="w-4 h-4 mr-1" /> Preview
@@ -1487,10 +1500,10 @@ function FolderDetailSheet({
           </div>
 
           <Tabs defaultValue="projects" className="w-full">
-            <TabsList className="bg-zinc-800/50 border border-zinc-700/50 mb-4 w-full grid grid-cols-3 p-1 rounded-xl">
-              <TabsTrigger value="projects" className="data-[state=active]:bg-zinc-700 data-[state=active]:text-white rounded-lg text-zinc-400 text-xs">Projects</TabsTrigger>
-              <TabsTrigger value="details" className="data-[state=active]:bg-zinc-700 data-[state=active]:text-white rounded-lg text-zinc-400 text-xs">Details</TabsTrigger>
-              <TabsTrigger value="share" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-600 data-[state=active]:to-cyan-500 data-[state=active]:text-white rounded-lg text-zinc-400 text-xs">Share</TabsTrigger>
+            <TabsList className={`${pt('bg-slate-100','bg-zinc-800/50')} border ${pt('border-slate-200','border-zinc-700/50')} mb-4 w-full grid grid-cols-3 p-1 rounded-xl`}>
+              <TabsTrigger value="projects" className={`data-[state=active]:bg-zinc-700 data-[state=active]:text-white rounded-lg ${pt('text-slate-500','text-zinc-400')} text-xs`}>Projects</TabsTrigger>
+              <TabsTrigger value="details" className={`data-[state=active]:bg-zinc-700 data-[state=active]:text-white rounded-lg ${pt('text-slate-500','text-zinc-400')} text-xs`}>Details</TabsTrigger>
+              <TabsTrigger value="share" className={`data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-600 data-[state=active]:to-cyan-500 data-[state=active]:text-white rounded-lg ${pt('text-slate-500','text-zinc-400')} text-xs`}>Share</TabsTrigger>
             </TabsList>
 
             {/* Projects Tab */}
@@ -1505,25 +1518,25 @@ function FolderDetailSheet({
                   return (
                     <div
                       key={project.id}
-                      className="flex items-center gap-4 p-4 rounded-xl bg-zinc-800/30 border border-zinc-700/40 hover:bg-zinc-800/50 transition-colors group cursor-pointer"
+                      className={`flex items-center gap-4 p-4 rounded-xl ${pt('bg-slate-50','bg-zinc-800/30')} border ${pt('border-slate-200','border-zinc-700/40')} ${pt('hover:bg-slate-100','hover:bg-zinc-800/50')} transition-colors group cursor-pointer`}
                       onClick={() => onViewProject?.(project)}
                     >
                       <div className={`w-8 h-8 rounded-xl ${statusConfig.bgColor} flex items-center justify-center`}>
                         <Folder className={`w-5 h-5 ${statusConfig.textColor}`} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-medium text-white truncate hover:text-cyan-400 transition-colors">{project.name}</h4>
+                        <h4 className={`text-sm font-medium ${pt('text-slate-900','text-white')} truncate hover:text-cyan-400 transition-colors`}>{project.name}</h4>
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="outline" className={`${statusConfig.bgColor} ${statusConfig.textColor} ${statusConfig.borderColor} text-[10px]`}>
                             {statusConfig.label}
                           </Badge>
-                          <span className="text-xs text-zinc-500">{progress}% complete</span>
+                          <span className={`text-xs ${pt('text-slate-400','text-zinc-500')}`}>{progress}% complete</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Button
                           size="icon"
-                          className="h-8 w-8 bg-zinc-800 hover:bg-cyan-500/20 text-zinc-400 hover:text-cyan-400 border border-zinc-700 hover:border-cyan-500/30"
+                          className={`h-8 w-8 ${pt('bg-slate-200','bg-zinc-800')} hover:bg-cyan-500/20 ${pt('text-slate-500','text-zinc-400')} hover:text-cyan-400 border ${pt('border-slate-300','border-zinc-700')} hover:border-cyan-500/30`}
                           onClick={(e) => {
                             e.stopPropagation();
                             onViewProject?.(project);
@@ -1533,7 +1546,7 @@ function FolderDetailSheet({
                         </Button>
                         <Button
                           size="icon"
-                          className="h-8 w-8 bg-zinc-800 hover:bg-red-500/20 text-zinc-400 hover:text-red-400 border border-zinc-700 hover:border-red-500/30"
+                          className={`h-8 w-8 ${pt('bg-slate-200','bg-zinc-800')} hover:bg-red-500/20 ${pt('text-slate-500','text-zinc-400')} hover:text-red-400 border ${pt('border-slate-300','border-zinc-700')} hover:border-red-500/30`}
                           onClick={(e) => {
                             e.stopPropagation();
                             onRemoveProject(project.id);
@@ -1547,13 +1560,13 @@ function FolderDetailSheet({
                   );
                 }) : (
                   <div className="text-center py-12">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-zinc-800/50 flex items-center justify-center">
-                      <Folder className="w-8 h-8 text-zinc-600" />
+                    <div className={`w-16 h-16 mx-auto mb-4 rounded-xl ${pt('bg-slate-100','bg-zinc-800/50')} flex items-center justify-center`}>
+                      <Folder className={`w-8 h-8 ${pt('text-slate-300','text-zinc-600')}`} />
                     </div>
-                    <p className="text-zinc-400 font-medium">No projects in this folder</p>
-                    <p className="text-sm text-zinc-600 mt-1">Add projects to share them with your client</p>
+                    <p className={`${pt('text-slate-500','text-zinc-400')} font-medium`}>No projects in this folder</p>
+                    <p className={`text-sm ${pt('text-slate-300','text-zinc-600')} mt-1`}>Add projects to share them with your client</p>
                     <Button
-                      className="mt-4 bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white"
+                      className={`mt-4 bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white`}
                       onClick={() => setShowAddProjects(true)}
                     >
                       <Plus className="w-4 h-4 mr-2" />
@@ -1567,39 +1580,39 @@ function FolderDetailSheet({
             {/* Details Tab */}
             <TabsContent value="details" className="space-y-4">
               {folder.description && (
-                <div className="p-4 rounded-xl bg-zinc-800/30 border border-zinc-700/40">
-                  <h4 className="text-xs text-zinc-500 mb-2">Description</h4>
-                  <p className="text-sm text-zinc-300">{folder.description}</p>
+                <div className={`p-4 rounded-xl ${pt('bg-slate-50','bg-zinc-800/30')} border ${pt('border-slate-200','border-zinc-700/40')}`}>
+                  <h4 className={`text-xs ${pt('text-slate-400','text-zinc-500')} mb-2`}>Description</h4>
+                  <p className={`text-sm ${pt('text-slate-600','text-zinc-300')}`}>{folder.description}</p>
                 </div>
               )}
 
               <div className="grid grid-cols-2 gap-4">
                 {folder.client_name && (
-                  <div className="p-4 rounded-xl bg-zinc-800/30 border border-zinc-700/40">
-                    <h4 className="text-xs text-zinc-500 mb-2">Client Contact</h4>
-                    <p className="text-sm text-white">{folder.client_name}</p>
+                  <div className={`p-4 rounded-xl ${pt('bg-slate-50','bg-zinc-800/30')} border ${pt('border-slate-200','border-zinc-700/40')}`}>
+                    <h4 className={`text-xs ${pt('text-slate-400','text-zinc-500')} mb-2`}>Client Contact</h4>
+                    <p className={`text-sm ${pt('text-slate-900','text-white')}`}>{folder.client_name}</p>
                     {folder.client_email && (
-                      <p className="text-xs text-zinc-400 mt-1">{folder.client_email}</p>
+                      <p className={`text-xs ${pt('text-slate-500','text-zinc-400')} mt-1`}>{folder.client_email}</p>
                     )}
                   </div>
                 )}
                 {folder.client_company && (
-                  <div className="p-4 rounded-xl bg-zinc-800/30 border border-zinc-700/40">
-                    <h4 className="text-xs text-zinc-500 mb-2">Company</h4>
-                    <p className="text-sm text-white">{folder.client_company}</p>
+                  <div className={`p-4 rounded-xl ${pt('bg-slate-50','bg-zinc-800/30')} border ${pt('border-slate-200','border-zinc-700/40')}`}>
+                    <h4 className={`text-xs ${pt('text-slate-400','text-zinc-500')} mb-2`}>Company</h4>
+                    <p className={`text-sm ${pt('text-slate-900','text-white')}`}>{folder.client_company}</p>
                   </div>
                 )}
               </div>
 
-              <div className="p-4 rounded-xl bg-zinc-800/30 border border-zinc-700/40">
-                <h4 className="text-xs text-zinc-500 mb-3">Folder Color</h4>
+              <div className={`p-4 rounded-xl ${pt('bg-slate-50','bg-zinc-800/30')} border ${pt('border-slate-200','border-zinc-700/40')}`}>
+                <h4 className={`text-xs ${pt('text-slate-400','text-zinc-500')} mb-3`}>Folder Color</h4>
                 <div className="flex gap-2">
                   {FOLDER_COLORS.map((color) => (
                     <button
                       key={color.id}
                       onClick={() => onUpdateFolder?.(folder.id, { cover_color: color.id })}
                       className={`w-8 h-8 rounded-lg bg-gradient-to-br ${color.gradient} ${
-                        folder.cover_color === color.id ? 'ring-2 ring-white ring-offset-2 ring-offset-zinc-900' : ''
+                        folder.cover_color === color.id ? `ring-2 ring-white ring-offset-2 ${pt('ring-offset-white','ring-offset-zinc-900')}` : ''
                       } transition-all`}
                     />
                   ))}
@@ -1626,13 +1639,13 @@ function FolderDetailSheet({
                         <Eye className="w-4 h-4 text-cyan-400" />
                       </div>
                       <div>
-                        <h4 className="text-sm font-semibold text-white">Client Portal Preview</h4>
-                        <p className="text-xs text-zinc-500">See how clients view this folder</p>
+                        <h4 className={`text-sm font-semibold ${pt('text-slate-900','text-white')}`}>Client Portal Preview</h4>
+                        <p className={`text-xs ${pt('text-slate-400','text-zinc-500')}`}>See how clients view this folder</p>
                       </div>
                     </div>
                     <Button
                       onClick={handlePreviewPortal}
-                      className="bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/20 border-0"
+                      className={`bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/20 border-0`}
                     >
                       <Eye className="w-4 h-4 mr-2" />
                       Preview Portal
@@ -1646,10 +1659,10 @@ function FolderDetailSheet({
 
         {/* Add Projects Dialog */}
         <Dialog open={showAddProjects} onOpenChange={setShowAddProjects}>
-          <DialogContent className="bg-zinc-900 border-zinc-800 max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogContent className={`${pt('bg-white','bg-zinc-900')} ${pt('border-slate-200','border-zinc-800')} max-w-lg max-h-[80vh] overflow-hidden flex flex-col`}>
             <DialogHeader>
-              <DialogTitle className="text-white">Add Projects to Folder</DialogTitle>
-              <DialogDescription className="text-zinc-400">
+              <DialogTitle className={`${pt('text-slate-900','text-white')}`}>Add Projects to Folder</DialogTitle>
+              <DialogDescription className={`${pt('text-slate-500','text-zinc-400')}`}>
                 Select projects to add to "{folder.name}"
               </DialogDescription>
             </DialogHeader>
@@ -1672,20 +1685,20 @@ function FolderDetailSheet({
                     className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${
                       isSelected
                         ? 'bg-cyan-500/10 border-2 border-cyan-500/40'
-                        : 'bg-zinc-800/30 border-2 border-transparent hover:bg-zinc-800/50'
+                        : `${pt('bg-slate-50','bg-zinc-800/30')} border-2 border-transparent ${pt('hover:bg-slate-100','hover:bg-zinc-800/50')}`
                     }`}
                   >
                     <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center ${
-                      isSelected ? 'border-cyan-400 bg-cyan-500' : 'border-zinc-600'
+                      isSelected ? 'border-cyan-400 bg-cyan-500' : pt('border-slate-300','border-zinc-600')
                     }`}>
-                      {isSelected && <CheckCircle2 className="w-3 h-3 text-white" />}
+                      {isSelected && <CheckCircle2 className={`w-3 h-3 ${pt('text-slate-900','text-white')}`} />}
                     </div>
                     <div className={`w-8 h-8 rounded-lg ${statusConfig.bgColor} flex items-center justify-center`}>
                       <Folder className={`w-4 h-4 ${statusConfig.textColor}`} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-white truncate">{project.name}</p>
-                      <p className="text-xs text-zinc-500">{project.client_name || 'No client'}</p>
+                      <p className={`text-sm ${pt('text-slate-900','text-white')} truncate`}>{project.name}</p>
+                      <p className={`text-xs ${pt('text-slate-400','text-zinc-500')}`}>{project.client_name || 'No client'}</p>
                     </div>
                     <Badge variant="outline" className={`${statusConfig.bgColor} ${statusConfig.textColor} ${statusConfig.borderColor} text-[10px]`}>
                       {statusConfig.label}
@@ -1693,25 +1706,25 @@ function FolderDetailSheet({
                   </div>
                 );
               }) : (
-                <div className="text-center py-8 text-zinc-500">
+                <div className={`text-center py-8 ${pt('text-slate-400','text-zinc-500')}`}>
                   <Folder className="w-10 h-10 mx-auto mb-2 opacity-50" />
                   <p>All projects are already in folders</p>
                 </div>
               )}
             </div>
 
-            <div className="flex gap-2 pt-4 border-t border-zinc-800">
+            <div className={`flex gap-2 pt-4 border-t ${pt('border-slate-200','border-zinc-800')}`}>
               <Button
                 variant="outline"
                 onClick={() => { setShowAddProjects(false); setSelectedProjectIds([]); }}
-                className="flex-1 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                className={`flex-1 ${pt('border-slate-300','border-zinc-700')} ${pt('text-slate-600','text-zinc-300')} ${pt('hover:bg-slate-100','hover:bg-zinc-800')}`}
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleAddSelectedProjects}
                 disabled={selectedProjectIds.length === 0}
-                className="flex-1 bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white disabled:opacity-50"
+                className={`flex-1 bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white disabled:opacity-50`}
               >
                 Add {selectedProjectIds.length > 0 ? `(${selectedProjectIds.length})` : ''} Projects
               </Button>
@@ -1725,6 +1738,7 @@ function FolderDetailSheet({
 
 // Folder Share Settings Panel
 function FolderShareSettings({ folder, onUpdateSettings, onGenerateLink, onPreviewPortal }) {
+  const { pt } = useProjectsTheme();
   const [settings, setSettings] = useState(folder?.share_settings || {});
   const [copied, setCopied] = useState(false);
 
@@ -1749,7 +1763,7 @@ function FolderShareSettings({ folder, onUpdateSettings, onGenerateLink, onPrevi
   return (
     <div className="space-y-5">
       {/* Share Link */}
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-zinc-800/80 to-zinc-900/80 border border-zinc-700/50">
+      <div className={`relative overflow-hidden rounded-xl bg-gradient-to-br from-zinc-800/80 to-zinc-900/80 border ${pt('border-slate-200','border-zinc-700/50')}`}>
         <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent" />
         <div className="relative p-4">
           <div className="flex items-center justify-between mb-4">
@@ -1758,8 +1772,8 @@ function FolderShareSettings({ folder, onUpdateSettings, onGenerateLink, onPrevi
                 <Globe className="w-4 h-4 text-cyan-400" />
               </div>
               <div>
-                <span className="text-sm font-semibold text-white">Share with Client</span>
-                <p className="text-xs text-zinc-500">Create a client portal for this folder</p>
+                <span className={`text-sm font-semibold ${pt('text-slate-900','text-white')}`}>Share with Client</span>
+                <p className={`text-xs ${pt('text-slate-400','text-zinc-500')}`}>Create a client portal for this folder</p>
               </div>
             </div>
             <PremiumToggle enabled={settings.is_public} onChange={() => handleToggle('is_public')} />
@@ -1774,16 +1788,16 @@ function FolderShareSettings({ folder, onUpdateSettings, onGenerateLink, onPrevi
                 className="space-y-3 overflow-hidden"
               >
                 {settings.share_link ? (
-                  <div className="flex items-center gap-2 p-1 bg-zinc-900/80 rounded-xl border border-zinc-700/50">
+                  <div className={`flex items-center gap-2 p-1 ${pt('bg-white/80 shadow-sm','bg-zinc-900/80')} rounded-xl border ${pt('border-slate-200','border-zinc-700/50')}`}>
                     <Input
                       value={settings.share_link}
                       readOnly
-                      className="bg-transparent border-0 text-xs text-zinc-400"
+                      className={`bg-transparent border-0 text-xs ${pt('text-slate-500','text-zinc-400')}`}
                     />
                     <Button
                       size="sm"
                       className={`shrink-0 transition-all duration-300 ${
-                        copied ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border-zinc-700'
+                        copied ? 'bg-green-500/20 text-green-400 border-green-500/30' : `${pt('bg-slate-200','bg-zinc-800')} ${pt('hover:bg-slate-200','hover:bg-zinc-700')} ${pt('text-slate-600','text-zinc-300')} ${pt('border-slate-300','border-zinc-700')}`
                       } border`}
                       onClick={copyLink}
                     >
@@ -1793,7 +1807,7 @@ function FolderShareSettings({ folder, onUpdateSettings, onGenerateLink, onPrevi
                 ) : (
                   <Button
                     onClick={onGenerateLink}
-                    className="w-full bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/20 border-0 h-11"
+                    className={`w-full bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/20 border-0 h-11`}
                   >
                     <LinkIcon className="w-4 h-4 mr-2" />
                     Generate Client Portal Link
@@ -1808,26 +1822,26 @@ function FolderShareSettings({ folder, onUpdateSettings, onGenerateLink, onPrevi
       {/* Visibility Options */}
       <div className="space-y-2">
         <div className="flex items-center gap-2 px-1 mb-3">
-          <Eye className="w-3.5 h-3.5 text-zinc-500" />
-          <h4 className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Portal Settings</h4>
+          <Eye className={`w-3.5 h-3.5 ${pt('text-slate-400','text-zinc-500')}`} />
+          <h4 className={`text-xs font-medium ${pt('text-slate-400','text-zinc-500')} uppercase tracking-wider`}>Portal Settings</h4>
         </div>
 
-        <div className="rounded-xl bg-zinc-800/40 border border-zinc-700/40 overflow-hidden divide-y divide-zinc-700/30">
+        <div className={`rounded-xl ${pt('bg-slate-100','bg-zinc-800/40')} border ${pt('border-slate-200','border-zinc-700/40')} overflow-hidden divide-y ${pt('divide-slate-200','divide-zinc-700/30')}`}>
           {[
             { key: 'show_individual_progress', label: 'Show Project Progress', desc: 'Display progress for each project', icon: TrendingUp },
             { key: 'show_overall_stats', label: 'Show Overall Statistics', desc: 'Display combined folder stats', icon: BarChart3 },
             { key: 'allow_comments', label: 'Allow Comments', desc: 'Let clients leave feedback', icon: MessageSquare },
           ].map(({ key, label, desc, icon: Icon }) => (
-            <div key={key} className="flex items-center justify-between p-4 hover:bg-zinc-800/30 transition-colors">
+            <div key={key} className={`flex items-center justify-between p-4 ${pt('hover:bg-slate-50','hover:bg-zinc-800/30')} transition-colors`}>
               <div className="flex items-center gap-3">
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                  settings[key] ? 'bg-cyan-500/15 text-cyan-400' : 'bg-zinc-700/50 text-zinc-500'
+                  settings[key] ? 'bg-cyan-500/15 text-cyan-400' : `${pt('bg-slate-100','bg-zinc-700/50')} ${pt('text-slate-400','text-zinc-500')}`
                 } transition-colors`}>
                   <Icon className="w-4 h-4" />
                 </div>
                 <div>
-                  <span className="text-sm font-medium text-zinc-200">{label}</span>
-                  <p className="text-xs text-zinc-500">{desc}</p>
+                  <span className={`text-sm font-medium ${pt('text-slate-700','text-zinc-200')}`}>{label}</span>
+                  <p className={`text-xs ${pt('text-slate-400','text-zinc-500')}`}>{desc}</p>
                 </div>
               </div>
               <PremiumToggle enabled={settings[key]} onChange={() => handleToggle(key)} size="small" />
@@ -1837,9 +1851,9 @@ function FolderShareSettings({ folder, onUpdateSettings, onGenerateLink, onPrevi
       </div>
 
       {/* Welcome Message */}
-      <div className="rounded-xl bg-zinc-800/40 border border-zinc-700/40 p-4">
-        <h4 className="text-sm font-medium text-zinc-200 mb-2">Welcome Message</h4>
-        <p className="text-xs text-zinc-500 mb-3">Display a custom message on the client portal</p>
+      <div className={`rounded-xl ${pt('bg-slate-100','bg-zinc-800/40')} border ${pt('border-slate-200','border-zinc-700/40')} p-4`}>
+        <h4 className={`text-sm font-medium ${pt('text-slate-700','text-zinc-200')} mb-2`}>Welcome Message</h4>
+        <p className={`text-xs ${pt('text-slate-400','text-zinc-500')} mb-3`}>Display a custom message on the client portal</p>
         <Textarea
           value={settings.welcome_message || ''}
           onChange={(e) => {
@@ -1848,7 +1862,7 @@ function FolderShareSettings({ folder, onUpdateSettings, onGenerateLink, onPrevi
             onUpdateSettings(newSettings);
           }}
           placeholder="Welcome! Here you can track all your project orders..."
-          className="bg-zinc-900/50 border-zinc-700/50 text-sm min-h-[80px]"
+          className={`${pt('bg-white shadow-sm','bg-zinc-900/50')} ${pt('border-slate-200','border-zinc-700/50')} text-sm min-h-[80px]`}
         />
       </div>
 
@@ -1859,8 +1873,8 @@ function FolderShareSettings({ folder, onUpdateSettings, onGenerateLink, onPrevi
             <Users className="w-4 h-4 text-emerald-400" />
           </div>
           <div>
-            <h4 className="text-sm font-medium text-white">Full Client Portal</h4>
-            <p className="text-xs text-zinc-400 mt-0.5">
+            <h4 className={`text-sm font-medium ${pt('text-slate-900','text-white')}`}>Full Client Portal</h4>
+            <p className={`text-xs ${pt('text-slate-500','text-zinc-400')} mt-0.5`}>
               Invite clients to a secure portal with login, comments, approvals, and more
             </p>
           </div>
@@ -1875,7 +1889,7 @@ function FolderShareSettings({ folder, onUpdateSettings, onGenerateLink, onPrevi
           </Link>
           <button
             onClick={onPreviewPortal}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-zinc-700/50 hover:bg-zinc-700 text-zinc-300 rounded-lg text-sm font-medium transition-colors"
+            className={`flex items-center justify-center gap-2 px-4 py-2.5 ${pt('bg-slate-100','bg-zinc-700/50')} ${pt('hover:bg-slate-200','hover:bg-zinc-700')} ${pt('text-slate-600','text-zinc-300')} rounded-lg text-sm font-medium transition-colors`}
           >
             <ExternalLink className="w-4 h-4" />
             Preview
@@ -1888,6 +1902,7 @@ function FolderShareSettings({ folder, onUpdateSettings, onGenerateLink, onPrevi
 
 // Shareable Folder View - Client Portal (matches new portal design)
 function ShareableFolderView({ folder, projects, tasks }) {
+  const { pt } = useProjectsTheme();
   const colorConfig = FOLDER_COLORS.find(c => c.id === folder?.cover_color) || FOLDER_COLORS[0];
   const settings = folder?.share_settings || {};
   const primaryColor = '#06b6d4'; // cyan-500
@@ -1914,16 +1929,16 @@ function ShareableFolderView({ folder, projects, tasks }) {
     <div className="min-h-screen bg-[#0a0a0b] p-6 lg:p-10">
       <div className="w-full">
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-zinc-500 mb-6">
+        <div className={`flex items-center gap-2 text-sm ${pt('text-slate-400','text-zinc-500')} mb-6`}>
           <span>Home</span>
           <ChevronRight className="w-3.5 h-3.5" />
-          <span className="text-zinc-300">Dashboard</span>
+          <span className={`${pt('text-slate-600','text-zinc-300')}`}>Dashboard</span>
         </div>
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white tracking-tight">{folder.name}</h1>
-          <p className="text-zinc-400 mt-2">
+          <h1 className={`text-3xl font-bold ${pt('text-slate-900','text-white')} tracking-tight`}>{folder.name}</h1>
+          <p className={`${pt('text-slate-500','text-zinc-400')} mt-2`}>
             {settings.welcome_message || folder.description || `Welcome to your client portal.`}
           </p>
         </div>
@@ -1937,7 +1952,7 @@ function ShareableFolderView({ folder, projects, tasks }) {
               { icon: CheckCircle2, label: 'Completed', value: completedProjects, color: '#10b981' },
               { icon: TrendingUp, label: 'Avg. Progress', value: `${overallProgress}%`, color: '#8b5cf6' },
             ].map((stat) => (
-              <div key={stat.label} className="relative overflow-hidden p-5 bg-white/[0.02] border border-zinc-800/60 rounded-2xl">
+              <div key={stat.label} className={`relative overflow-hidden p-5 bg-white/[0.02] border ${pt('border-slate-200','border-zinc-800/60')} rounded-2xl`}>
                 <div className="flex items-center gap-4">
                   <div
                     className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
@@ -1946,8 +1961,8 @@ function ShareableFolderView({ folder, projects, tasks }) {
                     <stat.icon className="w-5 h-5" style={{ color: stat.color }} />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-white tracking-tight">{stat.value}</p>
-                    <p className="text-xs text-zinc-500 font-medium">{stat.label}</p>
+                    <p className={`text-2xl font-bold ${pt('text-slate-900','text-white')} tracking-tight`}>{stat.value}</p>
+                    <p className={`text-xs ${pt('text-slate-400','text-zinc-500')} font-medium`}>{stat.label}</p>
                   </div>
                 </div>
               </div>
@@ -1958,8 +1973,8 @@ function ShareableFolderView({ folder, projects, tasks }) {
         {/* Section Header */}
         <div className="flex items-center gap-3 mb-4">
           <FolderKanban className="w-4 h-4" style={{ color: primaryColor }} />
-          <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wider">Your Projects</h2>
-          <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-zinc-800/80 text-zinc-500">
+          <h2 className={`text-sm font-semibold ${pt('text-slate-600','text-zinc-300')} uppercase tracking-wider`}>Your Projects</h2>
+          <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${pt('bg-slate-200','bg-zinc-800/80')} ${pt('text-slate-400','text-zinc-500')}`}>
             {projects.length}
           </span>
         </div>
@@ -1980,7 +1995,7 @@ function ShareableFolderView({ folder, projects, tasks }) {
             return (
               <div
                 key={project.id}
-                className="group flex items-center gap-4 p-4 bg-white/[0.02] hover:bg-white/[0.05] border border-zinc-800/60 hover:border-zinc-700/60 rounded-xl transition-all"
+                className={`group flex items-center gap-4 p-4 bg-white/[0.02] hover:bg-white/[0.05] border ${pt('border-slate-200','border-zinc-800/60')} hover:border-zinc-700/60 rounded-xl transition-all`}
               >
                 {/* Progress Ring */}
                 {(settings.show_individual_progress !== false) && (
@@ -1994,7 +2009,7 @@ function ShareableFolderView({ folder, projects, tasks }) {
                         className="transition-all duration-500"
                       />
                     </svg>
-                    <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-zinc-400">
+                    <span className={`absolute inset-0 flex items-center justify-center text-[10px] font-bold ${pt('text-slate-500','text-zinc-400')}`}>
                       {progress}
                     </span>
                   </div>
@@ -2003,7 +2018,7 @@ function ShareableFolderView({ folder, projects, tasks }) {
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2.5">
-                    <h3 className="font-medium text-white group-hover:text-cyan-300 transition-colors truncate">
+                    <h3 className={`font-medium ${pt('text-slate-900','text-white')} group-hover:text-cyan-300 transition-colors truncate`}>
                       {project.name || project.title}
                     </h3>
                     <span
@@ -2015,25 +2030,25 @@ function ShareableFolderView({ folder, projects, tasks }) {
                     </span>
                   </div>
                   {project.due_date && (
-                    <div className="flex items-center gap-1.5 mt-1.5 text-xs text-zinc-500">
+                    <div className={`flex items-center gap-1.5 mt-1.5 text-xs ${pt('text-slate-400','text-zinc-500')}`}>
                       <Calendar className="w-3 h-3" />
                       Due {new Date(project.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </div>
                   )}
                 </div>
 
-                <ChevronRight className="w-4 h-4 text-zinc-700 group-hover:text-zinc-400 transition-colors shrink-0" />
+                <ChevronRight className={`w-4 h-4 text-zinc-700 ${pt('group-hover:text-slate-600','group-hover:text-zinc-400')} transition-colors shrink-0`} />
               </div>
             );
           })}
 
           {projects.length === 0 && (
             <div className="flex flex-col items-center py-16 text-center">
-              <div className="w-14 h-14 rounded-2xl bg-zinc-800/50 flex items-center justify-center mb-4">
-                <Inbox className="w-7 h-7 text-zinc-600" />
+              <div className={`w-14 h-14 rounded-2xl ${pt('bg-slate-100','bg-zinc-800/50')} flex items-center justify-center mb-4`}>
+                <Inbox className={`w-7 h-7 ${pt('text-slate-300','text-zinc-600')}`} />
               </div>
-              <p className="text-white font-medium">No projects yet</p>
-              <p className="text-sm text-zinc-500 mt-1 max-w-xs">Projects will appear here once they're shared with you</p>
+              <p className={`${pt('text-slate-900','text-white')} font-medium`}>No projects yet</p>
+              <p className={`text-sm ${pt('text-slate-400','text-zinc-500')} mt-1 max-w-xs`}>Projects will appear here once they're shared with you</p>
             </div>
           )}
         </div>
@@ -2048,6 +2063,7 @@ function ShareableFolderView({ folder, projects, tasks }) {
 
 // Timeline Bar for Gantt-like view
 function TimelineBar({ project, startDate, endDate, totalDays }) {
+  const { pt } = useProjectsTheme();
   const projectStart = new Date(project.start_date || Date.now());
   const projectEnd = new Date(project.due_date || Date.now());
   const timelineStart = new Date(startDate);
@@ -2065,7 +2081,7 @@ function TimelineBar({ project, startDate, endDate, totalDays }) {
       className={`absolute h-6 rounded ${statusConfig.color} opacity-80 hover:opacity-100 transition-opacity cursor-pointer group`}
       style={{ left: `${leftPercent}%`, width: `${widthPercent}%`, top: "50%", transform: "translateY(-50%)" }}
     >
-      <div className="absolute -top-8 left-0 hidden group-hover:block bg-zinc-800 rounded px-2 py-1 text-xs text-white whitespace-nowrap z-10">
+      <div className={`absolute -top-8 left-0 hidden group-hover:block ${pt('bg-slate-200','bg-zinc-800')} rounded px-2 py-1 text-xs ${pt('text-slate-900','text-white')} whitespace-nowrap z-10`}>
         {project.name} ({Math.round(widthPercent)}%)
       </div>
     </div>
@@ -2074,6 +2090,7 @@ function TimelineBar({ project, startDate, endDate, totalDays }) {
 
 // Project Card Component
 function ProjectCard({ project, tasks, onClick, onStatusChange, onEdit, onDelete }) {
+  const { pt } = useProjectsTheme();
   const statusConfig = PROJECT_STATUSES.find(s => s.id === project.status) || PROJECT_STATUSES[0];
   const priorityConfig = PRIORITY_LEVELS.find(p => p.id === project.priority) || PRIORITY_LEVELS[1];
   const StatusIcon = statusConfig.icon;
@@ -2095,7 +2112,7 @@ function ProjectCard({ project, tasks, onClick, onStatusChange, onEdit, onDelete
       animate={{ opacity: 1, y: 0 }}
 
       onClick={onClick}
-      className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3 cursor-pointer hover:border-zinc-700 transition-all group"
+      className={`${pt('bg-white shadow-sm','bg-zinc-900/50')} border ${pt('border-slate-200','border-zinc-800/60')} rounded-xl p-3 cursor-pointer ${pt('hover:border-slate-300','hover:border-zinc-700')} transition-all group`}
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
@@ -2104,11 +2121,11 @@ function ProjectCard({ project, tasks, onClick, onStatusChange, onEdit, onDelete
             <StatusIcon className={`w-4 h-4 ${statusConfig.textColor}`} />
           </div>
           <div>
-            <h3 className="font-semibold text-white group-hover:text-cyan-400 transition-colors line-clamp-1">
+            <h3 className={`font-semibold ${pt('text-slate-900','text-white')} group-hover:text-cyan-400 transition-colors line-clamp-1`}>
               {project.name}
             </h3>
             {project.client_name && (
-              <p className="text-xs text-zinc-500">{project.client_name}</p>
+              <p className={`text-xs ${pt('text-slate-400','text-zinc-500')}`}>{project.client_name}</p>
             )}
           </div>
         </div>
@@ -2120,18 +2137,18 @@ function ProjectCard({ project, tasks, onClick, onStatusChange, onEdit, onDelete
             <DropdownMenu>
               <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                 <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <MoreVertical className="w-4 h-4 text-zinc-400" />
+                  <MoreVertical className={`w-4 h-4 ${pt('text-slate-500','text-zinc-400')}`} />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800" onClick={(e) => e.stopPropagation()}>
+              <DropdownMenuContent align="end" className={`${pt('bg-white','bg-zinc-900')} ${pt('border-slate-200','border-zinc-800')}`} onClick={(e) => e.stopPropagation()}>
                 {onEdit && (
-                  <DropdownMenuItem onClick={onEdit} className="text-zinc-300">
+                  <DropdownMenuItem onClick={onEdit} className={`${pt('text-slate-600','text-zinc-300')}`}>
                     <Edit2 className="w-4 h-4 mr-2" /> Edit
                   </DropdownMenuItem>
                 )}
                 {onDelete && (
                   <>
-                    <DropdownMenuSeparator className="bg-zinc-800" />
+                    <DropdownMenuSeparator className={`${pt('bg-slate-200','bg-zinc-800')}`} />
                     <DropdownMenuItem onClick={onDelete} className="text-red-400">
                       <Trash2 className="w-4 h-4 mr-2" /> Delete
                     </DropdownMenuItem>
@@ -2145,7 +2162,7 @@ function ProjectCard({ project, tasks, onClick, onStatusChange, onEdit, onDelete
 
       {/* Description */}
       {project.description && (
-        <p className="text-xs text-zinc-400 line-clamp-2 mb-3">{project.description}</p>
+        <p className={`text-xs ${pt('text-slate-500','text-zinc-400')} line-clamp-2 mb-3`}>{project.description}</p>
       )}
 
       {/* Progress & Stats */}
@@ -2153,33 +2170,33 @@ function ProjectCard({ project, tasks, onClick, onStatusChange, onEdit, onDelete
         <ProgressRing progress={progress} />
         <div className="flex-1 space-y-1">
           <div className="flex items-center justify-between text-[10px]">
-            <span className="text-zinc-500">Tasks</span>
-            <span className="text-zinc-400">{completedTasks}/{totalTasks}</span>
+            <span className={`${pt('text-slate-400','text-zinc-500')}`}>Tasks</span>
+            <span className={`${pt('text-slate-500','text-zinc-400')}`}>{completedTasks}/{totalTasks}</span>
           </div>
-          <Progress value={progress} className="h-1.5 bg-zinc-800" />
+          <Progress value={progress} className={`h-1.5 ${pt('bg-slate-200','bg-zinc-800')}`} />
         </div>
       </div>
 
       {/* Budget Progress (if exists) */}
       {project.budget && (
-        <div className="mb-3 p-2 bg-zinc-800/30 rounded-xl">
+        <div className={`mb-3 p-2 ${pt('bg-slate-50','bg-zinc-800/30')} rounded-xl`}>
           <div className="flex items-center justify-between text-xs mb-1">
-            <span className="text-zinc-500 flex items-center gap-1">
+            <span className={`${pt('text-slate-400','text-zinc-500')} flex items-center gap-1`}>
               <Wallet className="w-3 h-3" /> Budget
             </span>
-            <span className={`${budgetUsed > 90 ? "text-cyan-300" : "text-zinc-400"}`}>
+            <span className={`${budgetUsed > 90 ? "text-cyan-300" : `${pt('text-slate-500','text-zinc-400')}`}`}>
               ${(parseFloat(project.spent) || 0).toLocaleString()} / ${parseFloat(project.budget).toLocaleString()}
             </span>
           </div>
-          <Progress value={budgetUsed} className="h-1 bg-zinc-800" />
+          <Progress value={budgetUsed} className={`h-1 ${pt('bg-slate-200','bg-zinc-800')}`} />
         </div>
       )}
 
       {/* Footer */}
-      <div className="flex items-center justify-between pt-3 border-t border-zinc-800/60">
+      <div className={`flex items-center justify-between pt-3 border-t ${pt('border-slate-200','border-zinc-800/60')}`}>
         <div className="flex items-center gap-3">
           {project.due_date && (
-            <span className={`text-xs flex items-center gap-1 ${isOverdue ? "text-cyan-300" : "text-zinc-500"}`}>
+            <span className={`text-xs flex items-center gap-1 ${isOverdue ? "text-cyan-300" : `${pt('text-slate-400','text-zinc-500')}`}`}>
               <Calendar className="w-3 h-3" />
               {isOverdue ? `${Math.abs(daysLeft)}d overdue` : daysLeft === 0 ? "Due today" : `${daysLeft}d left`}
             </span>
@@ -2187,14 +2204,14 @@ function ProjectCard({ project, tasks, onClick, onStatusChange, onEdit, onDelete
           {project.team_members?.length > 0 && (
             <div className="flex -space-x-2">
               {project.team_members.slice(0, 3).map((member, i) => (
-                <Avatar key={i} className="w-6 h-6 border-2 border-zinc-900">
+                <Avatar key={i} className="w-6 h-6 border-2 ${pt('border-slate-200','border-zinc-900')}">
                   <AvatarFallback className="text-[10px] bg-cyan-500/15 text-cyan-400/80">
                     {member.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
               ))}
               {project.team_members.length > 3 && (
-                <div className="w-6 h-6 rounded-full bg-zinc-800 border-2 border-zinc-900 flex items-center justify-center text-[10px] text-zinc-400">
+                <div className={`w-6 h-6 rounded-full ${pt('bg-slate-200','bg-zinc-800')} border-2 ${pt('border-slate-200','border-zinc-900')} flex items-center justify-center text-[10px] ${pt('text-slate-500','text-zinc-400')}`}>
                   +{project.team_members.length - 3}
                 </div>
               )}
@@ -2211,6 +2228,7 @@ function ProjectCard({ project, tasks, onClick, onStatusChange, onEdit, onDelete
 
 // Kanban Project Card
 function KanbanProjectCard({ project, index, onClick }) {
+  const { pt } = useProjectsTheme();
   const priorityConfig = PRIORITY_LEVELS.find(p => p.id === project.priority) || PRIORITY_LEVELS[1];
   const progress = project.progress || 0;
 
@@ -2222,10 +2240,10 @@ function KanbanProjectCard({ project, index, onClick }) {
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           onClick={onClick}
-          className={`group bg-zinc-900/80 rounded-xl border transition-all cursor-grab active:cursor-grabbing ${
+          className={`group ${pt('bg-white/80 shadow-sm','bg-zinc-900/80')} rounded-xl border transition-all cursor-grab active:cursor-grabbing ${
             snapshot.isDragging
               ? "shadow-xl shadow-cyan-500/10 border-cyan-500/40 scale-[1.02] z-50"
-              : "border-zinc-800/60 hover:border-zinc-700"
+              : `${pt('border-slate-200','border-zinc-800/60')} ${pt('hover:border-slate-300','hover:border-zinc-700')}`
           }`}
           style={{
             ...provided.draggableProps.style,
@@ -2234,15 +2252,15 @@ function KanbanProjectCard({ project, index, onClick }) {
           <div className="p-3">
             <div className="flex items-start justify-between gap-2 mb-2">
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                <div className="text-zinc-600 hover:text-zinc-400">
+                <div className={`${pt('text-slate-300','text-zinc-600')} ${pt('hover:text-slate-500','hover:text-zinc-400')}`}>
                   <GripVertical className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <h4 className="text-sm font-medium text-white truncate group-hover:text-cyan-400">
+                  <h4 className={`text-sm font-medium ${pt('text-slate-900','text-white')} truncate group-hover:text-cyan-400`}>
                     {project.name}
                   </h4>
                   {project.client_name && (
-                    <p className="text-xs text-zinc-500 truncate">{project.client_name}</p>
+                    <p className={`text-xs ${pt('text-slate-400','text-zinc-500')} truncate`}>{project.client_name}</p>
                   )}
                 </div>
               </div>
@@ -2254,15 +2272,15 @@ function KanbanProjectCard({ project, index, onClick }) {
             {/* Mini Progress */}
             <div className="ml-6 mb-2">
               <div className="flex items-center justify-between text-xs mb-1">
-                <span className="text-zinc-500">{progress}% complete</span>
+                <span className={`${pt('text-slate-400','text-zinc-500')}`}>{progress}% complete</span>
               </div>
-              <Progress value={progress} className="h-1 bg-zinc-800" />
+              <Progress value={progress} className={`h-1 ${pt('bg-slate-200','bg-zinc-800')}`} />
             </div>
 
             {/* Footer */}
             <div className="flex items-center justify-between ml-6">
               {project.due_date && (
-                <span className="text-xs text-zinc-500 flex items-center gap-1">
+                <span className={`text-xs ${pt('text-slate-400','text-zinc-500')} flex items-center gap-1`}>
                   <Calendar className="w-3 h-3" />
                   {new Date(project.due_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                 </span>
@@ -2270,7 +2288,7 @@ function KanbanProjectCard({ project, index, onClick }) {
               {project.team_members?.length > 0 && (
                 <div className="flex -space-x-1">
                   {project.team_members.slice(0, 2).map((member, i) => (
-                    <Avatar key={i} className="w-5 h-5 border border-zinc-900">
+                    <Avatar key={i} className="w-5 h-5 border ${pt('border-slate-200','border-zinc-900')}">
                       <AvatarFallback className="text-[8px] bg-cyan-500/15 text-cyan-400/80">
                         {member.charAt(0)}
                       </AvatarFallback>
@@ -2288,6 +2306,7 @@ function KanbanProjectCard({ project, index, onClick }) {
 
 // Kanban Column
 function KanbanColumn({ status, projects, onAddProject, onClick }) {
+  const { pt } = useProjectsTheme();
   const StatusIcon = status.icon;
 
   return (
@@ -2297,13 +2316,13 @@ function KanbanColumn({ status, projects, onAddProject, onClick }) {
           <div className={`w-6 h-6 rounded flex items-center justify-center ${status.bgColor}`}>
             <StatusIcon className={`w-4 h-4 ${status.textColor}`} />
           </div>
-          <span className="font-medium text-white text-sm">{status.label}</span>
-          <span className="text-xs text-zinc-500 bg-zinc-800 px-1.5 py-0.5 rounded">{projects.length}</span>
+          <span className={`font-medium ${pt('text-slate-900','text-white')} text-sm`}>{status.label}</span>
+          <span className={`text-xs ${pt('text-slate-400','text-zinc-500')} ${pt('bg-slate-200','bg-zinc-800')} px-1.5 py-0.5 rounded`}>{projects.length}</span>
         </div>
         <Button
           variant="ghost"
           size="icon"
-          className="h-6 w-6 text-zinc-500 hover:text-white"
+          className={`h-6 w-6 ${pt('text-slate-400','text-zinc-500')} ${pt('hover:text-slate-900','hover:text-white')}`}
           onClick={() => onAddProject(status.id)}
         >
           <Plus className="w-4 h-4" />
@@ -2353,6 +2372,7 @@ function ProjectDetailSheet({
   onToggleMilestone,
   onDeleteMilestone,
 }) {
+  const { pt } = useProjectsTheme();
   const [showSharePreview, setShowSharePreview] = useState(false);
   const statusConfig = PROJECT_STATUSES.find(s => s.id === project?.status) || PROJECT_STATUSES[0];
   const priorityConfig = PRIORITY_LEVELS.find(p => p.id === project?.priority) || PRIORITY_LEVELS[1];
@@ -2430,18 +2450,18 @@ function ProjectDetailSheet({
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="w-full sm:max-w-2xl bg-zinc-900 border-zinc-800/60 overflow-y-auto p-0">
+      <SheetContent className={`w-full sm:max-w-2xl ${pt('bg-white','bg-zinc-900')} ${pt('border-slate-200','border-zinc-800/60')} overflow-y-auto p-0`}>
         <SheetDescription className="sr-only">Project details and management</SheetDescription>
         {/* Header with gradient */}
-        <div className={`p-6 bg-cyan-500/5 border-b border-zinc-800/60`}>
+        <div className={`p-6 bg-cyan-500/5 border-b ${pt('border-slate-200','border-zinc-800/60')}`}>
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-4">
               <div className="w-8 h-8 rounded-xl bg-cyan-500/15 flex items-center justify-center">
                 <Folder className="w-4 h-4 text-cyan-400/80" />
               </div>
               <div>
-                <SheetTitle className="text-white text-xl">{project.name}</SheetTitle>
-                {project.client_name && <p className="text-zinc-400 text-sm">{project.client_name}</p>}
+                <SheetTitle className={`${pt('text-slate-900','text-white')} text-xl`}>{project.name}</SheetTitle>
+                {project.client_name && <p className={`${pt('text-slate-500','text-zinc-400')} text-sm`}>{project.client_name}</p>}
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -2456,24 +2476,24 @@ function ProjectDetailSheet({
 
           {/* Quick Stats Row */}
           <div className="grid grid-cols-4 gap-3">
-            <div className="bg-zinc-900/50 rounded-lg p-3 text-center">
+            <div className={`${pt('bg-white shadow-sm','bg-zinc-900/50')} rounded-lg p-3 text-center`}>
               <ProgressRing progress={progress} size={36} strokeWidth={3} />
-              <div className="text-xs text-zinc-500 mt-1">Progress</div>
+              <div className={`text-xs ${pt('text-slate-400','text-zinc-500')} mt-1`}>Progress</div>
             </div>
-            <div className="bg-zinc-900/50 rounded-lg p-3 text-center">
-              <div className="text-lg font-bold text-white">{tasks.length}</div>
-              <div className="text-xs text-zinc-500">Tasks</div>
+            <div className={`${pt('bg-white shadow-sm','bg-zinc-900/50')} rounded-lg p-3 text-center`}>
+              <div className={`text-lg font-bold ${pt('text-slate-900','text-white')}`}>{tasks.length}</div>
+              <div className={`text-xs ${pt('text-slate-400','text-zinc-500')}`}>Tasks</div>
             </div>
-            <div className="bg-zinc-900/50 rounded-lg p-3 text-center">
-              <div className="text-lg font-bold text-white">{(project.attachments || []).length}</div>
-              <div className="text-xs text-zinc-500">Files</div>
+            <div className={`${pt('bg-white shadow-sm','bg-zinc-900/50')} rounded-lg p-3 text-center`}>
+              <div className={`text-lg font-bold ${pt('text-slate-900','text-white')}`}>{(project.attachments || []).length}</div>
+              <div className={`text-xs ${pt('text-slate-400','text-zinc-500')}`}>Files</div>
             </div>
             {project.due_date && (
-              <div className="bg-zinc-900/50 rounded-lg p-3 text-center">
-                <div className="text-lg font-bold text-white">
+              <div className={`${pt('bg-white shadow-sm','bg-zinc-900/50')} rounded-lg p-3 text-center`}>
+                <div className={`text-lg font-bold ${pt('text-slate-900','text-white')}`}>
                   {new Date(project.due_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                 </div>
-                <div className="text-xs text-zinc-500">Due</div>
+                <div className={`text-xs ${pt('text-slate-400','text-zinc-500')}`}>Due</div>
               </div>
             )}
           </div>
@@ -2483,15 +2503,15 @@ function ProjectDetailSheet({
         <div className="p-6">
           {/* Quick Actions */}
           <div className="flex items-center gap-2 mb-4 flex-wrap">
-            <Button size="sm" className="bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/20 border-0" onClick={() => onAddTask(project)}>
+            <Button size="sm" className={`bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/20 border-0`} onClick={() => onAddTask(project)}>
               <Plus className="w-4 h-4 mr-1" /> Add Task
             </Button>
-            <Button size="sm" className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-zinc-700 hover:border-zinc-600 transition-all" onClick={() => onEdit(project)}>
+            <Button size="sm" className={`${pt('bg-slate-200','bg-zinc-800')} ${pt('hover:bg-slate-200','hover:bg-zinc-700')} ${pt('text-slate-600','text-zinc-300')} ${pt('hover:text-slate-900','hover:text-white')} border ${pt('border-slate-300','border-zinc-700')} ${pt('hover:border-slate-300','hover:border-zinc-600')} transition-all`} onClick={() => onEdit(project)}>
               <Edit2 className="w-4 h-4 mr-1" /> Edit
             </Button>
             <Button
               size="sm"
-              className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-zinc-700 hover:border-zinc-600 transition-all"
+              className={`${pt('bg-slate-200','bg-zinc-800')} ${pt('hover:bg-slate-200','hover:bg-zinc-700')} ${pt('text-slate-600','text-zinc-300')} ${pt('hover:text-slate-900','hover:text-white')} border ${pt('border-slate-300','border-zinc-700')} ${pt('hover:border-slate-300','hover:border-zinc-600')} transition-all`}
               onClick={handlePreviewPortal}
             >
               <Eye className="w-4 h-4 mr-1" /> Preview
@@ -2499,26 +2519,26 @@ function ProjectDetailSheet({
           </div>
 
           <Tabs defaultValue="page" className="w-full">
-            <TabsList className="bg-zinc-800/50 border border-zinc-700/50 mb-4 w-full grid grid-cols-7 p-1 rounded-xl">
-              <TabsTrigger value="page" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-600 data-[state=active]:to-cyan-500 data-[state=active]:text-white rounded-lg text-zinc-400 text-xs">Page</TabsTrigger>
-              <TabsTrigger value="tasks" className="data-[state=active]:bg-zinc-700 data-[state=active]:text-white rounded-lg text-zinc-400 text-xs">Tasks</TabsTrigger>
-              <TabsTrigger value="files" className="data-[state=active]:bg-zinc-700 data-[state=active]:text-white rounded-lg text-zinc-400 text-xs">Files</TabsTrigger>
-              <TabsTrigger value="overview" className="data-[state=active]:bg-zinc-700 data-[state=active]:text-white rounded-lg text-zinc-400 text-xs">Info</TabsTrigger>
-              <TabsTrigger value="milestones" className="data-[state=active]:bg-zinc-700 data-[state=active]:text-white rounded-lg text-zinc-400 text-xs">Milestones</TabsTrigger>
-              <TabsTrigger value="updates" className="data-[state=active]:bg-zinc-700 data-[state=active]:text-white rounded-lg text-zinc-400 text-xs">Updates</TabsTrigger>
-              <TabsTrigger value="share" className="data-[state=active]:bg-zinc-700 data-[state=active]:text-white rounded-lg text-zinc-400 text-xs">Share</TabsTrigger>
+            <TabsList className={`${pt('bg-slate-100','bg-zinc-800/50')} border ${pt('border-slate-200','border-zinc-700/50')} mb-4 w-full grid grid-cols-7 p-1 rounded-xl`}>
+              <TabsTrigger value="page" className={`data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-600 data-[state=active]:to-cyan-500 data-[state=active]:text-white rounded-lg ${pt('text-slate-500','text-zinc-400')} text-xs`}>Page</TabsTrigger>
+              <TabsTrigger value="tasks" className={`data-[state=active]:bg-zinc-700 data-[state=active]:text-white rounded-lg ${pt('text-slate-500','text-zinc-400')} text-xs`}>Tasks</TabsTrigger>
+              <TabsTrigger value="files" className={`data-[state=active]:bg-zinc-700 data-[state=active]:text-white rounded-lg ${pt('text-slate-500','text-zinc-400')} text-xs`}>Files</TabsTrigger>
+              <TabsTrigger value="overview" className={`data-[state=active]:bg-zinc-700 data-[state=active]:text-white rounded-lg ${pt('text-slate-500','text-zinc-400')} text-xs`}>Info</TabsTrigger>
+              <TabsTrigger value="milestones" className={`data-[state=active]:bg-zinc-700 data-[state=active]:text-white rounded-lg ${pt('text-slate-500','text-zinc-400')} text-xs`}>Milestones</TabsTrigger>
+              <TabsTrigger value="updates" className={`data-[state=active]:bg-zinc-700 data-[state=active]:text-white rounded-lg ${pt('text-slate-500','text-zinc-400')} text-xs`}>Updates</TabsTrigger>
+              <TabsTrigger value="share" className={`data-[state=active]:bg-zinc-700 data-[state=active]:text-white rounded-lg ${pt('text-slate-500','text-zinc-400')} text-xs`}>Share</TabsTrigger>
             </TabsList>
 
             {/* Notion-like Page Content Tab */}
             <TabsContent value="page" className="space-y-4">
               <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2 text-xs text-zinc-500">
+                <div className={`flex items-center gap-2 text-xs ${pt('text-slate-400','text-zinc-500')}`}>
                   <FileText className="w-4 h-4" />
                   <span>Project documentation</span>
                 </div>
-                <div className="text-xs text-zinc-600">Type '/' for commands</div>
+                <div className={`text-xs ${pt('text-slate-300','text-zinc-600')}`}>Type '/' for commands</div>
               </div>
-              <div className="min-h-[300px] bg-zinc-800/20 rounded-xl p-4 border border-zinc-800/50">
+              <div className={`min-h-[300px] ${pt('bg-slate-50','bg-zinc-800/20')} rounded-xl p-4 border ${pt('border-slate-200','border-zinc-800/50')}`}>
                 <NotionEditor
                   blocks={project.page_content || []}
                   onChange={(newBlocks) => {
@@ -2534,17 +2554,17 @@ function ProjectDetailSheet({
             <TabsContent value="tasks">
               {/* Budget Progress */}
               {project.budget && (
-                <div className="mb-6 p-4 bg-zinc-800/30 rounded-xl">
+                <div className={`mb-6 p-4 ${pt('bg-slate-50','bg-zinc-800/30')} rounded-xl`}>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-zinc-400 flex items-center gap-2">
+                    <span className={`text-sm ${pt('text-slate-500','text-zinc-400')} flex items-center gap-2`}>
                       <Wallet className="w-4 h-4" /> Budget Usage
                     </span>
-                    <span className={`text-sm font-medium ${budgetUsed > 90 ? "text-cyan-300" : "text-zinc-300"}`}>
+                    <span className={`text-sm font-medium ${budgetUsed > 90 ? "text-cyan-300" : `${pt('text-slate-600','text-zinc-300')}`}`}>
                       {budgetUsed}%
                     </span>
                   </div>
-                  <Progress value={budgetUsed} className="h-2 bg-zinc-800" />
-                  <div className="flex justify-between mt-2 text-xs text-zinc-500">
+                  <Progress value={budgetUsed} className={`h-2 ${pt('bg-slate-200','bg-zinc-800')}`} />
+                  <div className={`flex justify-between mt-2 text-xs ${pt('text-slate-400','text-zinc-500')}`}>
                     <span>Spent: ${(parseFloat(project.spent) || 0).toLocaleString()}</span>
                     <span>Budget: ${parseFloat(project.budget).toLocaleString()}</span>
                   </div>
@@ -2556,8 +2576,8 @@ function ProjectDetailSheet({
                 {/* To Do */}
                 <div>
                   <div className="flex items-center gap-2 mb-3">
-                    <Circle className="w-4 h-4 text-zinc-500" />
-                    <span className="text-sm font-medium text-zinc-400">To Do ({tasksByStatus.todo.length})</span>
+                    <Circle className={`w-4 h-4 ${pt('text-slate-400','text-zinc-500')}`} />
+                    <span className={`text-sm font-medium ${pt('text-slate-500','text-zinc-400')}`}>To Do ({tasksByStatus.todo.length})</span>
                   </div>
                   <div className="space-y-2">
                     {tasksByStatus.todo.map(task => (
@@ -2570,7 +2590,7 @@ function ProjectDetailSheet({
                 <div>
                   <div className="flex items-center gap-2 mb-3">
                     <Clock className="w-4 h-4 text-cyan-400/80" />
-                    <span className="text-sm font-medium text-zinc-400">In Progress ({tasksByStatus.in_progress.length})</span>
+                    <span className={`text-sm font-medium ${pt('text-slate-500','text-zinc-400')}`}>In Progress ({tasksByStatus.in_progress.length})</span>
                   </div>
                   <div className="space-y-2">
                     {tasksByStatus.in_progress.map(task => (
@@ -2583,7 +2603,7 @@ function ProjectDetailSheet({
                 <div>
                   <div className="flex items-center gap-2 mb-3">
                     <CheckCircle2 className="w-4 h-4 text-cyan-400" />
-                    <span className="text-sm font-medium text-zinc-400">Completed ({tasksByStatus.completed.length})</span>
+                    <span className={`text-sm font-medium ${pt('text-slate-500','text-zinc-400')}`}>Completed ({tasksByStatus.completed.length})</span>
                   </div>
                   <div className="space-y-2">
                     {tasksByStatus.completed.map(task => (
@@ -2597,26 +2617,26 @@ function ProjectDetailSheet({
             <TabsContent value="overview" className="space-y-4">
               {project.description && (
                 <div>
-                  <h4 className="text-xs text-zinc-500 mb-2">Description</h4>
-                  <p className="text-sm text-zinc-300">{project.description}</p>
+                  <h4 className={`text-xs ${pt('text-slate-400','text-zinc-500')} mb-2`}>Description</h4>
+                  <p className={`text-sm ${pt('text-slate-600','text-zinc-300')}`}>{project.description}</p>
                 </div>
               )}
 
               <div className="grid grid-cols-2 gap-4">
                 {project.start_date && (
-                  <div className="p-3 bg-zinc-800/30 rounded-lg">
-                    <div className="text-xs text-zinc-500 mb-1">Start Date</div>
-                    <div className="text-sm text-white flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-zinc-500" />
+                  <div className={`p-3 ${pt('bg-slate-50','bg-zinc-800/30')} rounded-lg`}>
+                    <div className={`text-xs ${pt('text-slate-400','text-zinc-500')} mb-1`}>Start Date</div>
+                    <div className={`text-sm ${pt('text-slate-900','text-white')} flex items-center gap-2`}>
+                      <Calendar className={`w-4 h-4 ${pt('text-slate-400','text-zinc-500')}`} />
                       {new Date(project.start_date).toLocaleDateString()}
                     </div>
                   </div>
                 )}
                 {project.due_date && (
-                  <div className="p-3 bg-zinc-800/30 rounded-lg">
-                    <div className="text-xs text-zinc-500 mb-1">Due Date</div>
-                    <div className="text-sm text-white flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-zinc-500" />
+                  <div className={`p-3 ${pt('bg-slate-50','bg-zinc-800/30')} rounded-lg`}>
+                    <div className={`text-xs ${pt('text-slate-400','text-zinc-500')} mb-1`}>Due Date</div>
+                    <div className={`text-sm ${pt('text-slate-900','text-white')} flex items-center gap-2`}>
+                      <Calendar className={`w-4 h-4 ${pt('text-slate-400','text-zinc-500')}`} />
                       {new Date(project.due_date).toLocaleDateString()}
                     </div>
                   </div>
@@ -2625,16 +2645,16 @@ function ProjectDetailSheet({
 
               {project.team_members?.length > 0 && (
                 <div>
-                  <h4 className="text-xs text-zinc-500 mb-2">Team Members</h4>
+                  <h4 className={`text-xs ${pt('text-slate-400','text-zinc-500')} mb-2`}>Team Members</h4>
                   <div className="flex flex-wrap gap-2">
                     {project.team_members.map((member, i) => (
-                      <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-zinc-800/50 rounded-full">
+                      <div key={i} className={`flex items-center gap-2 px-3 py-1.5 ${pt('bg-slate-100','bg-zinc-800/50')} rounded-full`}>
                         <Avatar className="w-5 h-5">
                           <AvatarFallback className="text-[10px] bg-cyan-500/15 text-cyan-400/80">
                             {member.charAt(0).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="text-sm text-zinc-300">{member}</span>
+                        <span className={`text-sm ${pt('text-slate-600','text-zinc-300')}`}>{member}</span>
                       </div>
                     ))}
                   </div>
@@ -2643,10 +2663,10 @@ function ProjectDetailSheet({
 
               {project.tags?.length > 0 && (
                 <div>
-                  <h4 className="text-xs text-zinc-500 mb-2">Tags</h4>
+                  <h4 className={`text-xs ${pt('text-slate-400','text-zinc-500')} mb-2`}>Tags</h4>
                   <div className="flex flex-wrap gap-2">
                     {project.tags.map((tag, i) => (
-                      <Badge key={i} variant="outline" className="border-zinc-700">{tag}</Badge>
+                      <Badge key={i} variant="outline" className={`${pt('border-slate-300','border-zinc-700')}`}>{tag}</Badge>
                     ))}
                   </div>
                 </div>
@@ -2659,7 +2679,7 @@ function ProjectDetailSheet({
                 <Button
                   onClick={onAddMilestone}
                   variant="outline"
-                  className="w-full border-dashed border-zinc-700 hover:border-cyan-500/50 hover:bg-cyan-500/5"
+                  className={`w-full border-dashed ${pt('border-slate-300','border-zinc-700')} hover:border-cyan-500/50 hover:bg-cyan-500/5`}
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Add Milestone
@@ -2668,28 +2688,28 @@ function ProjectDetailSheet({
                 {project.milestones?.length > 0 ? (
                   <div className="space-y-3">
                     {project.milestones.map((milestone) => (
-                      <div key={milestone.id || milestone.name} className="flex items-center gap-3 p-3 bg-zinc-800/30 rounded-xl group">
+                      <div key={milestone.id || milestone.name} className={`flex items-center gap-3 p-3 ${pt('bg-slate-50','bg-zinc-800/30')} rounded-xl group`}>
                         <button
                           onClick={() => onToggleMilestone?.(milestone.id)}
                           className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-                            milestone.completed ? "bg-cyan-500/20 hover:bg-cyan-500/30" : "bg-zinc-700 hover:bg-zinc-600"
+                            milestone.completed ? "bg-cyan-500/20 hover:bg-cyan-500/30" : `${pt('bg-slate-200','bg-zinc-700')} ${pt('hover:bg-slate-200','hover:bg-zinc-600')}`
                           }`}
                         >
                           {milestone.completed ? (
                             <CheckCircle2 className="w-4 h-4 text-cyan-400" />
                           ) : (
-                            <Circle className="w-4 h-4 text-zinc-400" />
+                            <Circle className={`w-4 h-4 ${pt('text-slate-500','text-zinc-400')}`} />
                           )}
                         </button>
                         <div className="flex-1 min-w-0">
-                          <p className={`text-sm ${milestone.completed ? "text-zinc-500 line-through" : "text-white"}`}>
+                          <p className={`text-sm ${milestone.completed ? `${pt('text-slate-400','text-zinc-500')} line-through` : `${pt('text-slate-900','text-white')}`}`}>
                             {milestone.name}
                           </p>
                           {milestone.description && (
-                            <p className="text-xs text-zinc-600 truncate">{milestone.description}</p>
+                            <p className={`text-xs ${pt('text-slate-300','text-zinc-600')} truncate`}>{milestone.description}</p>
                           )}
                           {milestone.date && (
-                            <p className="text-xs text-zinc-500 flex items-center gap-1 mt-1">
+                            <p className={`text-xs ${pt('text-slate-400','text-zinc-500')} flex items-center gap-1 mt-1`}>
                               <Calendar className="w-3 h-3" />
                               {new Date(milestone.date).toLocaleDateString()}
                             </p>
@@ -2697,7 +2717,7 @@ function ProjectDetailSheet({
                         </div>
                         <button
                           onClick={() => onDeleteMilestone?.(milestone.id)}
-                          className="p-1.5 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all"
+                          className={`p-1.5 rounded-lg ${pt('text-slate-400','text-zinc-500')} hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all`}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -2705,7 +2725,7 @@ function ProjectDetailSheet({
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-zinc-500">
+                  <div className={`text-center py-8 ${pt('text-slate-400','text-zinc-500')}`}>
                     <Milestone className="w-10 h-10 mx-auto mb-2 opacity-50" />
                     <p>No milestones added</p>
                     <p className="text-xs mt-1">Add milestones to track project progress</p>
@@ -2728,7 +2748,7 @@ function ProjectDetailSheet({
             <TabsContent value="updates">
               <div className="space-y-4">
                 {/* Add Update Form */}
-                <div className="p-4 bg-zinc-800/30 rounded-xl">
+                <div className={`p-4 ${pt('bg-slate-50','bg-zinc-800/30')} rounded-xl`}>
                   <ClientUpdateForm
                     onSubmit={handleAddClientUpdate}
                   />
@@ -2746,7 +2766,7 @@ function ProjectDetailSheet({
                       />
                     ))
                   ) : (
-                    <div className="text-center py-8 text-zinc-500">
+                    <div className={`text-center py-8 ${pt('text-slate-400','text-zinc-500')}`}>
                       <History className="w-10 h-10 mx-auto mb-2 opacity-50" />
                       <p>No client updates yet</p>
                       <p className="text-xs mt-1">Post updates to keep your clients informed</p>
@@ -2776,13 +2796,13 @@ function ProjectDetailSheet({
                         <Eye className="w-4 h-4 text-cyan-400" />
                       </div>
                       <div>
-                        <h4 className="text-sm font-semibold text-white">Client Portal Preview</h4>
-                        <p className="text-xs text-zinc-500">See exactly how your project appears to clients</p>
+                        <h4 className={`text-sm font-semibold ${pt('text-slate-900','text-white')}`}>Client Portal Preview</h4>
+                        <p className={`text-xs ${pt('text-slate-400','text-zinc-500')}`}>See exactly how your project appears to clients</p>
                       </div>
                     </div>
                     <Button
                       onClick={handlePreviewPortal}
-                      className="bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/20 border-0"
+                      className={`bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/20 border-0`}
                     >
                       <Eye className="w-4 h-4 mr-2" />
                       Preview Portal
@@ -2800,6 +2820,7 @@ function ProjectDetailSheet({
 
 // Client Update Form Component
 function ClientUpdateForm({ onSubmit }) {
+  const { pt } = useProjectsTheme();
   const [content, setContent] = useState('');
 
   const handleSubmit = () => {
@@ -2821,11 +2842,11 @@ function ClientUpdateForm({ onSubmit }) {
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder="Share a progress update with your client..."
-        className="bg-zinc-900/50 border-zinc-700 min-h-[100px]"
+        className={`${pt('bg-white shadow-sm','bg-zinc-900/50')} ${pt('border-slate-300','border-zinc-700')} min-h-[100px]`}
       />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="text-zinc-500 hover:text-zinc-300">
+          <Button variant="ghost" size="sm" className={`${pt('text-slate-400','text-zinc-500')} ${pt('hover:text-slate-600','hover:text-zinc-300')}`}>
             <Paperclip className="w-4 h-4 mr-1" />
             Attach
           </Button>
@@ -2845,6 +2866,7 @@ function ClientUpdateForm({ onSubmit }) {
 
 // Task Item Component
 function TaskItem({ task, onUpdate }) {
+  const { pt } = useProjectsTheme();
   const priorityConfig = PRIORITY_LEVELS.find(p => p.id === task.priority) || PRIORITY_LEVELS[1];
 
   const cycleStatus = () => {
@@ -2856,28 +2878,28 @@ function TaskItem({ task, onUpdate }) {
   };
 
   return (
-    <div className="flex items-center gap-3 p-3 bg-zinc-800/30 rounded-xl hover:bg-zinc-800/50 transition-colors group">
+    <div className={`flex items-center gap-3 p-3 ${pt('bg-slate-50','bg-zinc-800/30')} rounded-xl ${pt('hover:bg-slate-100','hover:bg-zinc-800/50')} transition-colors group`}>
       <button onClick={cycleStatus} className="flex-shrink-0">
         {task.status === "completed" || task.status === "success" ? (
           <CheckCircle2 className="w-5 h-5 text-cyan-400" />
         ) : task.status === "in_progress" ? (
           <Clock className="w-5 h-5 text-cyan-400/80" />
         ) : (
-          <Circle className="w-5 h-5 text-zinc-500 group-hover:text-zinc-400" />
+          <Circle className={`w-5 h-5 ${pt('text-slate-400','text-zinc-500')} ${pt('group-hover:text-slate-600','group-hover:text-zinc-400')}`} />
         )}
       </button>
       <div className="flex-1 min-w-0">
-        <p className={`text-sm ${task.status === "completed" || task.status === "success" ? "text-zinc-500 line-through" : "text-white"}`}>
+        <p className={`text-sm ${task.status === "completed" || task.status === "success" ? `${pt('text-slate-400','text-zinc-500')} line-through` : `${pt('text-slate-900','text-white')}`}`}>
           {task.title}
         </p>
         {task.due_date && (
-          <p className="text-xs text-zinc-500 flex items-center gap-1 mt-1">
+          <p className={`text-xs ${pt('text-slate-400','text-zinc-500')} flex items-center gap-1 mt-1`}>
             <Calendar className="w-3 h-3" />
             {new Date(task.due_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
           </p>
         )}
       </div>
-      <Badge variant="outline" className={`border-zinc-700 text-xs ${priorityConfig.color}`}>
+      <Badge variant="outline" className={`${pt('border-slate-300','border-zinc-700')} text-xs ${priorityConfig.color}`}>
         {priorityConfig.label}
       </Badge>
     </div>
@@ -2886,6 +2908,7 @@ function TaskItem({ task, onUpdate }) {
 
 // Analytics Overview
 function ProjectAnalytics({ projects, tasks }) {
+  const { pt } = useProjectsTheme();
   const stats = useMemo(() => {
     const byStatus = {};
     PROJECT_STATUSES.forEach(s => { byStatus[s.id] = 0; });
@@ -2918,44 +2941,44 @@ function ProjectAnalytics({ projects, tasks }) {
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
-      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
+      <div className={`${pt('bg-white shadow-sm','bg-zinc-900/50')} border ${pt('border-slate-200','border-zinc-800/60')} rounded-xl p-3`}>
         <div className="flex items-center justify-between mb-2">
           <Folder className="w-4 h-4 text-cyan-400/70" />
         </div>
-        <div className="text-lg font-bold text-white">{stats.total}</div>
-        <div className="text-[10px] text-zinc-500">Total Projects</div>
+        <div className={`text-lg font-bold ${pt('text-slate-900','text-white')}`}>{stats.total}</div>
+        <div className={`text-[10px] ${pt('text-slate-400','text-zinc-500')}`}>Total Projects</div>
       </div>
 
-      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
+      <div className={`${pt('bg-white shadow-sm','bg-zinc-900/50')} border ${pt('border-slate-200','border-zinc-800/60')} rounded-xl p-3`}>
         <div className="flex items-center justify-between mb-2">
           <Play className="w-4 h-4 text-cyan-400/70" />
         </div>
-        <div className="text-lg font-bold text-white">{stats.byStatus.active || 0}</div>
-        <div className="text-[10px] text-zinc-500">Active</div>
+        <div className={`text-lg font-bold ${pt('text-slate-900','text-white')}`}>{stats.byStatus.active || 0}</div>
+        <div className={`text-[10px] ${pt('text-slate-400','text-zinc-500')}`}>Active</div>
       </div>
 
-      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
+      <div className={`${pt('bg-white shadow-sm','bg-zinc-900/50')} border ${pt('border-slate-200','border-zinc-800/60')} rounded-xl p-3`}>
         <div className="flex items-center justify-between mb-2">
           <Target className="w-4 h-4 text-cyan-400/70" />
         </div>
-        <div className="text-lg font-bold text-white">{stats.completionRate}%</div>
-        <div className="text-[10px] text-zinc-500">Completion Rate</div>
+        <div className={`text-lg font-bold ${pt('text-slate-900','text-white')}`}>{stats.completionRate}%</div>
+        <div className={`text-[10px] ${pt('text-slate-400','text-zinc-500')}`}>Completion Rate</div>
       </div>
 
-      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
+      <div className={`${pt('bg-white shadow-sm','bg-zinc-900/50')} border ${pt('border-slate-200','border-zinc-800/60')} rounded-xl p-3`}>
         <div className="flex items-center justify-between mb-2">
           <AlertCircle className="w-4 h-4 text-cyan-400/70" />
         </div>
-        <div className="text-lg font-bold text-white">{stats.overdue}</div>
-        <div className="text-[10px] text-zinc-500">Overdue</div>
+        <div className={`text-lg font-bold ${pt('text-slate-900','text-white')}`}>{stats.overdue}</div>
+        <div className={`text-[10px] ${pt('text-slate-400','text-zinc-500')}`}>Overdue</div>
       </div>
 
-      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-3">
+      <div className={`${pt('bg-white shadow-sm','bg-zinc-900/50')} border ${pt('border-slate-200','border-zinc-800/60')} rounded-xl p-3`}>
         <div className="flex items-center justify-between mb-2">
           <Euro className="w-4 h-4 text-cyan-400/70" />
         </div>
-        <div className="text-lg font-bold text-white">${(stats.totalBudget / 1000).toFixed(0)}k</div>
-        <div className="text-[10px] text-zinc-500">Total Budget</div>
+        <div className={`text-lg font-bold ${pt('text-slate-900','text-white')}`}>${(stats.totalBudget / 1000).toFixed(0)}k</div>
+        <div className={`text-[10px] ${pt('text-slate-400','text-zinc-500')}`}>Total Budget</div>
       </div>
     </div>
   );
@@ -2964,6 +2987,7 @@ function ProjectAnalytics({ projects, tasks }) {
 // Main Projects Component
 export default function Projects() {
   const { user } = useUser();
+  const { theme, toggleTheme, pt } = useProjectsTheme();
   const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -3672,11 +3696,11 @@ export default function Projects() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black px-4 lg:px-6 py-4">
+      <div className={cn("min-h-screen px-4 lg:px-6 py-4", pt("bg-slate-50", "bg-black"))}>
         <div className="max-w-7xl mx-auto">
-          <Skeleton className="h-8 w-40 bg-zinc-800 mb-4" />
+          <Skeleton className={`h-8 w-40 ${pt('bg-slate-200','bg-zinc-800')} mb-4`} />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className="h-48 bg-zinc-800 rounded-xl" />)}
+            {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className={`h-48 ${pt('bg-slate-200','bg-zinc-800')} rounded-xl`} />)}
           </div>
         </div>
       </div>
@@ -3684,58 +3708,62 @@ export default function Projects() {
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <ProjectsPageTransition className={cn("min-h-screen", pt("bg-slate-50", "bg-black"))}>
       <div className="max-w-full mx-auto px-4 lg:px-6 py-4 space-y-4">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
           <div>
-            <h1 className="text-lg font-bold text-white">Projects</h1>
-            <p className="text-xs text-zinc-400">{projects.length} total projects</p>
+            <h1 className={`text-lg font-bold ${pt('text-slate-900','text-white')}`}>Projects</h1>
+            <p className={`text-xs ${pt('text-slate-500','text-zinc-400')}`}>{projects.length} total projects</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             {/* View Mode Toggle */}
-            <div className="flex items-center bg-zinc-800/50 rounded-lg p-1">
+            <div className={`flex items-center ${pt('bg-slate-100','bg-zinc-800/50')} rounded-lg p-1`}>
               <button
                 onClick={() => setViewMode("grid")}
-                className={`p-2 rounded ${viewMode === "grid" ? "bg-zinc-700 text-white" : "text-zinc-400"}`}
+                className={`p-2 rounded ${viewMode === "grid" ? `${pt('bg-slate-200','bg-zinc-700')} ${pt('text-slate-900','text-white')}` : `${pt('text-slate-500','text-zinc-400')}`}`}
                 title="Grid View"
               >
                 <LayoutGrid className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setViewMode("kanban")}
-                className={`p-2 rounded ${viewMode === "kanban" ? "bg-zinc-700 text-white" : "text-zinc-400"}`}
+                className={`p-2 rounded ${viewMode === "kanban" ? `${pt('bg-slate-200','bg-zinc-700')} ${pt('text-slate-900','text-white')}` : `${pt('text-slate-500','text-zinc-400')}`}`}
                 title="Kanban View"
               >
                 <Columns className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setViewMode("list")}
-                className={`p-2 rounded ${viewMode === "list" ? "bg-zinc-700 text-white" : "text-zinc-400"}`}
+                className={`p-2 rounded ${viewMode === "list" ? `${pt('bg-slate-200','bg-zinc-700')} ${pt('text-slate-900','text-white')}` : `${pt('text-slate-500','text-zinc-400')}`}`}
                 title="List View"
               >
                 <List className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setViewMode("timeline")}
-                className={`p-2 rounded ${viewMode === "timeline" ? "bg-zinc-700 text-white" : "text-zinc-400"}`}
+                className={`p-2 rounded ${viewMode === "timeline" ? `${pt('bg-slate-200','bg-zinc-700')} ${pt('text-slate-900','text-white')}` : `${pt('text-slate-500','text-zinc-400')}`}`}
                 title="Timeline View"
               >
                 <CalendarRange className="w-4 h-4" />
               </button>
             </div>
 
+            <button onClick={toggleTheme} className={cn('p-2 rounded-xl transition-all', pt('bg-slate-100 hover:bg-slate-200 text-slate-600', 'bg-white/[0.06] hover:bg-white/10 text-zinc-400'))}>
+              {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+            </button>
+
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShowAnalytics(!showAnalytics)}
-              className={`border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700 ${showAnalytics ? "bg-cyan-500/15 text-cyan-400/80 border-cyan-500/30" : ""}`}
+              className={cn(showAnalytics ? "bg-cyan-500/15 text-cyan-400/80 border-cyan-500/30" : "", pt("border-slate-200 bg-slate-100 text-slate-600 hover:bg-slate-200", "border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700"))}
             >
               <BarChart3 className="w-4 h-4 mr-1" /> Analytics
             </Button>
 
-            <Button onClick={() => { setEditingProject(null); setFormData(emptyProject); setShowModal(true); }} className="bg-cyan-600/80 hover:bg-cyan-600 text-white">
+            <Button onClick={() => { setEditingProject(null); setFormData(emptyProject); setShowModal(true); }} className={`bg-cyan-600/80 hover:bg-cyan-600 text-white`}>
               <Plus className="w-4 h-4 mr-1" /> New Project
             </Button>
           </div>
@@ -3765,12 +3793,12 @@ export default function Projects() {
                 animate={{ rotate: showFoldersSection ? 90 : 0 }}
                 transition={{ duration: 0.2 }}
               >
-                <ChevronRight className="w-5 h-5 text-zinc-500 group-hover:text-zinc-300" />
+                <ChevronRight className={`w-5 h-5 ${pt('text-slate-400','text-zinc-500')} ${pt('group-hover:text-slate-600','group-hover:text-zinc-300')}`} />
               </motion.div>
               <div className="flex items-center gap-2">
                 <FolderOpen className="w-4 h-4 text-cyan-500" />
-                <h2 className="text-lg font-semibold text-white">Client Folders</h2>
-                <Badge variant="outline" className="bg-zinc-800/50 border-zinc-700 text-zinc-400">
+                <h2 className={`text-lg font-semibold ${pt('text-slate-900','text-white')}`}>Client Folders</h2>
+                <Badge variant="outline" className={`${pt('bg-slate-100','bg-zinc-800/50')} ${pt('border-slate-300','border-zinc-700')} ${pt('text-slate-500','text-zinc-400')}`}>
                   {folders.length}
                 </Badge>
               </div>
@@ -3778,7 +3806,7 @@ export default function Projects() {
             <Button
               onClick={handleCreateFolder}
               size="sm"
-              className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-zinc-700 hover:border-cyan-500/50 transition-all"
+              className={`${pt('bg-slate-200','bg-zinc-800')} ${pt('hover:bg-slate-200','hover:bg-zinc-700')} ${pt('text-slate-600','text-zinc-300')} ${pt('hover:text-slate-900','hover:text-white')} border ${pt('border-slate-300','border-zinc-700')} hover:border-cyan-500/50 transition-all`}
             >
               <Plus className="w-4 h-4 mr-1" /> New Folder
             </Button>
@@ -3807,20 +3835,20 @@ export default function Projects() {
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="relative overflow-hidden bg-gradient-to-br from-zinc-900/80 to-zinc-900/40 border border-zinc-800/60 rounded-xl p-8 text-center"
+                    className={`relative overflow-hidden bg-gradient-to-br from-zinc-900/80 to-zinc-900/40 border ${pt('border-slate-200','border-zinc-800/60')} rounded-xl p-8 text-center`}
                   >
                     <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-purple-500/5" />
                     <div className="relative z-10">
                       <div className="w-16 h-16 mx-auto mb-4 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 border border-cyan-500/20 flex items-center justify-center">
                         <FolderOpen className="w-8 h-8 text-cyan-500" />
                       </div>
-                      <h3 className="text-lg font-semibold text-white mb-2">No Client Folders Yet</h3>
-                      <p className="text-sm text-zinc-400 mb-6 max-w-md mx-auto">
+                      <h3 className={`text-lg font-semibold ${pt('text-slate-900','text-white')} mb-2`}>No Client Folders Yet</h3>
+                      <p className={`text-sm ${pt('text-slate-500','text-zinc-400')} mb-6 max-w-md mx-auto`}>
                         Create folders to organize projects by client. Share folder portals with clients so they can track all their orders in one place.
                       </p>
                       <Button
                         onClick={handleCreateFolder}
-                        className="bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/20"
+                        className={`bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white shadow-lg shadow-cyan-500/20`}
                       >
                         <Plus className="w-4 h-4 mr-2" /> Create First Folder
                       </Button>
@@ -3835,19 +3863,19 @@ export default function Projects() {
         {/* Search & Filters */}
         <div className="flex flex-col sm:flex-row gap-3 mb-4">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${pt('text-slate-400','text-zinc-500')}`} />
             <Input
               placeholder="Search projects..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-zinc-900 border-zinc-800"
+              className={`pl-10 ${pt('bg-white','bg-zinc-900')} ${pt('border-slate-200','border-zinc-800')}`}
             />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-40 bg-zinc-900 border-zinc-800">
+            <SelectTrigger className={`w-full sm:w-40 ${pt('bg-white','bg-zinc-900')} ${pt('border-slate-200','border-zinc-800')}`}>
               <SelectValue placeholder="Status" />
             </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-800">
+            <SelectContent className={`${pt('bg-white','bg-zinc-900')} ${pt('border-slate-200','border-zinc-800')}`}>
               <SelectItem value="all">All Statuses</SelectItem>
               {PROJECT_STATUSES.map(s => <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>)}
             </SelectContent>
@@ -3883,27 +3911,27 @@ export default function Projects() {
             ))}
             {filteredProjects.length === 0 && (
               <div className="col-span-full text-center py-20">
-                <Folder className="w-16 h-16 mx-auto mb-4 text-zinc-600" />
-                <h2 className="text-xl font-semibold text-zinc-300 mb-2">No projects found</h2>
-                <p className="text-zinc-500 mb-6">Create your first project to get started</p>
-                <Button onClick={() => { setEditingProject(null); setFormData(emptyProject); setShowModal(true); }} className="bg-cyan-600/80 hover:bg-cyan-600 text-white">
+                <Folder className={`w-16 h-16 mx-auto mb-4 ${pt('text-slate-300','text-zinc-600')}`} />
+                <h2 className={`text-xl font-semibold ${pt('text-slate-600','text-zinc-300')} mb-2`}>No projects found</h2>
+                <p className={`${pt('text-slate-400','text-zinc-500')} mb-6`}>Create your first project to get started</p>
+                <Button onClick={() => { setEditingProject(null); setFormData(emptyProject); setShowModal(true); }} className={`bg-cyan-600/80 hover:bg-cyan-600 text-white`}>
                   <Plus className="w-4 h-4 mr-1" /> Create Project
                 </Button>
               </div>
             )}
           </div>
         ) : viewMode === "list" ? (
-          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl overflow-hidden">
+          <div className={`${pt('bg-white shadow-sm','bg-zinc-900/50')} border ${pt('border-slate-200','border-zinc-800/60')} rounded-xl overflow-hidden`}>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-zinc-800">
-                    <th className="p-3 text-left text-xs font-medium text-zinc-500 uppercase">Project</th>
-                    <th className="p-3 text-left text-xs font-medium text-zinc-500 uppercase">Status</th>
-                    <th className="p-3 text-left text-xs font-medium text-zinc-500 uppercase">Progress</th>
-                    <th className="p-3 text-left text-xs font-medium text-zinc-500 uppercase">Due Date</th>
-                    <th className="p-3 text-left text-xs font-medium text-zinc-500 uppercase">Budget</th>
-                    <th className="p-3 text-left text-xs font-medium text-zinc-500 uppercase">Actions</th>
+                  <tr className={`border-b ${pt('border-slate-200','border-zinc-800')}`}>
+                    <th className={`p-3 text-left text-xs font-medium ${pt('text-slate-400','text-zinc-500')} uppercase`}>Project</th>
+                    <th className={`p-3 text-left text-xs font-medium ${pt('text-slate-400','text-zinc-500')} uppercase`}>Status</th>
+                    <th className={`p-3 text-left text-xs font-medium ${pt('text-slate-400','text-zinc-500')} uppercase`}>Progress</th>
+                    <th className={`p-3 text-left text-xs font-medium ${pt('text-slate-400','text-zinc-500')} uppercase`}>Due Date</th>
+                    <th className={`p-3 text-left text-xs font-medium ${pt('text-slate-400','text-zinc-500')} uppercase`}>Budget</th>
+                    <th className={`p-3 text-left text-xs font-medium ${pt('text-slate-400','text-zinc-500')} uppercase`}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -3914,15 +3942,15 @@ export default function Projects() {
                     const progress = projectTasks.length > 0 ? Math.round((completedTasks / projectTasks.length) * 100) : 0;
 
                     return (
-                      <tr key={project.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors">
+                      <tr key={project.id} className={`border-b ${pt('border-slate-200','border-zinc-800/50')} ${pt('hover:bg-slate-50','hover:bg-zinc-800/30')} transition-colors`}>
                         <td className="p-3">
                           <div className="flex items-center gap-3 cursor-pointer" onClick={() => handleViewProject(project)}>
                             <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${statusConfig.bgColor}`}>
                               <Folder className={`w-4 h-4 ${statusConfig.textColor}`} />
                             </div>
                             <div>
-                              <div className="font-medium text-white hover:text-cyan-400 transition-colors">{project.name}</div>
-                              {project.client_name && <div className="text-xs text-zinc-500">{project.client_name}</div>}
+                              <div className={`font-medium ${pt('text-slate-900','text-white')} hover:text-cyan-400 transition-colors`}>{project.name}</div>
+                              {project.client_name && <div className={`text-xs ${pt('text-slate-400','text-zinc-500')}`}>{project.client_name}</div>}
                             </div>
                           </div>
                         </td>
@@ -3933,36 +3961,36 @@ export default function Projects() {
                         </td>
                         <td className="p-3">
                           <div className="flex items-center gap-2">
-                            <Progress value={progress} className="w-20 h-1.5 bg-zinc-800" />
-                            <span className="text-xs text-zinc-400">{progress}%</span>
+                            <Progress value={progress} className={`w-20 h-1.5 ${pt('bg-slate-200','bg-zinc-800')}`} />
+                            <span className={`text-xs ${pt('text-slate-500','text-zinc-400')}`}>{progress}%</span>
                           </div>
                         </td>
                         <td className="p-3">
-                          <span className="text-sm text-zinc-400">
+                          <span className={`text-sm ${pt('text-slate-500','text-zinc-400')}`}>
                             {project.due_date ? new Date(project.due_date).toLocaleDateString() : "-"}
                           </span>
                         </td>
                         <td className="p-3">
-                          <span className="text-sm text-zinc-400">
+                          <span className={`text-sm ${pt('text-slate-500','text-zinc-400')}`}>
                             {project.budget ? `€${parseFloat(project.budget).toLocaleString()}` : "-"}
                           </span>
                         </td>
                         <td className="p-3">
                           <div className="flex items-center gap-1">
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditProject(project)}>
-                              <Edit2 className="w-4 h-4 text-zinc-400" />
+                              <Edit2 className={`w-4 h-4 ${pt('text-slate-500','text-zinc-400')}`} />
                             </Button>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <MoreVertical className="w-4 h-4 text-zinc-400" />
+                                  <MoreVertical className={`w-4 h-4 ${pt('text-slate-500','text-zinc-400')}`} />
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
-                                <DropdownMenuItem onClick={() => handleViewProject(project)} className="text-zinc-300">
+                              <DropdownMenuContent align="end" className={`${pt('bg-white','bg-zinc-900')} ${pt('border-slate-200','border-zinc-800')}`}>
+                                <DropdownMenuItem onClick={() => handleViewProject(project)} className={`${pt('text-slate-600','text-zinc-300')}`}>
                                   <Eye className="w-4 h-4 mr-2" /> View
                                 </DropdownMenuItem>
-                                <DropdownMenuSeparator className="bg-zinc-800" />
+                                <DropdownMenuSeparator className={`${pt('bg-slate-200','bg-zinc-800')}`} />
                                 <DropdownMenuItem onClick={() => handleDeleteProject(project.id)} className="text-red-400">
                                   <Trash2 className="w-4 h-4 mr-2" /> Delete
                                 </DropdownMenuItem>
@@ -3979,20 +4007,20 @@ export default function Projects() {
           </div>
         ) : (
           /* Timeline View */
-          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-4">
-            <h3 className="text-lg font-semibold text-white mb-4">Project Timeline</h3>
+          <div className={`${pt('bg-white shadow-sm','bg-zinc-900/50')} border ${pt('border-slate-200','border-zinc-800/60')} rounded-xl p-4`}>
+            <h3 className={`text-lg font-semibold ${pt('text-slate-900','text-white')} mb-4`}>Project Timeline</h3>
             <div className="space-y-4">
               {filteredProjects.filter(p => p.start_date && p.due_date).map(project => {
                 const statusConfig = PROJECT_STATUSES.find(s => s.id === project.status) || PROJECT_STATUSES[0];
                 return (
                   <div key={project.id} className="flex items-center gap-4">
                     <div className="w-48 flex-shrink-0">
-                      <div className="font-medium text-white text-sm truncate">{project.name}</div>
-                      <div className="text-xs text-zinc-500">
+                      <div className={`font-medium ${pt('text-slate-900','text-white')} text-sm truncate`}>{project.name}</div>
+                      <div className={`text-xs ${pt('text-slate-400','text-zinc-500')}`}>
                         {new Date(project.start_date).toLocaleDateString()} - {new Date(project.due_date).toLocaleDateString()}
                       </div>
                     </div>
-                    <div className="flex-1 relative h-8 bg-zinc-800/50 rounded-lg">
+                    <div className={`flex-1 relative h-8 ${pt('bg-slate-100','bg-zinc-800/50')} rounded-lg`}>
                       <TimelineBar
                         project={project}
                         startDate={new Date(Math.min(...filteredProjects.filter(p => p.start_date).map(p => new Date(p.start_date))))}
@@ -4007,7 +4035,7 @@ export default function Projects() {
                 );
               })}
               {filteredProjects.filter(p => p.start_date && p.due_date).length === 0 && (
-                <div className="text-center py-8 text-zinc-500">
+                <div className={`text-center py-8 ${pt('text-slate-400','text-zinc-500')}`}>
                   <CalendarRange className="w-10 h-10 mx-auto mb-2 opacity-50" />
                   <p>No projects with dates to display</p>
                 </div>
@@ -4035,63 +4063,63 @@ export default function Projects() {
 
       {/* Project Modal */}
       <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent className="bg-zinc-900 border-zinc-800 max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className={`${pt('bg-white','bg-zinc-900')} ${pt('border-slate-200','border-zinc-800')} max-w-2xl max-h-[90vh] overflow-y-auto`}>
           <DialogHeader>
-            <DialogTitle className="text-white">{editingProject ? "Edit Project" : "New Project"}</DialogTitle>
-            <DialogDescription className="text-zinc-400">Create or edit your project details</DialogDescription>
+            <DialogTitle className={`${pt('text-slate-900','text-white')}`}>{editingProject ? "Edit Project" : "New Project"}</DialogTitle>
+            <DialogDescription className={`${pt('text-slate-500','text-zinc-400')}`}>Create or edit your project details</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 mt-4">
             <div>
-              <label className="text-xs text-zinc-500 mb-1 block">Project Name *</label>
+              <label className={`text-xs ${pt('text-slate-400','text-zinc-500')} mb-1 block`}>Project Name *</label>
               <Input
                 placeholder="Website Redesign"
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                className="bg-zinc-800 border-zinc-700"
+                className={`${pt('bg-slate-200','bg-zinc-800')} ${pt('border-slate-300','border-zinc-700')}`}
               />
             </div>
 
             <div>
-              <label className="text-xs text-zinc-500 mb-1 block">Description</label>
+              <label className={`text-xs ${pt('text-slate-400','text-zinc-500')} mb-1 block`}>Description</label>
               <Textarea
                 placeholder="Project description..."
                 value={formData.description}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                className="bg-zinc-800 border-zinc-700"
+                className={`${pt('bg-slate-200','bg-zinc-800')} ${pt('border-slate-300','border-zinc-700')}`}
               />
             </div>
 
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="text-xs text-zinc-500 mb-1 block">Status</label>
+                <label className={`text-xs ${pt('text-slate-400','text-zinc-500')} mb-1 block`}>Status</label>
                 <Select value={formData.status} onValueChange={(v) => setFormData(prev => ({ ...prev, status: v }))}>
-                  <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                  <SelectTrigger className={`${pt('bg-slate-200','bg-zinc-800')} ${pt('border-slate-300','border-zinc-700')}`}>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-800">
+                  <SelectContent className={`${pt('bg-white','bg-zinc-900')} ${pt('border-slate-200','border-zinc-800')}`}>
                     {PROJECT_STATUSES.map(s => <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <label className="text-xs text-zinc-500 mb-1 block">Priority</label>
+                <label className={`text-xs ${pt('text-slate-400','text-zinc-500')} mb-1 block`}>Priority</label>
                 <Select value={formData.priority} onValueChange={(v) => setFormData(prev => ({ ...prev, priority: v }))}>
-                  <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                  <SelectTrigger className={`${pt('bg-slate-200','bg-zinc-800')} ${pt('border-slate-300','border-zinc-700')}`}>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-800">
+                  <SelectContent className={`${pt('bg-white','bg-zinc-900')} ${pt('border-slate-200','border-zinc-800')}`}>
                     {PRIORITY_LEVELS.map(p => <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <label className="text-xs text-zinc-500 mb-1 block">Category</label>
+                <label className={`text-xs ${pt('text-slate-400','text-zinc-500')} mb-1 block`}>Category</label>
                 <Select value={formData.category} onValueChange={(v) => setFormData(prev => ({ ...prev, category: v }))}>
-                  <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                  <SelectTrigger className={`${pt('bg-slate-200','bg-zinc-800')} ${pt('border-slate-300','border-zinc-700')}`}>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-800">
+                  <SelectContent className={`${pt('bg-white','bg-zinc-900')} ${pt('border-slate-200','border-zinc-800')}`}>
                     {PROJECT_CATEGORIES.map(c => <SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
@@ -4100,52 +4128,52 @@ export default function Projects() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-zinc-500 mb-1 block">Start Date</label>
+                <label className={`text-xs ${pt('text-slate-400','text-zinc-500')} mb-1 block`}>Start Date</label>
                 <Input
                   type="date"
                   value={formData.start_date}
                   onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
-                  className="bg-zinc-800 border-zinc-700"
+                  className={`${pt('bg-slate-200','bg-zinc-800')} ${pt('border-slate-300','border-zinc-700')}`}
                 />
               </div>
               <div>
-                <label className="text-xs text-zinc-500 mb-1 block">Due Date</label>
+                <label className={`text-xs ${pt('text-slate-400','text-zinc-500')} mb-1 block`}>Due Date</label>
                 <Input
                   type="date"
                   value={formData.due_date}
                   onChange={(e) => setFormData(prev => ({ ...prev, due_date: e.target.value }))}
-                  className="bg-zinc-800 border-zinc-700"
+                  className={`${pt('bg-slate-200','bg-zinc-800')} ${pt('border-slate-300','border-zinc-700')}`}
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-zinc-500 mb-1 block">Client Name</label>
+                <label className={`text-xs ${pt('text-slate-400','text-zinc-500')} mb-1 block`}>Client Name</label>
                 <Input
                   placeholder="Acme Corp"
                   value={formData.client_name}
                   onChange={(e) => setFormData(prev => ({ ...prev, client_name: e.target.value }))}
-                  className="bg-zinc-800 border-zinc-700"
+                  className={`${pt('bg-slate-200','bg-zinc-800')} ${pt('border-slate-300','border-zinc-700')}`}
                 />
               </div>
               <div>
-                <label className="text-xs text-zinc-500 mb-1 block">Budget ($)</label>
+                <label className={`text-xs ${pt('text-slate-400','text-zinc-500')} mb-1 block`}>Budget ($)</label>
                 <Input
                   type="number"
                   placeholder="10000"
                   value={formData.budget}
                   onChange={(e) => setFormData(prev => ({ ...prev, budget: e.target.value }))}
-                  className="bg-zinc-800 border-zinc-700"
+                  className={`${pt('bg-slate-200','bg-zinc-800')} ${pt('border-slate-300','border-zinc-700')}`}
                 />
               </div>
             </div>
 
             <div className="flex gap-2 pt-4">
-              <Button variant="outline" onClick={() => { setShowModal(false); setEditingProject(null); }} className="flex-1 border-zinc-700">
+              <Button variant="outline" onClick={() => { setShowModal(false); setEditingProject(null); }} className={`flex-1 ${pt('border-slate-300','border-zinc-700')}`}>
                 Cancel
               </Button>
-              <Button onClick={handleSaveProject} className="flex-1 bg-cyan-600/80 hover:bg-cyan-600 text-white">
+              <Button onClick={handleSaveProject} className={`flex-1 bg-cyan-600/80 hover:bg-cyan-600 text-white`}>
                 {editingProject ? "Update" : "Create"} Project
               </Button>
             </div>
@@ -4155,61 +4183,61 @@ export default function Projects() {
 
       {/* Task Modal */}
       <Dialog open={showTaskModal} onOpenChange={setShowTaskModal}>
-        <DialogContent className="bg-zinc-900 border-zinc-800 max-w-md">
+        <DialogContent className={`${pt('bg-white','bg-zinc-900')} ${pt('border-slate-200','border-zinc-800')} max-w-md`}>
           <DialogHeader>
-            <DialogTitle className="text-white">Add Task</DialogTitle>
-            <DialogDescription className="text-zinc-400">Add a new task to this project</DialogDescription>
+            <DialogTitle className={`${pt('text-slate-900','text-white')}`}>Add Task</DialogTitle>
+            <DialogDescription className={`${pt('text-slate-500','text-zinc-400')}`}>Add a new task to this project</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 mt-4">
             <div>
-              <label className="text-xs text-zinc-500 mb-1 block">Task Title *</label>
+              <label className={`text-xs ${pt('text-slate-400','text-zinc-500')} mb-1 block`}>Task Title *</label>
               <Input
                 placeholder="Design homepage mockup"
                 value={taskFormData.title}
                 onChange={(e) => setTaskFormData(prev => ({ ...prev, title: e.target.value }))}
-                className="bg-zinc-800 border-zinc-700"
+                className={`${pt('bg-slate-200','bg-zinc-800')} ${pt('border-slate-300','border-zinc-700')}`}
               />
             </div>
 
             <div>
-              <label className="text-xs text-zinc-500 mb-1 block">Description</label>
+              <label className={`text-xs ${pt('text-slate-400','text-zinc-500')} mb-1 block`}>Description</label>
               <Textarea
                 placeholder="Task details..."
                 value={taskFormData.description}
                 onChange={(e) => setTaskFormData(prev => ({ ...prev, description: e.target.value }))}
-                className="bg-zinc-800 border-zinc-700"
+                className={`${pt('bg-slate-200','bg-zinc-800')} ${pt('border-slate-300','border-zinc-700')}`}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-zinc-500 mb-1 block">Priority</label>
+                <label className={`text-xs ${pt('text-slate-400','text-zinc-500')} mb-1 block`}>Priority</label>
                 <Select value={taskFormData.priority} onValueChange={(v) => setTaskFormData(prev => ({ ...prev, priority: v }))}>
-                  <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                  <SelectTrigger className={`${pt('bg-slate-200','bg-zinc-800')} ${pt('border-slate-300','border-zinc-700')}`}>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-800">
+                  <SelectContent className={`${pt('bg-white','bg-zinc-900')} ${pt('border-slate-200','border-zinc-800')}`}>
                     {PRIORITY_LEVELS.map(p => <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <label className="text-xs text-zinc-500 mb-1 block">Due Date</label>
+                <label className={`text-xs ${pt('text-slate-400','text-zinc-500')} mb-1 block`}>Due Date</label>
                 <Input
                   type="date"
                   value={taskFormData.due_date}
                   onChange={(e) => setTaskFormData(prev => ({ ...prev, due_date: e.target.value }))}
-                  className="bg-zinc-800 border-zinc-700"
+                  className={`${pt('bg-slate-200','bg-zinc-800')} ${pt('border-slate-300','border-zinc-700')}`}
                 />
               </div>
             </div>
 
             <div className="flex gap-2 pt-4">
-              <Button variant="outline" onClick={() => setShowTaskModal(false)} className="flex-1 border-zinc-700">
+              <Button variant="outline" onClick={() => setShowTaskModal(false)} className={`flex-1 ${pt('border-slate-300','border-zinc-700')}`}>
                 Cancel
               </Button>
-              <Button onClick={handleSaveTask} className="flex-1 bg-cyan-600/80 hover:bg-cyan-600 text-white">
+              <Button onClick={handleSaveTask} className={`flex-1 bg-cyan-600/80 hover:bg-cyan-600 text-white`}>
                 Add Task
               </Button>
             </div>
@@ -4219,48 +4247,48 @@ export default function Projects() {
 
       {/* Milestone Modal */}
       <Dialog open={showMilestoneModal} onOpenChange={setShowMilestoneModal}>
-        <DialogContent className="bg-zinc-900 border-zinc-800 max-w-md">
+        <DialogContent className={`${pt('bg-white','bg-zinc-900')} ${pt('border-slate-200','border-zinc-800')} max-w-md`}>
           <DialogHeader>
-            <DialogTitle className="text-white">Add Milestone</DialogTitle>
-            <DialogDescription className="text-zinc-400">Add a milestone to track project progress</DialogDescription>
+            <DialogTitle className={`${pt('text-slate-900','text-white')}`}>Add Milestone</DialogTitle>
+            <DialogDescription className={`${pt('text-slate-500','text-zinc-400')}`}>Add a milestone to track project progress</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 mt-4">
             <div>
-              <label className="text-xs text-zinc-500 mb-1 block">Milestone Name *</label>
+              <label className={`text-xs ${pt('text-slate-400','text-zinc-500')} mb-1 block`}>Milestone Name *</label>
               <Input
                 placeholder="Design approval"
                 value={milestoneFormData.name}
                 onChange={(e) => setMilestoneFormData(prev => ({ ...prev, name: e.target.value }))}
-                className="bg-zinc-800 border-zinc-700"
+                className={`${pt('bg-slate-200','bg-zinc-800')} ${pt('border-slate-300','border-zinc-700')}`}
               />
             </div>
 
             <div>
-              <label className="text-xs text-zinc-500 mb-1 block">Description</label>
+              <label className={`text-xs ${pt('text-slate-400','text-zinc-500')} mb-1 block`}>Description</label>
               <Textarea
                 placeholder="Milestone details..."
                 value={milestoneFormData.description}
                 onChange={(e) => setMilestoneFormData(prev => ({ ...prev, description: e.target.value }))}
-                className="bg-zinc-800 border-zinc-700"
+                className={`${pt('bg-slate-200','bg-zinc-800')} ${pt('border-slate-300','border-zinc-700')}`}
               />
             </div>
 
             <div>
-              <label className="text-xs text-zinc-500 mb-1 block">Target Date</label>
+              <label className={`text-xs ${pt('text-slate-400','text-zinc-500')} mb-1 block`}>Target Date</label>
               <Input
                 type="date"
                 value={milestoneFormData.date}
                 onChange={(e) => setMilestoneFormData(prev => ({ ...prev, date: e.target.value }))}
-                className="bg-zinc-800 border-zinc-700"
+                className={`${pt('bg-slate-200','bg-zinc-800')} ${pt('border-slate-300','border-zinc-700')}`}
               />
             </div>
 
             <div className="flex gap-2 pt-4">
-              <Button variant="outline" onClick={() => setShowMilestoneModal(false)} className="flex-1 border-zinc-700">
+              <Button variant="outline" onClick={() => setShowMilestoneModal(false)} className={`flex-1 ${pt('border-slate-300','border-zinc-700')}`}>
                 Cancel
               </Button>
-              <Button onClick={handleSaveMilestone} className="flex-1 bg-cyan-600/80 hover:bg-cyan-600 text-white">
+              <Button onClick={handleSaveMilestone} className={`flex-1 bg-cyan-600/80 hover:bg-cyan-600 text-white`}>
                 Add Milestone
               </Button>
             </div>
@@ -4286,13 +4314,13 @@ export default function Projects() {
 
       {/* Folder Modal */}
       <Dialog open={showFolderModal} onOpenChange={setShowFolderModal}>
-        <DialogContent className="bg-zinc-900 border-zinc-800 max-w-xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className={`${pt('bg-white','bg-zinc-900')} ${pt('border-slate-200','border-zinc-800')} max-w-xl max-h-[90vh] overflow-y-auto`}>
           <DialogHeader>
-            <DialogTitle className="text-white flex items-center gap-2">
+            <DialogTitle className={`${pt('text-slate-900','text-white')} flex items-center gap-2`}>
               <FolderOpen className="w-4 h-4 text-cyan-500" />
               {editingFolder ? "Edit Folder" : "Create Client Folder"}
             </DialogTitle>
-            <DialogDescription className="text-zinc-400">
+            <DialogDescription className={`${pt('text-slate-500','text-zinc-400')}`}>
               Create a folder to group projects for a specific client
             </DialogDescription>
           </DialogHeader>
@@ -4300,60 +4328,60 @@ export default function Projects() {
           <div className="space-y-5 mt-4">
             {/* Folder Name */}
             <div>
-              <label className="text-xs font-medium text-zinc-400 mb-2 block">Folder Name *</label>
+              <label className={`text-xs font-medium ${pt('text-slate-500','text-zinc-400')} mb-2 block`}>Folder Name *</label>
               <Input
                 placeholder="e.g., Acme Corp Orders"
                 value={folderFormData.name}
                 onChange={(e) => setFolderFormData(prev => ({ ...prev, name: e.target.value }))}
-                className="bg-zinc-800 border-zinc-700 focus:border-cyan-500/50"
+                className={`${pt('bg-slate-200','bg-zinc-800')} ${pt('border-slate-300','border-zinc-700')} focus:border-cyan-500/50`}
               />
             </div>
 
             {/* Description */}
             <div>
-              <label className="text-xs font-medium text-zinc-400 mb-2 block">Description</label>
+              <label className={`text-xs font-medium ${pt('text-slate-500','text-zinc-400')} mb-2 block`}>Description</label>
               <Textarea
                 placeholder="Describe what this folder contains..."
                 value={folderFormData.description}
                 onChange={(e) => setFolderFormData(prev => ({ ...prev, description: e.target.value }))}
-                className="bg-zinc-800 border-zinc-700 focus:border-cyan-500/50 min-h-[80px]"
+                className={`${pt('bg-slate-200','bg-zinc-800')} ${pt('border-slate-300','border-zinc-700')} focus:border-cyan-500/50 min-h-[80px]`}
               />
             </div>
 
             {/* Client Info */}
-            <div className="bg-zinc-800/50 rounded-xl p-4 border border-zinc-700/50">
-              <h4 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
+            <div className={`${pt('bg-slate-100','bg-zinc-800/50')} rounded-xl p-4 border ${pt('border-slate-200','border-zinc-700/50')}`}>
+              <h4 className={`text-sm font-medium ${pt('text-slate-900','text-white')} mb-3 flex items-center gap-2`}>
                 <User className="w-4 h-4 text-cyan-500" />
                 Client Information
               </h4>
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs text-zinc-500 mb-1 block">Client Name</label>
+                  <label className={`text-xs ${pt('text-slate-400','text-zinc-500')} mb-1 block`}>Client Name</label>
                   <Input
                     placeholder="John Smith"
                     value={folderFormData.client_name}
                     onChange={(e) => setFolderFormData(prev => ({ ...prev, client_name: e.target.value }))}
-                    className="bg-zinc-800 border-zinc-700"
+                    className={`${pt('bg-slate-200','bg-zinc-800')} ${pt('border-slate-300','border-zinc-700')}`}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs text-zinc-500 mb-1 block">Email</label>
+                    <label className={`text-xs ${pt('text-slate-400','text-zinc-500')} mb-1 block`}>Email</label>
                     <Input
                       type="email"
                       placeholder="client@example.com"
                       value={folderFormData.client_email}
                       onChange={(e) => setFolderFormData(prev => ({ ...prev, client_email: e.target.value }))}
-                      className="bg-zinc-800 border-zinc-700"
+                      className={`${pt('bg-slate-200','bg-zinc-800')} ${pt('border-slate-300','border-zinc-700')}`}
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-zinc-500 mb-1 block">Company</label>
+                    <label className={`text-xs ${pt('text-slate-400','text-zinc-500')} mb-1 block`}>Company</label>
                     <Input
                       placeholder="Acme Corp"
                       value={folderFormData.client_company}
                       onChange={(e) => setFolderFormData(prev => ({ ...prev, client_company: e.target.value }))}
-                      className="bg-zinc-800 border-zinc-700"
+                      className={`${pt('bg-slate-200','bg-zinc-800')} ${pt('border-slate-300','border-zinc-700')}`}
                     />
                   </div>
                 </div>
@@ -4362,7 +4390,7 @@ export default function Projects() {
 
             {/* Folder Color */}
             <div>
-              <label className="text-xs font-medium text-zinc-400 mb-3 block">Folder Color</label>
+              <label className={`text-xs font-medium ${pt('text-slate-500','text-zinc-400')} mb-3 block`}>Folder Color</label>
               <div className="flex gap-2">
                 {FOLDER_COLORS.map(color => (
                   <button
@@ -4370,7 +4398,7 @@ export default function Projects() {
                     onClick={() => setFolderFormData(prev => ({ ...prev, cover_color: color.id }))}
                     className={`w-8 h-8 rounded-xl bg-gradient-to-br ${color.gradient} transition-all ${
                       folderFormData.cover_color === color.id
-                        ? "ring-2 ring-white ring-offset-2 ring-offset-zinc-900 scale-110"
+                        ? `ring-2 ring-white ring-offset-2 ${pt('ring-offset-white','ring-offset-zinc-900')} scale-110`
                         : ""
                     }`}
                   />
@@ -4379,7 +4407,7 @@ export default function Projects() {
             </div>
 
             {/* Actions */}
-            <div className="flex gap-3 pt-4 border-t border-zinc-800">
+            <div className={`flex gap-3 pt-4 border-t ${pt('border-slate-200','border-zinc-800')}`}>
               <Button
                 variant="outline"
                 onClick={() => {
@@ -4387,13 +4415,13 @@ export default function Projects() {
                   setFolderFormData(emptyFolder);
                   setEditingFolder(null);
                 }}
-                className="flex-1 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                className={`flex-1 ${pt('border-slate-300','border-zinc-700')} ${pt('text-slate-600','text-zinc-300')} ${pt('hover:bg-slate-100','hover:bg-zinc-800')}`}
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleSaveFolder}
-                className="flex-1 bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white"
+                className={`flex-1 bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 text-white`}
               >
                 {editingFolder ? "Save Changes" : "Create Folder"}
               </Button>
@@ -4401,6 +4429,6 @@ export default function Projects() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </ProjectsPageTransition>
   );
 }

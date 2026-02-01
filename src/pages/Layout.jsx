@@ -2571,6 +2571,132 @@ export default function Layout({ children, currentPageName }) {
           [data-sync-light] .animate-in { border-color: #E2E8F0 !important; }
 
           /* ══════════════════════════════════════════════════════
+             PROJECTS LIGHT MODE OVERRIDES
+             ══════════════════════════════════════════════════════ */
+          html[data-projects-light] body { background: #F8FAFC !important; color: #0F172A !important; }
+          html[data-projects-light] .min-h-screen.bg-black { background: #F8FAFC !important; }
+          [data-projects-light] { background: #F8FAFC !important; color: #0F172A !important; }
+
+          [data-projects-light] .bg-white,
+          [data-projects-light] .bg-white\\/95,[data-projects-light] .bg-white\\/90,[data-projects-light] .bg-white\\/80,
+          [data-projects-light] .bg-white\\/70,[data-projects-light] .bg-white\\/60 { background: #FFFFFF !important; border-color: #E2E8F0 !important; }
+          [data-projects-light] .bg-slate-50 { background: #F8FAFC !important; }
+          [data-projects-light] .bg-slate-100 { background: #F1F5F9 !important; }
+
+          [data-projects-light] .bg-black { background: #F8FAFC !important; }
+          [data-projects-light] .bg-zinc-950 { background: #F8FAFC !important; }
+          [data-projects-light] .bg-zinc-900 { background: #FFFFFF !important; }
+          [data-projects-light] .bg-zinc-900\\/30 { background: #FFFFFF !important; border-color: #E2E8F0 !important; box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important; }
+          [data-projects-light] .bg-zinc-900\\/50 { background: #FFFFFF !important; border-color: #E2E8F0 !important; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04) !important; }
+          [data-projects-light] .bg-zinc-900\\/60 { background: #FFFFFF !important; box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important; }
+          [data-projects-light] .bg-zinc-800 { background: #E2E8F0 !important; }
+          [data-projects-light] .bg-zinc-800\\/60 { background: #F1F5F9 !important; }
+          [data-projects-light] .bg-zinc-800\\/50 { background: #F1F5F9 !important; }
+          [data-projects-light] .bg-zinc-800\\/40 { background: #F1F5F9 !important; }
+          [data-projects-light] .bg-zinc-800\\/30 { background: #F8FAFC !important; }
+          [data-projects-light] .bg-zinc-800\\/80 { background: #F1F5F9 !important; }
+          [data-projects-light] .bg-zinc-700\\/30 { background: #F1F5F9 !important; }
+          [data-projects-light] .bg-zinc-700\\/50 { background: #E2E8F0 !important; }
+          [data-projects-light] .bg-black\\/80 { background: rgba(248,250,252,0.95) !important; }
+          [data-projects-light] .bg-black\\/60 { background: rgba(248,250,252,0.9) !important; }
+          [data-projects-light] .bg-black\\/90 { background: rgba(248,250,252,0.95) !important; }
+          [data-projects-light] .bg-black\\/95 { background: rgba(255,255,255,0.97) !important; border-color: #E2E8F0 !important; }
+          [data-projects-light] .bg-black\\/40 { background: rgba(248,250,252,0.8) !important; }
+
+          [data-projects-light] .text-white { color: #0F172A !important; }
+          [data-projects-light] .text-white\\/90 { color: #1E293B !important; }
+          [data-projects-light] .text-white\\/80 { color: #334155 !important; }
+          [data-projects-light] .text-white\\/70 { color: #475569 !important; }
+          [data-projects-light] .text-white\\/60 { color: #64748B !important; }
+          [data-projects-light] .text-zinc-100 { color: #1E293B !important; }
+          [data-projects-light] .text-zinc-200 { color: #334155 !important; }
+          [data-projects-light] .text-zinc-300 { color: #475569 !important; }
+          [data-projects-light] .text-zinc-400 { color: #64748B !important; }
+          [data-projects-light] .text-zinc-500 { color: #94A3B8 !important; }
+          [data-projects-light] .text-zinc-600 { color: #94A3B8 !important; }
+
+          [data-projects-light] .border-zinc-700 { border-color: #CBD5E1 !important; }
+          [data-projects-light] .border-zinc-700\\/40 { border-color: #E2E8F0 !important; }
+          [data-projects-light] .border-zinc-700\\/50 { border-color: #E2E8F0 !important; }
+          [data-projects-light] .border-zinc-700\\/60 { border-color: #CBD5E1 !important; }
+          [data-projects-light] .border-zinc-800 { border-color: #E2E8F0 !important; }
+          [data-projects-light] .border-zinc-800\\/60 { border-color: #E2E8F0 !important; }
+          [data-projects-light] .border-zinc-600 { border-color: #CBD5E1 !important; }
+          [data-projects-light] .border-zinc-600\\/30 { border-color: #E2E8F0 !important; }
+          [data-projects-light] .border-white\\/10 { border-color: #E2E8F0 !important; }
+          [data-projects-light] .border-white\\/20 { border-color: #CBD5E1 !important; }
+          [data-projects-light] .border-white\\/5 { border-color: #F1F5F9 !important; }
+          [data-projects-light] .divide-zinc-800 > * + * { border-color: #E2E8F0 !important; }
+
+          [data-projects-light] .text-cyan-400 { color: #0891B2 !important; }
+          [data-projects-light] .text-cyan-500 { color: #0E7490 !important; }
+          [data-projects-light] .bg-cyan-500 { background: #06B6D4 !important; }
+          [data-projects-light] .bg-cyan-600 { background: #0891B2 !important; }
+          [data-projects-light] .bg-cyan-500\\/10 { background: rgba(6,182,212,0.12) !important; }
+          [data-projects-light] .bg-cyan-500\\/20 { background: rgba(6,182,212,0.15) !important; }
+          [data-projects-light] .bg-cyan-900\\/5 { background: rgba(6,182,212,0.04) !important; }
+          [data-projects-light] .bg-cyan-950\\/40 { background: rgba(6,182,212,0.06) !important; }
+          [data-projects-light] .border-cyan-500\\/20 { border-color: rgba(6,182,212,0.3) !important; }
+          [data-projects-light] .border-cyan-500\\/30 { border-color: rgba(6,182,212,0.35) !important; }
+          [data-projects-light] .border-cyan-500\\/40 { border-color: rgba(6,182,212,0.45) !important; }
+
+          [data-projects-light] .shadow-lg { box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04) !important; }
+          [data-projects-light] .shadow-xl { box-shadow: 0 8px 24px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.04) !important; }
+          [data-projects-light] .ring-zinc-700 { --tw-ring-color: #CBD5E1 !important; }
+          [data-projects-light] .ring-zinc-800 { --tw-ring-color: #E2E8F0 !important; }
+          [data-projects-light] .ring-white\\/10 { --tw-ring-color: rgba(0,0,0,0.08) !important; }
+
+          [data-projects-light] input, [data-projects-light] textarea, [data-projects-light] select {
+            background: #FFFFFF !important; color: #0F172A !important; border-color: #CBD5E1 !important;
+          }
+          [data-projects-light] input:focus, [data-projects-light] textarea:focus, [data-projects-light] select:focus {
+            border-color: #06B6D4 !important; --tw-ring-color: rgba(6,182,212,0.3) !important;
+          }
+          [data-projects-light] input::placeholder, [data-projects-light] textarea::placeholder { color: #94A3B8 !important; }
+
+          [data-projects-light] .hover\\:bg-white\\/5:hover { background: rgba(0,0,0,0.04) !important; }
+          [data-projects-light] .hover\\:bg-white\\/10:hover { background: rgba(0,0,0,0.06) !important; }
+          [data-projects-light] .hover\\:bg-white\\/20:hover { background: rgba(0,0,0,0.08) !important; }
+          [data-projects-light] .hover\\:bg-zinc-800:hover { background: #F1F5F9 !important; }
+          [data-projects-light] .hover\\:bg-zinc-800\\/50:hover { background: #F1F5F9 !important; }
+          [data-projects-light] .hover\\:bg-zinc-700:hover { background: #E2E8F0 !important; }
+          [data-projects-light] .hover\\:border-zinc-700\\/60:hover { border-color: #CBD5E1 !important; }
+          [data-projects-light] .hover\\:border-zinc-600:hover { border-color: #94A3B8 !important; }
+          [data-projects-light] .hover\\:border-zinc-600\\/60:hover { border-color: #CBD5E1 !important; }
+          [data-projects-light] .hover\\:text-white:hover { color: #0F172A !important; }
+          [data-projects-light] .focus-within\\:border-cyan-500\\/40:focus-within { border-color: rgba(6,182,212,0.5) !important; }
+
+          [data-projects-light] .glass-card { background: #FFFFFF !important; border: 1px solid #E2E8F0 !important; box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important; }
+          [data-projects-light] .bg-card { background: #FFFFFF !important; }
+          [data-projects-light] .text-card-foreground { color: #0F172A !important; }
+          [data-projects-light] .text-muted-foreground { color: #64748B !important; }
+          [data-projects-light] .border { border-color: #E2E8F0 !important; }
+          [data-projects-light] .bg-muted { background: #F1F5F9 !important; }
+          [data-projects-light] .bg-popover { background: #FFFFFF !important; }
+          [data-projects-light] .text-popover-foreground { color: #0F172A !important; }
+          [data-projects-light] .bg-accent { background: #F1F5F9 !important; }
+          [data-projects-light] .bg-primary { background: #06B6D4 !important; }
+          [data-projects-light] .text-primary-foreground { color: #FFFFFF !important; }
+          [data-projects-light] .bg-secondary { background: #F1F5F9 !important; }
+          [data-projects-light] .text-secondary-foreground { color: #0F172A !important; }
+
+          html[data-projects-light] .sidebar-shell {
+            background: #FFFFFF !important; border-color: #E2E8F0 !important;
+            box-shadow: 1px 0 3px rgba(0,0,0,0.05) !important;
+          }
+          html[data-projects-light] .sidebar-shell * { border-color: #E2E8F0 !important; }
+          html[data-projects-light] .sidebar-shell .text-white { color: #334155 !important; }
+          html[data-projects-light] .sidebar-shell .text-zinc-400,
+          html[data-projects-light] .sidebar-shell .text-zinc-500 { color: #64748B !important; }
+          html[data-projects-light] .sidebar-shell .bg-white\\/5,
+          html[data-projects-light] .sidebar-shell .bg-white\\/10 { background: rgba(0,0,0,0.04) !important; }
+          html[data-projects-light] .sidebar-shell svg { color: #475569 !important; }
+          [data-projects-light] .bg-gradient-to-t.from-black { background: #FFFFFF !important; }
+          [data-projects-light] .bg-gray-900 { background: #FFFFFF !important; border-color: #E2E8F0 !important; }
+          [data-projects-light] .active\\:bg-white\\/10:active { background: rgba(0,0,0,0.06) !important; }
+          [data-projects-light] .animate-in { border-color: #E2E8F0 !important; }
+
+          /* ══════════════════════════════════════════════════════
              GROWTH LIGHT MODE OVERRIDES
              ══════════════════════════════════════════════════════ */
           html[data-growth-light] body { background: #F8FAFC !important; color: #0F172A !important; }
