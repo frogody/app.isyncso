@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useCRMTheme } from '@/contexts/CRMThemeContext';
+import { CRMPageTransition } from '@/components/crm/ui';
 import anime from '@/lib/anime-wrapper';
 const animate = anime;
 const stagger = anime.stagger;
@@ -31,7 +33,7 @@ import {
   ArrowDownRight, Minus, PieChart, LineChart, Send, PhoneCall, Video,
   UserPlus, Settings2, Zap, Sparkles, Award, AlertCircle, ArrowRight,
   Table2, RefreshCw, Copy, Link2, Linkedin, Twitter, SlidersHorizontal,
-  ChevronLeft, Home, Layers, GripVertical, Hash, Loader2
+  ChevronLeft, Home, Layers, GripVertical, Hash, Loader2, Sun, Moon
 } from "lucide-react";
 import { enrichContact, mapEnrichedDataToContact } from "@/components/integrations/ExploriumAPI";
 import { QuickAddContactModal } from "@/components/crm/QuickAddContactModal";
@@ -114,7 +116,9 @@ const emptyContact = {
 };
 
 // Lead Score Component - using cyan theme
-function LeadScoreIndicator({ score, size = "md" }) {
+function LeadScoreIndicator({ score, size = "md", crt: crtProp }) {
+  const themeCtx = useCRMTheme();
+  const crt = crtProp || themeCtx.crt;
   const getScoreColor = (s) => {
     if (s >= 80) return { bg: "bg-cyan-400", text: "text-cyan-400", label: "Hot" };
     if (s >= 60) return { bg: "bg-cyan-500/80", text: "text-cyan-400/80", label: "Warm" };
@@ -135,7 +139,7 @@ function LeadScoreIndicator({ score, size = "md" }) {
     <div className="flex items-center gap-1.5">
       <div className={`relative ${s.container}`}>
         <svg className="w-full h-full transform -rotate-90">
-          <circle cx={s.cx} cy={s.cy} r={s.r} stroke="currentColor" strokeWidth={s.stroke} fill="transparent" className="text-zinc-800" />
+          <circle cx={s.cx} cy={s.cy} r={s.r} stroke="currentColor" strokeWidth={s.stroke} fill="transparent" className={crt('text-slate-200', 'text-zinc-800')} />
           <circle
             cx={s.cx} cy={s.cy} r={s.r} stroke="currentColor" strokeWidth={s.stroke} fill="transparent"
             strokeDasharray={`${(score / 100) * s.circumference} ${s.circumference}`}
@@ -150,7 +154,9 @@ function LeadScoreIndicator({ score, size = "md" }) {
 }
 
 // Contact Card for Grid View
-function ContactCard({ contact, isSelected, onClick, onToggleStar, onStageChange }) {
+function ContactCard({ contact, isSelected, onClick, onToggleStar, onStageChange, crt: crtProp }) {
+  const themeCtx = useCRMTheme();
+  const crt = crtProp || themeCtx.crt;
   const stageConfig = PIPELINE_STAGES.find(s => s.id === contact.stage) || PIPELINE_STAGES[0];
 
   return (
@@ -159,30 +165,30 @@ function ContactCard({ contact, isSelected, onClick, onToggleStar, onStageChange
       animate={{ opacity: 1, y: 0 }}
 
       onClick={onClick}
-      className={`bg-zinc-900/50 border rounded-2xl p-4 cursor-pointer transition-all group ${
-        isSelected ? "border-cyan-500/50 ring-1 ring-cyan-500/30" : "border-zinc-800/60 hover:border-zinc-700"
+      className={`${crt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border')} rounded-2xl p-4 cursor-pointer transition-all group ${
+        isSelected ? "border-cyan-500/50 ring-1 ring-cyan-500/30" : `${crt('border-slate-200 hover:border-slate-300', 'border-zinc-800/60 hover:border-zinc-700')}`
       }`}
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500/20 to-cyan-400/10 flex items-center justify-center flex-shrink-0 ring-2 ring-zinc-800">
+          <div className={`w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500/20 to-cyan-400/10 flex items-center justify-center flex-shrink-0 ring-2 ${crt('ring-slate-200', 'ring-zinc-800')}`}>
             <span className="text-cyan-400/80 font-semibold">
               {contact.name?.charAt(0)?.toUpperCase() || "?"}
             </span>
           </div>
           <div>
-            <h4 className="font-medium text-white group-hover:text-cyan-400 transition-colors">
+            <h4 className={`font-medium ${crt('text-slate-900', 'text-white')} group-hover:text-cyan-400 transition-colors`}>
               {contact.name || "Unnamed Contact"}
             </h4>
             {contact.job_title && (
-              <p className="text-xs text-zinc-500">{contact.job_title}</p>
+              <p className={`text-xs ${crt('text-slate-400', 'text-zinc-500')}`}>{contact.job_title}</p>
             )}
           </div>
         </div>
         <button
           onClick={(e) => { e.stopPropagation(); onToggleStar(contact); }}
-          className="text-zinc-600 hover:text-yellow-400 transition-colors"
+          className={`${crt('text-slate-500', 'text-zinc-600')} hover:text-yellow-400 transition-colors`}
         >
           {contact.is_starred ? (
             <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
@@ -194,8 +200,8 @@ function ContactCard({ contact, isSelected, onClick, onToggleStar, onStageChange
 
       {/* Company */}
       {contact.company_name && (
-        <div className="flex items-center gap-2 mb-3 text-sm text-zinc-400">
-          <Building2 className="w-4 h-4 text-zinc-500" />
+        <div className={`flex items-center gap-2 mb-3 text-sm ${crt('text-slate-500', 'text-zinc-400')}`}>
+          <Building2 className={`w-4 h-4 ${crt('text-slate-400', 'text-zinc-500')}`} />
           <span className="truncate">{contact.company_name}</span>
         </div>
       )}
@@ -205,24 +211,24 @@ function ContactCard({ contact, isSelected, onClick, onToggleStar, onStageChange
         <Badge variant="outline" className={`${stageConfig.bgColor} ${stageConfig.textColor} ${stageConfig.borderColor}`}>
           {stageConfig.label}
         </Badge>
-        <LeadScoreIndicator score={contact.score || 50} />
+        <LeadScoreIndicator score={contact.score || 50} crt={crt} />
       </div>
 
       {/* Deal Value */}
       {contact.deal_value && (
         <div className="flex items-center justify-between text-sm mb-3">
-          <span className="text-zinc-500">Deal Value</span>
+          <span className={crt('text-slate-400', 'text-zinc-500')}>Deal Value</span>
           <span className="font-semibold text-cyan-400/80">€{parseFloat(contact.deal_value).toLocaleString()}</span>
         </div>
       )}
 
       {/* Footer */}
-      <div className="flex items-center justify-between pt-3 border-t border-zinc-800">
+      <div className={`flex items-center justify-between pt-3 border-t ${crt('border-slate-200', 'border-zinc-800')}`}>
         <div className="flex items-center gap-2">
           {contact.email && (
             <button
               onClick={(e) => { e.stopPropagation(); window.location.href = `mailto:${contact.email}`; }}
-              className="p-1.5 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors"
+              className={`p-1.5 rounded-lg ${crt('bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-200', 'bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700')} transition-colors`}
             >
               <Mail className="w-3.5 h-3.5" />
             </button>
@@ -230,7 +236,7 @@ function ContactCard({ contact, isSelected, onClick, onToggleStar, onStageChange
           {contact.phone && (
             <button
               onClick={(e) => { e.stopPropagation(); window.location.href = `tel:${contact.phone}`; }}
-              className="p-1.5 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors"
+              className={`p-1.5 rounded-lg ${crt('bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-200', 'bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700')} transition-colors`}
             >
               <Phone className="w-3.5 h-3.5" />
             </button>
@@ -238,14 +244,14 @@ function ContactCard({ contact, isSelected, onClick, onToggleStar, onStageChange
           {contact.linkedin_url && (
             <button
               onClick={(e) => { e.stopPropagation(); window.open(contact.linkedin_url, '_blank'); }}
-              className="p-1.5 rounded-lg bg-zinc-800 text-zinc-400 hover:text-cyan-400 hover:bg-zinc-700 transition-colors"
+              className={`p-1.5 rounded-lg ${crt('bg-slate-100 text-slate-500 hover:text-cyan-400 hover:bg-slate-200', 'bg-zinc-800 text-zinc-400 hover:text-cyan-400 hover:bg-zinc-700')} transition-colors`}
             >
               <Linkedin className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
         {contact.last_contacted && (
-          <span className="text-xs text-zinc-500">
+          <span className={`text-xs ${crt('text-slate-400', 'text-zinc-500')}`}>
             {new Date(contact.last_contacted).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
           </span>
         )}
@@ -255,7 +261,9 @@ function ContactCard({ contact, isSelected, onClick, onToggleStar, onStageChange
 }
 
 // Pipeline Kanban Card
-function PipelineCard({ contact, index, onEdit, onDelete }) {
+function PipelineCard({ contact, index, onEdit, onDelete, crt: crtProp }) {
+  const themeCtx = useCRMTheme();
+  const crt = crtProp || themeCtx.crt;
   return (
     <Draggable draggableId={contact.id} index={index}>
       {(provided, snapshot) => (
@@ -264,16 +272,16 @@ function PipelineCard({ contact, index, onEdit, onDelete }) {
           {...provided.draggableProps}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`group bg-zinc-900/80 rounded-xl border transition-all ${
+          className={`group ${crt('bg-white shadow-sm', 'bg-zinc-900/80')} rounded-xl border transition-all ${
             snapshot.isDragging
               ? "shadow-xl shadow-cyan-500/10 border-cyan-500/40"
-              : "border-zinc-800/60 hover:border-zinc-700"
+              : `${crt('border-slate-200 hover:border-slate-300', 'border-zinc-800/60 hover:border-zinc-700')}`
           }`}
         >
           <div className="p-3">
             <div className="flex items-start justify-between gap-2 mb-2">
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                <div {...provided.dragHandleProps} className="cursor-grab text-zinc-600 hover:text-zinc-400">
+                <div {...provided.dragHandleProps} className={`cursor-grab ${crt('text-slate-500 hover:text-slate-400', 'text-zinc-600 hover:text-zinc-400')}`}>
                   <GripVertical className="w-4 h-4" />
                 </div>
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500/15 to-cyan-400/10 flex items-center justify-center flex-shrink-0">
@@ -282,23 +290,23 @@ function PipelineCard({ contact, index, onEdit, onDelete }) {
                   </span>
                 </div>
                 <div className="min-w-0">
-                  <h4 className="text-sm font-medium text-white truncate">{contact.name}</h4>
+                  <h4 className={`text-sm font-medium ${crt('text-slate-900', 'text-white')} truncate`}>{contact.name}</h4>
                   {contact.company_name && (
-                    <p className="text-xs text-zinc-500 truncate">{contact.company_name}</p>
+                    <p className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} truncate`}>{contact.company_name}</p>
                   )}
                 </div>
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100">
-                    <MoreVertical className="w-3.5 h-3.5 text-zinc-400" />
+                    <MoreVertical className={`w-3.5 h-3.5 ${crt('text-slate-500', 'text-zinc-400')}`} />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
-                  <DropdownMenuItem onClick={() => onEdit(contact)} className="text-zinc-300">
+                <DropdownMenuContent align="end" className={crt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')}>
+                  <DropdownMenuItem onClick={() => onEdit(contact)} className={crt('text-slate-600', 'text-zinc-300')}>
                     <Edit2 className="w-4 h-4 mr-2" /> Edit
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-zinc-800" />
+                  <DropdownMenuSeparator className={crt('bg-slate-200', 'bg-zinc-800')} />
                   <DropdownMenuItem onClick={() => onDelete(contact.id)} className="text-red-400">
                     <Trash2 className="w-4 h-4 mr-2" /> Delete
                   </DropdownMenuItem>
@@ -315,10 +323,10 @@ function PipelineCard({ contact, index, onEdit, onDelete }) {
 
             <div className="flex items-center justify-between ml-6">
               <div className="flex items-center gap-1.5">
-                {contact.email && <Mail className="w-3 h-3 text-zinc-600" />}
-                {contact.phone && <Phone className="w-3 h-3 text-zinc-600" />}
+                {contact.email && <Mail className={`w-3 h-3 ${crt('text-slate-500', 'text-zinc-600')}`} />}
+                {contact.phone && <Phone className={`w-3 h-3 ${crt('text-slate-500', 'text-zinc-600')}`} />}
               </div>
-              <LeadScoreIndicator score={contact.score || 50} />
+              <LeadScoreIndicator score={contact.score || 50} crt={crt} />
             </div>
           </div>
         </motion.div>
@@ -328,7 +336,9 @@ function PipelineCard({ contact, index, onEdit, onDelete }) {
 }
 
 // Pipeline Column
-function PipelineColumn({ stage, contacts, onAddContact, onEdit, onDelete }) {
+function PipelineColumn({ stage, contacts, onAddContact, onEdit, onDelete, crt: crtProp }) {
+  const themeCtx = useCRMTheme();
+  const crt = crtProp || themeCtx.crt;
   const totalValue = contacts.reduce((sum, c) => sum + (parseFloat(c.deal_value) || 0), 0);
 
   return (
@@ -338,20 +348,20 @@ function PipelineColumn({ stage, contacts, onAddContact, onEdit, onDelete }) {
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${stage.color}`} />
-            <span className="font-medium text-white text-sm">{stage.label}</span>
-            <span className="text-xs text-zinc-500 bg-zinc-800 px-1.5 py-0.5 rounded">{contacts.length}</span>
+            <span className={`font-medium ${crt('text-slate-900', 'text-white')} text-sm`}>{stage.label}</span>
+            <span className={`text-xs ${crt('text-slate-400 bg-slate-100', 'text-zinc-500 bg-zinc-800')} px-1.5 py-0.5 rounded`}>{contacts.length}</span>
           </div>
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6 text-zinc-500 hover:text-white"
+            className={`h-6 w-6 ${crt('text-slate-400 hover:text-slate-900', 'text-zinc-500 hover:text-white')}`}
             onClick={() => onAddContact(stage.id)}
           >
             <Plus className="w-4 h-4" />
           </Button>
         </div>
         {totalValue > 0 && (
-          <div className="text-xs text-zinc-500">€{totalValue.toLocaleString()} total</div>
+          <div className={`text-xs ${crt('text-slate-400', 'text-zinc-500')}`}>€{totalValue.toLocaleString()} total</div>
         )}
       </div>
 
@@ -375,6 +385,7 @@ function PipelineColumn({ stage, contacts, onAddContact, onEdit, onDelete }) {
                   index={index}
                   onEdit={onEdit}
                   onDelete={onDelete}
+                  crt={crt}
                 />
               ))}
             </AnimatePresence>
@@ -387,14 +398,16 @@ function PipelineColumn({ stage, contacts, onAddContact, onEdit, onDelete }) {
 }
 
 // Contact Detail Sheet
-function ContactDetailSheet({ contact, isOpen, onClose, onEdit, onDelete, activities, deals }) {
+function ContactDetailSheet({ contact, isOpen, onClose, onEdit, onDelete, activities, deals, crt: crtProp }) {
+  const themeCtx = useCRMTheme();
+  const crt = crtProp || themeCtx.crt;
   const stageConfig = PIPELINE_STAGES.find(s => s.id === contact?.stage) || PIPELINE_STAGES[0];
 
   if (!contact) return null;
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="w-full sm:max-w-xl bg-zinc-900 border-zinc-800/60 overflow-y-auto">
+      <SheetContent className={`w-full sm:max-w-xl ${crt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800/60')} overflow-y-auto`}>
         <SheetHeader className="mb-6">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
@@ -404,10 +417,10 @@ function ContactDetailSheet({ contact, isOpen, onClose, onEdit, onDelete, activi
                 </span>
               </div>
               <div>
-                <SheetTitle className="text-white text-xl">{contact.name}</SheetTitle>
-                {contact.job_title && <p className="text-zinc-400">{contact.job_title}</p>}
+                <SheetTitle className={`${crt('text-slate-900', 'text-white')} text-xl`}>{contact.name}</SheetTitle>
+                {contact.job_title && <p className={crt('text-slate-500', 'text-zinc-400')}>{contact.job_title}</p>}
                 {contact.company_name && (
-                  <p className="text-zinc-500 text-sm flex items-center gap-1">
+                  <p className={`${crt('text-slate-400', 'text-zinc-500')} text-sm flex items-center gap-1`}>
                     <Building2 className="w-3 h-3" /> {contact.company_name}
                   </p>
                 )}
@@ -418,19 +431,19 @@ function ContactDetailSheet({ contact, isOpen, onClose, onEdit, onDelete, activi
 
         {/* Quick Stats */}
         <div className="grid grid-cols-3 gap-3 mb-6">
-          <div className="p-3 bg-zinc-800/50 rounded-lg text-center">
-            <div className="text-xs text-zinc-500 mb-1">Stage</div>
+          <div className={`p-3 ${crt('bg-slate-50', 'bg-zinc-800/50')} rounded-lg text-center`}>
+            <div className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1`}>Stage</div>
             <Badge variant="outline" className={`${stageConfig.bgColor} ${stageConfig.textColor} ${stageConfig.borderColor}`}>
               {stageConfig.label}
             </Badge>
           </div>
-          <div className="p-3 bg-zinc-800/50 rounded-lg text-center">
-            <div className="text-xs text-zinc-500 mb-1">Score</div>
-            <LeadScoreIndicator score={contact.score || 50} />
+          <div className={`p-3 ${crt('bg-slate-50', 'bg-zinc-800/50')} rounded-lg text-center`}>
+            <div className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1`}>Score</div>
+            <LeadScoreIndicator score={contact.score || 50} crt={crt} />
           </div>
-          <div className="p-3 bg-zinc-800/50 rounded-lg text-center">
-            <div className="text-xs text-zinc-500 mb-1">Deal Value</div>
-            <div className="text-lg font-bold text-white">
+          <div className={`p-3 ${crt('bg-slate-50', 'bg-zinc-800/50')} rounded-lg text-center`}>
+            <div className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1`}>Deal Value</div>
+            <div className={`text-lg font-bold ${crt('text-slate-900', 'text-white')}`}>
               €{parseFloat(contact.deal_value || 0).toLocaleString()}
             </div>
           </div>
@@ -448,20 +461,20 @@ function ContactDetailSheet({ contact, isOpen, onClose, onEdit, onDelete, activi
             </Button>
           )}
           {contact.phone && (
-            <Button size="sm" variant="outline" className="border-zinc-700" onClick={() => window.location.href = `tel:${contact.phone}`}>
+            <Button size="sm" variant="outline" className={crt('border-slate-300', 'border-zinc-700')} onClick={() => window.location.href = `tel:${contact.phone}`}>
               <Phone className="w-4 h-4 mr-1" /> Call
             </Button>
           )}
-          <Button size="sm" variant="outline" className="border-zinc-700">
+          <Button size="sm" variant="outline" className={crt('border-slate-300', 'border-zinc-700')}>
             <Video className="w-4 h-4 mr-1" /> Meet
           </Button>
-          <Button size="sm" variant="outline" className="border-zinc-700" onClick={() => onEdit(contact)}>
+          <Button size="sm" variant="outline" className={crt('border-slate-300', 'border-zinc-700')} onClick={() => onEdit(contact)}>
             <Edit2 className="w-4 h-4 mr-1" /> Edit
           </Button>
         </div>
 
         <Tabs defaultValue="details" className="w-full">
-          <TabsList className="bg-zinc-800/50 mb-4 w-full">
+          <TabsList className={`${crt('bg-slate-50', 'bg-zinc-800/50')} mb-4 w-full`}>
             <TabsTrigger value="details" className="flex-1">Details</TabsTrigger>
             <TabsTrigger value="activity" className="flex-1">Activity</TabsTrigger>
             <TabsTrigger value="deals" className="flex-1">Deals</TabsTrigger>
@@ -471,50 +484,50 @@ function ContactDetailSheet({ contact, isOpen, onClose, onEdit, onDelete, activi
           <TabsContent value="details" className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               {contact.email && (
-                <div className="p-3 bg-zinc-800/30 rounded-lg">
-                  <div className="text-xs text-zinc-500 mb-1">Email</div>
-                  <div className="text-sm text-white flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-zinc-500" />
+                <div className={`p-3 ${crt('bg-slate-50', 'bg-zinc-800/30')} rounded-lg`}>
+                  <div className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1`}>Email</div>
+                  <div className={`text-sm ${crt('text-slate-900', 'text-white')} flex items-center gap-2`}>
+                    <Mail className={`w-4 h-4 ${crt('text-slate-400', 'text-zinc-500')}`} />
                     <span className="truncate">{contact.email}</span>
                   </div>
                 </div>
               )}
               {contact.phone && (
-                <div className="p-3 bg-zinc-800/30 rounded-lg">
-                  <div className="text-xs text-zinc-500 mb-1">Phone</div>
-                  <div className="text-sm text-white flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-zinc-500" />
+                <div className={`p-3 ${crt('bg-slate-50', 'bg-zinc-800/30')} rounded-lg`}>
+                  <div className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1`}>Phone</div>
+                  <div className={`text-sm ${crt('text-slate-900', 'text-white')} flex items-center gap-2`}>
+                    <Phone className={`w-4 h-4 ${crt('text-slate-400', 'text-zinc-500')}`} />
                     {contact.phone}
                   </div>
                 </div>
               )}
               {contact.location && (
-                <div className="p-3 bg-zinc-800/30 rounded-lg">
-                  <div className="text-xs text-zinc-500 mb-1">Location</div>
-                  <div className="text-sm text-white flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-zinc-500" />
+                <div className={`p-3 ${crt('bg-slate-50', 'bg-zinc-800/30')} rounded-lg`}>
+                  <div className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1`}>Location</div>
+                  <div className={`text-sm ${crt('text-slate-900', 'text-white')} flex items-center gap-2`}>
+                    <MapPin className={`w-4 h-4 ${crt('text-slate-400', 'text-zinc-500')}`} />
                     {contact.location}
                   </div>
                 </div>
               )}
               {contact.industry && (
-                <div className="p-3 bg-zinc-800/30 rounded-lg">
-                  <div className="text-xs text-zinc-500 mb-1">Industry</div>
-                  <div className="text-sm text-white flex items-center gap-2">
-                    <Briefcase className="w-4 h-4 text-zinc-500" />
+                <div className={`p-3 ${crt('bg-slate-50', 'bg-zinc-800/30')} rounded-lg`}>
+                  <div className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1`}>Industry</div>
+                  <div className={`text-sm ${crt('text-slate-900', 'text-white')} flex items-center gap-2`}>
+                    <Briefcase className={`w-4 h-4 ${crt('text-slate-400', 'text-zinc-500')}`} />
                     {contact.industry}
                   </div>
                 </div>
               )}
               {contact.source && (
-                <div className="p-3 bg-zinc-800/30 rounded-lg">
-                  <div className="text-xs text-zinc-500 mb-1">Source</div>
-                  <div className="text-sm text-white capitalize">{contact.source.replace(/_/g, ' ')}</div>
+                <div className={`p-3 ${crt('bg-slate-50', 'bg-zinc-800/30')} rounded-lg`}>
+                  <div className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1`}>Source</div>
+                  <div className={`text-sm ${crt('text-slate-900', 'text-white')} capitalize`}>{contact.source.replace(/_/g, ' ')}</div>
                 </div>
               )}
               {contact.website && (
-                <div className="p-3 bg-zinc-800/30 rounded-lg">
-                  <div className="text-xs text-zinc-500 mb-1">Website</div>
+                <div className={`p-3 ${crt('bg-slate-50', 'bg-zinc-800/30')} rounded-lg`}>
+                  <div className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1`}>Website</div>
                   <a href={contact.website} target="_blank" rel="noopener noreferrer" className="text-sm text-cyan-400/80 hover:underline flex items-center gap-1">
                     <Globe className="w-4 h-4" /> Visit
                   </a>
@@ -524,16 +537,16 @@ function ContactDetailSheet({ contact, isOpen, onClose, onEdit, onDelete, activi
 
             {/* Social Links */}
             {(contact.linkedin_url || contact.twitter_url) && (
-              <div className="pt-3 border-t border-zinc-800/60">
-                <div className="text-xs text-zinc-500 mb-2">Social</div>
+              <div className={`pt-3 border-t ${crt('border-slate-200', 'border-zinc-800/60')}`}>
+                <div className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-2`}>Social</div>
                 <div className="flex gap-2">
                   {contact.linkedin_url && (
-                    <a href={contact.linkedin_url} target="_blank" rel="noopener noreferrer" className="p-2 bg-zinc-800/60 rounded-lg text-cyan-400/80 hover:bg-zinc-700">
+                    <a href={contact.linkedin_url} target="_blank" rel="noopener noreferrer" className={`p-2 ${crt('bg-slate-50 hover:bg-slate-200', 'bg-zinc-800/60 hover:bg-zinc-700')} rounded-lg text-cyan-400/80`}>
                       <Linkedin className="w-5 h-5" />
                     </a>
                   )}
                   {contact.twitter_url && (
-                    <a href={contact.twitter_url} target="_blank" rel="noopener noreferrer" className="p-2 bg-zinc-800/60 rounded-lg text-cyan-400/80 hover:bg-zinc-700">
+                    <a href={contact.twitter_url} target="_blank" rel="noopener noreferrer" className={`p-2 ${crt('bg-slate-50 hover:bg-slate-200', 'bg-zinc-800/60 hover:bg-zinc-700')} rounded-lg text-cyan-400/80`}>
                       <Twitter className="w-5 h-5" />
                     </a>
                   )}
@@ -543,11 +556,11 @@ function ContactDetailSheet({ contact, isOpen, onClose, onEdit, onDelete, activi
 
             {/* Tags */}
             {contact.tags?.length > 0 && (
-              <div className="pt-3 border-t border-zinc-800">
-                <div className="text-xs text-zinc-500 mb-2">Tags</div>
+              <div className={`pt-3 border-t ${crt('border-slate-200', 'border-zinc-800')}`}>
+                <div className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-2`}>Tags</div>
                 <div className="flex flex-wrap gap-2">
                   {contact.tags.map((tag, i) => (
-                    <Badge key={i} variant="outline" className="border-zinc-700 text-zinc-300">{tag}</Badge>
+                    <Badge key={i} variant="outline" className={crt('border-slate-300 text-slate-600', 'border-zinc-700 text-zinc-300')}>{tag}</Badge>
                   ))}
                 </div>
               </div>
@@ -558,19 +571,19 @@ function ContactDetailSheet({ contact, isOpen, onClose, onEdit, onDelete, activi
             {activities.length > 0 ? (
               <div className="space-y-3">
                 {activities.map((activity, i) => (
-                  <div key={i} className="flex items-start gap-3 p-3 bg-zinc-800/30 rounded-lg">
-                    <div className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center flex-shrink-0">
-                      <Activity className="w-4 h-4 text-zinc-400" />
+                  <div key={i} className={`flex items-start gap-3 p-3 ${crt('bg-slate-50', 'bg-zinc-800/30')} rounded-lg`}>
+                    <div className={`w-8 h-8 rounded-full ${crt('bg-slate-200', 'bg-zinc-700')} flex items-center justify-center flex-shrink-0`}>
+                      <Activity className={`w-4 h-4 ${crt('text-slate-500', 'text-zinc-400')}`} />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm text-white">{activity.description}</p>
-                      <p className="text-xs text-zinc-500 mt-1">{new Date(activity.created_date).toLocaleString()}</p>
+                      <p className={`text-sm ${crt('text-slate-900', 'text-white')}`}>{activity.description}</p>
+                      <p className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mt-1`}>{new Date(activity.created_date).toLocaleString()}</p>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-zinc-500">
+              <div className={`text-center py-8 ${crt('text-slate-400', 'text-zinc-500')}`}>
                 <Activity className="w-10 h-10 mx-auto mb-2 opacity-50" />
                 <p>No activity recorded</p>
               </div>
@@ -581,20 +594,20 @@ function ContactDetailSheet({ contact, isOpen, onClose, onEdit, onDelete, activi
             {deals.length > 0 ? (
               <div className="space-y-3">
                 {deals.map((deal, i) => (
-                  <div key={i} className="p-4 bg-zinc-800/30 rounded-lg border border-zinc-800">
+                  <div key={i} className={`p-4 ${crt('bg-slate-50 border border-slate-200', 'bg-zinc-800/30 border border-zinc-800')} rounded-lg`}>
                     <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-white">{deal.company_name || deal.title}</h4>
+                      <h4 className={`font-medium ${crt('text-slate-900', 'text-white')}`}>{deal.company_name || deal.title}</h4>
                       <span className="text-lg font-bold text-cyan-400/80">€{(deal.deal_value || 0).toLocaleString()}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="border-zinc-700 text-xs">{deal.stage}</Badge>
-                      <span className="text-xs text-zinc-500">{deal.probability}% probability</span>
+                      <Badge variant="outline" className={`${crt('border-slate-300', 'border-zinc-700')} text-xs`}>{deal.stage}</Badge>
+                      <span className={`text-xs ${crt('text-slate-400', 'text-zinc-500')}`}>{deal.probability}% probability</span>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-zinc-500">
+              <div className={`text-center py-8 ${crt('text-slate-400', 'text-zinc-500')}`}>
                 <Briefcase className="w-10 h-10 mx-auto mb-2 opacity-50" />
                 <p>No deals associated</p>
               </div>
@@ -603,11 +616,11 @@ function ContactDetailSheet({ contact, isOpen, onClose, onEdit, onDelete, activi
 
           <TabsContent value="notes">
             {contact.notes ? (
-              <div className="p-4 bg-zinc-800/30 rounded-lg">
-                <p className="text-sm text-zinc-300 whitespace-pre-wrap">{contact.notes}</p>
+              <div className={`p-4 ${crt('bg-slate-50', 'bg-zinc-800/30')} rounded-lg`}>
+                <p className={`text-sm ${crt('text-slate-600', 'text-zinc-300')} whitespace-pre-wrap`}>{contact.notes}</p>
               </div>
             ) : (
-              <div className="text-center py-8 text-zinc-500">
+              <div className={`text-center py-8 ${crt('text-slate-400', 'text-zinc-500')}`}>
                 <FileText className="w-10 h-10 mx-auto mb-2 opacity-50" />
                 <p>No notes added</p>
               </div>
@@ -620,7 +633,10 @@ function ContactDetailSheet({ contact, isOpen, onClose, onEdit, onDelete, activi
 }
 
 // Analytics Dashboard
-function CRMAnalytics({ contacts }) {
+function CRMAnalytics({ contacts, crt: crtProp }) {
+  const themeCtx = useCRMTheme();
+  const crt = crtProp || themeCtx.crt;
+  // eslint-disable-next-line no-unused-vars
   const stats = useMemo(() => {
     const byStage = {};
     PIPELINE_STAGES.forEach(s => { byStage[s.id] = { count: 0, value: 0 }; });
@@ -653,60 +669,60 @@ function CRMAnalytics({ contacts }) {
     <div className="space-y-4 sm:space-y-6 mb-6 sm:mb-8">
       {/* Quick Stats - 2x2 grid on mobile, 4 cols on desktop */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl sm:rounded-2xl p-3 sm:p-4">
+        <div className={`${crt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border border-zinc-800/60')} rounded-xl sm:rounded-2xl p-3 sm:p-4`}>
           <div className="flex items-center justify-between mb-1 sm:mb-2">
             <Users className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400/70" />
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-white">{stats.totalContacts}</div>
-          <div className="text-[10px] sm:text-xs text-zinc-500">Total Contacts</div>
+          <div className={`text-xl sm:text-2xl font-bold ${crt('text-slate-900', 'text-white')}`}>{stats.totalContacts}</div>
+          <div className={`text-[10px] sm:text-xs ${crt('text-slate-400', 'text-zinc-500')}`}>Total Contacts</div>
         </div>
 
-        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl sm:rounded-2xl p-3 sm:p-4">
+        <div className={`${crt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border border-zinc-800/60')} rounded-xl sm:rounded-2xl p-3 sm:p-4`}>
           <div className="flex items-center justify-between mb-1 sm:mb-2">
             <Euro className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400/70" />
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-white">${(stats.totalValue / 1000).toFixed(0)}k</div>
-          <div className="text-[10px] sm:text-xs text-zinc-500">Pipeline Value</div>
+          <div className={`text-xl sm:text-2xl font-bold ${crt('text-slate-900', 'text-white')}`}>${(stats.totalValue / 1000).toFixed(0)}k</div>
+          <div className={`text-[10px] sm:text-xs ${crt('text-slate-400', 'text-zinc-500')}`}>Pipeline Value</div>
         </div>
 
-        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl sm:rounded-2xl p-3 sm:p-4">
+        <div className={`${crt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border border-zinc-800/60')} rounded-xl sm:rounded-2xl p-3 sm:p-4`}>
           <div className="flex items-center justify-between mb-1 sm:mb-2">
             <Target className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400/70" />
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-white">{stats.conversionRate}%</div>
-          <div className="text-[10px] sm:text-xs text-zinc-500">Win Rate</div>
+          <div className={`text-xl sm:text-2xl font-bold ${crt('text-slate-900', 'text-white')}`}>{stats.conversionRate}%</div>
+          <div className={`text-[10px] sm:text-xs ${crt('text-slate-400', 'text-zinc-500')}`}>Win Rate</div>
         </div>
 
-        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl sm:rounded-2xl p-3 sm:p-4">
+        <div className={`${crt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border border-zinc-800/60')} rounded-xl sm:rounded-2xl p-3 sm:p-4`}>
           <div className="flex items-center justify-between mb-1 sm:mb-2">
             <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400/70" />
           </div>
-          <div className="text-xl sm:text-2xl font-bold text-white">{stats.hotLeads}</div>
-          <div className="text-[10px] sm:text-xs text-zinc-500">Hot Leads</div>
+          <div className={`text-xl sm:text-2xl font-bold ${crt('text-slate-900', 'text-white')}`}>{stats.hotLeads}</div>
+          <div className={`text-[10px] sm:text-xs ${crt('text-slate-400', 'text-zinc-500')}`}>Hot Leads</div>
         </div>
       </div>
 
       {/* Pipeline Funnel */}
-      <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl sm:rounded-2xl p-4 sm:p-6">
-        <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4">Pipeline Overview</h3>
+      <div className={`${crt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border border-zinc-800/60')} rounded-xl sm:rounded-2xl p-4 sm:p-6`}>
+        <h3 className={`text-base sm:text-lg font-semibold ${crt('text-slate-900', 'text-white')} mb-3 sm:mb-4`}>Pipeline Overview</h3>
         <div className="space-y-2 sm:space-y-3">
           {PIPELINE_STAGES.filter(s => s.id !== 'lost').map(stage => {
             const data = stats.byStage[stage.id];
             const percentage = stats.totalContacts > 0 ? (data.count / stats.totalContacts) * 100 : 0;
             return (
               <div key={stage.id} className="flex items-center gap-2 sm:gap-4">
-                <div className="w-20 sm:w-24 text-xs sm:text-sm text-zinc-400 truncate">{stage.label}</div>
-                <div className="flex-1 bg-zinc-800 rounded-full h-5 sm:h-6 relative overflow-hidden">
+                <div className={`w-20 sm:w-24 text-xs sm:text-sm ${crt('text-slate-500', 'text-zinc-400')} truncate`}>{stage.label}</div>
+                <div className={`flex-1 ${crt('bg-slate-100', 'bg-zinc-800')} rounded-full h-5 sm:h-6 relative overflow-hidden`}>
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${percentage}%` }}
                     className={`h-full ${stage.color} rounded-full`}
                   />
-                  <span className="absolute inset-0 flex items-center justify-center text-[10px] sm:text-xs font-medium text-white">
+                  <span className={`absolute inset-0 flex items-center justify-center text-[10px] sm:text-xs font-medium ${crt('text-slate-900', 'text-white')}`}>
                     {data.count} ({percentage.toFixed(0)}%)
                   </span>
                 </div>
-                <div className="w-14 sm:w-20 text-right text-xs sm:text-sm text-zinc-400">
+                <div className={`w-14 sm:w-20 text-right text-xs sm:text-sm ${crt('text-slate-500', 'text-zinc-400')}`}>
                   ${(data.value / 1000).toFixed(0)}k
                 </div>
               </div>
@@ -720,6 +736,7 @@ function CRMAnalytics({ contacts }) {
 
 // Main CRM Component
 export default function CRMContacts() {
+  const { theme, toggleTheme, crt } = useCRMTheme();
   const { user } = useUser();
   const { hasPermission } = usePermissions();
   const navigate = useNavigate();
@@ -1255,12 +1272,12 @@ export default function CRMContacts() {
   if (loading) {
     return (
       <div className="max-w-full mx-auto p-4 sm:p-6">
-        <Skeleton className="h-10 w-48 bg-zinc-800 mb-6" />
+        <Skeleton className={`h-10 w-48 ${crt('bg-slate-100', 'bg-zinc-800')} mb-6`} />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24 bg-zinc-800 rounded-xl" />)}
+          {[1, 2, 3, 4].map(i => <Skeleton key={i} className={`h-24 ${crt('bg-slate-100', 'bg-zinc-800')} rounded-xl`} />)}
         </div>
         <div className="flex gap-4 overflow-x-auto">
-          {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="w-72 h-96 bg-zinc-800 rounded-xl flex-shrink-0" />)}
+          {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className={`w-72 h-96 ${crt('bg-slate-100', 'bg-zinc-800')} rounded-xl flex-shrink-0`} />)}
         </div>
       </div>
     );
@@ -1270,36 +1287,42 @@ export default function CRMContacts() {
   const currentTypeLabel = CONTACT_TYPES.find(t => t.id === selectedContactType)?.label || 'Contacts';
 
   return (
+    <CRMPageTransition>
     <div className="max-w-full mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4 sm:mb-6">
         <div>
-          <h1 className="text-lg font-bold text-white">{currentTypeLabel}</h1>
-          <p className="text-xs text-zinc-400">
+          <h1 className={`text-lg font-bold ${crt('text-slate-900', 'text-white')}`}>{currentTypeLabel}</h1>
+          <p className={`text-xs ${crt('text-slate-500', 'text-zinc-400')}`}>
             {filteredContacts.length} {selectedContactType === 'all' ? 'contacts' : currentTypeLabel.toLowerCase()} in pipeline
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {/* Theme Toggle */}
+          <button onClick={toggleTheme} className={`p-2 rounded-lg border transition-colors ${crt('border-slate-200 hover:bg-slate-100 text-slate-600', 'border-zinc-700 hover:bg-zinc-800 text-zinc-400')}`}>
+            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+
           {/* View Mode Toggle */}
-          <div className="flex items-center bg-zinc-800/50 rounded-lg p-1 flex-shrink-0">
+          <div className={`flex items-center ${crt('bg-slate-50', 'bg-zinc-800/50')} rounded-lg p-1 flex-shrink-0`}>
             <button
               onClick={() => setViewMode("pipeline")}
-              className={`p-2 rounded text-sm ${viewMode === "pipeline" ? "bg-zinc-700 text-white" : "text-zinc-400"}`}
+              className={`p-2 rounded text-sm ${viewMode === "pipeline" ? `${crt('bg-slate-200 text-slate-900', 'bg-zinc-700 text-white')}` : `${crt('text-slate-400', 'text-zinc-400')}`}`}
               title="Pipeline View"
             >
               <Kanban className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode("grid")}
-              className={`p-2 rounded text-sm ${viewMode === "grid" ? "bg-zinc-700 text-white" : "text-zinc-400"}`}
+              className={`p-2 rounded text-sm ${viewMode === "grid" ? `${crt('bg-slate-200 text-slate-900', 'bg-zinc-700 text-white')}` : `${crt('text-slate-400', 'text-zinc-400')}`}`}
               title="Grid View"
             >
               <LayoutGrid className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode("table")}
-              className={`p-2 rounded text-sm ${viewMode === "table" ? "bg-zinc-700 text-white" : "text-zinc-400"}`}
+              className={`p-2 rounded text-sm ${viewMode === "table" ? `${crt('bg-slate-200 text-slate-900', 'bg-zinc-700 text-white')}` : `${crt('text-slate-400', 'text-zinc-400')}`}`}
               title="Table View"
             >
               <Table2 className="w-4 h-4" />
@@ -1310,12 +1333,12 @@ export default function CRMContacts() {
             variant="outline"
             size="sm"
             onClick={() => setShowAnalytics(!showAnalytics)}
-            className={`border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700 ${showAnalytics ? "bg-cyan-500/15 text-cyan-400/80 border-cyan-500/30" : ""}`}
+            className={`${crt('border-slate-300 bg-slate-50 text-slate-600 hover:bg-slate-200', 'border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700')} ${showAnalytics ? "bg-cyan-500/15 text-cyan-400/80 border-cyan-500/30" : ""}`}
           >
             <BarChart3 className="w-4 h-4 mr-1" /> Analytics
           </Button>
 
-          <Button variant="outline" size="sm" onClick={handleExport} className="border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700">
+          <Button variant="outline" size="sm" onClick={handleExport} className={crt('border-slate-300 bg-slate-50 text-slate-600 hover:bg-slate-200', 'border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-700')}>
             <Download className="w-4 h-4 mr-1" /> Export
           </Button>
 
@@ -1346,7 +1369,7 @@ export default function CRMContacts() {
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
             >
-              <CRMAnalytics contacts={contacts} />
+              <CRMAnalytics contacts={contacts} crt={crt} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -1356,13 +1379,13 @@ export default function CRMContacts() {
           {/* Search bar with RAG search - full width on mobile */}
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+              <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${crt('text-slate-400', 'text-zinc-500')}`} />
               <Input
                 placeholder="Search contacts or ask about them..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && searchQuery.length > 3 && handleRagSearch()}
-                className="pl-10 bg-zinc-900 border-zinc-800 h-11 sm:h-10"
+                className={`pl-10 ${crt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')} h-11 sm:h-10`}
               />
             </div>
             <Button
@@ -1387,10 +1410,10 @@ export default function CRMContacts() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="p-4 rounded-xl bg-zinc-900/80 border border-cyan-500/30"
+              className={`p-4 rounded-xl ${crt('bg-white shadow-sm', 'bg-zinc-900/80')} border border-cyan-500/30`}
             >
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-medium text-white flex items-center gap-2">
+                <h3 className={`text-sm font-medium ${crt('text-slate-900', 'text-white')} flex items-center gap-2`}>
                   <Sparkles className="w-4 h-4 text-cyan-400" />
                   Cross-Platform Results ({ragSearchResults.length})
                 </h3>
@@ -1398,7 +1421,7 @@ export default function CRMContacts() {
                   size="sm"
                   variant="ghost"
                   onClick={() => setShowRagResults(false)}
-                  className="text-zinc-400 hover:text-white h-7"
+                  className={`${crt('text-slate-500 hover:text-slate-900', 'text-zinc-400 hover:text-white')} h-7`}
                 >
                   <X className="w-4 h-4" />
                 </Button>
@@ -1407,17 +1430,17 @@ export default function CRMContacts() {
                 {ragSearchResults.map((result, i) => (
                   <div
                     key={i}
-                    className="p-3 rounded-lg bg-zinc-800/50 border border-zinc-700/50 hover:border-cyan-500/30 transition-colors"
+                    className={`p-3 rounded-lg ${crt('bg-slate-50 border border-slate-200', 'bg-zinc-800/50 border border-zinc-700/50')} hover:border-cyan-500/30 transition-colors`}
                   >
                     <div className="flex items-start gap-2">
                       <Badge className="text-[10px] bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
                         {result.sourceType}
                       </Badge>
-                      <p className="text-sm text-zinc-300 line-clamp-2 flex-1">
+                      <p className={`text-sm ${crt('text-slate-600', 'text-zinc-300')} line-clamp-2 flex-1`}>
                         {result.content?.substring(0, 150)}...
                       </p>
                     </div>
-                    <div className="flex items-center gap-2 mt-2 text-[10px] text-zinc-500">
+                    <div className={`flex items-center gap-2 mt-2 text-[10px] ${crt('text-slate-400', 'text-zinc-500')}`}>
                       <span>{Math.round((result.similarity || 0) * 100)}% match</span>
                       {result.metadata?.from && <span>From: {result.metadata.from}</span>}
                     </div>
@@ -1430,30 +1453,30 @@ export default function CRMContacts() {
           {/* Filters - horizontal scroll on mobile */}
           <div className="flex gap-2 overflow-x-auto pb-2 -mx-3 px-3 sm:mx-0 sm:px-0 sm:overflow-visible sm:flex-wrap scrollbar-hide">
             <Select value={stageFilter} onValueChange={setStageFilter}>
-              <SelectTrigger className="w-[130px] sm:w-40 bg-zinc-900 border-zinc-800 flex-shrink-0 h-10">
+              <SelectTrigger className={`w-[130px] sm:w-40 ${crt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')} flex-shrink-0 h-10`}>
                 <SelectValue placeholder="Stage" />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800">
+              <SelectContent className={crt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')}>
                 <SelectItem value="all">All Stages</SelectItem>
                 {PIPELINE_STAGES.map(s => <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={sourceFilter} onValueChange={setSourceFilter}>
-              <SelectTrigger className="w-[130px] sm:w-40 bg-zinc-900 border-zinc-800 flex-shrink-0 h-10">
+              <SelectTrigger className={`w-[130px] sm:w-40 ${crt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')} flex-shrink-0 h-10`}>
                 <SelectValue placeholder="Source" />
               </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-800">
+              <SelectContent className={crt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')}>
                 <SelectItem value="all">All Sources</SelectItem>
                 {CONTACT_SOURCES.map(s => <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>)}
               </SelectContent>
             </Select>
             {companies.length > 0 && (
               <Select value={companyFilter} onValueChange={setCompanyFilter}>
-                <SelectTrigger className="w-[140px] sm:w-48 bg-zinc-900 border-zinc-800 flex-shrink-0 h-10">
-                  <Building className="w-4 h-4 mr-2 text-zinc-400" />
+                <SelectTrigger className={`w-[140px] sm:w-48 ${crt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')} flex-shrink-0 h-10`}>
+                  <Building className={`w-4 h-4 mr-2 ${crt('text-slate-500', 'text-zinc-400')}`} />
                   <SelectValue placeholder="Company" />
                 </SelectTrigger>
-                <SelectContent className="bg-zinc-900 border-zinc-800">
+                <SelectContent className={crt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')}>
                   <SelectItem value="all">All Companies</SelectItem>
                   {companies.map(c => (
                     <SelectItem key={c.id} value={c.id}>
@@ -1467,8 +1490,8 @@ export default function CRMContacts() {
             {/* Bulk Actions */}
             {selectedContacts.length > 0 && (
               <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
-                <span className="text-xs sm:text-sm text-zinc-400 whitespace-nowrap">{selectedContacts.length} selected</span>
-                <Button variant="outline" size="sm" onClick={handleBulkDelete} className="text-zinc-400 border-zinc-600 hover:bg-zinc-800 h-10">
+                <span className={`text-xs sm:text-sm ${crt('text-slate-500', 'text-zinc-400')} whitespace-nowrap`}>{selectedContacts.length} selected</span>
+                <Button variant="outline" size="sm" onClick={handleBulkDelete} className={`${crt('text-slate-500 border-slate-300 hover:bg-slate-100', 'text-zinc-400 border-zinc-600 hover:bg-zinc-800')} h-10`}>
                   <Trash2 className="w-4 h-4 sm:mr-1" />
                   <span className="hidden sm:inline">Delete</span>
                 </Button>
@@ -1489,6 +1512,7 @@ export default function CRMContacts() {
                   onAddContact={handleAddToStage}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
+                  crt={crt}
                 />
               ))}
             </div>
@@ -1502,13 +1526,14 @@ export default function CRMContacts() {
                 isSelected={selectedContacts.includes(contact.id)}
                 onClick={() => handleViewContact(contact)}
                 onToggleStar={handleToggleStar}
+                crt={crt}
               />
             ))}
             {paginatedContacts.length === 0 && (
               <div className="col-span-full text-center py-20">
-                <Users className="w-16 h-16 mx-auto mb-4 text-zinc-600" />
-                <h2 className="text-xl font-semibold text-zinc-300 mb-2">No contacts found</h2>
-                <p className="text-zinc-500 mb-6">Try adjusting your filters or add a new contact</p>
+                <Users className={`w-16 h-16 mx-auto mb-4 ${crt('text-slate-500', 'text-zinc-600')}`} />
+                <h2 className={`text-xl font-semibold ${crt('text-slate-600', 'text-zinc-300')} mb-2`}>No contacts found</h2>
+                <p className={`${crt('text-slate-400', 'text-zinc-500')} mb-6`}>Try adjusting your filters or add a new contact</p>
                 <Button onClick={() => {
                   setEditingContact(null);
                   const preselectedType = selectedContactType !== 'all' && selectedContactType !== 'supplier' ? selectedContactType : 'lead';
@@ -1524,7 +1549,7 @@ export default function CRMContacts() {
                 <Button
                   variant="outline"
                   onClick={handleLoadMore}
-                  className="border-zinc-700 text-white hover:bg-zinc-800"
+                  className={crt('border-slate-300 text-slate-900 hover:bg-slate-100', 'border-zinc-700 text-white hover:bg-zinc-800')}
                 >
                   Load More ({remainingCount} remaining)
                 </Button>
@@ -1533,12 +1558,12 @@ export default function CRMContacts() {
           </div>
         ) : (
           /* Table View - Responsive with horizontal scroll */
-          <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl sm:rounded-2xl overflow-hidden -mx-3 sm:mx-0">
+          <div className={`${crt('bg-white border border-slate-200 shadow-sm', 'bg-zinc-900/50 border border-zinc-800/60')} rounded-xl sm:rounded-2xl overflow-hidden -mx-3 sm:mx-0`}>
             <div className="overflow-x-auto scrollbar-hide">
               <table className="w-full min-w-[700px]">
                 <thead>
-                  <tr className="border-b border-zinc-800">
-                    <th className="py-1.5 px-2 text-left sticky left-0 bg-zinc-900/95 z-10 w-8">
+                  <tr className={`border-b ${crt('border-slate-200', 'border-zinc-800')}`}>
+                    <th className={`py-1.5 px-2 text-left sticky left-0 ${crt('bg-white', 'bg-zinc-900/95')} z-10 w-8`}>
                       <Checkbox
                         checked={selectedContacts.length === paginatedContacts.length && paginatedContacts.length > 0}
                         onCheckedChange={(checked) => {
@@ -1547,21 +1572,21 @@ export default function CRMContacts() {
                         className="w-3.5 h-3.5"
                       />
                     </th>
-                    <th className="py-1.5 px-2 text-left text-[10px] font-medium text-zinc-500 uppercase tracking-wider whitespace-nowrap">Contact</th>
-                    <th className="py-1.5 px-2 text-left text-[10px] font-medium text-zinc-500 uppercase tracking-wider whitespace-nowrap hidden sm:table-cell">Company</th>
-                    <th className="py-1.5 px-2 text-left text-[10px] font-medium text-zinc-500 uppercase tracking-wider whitespace-nowrap">Stage</th>
-                    <th className="py-1.5 px-2 text-left text-[10px] font-medium text-zinc-500 uppercase tracking-wider whitespace-nowrap hidden md:table-cell">Score</th>
-                    <th className="py-1.5 px-2 text-left text-[10px] font-medium text-zinc-500 uppercase tracking-wider whitespace-nowrap">Value</th>
-                    <th className="py-1.5 px-2 text-left text-[10px] font-medium text-zinc-500 uppercase tracking-wider whitespace-nowrap hidden lg:table-cell">Source</th>
-                    <th className="py-1.5 px-2 text-left text-[10px] font-medium text-zinc-500 uppercase tracking-wider whitespace-nowrap w-16"></th>
+                    <th className={`py-1.5 px-2 text-left text-[10px] font-medium ${crt('text-slate-400', 'text-zinc-500')} uppercase tracking-wider whitespace-nowrap`}>Contact</th>
+                    <th className={`py-1.5 px-2 text-left text-[10px] font-medium ${crt('text-slate-400', 'text-zinc-500')} uppercase tracking-wider whitespace-nowrap hidden sm:table-cell`}>Company</th>
+                    <th className={`py-1.5 px-2 text-left text-[10px] font-medium ${crt('text-slate-400', 'text-zinc-500')} uppercase tracking-wider whitespace-nowrap`}>Stage</th>
+                    <th className={`py-1.5 px-2 text-left text-[10px] font-medium ${crt('text-slate-400', 'text-zinc-500')} uppercase tracking-wider whitespace-nowrap hidden md:table-cell`}>Score</th>
+                    <th className={`py-1.5 px-2 text-left text-[10px] font-medium ${crt('text-slate-400', 'text-zinc-500')} uppercase tracking-wider whitespace-nowrap`}>Value</th>
+                    <th className={`py-1.5 px-2 text-left text-[10px] font-medium ${crt('text-slate-400', 'text-zinc-500')} uppercase tracking-wider whitespace-nowrap hidden lg:table-cell`}>Source</th>
+                    <th className={`py-1.5 px-2 text-left text-[10px] font-medium ${crt('text-slate-400', 'text-zinc-500')} uppercase tracking-wider whitespace-nowrap w-16`}></th>
                   </tr>
                 </thead>
                 <tbody ref={tableBodyRef}>
                   {paginatedContacts.map(contact => {
                     const stageConfig = PIPELINE_STAGES.find(s => s.id === contact.stage) || PIPELINE_STAGES[0];
                     return (
-                      <tr key={contact.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/20 transition-colors h-9">
-                        <td className="py-1 px-2 sticky left-0 bg-zinc-900/95 z-10">
+                      <tr key={contact.id} className={`border-b ${crt('border-slate-100 hover:bg-slate-50/50', 'border-zinc-800/50 hover:bg-zinc-800/20')} transition-colors h-9`}>
+                        <td className={`py-1 px-2 sticky left-0 ${crt('bg-white', 'bg-zinc-900/95')} z-10`}>
                           <Checkbox
                             checked={selectedContacts.includes(contact.id)}
                             onCheckedChange={(checked) => {
@@ -1578,8 +1603,8 @@ export default function CRMContacts() {
                               <span className="text-cyan-400/80 text-[9px] font-medium">{contact.name?.charAt(0)?.toUpperCase()}</span>
                             </div>
                             <div className="min-w-0">
-                              <div className="font-medium text-white hover:text-cyan-400 transition-colors text-xs truncate max-w-[120px]">{contact.name}</div>
-                              <div className="text-[10px] text-zinc-500 truncate max-w-[120px] sm:hidden">{contact.company_name}</div>
+                              <div className={`font-medium ${crt('text-slate-900', 'text-white')} hover:text-cyan-400 transition-colors text-xs truncate max-w-[120px]`}>{contact.name}</div>
+                              <div className={`text-[10px] ${crt('text-slate-400', 'text-zinc-500')} truncate max-w-[120px] sm:hidden`}>{contact.company_name}</div>
                             </div>
                           </div>
                         </td>
@@ -1593,9 +1618,9 @@ export default function CRMContacts() {
                               {contact.company_name || "-"}
                             </Link>
                           ) : (
-                            <div className="text-xs text-zinc-300 truncate max-w-[120px]">{contact.company_name || "-"}</div>
+                            <div className={`text-xs ${crt('text-slate-600', 'text-zinc-300')} truncate max-w-[120px]`}>{contact.company_name || "-"}</div>
                           )}
-                          {contact.job_title && <div className="text-[10px] text-zinc-500 truncate max-w-[120px]">{contact.job_title}</div>}
+                          {contact.job_title && <div className={`text-[10px] ${crt('text-slate-400', 'text-zinc-500')} truncate max-w-[120px]`}>{contact.job_title}</div>}
                         </td>
                         <td className="py-1 px-2">
                           <Badge variant="outline" className={`${stageConfig.bgColor} ${stageConfig.textColor} ${stageConfig.borderColor} text-[10px] py-px px-1.5 whitespace-nowrap`}>
@@ -1606,29 +1631,29 @@ export default function CRMContacts() {
                           <LeadScoreIndicator score={contact.score || 50} size="xs" />
                         </td>
                         <td className="py-1 px-2">
-                          <span className="font-medium text-white text-xs whitespace-nowrap">
+                          <span className={`font-medium ${crt('text-slate-900', 'text-white')} text-xs whitespace-nowrap`}>
                             {contact.deal_value ? `€${parseFloat(contact.deal_value).toLocaleString()}` : "-"}
                           </span>
                         </td>
                         <td className="py-1 px-2 hidden lg:table-cell">
-                          <span className="text-[11px] text-zinc-400 capitalize whitespace-nowrap">{contact.source?.replace(/_/g, ' ') || "-"}</span>
+                          <span className={`text-[11px] ${crt('text-slate-500', 'text-zinc-400')} capitalize whitespace-nowrap`}>{contact.source?.replace(/_/g, ' ') || "-"}</span>
                         </td>
                         <td className="py-1 px-2">
                           <div className="flex items-center">
                             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleEdit(contact)}>
-                              <Edit2 className="w-3 h-3 text-zinc-400" />
+                              <Edit2 className={`w-3 h-3 ${crt('text-slate-500', 'text-zinc-400')}`} />
                             </Button>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-6 w-6">
-                                  <MoreVertical className="w-3 h-3 text-zinc-400" />
+                                  <MoreVertical className={`w-3 h-3 ${crt('text-slate-500', 'text-zinc-400')}`} />
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
-                                <DropdownMenuItem onClick={() => handleViewContact(contact)} className="text-zinc-300 min-h-[44px]">
+                              <DropdownMenuContent align="end" className={crt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')}>
+                                <DropdownMenuItem onClick={() => handleViewContact(contact)} className={`${crt('text-slate-600', 'text-zinc-300')} min-h-[44px]`}>
                                   <Eye className="w-4 h-4 mr-2" /> View
                                 </DropdownMenuItem>
-                                <DropdownMenuSeparator className="bg-zinc-800" />
+                                <DropdownMenuSeparator className={crt('bg-slate-200', 'bg-zinc-800')} />
                                 <DropdownMenuItem onClick={() => handleDelete(contact.id)} className="text-red-400 min-h-[44px]">
                                   <Trash2 className="w-4 h-4 mr-2" /> Delete
                                 </DropdownMenuItem>
@@ -1643,11 +1668,11 @@ export default function CRMContacts() {
               </table>
             </div>
             {hasMoreContacts && (
-              <div className="flex justify-center p-4 border-t border-zinc-800/50">
+              <div className={`flex justify-center p-4 border-t ${crt('border-slate-200', 'border-zinc-800/50')}`}>
                 <Button
                   variant="outline"
                   onClick={handleLoadMore}
-                  className="border-zinc-700 text-white hover:bg-zinc-800"
+                  className={crt('border-slate-300 text-slate-900 hover:bg-slate-100', 'border-zinc-700 text-white hover:bg-zinc-800')}
                 >
                   Load More ({remainingCount} remaining)
                 </Button>
@@ -1665,76 +1690,77 @@ export default function CRMContacts() {
         onDelete={handleDelete}
         activities={activities}
         deals={deals}
+        crt={crt}
       />
 
       {/* Add/Edit Modal - Full screen on mobile */}
       <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent className="bg-zinc-900 border-zinc-800 w-[95vw] max-w-2xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto rounded-xl sm:rounded-2xl p-4 sm:p-6">
+        <DialogContent className={`${crt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')} w-[95vw] max-w-2xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto rounded-xl sm:rounded-2xl p-4 sm:p-6`}>
           <DialogHeader>
-            <DialogTitle className="text-white">{editingContact ? "Edit Contact" : "Add Contact"}</DialogTitle>
+            <DialogTitle className={crt('text-slate-900', 'text-white')}>{editingContact ? "Edit Contact" : "Add Contact"}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 mt-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-zinc-500 mb-1 block">Full Name *</label>
+                <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Full Name *</label>
                 <Input
                   placeholder="John Smith"
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  className="bg-zinc-800 border-zinc-700"
+                  className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}
                 />
               </div>
               <div>
-                <label className="text-xs text-zinc-500 mb-1 block">Email</label>
+                <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Email</label>
                 <Input
                   type="email"
                   placeholder="john@company.com"
                   value={formData.email}
                   onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                  className="bg-zinc-800 border-zinc-700"
+                  className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-zinc-500 mb-1 block">Phone</label>
+                <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Phone</label>
                 <Input
                   placeholder="+1 234-567-8900"
                   value={formData.phone}
                   onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                  className="bg-zinc-800 border-zinc-700"
+                  className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}
                 />
               </div>
               <div>
-                <label className="text-xs text-zinc-500 mb-1 block">Job Title</label>
+                <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Job Title</label>
                 <Input
                   placeholder="CEO, CTO, etc."
                   value={formData.job_title}
                   onChange={(e) => setFormData(prev => ({ ...prev, job_title: e.target.value }))}
-                  className="bg-zinc-800 border-zinc-700"
+                  className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-zinc-500 mb-1 block">Company</label>
+                <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Company</label>
                 <Input
                   placeholder="Acme Corp"
                   value={formData.company_name}
                   onChange={(e) => setFormData(prev => ({ ...prev, company_name: e.target.value }))}
-                  className="bg-zinc-800 border-zinc-700"
+                  className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}
                 />
               </div>
               <div>
-                <label className="text-xs text-zinc-500 mb-1 block">Industry</label>
+                <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Industry</label>
                 <Select value={formData.industry} onValueChange={(v) => setFormData(prev => ({ ...prev, industry: v }))}>
-                  <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                  <SelectTrigger className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}>
                     <SelectValue placeholder="Select industry" />
                   </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-800">
+                  <SelectContent className={crt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')}>
                     {INDUSTRY_OPTIONS.map(ind => <SelectItem key={ind} value={ind}>{ind}</SelectItem>)}
                   </SelectContent>
                 </Select>
@@ -1743,12 +1769,12 @@ export default function CRMContacts() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-zinc-500 mb-1 block">Contact Type</label>
+                <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Contact Type</label>
                 <Select value={formData.contact_type} onValueChange={(v) => setFormData(prev => ({ ...prev, contact_type: v }))}>
-                  <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                  <SelectTrigger className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-800">
+                  <SelectContent className={crt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')}>
                     {CONTACT_TYPES.filter(t => t.id !== 'all' && t.id !== 'supplier').map(t => (
                       <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>
                     ))}
@@ -1756,12 +1782,12 @@ export default function CRMContacts() {
                 </Select>
               </div>
               <div>
-                <label className="text-xs text-zinc-500 mb-1 block">Stage</label>
+                <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Stage</label>
                 <Select value={formData.stage} onValueChange={(v) => setFormData(prev => ({ ...prev, stage: v }))}>
-                  <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                  <SelectTrigger className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-800">
+                  <SelectContent className={crt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')}>
                     {PIPELINE_STAGES.map(s => <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
@@ -1770,68 +1796,68 @@ export default function CRMContacts() {
 
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="text-xs text-zinc-500 mb-1 block">Source</label>
+                <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Source</label>
                 <Select value={formData.source} onValueChange={(v) => setFormData(prev => ({ ...prev, source: v }))}>
-                  <SelectTrigger className="bg-zinc-800 border-zinc-700">
+                  <SelectTrigger className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-800">
+                  <SelectContent className={crt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')}>
                     {CONTACT_SOURCES.map(s => <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <label className="text-xs text-zinc-500 mb-1 block">Lead Score</label>
+                <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Lead Score</label>
                 <Input
                   type="number"
                   min="0"
                   max="100"
                   value={formData.score}
                   onChange={(e) => setFormData(prev => ({ ...prev, score: parseInt(e.target.value) || 50 }))}
-                  className="bg-zinc-800 border-zinc-700"
+                  className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-zinc-500 mb-1 block">Deal Value ($)</label>
+                <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Deal Value ($)</label>
                 <Input
                   type="number"
                   placeholder="10000"
                   value={formData.deal_value}
                   onChange={(e) => setFormData(prev => ({ ...prev, deal_value: e.target.value }))}
-                  className="bg-zinc-800 border-zinc-700"
+                  className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}
                 />
               </div>
               <div>
-                <label className="text-xs text-zinc-500 mb-1 block">Location</label>
+                <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Location</label>
                 <Input
                   placeholder="New York, NY"
                   value={formData.location}
                   onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                  className="bg-zinc-800 border-zinc-700"
+                  className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-zinc-500 mb-1 block">Website</label>
+                <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Website</label>
                 <Input
                   placeholder="https://company.com"
                   value={formData.website}
                   onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
-                  className="bg-zinc-800 border-zinc-700"
+                  className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}
                 />
               </div>
               <div>
-                <label className="text-xs text-zinc-500 mb-1 block">LinkedIn</label>
+                <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>LinkedIn</label>
                 <Input
                   placeholder="https://linkedin.com/in/..."
                   value={formData.linkedin_url}
                   onChange={(e) => setFormData(prev => ({ ...prev, linkedin_url: e.target.value }))}
-                  className="bg-zinc-800 border-zinc-700"
+                  className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}
                 />
               </div>
             </div>
@@ -1845,7 +1871,7 @@ export default function CRMContacts() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs text-zinc-500 mb-1 block">Fee Percentage (%)</label>
+                    <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Fee Percentage (%)</label>
                     <Input
                       type="number"
                       min="0"
@@ -1854,31 +1880,31 @@ export default function CRMContacts() {
                       placeholder="20"
                       value={formData.recruitment_fee_percentage}
                       onChange={(e) => setFormData(prev => ({ ...prev, recruitment_fee_percentage: e.target.value }))}
-                      className="bg-zinc-800 border-zinc-700"
+                      className={crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')}
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-zinc-500 mb-1 block">Flat Fee</label>
+                    <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Flat Fee</label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">€</span>
+                      <span className={`absolute left-3 top-1/2 -translate-y-1/2 ${crt('text-slate-400', 'text-zinc-500')}`}>€</span>
                       <Input
                         type="number"
                         min="0"
                         placeholder="5000"
                         value={formData.recruitment_fee_flat}
                         onChange={(e) => setFormData(prev => ({ ...prev, recruitment_fee_flat: e.target.value }))}
-                        className="bg-zinc-800 border-zinc-700 pl-7"
+                        className={`${crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')} pl-7`}
                       />
                     </div>
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-zinc-500 mb-1 block">Payment Terms</label>
+                  <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Payment Terms</label>
                   <Textarea
                     placeholder="e.g., 50% on placement, 50% after probation period..."
                     value={formData.recruitment_terms}
                     onChange={(e) => setFormData(prev => ({ ...prev, recruitment_terms: e.target.value }))}
-                    className="bg-zinc-800 border-zinc-700 min-h-[60px]"
+                    className={`${crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')} min-h-[60px]`}
                     rows={2}
                   />
                 </div>
@@ -1904,22 +1930,22 @@ export default function CRMContacts() {
                 </>
               )}
             </Button>
-            <p className="text-xs text-zinc-500 text-center -mt-2">
+            <p className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} text-center -mt-2`}>
               Auto-fill company data using Explorium API
             </p>
 
             <div>
-              <label className="text-xs text-zinc-500 mb-1 block">Notes</label>
+              <label className={`text-xs ${crt('text-slate-400', 'text-zinc-500')} mb-1 block`}>Notes</label>
               <Textarea
                 placeholder="Add notes about this contact..."
                 value={formData.notes}
                 onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                className="bg-zinc-800 border-zinc-700 min-h-[80px]"
+                className={`${crt('bg-slate-50 border-slate-200', 'bg-zinc-800 border-zinc-700')} min-h-[80px]`}
               />
             </div>
 
             <div className="flex gap-2 pt-4">
-              <Button variant="outline" onClick={() => { setShowModal(false); setEditingContact(null); }} className="flex-1 border-zinc-700">
+              <Button variant="outline" onClick={() => { setShowModal(false); setEditingContact(null); }} className={`flex-1 ${crt('border-slate-300', 'border-zinc-700')}`}>
                 Cancel
               </Button>
               <Button onClick={handleSave} className="flex-1 bg-cyan-600/80 hover:bg-cyan-600 text-white">
@@ -1938,5 +1964,6 @@ export default function CRMContacts() {
         targetTable="prospects"
       />
     </div>
+    </CRMPageTransition>
   );
 }

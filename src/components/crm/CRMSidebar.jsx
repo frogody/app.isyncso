@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useCRMTheme } from '@/contexts/CRMThemeContext';
 
 // Contact type definitions with icons and colors
 const CONTACT_TYPES = [
@@ -109,6 +110,7 @@ export default function CRMSidebar({
   suppliers = [],
   className
 }) {
+  const { crt } = useCRMTheme();
   const [searchTerm, setSearchTerm] = useState('');
   const [showQuickFilters, setShowQuickFilters] = useState(true);
 
@@ -150,7 +152,7 @@ export default function CRMSidebar({
         className={`group relative flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl cursor-pointer transition-all duration-200 ${
           isSelected
             ? `${type.bgColor} border ${type.borderColor}`
-            : 'hover:bg-zinc-800/50 border border-transparent'
+            : `${crt('hover:bg-slate-100', 'hover:bg-zinc-800/50')} border border-transparent`
         }`}
       >
         {/* Selection indicator */}
@@ -165,22 +167,22 @@ export default function CRMSidebar({
         <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${
           isSelected
             ? `${type.bgColor} border ${type.borderColor}`
-            : 'bg-zinc-800/80 border border-zinc-700/50'
+            : `${crt('bg-slate-100', 'bg-zinc-800/80')} border ${crt('border-slate-300', 'border-zinc-700/50')}`
         }`}>
           <Icon className={`w-4 h-4 ${
-            isSelected ? type.textColor : 'text-zinc-500'
+            isSelected ? type.textColor : crt('text-slate-400', 'text-zinc-500')
           }`} />
         </div>
 
         {/* Label */}
         <div className="flex-1 min-w-0">
           <span className={`text-sm font-medium ${
-            isSelected ? 'text-white' : 'text-zinc-400 group-hover:text-zinc-200'
+            isSelected ? crt('text-slate-900', 'text-white') : `${crt('text-slate-500', 'text-zinc-400')} ${crt('group-hover:text-slate-700', 'group-hover:text-zinc-200')}`
           }`}>
             {type.label}
           </span>
           {type.description && (
-            <p className="text-xs text-zinc-600 truncate">{type.description}</p>
+            <p className={`text-xs ${crt('text-slate-400', 'text-zinc-600')} truncate`}>{type.description}</p>
           )}
         </div>
 
@@ -191,7 +193,7 @@ export default function CRMSidebar({
             className={`${
               isSelected
                 ? `${type.bgColor} ${type.textColor} ${type.borderColor}`
-                : 'bg-zinc-800 text-zinc-400 border-zinc-700'
+                : `${crt('bg-slate-100', 'bg-zinc-800')} ${crt('text-slate-500', 'text-zinc-400')} ${crt('border-slate-300', 'border-zinc-700')}`
             } text-xs px-1.5`}
           >
             {count}
@@ -200,34 +202,34 @@ export default function CRMSidebar({
 
         {/* External indicator for suppliers */}
         {type.isExternal && (
-          <Building2 className="w-3 h-3 text-zinc-600" title="Links to Suppliers" />
+          <Building2 className={`w-3 h-3 ${crt('text-slate-400', 'text-zinc-600')}`} title="Links to Suppliers" />
         )}
       </motion.div>
     );
   };
 
   return (
-    <div className={`w-64 bg-gradient-to-b from-zinc-950 via-zinc-900 to-cyan-950/5 border-r border-zinc-800/50 flex flex-col h-full ${className}`}>
+    <div className={`w-64 ${crt('bg-gradient-to-b from-slate-50 via-white to-cyan-50/5 border-r border-slate-200', 'bg-gradient-to-b from-zinc-950 via-zinc-900 to-cyan-950/5 border-r border-zinc-800/50')} flex flex-col h-full ${className}`}>
       {/* Header */}
-      <div className="p-4 border-b border-zinc-800/60">
+      <div className={`p-4 border-b ${crt('border-slate-200', 'border-zinc-800/60')}`}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500/30 to-cyan-600/30 border border-cyan-500/40 flex items-center justify-center shadow-lg shadow-cyan-500/10">
               <Users className="w-5 h-5 text-cyan-400" />
             </div>
             <div>
-              <h2 className="font-bold text-white text-base">CRM</h2>
-              <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Contacts</p>
+              <h2 className={`font-bold ${crt('text-slate-900', 'text-white')} text-base`}>CRM</h2>
+              <p className={`text-[10px] ${crt('text-slate-400', 'text-zinc-500')} uppercase tracking-wider`}>Contacts</p>
             </div>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-500 hover:text-white">
+              <Button variant="ghost" size="icon" className={`h-8 w-8 ${crt('text-slate-400 hover:text-slate-900', 'text-zinc-500 hover:text-white')}`}>
                 <MoreHorizontal className="w-4 h-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="bg-zinc-900 border-zinc-700" align="end">
-              <DropdownMenuItem onClick={onOpenSettings} className="text-zinc-300">
+            <DropdownMenuContent className={`${crt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-700')}`} align="end">
+              <DropdownMenuItem onClick={onOpenSettings} className={crt('text-slate-600', 'text-zinc-300')}>
                 <Settings className="w-4 h-4 mr-2" /> Settings
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -236,19 +238,19 @@ export default function CRMSidebar({
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
+          <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${crt('text-slate-400', 'text-zinc-600')}`} />
           <input
             type="text"
             placeholder="Search types..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-3 py-2 bg-zinc-800/50 border border-zinc-700/60 rounded-xl text-sm text-white placeholder-zinc-600 focus:border-cyan-600/50 focus:ring-1 focus:ring-cyan-600/30 focus:outline-none transition-all"
+            className={`w-full pl-10 pr-3 py-2 ${crt('bg-slate-50 border border-slate-200', 'bg-zinc-800/50 border border-zinc-700/60')} rounded-xl text-sm ${crt('text-slate-900 placeholder-slate-400', 'text-white placeholder-zinc-600')} focus:border-cyan-600/50 focus:ring-1 focus:ring-cyan-600/30 focus:outline-none transition-all`}
           />
         </div>
       </div>
 
       {/* Quick Actions */}
-      <div className="px-3 py-3 border-b border-zinc-800/40">
+      <div className={`px-3 py-3 border-b ${crt('border-slate-200', 'border-zinc-800/40')}`}>
         <div className="flex gap-2">
           <Button
             onClick={onAddContact}
@@ -261,7 +263,7 @@ export default function CRMSidebar({
           <Button
             onClick={onImportContacts}
             variant="outline"
-            className="border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-600"
+            className={`${crt('border-slate-300 text-slate-500 hover:text-slate-900 hover:border-slate-400', 'border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-600')}`}
             size="sm"
           >
             <Upload className="w-4 h-4" />
@@ -274,7 +276,7 @@ export default function CRMSidebar({
         {/* Section Header */}
         <button
           onClick={() => setShowQuickFilters(!showQuickFilters)}
-          className="flex items-center gap-2 px-2 py-1.5 mb-2 text-xs font-semibold text-zinc-500 hover:text-zinc-300 uppercase tracking-wider transition-colors w-full"
+          className={`flex items-center gap-2 px-2 py-1.5 mb-2 text-xs font-semibold ${crt('text-slate-400 hover:text-slate-600', 'text-zinc-500 hover:text-zinc-300')} uppercase tracking-wider transition-colors w-full`}
         >
           <motion.div
             animate={{ rotate: showQuickFilters ? 0 : -90 }}
@@ -302,7 +304,7 @@ export default function CRMSidebar({
               ))}
 
               {filteredTypes.length === 0 && searchTerm && (
-                <p className="text-xs text-zinc-600 px-2.5 py-2 text-center">
+                <p className={`text-xs ${crt('text-slate-400', 'text-zinc-600')} px-2.5 py-2 text-center`}>
                   No contact types found
                 </p>
               )}
@@ -312,15 +314,15 @@ export default function CRMSidebar({
       </div>
 
       {/* Footer Stats */}
-      <div className="p-4 border-t border-zinc-800/60 bg-zinc-950/50">
+      <div className={`p-4 border-t ${crt('border-slate-200 bg-slate-50/50', 'border-zinc-800/60 bg-zinc-950/50')}`}>
         <div className="grid grid-cols-2 gap-2">
-          <div className="p-2 bg-zinc-800/30 rounded-lg">
-            <div className="text-lg font-bold text-white">{getCount('all')}</div>
-            <div className="text-[10px] text-zinc-500 uppercase">Total</div>
+          <div className={`p-2 ${crt('bg-slate-100/50', 'bg-zinc-800/30')} rounded-lg`}>
+            <div className={`text-lg font-bold ${crt('text-slate-900', 'text-white')}`}>{getCount('all')}</div>
+            <div className={`text-[10px] ${crt('text-slate-400', 'text-zinc-500')} uppercase`}>Total</div>
           </div>
-          <div className="p-2 bg-zinc-800/30 rounded-lg">
+          <div className={`p-2 ${crt('bg-slate-100/50', 'bg-zinc-800/30')} rounded-lg`}>
             <div className="text-lg font-bold text-green-400">{contactCounts.customer || 0}</div>
-            <div className="text-[10px] text-zinc-500 uppercase">Customers</div>
+            <div className={`text-[10px] ${crt('text-slate-400', 'text-zinc-500')} uppercase`}>Customers</div>
           </div>
         </div>
       </div>

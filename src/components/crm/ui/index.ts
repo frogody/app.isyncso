@@ -1,0 +1,1 @@
+export { CRMPageTransition } from './CRMPageTransition';

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useCRMTheme } from '@/contexts/CRMThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Dialog,
@@ -30,6 +31,7 @@ import { usePermissions } from '@/components/context/PermissionContext';
 import { toast } from 'sonner';
 
 export function QuickAddContactModal({ isOpen, onClose, onSuccess, targetTable = 'contacts' }) {
+  const { crt } = useCRMTheme();
   const { user } = useUser();
   const { hasPermission } = usePermissions();
   const canCreate = hasPermission('users.create');
@@ -273,9 +275,9 @@ export function QuickAddContactModal({ isOpen, onClose, onSuccess, targetTable =
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleClose(); }}>
-      <DialogContent className="bg-slate-900 border-white/10 max-w-lg">
+      <DialogContent className={`${crt('bg-white border-slate-200', 'bg-slate-900 border-white/10')} max-w-lg`}>
         <DialogHeader>
-          <DialogTitle className="text-white flex items-center gap-2">
+          <DialogTitle className={`${crt('text-slate-900', 'text-white')} flex items-center gap-2`}>
             <Sparkles className="h-5 w-5 text-cyan-400" />
             Quick Add with Enrichment
           </DialogTitle>
@@ -291,7 +293,7 @@ export function QuickAddContactModal({ isOpen, onClose, onSuccess, targetTable =
               exit={{ opacity: 0, y: -10 }}
               className="space-y-4 py-4"
             >
-              <p className="text-white/60 text-sm">
+              <p className={`${crt('text-slate-500', 'text-white/60')} text-sm`}>
                 Enter a LinkedIn URL or email address to automatically enrich contact and company data.
               </p>
 
@@ -301,7 +303,7 @@ export function QuickAddContactModal({ isOpen, onClose, onSuccess, targetTable =
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   disabled={loading}
-                  className="bg-zinc-800/50 border-zinc-700 text-white h-12"
+                  className={`${crt('bg-slate-50 border-slate-300 text-slate-900', 'bg-zinc-800/50 border-zinc-700 text-white')} h-12`}
                 />
                 {inputValue && (
                   <div className="flex items-center gap-2 text-sm">
@@ -352,11 +354,11 @@ export function QuickAddContactModal({ isOpen, onClose, onSuccess, targetTable =
                 </div>
               </div>
 
-              <p className="text-white/80 font-medium">
+              <p className={`${crt('text-slate-700', 'text-white/80')} font-medium`}>
                 {step === 'matching' && 'Finding prospect...'}
                 {step === 'enriching' && 'Enriching contact & company data...'}
               </p>
-              <p className="text-white/50 text-sm mt-2">
+              <p className={`${crt('text-slate-400', 'text-white/50')} text-sm mt-2`}>
                 This may take a few seconds
               </p>
             </motion.div>
@@ -375,13 +377,13 @@ export function QuickAddContactModal({ isOpen, onClose, onSuccess, targetTable =
                 <AlertCircle className="w-8 h-8 text-red-400" />
               </div>
               <div>
-                <p className="text-white font-medium">Enrichment Failed</p>
-                <p className="text-white/60 text-sm mt-1">{error}</p>
+                <p className={`${crt('text-slate-900', 'text-white')} font-medium`}>Enrichment Failed</p>
+                <p className={`${crt('text-slate-500', 'text-white/60')} text-sm mt-1`}>{error}</p>
               </div>
               <Button
                 variant="outline"
                 onClick={handleRetry}
-                className="border-zinc-700 text-white hover:bg-zinc-800"
+                className={`${crt('border-slate-300 text-slate-900 hover:bg-slate-100', 'border-zinc-700 text-white hover:bg-zinc-800')}`}
               >
                 Try Again
               </Button>
@@ -404,33 +406,33 @@ export function QuickAddContactModal({ isOpen, onClose, onSuccess, targetTable =
               </div>
 
               {/* Contact Preview Card */}
-              <div className="bg-zinc-800/50 rounded-lg p-4 space-y-4 border border-zinc-700/50">
+              <div className={`${crt('bg-slate-50 border-slate-200', 'bg-zinc-800/50 border-zinc-700/50')} rounded-lg p-4 space-y-4 border`}>
                 {/* Header */}
                 <div className="flex items-center gap-3">
                   <div className="h-12 w-12 bg-cyan-600/20 rounded-full flex items-center justify-center">
                     <User className="h-6 w-6 text-cyan-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-white">
+                    <h3 className={`font-semibold ${crt('text-slate-900', 'text-white')}`}>
                       {enrichedData.first_name} {enrichedData.last_name}
                     </h3>
-                    <p className="text-sm text-white/60">{enrichedData.job_title}</p>
+                    <p className={`text-sm ${crt('text-slate-500', 'text-white/60')}`}>{enrichedData.job_title}</p>
                   </div>
                 </div>
 
                 {/* Contact Info */}
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="flex items-center gap-2 text-white/70">
-                    <Mail className="h-4 w-4 text-white/40" />
+                  <div className={`flex items-center gap-2 ${crt('text-slate-600', 'text-white/70')}`}>
+                    <Mail className={`h-4 w-4 ${crt('text-slate-400', 'text-white/40')}`} />
                     <span className="truncate">{enrichedData.email || 'N/A'}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-white/70">
-                    <Phone className="h-4 w-4 text-white/40" />
+                  <div className={`flex items-center gap-2 ${crt('text-slate-600', 'text-white/70')}`}>
+                    <Phone className={`h-4 w-4 ${crt('text-slate-400', 'text-white/40')}`} />
                     <span>{enrichedData.mobile_phone || enrichedData.phone || 'N/A'}</span>
                   </div>
                   {enrichedData.location_city && (
-                    <div className="flex items-center gap-2 text-white/70 col-span-2">
-                      <MapPin className="h-4 w-4 text-white/40" />
+                    <div className={`flex items-center gap-2 ${crt('text-slate-600', 'text-white/70')} col-span-2`}>
+                      <MapPin className={`h-4 w-4 ${crt('text-slate-400', 'text-white/40')}`} />
                       <span>
                         {[enrichedData.location_city, enrichedData.location_country].filter(Boolean).join(', ')}
                       </span>
@@ -440,12 +442,12 @@ export function QuickAddContactModal({ isOpen, onClose, onSuccess, targetTable =
 
                 {/* Company Info */}
                 {enrichedData.company && (
-                  <div className="pt-3 border-t border-zinc-700/50">
+                  <div className={`pt-3 border-t ${crt('border-slate-200', 'border-zinc-700/50')}`}>
                     <div className="flex items-start gap-2">
-                      <Building className="h-4 w-4 text-white/40 mt-0.5" />
+                      <Building className={`h-4 w-4 ${crt('text-slate-400', 'text-white/40')} mt-0.5`} />
                       <div>
-                        <p className="font-medium text-white">{enrichedData.company}</p>
-                        <p className="text-xs text-white/50">
+                        <p className={`font-medium ${crt('text-slate-900', 'text-white')}`}>{enrichedData.company}</p>
+                        <p className={`text-xs ${crt('text-slate-400', 'text-white/50')}`}>
                           {[
                             enrichedData.company_industry,
                             enrichedData.company_size,
@@ -459,13 +461,13 @@ export function QuickAddContactModal({ isOpen, onClose, onSuccess, targetTable =
 
                 {/* Skills */}
                 {enrichedData.skills?.length > 0 && (
-                  <div className="pt-3 border-t border-zinc-700/50">
+                  <div className={`pt-3 border-t ${crt('border-slate-200', 'border-zinc-700/50')}`}>
                     <div className="flex flex-wrap gap-1">
                       {enrichedData.skills.slice(0, 6).map((skill, i) => (
                         <Badge
                           key={i}
                           variant="outline"
-                          className="text-xs bg-zinc-800 border-zinc-600 text-white/70"
+                          className={`text-xs ${crt('bg-slate-100 border-slate-300 text-slate-600', 'bg-zinc-800 border-zinc-600 text-white/70')}`}
                         >
                           {skill}
                         </Badge>
@@ -473,7 +475,7 @@ export function QuickAddContactModal({ isOpen, onClose, onSuccess, targetTable =
                       {enrichedData.skills.length > 6 && (
                         <Badge
                           variant="outline"
-                          className="text-xs bg-zinc-800 border-zinc-600 text-white/50"
+                          className={`text-xs ${crt('bg-slate-100 border-slate-300 text-slate-400', 'bg-zinc-800 border-zinc-600 text-white/50')}`}
                         >
                           +{enrichedData.skills.length - 6} more
                         </Badge>
@@ -489,7 +491,7 @@ export function QuickAddContactModal({ isOpen, onClose, onSuccess, targetTable =
                   variant="outline"
                   onClick={() => setStep('input')}
                   disabled={loading}
-                  className="flex-1 border-zinc-700 text-white hover:bg-zinc-800"
+                  className={`flex-1 ${crt('border-slate-300 text-slate-900 hover:bg-slate-100', 'border-zinc-700 text-white hover:bg-zinc-800')}`}
                 >
                   Back
                 </Button>

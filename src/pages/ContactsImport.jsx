@@ -5,7 +5,8 @@ import { toast } from 'sonner';
 import {
   Upload, Columns, CheckCircle, Download, Sparkles, Users,
   ArrowLeft, ArrowRight, FileSpreadsheet, Building2, Target,
-  TrendingUp, UserCheck, Handshake, UserPlus, Crosshair, Truck
+  TrendingUp, UserCheck, Handshake, UserPlus, Crosshair, Truck,
+  Sun, Moon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -14,6 +15,8 @@ import { cn } from '@/lib/utils';
 import { useUser } from '@/components/context/UserContext';
 import { usePermissions } from '@/components/context/PermissionContext';
 import { supabase } from '@/api/supabaseClient';
+import { useCRMTheme } from '@/contexts/CRMThemeContext';
+import { CRMPageTransition } from '@/components/crm/ui';
 
 import { FileUploader } from '@/components/import/FileUploader';
 import { ColumnMapper } from '@/components/import/ColumnMapper';
@@ -63,6 +66,7 @@ export default function ContactsImport() {
   const { hasPermission } = usePermissions();
   const canCreate = hasPermission('users.create');
   const navigate = useNavigate();
+  const { theme, toggleTheme, crt } = useCRMTheme();
 
   // All hooks must be called unconditionally at the top
   // Wizard state
@@ -109,25 +113,27 @@ export default function ContactsImport() {
   // If user doesn't have permission, show access denied
   if (!canCreate) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-black to-zinc-900 flex items-center justify-center p-6">
-        <GlassCard className="max-w-md text-center">
-          <div className="p-2 bg-red-500/10 rounded-xl w-fit mx-auto mb-4">
-            <Upload className="w-8 h-8 text-red-400" />
-          </div>
-          <h2 className="text-xl font-semibold text-white mb-2">Access Denied</h2>
-          <p className="text-white/60 mb-6">
-            You don't have permission to import contacts. Please contact your administrator.
-          </p>
-          <Button
-            variant="outline"
-            className="border-zinc-700"
-            onClick={() => navigate('/crm-contacts')}
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Contacts
-          </Button>
-        </GlassCard>
-      </div>
+      <CRMPageTransition>
+        <div className={cn("min-h-screen flex items-center justify-center p-6", crt('bg-slate-100', 'bg-gradient-to-br from-zinc-900 via-black to-zinc-900'))}>
+          <GlassCard className="max-w-md text-center">
+            <div className="p-2 bg-red-500/10 rounded-xl w-fit mx-auto mb-4">
+              <Upload className="w-8 h-8 text-red-400" />
+            </div>
+            <h2 className={cn("text-xl font-semibold mb-2", crt('text-slate-900', 'text-white'))}>Access Denied</h2>
+            <p className="text-white/60 mb-6">
+              You don't have permission to import contacts. Please contact your administrator.
+            </p>
+            <Button
+              variant="outline"
+              className={crt('border-slate-300', 'border-zinc-700')}
+              onClick={() => navigate('/crm-contacts')}
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Contacts
+            </Button>
+          </GlassCard>
+        </div>
+      </CRMPageTransition>
     );
   }
 
@@ -359,8 +365,8 @@ export default function ContactsImport() {
           <GlassCard className="p-4">
             <div className="text-center mb-4">
               <FileSpreadsheet className="w-8 h-8 mx-auto mb-3 text-cyan-400" />
-              <h2 className="text-lg font-semibold text-white mb-2">Upload Contacts File</h2>
-              <p className="text-zinc-400 text-xs">
+              <h2 className={cn("text-lg font-semibold mb-2", crt('text-slate-900', 'text-white'))}>Upload Contacts File</h2>
+              <p className={cn("text-xs", crt('text-slate-500', 'text-zinc-400'))}>
                 Upload a CSV or Excel file containing your contacts
               </p>
             </div>
@@ -383,8 +389,8 @@ export default function ContactsImport() {
           <GlassCard className="p-4">
             <div className="text-center mb-4">
               <Users className="w-8 h-8 mx-auto mb-3 text-cyan-400" />
-              <h2 className="text-lg font-semibold text-white mb-2">Select Contact Type</h2>
-              <p className="text-zinc-400 text-xs">
+              <h2 className={cn("text-lg font-semibold mb-2", crt('text-slate-900', 'text-white'))}>Select Contact Type</h2>
+              <p className={cn("text-xs", crt('text-slate-500', 'text-zinc-400'))}>
                 What type of contacts are you importing?
               </p>
             </div>
@@ -403,20 +409,20 @@ export default function ContactsImport() {
                       "p-3 rounded-lg border-2 text-left transition-all",
                       isSelected
                         ? "border-cyan-500 bg-cyan-500/10"
-                        : "border-zinc-700 bg-zinc-800/50 hover:border-zinc-600"
+                        : cn(crt('border-slate-300 bg-slate-50 hover:border-slate-400', 'border-zinc-700 bg-zinc-800/50 hover:border-zinc-600'))
                     )}
                   >
                     <Icon className={cn(
                       "w-5 h-5 mb-2",
-                      isSelected ? "text-cyan-400" : "text-zinc-400"
+                      isSelected ? "text-cyan-400" : crt('text-slate-500', 'text-zinc-400')
                     )} />
                     <h3 className={cn(
                       "font-medium mb-1 text-sm",
-                      isSelected ? "text-white" : "text-zinc-300"
+                      isSelected ? crt('text-slate-900', 'text-white') : crt('text-slate-600', 'text-zinc-300')
                     )}>
                       {type.label}
                     </h3>
-                    <p className="text-[10px] text-zinc-500">{type.description}</p>
+                    <p className={cn("text-[10px]", crt('text-slate-400', 'text-zinc-500'))}>{type.description}</p>
                   </motion.button>
                 );
               })}
@@ -428,8 +434,8 @@ export default function ContactsImport() {
         return (
           <GlassCard className="p-4">
             <div className="mb-4">
-              <h2 className="text-lg font-semibold text-white mb-2">Map Columns</h2>
-              <p className="text-zinc-400 text-xs">
+              <h2 className={cn("text-lg font-semibold mb-2", crt('text-slate-900', 'text-white'))}>Map Columns</h2>
+              <p className={cn("text-xs", crt('text-slate-500', 'text-zinc-400'))}>
                 Match your spreadsheet columns to contact fields
               </p>
               {aiConfidence > 0 && (
@@ -458,8 +464,8 @@ export default function ContactsImport() {
         return (
           <GlassCard className="p-4">
             <div className="mb-4">
-              <h2 className="text-lg font-semibold text-white mb-2">Review Data</h2>
-              <p className="text-zinc-400 text-xs">
+              <h2 className={cn("text-lg font-semibold mb-2", crt('text-slate-900', 'text-white'))}>Review Data</h2>
+              <p className={cn("text-xs", crt('text-slate-500', 'text-zinc-400'))}>
                 Review the data before importing ({previewData?.validRows?.length || 0} valid contacts found)
               </p>
             </div>
@@ -468,43 +474,43 @@ export default function ContactsImport() {
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
                 <div className="text-lg font-bold text-green-400">{previewData?.validRows?.length || 0}</div>
-                <div className="text-[10px] text-zinc-400">Valid contacts</div>
+                <div className={cn("text-[10px]", crt('text-slate-500', 'text-zinc-400'))}>Valid contacts</div>
               </div>
               <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
                 <div className="text-lg font-bold text-red-400">{previewData?.invalidRows?.length || 0}</div>
-                <div className="text-[10px] text-zinc-400">Invalid rows</div>
+                <div className={cn("text-[10px]", crt('text-slate-500', 'text-zinc-400'))}>Invalid rows</div>
               </div>
             </div>
 
             {/* Preview Table */}
             {previewData?.validRows?.length > 0 && (
-              <div className="rounded-lg border border-white/10 overflow-hidden">
+              <div className={cn("rounded-lg border overflow-hidden", crt('border-slate-200', 'border-white/10'))}>
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="bg-zinc-900/50 border-b border-white/10">
-                        <th className="px-3 py-2 text-left text-xs font-medium text-zinc-400">Name</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium text-zinc-400">Email</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium text-zinc-400">Company</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium text-zinc-400">Phone</th>
+                      <tr className={cn("border-b", crt('bg-white border-slate-200 shadow-sm', 'bg-zinc-900/50 border-white/10'))}>
+                        <th className={cn("px-3 py-2 text-left text-xs font-medium", crt('text-slate-500', 'text-zinc-400'))}>Name</th>
+                        <th className={cn("px-3 py-2 text-left text-xs font-medium", crt('text-slate-500', 'text-zinc-400'))}>Email</th>
+                        <th className={cn("px-3 py-2 text-left text-xs font-medium", crt('text-slate-500', 'text-zinc-400'))}>Company</th>
+                        <th className={cn("px-3 py-2 text-left text-xs font-medium", crt('text-slate-500', 'text-zinc-400'))}>Phone</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
                       {previewData.validRows.slice(0, 10).map((row, idx) => (
                         <tr key={idx} className="hover:bg-white/5">
-                          <td className="px-3 py-2 text-white text-sm">
+                          <td className={cn("px-3 py-2 text-sm", crt('text-slate-900', 'text-white'))}>
                             {row.data.first_name || row.data.full_name || '-'} {row.data.last_name || ''}
                           </td>
-                          <td className="px-3 py-2 text-zinc-400 text-sm">{row.data.email || '-'}</td>
-                          <td className="px-3 py-2 text-zinc-400 text-sm">{row.data.company || '-'}</td>
-                          <td className="px-3 py-2 text-zinc-400 text-sm">{row.data.phone || '-'}</td>
+                          <td className={cn("px-3 py-2 text-sm", crt('text-slate-500', 'text-zinc-400'))}>{row.data.email || '-'}</td>
+                          <td className={cn("px-3 py-2 text-sm", crt('text-slate-500', 'text-zinc-400'))}>{row.data.company || '-'}</td>
+                          <td className={cn("px-3 py-2 text-sm", crt('text-slate-500', 'text-zinc-400'))}>{row.data.phone || '-'}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
                 {previewData.validRows.length > 10 && (
-                  <div className="p-2 text-center text-xs text-zinc-500 border-t border-white/10">
+                  <div className={cn("p-2 text-center text-xs border-t", crt('text-slate-400 border-slate-200', 'text-zinc-500 border-white/10'))}>
                     Showing first 10 of {previewData.validRows.length} contacts
                   </div>
                 )}
@@ -519,7 +525,7 @@ export default function ContactsImport() {
                   {previewData.invalidRows.slice(0, 5).map((item, idx) => (
                     <div key={idx} className="p-2 bg-red-500/10 border border-red-500/20 rounded text-xs">
                       <span className="text-red-400">Row {item.index + 2}:</span>
-                      <span className="text-zinc-400 ml-2">{item.errors.join(', ')}</span>
+                      <span className={cn("ml-2", crt('text-slate-500', 'text-zinc-400'))}>{item.errors.join(', ')}</span>
                     </div>
                   ))}
                 </div>
@@ -535,11 +541,11 @@ export default function ContactsImport() {
               {isImporting ? (
                 <>
                   <div className="w-12 h-12 mx-auto mb-3 rounded-full border-3 border-cyan-500/30 border-t-cyan-500 animate-spin" />
-                  <h2 className="text-lg font-semibold text-white mb-2">Importing Contacts...</h2>
-                  <p className="text-zinc-400 text-xs mb-3">
+                  <h2 className={cn("text-lg font-semibold mb-2", crt('text-slate-900', 'text-white'))}>Importing Contacts...</h2>
+                  <p className={cn("text-xs mb-3", crt('text-slate-500', 'text-zinc-400'))}>
                     {importProgress.current} of {importProgress.total} contacts
                   </p>
-                  <div className="w-full bg-zinc-800 rounded-full h-1.5">
+                  <div className={cn("w-full rounded-full h-1.5", crt('bg-slate-100', 'bg-zinc-800'))}>
                     <div
                       className="bg-cyan-500 h-1.5 rounded-full transition-all"
                       style={{ width: `${(importProgress.current / importProgress.total) * 100}%` }}
@@ -549,19 +555,19 @@ export default function ContactsImport() {
               ) : importResults ? (
                 <>
                   <CheckCircle className="w-12 h-12 mx-auto mb-3 text-green-400" />
-                  <h2 className="text-lg font-semibold text-white mb-2">Import Complete!</h2>
+                  <h2 className={cn("text-lg font-semibold mb-2", crt('text-slate-900', 'text-white'))}>Import Complete!</h2>
                   <div className="grid grid-cols-3 gap-3 my-4">
                     <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
                       <div className="text-lg font-bold text-green-400">{importResults.created}</div>
-                      <div className="text-[10px] text-zinc-400">Created</div>
+                      <div className={cn("text-[10px]", crt('text-slate-500', 'text-zinc-400'))}>Created</div>
                     </div>
                     <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
                       <div className="text-lg font-bold text-amber-400">{importResults.duplicates}</div>
-                      <div className="text-[10px] text-zinc-400">Duplicates</div>
+                      <div className={cn("text-[10px]", crt('text-slate-500', 'text-zinc-400'))}>Duplicates</div>
                     </div>
                     <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
                       <div className="text-lg font-bold text-red-400">{importResults.failed}</div>
-                      <div className="text-[10px] text-zinc-400">Failed</div>
+                      <div className={cn("text-[10px]", crt('text-slate-500', 'text-zinc-400'))}>Failed</div>
                     </div>
                   </div>
                   <Button onClick={goToCRM} className="bg-cyan-600 hover:bg-cyan-500">
@@ -572,8 +578,8 @@ export default function ContactsImport() {
               ) : (
                 <>
                   <Download className="w-12 h-12 mx-auto mb-3 text-cyan-400" />
-                  <h2 className="text-lg font-semibold text-white mb-2">Ready to Import</h2>
-                  <p className="text-zinc-400 text-xs mb-4">
+                  <h2 className={cn("text-lg font-semibold mb-2", crt('text-slate-900', 'text-white'))}>Ready to Import</h2>
+                  <p className={cn("text-xs mb-4", crt('text-slate-500', 'text-zinc-400'))}>
                     {validationResult?.validCount || 0} contacts will be imported as {
                       CONTACT_TYPES.find(t => t.id === selectedContactType)?.label || 'contacts'
                     }
@@ -624,95 +630,105 @@ export default function ContactsImport() {
   };
 
   return (
-    <div className="min-h-screen bg-black px-4 lg:px-6 py-4">
-      <div className="max-w-4xl mx-auto space-y-4">
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={goToCRM}
-            className="text-zinc-400 hover:text-white"
+    <CRMPageTransition>
+      <div className={cn("min-h-screen px-4 lg:px-6 py-4", crt('bg-slate-50', 'bg-black'))}>
+        <div className="max-w-4xl mx-auto space-y-4">
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-6">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={goToCRM}
+              className={crt('text-slate-500 hover:text-slate-900', 'text-zinc-400 hover:text-white')}
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div className="flex-1">
+              <h1 className={cn("text-lg font-bold", crt('text-slate-900', 'text-white'))}>Import Contacts</h1>
+              <p className={cn("text-sm", crt('text-slate-500', 'text-zinc-400'))}>Import contacts from CSV or Excel files</p>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className={crt('text-slate-500 hover:text-slate-900 hover:bg-slate-100', 'text-zinc-400 hover:text-white hover:bg-zinc-800')}
+            >
+              {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+            </Button>
+          </div>
+
+          {/* Progress Steps */}
+          <div className="flex items-center justify-between mb-6">
+            {STEPS.map((step, index) => {
+              const Icon = step.icon;
+              const isActive = index === currentStep;
+              const isComplete = index < currentStep;
+
+              return (
+                <React.Fragment key={step.id}>
+                  <div className="flex flex-col items-center">
+                    <div className={cn(
+                      "w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors",
+                      isActive && "bg-cyan-500 text-white",
+                      isComplete && "bg-green-500 text-white",
+                      !isActive && !isComplete && cn(crt('bg-slate-100 text-slate-400', 'bg-zinc-800 text-zinc-500'))
+                    )}>
+                      {isComplete ? <CheckCircle className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
+                    </div>
+                    <span className={cn(
+                      "text-xs font-medium hidden sm:block",
+                      isActive && crt('text-slate-900', 'text-white'),
+                      !isActive && crt('text-slate-400', 'text-zinc-500')
+                    )}>
+                      {step.title}
+                    </span>
+                  </div>
+                  {index < STEPS.length - 1 && (
+                    <div className={cn(
+                      "flex-1 h-0.5 mx-2",
+                      index < currentStep ? "bg-green-500" : crt('bg-slate-300', 'bg-zinc-700')
+                    )} />
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
+
+          {/* Step Content */}
+          <motion.div
+            key={currentStep}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
           >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div>
-            <h1 className="text-lg font-bold text-white">Import Contacts</h1>
-            <p className="text-sm text-zinc-400">Import contacts from CSV or Excel files</p>
+            {renderStepContent()}
+          </motion.div>
+
+          {/* Navigation Buttons */}
+          <div className="flex justify-between mt-4 gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
+              disabled={currentStep === 0 || isImporting}
+              className={cn(crt('border-slate-300 text-slate-600', 'border-zinc-700 text-zinc-300'))}
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
+            </Button>
+
+            {currentStep < STEPS.length - 1 && (
+              <Button
+                onClick={handleNext}
+                disabled={!canProceed() || isImporting}
+                className="bg-cyan-600 hover:bg-cyan-500"
+              >
+                Next
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            )}
           </div>
         </div>
-
-        {/* Progress Steps */}
-        <div className="flex items-center justify-between mb-6">
-          {STEPS.map((step, index) => {
-            const Icon = step.icon;
-            const isActive = index === currentStep;
-            const isComplete = index < currentStep;
-
-            return (
-              <React.Fragment key={step.id}>
-                <div className="flex flex-col items-center">
-                  <div className={cn(
-                    "w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors",
-                    isActive && "bg-cyan-500 text-white",
-                    isComplete && "bg-green-500 text-white",
-                    !isActive && !isComplete && "bg-zinc-800 text-zinc-500"
-                  )}>
-                    {isComplete ? <CheckCircle className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
-                  </div>
-                  <span className={cn(
-                    "text-xs font-medium hidden sm:block",
-                    isActive && "text-white",
-                    !isActive && "text-zinc-500"
-                  )}>
-                    {step.title}
-                  </span>
-                </div>
-                {index < STEPS.length - 1 && (
-                  <div className={cn(
-                    "flex-1 h-0.5 mx-2",
-                    index < currentStep ? "bg-green-500" : "bg-zinc-700"
-                  )} />
-                )}
-              </React.Fragment>
-            );
-          })}
-        </div>
-
-        {/* Step Content */}
-        <motion.div
-          key={currentStep}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-        >
-          {renderStepContent()}
-        </motion.div>
-
-        {/* Navigation Buttons */}
-        <div className="flex justify-between mt-4 gap-3">
-          <Button
-            variant="outline"
-            onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
-            disabled={currentStep === 0 || isImporting}
-            className="border-zinc-700 text-zinc-300"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
-          </Button>
-
-          {currentStep < STEPS.length - 1 && (
-            <Button
-              onClick={handleNext}
-              disabled={!canProceed() || isImporting}
-              className="bg-cyan-600 hover:bg-cyan-500"
-            >
-              Next
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-          )}
-        </div>
       </div>
-    </div>
+    </CRMPageTransition>
   );
 }
