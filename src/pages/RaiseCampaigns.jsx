@@ -7,7 +7,7 @@ import {
   AlertCircle, Play, Pause, BarChart3, Edit2,
   Sun, Moon
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { RaiseCard as Card, RaiseCardContent as CardContent, RaiseCardHeader as CardHeader, RaiseCardTitle as CardTitle, RaiseCardDescription as CardDescription } from '@/components/raise/RaiseCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';

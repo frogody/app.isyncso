@@ -10,7 +10,7 @@ import {
   GripVertical, MoreHorizontal, Trash2, Sun, Moon
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { RaiseCard as Card, RaiseCardContent as CardContent, RaiseCardHeader as CardHeader, RaiseCardTitle as CardTitle, RaiseCardDescription as CardDescription } from '@/components/raise/RaiseCard';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
