@@ -9,17 +9,19 @@ interface CreateThemeContextType {
   ct: (lightClasses: string, darkClasses: string) => string;
 }
 
-const CreateThemeContext = createContext<CreateThemeContextType | undefined>(undefined);
-
 const STORAGE_KEY = 'create-theme';
 
+function getStoredTheme(): CreateTheme {
+  if (typeof window !== 'undefined') {
+    return (localStorage.getItem(STORAGE_KEY) as CreateTheme) || 'dark';
+  }
+  return 'dark';
+}
+
+const CreateThemeContext = createContext<CreateThemeContextType | undefined>(undefined);
+
 export function CreateThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<CreateTheme>(() => {
-    if (typeof window !== 'undefined') {
-      return (localStorage.getItem(STORAGE_KEY) as CreateTheme) || 'dark';
-    }
-    return 'dark';
-  });
+  const [theme, setTheme] = useState<CreateTheme>(getStoredTheme);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, theme);
@@ -43,14 +45,31 @@ export function CreateThemeProvider({ children }: { children: React.ReactNode })
   );
 }
 
-export function useCreateTheme() {
+/**
+ * Hook that works both inside and outside the provider.
+ * Outside the provider it still reads/writes localStorage and triggers re-renders
+ * via its own local state — so useCreateTheme() is safe to call anywhere.
+ */
+export function useCreateTheme(): CreateThemeContextType {
   const context = useContext(CreateThemeContext);
-  if (!context) {
-    return {
-      theme: 'dark' as CreateTheme,
-      toggleTheme: () => {},
-      ct: (_light: string, dark: string) => dark,
-    };
-  }
-  return context;
+
+  // Local state fallback for when called outside provider
+  const [localTheme, setLocalTheme] = useState<CreateTheme>(getStoredTheme);
+
+  const localToggle = useCallback(() => {
+    setLocalTheme(prev => {
+      const next = prev === 'dark' ? 'light' : 'dark';
+      localStorage.setItem(STORAGE_KEY, next);
+      return next;
+    });
+  }, []);
+
+  const localCt = useCallback(
+    (lightClasses: string, darkClasses: string) => (localTheme === 'light' ? lightClasses : darkClasses),
+    [localTheme],
+  );
+
+  if (context) return context;
+
+  return { theme: localTheme, toggleTheme: localToggle, ct: localCt };
 }
