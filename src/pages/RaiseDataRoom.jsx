@@ -220,17 +220,17 @@ export default function RaiseDataRoom() {
                           {room.is_active ? 'Active' : 'Inactive'}
                         </RaiseBadge>
                         <div className="flex gap-1">
-                          <RaiseButton variant="ghost" size="icon">
+                          <RaiseButton variant="ghost" size="sm" className="h-8 w-8 !px-0">
                             <Link2 className="w-4 h-4" />
                           </RaiseButton>
-                          <RaiseButton variant="ghost" size="icon">
+                          <RaiseButton variant="ghost" size="sm" className="h-8 w-8 !px-0">
                             <Upload className="w-4 h-4" />
                           </RaiseButton>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <RaiseButton variant="ghost" size="icon">
+                              <button className={`inline-flex items-center justify-center h-8 w-8 rounded-full ${rt('text-slate-500 hover:bg-slate-100', 'text-zinc-400 hover:bg-zinc-800/30')} transition-colors`}>
                                 <MoreHorizontal className="w-4 h-4" />
-                              </RaiseButton>
+                              </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className={rt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')}>
                               <DropdownMenuItem className={rt('text-slate-700', 'text-zinc-300')}>Open</DropdownMenuItem>

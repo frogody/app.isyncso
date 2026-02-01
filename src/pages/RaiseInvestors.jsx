@@ -261,32 +261,20 @@ export default function RaiseInvestors() {
                         </RaiseBadge>
                         <div className="flex gap-1">
                           {investor.email && (
-                            <RaiseButton
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 !px-0"
-                              asChild
-                            >
-                              <a href={`mailto:${investor.email}`}>
-                                <Mail className="w-4 h-4" />
-                              </a>
-                            </RaiseButton>
+                            <a href={`mailto:${investor.email}`} className={`inline-flex items-center justify-center h-8 w-8 rounded-full ${rt('text-slate-500 hover:text-slate-900 hover:bg-slate-100', 'text-zinc-400 hover:text-white hover:bg-zinc-800/30')} transition-colors`}>
+                              <Mail className="w-4 h-4" />
+                            </a>
                           )}
                           {investor.linkedin_url && (
-                            <RaiseButton
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 !px-0"
-                              asChild
-                            >
-                              <a href={investor.linkedin_url} target="_blank" rel="noopener noreferrer">
-                                <Linkedin className="w-4 h-4" />
-                              </a>
-                            </RaiseButton>
+                            <a href={investor.linkedin_url} target="_blank" rel="noopener noreferrer" className={`inline-flex items-center justify-center h-8 w-8 rounded-full ${rt('text-slate-500 hover:text-slate-900 hover:bg-slate-100', 'text-zinc-400 hover:text-white hover:bg-zinc-800/30')} transition-colors`}>
+                              <Linkedin className="w-4 h-4" />
+                            </a>
                           )}
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <RaiseButton variant="ghost" size="sm" className="h-8 w-8 !px-0" icon={<MoreHorizontal className="w-4 h-4" />} />
+                              <button className={`inline-flex items-center justify-center h-8 w-8 rounded-full ${rt('text-slate-500 hover:bg-slate-100', 'text-zinc-400 hover:bg-zinc-800/30')} transition-colors`}>
+                                <MoreHorizontal className="w-4 h-4" />
+                              </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className={rt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')}>
                               <DropdownMenuItem className={rt('text-slate-600', 'text-zinc-300')}>Edit</DropdownMenuItem>

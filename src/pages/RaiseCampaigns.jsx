@@ -251,9 +251,9 @@ export default function RaiseCampaigns() {
                                 </RaiseBadge>
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
-                                    <RaiseButton variant="ghost" size="icon" className="h-8 w-8">
+                                    <button className={`inline-flex items-center justify-center h-8 w-8 rounded-full ${rt('text-slate-500 hover:bg-slate-100', 'text-zinc-400 hover:bg-zinc-800/30')} transition-colors`}>
                                       <MoreHorizontal className="w-4 h-4" />
-                                    </RaiseButton>
+                                    </button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end" className={rt('bg-white border-slate-200', 'bg-zinc-900 border-zinc-800')}>
                                     <DropdownMenuItem className={rt('text-slate-700', 'text-zinc-300')}>Edit</DropdownMenuItem>
