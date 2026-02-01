@@ -1954,6 +1954,7 @@ export default function Layout({ children, currentPageName }) {
           [data-finance-light] .bg-zinc-700\\/30 { background: #F1F5F9 !important; }
           [data-finance-light] .bg-zinc-700\\/50 { background: #E2E8F0 !important; }
           [data-finance-light] .bg-black\\/80 { background: rgba(248,250,252,0.95) !important; }
+          [data-finance-light] .bg-black\\/95 { background: rgba(255,255,255,0.97) !important; border-color: #E2E8F0 !important; }
           [data-finance-light] .bg-black\\/60 { background: rgba(248,250,252,0.9) !important; }
 
           /* Text colors */

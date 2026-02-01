@@ -295,7 +295,7 @@ export default function Finance() {
                   </Button>
                 )}
                 {canCreate && (
-                  <Button className="bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30" onClick={() => setShowInvoiceModal(true)}>
+                  <Button className={ft('bg-blue-600 hover:bg-blue-700 text-white', 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30')} onClick={() => setShowInvoiceModal(true)}>
                     <Plus className="w-4 h-4 mr-2" />
                     New Transaction
                   </Button>
