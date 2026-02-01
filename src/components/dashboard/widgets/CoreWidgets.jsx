@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { ListTodo, Zap, Clock, CheckCircle, AlertTriangle, ArrowUpRight } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 // Widget metadata - these are always available
 export const CORE_WIDGETS = [
@@ -57,10 +58,7 @@ export function RecentActionsWidget({ actions = [] }) {
           ))}
         </div>
       ) : (
-        <div className="text-center py-6 text-zinc-500 text-sm">
-          <ListTodo className="w-10 h-10 mx-auto mb-2 opacity-50" />
-          No recent actions
-        </div>
+        <EmptyState icon={ListTodo} title="No recent actions" description="Your activity will appear here" size="sm" />
       )}
     </GlassCard>
   );
