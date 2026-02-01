@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { AnimatedNumber } from './AnimatedNumber';
 
 export function GlassCard({
   children,
@@ -155,7 +156,13 @@ export function StatCard({
           </span>
         )}
       </div>
-      <div className={cn(s.value, 'font-bold text-white mb-0.5')}>{value}</div>
+      <div className={cn(s.value, 'font-bold text-white mb-0.5')}>
+        {typeof value === 'number' ? (
+          <AnimatedNumber value={value} delay={delay} duration={1.2} formatOptions={{ useLocale: true }} />
+        ) : (
+          value
+        )}
+      </div>
       <div className={cn(s.label, 'text-zinc-400')}>{label}</div>
     </GlassCard>
   );
