@@ -1,6 +1,7 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva } from "class-variance-authority";
+import { motion, AnimatePresence } from "framer-motion";
 import { PanelLeft } from "lucide-react"
 
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -403,13 +404,41 @@ const SidebarMenu = React.forwardRef(({ className, ...props }, ref) => (
 ))
 SidebarMenu.displayName = "SidebarMenu"
 
-const SidebarMenuItem = React.forwardRef(({ className, ...props }, ref) => (
-  <li
-    ref={ref}
-    data-sidebar="menu-item"
-    className={cn("group/menu-item relative", className)}
-    {...props} />
-))
+function ActiveIndicator() {
+  return (
+    <motion.div
+      layoutId="sidebar-active-indicator"
+      className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.5)]"
+      initial={{ opacity: 0, scaleY: 0 }}
+      animate={{ opacity: 1, scaleY: 1 }}
+      exit={{ opacity: 0, scaleY: 0 }}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+    />
+  );
+}
+
+const SidebarMenuItem = React.forwardRef(({ className, children, ...props }, ref) => {
+  const hasActive = React.useMemo(() => {
+    let active = false;
+    React.Children.forEach(children, (child) => {
+      if (React.isValidElement(child) && child.props?.isActive) active = true;
+    });
+    return active;
+  }, [children]);
+
+  return (
+    <li
+      ref={ref}
+      data-sidebar="menu-item"
+      className={cn("group/menu-item relative", className)}
+      {...props}>
+      <AnimatePresence>
+        {hasActive && <ActiveIndicator key="indicator" />}
+      </AnimatePresence>
+      {children}
+    </li>
+  );
+})
 SidebarMenuItem.displayName = "SidebarMenuItem"
 
 const sidebarMenuButtonVariants = cva(
@@ -446,18 +475,37 @@ const SidebarMenuButton = React.forwardRef((
   },
   ref
 ) => {
-  const Comp = asChild ? Slot : "button"
   const { isMobile, state } = useSidebar()
+  const isExpanded = state === "expanded"
 
-  const button = (
-    <Comp
-      ref={ref}
-      data-sidebar="menu-button"
-      data-size={size}
-      data-active={isActive}
-      className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
-      {...props} />
-  )
+  const buttonClassName = cn(sidebarMenuButtonVariants({ variant, size }), className)
+
+  let button;
+
+  if (asChild) {
+    button = (
+      <Slot
+        ref={ref}
+        data-sidebar="menu-button"
+        data-size={size}
+        data-active={isActive}
+        className={buttonClassName}
+        {...props} />
+    )
+  } else {
+    button = (
+      <motion.button
+        ref={ref}
+        data-sidebar="menu-button"
+        data-size={size}
+        data-active={isActive}
+        className={buttonClassName}
+        whileHover={isExpanded ? { x: 4 } : undefined}
+        whileTap={{ scale: 0.98 }}
+        transition={{ type: "spring", stiffness: 400, damping: 30 }}
+        {...props} />
+    )
+  }
 
   if (!tooltip) {
     return button
