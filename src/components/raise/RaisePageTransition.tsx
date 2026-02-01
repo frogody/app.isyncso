@@ -1,28 +1,25 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { RaiseThemeProvider, useRaiseTheme } from '@/contexts/RaiseThemeContext';
 
 interface RaisePageTransitionProps {
   children: React.ReactNode;
   className?: string;
 }
 
-/**
- * Wraps Raise page content with enter/exit fade+slide animation and theme provider.
- * Toggles data-raise-light on <html> so CSS overrides apply globally.
- */
-export function RaisePageTransition({ children, className }: RaisePageTransitionProps) {
-  return (
-    <RaiseThemeProvider>
-      <RaisePageTransitionInner className={className}>
-        {children}
-      </RaisePageTransitionInner>
-    </RaiseThemeProvider>
-  );
-}
+const STORAGE_KEY = 'raise-theme';
 
-function RaisePageTransitionInner({ children, className }: RaisePageTransitionProps) {
-  const { theme } = useRaiseTheme();
+export function RaisePageTransition({ children, className }: RaisePageTransitionProps) {
+  const [theme, setTheme] = useState(() =>
+    (typeof window !== 'undefined' && localStorage.getItem(STORAGE_KEY)) || 'dark'
+  );
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const stored = localStorage.getItem(STORAGE_KEY) || 'dark';
+      setTheme(prev => (prev !== stored ? stored : prev));
+    }, 100);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const html = document.documentElement;

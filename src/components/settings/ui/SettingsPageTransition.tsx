@@ -1,29 +1,26 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { MOTION_VARIANTS } from '@/tokens/settings';
-import { SettingsThemeProvider, useSettingsTheme } from '@/contexts/SettingsThemeContext';
 
 interface SettingsPageTransitionProps {
   children: React.ReactNode;
   className?: string;
 }
 
-/**
- * Wraps page content with enter/exit fade+slide animation and Settings theme provider.
- * Toggles data-settings-light on <html> so CSS overrides apply to the entire page.
- */
-export function SettingsPageTransition({ children, className }: SettingsPageTransitionProps) {
-  return (
-    <SettingsThemeProvider>
-      <SettingsPageTransitionInner className={className}>
-        {children}
-      </SettingsPageTransitionInner>
-    </SettingsThemeProvider>
-  );
-}
+const STORAGE_KEY = 'settings-theme';
 
-function SettingsPageTransitionInner({ children, className }: SettingsPageTransitionProps) {
-  const { theme } = useSettingsTheme();
+export function SettingsPageTransition({ children, className }: SettingsPageTransitionProps) {
+  const [theme, setTheme] = useState(() =>
+    (typeof window !== 'undefined' && localStorage.getItem(STORAGE_KEY)) || 'dark'
+  );
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const stored = localStorage.getItem(STORAGE_KEY) || 'dark';
+      setTheme(prev => (prev !== stored ? stored : prev));
+    }, 100);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const html = document.documentElement;

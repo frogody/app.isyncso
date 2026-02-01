@@ -1,29 +1,26 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { MOTION_VARIANTS } from '@/tokens/finance';
-import { FinanceThemeProvider, useFinanceTheme } from '@/contexts/FinanceThemeContext';
 
 interface FinancePageTransitionProps {
   children: React.ReactNode;
   className?: string;
 }
 
-/**
- * Wraps page content with enter/exit fade+slide animation and Finance theme provider.
- * Toggles data-finance-light on <html> so CSS overrides apply to the entire page.
- */
-export function FinancePageTransition({ children, className }: FinancePageTransitionProps) {
-  return (
-    <FinanceThemeProvider>
-      <FinancePageTransitionInner className={className}>
-        {children}
-      </FinancePageTransitionInner>
-    </FinanceThemeProvider>
-  );
-}
+const STORAGE_KEY = 'finance-theme';
 
-function FinancePageTransitionInner({ children, className }: FinancePageTransitionProps) {
-  const { theme } = useFinanceTheme();
+export function FinancePageTransition({ children, className }: FinancePageTransitionProps) {
+  const [theme, setTheme] = useState(() =>
+    (typeof window !== 'undefined' && localStorage.getItem(STORAGE_KEY)) || 'dark'
+  );
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const stored = localStorage.getItem(STORAGE_KEY) || 'dark';
+      setTheme(prev => (prev !== stored ? stored : prev));
+    }, 100);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const html = document.documentElement;

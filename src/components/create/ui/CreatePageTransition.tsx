@@ -1,30 +1,26 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { MOTION_VARIANTS } from '@/tokens/create';
-import { CreateThemeProvider, useCreateTheme } from '@/contexts/CreateThemeContext';
 
 interface CreatePageTransitionProps {
   children: React.ReactNode;
   className?: string;
 }
 
-/**
- * Wraps page content with enter/exit fade+slide animation and Create theme provider.
- * Toggles data-create-light on <html> so CSS overrides apply to the entire page
- * (including body background) — not just descendants of this component.
- */
-export function CreatePageTransition({ children, className }: CreatePageTransitionProps) {
-  return (
-    <CreateThemeProvider>
-      <CreatePageTransitionInner className={className}>
-        {children}
-      </CreatePageTransitionInner>
-    </CreateThemeProvider>
-  );
-}
+const STORAGE_KEY = 'create-theme';
 
-function CreatePageTransitionInner({ children, className }: CreatePageTransitionProps) {
-  const { theme } = useCreateTheme();
+export function CreatePageTransition({ children, className }: CreatePageTransitionProps) {
+  const [theme, setTheme] = useState(() =>
+    (typeof window !== 'undefined' && localStorage.getItem(STORAGE_KEY)) || 'dark'
+  );
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const stored = localStorage.getItem(STORAGE_KEY) || 'dark';
+      setTheme(prev => (prev !== stored ? stored : prev));
+    }, 100);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const html = document.documentElement;

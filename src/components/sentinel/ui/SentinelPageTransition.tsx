@@ -1,30 +1,26 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { MOTION_VARIANTS } from '@/tokens/sentinel';
-import { SentinelThemeProvider, useSentinelTheme } from '@/contexts/SentinelThemeContext';
 
 interface SentinelPageTransitionProps {
   children: React.ReactNode;
   className?: string;
 }
 
-/**
- * Wraps page content with enter/exit fade+slide animation and Sentinel theme provider.
- * Toggles data-sentinel-light on <html> so CSS overrides apply to the entire page
- * (including body background) — not just descendants of this component.
- */
-export function SentinelPageTransition({ children, className }: SentinelPageTransitionProps) {
-  return (
-    <SentinelThemeProvider>
-      <SentinelPageTransitionInner className={className}>
-        {children}
-      </SentinelPageTransitionInner>
-    </SentinelThemeProvider>
-  );
-}
+const STORAGE_KEY = 'sentinel-theme';
 
-function SentinelPageTransitionInner({ children, className }: SentinelPageTransitionProps) {
-  const { theme } = useSentinelTheme();
+export function SentinelPageTransition({ children, className }: SentinelPageTransitionProps) {
+  const [theme, setTheme] = useState(() =>
+    (typeof window !== 'undefined' && localStorage.getItem(STORAGE_KEY)) || 'dark'
+  );
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const stored = localStorage.getItem(STORAGE_KEY) || 'dark';
+      setTheme(prev => (prev !== stored ? stored : prev));
+    }, 100);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const html = document.documentElement;

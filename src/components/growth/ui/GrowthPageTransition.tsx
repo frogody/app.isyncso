@@ -1,29 +1,31 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { MOTION_VARIANTS } from '@/tokens/growth';
-import { GrowthThemeProvider, useGrowthTheme } from '@/contexts/GrowthThemeContext';
 
 interface GrowthPageTransitionProps {
   children: React.ReactNode;
   className?: string;
 }
 
+const STORAGE_KEY = 'growth-theme';
+
 /**
- * Wraps page content with enter/exit fade+slide animation and Growth theme provider.
- * Toggles data-growth-light on <html> so CSS overrides apply to the entire page.
+ * Wraps page content with enter/exit fade+slide animation.
+ * Reads theme directly from localStorage and polls for changes
+ * so it stays in sync with useGrowthTheme() calls outside the provider.
  */
 export function GrowthPageTransition({ children, className }: GrowthPageTransitionProps) {
-  return (
-    <GrowthThemeProvider>
-      <GrowthPageTransitionInner className={className}>
-        {children}
-      </GrowthPageTransitionInner>
-    </GrowthThemeProvider>
+  const [theme, setTheme] = useState(() =>
+    (typeof window !== 'undefined' && localStorage.getItem(STORAGE_KEY)) || 'dark'
   );
-}
 
-function GrowthPageTransitionInner({ children, className }: GrowthPageTransitionProps) {
-  const { theme } = useGrowthTheme();
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const stored = localStorage.getItem(STORAGE_KEY) || 'dark';
+      setTheme(prev => (prev !== stored ? stored : prev));
+    }, 100);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const html = document.documentElement;
